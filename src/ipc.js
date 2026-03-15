@@ -121,6 +121,7 @@ function register() {
 
   // Documents de canal (bibliothèque)
   handle('db:getChannelDocuments',          (channelId)  => queries.getChannelDocuments(channelId));
+  handle('db:getPromoDocuments',            (promoId)    => queries.getPromoDocuments(promoId));
   handle('db:addChannelDocument',           (payload)    => queries.addChannelDocument(payload));
   handle('db:deleteChannelDocument',        (id)         => queries.deleteChannelDocument(id));
   handle('db:getChannelDocumentCategories', (channelId)  => queries.getChannelDocumentCategories(channelId));

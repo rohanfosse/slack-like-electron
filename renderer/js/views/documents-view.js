@@ -10,6 +10,7 @@ let _searchQuery       = '';
 let _typeFilter        = 'all'; // 'all' | 'pdf' | 'image' | 'link'
 let _isTeacher         = false;
 let _navInitialized    = false; // évite de re-lier les écouteurs promo/canal
+let _allMode           = false; // true = vue "Tous les documents" de la promo
 
 // ─── Initialisation ───────────────────────────────────────────────────────────
 
@@ -37,26 +38,54 @@ export async function renderDocumentsSidebar() {
   const promotions = await call(window.api.getPromotions);
   if (!promotions) return;
 
-  // Boutons de promo
-  promoFilter.innerHTML = promotions.map(p => `
-    <button class="doc-promo-btn" data-promo-id="${p.id}"
+  // Bouton "Tous" + boutons de promo
+  promoFilter.innerHTML = `
+    <button class="doc-promo-btn doc-all-btn${_allMode ? ' active' : ''}" id="doc-btn-all">
+      <span class="doc-promo-dot" style="background:var(--accent)"></span>
+      Tous
+    </button>
+  ` + promotions.map(p => `
+    <button class="doc-promo-btn${!_allMode && false ? ' active' : ''}" data-promo-id="${p.id}"
             style="--promo-color:${p.color}">
       <span class="doc-promo-dot" style="background:${p.color}"></span>
       ${escapeHtml(p.name)}
     </button>
   `).join('');
 
+  // Clic "Tous"
+  promoFilter.querySelector('#doc-btn-all').addEventListener('click', async () => {
+    _allMode = true;
+    _activeChannelId = null;
+    promoFilter.querySelectorAll('.doc-promo-btn').forEach(b => b.classList.remove('active'));
+    promoFilter.querySelector('#doc-btn-all').classList.add('active');
+    channelNav.innerHTML = '';
+    document.getElementById('documents-area-channel-name').textContent = 'Tous les documents';
+    _searchQuery = '';
+    const searchInput = document.getElementById('doc-search-input');
+    if (searchInput) searchInput.value = '';
+    renderDocuments();
+  });
+
+  // Clic promo
   promoFilter.addEventListener('click', async e => {
     const btn = e.target.closest('[data-promo-id]');
     if (!btn) return;
+    _allMode = false;
     promoFilter.querySelectorAll('.doc-promo-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     await renderDocChannelNav(parseInt(btn.dataset.promoId));
   });
 
-  // Ouvrir la première promo par défaut
-  if (promotions.length) {
-    promoFilter.querySelector('.doc-promo-btn')?.classList.add('active');
+  // Sélection par défaut : étudiant → Tous, prof → première promo
+  if (!_isTeacher) {
+    _allMode = true;
+    promoFilter.querySelector('#doc-btn-all').classList.add('active');
+    document.getElementById('documents-area-channel-name').textContent = 'Tous les documents';
+    renderDocuments();
+  } else if (promotions.length) {
+    _allMode = false;
+    const firstPromoBtn = promoFilter.querySelector('[data-promo-id]');
+    firstPromoBtn?.classList.add('active');
     await renderDocChannelNav(promotions[0].id);
   }
 }
@@ -111,14 +140,23 @@ export async function renderDocuments() {
   const container = document.getElementById('documents-main-content');
   if (!container) return;
 
-  if (!_activeChannelId) {
+  if (!_allMode && !_activeChannelId) {
     container.innerHTML = '<div class="doc-empty">Selectionnez un canal dans la barre laterale.</div>';
     return;
   }
 
   container.innerHTML = '<div class="doc-loading">Chargement…</div>';
 
-  const docs = await call(window.api.getChannelDocuments, _activeChannelId);
+  let docs;
+  if (_allMode) {
+    // Charger tous les docs de toutes les promos accessibles
+    const promotions = await call(window.api.getPromotions);
+    if (!promotions?.length) { container.innerHTML = '<div class="doc-empty">Aucun document disponible.</div>'; return; }
+    const allDocs = await Promise.all(promotions.map(p => call(window.api.getPromoDocuments, p.id)));
+    docs = allDocs.flat().filter(Boolean);
+  } else {
+    docs = await call(window.api.getChannelDocuments, _activeChannelId);
+  }
   if (!docs) { container.innerHTML = ''; return; }
 
   // Filtrage recherche + type
@@ -193,7 +231,10 @@ function buildDocCard(d) {
     <div class="doc-card-body">
       <div class="doc-card-name">${escapeHtml(d.name)}</div>
       ${d.description ? `<div class="doc-card-desc">${escapeHtml(d.description)}</div>` : ''}
-      <div class="doc-card-meta">${isLink ? escapeHtml(d.path_or_url) : 'Fichier local'}</div>
+      <div class="doc-card-meta">
+        ${d.channel_name ? `<span class="doc-card-channel">#${escapeHtml(d.channel_name)}</span>` : ''}
+        ${isLink ? escapeHtml(d.path_or_url) : 'Fichier local'}
+      </div>
       ${d.created_at ? `<div class="doc-card-date">${formatDate(d.created_at)}</div>` : ''}
     </div>
     <div class="doc-card-actions">

@@ -8,7 +8,6 @@ import { bindDepotsModal, bindNoteModal }                                       
 import { bindSuiviModal, openProfilPanel }                                       from './views/suivi.js';
 import { openGestionDevoir, bindGestionDevoir }                                  from './views/gestion-devoir.js';
 import { showLoginScreen }                         from './views/login.js';
-import { renderStudentTravaux }                    from './views/student-dashboard.js';
 import { openTimeline, bindTimeline }              from './views/timeline.js';
 import { openRessourcesModal, bindRessourcesModal } from './views/ressources.js';
 import { openEcheancier, bindEcheancier }           from './views/echeancier.js';
@@ -85,16 +84,8 @@ async function onLogin(user) {
   // ── Adapter l'interface selon le rôle ─────────────────────────────────────
 
   const isStudent = user.type === 'student';
-  const btnMesTravaux  = document.getElementById('btn-mes-travaux');
-  const btnEcheancier  = document.getElementById('btn-echeancier');
-
-  if (isStudent) {
-    if (btnMesTravaux)  btnMesTravaux.style.display  = '';
-    if (btnEcheancier)  btnEcheancier.style.display  = 'none';
-  } else {
-    if (btnMesTravaux)  btnMesTravaux.style.display  = 'none';
-    if (btnEcheancier)  btnEcheancier.style.display  = '';
-  }
+  const btnEcheancier = document.getElementById('btn-echeancier');
+  if (btnEcheancier) btnEcheancier.style.display = isStudent ? 'none' : '';
 
   // ── Navigation rail ───────────────────────────────────────────────────────
 
@@ -125,19 +116,6 @@ async function onLogin(user) {
   });
   initMessageInput();
   initFormatToolbar();
-
-  // ── Bouton Mes travaux (étudiant) ─────────────────────────────────────────
-
-  if (btnMesTravaux) {
-    btnMesTravaux.addEventListener('click', () => {
-      if (state.rightPanel === 'mes-travaux') {
-        state.rightPanel = null;
-        document.getElementById('right-panel').classList.add('hidden');
-      } else {
-        renderStudentTravaux();
-      }
-    });
-  }
 
   // ── Vue Gantt / rendus (section travaux) ──────────────────────────────────
 

@@ -1028,6 +1028,16 @@ function getChannelDocumentCategories(channelId) {
   `).all(channelId).map(r => r.category);
 }
 
+function getPromoDocuments(promoId) {
+  return getDb().prepare(`
+    SELECT cd.*, c.name AS channel_name
+    FROM channel_documents cd
+    JOIN channels c ON cd.channel_id = c.id
+    WHERE c.promo_id = ?
+    ORDER BY cd.category ASC, cd.created_at ASC
+  `).all(promoId);
+}
+
 // ─── Gantt ────────────────────────────────────────────────────────────────────
 
 function getGanttData(promoId) {
@@ -1260,6 +1270,6 @@ module.exports = {
   getTeacherSchedule,
   getGanttData,
   getAllRendus,
-  getChannelDocuments, addChannelDocument, deleteChannelDocument, getChannelDocumentCategories,
+  getChannelDocuments, addChannelDocument, deleteChannelDocument, getChannelDocumentCategories, getPromoDocuments,
   getPinnedMessages, togglePinMessage, markNonSubmittedAsD,
 };

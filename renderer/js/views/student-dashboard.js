@@ -130,74 +130,70 @@ export async function renderStudentDashboard(container) {
 
   container.innerHTML = '';
 
-  // ── Barre de stats ────────────────────────────────────────────────────────
-  const statsBar = document.createElement('div');
-  statsBar.className = 'std-stats-bar';
-  statsBar.innerHTML = `
-    <div class="std-stat ${late > 0 ? 'std-stat-alert' : (aRendre.length === 0 ? 'std-stat-ok' : '')}">
-      <span class="std-stat-num">${aRendre.length}</span>
-      <span class="std-stat-label">A rendre</span>
-      ${late > 0 ? `<span class="std-stat-sub">${late} en retard</span>` : ''}
-    </div>
-    <div class="std-stat ${urgent > 0 ? 'std-stat-warn' : ''}">
-      <span class="std-stat-num">${urgent}</span>
-      <span class="std-stat-label">Urgents (&lt;48h)</span>
-    </div>
-    <div class="std-stat">
-      <span class="std-stat-num">${attente.length}</span>
-      <span class="std-stat-label">En correction</span>
-    </div>
-    <div class="std-stat std-stat-ok">
-      <span class="std-stat-num">${notes.length}</span>
-      <span class="std-stat-label">Notes</span>
-    </div>
-  `;
-  container.appendChild(statsBar);
+  // ── Ligne de stats compacte ───────────────────────────────────────────────
+  const pctSem = totalWork > 0 ? Math.round((rendus / totalWork) * 100) : 0;
+  const summaryEl = document.createElement('div');
+  summaryEl.className = 'std-summary-line';
+  const parts = [];
+  if (late > 0)    parts.push(`<span class="std-sl-danger">${late} en retard</span>`);
+  if (urgent > 0)  parts.push(`<span class="std-sl-warn">${urgent} urgent${urgent > 1 ? 's' : ''}</span>`);
+  parts.push(`<span class="${aRendre.length === 0 ? 'std-sl-ok' : ''}">${aRendre.length} à rendre</span>`);
+  if (attente.length) parts.push(`<span>${attente.length} en correction</span>`);
+  if (notes.length)   parts.push(`<span class="std-sl-ok">${notes.length} noté${notes.length > 1 ? 's' : ''}</span>`);
+  parts.push(`<span class="std-sl-pct">${pctSem}%</span>`);
+  summaryEl.innerHTML = parts.join('<span class="std-sl-sep">·</span>');
+  container.appendChild(summaryEl);
 
-  // ── Distribution des notes + ponctualité ──────────────────────────────────
+  // Distribution des notes (calculée ici, injectée dans l'onglet Notes plus bas)
   const gradedTravaux = sorted.filter(t => t.depot_id != null && t.note != null && t.type !== 'jalon');
+  let _gradeDistHTML = '';
   if (gradedTravaux.length) {
     const gradeCounts = { A: 0, B: 0, C: 0, D: 0 };
-    for (const t of gradedTravaux) {
-      const n = String(t.note).toUpperCase();
-      if (n in gradeCounts) gradeCounts[n]++;
-    }
-
-    const onTimeCount = sorted.filter(t =>
-      t.depot_id != null && t.type !== 'jalon' && t.submitted_at && t.deadline &&
-      t.submitted_at <= t.deadline
-    ).length;
+    for (const t of gradedTravaux) { const n = String(t.note).toUpperCase(); if (n in gradeCounts) gradeCounts[n]++; }
+    const onTimeCount    = sorted.filter(t => t.depot_id != null && t.type !== 'jalon' && t.submitted_at && t.deadline && t.submitted_at <= t.deadline).length;
     const submittedCount = sorted.filter(t => t.depot_id != null && t.type !== 'jalon').length;
     const punctualityPct = submittedCount > 0 ? Math.round((onTimeCount / submittedCount) * 100) : null;
-
-    const gradeEl = document.createElement('div');
-    gradeEl.className = 'std-grade-distribution';
-    gradeEl.innerHTML = `
-      <span class="std-grade-dist-label">Notes :</span>
-      <span class="std-grade-pill std-grade-a">A <strong>${gradeCounts.A}</strong></span>
-      <span class="std-grade-pill std-grade-b">B <strong>${gradeCounts.B}</strong></span>
-      <span class="std-grade-pill std-grade-c">C <strong>${gradeCounts.C}</strong></span>
-      <span class="std-grade-pill std-grade-d">D <strong>${gradeCounts.D}</strong></span>
-      ${punctualityPct !== null ? `<span class="std-punctuality"><i data-lucide="clock-3" aria-hidden="true"></i> ${punctualityPct}% dans les délais</span>` : ''}
-    `;
-    container.appendChild(gradeEl);
+    _gradeDistHTML = `
+      <div class="std-grade-distribution">
+        <span class="std-grade-dist-label">Notes :</span>
+        <span class="std-grade-pill std-grade-a">A <strong>${gradeCounts.A}</strong></span>
+        <span class="std-grade-pill std-grade-b">B <strong>${gradeCounts.B}</strong></span>
+        <span class="std-grade-pill std-grade-c">C <strong>${gradeCounts.C}</strong></span>
+        <span class="std-grade-pill std-grade-d">D <strong>${gradeCounts.D}</strong></span>
+        ${punctualityPct !== null ? `<span class="std-punctuality"><i data-lucide="clock-3" aria-hidden="true"></i> ${punctualityPct}% dans les délais</span>` : ''}
+      </div>`;
   }
 
-  // ── Barre de progression semestrielle ────────────────────────────────────
-  if (totalWork > 0) {
-    const pct = Math.round((rendus / totalWork) * 100);
-    const progressEl = document.createElement('div');
-    progressEl.className = 'std-progress-wrap';
-    progressEl.innerHTML = `
-      <div class="std-progress-label">
-        <span>${rendus} rendu${rendus > 1 ? 's' : ''} sur ${totalWork}</span>
-        <span class="std-progress-pct">${pct} %</span>
+  // ── Hero card : devoir le plus urgent ────────────────────────────────────
+  const urgencyOrder = ['deadline-passed', 'deadline-critical', 'deadline-soon', 'deadline-warning', 'deadline-ok'];
+  const heroCandidate = [...aRendre].sort((a, b) =>
+    urgencyOrder.indexOf(deadlineClass(a.deadline)) - urgencyOrder.indexOf(deadlineClass(b.deadline))
+  )[0];
+  if (heroCandidate) {
+    const hCls   = deadlineClass(heroCandidate.deadline);
+    const hLabel = deadlineLabel(heroCandidate.deadline);
+    const hColor = CATEGORIES[heroCandidate.category]?.color ?? '#888';
+    const isLate = hCls === 'deadline-passed';
+    const isCrit = hCls === 'deadline-critical';
+    const heroEl = document.createElement('div');
+    heroEl.className = `std-hero-urgent${isLate ? ' std-hero-late' : isCrit ? ' std-hero-critical' : ''}`;
+    heroEl.innerHTML = `
+      <div class="std-hero-left">
+        <div class="std-hero-eyebrow">${isLate ? '⚠ Devoir en retard' : isCrit ? '⏰ Deadline imminente' : '📋 Prochain devoir'}</div>
+        <div class="std-hero-title">${escapeHtml(heroCandidate.title)}</div>
+        <div class="std-hero-meta">
+          <span class="deadline-badge ${hCls}">${hLabel}</span>
+          <span style="color:var(--text-muted);font-size:12px">&nbsp;·&nbsp;${formatDate(heroCandidate.deadline)}</span>
+          <span style="color:var(--text-muted);font-size:12px">&nbsp;·&nbsp;#${escapeHtml(heroCandidate.channel_name)}</span>
+        </div>
       </div>
-      <div class="std-progress-track">
-        <div class="std-progress-fill" style="width:${pct}%"></div>
-      </div>
+      <button class="std-hero-cta btn-primary">Rendre maintenant</button>
     `;
-    container.appendChild(progressEl);
+    heroEl.querySelector('.std-hero-cta').addEventListener('click', () => {
+      _activeTab = 'todo';
+      renderStudentDashboard(container);
+    });
+    container.appendChild(heroEl);
   }
 
   // ── Onglets ──────────────────────────────────────────────────────────────
@@ -257,6 +253,7 @@ export async function renderStudentDashboard(container) {
         'Vos résultats apparaîtront ici dès que votre professeur les publiera.'
       ));
     } else {
+      if (_gradeDistHTML) { const d = document.createElement('div'); d.innerHTML = _gradeDistHTML; sections.appendChild(d.firstElementChild); }
       _buildSection(sections, 'Notes reçues', notes, _buildNoteCard);
     }
   }

@@ -29,6 +29,12 @@ export function initFormatToolbar() {
   const input   = document.getElementById('message-input');
   if (!toolbar || !input) return;
 
+  // Toggle Aa
+  document.getElementById('btn-toggle-format')?.addEventListener('click', () => {
+    const hidden = toolbar.classList.toggle('hidden');
+    document.getElementById('btn-toggle-format')?.classList.toggle('active', !hidden);
+  });
+
   const WRAP = { bold: ['**','**'], italic: ['*','*'], code: ['`','`'] };
 
   toolbar.addEventListener('click', e => {

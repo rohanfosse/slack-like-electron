@@ -85,6 +85,7 @@ contextBridge.exposeInMainWorld('api', {
 
   // Documents de canal
   getChannelDocuments:          (channelId)  => invoke('db:getChannelDocuments',          channelId),
+  getPromoDocuments:            (promoId)    => invoke('db:getPromoDocuments',            promoId),
   addChannelDocument:           (payload)    => invoke('db:addChannelDocument',           payload),
   deleteChannelDocument:        (id)         => invoke('db:deleteChannelDocument',        id),
   getChannelDocumentCategories: (channelId)  => invoke('db:getChannelDocumentCategories', channelId),
