@@ -92,6 +92,12 @@
 
   <!-- Section MESSAGES -->
   <div id="sidebar-section-messages">
+    <div id="sidebar-channels-header" class="sidebar-section-header hidden">
+      <span>Canaux</span>
+      <button id="btn-create-channel" class="btn-icon" title="Créer un canal" aria-label="Créer un canal">
+        <i data-lucide="plus"></i>
+      </button>
+    </div>
     <nav id="sidebar-nav"></nav>
   </div>
 
@@ -662,6 +668,45 @@
      TOAST
 ════════════════════════════════════════ -->
 <div id="app-toast" class="hidden"></div>
+
+<!-- ════════════════════════════════════════
+     MODAL — CRÉER UN CANAL
+════════════════════════════════════════ -->
+<div id="modal-create-channel-overlay" class="modal-overlay hidden">
+  <div class="modal modal-sm">
+    <div class="modal-header">
+      <h3>Créer un canal</h3>
+      <button id="modal-create-channel-close" class="btn-close-modal" aria-label="Fermer">
+        <i data-lucide="x"></i>
+      </button>
+    </div>
+    <div class="modal-body" style="padding:20px;display:flex;flex-direction:column;gap:14px;">
+      <div class="form-group">
+        <label class="form-label" for="new-channel-name">Nom du canal</label>
+        <input type="text" id="new-channel-name" class="form-input" placeholder="ex: général, tp-react…" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Visibilité</label>
+        <div style="display:flex;gap:20px;">
+          <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;">
+            <input type="radio" name="channel-visibility" value="public" id="channel-vis-public" checked /> Public
+          </label>
+          <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;">
+            <input type="radio" name="channel-visibility" value="private" id="channel-vis-private" /> Privé
+          </label>
+        </div>
+      </div>
+      <div id="channel-members-list" style="display:none;">
+        <label class="form-label">Membres</label>
+        <div id="channel-members-checkboxes" class="channel-members-checkboxes"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button id="btn-cancel-create-channel" class="btn-ghost">Annuler</button>
+      <button id="btn-confirm-create-channel" class="btn-primary">Créer</button>
+    </div>
+  </div>
+</div>
 
 <script src="js/vendor/lucide.min.js"></script>
 <script type="module" src="js/main.js"></script>

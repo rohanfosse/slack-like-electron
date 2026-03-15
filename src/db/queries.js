@@ -174,6 +174,11 @@ function migrate(db) {
 
     if (!col('messages').includes('reactions'))
       db.exec('ALTER TABLE messages ADD COLUMN reactions TEXT DEFAULT NULL');
+
+  if (!col('channels').includes('is_private'))
+    db.exec('ALTER TABLE channels ADD COLUMN is_private INTEGER NOT NULL DEFAULT 0');
+  if (!col('channels').includes('members'))
+    db.exec('ALTER TABLE channels ADD COLUMN members TEXT DEFAULT NULL');
 }
 
 // ─── Seed ────────────────────────────────────────────────────────────────────
@@ -736,6 +741,15 @@ function createPromotion({ name, color }) {
   return promoId;
 }
 
+function createChannel({ promoId, name, isPrivate, members }) {
+  const db = getDb();
+  const membersJson = isPrivate && members?.length ? JSON.stringify(members) : null;
+  const id = db.prepare(
+    'INSERT INTO channels (promo_id, name, description, type, is_private, members) VALUES (?, ?, ?, ?, ?, ?)'
+  ).run(promoId, name, '', 'chat', isPrivate ? 1 : 0, membersJson).lastInsertRowid;
+  return id;
+}
+
 function deletePromotion(promoId) {
   return getDb().prepare('DELETE FROM promotions WHERE id = ?').run(promoId);
 }
@@ -1242,7 +1256,7 @@ module.exports = {
   getRessources, addRessource, deleteRessource,
   getTravailGroupMembers, setTravailGroupMember,
   updateTravailPublished,
-  createPromotion, deletePromotion,
+  createPromotion, deletePromotion, createChannel,
   getTeacherSchedule,
   getGanttData,
   getAllRendus,

@@ -1,6 +1,7 @@
 import { call }        from '../api.js';
 import { state }       from '../state.js';
-import { avatarColor, escapeHtml } from '../utils.js';
+import { avatarColor, escapeHtml, showToast } from '../utils.js';
+import { refreshLucide } from '../lucide.js';
 
 // Callbacks injectes par main.js
 let _onChannel = null;
@@ -9,6 +10,7 @@ let _onDm      = null;
 export function initSidebar({ onChannel, onDm }) {
   _onChannel = onChannel;
   _onDm      = onDm;
+  _bindCreateChannelModal();
 }
 
 export async function renderSidebar() {
@@ -30,12 +32,16 @@ export async function renderSidebar() {
 
   nav.innerHTML = '';
 
+  const channelsHeader = document.getElementById('sidebar-channels-header');
+
   if (user?.type === 'student') {
     _clearPromoRail();
+    if (channelsHeader) channelsHeader.classList.add('hidden');
     await renderStudentSidebar(nav, user);
     return;
   }
 
+  if (channelsHeader) channelsHeader.classList.remove('hidden');
   await renderTeacherSidebar(nav);
 }
 
@@ -58,6 +64,7 @@ async function renderTeacherSidebar(nav) {
   _renderPromoRail(_allPromos);
   await _renderTeacherChannels(nav);
   attachNavDelegation(nav);
+  refreshLucide();
 }
 
 // ─── Icônes promo dans le rail ────────────────────────────────────────────────
@@ -162,6 +169,7 @@ async function _renderTeacherChannels(nav) {
       item.innerHTML = `
         <span class="channel-prefix">#</span>
         <span>${escapeHtml(ch.name)}</span>
+        ${ch.is_private ? '<i data-lucide="lock" class="channel-lock-icon" aria-hidden="true"></i>' : ''}
         ${ch.type === 'annonce' ? '<span class="channel-annonce">Annonce</span>' : ''}
       `;
       nav.appendChild(item);
@@ -266,7 +274,16 @@ async function renderStudentSidebar(nav, user) {
   const promo = promotions.find(p => p.id === user.promo_id);
   if (!promo) return;
 
-  const section = buildPromoSection(promo, channels, [], false);
+  // Filtrer : canaux publics + canaux privés dont l'étudiant est membre
+  const visibleChannels = channels.filter(ch => {
+    if (!ch.is_private) return true;
+    try {
+      const members = JSON.parse(ch.members ?? '[]');
+      return members.includes(user.id);
+    } catch { return false; }
+  });
+
+  const section = buildPromoSection(promo, visibleChannels, [], false);
   nav.appendChild(section);
 
   // Lien DM professeur
@@ -305,6 +322,7 @@ async function renderStudentSidebar(nav, user) {
   }
 
   attachNavDelegation(nav);
+  refreshLucide();
 }
 
 // ─── Section promo (vue étudiant, collapsible) ────────────────────────────────
@@ -402,4 +420,73 @@ export function setActiveItem(el) {
   document.querySelectorAll('.channel-item.active, .dm-item.active, .dm-teacher-item.active')
     .forEach(x => x.classList.remove('active'));
   el.classList.add('active');
+}
+
+// ─── Modale créer un canal ────────────────────────────────────────────────────
+
+function _bindCreateChannelModal() {
+  const overlay   = document.getElementById('modal-create-channel-overlay');
+  const closeBtn  = document.getElementById('modal-create-channel-close');
+  const cancelBtn = document.getElementById('btn-cancel-create-channel');
+  const confirmBtn= document.getElementById('btn-confirm-create-channel');
+  const nameInput = document.getElementById('new-channel-name');
+  const membersList = document.getElementById('channel-members-list');
+  const membersBoxes= document.getElementById('channel-members-checkboxes');
+  const visPublic = document.getElementById('channel-vis-public');
+  const visPrivate= document.getElementById('channel-vis-private');
+
+  if (!overlay) return;
+
+  // Ouvrir
+  document.getElementById('btn-create-channel')?.addEventListener('click', async () => {
+    // Peupler la liste des étudiants de la promo active
+    membersBoxes.innerHTML = '';
+    const students = _allStudents.filter(s => s.promo_id === state.activePromoId);
+    for (const s of students) {
+      const lbl = document.createElement('label');
+      lbl.className = 'channel-member-label';
+      lbl.innerHTML = `<input type="checkbox" value="${s.id}" /> ${escapeHtml(s.name)}`;
+      membersBoxes.appendChild(lbl);
+    }
+    visPublic.checked = true;
+    membersList.style.display = 'none';
+    nameInput.value = '';
+    overlay.classList.remove('hidden');
+    nameInput.focus();
+    refreshLucide();
+  });
+
+  // Toggle affichage membres
+  visPublic.addEventListener('change',  () => { membersList.style.display = 'none'; });
+  visPrivate.addEventListener('change', () => { membersList.style.display = 'block'; });
+
+  // Fermer
+  const close = () => overlay.classList.add('hidden');
+  closeBtn?.addEventListener('click',  close);
+  cancelBtn?.addEventListener('click', close);
+  overlay.addEventListener('click', e => { if (e.target === overlay) close(); });
+
+  // Créer
+  confirmBtn?.addEventListener('click', async () => {
+    const name = nameInput.value.trim();
+    if (!name) { nameInput.focus(); return; }
+
+    const isPrivate = visPrivate.checked;
+    const members   = isPrivate
+      ? [...membersBoxes.querySelectorAll('input:checked')].map(i => parseInt(i.value))
+      : [];
+
+    const ok = await call(window.api.createChannel, {
+      promoId: state.activePromoId,
+      name,
+      isPrivate,
+      members,
+    });
+    if (ok === null) return;
+
+    close();
+    showToast('Canal créé.', 'success');
+    _delegationAttached = false;
+    await renderSidebar();
+  });
 }

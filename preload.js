@@ -52,9 +52,10 @@ contextBridge.exposeInMainWorld('api', {
   // Brouillon
   updateTravailPublished: (payload)    => invoke('db:updateTravailPublished', payload),
 
-  // Promotions
+  // Promotions & canaux
   createPromotion:    (payload)        => invoke('db:createPromotion',        payload),
   deletePromotion:    (promoId)        => invoke('db:deletePromotion',        promoId),
+  createChannel:      (payload)        => invoke('db:createChannel',          payload),
 
   // Inscription
   getStudentByEmail:  (email)          => invoke('db:getStudentByEmail',      email),

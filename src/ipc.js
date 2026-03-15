@@ -87,9 +87,10 @@ function register() {
     }
   });
 
-  // Promotions
+  // Promotions & canaux
   handle('db:createPromotion',   (payload)    => queries.createPromotion(payload));
   handle('db:deletePromotion',   (promoId)    => queries.deletePromotion(promoId));
+  handle('db:createChannel',     (payload)    => queries.createChannel(payload));
 
   // Inscription etudiant
   handle('db:getStudentByEmail', (email)      => queries.getStudentByEmail(email));
