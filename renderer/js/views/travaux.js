@@ -145,6 +145,9 @@ function makeTravailCard(t) {
 
 // ─── Modal nouveau travail ────────────────────────────────────────────────────
 
+// ─── Étudiants de la promo (pour group-builder) ──────────────────────────────
+let _promoStudents = [];
+
 async function openNewTravailModal() {
   const overlay = document.getElementById('modal-new-travail-overlay');
   overlay.classList.remove('hidden');
@@ -156,6 +159,16 @@ async function openNewTravailModal() {
 
   // Basculer les champs selon type devoir/jalon
   updateTravailTypeFields();
+
+  // Reset assignation
+  document.getElementById('nt-assign-indiv').checked = true;
+  _updateGroupBuilder();
+
+  // Charger les étudiants de la promo pour le group-builder
+  _promoStudents = [];
+  if (state.activePromoId) {
+    _promoStudents = (await call(window.api.getStudents, state.activePromoId)) ?? [];
+  }
 
   // Charger les groupes de la promo courante
   const groupSelect = document.getElementById('nt-group');
@@ -173,6 +186,48 @@ async function openNewTravailModal() {
   }
 
   document.getElementById('nt-title').focus();
+}
+
+function _updateGroupBuilder() {
+  const isByGroupe = document.getElementById('nt-assign-groupe')?.checked;
+  const container  = document.getElementById('group-builder-container');
+  if (container) container.style.display = isByGroupe ? 'flex' : 'none';
+  if (!isByGroupe) {
+    const list = document.getElementById('group-builder-list');
+    if (list) list.innerHTML = '';
+  }
+}
+
+function _addGroupBlock() {
+  const list = document.getElementById('group-builder-list');
+  const idx  = list.children.length + 1;
+
+  const block = document.createElement('div');
+  block.className = 'group-builder-block';
+  block.innerHTML = `
+    <div class="group-builder-header">
+      <input type="text" class="form-input group-name-input" placeholder="Nom du groupe (ex: G${idx})" value="G${idx}" style="font-size:12px;padding:4px 8px;flex:1;" />
+      <button type="button" class="btn-ghost group-builder-remove" style="font-size:11px;padding:2px 8px;color:var(--color-danger);">✕</button>
+    </div>
+    <div class="group-builder-members">
+      ${_promoStudents.map(s => `
+        <label class="channel-member-label">
+          <input type="checkbox" class="group-member-check" value="${s.id}" />
+          ${escapeHtml(s.name)}
+        </label>
+      `).join('')}
+    </div>
+  `;
+
+  block.querySelector('.group-builder-remove').addEventListener('click', () => block.remove());
+  list.appendChild(block);
+}
+
+function _collectGroupes() {
+  return [...document.querySelectorAll('.group-builder-block')].map(block => ({
+    nom:     block.querySelector('.group-name-input').value.trim() || `G?`,
+    members: [...block.querySelectorAll('.group-member-check:checked')].map(c => parseInt(c.value)),
+  }));
 }
 
 function updateTravailTypeFields() {
@@ -200,12 +255,20 @@ export function bindNewTravailForm() {
     r.addEventListener('change', updateTravailTypeFields);
   });
 
+  // Switch individuel / par groupe
+  overlay.querySelectorAll('input[name="nt-assign"]').forEach(r => {
+    r.addEventListener('change', _updateGroupBuilder);
+  });
+
+  document.getElementById('btn-add-group')?.addEventListener('click', _addGroupBlock);
+
   document.getElementById('form-new-travail').addEventListener('submit', async e => {
     e.preventDefault();
     if (!state.activeChannelId) { showToast('Selectionnez d\'abord un canal.'); return; }
 
     const type        = overlay.querySelector('input[name="nt-type"]:checked')?.value ?? 'devoir';
     const isJalon     = type === 'jalon';
+    const assignation = overlay.querySelector('input[name="nt-assign"]:checked')?.value ?? 'individuel';
     const title       = document.getElementById('nt-title').value.trim();
     const description = document.getElementById('nt-description').value.trim();
     const startDate   = document.getElementById('nt-start-date')?.value ?? '';
@@ -214,6 +277,8 @@ export function bindNewTravailForm() {
     const category    = document.getElementById('nt-category').value;
     const published   = !document.getElementById('nt-draft')?.checked;
     if (!title || !deadline) return;
+
+    const groupes = assignation === 'groupe' ? _collectGroupes() : [];
 
     const ok = await call(window.api.createTravail, {
       channelId: state.activeChannelId,
@@ -225,12 +290,15 @@ export function bindNewTravailForm() {
       category,
       type,
       published,
+      assignation,
+      groupes,
     });
     if (ok === null) return;
 
     overlay.classList.add('hidden');
     document.getElementById('form-new-travail').reset();
     updateTravailTypeFields();
+    _updateGroupBuilder();
     showToast(isJalon ? 'Jalon cree.' : 'Travail cree.', 'success');
     await renderTravaux();
   });

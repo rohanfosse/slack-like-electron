@@ -284,7 +284,10 @@
     </div>
     <div class="modal-body" id="suivi-body"></div>
     <div class="modal-footer spread">
-      <button id="btn-export-csv" class="btn-ghost">Exporter CSV</button>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <button id="btn-export-csv" class="btn-ghost">Exporter CSV</button>
+        <button id="btn-relancer-non-rendus" class="btn-ghost" style="color:var(--accent);border-color:rgba(74,144,217,.3)">Relancer les non-rendus</button>
+      </div>
       <button id="modal-suivi-close-2" class="btn-primary" onclick="document.getElementById('modal-suivi-overlay').classList.add('hidden')">Fermer</button>
     </div>
   </div>
@@ -382,6 +385,27 @@
           <select id="nt-group" class="form-select">
             <option value="">Toute la promotion</option>
           </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Assignation</label>
+          <div class="nt-type-toggle">
+            <label class="nt-type-option">
+              <input type="radio" name="nt-assign" value="individuel" id="nt-assign-indiv" checked />
+              <span>Individuel</span>
+            </label>
+            <label class="nt-type-option">
+              <input type="radio" name="nt-assign" value="groupe" id="nt-assign-groupe" />
+              <span>Par Groupe</span>
+            </label>
+          </div>
+        </div>
+
+        <div id="group-builder-container" style="display:none;flex-direction:column;gap:10px;">
+          <div id="group-builder-list"></div>
+          <button type="button" id="btn-add-group" class="btn-ghost" style="font-size:12px;align-self:flex-start;">
+            + Ajouter un groupe
+          </button>
         </div>
       </div>
 

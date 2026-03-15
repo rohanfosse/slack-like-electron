@@ -283,6 +283,35 @@ export function bindSuiviModal() {
     if (result === null) return;
     if (result) showToast(`Exporte : ${result}`, 'success');
   });
+
+  // ── Relancer les non-rendus ───────────────────────────────────────────────
+  document.getElementById('btn-relancer-non-rendus')?.addEventListener('click', async () => {
+    const travailId = parseInt(document.getElementById('btn-export-csv').dataset.travailId);
+    if (!travailId) return;
+
+    const [rows, travail] = await Promise.all([
+      call(window.api.getTravauxSuivi, travailId),
+      call(window.api.getTravailById,  travailId),
+    ]);
+    if (!rows || !travail) return;
+
+    const nonRendus = rows.filter(r => r.depot_id == null);
+    if (!nonRendus.length) { showToast('Tous les rendus sont déjà soumis.', 'success'); return; }
+
+    // Simuler l'envoi d'un DM à chaque étudiant non-rendu
+    const msg = `N'oublie pas le devoir : ${travail.title}`;
+    await Promise.all(nonRendus.map(r =>
+      call(window.api.sendMessage, {
+        channelId:   null,
+        dmStudentId: r.student_id,
+        authorName:  state.currentUser?.name ?? 'Professeur',
+        authorType:  'teacher',
+        content:     msg,
+      })
+    ));
+
+    showToast(`Relance envoyée à ${nonRendus.length} étudiant${nonRendus.length > 1 ? 's' : ''}.`, 'success');
+  });
 }
 
 // ─── Profil etudiant (panel droit) ────────────────────────────────────────────
