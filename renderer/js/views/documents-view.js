@@ -1,6 +1,7 @@
 import { call }      from '../api.js';
 import { state }     from '../state.js';
 import { escapeHtml, showToast, formatDate } from '../utils.js';
+import { refreshLucide } from '../lucide.js';
 
 // État local
 let _activeChannelId   = null;
@@ -171,6 +172,8 @@ export async function renderDocuments() {
     section.appendChild(grid);
     container.appendChild(section);
   }
+
+  refreshLucide();
 }
 
 function buildDocCard(d) {
@@ -199,7 +202,7 @@ function buildDocCard(d) {
           <path d="M19 19H5V5h7V3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/>
         </svg>
       </button>
-      ${!isLink ? `<button class="btn-ghost doc-btn-download" title="Télécharger">📥</button>` : ''}
+      ${!isLink ? `<button class="btn-ghost doc-btn-download" title="Télécharger"><i data-lucide="download" aria-hidden="true"></i></button>` : ''}
       ${_isTeacher ? `<button class="btn-ghost doc-btn-delete" title="Supprimer">
         <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16">
           <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
@@ -352,7 +355,7 @@ export async function openDocPreview(doc) {
   } else {
     bodyEl.innerHTML = `
       <div class="doc-preview-unsupported">
-        <div style="font-size:48px">📄</div>
+        <div style="display:flex;justify-content:center;"><i data-lucide="file-text" aria-hidden="true"></i></div>
         <p>Prévisualisation non disponible pour ce type de fichier (.${ext}).</p>
         <button class="btn-primary" id="doc-preview-open-ext-fallback">Ouvrir avec l'application par défaut</button>
       </div>
@@ -361,6 +364,8 @@ export async function openDocPreview(doc) {
       await call(window.api.openPath, doc.path_or_url);
     });
   }
+
+  refreshLucide();
 
   // Fermeture
   const close = () => overlay.classList.add('hidden');

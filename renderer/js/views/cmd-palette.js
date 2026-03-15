@@ -1,5 +1,6 @@
 import { call }       from '../api.js';
 import { escapeHtml } from '../utils.js';
+import { refreshLucide } from '../lucide.js';
 
 let _items         = [];
 let _selectedIndex = -1;
@@ -47,8 +48,8 @@ function _close() {
 
 async function _loadItems() {
   _items = [
-    { type: 'section', label: 'Messages', icon: '💬', section: 'messages' },
-    { type: 'section', label: 'Travaux',  icon: '📋', section: 'travaux'  },
+    { type: 'section', label: 'Messages', icon: 'message-square', section: 'messages' },
+    { type: 'section', label: 'Travaux',  icon: 'clipboard-list', section: 'travaux'  },
   ];
   try {
     const promos = await call(window.api.getPromotions) ?? [];
@@ -126,7 +127,7 @@ function _render(items) {
     html += `<div class="cmd-group-label">${escapeHtml(g.label)}</div>`;
     for (const item of gr) {
       const icon = item.type === 'section' ? item.icon
-                 : item.type === 'channel' ? '#' : '@';
+                 : item.type === 'channel' ? 'hash' : 'at-sign';
       html += `
         <div class="cmd-item"
              data-type="${item.type}"
@@ -135,13 +136,14 @@ function _render(items) {
              data-section="${item.section ?? ''}"
              data-name="${escapeHtml(item.label)}"
              data-ch-type="${item.chType ?? 'chat'}">
-          <span class="cmd-item-icon">${escapeHtml(String(icon))}</span>
+           <span class="cmd-item-icon" aria-hidden="true"><i data-lucide="${escapeHtml(String(icon))}"></i></span>
           <span class="cmd-item-name">${escapeHtml(item.label)}</span>
           ${item.sub ? `<span class="cmd-item-sub">${escapeHtml(item.sub)}</span>` : ''}
         </div>`;
     }
   }
   container.innerHTML = html;
+  refreshLucide();
 
   container.querySelectorAll('.cmd-item').forEach(el => {
     el.addEventListener('click', () => {

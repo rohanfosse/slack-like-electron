@@ -6,6 +6,7 @@ import {
 } from '../utils.js';
 import { CATEGORIES } from './timeline.js';
 import { renderRessourcesInline } from './ressources.js';
+import { refreshLucide } from '../lucide.js';
 
 // ─── État de l'onglet actif ────────────────────────────────────────────────
 let _activeTab = 'todo'; // 'todo' | 'waiting' | 'graded'
@@ -139,7 +140,7 @@ export async function renderStudentDashboard(container) {
       <span class="std-grade-pill std-grade-b">B <strong>${gradeCounts.B}</strong></span>
       <span class="std-grade-pill std-grade-c">C <strong>${gradeCounts.C}</strong></span>
       <span class="std-grade-pill std-grade-d">D <strong>${gradeCounts.D}</strong></span>
-      ${punctualityPct !== null ? `<span class="std-punctuality">⏱ ${punctualityPct}% dans les délais</span>` : ''}
+      ${punctualityPct !== null ? `<span class="std-punctuality"><i data-lucide="clock-3" aria-hidden="true"></i> ${punctualityPct}% dans les délais</span>` : ''}
     `;
     container.appendChild(gradeEl);
   }
@@ -223,6 +224,7 @@ export async function renderStudentDashboard(container) {
   }
 
   container.appendChild(sections);
+  refreshLucide();
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -428,7 +430,7 @@ function _buildAttenteCard(t, container) {
     <div class="std-card-file">
       ${t.link_url
         ? _buildLinkPills(t.link_url, t.deploy_url)
-        : `<span class="std-file-icon">📄</span>
+        : `<span class="std-file-icon" aria-hidden="true"><i data-lucide="file-text"></i></span>
            <span class="std-file-name" title="${escapeHtml(t.file_name)}">${escapeHtml(t.file_name)}</span>`
       }
       <span class="stc-pending-note">En attente de note</span>
@@ -468,7 +470,7 @@ function _buildNoteCard(t) {
     <div class="std-card-meta">#${escapeHtml(t.channel_name)}</div>
     ${t.feedback ? `
       <div class="feedback-callout">
-        <div class="feedback-callout-label">💬 Commentaire du professeur</div>
+        <div class="feedback-callout-label">Commentaire du professeur</div>
         <div class="feedback-callout-text">"${escapeHtml(t.feedback)}"</div>
       </div>
     ` : ''}

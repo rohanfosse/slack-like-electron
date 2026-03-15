@@ -16,12 +16,14 @@ import { initTravauxSection, switchTravauxView, renderTravauxSidebar } from './v
 import { initDocumentsSection, bindDocumentsModal } from './views/documents-view.js';
 import { openSettings, bindSettings, getPref }      from './views/settings.js';
 import { initCmdPalette }                           from './views/cmd-palette.js';
+import { refreshLucide }                            from './lucide.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
   await showLoginScreen(onLogin);
 });
 
 async function onLogin(user) {
+  refreshLucide();
 
   // ── Mettre à jour le mini-avatar dans le nav-rail ─────────────────────────
   const navAvatar = document.getElementById('nav-user-avatar');
@@ -346,13 +348,14 @@ async function openChannel(channelId, promoId, channelName, channelType) {
       banner.id = 'channel-pending-banner';
       banner.className = `channel-pending-banner${hasUrgent ? ' channel-pending-urgent' : ''}`;
       banner.innerHTML = `
-        <span>📋 ${pending.length} travail${pending.length > 1 ? 'x' : ''} à rendre dans ce canal${hasUrgent ? ' — <strong>urgent !</strong>' : ''}</span>
+        <span><i data-lucide="clipboard-list" aria-hidden="true"></i> ${pending.length} travail${pending.length > 1 ? 'x' : ''} à rendre dans ce canal${hasUrgent ? ' — <strong>urgent !</strong>' : ''}</span>
         <button class="btn-primary" style="font-size:11px;padding:3px 10px" id="btn-banner-travaux">Voir mes travaux</button>
       `;
       banner.querySelector('#btn-banner-travaux').addEventListener('click', () => {
         document.getElementById('nav-btn-travaux').click();
       });
       document.getElementById('messages-container').prepend(banner);
+      refreshLucide();
     }
   }
 }

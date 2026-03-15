@@ -6,6 +6,7 @@ import {
   avatarColor, escapeHtml, highlightTerm,
   makeAvatar,
 } from '../utils.js';
+import { refreshLucide } from '../lucide.js';
 
 const GROUP_THRESHOLD_MS = 5 * 60 * 1000; // messages < 5 min apart sont groupés
 
@@ -75,7 +76,7 @@ export async function renderMessages(searchTerm = '') {
 
     const isTeacher = state.currentUser?.type === 'teacher';
     const pinBtn = isTeacher && state.activeChannelId
-      ? `<button class="msg-pin-btn${msg.pinned ? ' pinned' : ''}" data-msg-id="${msg.id}" data-pinned="${msg.pinned ? 1 : 0}" title="${msg.pinned ? 'Désépingler' : 'Épingler'}">📌</button>`
+      ? `<button class="msg-pin-btn${msg.pinned ? ' pinned' : ''}" data-msg-id="${msg.id}" data-pinned="${msg.pinned ? 1 : 0}" title="${msg.pinned ? 'Désépingler' : 'Épingler'}"><i data-lucide="pin" aria-hidden="true"></i></button>`
       : '';
 
     if (isGrouped) {
@@ -110,6 +111,7 @@ export async function renderMessages(searchTerm = '') {
   }
 
   if (!searchTerm) scrollToBottom();
+  refreshLucide();
 
   // ── Pin handler (délégation sur la liste) ────────────────────────────────
   if (!list._pinHandlerBound) {
@@ -146,6 +148,7 @@ export async function renderPinnedBanner(channelId) {
   `).join('');
 
   banner.classList.remove('hidden');
+  refreshLucide();
 }
 
 function scrollToBottom() {

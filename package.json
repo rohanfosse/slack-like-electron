@@ -12,16 +12,21 @@
     "build:mac": "electron-builder --mac",
     "build:linux": "electron-builder --linux"
   },
-  "keywords": ["electron", "education", "cesi"],
+  "keywords": [
+    "electron",
+    "education",
+    "cesi"
+  ],
   "author": "Rohan Fossé <rohan.fosse@cesi.fr>",
   "license": "MIT",
   "dependencies": {
-    "better-sqlite3": "^9.4.3"
+    "better-sqlite3": "^9.4.3",
+    "lucide": "^0.577.0"
   },
   "devDependencies": {
+    "@electron/rebuild": "^3.6.0",
     "electron": "^29.1.0",
-    "electron-builder": "^24.13.3",
-    "@electron/rebuild": "^3.6.0"
+    "electron-builder": "^24.13.3"
   },
   "build": {
     "appId": "fr.cesi.classroom",

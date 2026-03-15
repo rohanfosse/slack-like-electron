@@ -141,7 +141,7 @@ export async function renderRessourcesInline(travailId, container) {
 
   const label = document.createElement('div');
   label.className   = 'res-block-label';
-  label.textContent = '📎 Ressources utiles';
+  label.textContent = 'Ressources utiles';
   container.appendChild(label);
 
   for (const r of items) {

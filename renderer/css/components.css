@@ -1690,7 +1690,12 @@
 .rendu-info { flex: 1; min-width: 0; }
 .rendu-student { font-size: 12px; font-weight: 500; color: var(--text-primary); margin-bottom: 2px; }
 .rendu-file { font-size: 11px; color: var(--text-secondary); display: flex; align-items: center; gap: 4px; }
-.rendu-file-icon { flex-shrink: 0; }
+.rendu-file-icon {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+}
+.rendu-file-icon .lucide { width: 13px; height: 13px; }
 .rendu-date { color: var(--text-muted); font-style: italic; }
 .rendu-feedback { font-size: 11px; color: var(--text-muted); font-style: italic; margin-top: 2px; }
 .rendu-non-note { font-size: 11px; color: var(--text-muted); }
@@ -1911,7 +1916,12 @@
   padding-bottom: 6px;
   border-bottom: 1px solid rgba(255,255,255,.07);
 }
-.ech-section-icon { font-size: 16px; }
+.ech-section-icon {
+  font-size: 16px;
+  display: inline-flex;
+  align-items: center;
+}
+.ech-section-icon .lucide { width: 16px; height: 16px; }
 .ech-section-title {
   font-size: 13px;
   font-weight: 600;
@@ -1967,6 +1977,7 @@
   background: linear-gradient(135deg, #7B68EE, #9B59B6);
   font-size: 14px;
 }
+.ech-avatar-jalon .lucide { width: 14px; height: 14px; }
 .ech-item-info { flex: 1; min-width: 0; }
 .ech-item-title {
   font-size: 13px;
@@ -2420,7 +2431,12 @@
 .std-card-deadline { font-size: 12px; color: var(--text-secondary); }
 .std-card-desc  { font-size: 12px; color: var(--text-muted); font-style: italic; line-height: 1.4; }
 .std-card-file  { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; font-size: 12px; }
-.std-file-icon  { flex-shrink: 0; }
+.std-file-icon  {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+}
+.std-file-icon .lucide { width: 13px; height: 13px; }
 .std-file-name  {
   color: var(--text-secondary);
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
@@ -3079,7 +3095,11 @@ button:focus-visible {
   font-size: 13px;
   color: var(--text-muted);
   flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
+.cmd-item-icon .lucide { width: 14px; height: 14px; }
 .cmd-item-name {
   flex: 1;
   font-size: 13px;
@@ -3163,6 +3183,13 @@ button:focus-visible {
   padding: 2px 6px !important;
   opacity: .55;
   line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.sg-feedback-btn .lucide {
+  width: 14px;
+  height: 14px;
 }
 .sg-feedback-btn:hover { opacity: 1; }
 .sg-feedback-btn.has-feedback { opacity: .9; }
@@ -3250,6 +3277,13 @@ button:focus-visible {
   transition: opacity .12s, background .12s;
   line-height: 1;
   color: var(--text-muted);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.msg-pin-btn .lucide {
+  width: 12px;
+  height: 12px;
 }
 .msg-row:hover .msg-pin-btn { opacity: 1; }
 .msg-pin-btn:hover { background: var(--bg-active); color: var(--text-primary); }

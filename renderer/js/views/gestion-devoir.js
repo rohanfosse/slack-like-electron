@@ -92,7 +92,7 @@ function _renderRendus(rows) {
   const section = document.getElementById('gd-rendus-section');
   section.innerHTML = `
     <div class="gd-section-title">
-      ✅ Fichiers rendus
+      Fichiers rendus
       <span class="gd-count">${rows.length}</span>
     </div>
   `;
@@ -113,7 +113,7 @@ function _renderRendus(rows) {
     info.innerHTML = `
       <div class="gd-student-name">${escapeHtml(r.student_name)}</div>
       <div class="gd-student-file">
-        📄 <span title="${escapeHtml(r.file_name)}">${escapeHtml(r.file_name)}</span>
+        <span class="gd-file-label">Fichier</span> <span title="${escapeHtml(r.file_name)}">${escapeHtml(r.file_name)}</span>
         <span class="gd-submitted-at">• ${formatDate(r.submitted_at)}</span>
       </div>
       ${r.feedback ? `<div class="gd-feedback-display">"${escapeHtml(r.feedback)}"</div>` : ''}

@@ -215,7 +215,16 @@ body {
   flex-shrink: 0;
 }
 #pinned-messages-banner.hidden { display: none; }
-.pinned-banner-icon { flex-shrink: 0; font-size: 13px; }
+.pinned-banner-icon {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.pinned-banner-icon .lucide {
+  width: 13px;
+  height: 13px;
+}
 .pinned-messages-list {
   flex: 1;
   overflow: hidden;
@@ -432,6 +441,11 @@ body {
   gap: 8px;
   font-size: 15px;
   font-weight: 600;
+}
+#travaux-area-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 #travaux-area-actions {
   display: flex;

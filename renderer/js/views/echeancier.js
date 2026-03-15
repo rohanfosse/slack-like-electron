@@ -1,6 +1,7 @@
 import { call }      from '../api.js';
 import { escapeHtml, formatDate } from '../utils.js';
 import { CATEGORIES } from './timeline.js';
+import { refreshLucide } from '../lucide.js';
 
 // ─── Ouverture de l'échéancier ────────────────────────────────────────────────
 
@@ -36,7 +37,7 @@ async function renderEcheancier() {
   // ── Section : À noter ────────────────────────────────────────────────────
   body.appendChild(buildSection({
     id:       'ech-anoter',
-    icon:     '✏️',
+    icon:     '<i data-lucide="pencil"></i>',
     title:    'À corriger',
     count:    aNoter.length,
     empty:    'Tous les rendus ont une note.',
@@ -64,7 +65,7 @@ async function renderEcheancier() {
   // ── Section : Urgences (échéances < 7j) ──────────────────────────────────
   body.appendChild(buildSection({
     id:       'ech-urgents',
-    icon:     '⏰',
+    icon:     '<i data-lucide="alarm-clock"></i>',
     title:    'Échéances dans 7 jours',
     count:    urgents.length,
     empty:    'Aucun devoir n\'arrive à échéance dans les 7 prochains jours.',
@@ -100,7 +101,7 @@ async function renderEcheancier() {
   // ── Section : Jalons à venir ──────────────────────────────────────────────
   body.appendChild(buildSection({
     id:       'ech-jalons',
-    icon:     '🏁',
+    icon:     '<i data-lucide="flag"></i>',
     title:    'Jalons dans 30 jours',
     count:    jalons.length,
     empty:    'Aucun jalon prévu dans les 30 prochains jours.',
@@ -109,7 +110,7 @@ async function renderEcheancier() {
     renderItem: (j) => `
       <div class="ech-item ech-jalon">
         <div class="ech-item-left">
-          <div class="ech-avatar ech-avatar-jalon">⚑</div>
+          <div class="ech-avatar ech-avatar-jalon"><i data-lucide="flag"></i></div>
           <div class="ech-item-info">
             <div class="ech-item-title">${escapeHtml(j.title)}</div>
             <div class="ech-item-sub">
@@ -127,7 +128,7 @@ async function renderEcheancier() {
   // ── Section : Brouillons ──────────────────────────────────────────────────
   body.appendChild(buildSection({
     id:       'ech-brouillons',
-    icon:     '📝',
+    icon:     '<i data-lucide="file-pen-line"></i>',
     title:    'Brouillons à publier',
     count:    brouillons.length,
     empty:    'Aucun brouillon en attente.',
@@ -149,6 +150,8 @@ async function renderEcheancier() {
       </div>
     `,
   }));
+
+  refreshLucide();
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────

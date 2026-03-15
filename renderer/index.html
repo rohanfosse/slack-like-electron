@@ -148,7 +148,7 @@
   </header>
 
   <div id="pinned-messages-banner" class="hidden">
-    <span class="pinned-banner-icon">📌</span>
+    <span class="pinned-banner-icon" aria-hidden="true"><i data-lucide="pin"></i></span>
     <div id="pinned-messages-list" class="pinned-messages-list"></div>
     <button id="btn-pinned-toggle" class="btn-ghost" style="font-size:11px;padding:2px 8px;flex-shrink:0">Voir tout</button>
   </div>
@@ -181,7 +181,7 @@
 <section id="travaux-area" class="hidden">
   <header id="travaux-area-header">
     <div id="travaux-area-title">
-      <span id="travaux-area-icon">📋</span>
+      <span id="travaux-area-icon" aria-hidden="true"><i data-lucide="clipboard-list"></i></span>
       <span id="travaux-area-name">Travaux</span>
     </div>
     <div id="travaux-area-actions">
@@ -663,6 +663,7 @@
 ════════════════════════════════════════ -->
 <div id="app-toast" class="hidden"></div>
 
+<script src="js/vendor/lucide.min.js"></script>
 <script type="module" src="js/main.js"></script>
 </body>
 </html>

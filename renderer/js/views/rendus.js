@@ -2,6 +2,7 @@ import { call }      from '../api.js';
 import { state }     from '../state.js';
 import { showToast, escapeHtml, formatDate, avatarColor } from '../utils.js';
 import { CATEGORIES } from './timeline.js';
+import { refreshLucide } from '../lucide.js';
 
 let _currentPromoId = null;
 let _searchTerm     = '';
@@ -101,6 +102,7 @@ async function renderRendusList(container) {
   }
 
   container.innerHTML = html;
+  refreshLucide();
 
   // Délégation — un seul handler via onclick pour éviter les doublons
   container.onclick = async e => {
@@ -129,7 +131,7 @@ async function renderRendusList(container) {
       return;
     }
 
-    // Speed Grader — bouton feedback 💬
+    // Speed Grader — bouton feedback
     const fbBtn = e.target.closest('.sg-feedback-btn');
     if (fbBtn) {
       const row = fbBtn.closest('.rendu-row');
@@ -182,9 +184,9 @@ function buildRenduRow(r, isTeacher = false) {
       );
 
   const feedbackBtn = isTeacher
-    ? `<button class="btn-ghost btn-sm sg-feedback-btn${r.feedback ? ' has-feedback' : ''}"
-              data-feedback="${escapeHtml(r.feedback ?? '')}"
-              title="${r.feedback ? 'Modifier le commentaire' : 'Ajouter un commentaire'}">💬</button>`
+  ? `<button class="btn-ghost btn-sm sg-feedback-btn${r.feedback ? ' has-feedback' : ''}"
+        data-feedback="${escapeHtml(r.feedback ?? '')}"
+      title="${r.feedback ? 'Modifier le commentaire' : 'Ajouter un commentaire'}"><i data-lucide="message-circle" aria-hidden="true"></i></button>`
     : '';
 
   return `
@@ -196,7 +198,7 @@ function buildRenduRow(r, isTeacher = false) {
         <div class="rendu-info">
           <div class="rendu-student">${escapeHtml(r.student_name)}</div>
           <div class="rendu-file">
-            <span class="rendu-file-icon">${isPdf ? '📄' : '📎'}</span>
+            <span class="rendu-file-icon" aria-hidden="true"><i data-lucide="${isPdf ? 'file-text' : 'paperclip'}"></i></span>
             <span>${escapeHtml(r.file_name ?? 'Fichier manquant')}</span>
             <span class="rendu-date">· ${formatDate(r.submitted_at)}</span>
           </div>
@@ -209,7 +211,7 @@ function buildRenduRow(r, isTeacher = false) {
         ${r.file_path ? `
           <button class="btn-ghost btn-sm" data-open-pdf="${escapeHtml(r.file_path)}"
                   title="${isPdf ? 'Voir le PDF' : 'Ouvrir le fichier'}">
-            ${isPdf ? '👁' : '📂'}
+            <i data-lucide="${isPdf ? 'eye' : 'folder-open'}" aria-hidden="true"></i>
           </button>
         ` : ''}
       </div>
