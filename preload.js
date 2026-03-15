@@ -28,8 +28,19 @@ contextBridge.exposeInMainWorld('api', {
   setNote:            (payload)        => invoke('db:setNote',            payload),
   setFeedback:        (payload)        => invoke('db:setFeedback',        payload),
 
-  // Profil etudiant
+  // Groupes
+  getGroups:          (promoId)        => invoke('db:getGroups',          promoId),
+  createGroup:        (payload)        => invoke('db:createGroup',        payload),
+  deleteGroup:        (groupId)        => invoke('db:deleteGroup',        groupId),
+  getGroupMembers:    (groupId)        => invoke('db:getGroupMembers',    groupId),
+  setGroupMembers:    (payload)        => invoke('db:setGroupMembers',    payload),
+
+  // Profil & travaux etudiant
   getStudentProfile:  (studentId)      => invoke('db:getStudentProfile',  studentId),
+  getStudentTravaux:  (studentId)      => invoke('db:getStudentTravaux',  studentId),
+
+  // Identites (login)
+  getIdentities:      ()               => invoke('db:getIdentities'),
 
   // Fichiers & export
   openFileDialog:     ()               => invoke('dialog:openFile'),

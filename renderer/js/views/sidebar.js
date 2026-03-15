@@ -12,65 +12,131 @@ export function initSidebar({ onChannel, onDm }) {
 }
 
 export async function renderSidebar() {
-  const nav         = document.getElementById('sidebar-nav');
+  const nav  = document.getElementById('sidebar-nav');
+  const user = state.currentUser;
+
+  // Mettre a jour le badge utilisateur dans le header
+  const badgeEl = document.getElementById('teacher-badge');
+  if (badgeEl && user) {
+    const color = user.type === 'teacher' ? 'var(--accent)' : avatarColor(user.name);
+    badgeEl.innerHTML = `
+      <div class="avatar teacher-avatar" style="background:${color};color:#fff">${escapeHtml(user.avatar_initials)}</div>
+      <div class="sidebar-user-info">
+        <span class="sidebar-user-name">${escapeHtml(user.name)}</span>
+        <span class="sidebar-user-role">${user.type === 'teacher' ? 'Professeur' : escapeHtml(user.promo_name ?? '')}</span>
+      </div>
+    `;
+  }
+
+  nav.innerHTML = '';
+
+  // ── Vue etudiant — sidebar simplifiee ─────────────────────────────────────
+  if (user?.type === 'student') {
+    await renderStudentSidebar(nav, user);
+    return;
+  }
+
+  // ── Vue professeur — toutes les promos ────────────────────────────────────
+  await renderTeacherSidebar(nav);
+}
+
+// ─── Sidebar professeur ───────────────────────────────────────────────────────
+
+async function renderTeacherSidebar(nav) {
   const promotions  = await call(window.api.getPromotions);
   const allStudents = await call(window.api.getAllStudents);
   if (!promotions || !allStudents) return;
-
-  nav.innerHTML = '';
 
   for (const promo of promotions) {
     const channels = await call(window.api.getChannels, promo.id);
     if (!channels) continue;
     const students = allStudents.filter(s => s.promo_id === promo.id);
 
-    const section = document.createElement('div');
-    section.className = 'promo-section';
-
-    const annonceBadge = (type) =>
-      type === 'annonce' ? `<span class="channel-annonce">Annonce</span>` : '';
-
-    section.innerHTML = `
-      <div class="promo-header">
-        <span class="promo-dot" style="background:${promo.color}"></span>
-        <span>${escapeHtml(promo.name)}</span>
-        <span class="promo-chevron">&#9660;</span>
-      </div>
-      <div class="promo-channels">
-        <div class="section-label">Canaux</div>
-        ${channels.map(ch => `
-          <div class="channel-item"
-               data-channel-id="${ch.id}"
-               data-promo-id="${promo.id}"
-               data-channel-name="${escapeHtml(ch.name)}"
-               data-channel-type="${ch.type}">
-            <span class="channel-prefix">#</span>
-            <span>${escapeHtml(ch.name)}</span>
-            ${annonceBadge(ch.type)}
-          </div>
-        `).join('')}
-        <div class="section-label">Messages directs</div>
-        ${students.map(s => `
-          <div class="dm-item"
-               data-student-id="${s.id}"
-               data-promo-id="${promo.id}"
-               data-student-name="${escapeHtml(s.name)}">
-            <span class="student-avatar-sm"
-                  style="background:${avatarColor(s.name)};color:#fff">${escapeHtml(s.avatar_initials)}</span>
-            <span>${escapeHtml(s.name)}</span>
-          </div>
-        `).join('')}
-      </div>
-    `;
-
-    section.querySelector('.promo-header').addEventListener('click', () => {
-      section.classList.toggle('collapsed');
-    });
-
+    const section = buildPromoSection(promo, channels, students, true);
     nav.appendChild(section);
   }
 
-  // Delegation unique sur le nav
+  attachNavDelegation(nav);
+}
+
+// ─── Sidebar etudiant ─────────────────────────────────────────────────────────
+
+async function renderStudentSidebar(nav, user) {
+  const channels = await call(window.api.getChannels, user.promo_id);
+  if (!channels) return;
+
+  // Creer une section unique pour la promo de l'etudiant, sans DMs
+  const promotions = await call(window.api.getPromotions);
+  const promo = promotions?.find(p => p.id === user.promo_id);
+  if (!promo) return;
+
+  const section = buildPromoSection(promo, channels, [], false);
+  nav.appendChild(section);
+
+  attachNavDelegation(nav);
+}
+
+// ─── Construction d'une section promo ────────────────────────────────────────
+
+function buildPromoSection(promo, channels, students, showDms) {
+  const section = document.createElement('div');
+  section.className = 'promo-section';
+
+  const annonceBadge = (type) =>
+    type === 'annonce' ? `<span class="channel-annonce">Annonce</span>` : '';
+
+  const dmRows = showDms && students.length ? `
+    <div class="section-label">Messages directs</div>
+    ${students.map(s => `
+      <div class="dm-item"
+           data-student-id="${s.id}"
+           data-promo-id="${promo.id}"
+           data-student-name="${escapeHtml(s.name)}">
+        <span class="student-avatar-sm"
+              style="background:${avatarColor(s.name)};color:#fff">${escapeHtml(s.avatar_initials)}</span>
+        <span>${escapeHtml(s.name)}</span>
+      </div>
+    `).join('')}
+  ` : '';
+
+  section.innerHTML = `
+    <div class="promo-header">
+      <span class="promo-dot" style="background:${promo.color}"></span>
+      <span>${escapeHtml(promo.name)}</span>
+      <span class="promo-chevron">&#9660;</span>
+    </div>
+    <div class="promo-channels">
+      <div class="section-label">Canaux</div>
+      ${channels.map(ch => `
+        <div class="channel-item"
+             data-channel-id="${ch.id}"
+             data-promo-id="${promo.id}"
+             data-channel-name="${escapeHtml(ch.name)}"
+             data-channel-type="${ch.type}">
+          <span class="channel-prefix">#</span>
+          <span>${escapeHtml(ch.name)}</span>
+          ${annonceBadge(ch.type)}
+        </div>
+      `).join('')}
+      ${dmRows}
+    </div>
+  `;
+
+  section.querySelector('.promo-header').addEventListener('click', () => {
+    section.classList.toggle('collapsed');
+  });
+
+  return section;
+}
+
+// ─── Delegation d'evenements sur le nav ──────────────────────────────────────
+
+let _delegationAttached = false;
+
+function attachNavDelegation(nav) {
+  if (_delegationAttached) return;
+  _delegationAttached = true;
+
   nav.addEventListener('click', e => {
     const channelEl = e.target.closest('[data-channel-id]');
     const dmEl      = e.target.closest('[data-student-id]');

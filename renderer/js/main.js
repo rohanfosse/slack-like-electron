@@ -4,8 +4,17 @@ import { renderSidebar, initSidebar }              from './views/sidebar.js';
 import { openPanel, closePanel, renderTravaux, initTravaux, bindNewTravailForm } from './views/travaux.js';
 import { openDepotsModal, renderDepots, bindDepotsModal, bindNoteModal }         from './views/depots.js';
 import { openSuiviModal, bindSuiviModal, openProfilPanel }                       from './views/suivi.js';
+import { showLoginScreen }                         from './views/login.js';
+import { renderStudentTravaux }                    from './views/student-dashboard.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
+
+  // ── Ecran de connexion ────────────────────────────────────────────────────
+
+  await showLoginScreen(onLogin);
+});
+
+async function onLogin(user) {
 
   // ── Initialisation des vues ───────────────────────────────────────────────
 
@@ -20,6 +29,22 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
 
   initSearch();
+
+  // ── Adapter l'interface selon le role ─────────────────────────────────────
+
+  const isStudent = user.type === 'student';
+
+  // Les etudiants ne voient pas le bouton "Travaux" (panel prof)
+  // mais ont acces a "Mes travaux"
+  const btnTravaux     = document.getElementById('btn-travaux');
+  const btnMesTravaux  = document.getElementById('btn-mes-travaux');
+
+  if (isStudent) {
+    btnTravaux.style.display = 'none';
+    if (btnMesTravaux) btnMesTravaux.style.display = '';
+  } else {
+    if (btnMesTravaux) btnMesTravaux.style.display = 'none';
+  }
 
   // ── Chargement initial ────────────────────────────────────────────────────
 
@@ -36,12 +61,25 @@ document.addEventListener('DOMContentLoaded', async () => {
     this.style.height = Math.min(this.scrollHeight, 120) + 'px';
   });
 
-  // ── Bouton Travaux ────────────────────────────────────────────────────────
+  // ── Bouton Travaux (professeur) ───────────────────────────────────────────
 
-  document.getElementById('btn-travaux').addEventListener('click', () => {
+  btnTravaux.addEventListener('click', () => {
     if (state.rightPanel === 'travaux') closePanel();
     else openPanel();
   });
+
+  // ── Bouton Mes travaux (etudiant) ─────────────────────────────────────────
+
+  if (btnMesTravaux) {
+    btnMesTravaux.addEventListener('click', () => {
+      if (state.rightPanel === 'mes-travaux') {
+        state.rightPanel = null;
+        document.getElementById('right-panel').classList.add('hidden');
+      } else {
+        renderStudentTravaux();
+      }
+    });
+  }
 
   // ── Modals ────────────────────────────────────────────────────────────────
 
@@ -49,7 +87,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   bindDepotsModal();
   bindNoteModal();
   bindSuiviModal();
-});
+}
 
 // ─── Ouverture d'un canal ────────────────────────────────────────────────────
 
@@ -60,7 +98,7 @@ async function openChannel(channelId, promoId, channelName, channelType) {
   state.activeChannelType = channelType ?? 'chat';
 
   // Fermer le profil si ouvert, garder travaux
-  if (state.rightPanel === 'profil') {
+  if (state.rightPanel === 'profil' || state.rightPanel === 'mes-travaux') {
     state.rightPanel = null;
     document.getElementById('right-panel').classList.add('hidden');
   }
@@ -77,10 +115,13 @@ async function openChannel(channelId, promoId, channelName, channelType) {
     badge.classList.add('hidden');
   }
 
-  // Input : desactiver pour les canaux d'annonce (infos etudiants)
+  // Input : canal d'annonce — lecture seule pour les etudiants
   const inputArea = document.getElementById('message-input-area');
   const inputEl   = document.getElementById('message-input');
-  if (channelType === 'annonce') {
+  const isStudent = state.currentUser?.type === 'student';
+  const readonly  = channelType === 'annonce' && isStudent;
+
+  if (readonly) {
     inputEl.placeholder = 'Canal d\'annonces';
     inputArea.classList.add('readonly');
     document.getElementById('message-input-wrapper').classList.add('hidden');
@@ -89,7 +130,7 @@ async function openChannel(channelId, promoId, channelName, channelType) {
       notice = document.createElement('p');
       notice.id        = 'readonly-notice';
       notice.className = 'readonly-notice';
-      notice.textContent = 'Ce canal est en lecture seule pour les etudiants.';
+      notice.textContent = 'Ce canal est en lecture seule.';
       inputArea.appendChild(notice);
     }
   } else {
@@ -100,7 +141,10 @@ async function openChannel(channelId, promoId, channelName, channelType) {
     inputEl.placeholder = `Envoyer dans #${channelName ?? ''}`;
   }
 
-  document.getElementById('btn-travaux').style.display = '';
+  const btnTravaux = document.getElementById('btn-travaux');
+  if (state.currentUser?.type === 'teacher') {
+    btnTravaux.style.display = '';
+  }
 
   await renderMessages();
   if (state.rightPanel === 'travaux') await renderTravaux();
@@ -118,13 +162,13 @@ async function openDm(studentId, promoId, studentName) {
   document.getElementById('channel-name').textContent = studentName ?? '';
   document.getElementById('channel-type-badge').classList.add('hidden');
   document.getElementById('message-input').placeholder = `Message prive — ${studentName ?? ''}`;
-  document.getElementById('btn-travaux').style.display = 'none';
 
-  // Ouvrir le profil dans le panel droit
-  await openProfilPanel(studentId);
-
-  // Si le panel travaux etait ouvert, le fermer
-  if (state.rightPanel === 'travaux') closePanel();
+  // DMs accessibles au professeur seulement
+  if (state.currentUser?.type === 'teacher') {
+    document.getElementById('btn-travaux').style.display = 'none';
+    await openProfilPanel(studentId);
+    if (state.rightPanel === 'travaux') closePanel();
+  }
 
   await renderMessages();
 }

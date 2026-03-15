@@ -39,8 +39,19 @@ function register() {
   handle('db:setNote',           (payload)    => queries.setNote(payload));
   handle('db:setFeedback',       (payload)    => queries.setFeedback(payload));
 
+  // Groupes
+  handle('db:getGroups',         (promoId)    => queries.getGroups(promoId));
+  handle('db:createGroup',       (payload)    => queries.createGroup(payload));
+  handle('db:deleteGroup',       (groupId)    => queries.deleteGroup(groupId));
+  handle('db:getGroupMembers',   (groupId)    => queries.getGroupMembers(groupId));
+  handle('db:setGroupMembers',   (payload)    => queries.setGroupMembers(payload));
+
   // Profil etudiant
-  handle('db:getStudentProfile', (studentId)  => queries.getStudentProfile(studentId));
+  handle('db:getStudentProfile',  (studentId) => queries.getStudentProfile(studentId));
+  handle('db:getStudentTravaux',  (studentId) => queries.getStudentTravaux(studentId));
+
+  // Identite / login
+  handle('db:getIdentities',     ()           => queries.getIdentities());
 
   // Dialogue fichier — ouverture
   ipcMain.handle('dialog:openFile', async () => {

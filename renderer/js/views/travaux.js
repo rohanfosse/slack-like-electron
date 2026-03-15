@@ -71,7 +71,10 @@ export async function renderTravaux() {
     const card = document.createElement('div');
     card.className = 'travail-card';
     card.innerHTML = `
-      <div class="travail-title">${escapeHtml(t.title)}</div>
+      <div class="travail-title">
+        ${escapeHtml(t.title)}
+        ${t.group_name ? `<span class="group-tag">${escapeHtml(t.group_name)}</span>` : ''}
+      </div>
       <div class="travail-desc">${escapeHtml(t.description ?? '')}</div>
       <div class="travail-footer">
         <span class="deadline-badge ${cls}">${label} — ${formatDate(t.deadline)}</span>
@@ -99,7 +102,7 @@ export async function renderTravaux() {
 
 // ─── Modal nouveau travail ────────────────────────────────────────────────────
 
-function openNewTravailModal() {
+async function openNewTravailModal() {
   const overlay = document.getElementById('modal-new-travail-overlay');
   overlay.classList.remove('hidden');
 
@@ -107,6 +110,21 @@ function openNewTravailModal() {
   const twoWeeks = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000);
   document.getElementById('nt-deadline').value =
     new Date(twoWeeks - twoWeeks.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+
+  // Charger les groupes de la promo courante
+  const groupSelect = document.getElementById('nt-group');
+  groupSelect.innerHTML = '<option value="">Toute la promotion</option>';
+  if (state.activePromoId) {
+    const groups = await call(window.api.getGroups, state.activePromoId);
+    if (groups) {
+      for (const g of groups) {
+        const opt = document.createElement('option');
+        opt.value       = g.id;
+        opt.textContent = `${g.name} (${g.members_count} eleve${g.members_count > 1 ? 's' : ''})`;
+        groupSelect.appendChild(opt);
+      }
+    }
+  }
 
   document.getElementById('nt-title').focus();
 }
@@ -131,6 +149,7 @@ export function bindNewTravailForm() {
     const title       = document.getElementById('nt-title').value.trim();
     const description = document.getElementById('nt-description').value.trim();
     const deadline    = document.getElementById('nt-deadline').value;
+    const groupVal    = document.getElementById('nt-group').value;
     if (!title || !deadline) return;
 
     const ok = await call(window.api.createTravail, {
@@ -138,6 +157,7 @@ export function bindNewTravailForm() {
       title,
       description,
       deadline: deadline.replace('T', ' ') + ':00',
+      groupId:  groupVal ? parseInt(groupVal) : null,
     });
     if (ok === null) return;
 

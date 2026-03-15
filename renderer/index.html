@@ -22,7 +22,10 @@
     </div>
     <div id="teacher-badge">
       <div class="avatar teacher-avatar">RF</div>
-      <span>Rohan Fosse</span>
+      <div class="sidebar-user-info">
+        <span class="sidebar-user-name">Rohan Fosse</span>
+        <span class="sidebar-user-role">Professeur</span>
+      </div>
     </div>
   </div>
   <nav id="sidebar-nav"></nav>
@@ -47,6 +50,7 @@
       </div>
       <button id="btn-search" class="btn-ghost" title="Rechercher">Rechercher</button>
       <button id="btn-travaux" class="btn-ghost">Travaux</button>
+      <button id="btn-mes-travaux" class="btn-ghost" style="display:none">Mes travaux</button>
     </div>
   </header>
 
@@ -172,6 +176,12 @@
         <textarea id="nt-description" class="form-textarea" rows="3" placeholder="Description et consignes…"></textarea>
       </div>
       <div class="form-group">
+        <label class="form-label" for="nt-group">Groupe (optionnel)</label>
+        <select id="nt-group" class="form-select">
+          <option value="">Toute la promotion</option>
+        </select>
+      </div>
+      <div class="form-group">
         <label class="form-label" for="nt-deadline">Date limite</label>
         <input type="datetime-local" id="nt-deadline" class="form-input" required />
       </div>
@@ -180,6 +190,21 @@
         <button type="submit" class="btn-primary">Creer le travail</button>
       </div>
     </form>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     ECRAN DE CONNEXION
+════════════════════════════════════════ -->
+<div id="login-overlay">
+  <div id="login-panel">
+    <div id="login-logo">
+      <div class="logo-mark">CC</div>
+      <span class="logo-text">CESI Classroom</span>
+    </div>
+    <h2 id="login-title">Qui etes-vous ?</h2>
+    <p id="login-subtitle">Selectionnez votre identite pour continuer</p>
+    <div id="login-identity-grid"></div>
   </div>
 </div>
 
