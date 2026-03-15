@@ -491,6 +491,32 @@
 </div>
 
 <!-- ════════════════════════════════════════
+     GESTION D'UN DEVOIR (overlay unifié)
+════════════════════════════════════════ -->
+<div id="modal-gestion-overlay" class="fullscreen-overlay hidden">
+  <div id="gd-panel">
+    <div id="gd-header">
+      <div id="gd-header-left">
+        <h2 id="gd-title"></h2>
+        <div id="gd-badges"></div>
+        <div id="gd-progress-block">
+          <span id="gd-progress-label" class="gd-progress-label-text"></span>
+          <div class="progress-bar-track gd-progress-track">
+            <div class="progress-bar-fill" id="gd-progress-fill" style="width:0%"></div>
+          </div>
+        </div>
+      </div>
+      <button id="modal-gestion-close" class="btn-ghost">✕ Fermer</button>
+    </div>
+    <div id="gd-group-pills"></div>
+    <div id="gd-body">
+      <div id="gd-rendus-section"  class="gd-section"></div>
+      <div id="gd-attente-section" class="gd-section"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
      TOAST
 ════════════════════════════════════════ -->
 <div id="app-toast" class="hidden"></div>

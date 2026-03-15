@@ -4,8 +4,9 @@ import { deadlineClass }   from './utils.js';
 import { renderMessages, sendMessage, initSearch } from './views/chat.js';
 import { renderSidebar, initSidebar }              from './views/sidebar.js';
 import { openPanel, closePanel, renderTravaux, initTravaux, bindNewTravailForm } from './views/travaux.js';
-import { openDepotsModal, renderDepots, bindDepotsModal, bindNoteModal }         from './views/depots.js';
-import { openSuiviModal, bindSuiviModal, openProfilPanel }                       from './views/suivi.js';
+import { bindDepotsModal, bindNoteModal }                                        from './views/depots.js';
+import { bindSuiviModal, openProfilPanel }                                       from './views/suivi.js';
+import { openGestionDevoir, bindGestionDevoir }                                  from './views/gestion-devoir.js';
 import { showLoginScreen }                         from './views/login.js';
 import { renderStudentTravaux }                    from './views/student-dashboard.js';
 import { openTimeline, bindTimeline }              from './views/timeline.js';
@@ -40,8 +41,7 @@ async function onLogin(user) {
   });
 
   initTravaux({
-    onOpenDepots:     (travail) => openDepotsModal(travail),
-    onOpenSuivi:      (travail) => openSuiviModal(travail),
+    onOpenGestion:    (travail) => openGestionDevoir(travail),
     onOpenRessources: (travail) => openRessourcesModal(travail),
   });
 
@@ -119,6 +119,7 @@ async function onLogin(user) {
   bindTimeline();
   bindEcheancier();
   bindDocumentsModal();
+  bindGestionDevoir();
 
   document.getElementById('btn-timeline').addEventListener('click', () => openTimeline());
 
@@ -128,6 +129,17 @@ async function onLogin(user) {
   // ── Badge Travaux + écoute de dépôt réussi ───────────────────────────────
   await updateTravauxBadge();
   document.addEventListener('depot:success', () => updateTravauxBadge());
+
+  // ── Fermeture du right-panel en cliquant en dehors (petits écrans) ────────
+  document.addEventListener('click', e => {
+    if (window.innerWidth > 1100) return;
+    const panel = document.getElementById('right-panel');
+    if (!panel || panel.classList.contains('hidden')) return;
+    if (!panel.contains(e.target)) {
+      state.rightPanel = null;
+      panel.classList.add('hidden');
+    }
+  });
 
   // ── Modal détail travail (depuis timeline) ───────────────────────────────
   // Câblé dynamiquement dans gantt.js / timeline.js
@@ -183,7 +195,8 @@ async function openChannel(channelId, promoId, channelName, channelType) {
   state.activePromoId     = promoId;
   state.activeChannelType = channelType ?? 'chat';
 
-  if (state.rightPanel === 'profil' || state.rightPanel === 'mes-travaux') {
+  // Fermer le panneau droit à chaque changement de canal
+  if (state.rightPanel) {
     state.rightPanel = null;
     document.getElementById('right-panel').classList.add('hidden');
   }

@@ -4,13 +4,11 @@ import { showToast } from '../utils.js';
 import { deadlineClass, deadlineLabel, formatDate, escapeHtml, isoForDatetimeLocal } from '../utils.js';
 import { CATEGORIES } from './timeline.js';
 
-let _onOpenDepots     = null;
-let _onOpenSuivi      = null;
+let _onOpenGestion    = null;
 let _onOpenRessources = null;
 
-export function initTravaux({ onOpenDepots, onOpenSuivi, onOpenRessources }) {
-  _onOpenDepots     = onOpenDepots;
-  _onOpenSuivi      = onOpenSuivi;
+export function initTravaux({ onOpenGestion, onOpenRessources }) {
+  _onOpenGestion    = onOpenGestion;
   _onOpenRessources = onOpenRessources;
 }
 
@@ -98,6 +96,15 @@ function makeTravailCard(t) {
       </div>` : ''}
   `;
 
+  // Clic sur la carte → Gestion unifiée (sauf jalon)
+  if (!isJalon) {
+    card.style.cursor = 'pointer';
+    card.addEventListener('click', e => {
+      if (e.target.closest('button')) return;
+      _onOpenGestion?.(t);
+    });
+  }
+
   // Actions
   const actions = document.createElement('div');
   actions.className = 'travail-card-actions';
@@ -110,14 +117,12 @@ function makeTravailCard(t) {
   actions.appendChild(btnRessources);
 
   if (!isJalon) {
-    card.addEventListener('click', () => _onOpenDepots?.(t));
-
-    const btnSuivi = document.createElement('button');
-    btnSuivi.className = 'btn-ghost';
-    btnSuivi.style.cssText = 'font-size:12px;flex:1;';
-    btnSuivi.textContent   = 'Suivi';
-    btnSuivi.addEventListener('click', e => { e.stopPropagation(); _onOpenSuivi?.(t); });
-    actions.appendChild(btnSuivi);
+    const btnGestion = document.createElement('button');
+    btnGestion.className = 'btn-primary';
+    btnGestion.style.cssText = 'font-size:12px;flex:1;';
+    btnGestion.textContent   = 'Gérer';
+    btnGestion.addEventListener('click', e => { e.stopPropagation(); _onOpenGestion?.(t); });
+    actions.appendChild(btnGestion);
   }
 
   // Toggle brouillon / publier
