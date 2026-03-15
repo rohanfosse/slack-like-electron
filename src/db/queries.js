@@ -25,7 +25,8 @@ function initSchema() {
       promo_id        INTEGER NOT NULL REFERENCES promotions(id) ON DELETE CASCADE,
       name            TEXT NOT NULL,
       email           TEXT NOT NULL UNIQUE,
-      avatar_initials TEXT NOT NULL
+      avatar_initials TEXT NOT NULL,
+      photo_data      TEXT
     );
 
     CREATE TABLE IF NOT EXISTS groups (
@@ -61,7 +62,16 @@ function initSchema() {
       title       TEXT NOT NULL,
       description TEXT,
       deadline    TEXT NOT NULL,
-      category    TEXT NOT NULL DEFAULT 'TP' CHECK(category IN ('TP','Projet','Devoir','Examen','Rendu'))
+      category    TEXT NOT NULL DEFAULT 'TP' CHECK(category IN ('TP','Projet','Devoir','Examen','Rendu')),
+      type        TEXT NOT NULL DEFAULT 'devoir' CHECK(type IN ('devoir', 'jalon')),
+      published   INTEGER NOT NULL DEFAULT 1
+    );
+
+    CREATE TABLE IF NOT EXISTS travail_group_members (
+      travail_id INTEGER NOT NULL REFERENCES travaux(id) ON DELETE CASCADE,
+      student_id INTEGER NOT NULL REFERENCES students(id) ON DELETE CASCADE,
+      group_id   INTEGER NOT NULL REFERENCES groups(id) ON DELETE CASCADE,
+      PRIMARY KEY (travail_id, student_id)
     );
 
     CREATE TABLE IF NOT EXISTS ressources (
@@ -104,6 +114,25 @@ function migrate(db) {
 
   if (!col('travaux').includes('category'))
     db.exec("ALTER TABLE travaux ADD COLUMN category TEXT NOT NULL DEFAULT 'TP'");
+
+  if (!col('travaux').includes('type'))
+    db.exec("ALTER TABLE travaux ADD COLUMN type TEXT NOT NULL DEFAULT 'devoir'");
+
+  if (!col('travaux').includes('published'))
+    db.exec('ALTER TABLE travaux ADD COLUMN published INTEGER NOT NULL DEFAULT 1');
+
+  if (!col('students').includes('photo_data'))
+    db.exec('ALTER TABLE students ADD COLUMN photo_data TEXT');
+
+  // Table des groupes par projet (si inexistante — bases existantes)
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS travail_group_members (
+      travail_id INTEGER NOT NULL REFERENCES travaux(id) ON DELETE CASCADE,
+      student_id INTEGER NOT NULL REFERENCES students(id) ON DELETE CASCADE,
+      group_id   INTEGER NOT NULL REFERENCES groups(id) ON DELETE CASCADE,
+      PRIMARY KEY (travail_id, student_id)
+    )
+  `);
 }
 
 // ─── Seed ────────────────────────────────────────────────────────────────────
@@ -226,15 +255,52 @@ function getAllStudents() {
 // Retourne toutes les identites disponibles au login (professeur + etudiants)
 function getIdentities() {
   const students = getDb().prepare(`
-    SELECT s.id, s.name, s.avatar_initials, 'student' AS type,
+    SELECT s.id, s.name, s.avatar_initials, s.photo_data, 'student' AS type,
            p.name AS promo_name, p.id AS promo_id
     FROM students s JOIN promotions p ON s.promo_id = p.id
     ORDER BY p.name, s.name
   `).all();
 
-  const teacher = { id: 0, name: 'Rohan Fosse', avatar_initials: 'RF', type: 'teacher', promo_name: null, promo_id: null };
+  const teacher = { id: 0, name: 'Rohan Fosse', avatar_initials: 'RF', photo_data: null, type: 'teacher', promo_name: null, promo_id: null };
 
   return [teacher, ...students];
+}
+
+// ─── Inscription etudiant ──────────────────────────────────────────────────────
+
+function getStudentByEmail(email) {
+  return getDb().prepare(`
+    SELECT s.*, p.name AS promo_name
+    FROM students s JOIN promotions p ON s.promo_id = p.id
+    WHERE s.email = ?
+  `).get(email);
+}
+
+function registerStudent({ name, email, promoId, photoData }) {
+  const db = getDb();
+  const existing = db.prepare('SELECT id FROM students WHERE email = ?').get(email);
+  if (existing) throw new Error('Cette adresse email est deja utilisee.');
+
+  const initials = name.trim().split(/\s+/).map(w => w[0]).join('').toUpperCase().slice(0, 2);
+  return db.prepare(`
+    INSERT INTO students (promo_id, name, email, avatar_initials, photo_data)
+    VALUES (?, ?, ?, ?, ?)
+  `).run(promoId, name.trim(), email.trim().toLowerCase(), initials, photoData ?? null);
+}
+
+// ─── Gestion des promotions ────────────────────────────────────────────────────
+
+function createPromotion({ name, color }) {
+  const db      = getDb();
+  const promoId = db.prepare('INSERT INTO promotions (name, color) VALUES (?, ?)').run(name, color).lastInsertRowid;
+  // Canaux par defaut
+  db.prepare("INSERT INTO channels (promo_id, name, description, type) VALUES (?, 'annonces', 'Informations importantes', 'annonce')").run(promoId);
+  db.prepare("INSERT INTO channels (promo_id, name, description, type) VALUES (?, 'general', 'Canal principal', 'chat')").run(promoId);
+  return promoId;
+}
+
+function deletePromotion(promoId) {
+  return getDb().prepare('DELETE FROM promotions WHERE id = ?').run(promoId);
 }
 
 // ─── Groupes ──────────────────────────────────────────────────────────────────
@@ -332,11 +398,31 @@ function getTravailById(travailId) {
   return getDb().prepare('SELECT * FROM travaux WHERE id = ?').get(travailId);
 }
 
-function createTravail({ channelId, groupId, title, description, deadline, category }) {
-  return getDb().prepare(`
-    INSERT INTO travaux (channel_id, group_id, title, description, deadline, category)
-    VALUES (?, ?, ?, ?, ?, ?)
-  `).run(channelId, groupId ?? null, title, description, deadline, category ?? 'TP');
+function createTravail({ channelId, groupId, title, description, deadline, category, type, published }) {
+  const db = getDb();
+  const result = db.prepare(`
+    INSERT INTO travaux (channel_id, group_id, title, description, deadline, category, type, published)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+  `).run(
+    channelId, groupId ?? null, title, description, deadline,
+    category  ?? 'TP',
+    type      ?? 'devoir',
+    published != null ? (published ? 1 : 0) : 1
+  );
+
+  // Peupler les assignations de groupe par projet depuis les membres par defaut
+  if (groupId) {
+    const travailId = result.lastInsertRowid;
+    const members   = db.prepare('SELECT student_id FROM group_members WHERE group_id = ?').all(groupId);
+    const ins       = db.prepare('INSERT OR IGNORE INTO travail_group_members (travail_id, student_id, group_id) VALUES (?, ?, ?)');
+    for (const m of members) ins.run(travailId, m.student_id, groupId);
+  }
+
+  return result;
+}
+
+function updateTravailPublished({ travailId, published }) {
+  return getDb().prepare('UPDATE travaux SET published = ? WHERE id = ?').run(published ? 1 : 0, travailId);
 }
 
 // ─── Suivi (vue enseignant) ───────────────────────────────────────────────────
@@ -344,21 +430,49 @@ function createTravail({ channelId, groupId, title, description, deadline, categ
 function getTravauxSuivi(travailId) {
   return getDb().prepare(`
     SELECT
-      s.id AS student_id, s.name AS student_name, s.avatar_initials,
+      s.id AS student_id, s.name AS student_name, s.avatar_initials, s.photo_data,
       d.id AS depot_id, d.file_name, d.file_path,
-      d.note, d.feedback, d.submitted_at
+      d.note, d.feedback, d.submitted_at,
+      tgm.group_id   AS travail_group_id,
+      tg.name        AS travail_group_name
     FROM travaux t
     JOIN channels c ON t.channel_id = c.id
     JOIN students s ON s.promo_id = c.promo_id
-    LEFT JOIN depots d ON d.travail_id = t.id AND d.student_id = s.id
+    LEFT JOIN depots d   ON d.travail_id = t.id AND d.student_id = s.id
+    LEFT JOIN travail_group_members tgm ON tgm.travail_id = t.id AND tgm.student_id = s.id
+    LEFT JOIN groups tg  ON tg.id = tgm.group_id
     WHERE t.id = ?
       AND (
-        t.group_id IS NULL OR
-        EXISTS (SELECT 1 FROM group_members gm
-                WHERE gm.group_id = t.group_id AND gm.student_id = s.id)
+        t.group_id IS NULL
+        OR EXISTS (SELECT 1 FROM travail_group_members WHERE travail_id = t.id AND student_id = s.id)
+        OR EXISTS (SELECT 1 FROM group_members WHERE group_id = t.group_id AND student_id = s.id)
       )
-    ORDER BY s.name ASC
+    ORDER BY tg.name NULLS LAST, s.name ASC
   `).all(travailId);
+}
+
+function getTravailGroupMembers(travailId) {
+  return getDb().prepare(`
+    SELECT tgm.*, s.name AS student_name, s.avatar_initials, g.name AS group_name
+    FROM travail_group_members tgm
+    JOIN students s ON tgm.student_id = s.id
+    JOIN groups   g ON tgm.group_id   = g.id
+    WHERE tgm.travail_id = ?
+    ORDER BY g.name, s.name
+  `).all(travailId);
+}
+
+function setTravailGroupMember({ travailId, studentId, groupId }) {
+  if (groupId === null) {
+    return getDb().prepare(
+      'DELETE FROM travail_group_members WHERE travail_id = ? AND student_id = ?'
+    ).run(travailId, studentId);
+  }
+  return getDb().prepare(`
+    INSERT INTO travail_group_members (travail_id, student_id, group_id)
+    VALUES (?, ?, ?)
+    ON CONFLICT(travail_id, student_id) DO UPDATE SET group_id = excluded.group_id
+  `).run(travailId, studentId, groupId);
 }
 
 // ─── Vue etudiant ─────────────────────────────────────────────────────────────
@@ -367,24 +481,24 @@ function getTravauxSuivi(travailId) {
 function getStudentTravaux(studentId) {
   return getDb().prepare(`
     SELECT
-      t.id, t.title, t.description, t.deadline, t.group_id,
+      t.id, t.title, t.description, t.deadline, t.group_id, t.category, t.type,
       ch.name AS channel_name, ch.id AS channel_id,
-      g.name  AS group_name,
+      tgm_g.name AS group_name,
       d.id    AS depot_id, d.file_name, d.note, d.feedback, d.submitted_at
     FROM students s
     JOIN channels ch ON ch.promo_id = s.promo_id AND ch.type = 'chat'
     JOIN travaux t   ON t.channel_id = ch.id
-    LEFT JOIN groups g  ON t.group_id = g.id
+    LEFT JOIN travail_group_members tgm ON tgm.travail_id = t.id AND tgm.student_id = s.id
+    LEFT JOIN groups tgm_g ON tgm_g.id = tgm.group_id
     LEFT JOIN depots d  ON d.travail_id = t.id AND d.student_id = s.id
     WHERE s.id = ?
+      AND t.published = 1
       AND (
-        t.group_id IS NULL OR
-        EXISTS (SELECT 1 FROM group_members gm
-                WHERE gm.group_id = t.group_id AND gm.student_id = s.id)
+        t.group_id IS NULL
+        OR EXISTS (SELECT 1 FROM travail_group_members WHERE travail_id = t.id AND student_id = s.id)
+        OR EXISTS (SELECT 1 FROM group_members WHERE group_id = t.group_id AND student_id = s.id)
       )
-    ORDER BY
-      CASE WHEN d.id IS NULL THEN 0 ELSE 1 END,
-      t.deadline ASC
+    ORDER BY t.deadline ASC
   `).all(studentId);
 }
 
@@ -469,6 +583,9 @@ module.exports = {
   getTravauxSuivi, getStudentTravaux,
   getDepots, addDepot, setNote, setFeedback,
   getStudentProfile,
-  getIdentities,
+  getIdentities, getStudentByEmail, registerStudent,
   getRessources, addRessource, deleteRessource,
+  getTravailGroupMembers, setTravailGroupMember,
+  updateTravailPublished,
+  createPromotion, deletePromotion,
 };

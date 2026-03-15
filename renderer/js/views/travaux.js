@@ -33,11 +33,11 @@ export function closePanel() {
 function buildPanelHTML() {
   return `
     <div class="panel-header">
-      <h2>Travaux</h2>
+      <span class="panel-title">Travaux</span>
       <button class="btn-ghost" id="btn-close-panel">Fermer</button>
     </div>
     <div class="panel-body" id="panel-body">
-      <button class="btn-primary" id="btn-new-travail">Nouveau travail</button>
+      <button class="btn-primary" id="btn-new-travail" style="width:100%">Nouveau travail</button>
       <div id="travaux-list"></div>
     </div>
   `;
@@ -51,7 +51,7 @@ function bindPanelEvents() {
 export async function renderTravaux() {
   if (!state.activeChannelId) return;
 
-  const list    = document.getElementById('travaux-list');
+  const list = document.getElementById('travaux-list');
   if (!list) return;
 
   const travaux = await call(window.api.getTravaux, state.activeChannelId);
@@ -65,57 +65,77 @@ export async function renderTravaux() {
   }
 
   for (const t of travaux) {
-    const cls   = deadlineClass(t.deadline);
-    const label = deadlineLabel(t.deadline);
-    const count = t.depots_count   ?? 0;
-    const total = t.students_total ?? 0;
-    const pct   = total > 0 ? Math.round((count / total) * 100) : 0;
+    list.appendChild(makeTravailCard(t));
+  }
+}
 
-    const card = document.createElement('div');
-    card.className = 'travail-card';
-    const catColor = CATEGORIES[t.category]?.color ?? '#888';
+function makeTravailCard(t) {
+  const isJalon   = t.type === 'jalon';
+  const isDraft   = !t.published;
+  const cls       = deadlineClass(t.deadline);
+  const label     = deadlineLabel(t.deadline);
+  const catColor  = CATEGORIES[t.category]?.color ?? '#888';
 
-    card.innerHTML = `
-      <div class="travail-title">
-        <span class="category-badge" style="background:${catColor}20;color:${catColor};border-color:${catColor}40">${escapeHtml(t.category ?? 'TP')}</span>
-        ${escapeHtml(t.title)}
-        ${t.group_name ? `<span class="group-tag">${escapeHtml(t.group_name)}</span>` : ''}
-      </div>
-      <div class="travail-desc">${escapeHtml(t.description ?? '')}</div>
-      <div class="travail-footer">
-        <span class="deadline-badge ${cls}">${label} — ${formatDate(t.deadline)}</span>
-        <span class="depots-progress"><strong>${count}/${total}</strong> rendus</span>
-      </div>
+  const card = document.createElement('div');
+  card.className = `travail-card${isJalon ? ' jalon' : ''}${isDraft ? ' draft' : ''}`;
+
+  card.innerHTML = `
+    <div class="travail-title">
+      <span class="category-badge" style="background:${catColor}20;color:${catColor};border-color:${catColor}40">${escapeHtml(t.category ?? 'TP')}</span>
+      ${isJalon ? '<span class="jalon-badge">Jalon</span>' : ''}
+      ${isDraft  ? '<span class="draft-badge">Brouillon</span>' : ''}
+      ${escapeHtml(t.title)}
+      ${t.group_name ? `<span class="group-tag">${escapeHtml(t.group_name)}</span>` : ''}
+    </div>
+    <div class="travail-desc">${escapeHtml(t.description ?? '')}</div>
+    <div class="travail-footer">
+      <span class="deadline-badge ${cls}">${label} — ${formatDate(t.deadline)}</span>
+      ${!isJalon ? `<span class="depots-progress"><strong>${t.depots_count ?? 0}/${t.students_total ?? 0}</strong> rendus</span>` : ''}
+    </div>
+    ${!isJalon ? `
       <div class="progress-bar-track">
-        <div class="progress-bar-fill" style="width:${pct}%"></div>
-      </div>
-    `;
+        <div class="progress-bar-fill" style="width:${t.students_total > 0 ? Math.round((t.depots_count / t.students_total) * 100) : 0}%"></div>
+      </div>` : ''}
+  `;
 
-    // Clic gauche : ouvrir les depots
+  // Actions
+  const actions = document.createElement('div');
+  actions.className = 'travail-card-actions';
+
+  const btnRessources = document.createElement('button');
+  btnRessources.className = 'btn-ghost';
+  btnRessources.style.cssText = 'font-size:12px;flex:1;';
+  btnRessources.textContent   = 'Ressources';
+  btnRessources.addEventListener('click', e => { e.stopPropagation(); _onOpenRessources?.(t); });
+  actions.appendChild(btnRessources);
+
+  if (!isJalon) {
     card.addEventListener('click', () => _onOpenDepots?.(t));
 
-    // Boutons d'action
-    const actions = document.createElement('div');
-    actions.className = 'travail-card-actions';
-
-    const btnRessources = document.createElement('button');
-    btnRessources.className   = 'btn-ghost';
-    btnRessources.style.cssText = 'font-size:12px;flex:1;';
-    btnRessources.textContent = 'Ressources';
-    btnRessources.addEventListener('click', e => { e.stopPropagation(); _onOpenRessources?.(t); });
-
     const btnSuivi = document.createElement('button');
-    btnSuivi.className   = 'btn-ghost';
+    btnSuivi.className = 'btn-ghost';
     btnSuivi.style.cssText = 'font-size:12px;flex:1;';
-    btnSuivi.textContent = 'Suivi complet';
+    btnSuivi.textContent   = 'Suivi';
     btnSuivi.addEventListener('click', e => { e.stopPropagation(); _onOpenSuivi?.(t); });
-
-    actions.appendChild(btnRessources);
     actions.appendChild(btnSuivi);
-    card.appendChild(actions);
-
-    list.appendChild(card);
   }
+
+  // Toggle brouillon / publier
+  const btnPublish = document.createElement('button');
+  btnPublish.className = 'btn-ghost';
+  btnPublish.style.cssText = 'font-size:12px;flex:1;';
+  btnPublish.textContent   = isDraft ? 'Publier' : 'Brouillon';
+  btnPublish.addEventListener('click', async e => {
+    e.stopPropagation();
+    const ok = await call(window.api.updateTravailPublished, { travailId: t.id, published: isDraft });
+    if (ok === null) return;
+    showToast(isDraft ? 'Travail publie.' : 'Passe en brouillon.', 'success');
+    await renderTravaux();
+  });
+  actions.appendChild(btnPublish);
+
+  card.appendChild(actions);
+  return card;
 }
 
 // ─── Modal nouveau travail ────────────────────────────────────────────────────
@@ -128,6 +148,9 @@ async function openNewTravailModal() {
   const twoWeeks = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000);
   document.getElementById('nt-deadline').value =
     new Date(twoWeeks - twoWeeks.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+
+  // Basculer les champs selon type devoir/jalon
+  updateTravailTypeFields();
 
   // Charger les groupes de la promo courante
   const groupSelect = document.getElementById('nt-group');
@@ -147,6 +170,13 @@ async function openNewTravailModal() {
   document.getElementById('nt-title').focus();
 }
 
+function updateTravailTypeFields() {
+  const type       = document.querySelector('input[name="nt-type"]:checked')?.value ?? 'devoir';
+  const isJalon    = type === 'jalon';
+  const devoirOnly = document.getElementById('nt-devoir-only-fields');
+  if (devoirOnly) devoirOnly.style.display = isJalon ? 'none' : '';
+}
+
 export function bindNewTravailForm() {
   const overlay = document.getElementById('modal-new-travail-overlay');
 
@@ -160,30 +190,41 @@ export function bindNewTravailForm() {
     if (e.target === overlay) overlay.classList.add('hidden');
   });
 
+  // Switch devoir / jalon
+  overlay.querySelectorAll('input[name="nt-type"]').forEach(r => {
+    r.addEventListener('change', updateTravailTypeFields);
+  });
+
   document.getElementById('form-new-travail').addEventListener('submit', async e => {
     e.preventDefault();
     if (!state.activeChannelId) { showToast('Selectionnez d\'abord un canal.'); return; }
 
+    const type        = overlay.querySelector('input[name="nt-type"]:checked')?.value ?? 'devoir';
+    const isJalon     = type === 'jalon';
     const title       = document.getElementById('nt-title').value.trim();
     const description = document.getElementById('nt-description').value.trim();
     const deadline    = document.getElementById('nt-deadline').value;
-    const groupVal    = document.getElementById('nt-group').value;
+    const groupVal    = !isJalon ? document.getElementById('nt-group').value    : '';
     const category    = document.getElementById('nt-category').value;
+    const published   = !document.getElementById('nt-draft')?.checked;
     if (!title || !deadline) return;
 
     const ok = await call(window.api.createTravail, {
       channelId: state.activeChannelId,
       title,
       description,
-      deadline: deadline.replace('T', ' ') + ':00',
-      groupId:  groupVal ? parseInt(groupVal) : null,
+      deadline:  deadline.replace('T', ' ') + ':00',
+      groupId:   groupVal ? parseInt(groupVal) : null,
       category,
+      type,
+      published,
     });
     if (ok === null) return;
 
     overlay.classList.add('hidden');
     document.getElementById('form-new-travail').reset();
-    showToast('Travail cree.', 'success');
+    updateTravailTypeFields();
+    showToast(isJalon ? 'Jalon cree.' : 'Travail cree.', 'success');
     await renderTravaux();
   });
 }

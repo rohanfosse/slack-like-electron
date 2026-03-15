@@ -105,15 +105,22 @@ export function make(tag, props = {}) {
   return node;
 }
 
-// Cree un avatar DOM (evite les styles inline dans innerHTML)
-export function makeAvatar(initials, colorStr, size = 34) {
+// Cree un avatar DOM — photoData (base64 data URL) optionnel
+export function makeAvatar(initials, colorStr, size = 34, photoData = null) {
   const div = document.createElement('div');
   div.className = 'msg-avatar';
-  div.style.width      = `${size}px`;
-  div.style.height     = `${size}px`;
-  div.style.background = colorStr;
-  div.style.color      = '#fff';
-  div.style.fontSize   = `${Math.round(size * 0.33)}px`;
-  div.textContent      = initials;
+  div.style.cssText = `width:${size}px;height:${size}px;font-size:${Math.round(size * 0.33)}px;flex-shrink:0;border-radius:50%;display:flex;align-items:center;justify-content:center;overflow:hidden;`;
+
+  if (photoData) {
+    div.style.background = 'transparent';
+    const img = document.createElement('img');
+    img.src = photoData;
+    img.style.cssText = 'width:100%;height:100%;object-fit:cover;';
+    div.appendChild(img);
+  } else {
+    div.style.background = colorStr;
+    div.style.color      = '#fff';
+    div.textContent      = initials;
+  }
   return div;
 }

@@ -56,7 +56,66 @@ async function renderTeacherSidebar(nav) {
     nav.appendChild(section);
   }
 
+  // Bouton "Nouvelle promotion"
+  const btnNew = document.createElement('button');
+  btnNew.className = 'btn-new-promo';
+  btnNew.textContent = '+ Nouvelle promotion';
+  btnNew.addEventListener('click', () => openNewPromoForm(nav));
+  nav.appendChild(btnNew);
+
   attachNavDelegation(nav);
+}
+
+function openNewPromoForm(nav) {
+  // Eviter les doublons
+  if (document.getElementById('new-promo-form')) return;
+
+  const COLORS = ['#4A90D9','#7B68EE','#50C878','#E74C3C','#F39C12','#1ABC9C','#E91E63'];
+
+  const wrap = document.createElement('div');
+  wrap.id = 'new-promo-form';
+  wrap.className = 'new-promo-form';
+  wrap.innerHTML = `
+    <div class="form-group" style="margin:0">
+      <input type="text" id="new-promo-name" class="form-input" placeholder="Nom de la promotion" style="font-size:12px;padding:6px 10px;" />
+    </div>
+    <div class="promo-color-row" id="promo-color-row">
+      ${COLORS.map((c, i) => `<button type="button" class="color-swatch${i === 0 ? ' selected' : ''}" data-color="${c}" style="background:${c}" title="${c}"></button>`).join('')}
+    </div>
+    <div style="display:flex;gap:6px;margin-top:6px;">
+      <button id="btn-cancel-promo" class="btn-ghost" style="flex:1;font-size:12px;padding:5px">Annuler</button>
+      <button id="btn-confirm-promo" class="btn-primary" style="flex:1;font-size:12px;padding:5px">Creer</button>
+    </div>
+  `;
+
+  let selectedColor = COLORS[0];
+
+  wrap.querySelector('#promo-color-row').addEventListener('click', e => {
+    const swatch = e.target.closest('.color-swatch');
+    if (!swatch) return;
+    wrap.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('selected'));
+    swatch.classList.add('selected');
+    selectedColor = swatch.dataset.color;
+  });
+
+  wrap.querySelector('#btn-cancel-promo').addEventListener('click', () => wrap.remove());
+
+  wrap.querySelector('#btn-confirm-promo').addEventListener('click', async () => {
+    const { showToast } = await import('../utils.js');
+    const name = document.getElementById('new-promo-name').value.trim();
+    if (!name) return;
+
+    const ok = await call(window.api.createPromotion, { name, color: selectedColor });
+    if (ok === null) return;
+
+    wrap.remove();
+    showToast('Promotion creee.', 'success');
+    _delegationAttached = false;
+    await renderSidebar();
+  });
+
+  nav.insertBefore(wrap, nav.querySelector('.btn-new-promo'));
+  document.getElementById('new-promo-name').focus();
 }
 
 // ─── Sidebar etudiant ─────────────────────────────────────────────────────────

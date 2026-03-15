@@ -168,13 +168,30 @@
       <button id="modal-new-travail-close" class="btn-ghost">Fermer</button>
     </div>
     <form id="form-new-travail" style="padding:20px;display:flex;flex-direction:column;gap:14px;">
+
+      <!-- Type : Devoir ou Jalon -->
+      <div class="form-group">
+        <label class="form-label">Type</label>
+        <div class="nt-type-toggle">
+          <label class="nt-type-option">
+            <input type="radio" name="nt-type" value="devoir" checked />
+            <span>Devoir</span>
+          </label>
+          <label class="nt-type-option">
+            <input type="radio" name="nt-type" value="jalon" />
+            <span>Jalon</span>
+          </label>
+        </div>
+        <p class="form-hint" id="nt-type-hint">Un jalon est un evenement sans rendu (soutenance, revue…)</p>
+      </div>
+
       <div class="form-group">
         <label class="form-label" for="nt-title">Titre</label>
         <input type="text" id="nt-title" class="form-input" placeholder="Intitule du travail" required />
       </div>
       <div class="form-group">
-        <label class="form-label" for="nt-description">Consignes</label>
-        <textarea id="nt-description" class="form-textarea" rows="3" placeholder="Description et consignes…"></textarea>
+        <label class="form-label" for="nt-description">Description</label>
+        <textarea id="nt-description" class="form-textarea" rows="3" placeholder="Consignes, informations…"></textarea>
       </div>
       <div class="form-group">
         <label class="form-label" for="nt-category">Categorie</label>
@@ -186,19 +203,30 @@
           <option value="Rendu">Rendu</option>
         </select>
       </div>
-      <div class="form-group">
-        <label class="form-label" for="nt-group">Groupe (optionnel)</label>
-        <select id="nt-group" class="form-select">
-          <option value="">Toute la promotion</option>
-        </select>
+
+      <!-- Champs specifiques aux devoirs (caches pour les jalons) -->
+      <div id="nt-devoir-only-fields">
+        <div class="form-group">
+          <label class="form-label" for="nt-group">Groupe (optionnel)</label>
+          <select id="nt-group" class="form-select">
+            <option value="">Toute la promotion</option>
+          </select>
+        </div>
       </div>
+
       <div class="form-group">
-        <label class="form-label" for="nt-deadline">Date limite</label>
+        <label class="form-label" for="nt-deadline">Date limite / Date du jalon</label>
         <input type="datetime-local" id="nt-deadline" class="form-input" required />
       </div>
+
+      <label class="form-check-label">
+        <input type="checkbox" id="nt-draft" />
+        Enregistrer comme brouillon (invisible aux etudiants)
+      </label>
+
       <div class="modal-footer" style="padding:0;border:none;">
         <button type="button" id="btn-cancel-travail" class="btn-ghost">Annuler</button>
-        <button type="submit" class="btn-primary">Creer le travail</button>
+        <button type="submit" class="btn-primary">Creer</button>
       </div>
     </form>
   </div>
@@ -266,15 +294,7 @@
      ECRAN DE CONNEXION
 ════════════════════════════════════════ -->
 <div id="login-overlay">
-  <div id="login-panel">
-    <div id="login-logo">
-      <div class="logo-mark">CC</div>
-      <span class="logo-text">CESI Classroom</span>
-    </div>
-    <h2 id="login-title">Qui etes-vous ?</h2>
-    <p id="login-subtitle">Selectionnez votre identite pour continuer</p>
-    <div id="login-identity-grid"></div>
-  </div>
+  <!-- Contenu rendu dynamiquement par login.js -->
 </div>
 
 <!-- ════════════════════════════════════════

@@ -30,6 +30,7 @@ function register() {
 
   // Travaux
   handle('db:getTravaux',        (channelId)  => queries.getTravaux(channelId));
+  handle('db:getTravailById',    (travailId)  => queries.getTravailById(travailId));
   handle('db:createTravail',     (payload)    => queries.createTravail(payload));
   handle('db:getTravauxSuivi',   (travailId)  => queries.getTravauxSuivi(travailId));
 
@@ -55,6 +56,21 @@ function register() {
   handle('db:addRessource',      (payload)    => queries.addRessource(payload));
   handle('db:deleteRessource',   (id)         => queries.deleteRessource(id));
 
+  // Groupes par projet
+  handle('db:getTravailGroupMembers', (travailId) => queries.getTravailGroupMembers(travailId));
+  handle('db:setTravailGroupMember',  (payload)   => queries.setTravailGroupMember(payload));
+
+  // Brouillon / publication
+  handle('db:updateTravailPublished', (payload)   => queries.updateTravailPublished(payload));
+
+  // Promotions
+  handle('db:createPromotion',   (payload)    => queries.createPromotion(payload));
+  handle('db:deletePromotion',   (promoId)    => queries.deletePromotion(promoId));
+
+  // Inscription etudiant
+  handle('db:getStudentByEmail', (email)      => queries.getStudentByEmail(email));
+  handle('db:registerStudent',   (payload)    => queries.registerStudent(payload));
+
   // Identite / login
   handle('db:getIdentities',     ()           => queries.getIdentities());
 
@@ -75,6 +91,23 @@ function register() {
       return { ok: true, data: null };
     } catch (e) {
       return { ok: false, error: e.message };
+    }
+  });
+
+  // Dialogue image — photo de profil (retourne base64 data URL)
+  ipcMain.handle('dialog:openImage', async () => {
+    try {
+      const result = await dialog.showOpenDialog({
+        properties: ['openFile'],
+        filters: [{ name: 'Images', extensions: ['jpg', 'jpeg', 'png', 'webp', 'gif'] }],
+      });
+      if (result.canceled || !result.filePaths.length) return { ok: true, data: null };
+      const buffer  = fs.readFileSync(result.filePaths[0]);
+      const ext     = path.extname(result.filePaths[0]).slice(1).toLowerCase();
+      const mime    = ext === 'jpg' ? 'image/jpeg' : `image/${ext}`;
+      return { ok: true, data: `data:${mime};base64,${buffer.toString('base64')}` };
+    } catch (err) {
+      return { ok: false, error: err.message };
     }
   });
 

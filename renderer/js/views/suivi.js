@@ -23,8 +23,11 @@ export async function openSuiviModal(travail) {
 }
 
 async function renderSuivi(travailId) {
-  const body = document.getElementById('suivi-body');
-  const rows = await call(window.api.getTravauxSuivi, travailId);
+  const body    = document.getElementById('suivi-body');
+  const [rows, travail] = await Promise.all([
+    call(window.api.getTravauxSuivi, travailId),
+    call(window.api.getTravailById,  travailId),
+  ]);
   if (!rows) return;
 
   const total  = rows.length;
@@ -49,14 +52,18 @@ async function renderSuivi(travailId) {
     const statusDot = document.createElement('div');
     statusDot.className = 'suivi-status';
 
-    const avatar = makeAvatar(r.avatar_initials, avatarColor(r.student_name), 30);
+    const avatar = makeAvatar(r.avatar_initials, avatarColor(r.student_name), 30, r.photo_data ?? null);
 
     const info = document.createElement('div');
     info.className = 'suivi-info';
 
+    const groupBadge = r.travail_group_name
+      ? `<span class="group-tag" style="font-size:10px">${escapeHtml(r.travail_group_name)}</span>`
+      : '';
+
     if (rendu) {
       info.innerHTML = `
-        <div class="suivi-name">${escapeHtml(r.student_name)}</div>
+        <div class="suivi-name">${escapeHtml(r.student_name)} ${groupBadge}</div>
         <div class="suivi-detail">
           ${escapeHtml(r.file_name)} &middot; Depose le ${formatDate(r.submitted_at)}
         </div>
@@ -64,7 +71,7 @@ async function renderSuivi(travailId) {
       `;
     } else {
       info.innerHTML = `
-        <div class="suivi-name">${escapeHtml(r.student_name)}</div>
+        <div class="suivi-name">${escapeHtml(r.student_name)} ${groupBadge}</div>
         <div class="suivi-detail">Non rendu</div>
       `;
     }
@@ -87,12 +94,58 @@ async function renderSuivi(travailId) {
       }
     }
 
+    // Reassignation de groupe (si le travail est groupe)
+    if (travail?.group_id) {
+      const groupEl = await buildGroupSelect(travailId, r.student_id, r.travail_group_id);
+      row.appendChild(groupEl);
+    }
+
     row.appendChild(statusDot);
     row.appendChild(avatar);
     row.appendChild(info);
     row.appendChild(noteArea);
     body.appendChild(row);
   }
+}
+
+async function buildGroupSelect(travailId, studentId, currentGroupId) {
+  const wrap = document.createElement('div');
+  wrap.className = 'suivi-group-select-wrap';
+
+  // Recuperer les groupes de la promo
+  const travail = await call(window.api.getTravailById, travailId);
+  if (!travail) return wrap;
+
+  const channelId = travail.channel_id;
+  // On recupère les groupes via la promo (en passant par le channel)
+  // Pour simplifier on charge tous les groupes deja présents dans le suivi
+  const tgm = await call(window.api.getTravailGroupMembers, travailId);
+  if (!tgm) return wrap;
+
+  // Liste unique de groupes
+  const groupMap = new Map();
+  for (const m of tgm) groupMap.set(m.group_id, m.group_name);
+
+  const select = document.createElement('select');
+  select.className = 'suivi-group-select form-select';
+  select.innerHTML = '<option value="">— aucun groupe —</option>';
+  for (const [gid, gname] of groupMap) {
+    const opt = document.createElement('option');
+    opt.value = gid;
+    opt.textContent = gname;
+    if (gid === currentGroupId) opt.selected = true;
+    select.appendChild(opt);
+  }
+
+  select.addEventListener('change', async () => {
+    const newGroupId = select.value ? parseInt(select.value) : null;
+    await call(window.api.setTravailGroupMember, { travailId, studentId, groupId: newGroupId });
+    showToast('Groupe mis a jour.', 'success');
+    await renderSuivi(travailId);
+  });
+
+  wrap.appendChild(select);
+  return wrap;
 }
 
 // Champ de note inline dans le suivi (evite d'ouvrir une 2e modal)

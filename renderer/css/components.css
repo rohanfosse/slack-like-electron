@@ -1118,3 +1118,184 @@
   color: var(--text-secondary);
   margin-top: 6px;
 }
+
+/* ════════════════════════════════════════════
+   BADGE JALON
+════════════════════════════════════════════ */
+
+.jalon-badge {
+  background: rgba(123,104,238,.2);
+  color: #7B68EE;
+  border: 1px solid rgba(123,104,238,.35);
+  padding: 1px 7px;
+  border-radius: 3px;
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.draft-badge {
+  background: rgba(255,255,255,.08);
+  color: var(--text-muted);
+  border: 1px solid rgba(255,255,255,.14);
+  padding: 1px 7px;
+  border-radius: 3px;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.travail-card.jalon {
+  border-left: 3px solid #7B68EE;
+}
+.travail-card.draft {
+  opacity: .65;
+}
+.travail-card.draft .travail-title::after {
+  content: '';
+}
+
+/* ════════════════════════════════════════════
+   FORMULAIRE NOUVEAU TRAVAIL — TYPE TOGGLE
+════════════════════════════════════════════ */
+
+.nt-type-toggle {
+  display: flex;
+  gap: 6px;
+  margin-top: 4px;
+}
+.nt-type-option {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--text-secondary);
+  transition: all .15s;
+}
+.nt-type-option:has(input:checked) {
+  border-color: var(--accent);
+  color: var(--text-primary);
+  background: rgba(82,100,255,.1);
+}
+.nt-type-option input { display: none; }
+
+.form-hint {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin: 4px 0 0;
+  font-style: italic;
+}
+
+.form-check-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  user-select: none;
+}
+.form-check-label input[type=checkbox] {
+  accent-color: var(--accent);
+  width: 14px;
+  height: 14px;
+}
+
+/* ════════════════════════════════════════════
+   INSCRIPTION — FORMULAIRE
+════════════════════════════════════════════ */
+
+.register-photo-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 0;
+}
+.register-avatar-preview {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--bg-active);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  font-weight: 700;
+  flex-shrink: 0;
+  overflow: hidden;
+  transition: background .2s;
+}
+
+/* ════════════════════════════════════════════
+   SIDEBAR — NOUVELLE PROMO
+════════════════════════════════════════════ */
+
+.btn-new-promo {
+  display: block;
+  width: calc(100% - 16px);
+  margin: 8px 8px 4px;
+  padding: 7px 12px;
+  background: transparent;
+  border: 1px dashed rgba(255,255,255,.15);
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  font-family: var(--font);
+  font-size: 12px;
+  cursor: pointer;
+  text-align: left;
+  transition: all .15s;
+}
+.btn-new-promo:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: rgba(82,100,255,.06);
+}
+
+.new-promo-form {
+  margin: 4px 8px 8px;
+  padding: 10px 12px;
+  background: var(--bg-light);
+  border-radius: var(--radius);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.promo-color-row {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.color-swatch {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: transform .1s;
+}
+.color-swatch:hover   { transform: scale(1.15); }
+.color-swatch.selected { border-color: #fff; transform: scale(1.1); }
+
+/* ════════════════════════════════════════════
+   SUIVI — REASSIGNATION DE GROUPE
+════════════════════════════════════════════ */
+
+.suivi-group-select-wrap {
+  flex-shrink: 0;
+}
+.suivi-group-select {
+  font-size: 11px;
+  padding: 3px 6px;
+  height: auto;
+  background: var(--bg-medium);
+  border: 1px solid rgba(255,255,255,.1);
+  color: var(--text-secondary);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}

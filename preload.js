@@ -19,6 +19,7 @@ contextBridge.exposeInMainWorld('api', {
 
   // Travaux
   getTravaux:         (channelId)      => invoke('db:getTravaux',         channelId),
+  getTravailById:     (travailId)      => invoke('db:getTravailById',      travailId),
   createTravail:      (payload)        => invoke('db:createTravail',      payload),
   getTravauxSuivi:    (travailId)      => invoke('db:getTravauxSuivi',    travailId),
 
@@ -44,6 +45,21 @@ contextBridge.exposeInMainWorld('api', {
   addRessource:       (payload)        => invoke('db:addRessource',       payload),
   deleteRessource:    (id)             => invoke('db:deleteRessource',    id),
 
+  // Groupes par projet
+  getTravailGroupMembers: (travailId)  => invoke('db:getTravailGroupMembers', travailId),
+  setTravailGroupMember:  (payload)    => invoke('db:setTravailGroupMember',  payload),
+
+  // Brouillon
+  updateTravailPublished: (payload)    => invoke('db:updateTravailPublished', payload),
+
+  // Promotions
+  createPromotion:    (payload)        => invoke('db:createPromotion',        payload),
+  deletePromotion:    (promoId)        => invoke('db:deletePromotion',        promoId),
+
+  // Inscription
+  getStudentByEmail:  (email)          => invoke('db:getStudentByEmail',      email),
+  registerStudent:    (payload)        => invoke('db:registerStudent',        payload),
+
   // Identites (login)
   getIdentities:      ()               => invoke('db:getIdentities'),
 
@@ -52,6 +68,7 @@ contextBridge.exposeInMainWorld('api', {
   openExternal:       (url)            => invoke('shell:openExternal',    url),
 
   // Fichiers & export
+  openImageDialog:    ()               => invoke('dialog:openImage'),
   openFileDialog:     ()               => invoke('dialog:openFile'),
   exportCsv:          (travailId)      => invoke('export:csv',            travailId),
 });
