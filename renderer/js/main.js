@@ -7,7 +7,7 @@ import { initTravaux, bindNewTravailForm } from './views/travaux.js';
 import { bindDepotsModal, bindNoteModal }                                        from './views/depots.js';
 import { bindSuiviModal, openProfilPanel }                                       from './views/suivi.js';
 import { openGestionDevoir, bindGestionDevoir }                                  from './views/gestion-devoir.js';
-import { showLoginScreen }                         from './views/login.js';
+import { showLoginScreen, logout, showImpersonateModal } from './views/login.js';
 import { openTimeline, bindTimeline }              from './views/timeline.js';
 import { openRessourcesModal, bindRessourcesModal } from './views/ressources.js';
 import { openEcheancier, bindEcheancier }           from './views/echeancier.js';
@@ -20,6 +20,8 @@ import { refreshLucide }                            from './lucide.js';
 document.addEventListener('DOMContentLoaded', async () => {
   await showLoginScreen(onLogin);
 });
+
+let _appInitialized = false;
 
 async function onLogin(user) {
   refreshLucide();
@@ -36,132 +38,140 @@ async function onLogin(user) {
     navAvatar.title = user.name;
   }
 
-  // ── Initialisation des vues ───────────────────────────────────────────────
-
-  initSidebar({
-    onChannel: ({ id, promo, name, type }) => openChannel(id, promo, name, type),
-    onDm:      ({ id, promo, name })       => openDm(id, promo, name),
-  });
-
-  initCmdPalette({
-    onChannel: ({ id, promo, name, type }) => openChannel(id, promo, name, type),
-    onDm:      ({ id, promo, name })       => openDm(id, promo, name),
-    onSection: (section) => switchSection(section),
-  });
-
-  // ── Bouton recherche globale dans la barre de titre ───────────────────────
-  document.getElementById('global-search-btn')?.addEventListener('click', () => {
-    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', ctrlKey: true, bubbles: true }));
-  });
-
-  // ── Fermeture des overlays (touche Échap) — du plus haut au plus bas ──────
-  document.addEventListener('keydown', e => {
-    if (e.key !== 'Escape') return;
-    const order = [
-      '#document-preview-overlay',
-      '#modal-gestion-overlay',
-      '#timeline-overlay',
-      '#echeancier-overlay',
-      '#cmd-palette-overlay',
-    ];
-    for (const sel of order) {
-      const el = document.querySelector(sel);
-      if (el && !el.classList.contains('hidden')) { el.classList.add('hidden'); return; }
-    }
-    const modal = document.querySelector('.modal-overlay:not(.hidden)');
-    if (modal) modal.classList.add('hidden');
-  });
-
-  _initResizeHandles();
-
-  initTravaux({
-    onOpenGestion:    (travail) => openGestionDevoir(travail),
-    onOpenRessources: (travail) => openRessourcesModal(travail),
-  });
-
-  initSearch();
-
   // ── Adapter l'interface selon le rôle ─────────────────────────────────────
-
   const isStudent = user.type === 'student';
   const btnEcheancier = document.getElementById('btn-echeancier');
   if (btnEcheancier) btnEcheancier.style.display = isStudent ? 'none' : '';
 
-  // ── Navigation rail ───────────────────────────────────────────────────────
+  const impersonateRow = document.getElementById('settings-impersonate-row');
+  if (impersonateRow) impersonateRow.style.display = user.type === 'teacher' ? '' : 'none';
 
-  document.getElementById('nav-btn-messages').addEventListener('click',  () => switchSection('messages'));
-  document.getElementById('nav-btn-travaux').addEventListener('click',   () => switchSection('travaux'));
-  document.getElementById('nav-btn-documents').addEventListener('click', () => switchSection('documents'));
+  // ── Initialisation unique des écouteurs (une seule fois par chargement) ───
+  if (!_appInitialized) {
+    _appInitialized = true;
 
-  // Avatar → Paramètres
-  document.getElementById('nav-user-avatar').addEventListener('click', () => openSettings());
+    initSidebar({
+      onChannel: ({ id, promo, name, type }) => openChannel(id, promo, name, type),
+      onDm:      ({ id, promo, name })       => openDm(id, promo, name),
+    });
 
-  // ── Chargement initial ────────────────────────────────────────────────────
+    initCmdPalette({
+      onChannel: ({ id, promo, name, type }) => openChannel(id, promo, name, type),
+      onDm:      ({ id, promo, name })       => openDm(id, promo, name),
+      onSection: (section) => switchSection(section),
+    });
+
+    document.getElementById('global-search-btn')?.addEventListener('click', () => {
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', ctrlKey: true, bubbles: true }));
+    });
+
+    document.addEventListener('keydown', e => {
+      if (e.key !== 'Escape') return;
+      const order = [
+        '#document-preview-overlay',
+        '#modal-gestion-overlay',
+        '#timeline-overlay',
+        '#echeancier-overlay',
+        '#cmd-palette-overlay',
+      ];
+      for (const sel of order) {
+        const el = document.querySelector(sel);
+        if (el && !el.classList.contains('hidden')) { el.classList.add('hidden'); return; }
+      }
+      const modal = document.querySelector('.modal-overlay:not(.hidden)');
+      if (modal) modal.classList.add('hidden');
+    });
+
+    _initResizeHandles();
+
+    initTravaux({
+      onOpenGestion:    (travail) => openGestionDevoir(travail),
+      onOpenRessources: (travail) => openRessourcesModal(travail),
+    });
+
+    initSearch();
+
+    document.getElementById('nav-btn-messages').addEventListener('click',  () => switchSection('messages'));
+    document.getElementById('nav-btn-travaux').addEventListener('click',   () => switchSection('travaux'));
+    document.getElementById('nav-btn-documents').addEventListener('click', () => switchSection('documents'));
+
+    document.getElementById('nav-user-avatar').addEventListener('click', () => openSettings());
+
+    document.getElementById('btn-send').addEventListener('click', sendMessage);
+    document.getElementById('message-input').addEventListener('keydown', e => {
+      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+    });
+    initMessageInput();
+    initFormatToolbar();
+
+    document.getElementById('btn-view-gantt').addEventListener('click', () => switchTravauxView('gantt'));
+    document.getElementById('btn-view-rendus').addEventListener('click', () => switchTravauxView('rendus'));
+
+    bindNewTravailForm();
+    bindDepotsModal();
+    bindNoteModal();
+    bindSuiviModal();
+    bindRessourcesModal();
+    bindTimeline();
+    bindEcheancier();
+    bindDocumentsModal();
+    bindGestionDevoir();
+    bindSettings();
+
+    document.getElementById('btn-logout')?.addEventListener('click', () => {
+      document.getElementById('modal-settings-overlay').classList.add('hidden');
+      logout(onLogin);
+    });
+    document.getElementById('btn-impersonate')?.addEventListener('click', () => {
+      document.getElementById('modal-settings-overlay').classList.add('hidden');
+      showImpersonateModal(onLogin);
+    });
+
+    document.getElementById('btn-timeline').addEventListener('click', () => openTimeline());
+    document.getElementById('btn-echeancier')?.addEventListener('click', () => openEcheancier());
+
+    document.addEventListener('depot:success', () => updateTravauxBadge());
+
+    document.addEventListener('click', e => {
+      if (window.innerWidth > 1100) return;
+      const panel = document.getElementById('right-panel');
+      if (!panel || panel.classList.contains('hidden')) return;
+      if (!panel.contains(e.target)) {
+        state.rightPanel = null;
+        panel.classList.add('hidden');
+      }
+    });
+
+    startUnreadPolling();
+    document.addEventListener('unread:changed', () => renderSidebar());
+  }
+
+  // ── Chargement initial (à chaque login/switch) ────────────────────────────
+
+  // Réinitialiser la section courante sur Messages
+  _currentSection = 'messages';
+  document.getElementById('nav-btn-messages').classList.add('active');
+  document.getElementById('nav-btn-travaux').classList.remove('active');
+  document.getElementById('nav-btn-documents').classList.remove('active');
+  document.getElementById('main-area').classList.remove('hidden');
+  document.getElementById('travaux-area').classList.add('hidden');
+  document.getElementById('documents-area').classList.add('hidden');
+  document.getElementById('sidebar-section-messages').classList.remove('hidden');
+  document.getElementById('sidebar-section-travaux').classList.add('hidden');
+  document.getElementById('sidebar-section-documents').classList.add('hidden');
 
   await renderSidebar();
 
-  // ── Unread polling setup ──────────────────────────────────────────────────
   if (user.type === 'teacher' && state.activePromoId) {
     const chans = await call(window.api.getChannels, state.activePromoId);
     if (chans) setUnreadChannels(chans.map(c => c.id));
   }
-  startUnreadPolling();
-  document.addEventListener('unread:changed', () => renderSidebar());
 
-  // ── Envoi de message ──────────────────────────────────────────────────────
-
-  document.getElementById('btn-send').addEventListener('click', sendMessage);
-  document.getElementById('message-input').addEventListener('keydown', e => {
-    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
-  });
-  initMessageInput();
-  initFormatToolbar();
-
-  // ── Vue Gantt / rendus (section travaux) ──────────────────────────────────
-
-  document.getElementById('btn-view-gantt').addEventListener('click', () => switchTravauxView('gantt'));
-  document.getElementById('btn-view-rendus').addEventListener('click', () => switchTravauxView('rendus'));
-
-  // ── Modals ────────────────────────────────────────────────────────────────
-
-  bindNewTravailForm();
-  bindDepotsModal();
-  bindNoteModal();
-  bindSuiviModal();
-  bindRessourcesModal();
-  bindTimeline();
-  bindEcheancier();
-  bindDocumentsModal();
-  bindGestionDevoir();
-  bindSettings();
-
-  document.getElementById('btn-timeline').addEventListener('click', () => openTimeline());
-
-  const btnEch = document.getElementById('btn-echeancier');
-  if (btnEch) btnEch.addEventListener('click', () => openEcheancier());
-
-  // ── Badge Travaux + écoute de dépôt réussi ───────────────────────────────
   await updateTravauxBadge();
-  document.addEventListener('depot:success', () => updateTravauxBadge());
 
-  // ── Préférence : Documents ouverts par défaut ─────────────────────────────
   if (getPref('docsOpenByDefault')) {
     await switchSection('documents');
   }
-
-  // ── Fermeture du right-panel en cliquant en dehors (petits écrans) ────────
-  document.addEventListener('click', e => {
-    if (window.innerWidth > 1100) return;
-    const panel = document.getElementById('right-panel');
-    if (!panel || panel.classList.contains('hidden')) return;
-    if (!panel.contains(e.target)) {
-      state.rightPanel = null;
-      panel.classList.add('hidden');
-    }
-  });
-
-  // ── Modal détail travail (depuis timeline) ───────────────────────────────
-  // Câblé dynamiquement dans gantt.js / timeline.js
 }
 
 // ─── Badge Travaux ─────────────────────────────────────────────────────────

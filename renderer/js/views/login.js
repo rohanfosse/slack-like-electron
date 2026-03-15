@@ -2,18 +2,43 @@ import { call }        from '../api.js';
 import { state }       from '../state.js';
 import { avatarColor, escapeHtml } from '../utils.js';
 
-const TEACHER = { id: 0, name: 'Rohan Fosse', avatar_initials: 'RF', photo_data: null, type: 'teacher', promo_name: null, promo_id: null };
+const SESSION_KEY = 'cc_session';
 
-// ─── Ecran de connexion ───────────────────────────────────────────────────────
+// ─── Persistance de session ────────────────────────────────────────────────────
+
+function saveSession(user) {
+  try { localStorage.setItem(SESSION_KEY, JSON.stringify(user)); } catch {}
+}
+
+function loadSession() {
+  try { return JSON.parse(localStorage.getItem(SESSION_KEY) ?? 'null'); } catch { return null; }
+}
+
+export function logout(onLogin) {
+  try { localStorage.removeItem(SESSION_KEY); } catch {}
+  state.currentUser = null;
+  showLoginScreen(onLogin);
+}
+
+// ─── Point d'entrée ───────────────────────────────────────────────────────────
 
 export async function showLoginScreen(onLogin) {
   const overlay = document.getElementById('login-overlay');
   overlay.classList.remove('hidden');
 
-  await showIdentityGrid(onLogin);
+  // Auto-login si session sauvegardée
+  const saved = loadSession();
+  if (saved) {
+    _applyLogin(saved, onLogin);
+    return;
+  }
+
+  _showEmailForm(onLogin);
 }
 
-async function showIdentityGrid(onLogin) {
+// ─── Formulaire email + mot de passe ─────────────────────────────────────────
+
+function _showEmailForm(onLogin, prefillEmail = '') {
   const overlay = document.getElementById('login-overlay');
   overlay.innerHTML = `
     <div id="login-panel">
@@ -21,67 +46,169 @@ async function showIdentityGrid(onLogin) {
         <div class="logo-mark">CC</div>
         <span class="logo-text">CESI Classroom</span>
       </div>
-      <h2 id="login-title">Qui etes-vous ?</h2>
-      <p id="login-subtitle">Selectionnez votre identite pour continuer</p>
-      <div id="login-identity-grid"></div>
-      <button id="btn-new-account" class="btn-ghost" style="margin-top:20px;width:100%;font-size:13px;">
-        Nouveau compte etudiant
+      <h2 id="login-title">Connexion</h2>
+      <p id="login-subtitle">Entrez vos identifiants pour continuer</p>
+
+      <form id="login-form" style="width:100%;display:flex;flex-direction:column;gap:12px;margin-top:8px;">
+        <div class="form-group">
+          <label class="form-label" for="login-email">Adresse email</label>
+          <input type="email" id="login-email" class="form-input"
+                 placeholder="prenom.nom@viacesi.fr" autocomplete="email" required
+                 value="${escapeHtml(prefillEmail)}"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="login-password">Mot de passe</label>
+          <input type="password" id="login-password" class="form-input"
+                 placeholder="••••••••" autocomplete="current-password" required/>
+        </div>
+        <span id="login-error" class="field-error" style="margin-top:-4px;"></span>
+        <button type="submit" class="btn-primary" style="margin-top:4px;">Se connecter</button>
+      </form>
+
+      <button id="btn-new-account" class="btn-ghost" style="margin-top:16px;width:100%;font-size:13px;">
+        Nouveau compte étudiant
       </button>
     </div>
   `;
 
-  const identities = await call(window.api.getIdentities);
-  if (!identities) return;
+  const form    = document.getElementById('login-form');
+  const errEl   = document.getElementById('login-error');
+  const emailEl = document.getElementById('login-email');
+  const pwdEl   = document.getElementById('login-password');
 
-  const grid = document.getElementById('login-identity-grid');
+  // Focus sur le bon champ
+  if (prefillEmail) pwdEl.focus();
+  else emailEl.focus();
 
-  for (const identity of identities) {
-    const card = document.createElement('button');
-    card.className = 'login-identity-card';
-    if (identity.type === 'teacher') card.classList.add('teacher');
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    errEl.textContent = '';
+    const email    = emailEl.value.trim();
+    const password = pwdEl.value;
 
-    const initials = identity.avatar_initials ?? identity.name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
-    const color    = identity.type === 'teacher' ? 'var(--accent)' : avatarColor(identity.name);
+    const submitBtn = form.querySelector('[type="submit"]');
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Connexion…';
 
-    const avatarHtml = identity.photo_data
-      ? `<div class="login-avatar" style="overflow:hidden;background:transparent"><img src="${identity.photo_data}" style="width:100%;height:100%;object-fit:cover;border-radius:50%"/></div>`
-      : `<div class="login-avatar" style="background:${color}">${escapeHtml(initials)}</div>`;
+    const identity = await call(window.api.loginWithCredentials, email, password);
 
-    card.innerHTML = `
-      ${avatarHtml}
-      <div class="login-identity-name">${escapeHtml(identity.name)}</div>
-      <div class="login-identity-promo">${identity.promo_name ? escapeHtml(identity.promo_name) : 'Professeur'}</div>
-    `;
+    submitBtn.disabled = false;
+    submitBtn.textContent = 'Se connecter';
 
-    card.addEventListener('click', () => login(identity, initials, onLogin));
-    grid.appendChild(card);
-  }
+    if (!identity) {
+      errEl.textContent = 'Email ou mot de passe incorrect.';
+      pwdEl.value = '';
+      pwdEl.focus();
+      return;
+    }
+
+    const initials = identity.avatar_initials
+      ?? identity.name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
+
+    const user = {
+      id:              identity.id,
+      name:            identity.name,
+      avatar_initials: initials,
+      photo_data:      identity.photo_data ?? null,
+      type:            identity.type,
+      promo_id:        identity.promo_id,
+      promo_name:      identity.promo_name,
+    };
+
+    saveSession(user);
+    _applyLogin(user, onLogin);
+  });
 
   document.getElementById('btn-new-account').addEventListener('click', () => {
-    showRegisterForm(onLogin);
+    _showRegisterForm(onLogin);
   });
 }
 
-function login(identity, initials, onLogin) {
-  state.currentUser = {
-    id:              identity.id,
-    name:            identity.name,
-    avatar_initials: initials,
-    photo_data:      identity.photo_data ?? null,
-    type:            identity.type,
-    promo_id:        identity.promo_id,
-    promo_name:      identity.promo_name,
-  };
+// ─── Application du login ─────────────────────────────────────────────────────
+
+function _applyLogin(user, onLogin) {
+  state.currentUser = user;
   document.getElementById('login-overlay').classList.add('hidden');
-  onLogin(state.currentUser);
+  onLogin(user);
+}
+
+// ─── Impersonification (prof → étudiant) ─────────────────────────────────────
+
+export async function showImpersonateModal(onLogin) {
+  const identities = await call(window.api.getIdentities);
+  if (!identities) return;
+
+  const students = identities.filter(i => i.type === 'student');
+
+  let modal = document.getElementById('impersonate-modal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id        = 'impersonate-modal';
+    modal.className = 'modal-overlay';
+    modal.innerHTML = `
+      <div class="modal-box" style="max-width:480px">
+        <div class="modal-header">
+          <h3 class="modal-title">Accéder à un compte étudiant</h3>
+          <button class="modal-close" id="btn-close-impersonate" aria-label="Fermer">
+            <i data-lucide="x" aria-hidden="true"></i>
+          </button>
+        </div>
+        <div id="impersonate-list" style="display:flex;flex-direction:column;gap:6px;max-height:420px;overflow-y:auto;padding:12px 0;"></div>
+      </div>
+    `;
+    document.body.appendChild(modal);
+    document.getElementById('btn-close-impersonate').addEventListener('click', () => {
+      modal.classList.add('hidden');
+    });
+  }
+
+  const list = document.getElementById('impersonate-list');
+  list.innerHTML = '';
+
+  for (const s of students) {
+    const initials = s.avatar_initials ?? s.name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+    const color    = avatarColor(s.name);
+    const btn      = document.createElement('button');
+    btn.className  = 'login-identity-card';
+    btn.style.cssText = 'flex-direction:row;gap:12px;padding:10px 14px;text-align:left;';
+    btn.innerHTML  = `
+      ${s.photo_data
+        ? `<div class="login-avatar" style="overflow:hidden;background:transparent;flex-shrink:0"><img src="${s.photo_data}" style="width:100%;height:100%;object-fit:cover;border-radius:50%"/></div>`
+        : `<div class="login-avatar" style="background:${color};flex-shrink:0">${escapeHtml(initials)}</div>`
+      }
+      <div>
+        <div class="login-identity-name" style="font-size:13px;">${escapeHtml(s.name)}</div>
+        <div class="login-identity-promo" style="font-size:11px;">${escapeHtml(s.promo_name ?? '')}</div>
+      </div>
+    `;
+    btn.addEventListener('click', () => {
+      modal.classList.add('hidden');
+      const user = {
+        id:              s.id,
+        name:            s.name,
+        avatar_initials: initials,
+        photo_data:      s.photo_data ?? null,
+        type:            'student',
+        promo_id:        s.promo_id,
+        promo_name:      s.promo_name,
+      };
+      // Ne pas sauvegarder en session (retour teacher au rechargement)
+      state.currentUser = user;
+      document.getElementById('login-overlay').classList.add('hidden');
+      onLogin(user);
+    });
+    list.appendChild(btn);
+  }
+
+  modal.classList.remove('hidden');
 }
 
 // ─── Formulaire d'inscription ─────────────────────────────────────────────────
 
-async function showRegisterForm(onLogin) {
+async function _showRegisterForm(onLogin) {
   const overlay = document.getElementById('login-overlay');
 
-  const promotions = await call(window.api.getPromotions);
+  const promotions   = await call(window.api.getPromotions);
   const promoOptions = (promotions ?? [])
     .map(p => `<option value="${p.id}">${escapeHtml(p.name)}</option>`)
     .join('');
@@ -92,8 +219,8 @@ async function showRegisterForm(onLogin) {
         <div class="logo-mark">CC</div>
         <span class="logo-text">CESI Classroom</span>
       </div>
-      <h2 id="login-title">Nouveau compte etudiant</h2>
-      <p id="login-subtitle">Seules les adresses @viacesi.fr sont acceptees</p>
+      <h2 id="login-title">Nouveau compte étudiant</h2>
+      <p id="login-subtitle">Seules les adresses @viacesi.fr sont acceptées</p>
 
       <form id="register-form" style="width:100%;display:flex;flex-direction:column;gap:12px;margin-top:8px;">
 
@@ -109,7 +236,7 @@ async function showRegisterForm(onLogin) {
 
         <div style="display:flex;gap:10px;">
           <div class="form-group" style="flex:1">
-            <label class="form-label">Prenom</label>
+            <label class="form-label">Prénom</label>
             <input type="text" id="reg-firstname" class="form-input" placeholder="ex : Alice" required autocomplete="off"/>
           </div>
           <div class="form-group" style="flex:1">
@@ -132,15 +259,19 @@ async function showRegisterForm(onLogin) {
           </select>
         </div>
 
+        <div class="form-group">
+          <label class="form-label">Mot de passe</label>
+          <input type="password" id="reg-password" class="form-input" placeholder="Choisissez un mot de passe" required autocomplete="new-password" minlength="4"/>
+        </div>
+
         <div style="display:flex;gap:10px;margin-top:6px;">
           <button type="button" id="btn-back-login" class="btn-ghost" style="flex:1">Retour</button>
-          <button type="submit" class="btn-primary" style="flex:2">Creer mon compte</button>
+          <button type="submit" class="btn-primary" style="flex:2">Créer mon compte</button>
         </div>
       </form>
     </div>
   `;
 
-  // Mise a jour de l'apercu avatar en temps reel
   let pendingPhoto = null;
 
   const updatePreview = () => {
@@ -176,7 +307,7 @@ async function showRegisterForm(onLogin) {
   });
 
   document.getElementById('btn-back-login').addEventListener('click', () => {
-    showIdentityGrid(onLogin);
+    _showEmailForm(onLogin);
   });
 
   document.getElementById('register-form').addEventListener('submit', async (e) => {
@@ -186,6 +317,7 @@ async function showRegisterForm(onLogin) {
     const lastName  = document.getElementById('reg-lastname').value.trim();
     const email     = document.getElementById('reg-email').value.trim().toLowerCase();
     const promoId   = parseInt(document.getElementById('reg-promo').value);
+    const password  = document.getElementById('reg-password').value;
     const emailErr  = document.getElementById('reg-email-error');
 
     emailErr.textContent = '';
@@ -204,19 +336,29 @@ async function showRegisterForm(onLogin) {
         email,
         promoId,
         photoData: pendingPhoto,
+        password,
       });
 
-      if (result === null) return; // erreur affichee par call()
+      if (result === null) return;
 
-      // Recuperer le nouvel etudiant pour auto-login
       const student = await call(window.api.getStudentByEmail, email);
       if (!student) return;
 
       const initials = fullName.split(/\s+/).map(w => w[0]).join('').toUpperCase().slice(0, 2);
-      login({ ...student, type: 'student', avatar_initials: initials }, initials, onLogin);
+      const user = {
+        id:              student.id,
+        name:            student.name,
+        avatar_initials: initials,
+        photo_data:      student.photo_data ?? null,
+        type:            'student',
+        promo_id:        student.promo_id,
+        promo_name:      student.promo_name,
+      };
+      saveSession(user);
+      _applyLogin(user, onLogin);
 
     } catch (err) {
-      emailErr.textContent = err.message ?? 'Erreur lors de la creation du compte.';
+      emailErr.textContent = err.message ?? 'Erreur lors de la création du compte.';
     }
   });
 }

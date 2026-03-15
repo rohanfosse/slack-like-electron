@@ -179,6 +179,9 @@ function migrate(db) {
     db.exec('ALTER TABLE channels ADD COLUMN is_private INTEGER NOT NULL DEFAULT 0');
   if (!col('channels').includes('members'))
     db.exec('ALTER TABLE channels ADD COLUMN members TEXT DEFAULT NULL');
+
+  if (!col('students').includes('password'))
+    db.exec("ALTER TABLE students ADD COLUMN password TEXT DEFAULT 'cesi1234'");
 }
 
 // ─── Seed ────────────────────────────────────────────────────────────────────
@@ -718,16 +721,31 @@ function getStudentByEmail(email) {
   `).get(email);
 }
 
-function registerStudent({ name, email, promoId, photoData }) {
+function loginWithCredentials(email, password) {
+  const TEACHER_EMAIL    = 'rohan.fosse@cesi.fr';
+  const TEACHER_PASSWORD = 'admin';
+  if (email.trim().toLowerCase() === TEACHER_EMAIL && password === TEACHER_PASSWORD) {
+    return { id: 0, name: 'Rohan Fosse', avatar_initials: 'RF', photo_data: null, type: 'teacher', promo_name: null, promo_id: null };
+  }
+  return getDb().prepare(`
+    SELECT s.id, s.name, s.email, s.avatar_initials, s.photo_data, 'student' AS type,
+           p.name AS promo_name, p.id AS promo_id
+    FROM students s JOIN promotions p ON s.promo_id = p.id
+    WHERE LOWER(s.email) = LOWER(?) AND s.password = ?
+  `).get(email.trim(), password) ?? null;
+}
+
+function registerStudent({ name, email, promoId, photoData, password }) {
   const db = getDb();
   const existing = db.prepare('SELECT id FROM students WHERE email = ?').get(email);
   if (existing) throw new Error('Cette adresse email est deja utilisee.');
 
   const initials = name.trim().split(/\s+/).map(w => w[0]).join('').toUpperCase().slice(0, 2);
+  const pwd = (password ?? '').trim() || 'cesi1234';
   return db.prepare(`
-    INSERT INTO students (promo_id, name, email, avatar_initials, photo_data)
-    VALUES (?, ?, ?, ?, ?)
-  `).run(promoId, name.trim(), email.trim().toLowerCase(), initials, photoData ?? null);
+    INSERT INTO students (promo_id, name, email, avatar_initials, photo_data, password)
+    VALUES (?, ?, ?, ?, ?, ?)
+  `).run(promoId, name.trim(), email.trim().toLowerCase(), initials, photoData ?? null, pwd);
 }
 
 // ─── Gestion des promotions ────────────────────────────────────────────────────
@@ -1262,7 +1280,7 @@ module.exports = {
   getTravauxSuivi, getStudentTravaux,
   getDepots, addDepot, setNote, setFeedback,
   getStudentProfile,
-  getIdentities, getStudentByEmail, registerStudent,
+  getIdentities, getStudentByEmail, registerStudent, loginWithCredentials,
   getRessources, addRessource, deleteRessource,
   getTravailGroupMembers, setTravailGroupMember,
   updateTravailPublished,

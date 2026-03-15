@@ -620,6 +620,7 @@
       <nav class="settings-nav">
         <button class="settings-nav-item active" data-section="general">Général</button>
         <button class="settings-nav-item" data-section="appearance">Apparence</button>
+        <button class="settings-nav-item" data-section="account">Compte</button>
       </nav>
       <div class="settings-content">
 
@@ -643,6 +644,25 @@
         <div class="settings-section hidden" id="settings-section-appearance">
           <h4 class="settings-section-title">Apparence</h4>
           <p class="settings-placeholder">Options à venir…</p>
+        </div>
+
+        <!-- Section : Compte -->
+        <div class="settings-section hidden" id="settings-section-account">
+          <h4 class="settings-section-title">Compte</h4>
+          <div class="settings-option">
+            <div class="settings-option-info">
+              <span class="settings-option-name">Déconnexion</span>
+              <span class="settings-option-desc">Revenir à l'écran de connexion.</span>
+            </div>
+            <button id="btn-logout" class="btn-ghost" style="font-size:12px;color:var(--danger,#e74c3c);">Se déconnecter</button>
+          </div>
+          <div class="settings-option" id="settings-impersonate-row" style="display:none">
+            <div class="settings-option-info">
+              <span class="settings-option-name">Accéder à un compte étudiant</span>
+              <span class="settings-option-desc">Phase de test — se connecter temporairement comme un étudiant.</span>
+            </div>
+            <button id="btn-impersonate" class="btn-ghost" style="font-size:12px;">Choisir…</button>
+          </div>
         </div>
 
       </div>

@@ -97,7 +97,8 @@ function register() {
   handle('db:registerStudent',   (payload)    => queries.registerStudent(payload));
 
   // Identite / login
-  handle('db:getIdentities',     ()           => queries.getIdentities());
+  handle('db:getIdentities',         ()                    => queries.getIdentities());
+  handle('db:loginWithCredentials',  (email, password)     => queries.loginWithCredentials(email, password));
 
   // Ouverture de fichier / lien externe (pour les ressources)
   ipcMain.handle('shell:openPath', async (_event, filePath) => {

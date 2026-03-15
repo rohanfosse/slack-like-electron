@@ -62,7 +62,8 @@ contextBridge.exposeInMainWorld('api', {
   registerStudent:    (payload)        => invoke('db:registerStudent',        payload),
 
   // Identites (login)
-  getIdentities:      ()               => invoke('db:getIdentities'),
+  getIdentities:          ()                   => invoke('db:getIdentities'),
+  loginWithCredentials:   (email, password)    => invoke('db:loginWithCredentials', email, password),
 
   // Ouverture de fichiers / liens
   openPath:           (filePath)       => invoke('shell:openPath',        filePath),
