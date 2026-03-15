@@ -3,6 +3,26 @@ const fs      = require('fs');
 const path    = require('path');
 const queries = require('./db/index');
 
+// ─── Sécurité : validation des chemins de fichiers ────────────────────────────
+// Utilisée par fs:readFileBase64, fs:downloadFile et shell:openPath.
+// Rejette : non-string, null bytes, chemins relatifs, fichiers inexistants.
+// Limite : 50 Mo pour les lectures en mémoire.
+const MAX_READ_BYTES = 50 * 1024 * 1024;
+
+function assertSafePath(filePath) {
+  if (typeof filePath !== 'string' || !filePath.trim()) {
+    throw new Error('Chemin de fichier invalide.');
+  }
+  if (filePath.includes('\0')) {
+    throw new Error('Chemin de fichier invalide (null byte).');
+  }
+  const resolved = path.resolve(filePath);
+  if (!path.isAbsolute(resolved)) {
+    throw new Error('Chemin de fichier non absolu.');
+  }
+  return resolved;
+}
+
 // Wrapper uniforme : toutes les reponses ont la forme { ok, data } ou { ok: false, error }
 function handle(channel, fn) {
   ipcMain.handle(channel, async (_event, ...args) => {
@@ -103,16 +123,21 @@ function register() {
   // Ouverture de fichier / lien externe (pour les ressources)
   ipcMain.handle('shell:openPath', async (_event, filePath) => {
     try {
-      const err = await shell.openPath(filePath);
+      const resolved = assertSafePath(filePath);
+      if (!fs.existsSync(resolved)) return { ok: false, error: 'Fichier introuvable.' };
+      const err = await shell.openPath(resolved);
       return err ? { ok: false, error: err } : { ok: true, data: null };
     } catch (e) {
       return { ok: false, error: e.message };
     }
   });
 
+  // Protocoles autorisés : https, http (ressources pédagogiques), mailto (liens email)
   ipcMain.handle('shell:openExternal', async (_event, url) => {
     try {
-      if (!/^https?:\/\//i.test(url)) return { ok: false, error: 'URL invalide.' };
+      if (typeof url !== 'string' || !/^(https?:\/\/|mailto:)/i.test(url)) {
+        return { ok: false, error: 'URL invalide.' };
+      }
       await shell.openExternal(url);
       return { ok: true, data: null };
     } catch (e) {
@@ -137,8 +162,12 @@ function register() {
   // Lecture de fichier en base64 (prévisualisation in-app)
   ipcMain.handle('fs:readFileBase64', async (_event, filePath) => {
     try {
-      const buffer = fs.readFileSync(filePath);
-      const ext = path.extname(filePath).slice(1).toLowerCase();
+      const resolved = assertSafePath(filePath);
+      if (!fs.existsSync(resolved)) return { ok: false, error: 'Fichier introuvable.' };
+      const stats = fs.statSync(resolved);
+      if (stats.size > MAX_READ_BYTES) return { ok: false, error: 'Fichier trop volumineux (> 50 Mo).' };
+      const buffer = fs.readFileSync(resolved);
+      const ext    = path.extname(resolved).slice(1).toLowerCase();
       const mimeMap = {
         pdf: 'application/pdf', png: 'image/png', jpg: 'image/jpeg',
         jpeg: 'image/jpeg', gif: 'image/gif', webp: 'image/webp', svg: 'image/svg+xml',
@@ -154,10 +183,12 @@ function register() {
   // Téléchargement — copie vers un emplacement choisi par l'utilisateur
   ipcMain.handle('fs:downloadFile', async (_event, filePath) => {
     try {
-      const fileName = path.basename(filePath);
+      const resolved = assertSafePath(filePath);
+      if (!fs.existsSync(resolved)) return { ok: false, error: 'Fichier introuvable.' };
+      const fileName = path.basename(resolved);
       const { canceled, filePath: dest } = await dialog.showSaveDialog({ defaultPath: fileName });
       if (canceled || !dest) return { ok: true, data: null };
-      fs.copyFileSync(filePath, dest);
+      fs.copyFileSync(resolved, dest);
       return { ok: true, data: dest };
     } catch (err) {
       return { ok: false, error: err.message };

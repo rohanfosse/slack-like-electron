@@ -2,8 +2,26 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8" />
+  <!--
+    CSP — notes d'implémentation :
+    · style-src 'unsafe-inline' : requis car les vues JS injectent des couleurs dynamiques
+      via style= dans les templates innerHTML (promo_color, catColor…). Supprimable
+      uniquement après migration vers CSS custom properties ou un framework (Axe 3).
+    · img-src data: : nécessaire pour les photos de profil stockées en base64 (photo_data).
+    · media-src blob: : nécessaire pour la prévisualisation vidéo via URL.createObjectURL.
+    · connect-src est volontairement absent : l'app est 100% locale (pas de fetch externe).
+  -->
   <meta http-equiv="Content-Security-Policy"
-        content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'" />
+        content="
+          default-src 'self';
+          script-src  'self';
+          style-src   'self' 'unsafe-inline';
+          img-src     'self' data: blob:;
+          media-src   'self' data: blob:;
+          font-src    'self' data:;
+          object-src  'none';
+          base-uri    'none';
+        " />
   <title>CESI Classroom</title>
   <link rel="stylesheet" href="css/base.css" />
   <link rel="stylesheet" href="css/layout.css" />
