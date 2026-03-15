@@ -11,12 +11,12 @@ body {
    GLOBAL TOP BAR (Navigation supérieure)
 ══════════════════════════════════════════════ */
 #global-top-bar {
-  height: 48px;
+  min-height: 60px;
   flex-shrink: 0;
   display: flex;
   align-items: center;
   gap: 0;
-  padding: 0 12px;
+  padding: 20px 12px 0;
   /* Glassmorphism */
   background: rgba(16, 18, 22, .88);
   backdrop-filter: blur(14px) saturate(160%);
@@ -27,6 +27,14 @@ body {
   user-select: none;
   z-index: 100;
   position: relative;
+}
+
+#global-top-bar button,
+#global-top-bar input,
+#global-top-bar .btn-icon,
+#global-top-bar .nav-item,
+#global-top-bar #nav-user-avatar {
+  -webkit-app-region: no-drag;
 }
 
 /* ── Zone gauche : logo ── */
@@ -230,7 +238,7 @@ body {
 @media (max-width: 1100px) {
   #right-panel:not(.hidden) {
     position: fixed;
-    top: 48px; /* sous la top bar */
+    top: 60px; /* sous la top bar */
     right: 0;
     bottom: 0;
     width: var(--panel-width);
