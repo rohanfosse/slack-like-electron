@@ -148,7 +148,7 @@ function makeTravailCard(t) {
 // ─── Étudiants de la promo (pour group-builder) ──────────────────────────────
 let _promoStudents = [];
 
-async function openNewTravailModal() {
+export async function openNewTravailModal(contextPromoId = null) {
   const overlay = document.getElementById('modal-new-travail-overlay');
   overlay.classList.remove('hidden');
 
@@ -164,17 +164,39 @@ async function openNewTravailModal() {
   document.getElementById('nt-assign-indiv').checked = true;
   _updateGroupBuilder();
 
+  // Sélecteur de canal (visible uniquement quand ouvert sans canal actif)
+  const channelRow = document.getElementById('nt-channel-row');
+  const channelSel = document.getElementById('nt-channel');
+  const promoId = state.activeChannelId ? state.activePromoId : (contextPromoId ?? state.activePromoId);
+  if (channelRow && channelSel) {
+    if (!state.activeChannelId) {
+      channelRow.style.display = '';
+      channelSel.innerHTML = '<option value="">— Sélectionner un canal —</option>';
+      if (promoId) {
+        const channels = await call(window.api.getChannels, promoId);
+        if (channels) channels.forEach(ch => {
+          const opt = document.createElement('option');
+          opt.value = ch.id;
+          opt.textContent = `#${ch.name}`;
+          channelSel.appendChild(opt);
+        });
+      }
+    } else {
+      channelRow.style.display = 'none';
+    }
+  }
+
   // Charger les étudiants de la promo pour le group-builder
   _promoStudents = [];
-  if (state.activePromoId) {
-    _promoStudents = (await call(window.api.getStudents, state.activePromoId)) ?? [];
+  if (promoId) {
+    _promoStudents = (await call(window.api.getStudents, promoId)) ?? [];
   }
 
   // Charger les groupes de la promo courante
   const groupSelect = document.getElementById('nt-group');
   groupSelect.innerHTML = '<option value="">Toute la promotion</option>';
-  if (state.activePromoId) {
-    const groups = await call(window.api.getGroups, state.activePromoId);
+  if (promoId) {
+    const groups = await call(window.api.getGroups, promoId);
     if (groups) {
       for (const g of groups) {
         const opt = document.createElement('option');
@@ -264,7 +286,8 @@ export function bindNewTravailForm() {
 
   document.getElementById('form-new-travail').addEventListener('submit', async e => {
     e.preventDefault();
-    if (!state.activeChannelId) { showToast('Selectionnez d\'abord un canal.'); return; }
+    const channelId = state.activeChannelId ?? parseInt(document.getElementById('nt-channel')?.value || '0') || null;
+    if (!channelId) { showToast('Sélectionnez un canal.'); return; }
 
     const type        = overlay.querySelector('input[name="nt-type"]:checked')?.value ?? 'devoir';
     const isJalon     = type === 'jalon';
@@ -281,7 +304,7 @@ export function bindNewTravailForm() {
     const groupes = assignation === 'groupe' ? _collectGroupes() : [];
 
     const ok = await call(window.api.createTravail, {
-      channelId: state.activeChannelId,
+      channelId,
       title,
       description,
       startDate: startDate ? startDate.replace('T', ' ') + ':00' : null,

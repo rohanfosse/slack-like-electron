@@ -158,8 +158,9 @@ async function _renderTeacherChannels(nav) {
     nav.appendChild(lbl);
 
     for (const ch of channels) {
+      const unread = state.unread[ch.id] ?? 0;
       const item = document.createElement('div');
-      item.className = 'channel-item';
+      item.className = `channel-item${unread > 0 ? ' unread' : ''}`;
       item.dataset.channelId   = ch.id;
       item.dataset.promoId     = promo.id;
       item.dataset.channelName = ch.name;
@@ -171,6 +172,7 @@ async function _renderTeacherChannels(nav) {
         <span>${escapeHtml(ch.name)}</span>
         ${ch.is_private ? '<i data-lucide="lock" class="channel-lock-icon" aria-hidden="true"></i>' : ''}
         ${ch.type === 'annonce' ? '<span class="channel-annonce">Annonce</span>' : ''}
+        ${unread > 0 ? `<span class="unread-badge">${unread > 99 ? '99+' : unread}</span>` : ''}
       `;
       nav.appendChild(item);
     }
@@ -377,8 +379,10 @@ function buildPromoSection(promo, channels, students, showDms) {
     </div>
     <div class="promo-channels">
       <div class="section-label">Canaux</div>
-      ${channels.map(ch => `
-        <div class="channel-item"
+      ${channels.map(ch => {
+        const u = state.unread[ch.id] ?? 0;
+        return `
+        <div class="channel-item${u > 0 ? ' unread' : ''}"
              data-channel-id="${ch.id}"
              data-promo-id="${promo.id}"
              data-channel-name="${escapeHtml(ch.name)}"
@@ -388,8 +392,9 @@ function buildPromoSection(promo, channels, students, showDms) {
           <span class="channel-prefix">#</span>
           <span>${escapeHtml(ch.name)}</span>
           ${annonceBadge(ch.type)}
-        </div>
-      `).join('')}
+          ${u > 0 ? `<span class="unread-badge">${u > 99 ? '99+' : u}</span>` : ''}
+        </div>`;
+      }).join('')}
       ${dmRows}
     </div>
   `;

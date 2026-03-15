@@ -1,9 +1,9 @@
 import { state }           from './state.js';
 import { call }            from './api.js';
 import { deadlineClass }   from './utils.js';
-import { renderMessages, sendMessage, initSearch, renderPinnedBanner, initMessageInput } from './views/chat.js';
+import { renderMessages, sendMessage, initSearch, renderPinnedBanner, initMessageInput, initFormatToolbar, markChannelRead, setUnreadChannels, startUnreadPolling } from './views/chat.js';
 import { renderSidebar, initSidebar }              from './views/sidebar.js';
-import { openPanel, closePanel, renderTravaux, initTravaux, bindNewTravailForm } from './views/travaux.js';
+import { initTravaux, bindNewTravailForm } from './views/travaux.js';
 import { bindDepotsModal, bindNoteModal }                                        from './views/depots.js';
 import { bindSuiviModal, openProfilPanel }                                       from './views/suivi.js';
 import { openGestionDevoir, bindGestionDevoir }                                  from './views/gestion-devoir.js';
@@ -85,12 +85,10 @@ async function onLogin(user) {
   // ── Adapter l'interface selon le rôle ─────────────────────────────────────
 
   const isStudent = user.type === 'student';
-  const btnTravaux     = document.getElementById('btn-travaux');
   const btnMesTravaux  = document.getElementById('btn-mes-travaux');
   const btnEcheancier  = document.getElementById('btn-echeancier');
 
   if (isStudent) {
-    btnTravaux.style.display    = 'none';
     if (btnMesTravaux)  btnMesTravaux.style.display  = '';
     if (btnEcheancier)  btnEcheancier.style.display  = 'none';
   } else {
@@ -111,6 +109,14 @@ async function onLogin(user) {
 
   await renderSidebar();
 
+  // ── Unread polling setup ──────────────────────────────────────────────────
+  if (user.type === 'teacher' && state.activePromoId) {
+    const chans = await call(window.api.getChannels, state.activePromoId);
+    if (chans) setUnreadChannels(chans.map(c => c.id));
+  }
+  startUnreadPolling();
+  document.addEventListener('unread:changed', () => renderSidebar());
+
   // ── Envoi de message ──────────────────────────────────────────────────────
 
   document.getElementById('btn-send').addEventListener('click', sendMessage);
@@ -118,13 +124,7 @@ async function onLogin(user) {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
   });
   initMessageInput();
-
-  // ── Bouton Travaux (professeur — panel droit) ──────────────────────────────
-
-  btnTravaux.addEventListener('click', () => {
-    if (state.rightPanel === 'travaux') closePanel();
-    else openPanel();
-  });
+  initFormatToolbar();
 
   // ── Bouton Mes travaux (étudiant) ─────────────────────────────────────────
 
@@ -321,14 +321,12 @@ async function openChannel(channelId, promoId, channelName, channelType) {
     inputEl.placeholder = `Envoyer dans #${channelName ?? ''}`;
   }
 
-  const btnTravaux = document.getElementById('btn-travaux');
-  if (state.currentUser?.type === 'teacher') {
-    btnTravaux.style.display = '';
-  }
+  // Marquer le canal comme lu
+  markChannelRead(channelId);
+  renderSidebar();
 
   await renderMessages();
   await renderPinnedBanner(channelId);
-  if (state.rightPanel === 'travaux') await renderTravaux();
 
   // ── Bannière travaux en attente (étudiant) ───────────────────────────────
   document.getElementById('channel-pending-banner')?.remove();
@@ -371,9 +369,7 @@ async function openDm(studentId, promoId, studentName) {
   document.getElementById('message-input').placeholder = `Message prive — ${studentName ?? ''}`;
 
   if (state.currentUser?.type === 'teacher') {
-    document.getElementById('btn-travaux').style.display = 'none';
     await openProfilPanel(studentId);
-    if (state.rightPanel === 'travaux') closePanel();
   }
 
   await renderMessages();

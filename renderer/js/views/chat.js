@@ -22,10 +22,49 @@ export function initMessageInput() {
   });
 }
 
+// ─── Format toolbar ───────────────────────────────────────────────────────────
+
+export function initFormatToolbar() {
+  const toolbar = document.getElementById('chat-format-toolbar');
+  const input   = document.getElementById('message-input');
+  if (!toolbar || !input) return;
+
+  const WRAP = { bold: ['**','**'], italic: ['*','*'], code: ['`','`'] };
+
+  toolbar.addEventListener('click', e => {
+    const btn = e.target.closest('.fmt-btn');
+    if (!btn) return;
+    const [pre, post] = WRAP[btn.dataset.fmt] ?? [];
+    if (!pre) return;
+
+    const start = input.selectionStart;
+    const end   = input.selectionEnd;
+    const sel   = input.value.slice(start, end) || 'texte';
+    const before = input.value.slice(0, start);
+    const after  = input.value.slice(end);
+
+    input.value = before + pre + sel + post + after;
+    input.focus();
+    input.selectionStart = start + pre.length;
+    input.selectionEnd   = start + pre.length + sel.length;
+    // Trigger auto-resize
+    input.dispatchEvent(new Event('input'));
+  });
+}
+
+// ─── Markdown inline parser ───────────────────────────────────────────────────
+
+function _parseMarkdown(html) {
+  return html
+    .replace(/\*\*(.*?)\*\*/g,  '<strong>$1</strong>')
+    .replace(/\*(.*?)\*/g,       '<em>$1</em>')
+    .replace(/`(.*?)`/g,         '<code class="inline-code">$1</code>');
+}
+
 // ─── Mentions ─────────────────────────────────────────────────────────────────
 
 function _applyMentions(html) {
-  return html.replace(/@(\w[\w\s]*?\b)/g, (match, name) =>
+  return html.replace(/@(everyone|\w[\w\s]*?\w)/g, match =>
     `<span class="mention-tag">${match}</span>`
   );
 }
@@ -33,6 +72,34 @@ function _applyMentions(html) {
 function _hasMention(text) {
   const userName = state.currentUser?.name ?? '';
   return /@everyone\b/i.test(text) || (userName && text.includes('@' + userName));
+}
+
+// ─── Non-lus (unread) ────────────────────────────────────────────────────────
+
+const _lastMsgTs = new Map(); // channelId -> ISO string of latest msg
+let   _pollChannelIds = [];
+
+export function setUnreadChannels(ids) { _pollChannelIds = ids ?? []; }
+
+export function markChannelRead(channelId) {
+  delete state.unread[channelId];
+}
+
+export function startUnreadPolling() {
+  setInterval(async () => {
+    for (const chId of _pollChannelIds) {
+      if (chId === state.activeChannelId) continue;
+      const msgs = await call(window.api.getChannelMessages, chId);
+      if (!msgs?.length) continue;
+      const latest = msgs[msgs.length - 1].created_at;
+      const prev   = _lastMsgTs.get(chId);
+      if (prev !== undefined && latest > prev) {
+        state.unread[chId] = (state.unread[chId] ?? 0) + 1;
+        document.dispatchEvent(new CustomEvent('unread:changed'));
+      }
+      _lastMsgTs.set(chId, latest);
+    }
+  }, 20000);
 }
 
 // ─── Réactions en mémoire ────────────────────────────────────────────────────
@@ -191,7 +258,7 @@ export async function renderMessages(searchTerm = '') {
 
     const rawContent = searchTerm
       ? highlightTerm(msg.content, searchTerm)
-      : _applyMentions(escapeHtml(msg.content));
+      : _applyMentions(_parseMarkdown(escapeHtml(msg.content)));
 
     const isMention = !searchTerm && _hasMention(msg.content);
 

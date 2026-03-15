@@ -2,10 +2,11 @@ import { call }      from '../api.js';
 import { state }     from '../state.js';
 import { escapeHtml, formatDate, deadlineClass, deadlineLabel } from '../utils.js';
 import { CATEGORIES } from './timeline.js';
-import { renderGantt, setGanttPromo, openTravailDetail } from './gantt.js';
+import { renderGantt, setGanttPromo } from './gantt.js';
 import { renderRendus, setRendusPromo } from './rendus.js';
+import { openGestionDevoir } from './gestion-devoir.js';
+import { openNewTravailModal } from './travaux.js';
 
-let _activeTab   = 'list'; // 'list' | 'rendus'
 let _activePromo = null;   // null = toutes
 let _activeView  = 'gantt'; // 'gantt' | 'rendus' (boutons header)
 
@@ -30,8 +31,16 @@ export async function initTravauxSection() {
   document.getElementById('btn-view-gantt').classList.toggle('hidden', isStudent);
   document.getElementById('btn-view-rendus').classList.toggle('hidden', isStudent);
 
+  const btnNewTravail = document.getElementById('btn-new-travail-header');
+  if (btnNewTravail) {
+    btnNewTravail.classList.toggle('hidden', isStudent);
+    if (!btnNewTravail._bound) {
+      btnNewTravail._bound = true;
+      btnNewTravail.addEventListener('click', () => openNewTravailModal(_activePromo));
+    }
+  }
+
   if (isStudent) {
-    // Masquer Gantt/Rendus, afficher la vue dashboard étudiant
     document.getElementById('gantt-view').classList.add('hidden');
     document.getElementById('rendus-view').classList.add('hidden');
     const sv = document.getElementById('student-view');
@@ -39,11 +48,6 @@ export async function initTravauxSection() {
 
     const { renderStudentDashboard } = await import('./student-dashboard.js');
     await renderStudentDashboard(sv);
-
-    // Masquer l'onglet "Rendus" (inutile pour un étudiant)
-    document.querySelectorAll('#travaux-sidebar-tabs .trv-tab').forEach(t => {
-      if (t.dataset.tab === 'rendus') t.style.display = 'none';
-    });
 
     await renderTravauxSidebar();
   } else {
@@ -58,25 +62,6 @@ export async function initTravauxSection() {
 export async function renderTravauxSidebar() {
   await renderPromoFilter();
   await renderTravauxNav();
-  bindSidebarTabs();
-}
-
-function bindSidebarTabs() {
-  const tabs = document.querySelectorAll('#travaux-sidebar-tabs .trv-tab');
-  tabs.forEach(tab => {
-    tab.onclick = async () => {
-      tabs.forEach(t => t.classList.remove('active'));
-      tab.classList.add('active');
-      _activeTab = tab.dataset.tab;
-      await renderTravauxNav();
-      // Si on clique sur "Rendus" dans sidebar, passer la vue principale aux rendus
-      if (_activeTab === 'rendus') {
-        await switchTravauxView('rendus');
-      } else {
-        await switchTravauxView('gantt');
-      }
-    };
-  });
 }
 
 async function renderPromoFilter() {
@@ -126,11 +111,6 @@ async function renderPromoFilter() {
 async function renderTravauxNav() {
   const nav = document.getElementById('travaux-nav');
   if (!nav) return;
-
-  if (_activeTab === 'rendus') {
-    await renderRendusSidebar(nav);
-    return;
-  }
 
   // Liste des travaux
   const user = state.currentUser;
@@ -196,58 +176,10 @@ async function renderTravauxNav() {
     if (!item) return;
     const id = parseInt(item.dataset.travailId);
     const t  = travaux.find(x => x.id === id);
-    if (t) openTravailDetail(t);
+    if (t && t.type !== 'jalon') openGestionDevoir(t);
   });
 }
 
-async function renderRendusSidebar(nav) {
-  // Dans le sidebar Rendus : stats rapides par promo
-  const user = state.currentUser;
-  if (user?.type === 'student') {
-    nav.innerHTML = '<div class="nav-empty">Vos rendus sont affichés à droite.</div>';
-    return;
-  }
-
-  const rendus = (await call(window.api.getAllRendus, _activePromo ?? null)) ?? [];
-  const noted  = rendus.filter(r => r.note != null).length;
-  const unoted = rendus.length - noted;
-
-  // Stats groupées par travail
-  const byTravail = new Map();
-  for (const r of rendus) {
-    if (!byTravail.has(r.travail_id)) byTravail.set(r.travail_id, { title: r.travail_title, category: r.category, count: 0, noted: 0 });
-    const g = byTravail.get(r.travail_id);
-    g.count++;
-    if (r.note != null) g.noted++;
-  }
-
-  let html = `
-    <div class="trv-rendus-stats">
-      <div class="trv-stat"><span>${rendus.length}</span>Dépôts</div>
-      <div class="trv-stat ok"><span>${noted}</span>Notés</div>
-      ${unoted > 0 ? `<div class="trv-stat warn"><span>${unoted}</span>À noter</div>` : ''}
-    </div>
-  `;
-
-  for (const [, g] of byTravail) {
-    const catColor = CATEGORIES[g.category]?.color ?? '#888';
-    const pct = g.count > 0 ? Math.round(g.noted / g.count * 100) : 0;
-    html += `
-      <div class="trv-nav-item" style="padding:8px 10px">
-        <span class="trv-nav-dot" style="background:${catColor}"></span>
-        <div class="trv-nav-item-content">
-          <div class="trv-nav-item-title">${escapeHtml(g.title)}</div>
-          <div class="trv-nav-item-meta">${g.noted}/${g.count} notés</div>
-          <div class="trv-nav-progress">
-            <div class="trv-nav-progress-fill" style="width:${pct}%;background:${catColor}"></div>
-          </div>
-        </div>
-      </div>
-    `;
-  }
-
-  nav.innerHTML = html;
-}
 
 // ─── Basculer entre Gantt et Rendus ──────────────────────────────────────────
 

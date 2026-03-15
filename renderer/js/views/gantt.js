@@ -2,6 +2,7 @@ import { call }      from '../api.js';
 import { state }     from '../state.js';
 import { escapeHtml, formatDate } from '../utils.js';
 import { CATEGORIES } from './timeline.js';
+import { openGestionDevoir } from './gestion-devoir.js';
 
 // Durées par défaut (jours) quand start_date est absent
 const DEFAULT_DURATIONS = {
@@ -144,7 +145,7 @@ export async function renderGantt(container) {
     if (!row) return;
     const id = parseInt(row.dataset.travailId);
     const t  = items.find(x => x.id === id);
-    if (t) openTravailDetail(t);
+    if (t) openGestionDevoir(t);
   });
 }
 

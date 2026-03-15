@@ -48,6 +48,44 @@ export async function deposerFichier(travail, onSuccess = null, preselectedPath 
   }
 }
 
+// ─── Dépôt avec état de succès ────────────────────────────────────────────────
+
+async function _deposerWithSuccess(travail, dropZone, onSuccess, preselectedPath = null) {
+  const filePath = preselectedPath ?? await call(window.api.openFileDialog);
+  if (!filePath) return;
+
+  const fileName = filePath.split(/[\\/]/).pop();
+
+  const cancelled = await showUndoToast(`Dépôt : ${fileName}`, 5000);
+  if (cancelled) { showToast('Dépôt annulé.', 'error'); return; }
+
+  const ok = await call(window.api.addDepot, {
+    travailId: travail.id,
+    studentId: state.currentUser.id,
+    filePath,
+    fileName,
+  });
+  if (ok === null) return;
+
+  document.dispatchEvent(new CustomEvent('depot:success'));
+
+  // ── Afficher l'état de succès ────────────────────────────────────────────
+  const successEl = document.createElement('div');
+  successEl.className = 'upload-success-state';
+  successEl.innerHTML = `
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="36" height="36">
+      <circle cx="12" cy="12" r="10"/>
+      <polyline points="9 12 11 14 15 10"/>
+    </svg>
+    <span>Devoir rendu avec succès !</span>
+  `;
+  dropZone.style.display = 'none';
+  dropZone.parentElement.insertBefore(successEl, dropZone.nextSibling);
+
+  await new Promise(r => setTimeout(r, 2000));
+  if (onSuccess) await onSuccess();
+}
+
 // ─── Soumission d'un lien (GitHub, Figma, Vercel…) ───────────────────────────
 
 export async function soumettreLien(travail, linkUrl, deployUrl, onSuccess = null) {
@@ -310,17 +348,20 @@ function _buildARendreCard(t, container) {
     </button>
   `;
 
-  dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('std-drop-active'); });
-  dropZone.addEventListener('dragleave', () => dropZone.classList.remove('std-drop-active'));
+  dropZone.addEventListener('dragenter', e => { e.preventDefault(); dropZone.classList.add('drag-active'); });
+  dropZone.addEventListener('dragover',  e => { e.preventDefault(); dropZone.classList.add('drag-active'); });
+  dropZone.addEventListener('dragleave', e => {
+    if (!dropZone.contains(e.relatedTarget)) dropZone.classList.remove('drag-active');
+  });
   dropZone.addEventListener('drop', async e => {
     e.preventDefault();
-    dropZone.classList.remove('std-drop-active');
+    dropZone.classList.remove('drag-active');
     const file = e.dataTransfer.files[0];
-    if (file) await deposerFichier(t, refresh, file.path);
+    if (file) await _deposerWithSuccess(t, dropZone, refresh, file.path);
   });
   dropZone.querySelector('.std-btn-deposer').addEventListener('click', e => {
     e.stopPropagation();
-    deposerFichier(t, refresh);
+    _deposerWithSuccess(t, dropZone, refresh);
   });
   dropZone.addEventListener('keydown', e => {
     if (e.key === 'Enter') dropZone.querySelector('.std-btn-deposer').click();

@@ -16,4 +16,7 @@ export const state = {
 
   // Recherche
   searchActive:       false,  // barre de recherche visible
+
+  // Non-lus (channelId -> count)
+  unread:             {},
 };

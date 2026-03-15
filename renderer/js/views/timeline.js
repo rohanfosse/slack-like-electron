@@ -2,7 +2,7 @@ import { call }      from '../api.js';
 import { state }     from '../state.js';
 import { escapeHtml, formatDate, deadlineClass, deadlineLabel } from '../utils.js';
 import { renderRessourcesInline } from './ressources.js';
-import { openTravailDetail } from './gantt.js';
+import { openGestionDevoir } from './gestion-devoir.js';
 
 // Categories disponibles et leurs couleurs
 export const CATEGORIES = {
@@ -231,7 +231,7 @@ async function renderTimeline() {
       // Clic sur la carte → modal détail
       card.addEventListener('click', e => {
         if (e.target.closest('button, a')) return;
-        openTravailDetail({ ...t, students_total: null, depots_count: 0 });
+        openGestionDevoir(t);
       });
 
       monthEl.appendChild(card);

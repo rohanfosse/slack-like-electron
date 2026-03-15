@@ -3386,6 +3386,81 @@ button:focus-visible {
   padding: 2px 0;
 }
 
+/* ── Format toolbar ──────────────────────────────────────────────── */
+.chat-format-toolbar {
+  display: flex;
+  gap: 2px;
+  padding: 4px 4px 0;
+}
+.fmt-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 4px 6px;
+  border-radius: 5px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background .1s, color .1s;
+}
+.fmt-btn:hover { background: var(--bg-hover); color: var(--text-primary); }
+.fmt-btn .lucide { width: 14px; height: 14px; }
+
+/* ── Inline code ─────────────────────────────────────────────────── */
+.inline-code {
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-size: .85em;
+  background: rgba(255,255,255,.08);
+  border: 1px solid rgba(255,255,255,.1);
+  border-radius: 3px;
+  padding: 1px 5px;
+  color: #e8a87c;
+}
+
+/* ── Unread badges ───────────────────────────────────────────────── */
+.channel-item.unread { font-weight: 600; color: #fff; }
+.unread-badge {
+  margin-left: auto;
+  background: var(--color-danger, #e74c3c);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1;
+  min-width: 18px;
+  height: 18px;
+  border-radius: 9px;
+  padding: 0 5px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+/* ── Dépôt — drag active + succès ───────────────────────────────── */
+.std-drop-zone { transition: all .2s; }
+.std-drop-zone.drag-active {
+  border-color: var(--accent) !important;
+  background: rgba(74,144,217,.1);
+  transform: scale(1.02);
+}
+.upload-success-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 20px;
+  color: #2ecc71;
+  font-size: 13px;
+  font-weight: 500;
+  animation: pop-in .25s cubic-bezier(.34,1.56,.64,1) both;
+}
+@keyframes pop-in {
+  from { transform: scale(.6); opacity: 0; }
+  to   { transform: scale(1);  opacity: 1; }
+}
+.upload-success-state svg { stroke: #2ecc71; }
+
 /* ── Mentions ────────────────────────────────────────────────────── */
 .mention-tag {
   font-weight: 600;
