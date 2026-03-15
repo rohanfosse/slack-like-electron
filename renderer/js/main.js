@@ -1,7 +1,7 @@
 import { state }           from './state.js';
 import { call }            from './api.js';
 import { deadlineClass }   from './utils.js';
-import { renderMessages, sendMessage, initSearch, renderPinnedBanner } from './views/chat.js';
+import { renderMessages, sendMessage, initSearch, renderPinnedBanner, initMessageInput } from './views/chat.js';
 import { renderSidebar, initSidebar }              from './views/sidebar.js';
 import { openPanel, closePanel, renderTravaux, initTravaux, bindNewTravailForm } from './views/travaux.js';
 import { bindDepotsModal, bindNoteModal }                                        from './views/depots.js';
@@ -117,10 +117,7 @@ async function onLogin(user) {
   document.getElementById('message-input').addEventListener('keydown', e => {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
   });
-  document.getElementById('message-input').addEventListener('input', function () {
-    this.style.height = 'auto';
-    this.style.height = Math.min(this.scrollHeight, 120) + 'px';
-  });
+  initMessageInput();
 
   // ── Bouton Travaux (professeur — panel droit) ──────────────────────────────
 

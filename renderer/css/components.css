@@ -3364,6 +3364,46 @@ button:focus-visible {
 }
 .reaction-picker-btn .lucide { width: 16px; height: 16px; }
 
+/* ── Mentions ────────────────────────────────────────────────────── */
+.mention-tag {
+  font-weight: 600;
+  color: var(--accent);
+  background: rgba(74,144,217,.1);
+  border-radius: 3px;
+  padding: 0 3px;
+}
+.msg-is-mention {
+  background: rgba(243,156,18,.07);
+  border-left: 3px solid #f39c12;
+  padding-left: 9px;
+  margin-left: -12px;
+}
+
+/* ── Widget urgence sidebar ──────────────────────────────────────── */
+#urgent-deadline-widget {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  margin: 8px 10px;
+  padding: 8px 10px;
+  background: rgba(231,76,60,.1);
+  border: 1px solid rgba(231,76,60,.25);
+  border-radius: 7px;
+  font-size: 11.5px;
+  color: #e07060;
+  line-height: 1.4;
+}
+#urgent-deadline-widget .lucide {
+  width: 13px;
+  height: 13px;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+#urgent-deadline-widget strong {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
 /* ── Sidebar : header canaux + cadenas ──────────────────────────── */
 .sidebar-section-header {
   display: flex;

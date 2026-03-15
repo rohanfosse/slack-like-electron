@@ -1,6 +1,6 @@
 import { call }        from '../api.js';
 import { state }       from '../state.js';
-import { avatarColor, escapeHtml, showToast } from '../utils.js';
+import { avatarColor, escapeHtml, showToast, deadlineClass } from '../utils.js';
 import { refreshLucide } from '../lucide.js';
 
 // Callbacks injectes par main.js
@@ -282,6 +282,25 @@ async function renderStudentSidebar(nav, user) {
       return members.includes(user.id);
     } catch { return false; }
   });
+
+  // Widget urgence
+  document.getElementById('urgent-deadline-widget')?.remove();
+  if (travaux) {
+    const urgent = travaux
+      .filter(t => t.depot_id == null && t.type !== 'jalon' && t.deadline)
+      .filter(t => ['deadline-passed', 'deadline-critical'].includes(deadlineClass(t.deadline)))
+      .sort((a, b) => new Date(a.deadline) - new Date(b.deadline))[0];
+
+    if (urgent) {
+      const widget = document.createElement('div');
+      widget.id = 'urgent-deadline-widget';
+      widget.innerHTML = `
+        <i data-lucide="clock" aria-hidden="true"></i>
+        <span>Échéance proche : <strong>${escapeHtml(urgent.title)}</strong></span>
+      `;
+      nav.appendChild(widget);
+    }
+  }
 
   const section = buildPromoSection(promo, visibleChannels, [], false);
   nav.appendChild(section);

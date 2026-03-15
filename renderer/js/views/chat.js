@@ -10,6 +10,31 @@ import { refreshLucide } from '../lucide.js';
 
 const GROUP_THRESHOLD_MS = 5 * 60 * 1000;
 
+// ─── Auto-resize textarea ─────────────────────────────────────────────────────
+
+export function initMessageInput() {
+  const el = document.getElementById('message-input');
+  if (!el || el._autoResizeBound) return;
+  el._autoResizeBound = true;
+  el.addEventListener('input', () => {
+    el.style.height = 'auto';
+    el.style.height = el.scrollHeight + 'px';
+  });
+}
+
+// ─── Mentions ─────────────────────────────────────────────────────────────────
+
+function _applyMentions(html) {
+  return html.replace(/@(\w[\w\s]*?\b)/g, (match, name) =>
+    `<span class="mention-tag">${match}</span>`
+  );
+}
+
+function _hasMention(text) {
+  const userName = state.currentUser?.name ?? '';
+  return /@everyone\b/i.test(text) || (userName && text.includes('@' + userName));
+}
+
 // ─── Réactions en mémoire ────────────────────────────────────────────────────
 
 const _reactions = new Map(); // msgId -> { check, thumb, bulb, question, eye }
@@ -164,9 +189,11 @@ export async function renderMessages(searchTerm = '') {
     prevAuthor = msg.author_name;
     prevTime   = msgTime;
 
-    const content = searchTerm
+    const rawContent = searchTerm
       ? highlightTerm(msg.content, searchTerm)
-      : escapeHtml(msg.content);
+      : _applyMentions(escapeHtml(msg.content));
+
+    const isMention = !searchTerm && _hasMention(msg.content);
 
     const hoverActions = `
       <div class="msg-hover-actions">
@@ -185,18 +212,18 @@ export async function renderMessages(searchTerm = '') {
     const row = document.createElement('div');
 
     if (isGrouped) {
-      row.className = 'msg-row msg-grouped';
+      row.className = `msg-row msg-grouped${isMention ? ' msg-is-mention' : ''}`;
       row.dataset.msgId = msg.id;
       row.innerHTML = `
         <div class="msg-grouped-time">${formatTime(msg.created_at)}</div>
         <div class="msg-body">
-          <div class="msg-content">${content}</div>
+          <div class="msg-content">${rawContent}</div>
           <div class="msg-reactions-list" id="react-${msg.id}"></div>
         </div>
         ${hoverActions}
       `;
     } else {
-      row.className = 'msg-row';
+      row.className = `msg-row${isMention ? ' msg-is-mention' : ''}`;
       row.dataset.msgId = msg.id;
       const initials = msg.author_name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
       const bgColor  = msg.author_type === 'teacher' ? 'var(--accent)' : avatarColor(msg.author_name);
@@ -207,7 +234,7 @@ export async function renderMessages(searchTerm = '') {
             <span class="msg-author ${msg.author_type}">${escapeHtml(msg.author_name)}</span>
             <span class="msg-time">${formatTime(msg.created_at)}</span>
           </div>
-          <div class="msg-content">${content}</div>
+          <div class="msg-content">${rawContent}</div>
           <div class="msg-reactions-list" id="react-${msg.id}"></div>
         </div>
         ${hoverActions}
@@ -297,7 +324,7 @@ export async function sendMessage() {
   if (ok === null) return;
 
   input.value = '';
-  input.style.height = 'auto';
+  input.style.height = '';
   await renderMessages();
 }
 
