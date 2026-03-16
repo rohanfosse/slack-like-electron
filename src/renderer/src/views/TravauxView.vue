@@ -16,12 +16,6 @@ const appStore     = useAppStore()
 const travauxStore = useTravauxStore()
 const modals       = useModalsStore()
 
-// ── Filtre promo ───────────────────────────────────────────────────────────────
-const promoFilter = ref<number | null>(null)
-const promotions  = ref<{ id: number; name: string }[]>([])
-
-const activePromoId = computed(() => promoFilter.value ?? appStore.activePromoId)
-
 // ── Vue locale enseignant (remplace travauxStore.view côté UI) ────────────────
 const teacherView = ref<'gantt' | 'liste' | 'rendus'>('gantt')
 
@@ -52,12 +46,6 @@ const depositing          = ref(false)
 // ── Lifecycle ─────────────────────────────────────────────────────────────────
 onMounted(async () => {
   clockInterval = setInterval(() => { now.value = Date.now() }, 30_000)
-
-  const res = await window.api.getPromotions()
-  promotions.value = res?.ok ? res.data : []
-  if (!promoFilter.value && promotions.value.length) {
-    promoFilter.value = promotions.value[0].id
-  }
   await loadView()
 })
 
@@ -70,13 +58,13 @@ async function loadView() {
   if (appStore.isStudent) {
     await travauxStore.fetchStudentTravaux()
   } else {
-    if (!activePromoId.value) return
+    const promoId = appStore.activePromoId
+    if (!promoId) return
     // Toujours charger le gantt pour avoir les titres disponibles dans rendus/liste
-    await travauxStore.fetchGantt(activePromoId.value)
+    await travauxStore.fetchGantt(promoId)
     if (teacherView.value === 'rendus') {
-      await travauxStore.fetchRendus(activePromoId.value)
+      await travauxStore.fetchRendus(promoId)
     }
-    // Maintenir la compatibilité avec travauxStore.view
     travauxStore.setView(teacherView.value === 'rendus' ? 'rendus' : 'gantt')
   }
 }
@@ -86,7 +74,7 @@ function setTeacherView(v: 'gantt' | 'liste' | 'rendus') {
   loadView()
 }
 
-watch(promoFilter, loadView)
+watch(() => appStore.activePromoId, loadView)
 
 // Recharger les travaux étudiant quand le canal change depuis la sidebar
 watch(() => appStore.activeChannelId, () => {
@@ -136,6 +124,11 @@ async function pickFile() {
     depositFile.value     = res.data
     depositFileName.value = res.data.split(/[\\/]/).pop() ?? res.data
   }
+}
+
+function clearDepositFile() {
+  depositFile.value     = null
+  depositFileName.value = null
 }
 
 async function submitDeposit(travail: Travail) {
@@ -233,15 +226,6 @@ const rendusByTravail = computed(() => {
       </div>
 
       <div class="travaux-header-actions">
-        <!-- Filtre promo (prof) -->
-        <select
-          v-if="appStore.isTeacher && promotions.length"
-          v-model="promoFilter"
-          class="form-select promo-select"
-        >
-          <option v-for="p in promotions" :key="p.id" :value="p.id">{{ p.name }}</option>
-        </select>
-
         <!-- Toggle vue (prof) -->
         <template v-if="appStore.isTeacher">
           <div class="view-toggle">
@@ -356,11 +340,19 @@ const rendusByTravail = computed(() => {
                         <Link2 :size="12" /> Lien URL
                       </button>
                     </div>
-                    <div v-if="depositMode === 'file'" class="deposit-file-zone" @click="pickFile">
-                      <Upload :size="16" class="deposit-file-zone-icon" />
-                      <span class="deposit-file-label" :class="{ 'has-file': !!depositFileName }">
-                        {{ depositFileName ?? 'Cliquer pour choisir un fichier…' }}
-                      </span>
+                    <div v-if="depositMode === 'file'">
+                      <div v-if="depositFile" class="deposit-file-selected">
+                        <CheckCircle2 :size="15" class="deposit-file-selected-icon" />
+                        <span class="deposit-file-selected-name">{{ depositFileName }}</span>
+                        <button class="deposit-file-selected-clear" type="button" @click.stop="clearDepositFile">
+                          <X :size="12" />
+                        </button>
+                      </div>
+                      <div v-else class="deposit-file-zone" @click="pickFile">
+                        <Upload :size="20" class="deposit-file-zone-icon" />
+                        <span class="deposit-file-zone-label">Cliquer pour choisir un fichier</span>
+                        <span class="deposit-file-zone-hint">PDF, images, archives…</span>
+                      </div>
                     </div>
                     <input v-else v-model="depositLink" class="form-input" placeholder="https://…" type="url" />
                     <div class="deposit-actions">
@@ -417,11 +409,19 @@ const rendusByTravail = computed(() => {
                         <Link2 :size="12" /> Lien URL
                       </button>
                     </div>
-                    <div v-if="depositMode === 'file'" class="deposit-file-zone" @click="pickFile">
-                      <Upload :size="16" class="deposit-file-zone-icon" />
-                      <span class="deposit-file-label" :class="{ 'has-file': !!depositFileName }">
-                        {{ depositFileName ?? 'Cliquer pour choisir un fichier…' }}
-                      </span>
+                    <div v-if="depositMode === 'file'">
+                      <div v-if="depositFile" class="deposit-file-selected">
+                        <CheckCircle2 :size="15" class="deposit-file-selected-icon" />
+                        <span class="deposit-file-selected-name">{{ depositFileName }}</span>
+                        <button class="deposit-file-selected-clear" type="button" @click.stop="clearDepositFile">
+                          <X :size="12" />
+                        </button>
+                      </div>
+                      <div v-else class="deposit-file-zone" @click="pickFile">
+                        <Upload :size="20" class="deposit-file-zone-icon" />
+                        <span class="deposit-file-zone-label">Cliquer pour choisir un fichier</span>
+                        <span class="deposit-file-zone-hint">PDF, images, archives…</span>
+                      </div>
                     </div>
                     <input v-else v-model="depositLink" class="form-input" placeholder="https://…" type="url" />
                     <div class="deposit-actions">
@@ -477,11 +477,19 @@ const rendusByTravail = computed(() => {
                         <Link2 :size="12" /> Lien URL
                       </button>
                     </div>
-                    <div v-if="depositMode === 'file'" class="deposit-file-zone" @click="pickFile">
-                      <Upload :size="16" class="deposit-file-zone-icon" />
-                      <span class="deposit-file-label" :class="{ 'has-file': !!depositFileName }">
-                        {{ depositFileName ?? 'Cliquer pour choisir un fichier…' }}
-                      </span>
+                    <div v-if="depositMode === 'file'">
+                      <div v-if="depositFile" class="deposit-file-selected">
+                        <CheckCircle2 :size="15" class="deposit-file-selected-icon" />
+                        <span class="deposit-file-selected-name">{{ depositFileName }}</span>
+                        <button class="deposit-file-selected-clear" type="button" @click.stop="clearDepositFile">
+                          <X :size="12" />
+                        </button>
+                      </div>
+                      <div v-else class="deposit-file-zone" @click="pickFile">
+                        <Upload :size="20" class="deposit-file-zone-icon" />
+                        <span class="deposit-file-zone-label">Cliquer pour choisir un fichier</span>
+                        <span class="deposit-file-zone-hint">PDF, images, archives…</span>
+                      </div>
                     </div>
                     <input v-else v-model="depositLink" class="form-input" placeholder="https://…" type="url" />
                     <div class="deposit-actions">
@@ -752,12 +760,6 @@ const rendusByTravail = computed(() => {
   display: flex;
   align-items: center;
   gap: 8px;
-}
-
-.promo-select {
-  font-size: 13px;
-  padding: 5px 8px;
-  width: auto;
 }
 
 .btn-nouveau {
@@ -1038,12 +1040,14 @@ const rendusByTravail = computed(() => {
 
 .deposit-file-zone {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 10px;
-  padding: 12px 14px;
+  gap: 4px;
+  padding: 20px 14px;
   border: 1.5px dashed var(--border-input);
   border-radius: 8px;
   cursor: pointer;
+  text-align: center;
   transition: border-color var(--t-fast), background var(--t-fast);
 }
 .deposit-file-zone:hover {
@@ -1051,11 +1055,45 @@ const rendusByTravail = computed(() => {
   background: var(--accent-subtle);
 }
 
-.deposit-file-zone-icon { color: var(--text-muted); flex-shrink: 0; }
+.deposit-file-zone-icon       { color: var(--text-muted); margin-bottom: 2px; }
 .deposit-file-zone:hover .deposit-file-zone-icon { color: var(--accent); }
+.deposit-file-zone-label      { font-size: 13px; font-weight: 500; color: var(--text-secondary); }
+.deposit-file-zone-hint       { font-size: 11px; color: var(--text-muted); opacity: .7; }
 
-.deposit-file-label          { font-size: 13px; color: var(--text-secondary); }
-.deposit-file-label.has-file { color: var(--text-primary); font-weight: 600; }
+.deposit-file-selected {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border: 1.5px solid #27AE60;
+  border-radius: 8px;
+  background: rgba(39, 174, 96, 0.08);
+}
+
+.deposit-file-selected-icon { color: #27AE60; flex-shrink: 0; }
+
+.deposit-file-selected-name {
+  flex: 1;
+  font-size: 13px;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.deposit-file-selected-clear {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 2px;
+  display: flex;
+  align-items: center;
+  border-radius: 4px;
+  flex-shrink: 0;
+  transition: color var(--t-fast), background var(--t-fast);
+}
+.deposit-file-selected-clear:hover { color: #ff6b6b; background: rgba(231, 76, 60, 0.12); }
 
 .deposit-actions {
   display: flex;

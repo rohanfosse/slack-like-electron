@@ -2,7 +2,7 @@
   import { ref, computed, onMounted, watch } from 'vue'
   import {
     FileText, Image, Link2, Video, File, Plus, Trash2,
-    ExternalLink, Download, Search, X, Upload, FolderOpen, Eye,
+    ExternalLink, Download, Search, X, Upload, FolderOpen, Eye, CheckCircle2,
   } from 'lucide-vue-next'
   import { useAppStore }       from '@/stores/app'
   import { useDocumentsStore } from '@/stores/documents'
@@ -18,52 +18,41 @@
   const modals   = useModalsStore()
   const { showToast } = useToast()
 
-  const promotions    = ref<{ id: number; name: string }[]>([])
-  const promoFilter   = ref<number | null>(null)
-  const channelFilter = ref<number | null>(null)
-  const channelsList  = ref<{ id: number; name: string }[]>([])
+  const channelsList = ref<{ id: number; name: string }[]>([])
 
   // ── Add modal ────────────────────────────────────────────────────────────
-  const showAddModal  = ref(false)
-  const addName       = ref('')
-  const addCategory   = ref('')
-  const addType       = ref<'file' | 'link'>('file')
-  const addLink       = ref('')
-  const addFile       = ref<string | null>(null)
-  const addFileName   = ref<string | null>(null)
-  const addChannelId  = ref<number | null>(null)
-  const adding        = ref(false)
+  const showAddModal = ref(false)
+  const addName      = ref('')
+  const addCategory  = ref('')
+  const addType      = ref<'file' | 'link'>('file')
+  const addLink      = ref('')
+  const addFile      = ref<string | null>(null)
+  const addFileName  = ref<string | null>(null)
+  const addChannelId = ref<number | null>(null)
+  const adding       = ref(false)
 
-  onMounted(async () => {
-    const res = await api.getPromotions()
-    promotions.value = res?.ok ? res.data : []
-    if (!promoFilter.value && promotions.value.length) {
-      promoFilter.value = promotions.value[0].id
-      await loadChannels()
-    }
-  })
-
+  // ── Chargement ───────────────────────────────────────────────────────────
   async function loadChannels() {
-    if (!promoFilter.value) return
-    const res = await api.getChannels(promoFilter.value)
+    const promoId = appStore.activePromoId ?? appStore.currentUser?.promo_id ?? null
+    if (!promoId) return
+    const res = await api.getChannels(promoId)
     channelsList.value = res?.ok ? res.data : []
-    await loadDocuments()
   }
 
   async function loadDocuments() {
-    if (channelFilter.value) {
-      await docStore.fetchDocuments(channelFilter.value)
-    } else if (promoFilter.value) {
-      await docStore.fetchDocuments(undefined, promoFilter.value)
-    }
+    const chId    = appStore.activeChannelId
+    const promoId = appStore.activePromoId ?? appStore.currentUser?.promo_id ?? null
+    if (chId)          await docStore.fetchDocuments(chId)
+    else if (promoId)  await docStore.fetchDocuments(undefined, promoId)
   }
 
-  watch(promoFilter, loadChannels)
-  watch(channelFilter, loadDocuments)
-
-  watch(() => appStore.activeChannelId, (chId) => {
-    if (chId !== null) channelFilter.value = chId
+  onMounted(async () => {
+    await loadChannels()
+    await loadDocuments()
   })
+
+  watch(() => appStore.activeChannelId, loadDocuments)
+  watch(() => appStore.activePromoId,   async () => { await loadChannels(); await loadDocuments() })
 
   // ── Filtrage + catégories ────────────────────────────────────────────────
   const filtered = computed(() => {
@@ -91,8 +80,8 @@
   })
 
   const activeChannelName = computed(() =>
-    channelFilter.value
-      ? (channelsList.value.find((c) => c.id === channelFilter.value)?.name ?? null)
+    appStore.activeChannelId
+      ? (channelsList.value.find((c) => c.id === appStore.activeChannelId)?.name ?? null)
       : null,
   )
 
@@ -147,7 +136,7 @@
     addLink.value      = ''
     addFile.value      = null
     addFileName.value  = null
-    addChannelId.value = channelFilter.value ?? (channelsList.value[0]?.id ?? null)
+    addChannelId.value = appStore.activeChannelId ?? channelsList.value[0]?.id ?? null
     showAddModal.value = true
   }
 
@@ -158,6 +147,11 @@
       addFileName.value = res.data.split(/[\\/]/).pop() ?? res.data
       if (!addName.value) addName.value = addFileName.value ?? ''
     }
+  }
+
+  function clearFile() {
+    addFile.value     = null
+    addFileName.value = null
   }
 
   async function submitAdd() {
@@ -177,8 +171,6 @@
       if (ok) {
         showToast('Document ajouté.', 'success')
         showAddModal.value = false
-        channelFilter.value = addChannelId.value
-        await loadDocuments()
       } else {
         showToast('Erreur lors de l\'ajout.')
       }
@@ -197,32 +189,12 @@
         <FolderOpen :size="18" class="docs-header-icon" />
         <div class="docs-header-title-block">
           <h1 class="docs-header-title">Documents</h1>
-          <span v-if="activeChannelName" class="docs-header-channel">
-            #{{ activeChannelName }}
-          </span>
+          <span v-if="activeChannelName" class="docs-header-channel">#{{ activeChannelName }}</span>
+          <span v-else class="docs-header-channel">Tous les canaux</span>
         </div>
       </div>
 
       <div class="docs-header-actions">
-        <!-- Filtre promo (prof) -->
-        <select
-          v-if="appStore.isTeacher && promotions.length > 1"
-          v-model="promoFilter"
-          class="form-select docs-select"
-        >
-          <option v-for="p in promotions" :key="p.id" :value="p.id">{{ p.name }}</option>
-        </select>
-
-        <!-- Filtre canal -->
-        <select
-          v-if="channelsList.length"
-          v-model="channelFilter"
-          class="form-select docs-select"
-        >
-          <option :value="null">Tous les canaux</option>
-          <option v-for="c in channelsList" :key="c.id" :value="c.id">#{{ c.name }}</option>
-        </select>
-
         <!-- Recherche -->
         <div class="docs-search">
           <Search :size="14" class="docs-search-icon" />
@@ -230,7 +202,7 @@
             v-model="docStore.searchQuery"
             type="text"
             class="docs-search-input"
-            placeholder="Rechercher un document…"
+            placeholder="Rechercher…"
           />
           <button v-if="docStore.searchQuery" class="docs-search-clear" @click="docStore.searchQuery = ''">
             <X :size="12" />
@@ -281,13 +253,11 @@
       <!-- Documents groupés par catégorie -->
       <template v-else-if="filtered.length">
         <template v-for="[cat, docs] in byCategory" :key="cat">
-          <!-- En-tête de groupe (seulement s'il y a plusieurs catégories) -->
           <div v-if="byCategory.size > 1" class="docs-group-header">
             <span class="docs-group-label">{{ cat }}</span>
             <span class="docs-group-count">{{ docs.length }} fichier{{ docs.length > 1 ? 's' : '' }}</span>
           </div>
 
-          <!-- Grille de cartes -->
           <div class="docs-grid">
             <div
               v-for="doc in docs"
@@ -296,30 +266,25 @@
               :title="doc.description ?? doc.name"
               @click="openDoc(doc)"
             >
-              <!-- Icône de type -->
               <div class="doc-card-icon" :style="{ background: iconColors[docIconType(doc)] + '1A', color: iconColors[docIconType(doc)] }">
-                <Image  v-if="docIconType(doc) === 'image'" :size="28" />
-                <Video  v-else-if="docIconType(doc) === 'video'" :size="28" />
-                <Link2  v-else-if="docIconType(doc) === 'link'" :size="28" />
+                <Image    v-if="docIconType(doc) === 'image'" :size="28" />
+                <Video    v-else-if="docIconType(doc) === 'video'" :size="28" />
+                <Link2    v-else-if="docIconType(doc) === 'link'" :size="28" />
                 <FileText v-else-if="docIconType(doc) === 'pdf'" :size="28" />
-                <File   v-else :size="28" />
+                <File     v-else :size="28" />
               </div>
 
-              <!-- Badge de type -->
               <span class="doc-card-type-badge" :style="{ background: iconColors[docIconType(doc)] + '22', color: iconColors[docIconType(doc)] }">
                 {{ iconLabels[docIconType(doc)] }}
               </span>
 
-              <!-- Nom -->
               <p class="doc-card-name">{{ doc.name }}</p>
 
-              <!-- Canal + date -->
               <p class="doc-card-meta">
-                <span v-if="!channelFilter && doc.channel_name">#{{ doc.channel_name }}</span>
+                <span v-if="!appStore.activeChannelId && doc.channel_name">#{{ doc.channel_name }}</span>
                 <span>{{ formatDate(doc.created_at) }}</span>
               </p>
 
-              <!-- Actions au survol -->
               <div class="doc-card-actions" @click.stop>
                 <button
                   class="doc-card-action-btn"
@@ -366,13 +331,19 @@
     </div>
 
     <!-- ── Modal ajout ─────────────────────────────────────────────────── -->
-    <Modal v-model="showAddModal" title="Ajouter un document">
+    <Modal v-model="showAddModal" title="Ajouter un document" max-width="480px">
       <div class="docs-add-form">
 
-        <!-- Quel canal ? -->
+        <!-- Canal cible -->
         <div class="form-group">
           <label class="form-label">Canal</label>
-          <select v-model="addChannelId" class="form-select" required>
+          <!-- Canal actif → badge read-only -->
+          <div v-if="appStore.activeChannelId" class="docs-channel-badge">
+            <span class="docs-channel-badge-hash">#</span>
+            <span>{{ activeChannelName }}</span>
+          </div>
+          <!-- Pas de canal actif → sélecteur -->
+          <select v-else v-model="addChannelId" class="form-select" required>
             <option :value="null" disabled>Choisir un canal…</option>
             <option v-for="c in channelsList" :key="c.id" :value="c.id">#{{ c.name }}</option>
           </select>
@@ -380,46 +351,58 @@
 
         <!-- Nom -->
         <div class="form-group">
-          <label class="form-label">Nom</label>
-          <input v-model="addName" type="text" class="form-input" placeholder="ex : Cours réseaux — chapitre 3" autofocus />
+          <label class="form-label">Nom du document</label>
+          <input
+            v-model="addName"
+            type="text"
+            class="form-input"
+            placeholder="ex : Cours réseaux — chapitre 3"
+            autofocus
+          />
         </div>
 
         <!-- Catégorie -->
         <div class="form-group">
           <label class="form-label">
-            Catégorie <span style="opacity:.55;font-weight:400">(optionnelle)</span>
+            Catégorie
+            <span class="form-label-hint">(optionnelle)</span>
           </label>
-          <input v-model="addCategory" type="text" class="form-input" placeholder="ex : Cours, TP, Exercices…" />
+          <input
+            v-model="addCategory"
+            type="text"
+            class="form-input"
+            placeholder="ex : Cours, TP, Exercices…"
+          />
         </div>
 
-        <!-- Type : fichier ou lien -->
+        <!-- Toggle fichier / lien -->
         <div class="form-group">
           <label class="form-label">Type</label>
           <div class="docs-type-toggle">
-            <button
-              class="docs-type-btn"
-              :class="{ active: addType === 'file' }"
-              type="button"
-              @click="addType = 'file'"
-            >
+            <button class="docs-type-btn" :class="{ active: addType === 'file' }" type="button" @click="addType = 'file'">
               <Upload :size="14" /> Fichier
             </button>
-            <button
-              class="docs-type-btn"
-              :class="{ active: addType === 'link' }"
-              type="button"
-              @click="addType = 'link'"
-            >
+            <button class="docs-type-btn" :class="{ active: addType === 'link' }" type="button" @click="addType = 'link'">
               <Link2 :size="14" /> Lien URL
             </button>
           </div>
         </div>
 
-        <!-- Sélection fichier -->
+        <!-- Zone de dépôt fichier -->
         <div v-if="addType === 'file'" class="form-group">
-          <button class="docs-file-picker" type="button" @click="pickFile">
-            <File :size="16" />
-            <span>{{ addFileName ?? 'Cliquer pour choisir un fichier…' }}</span>
+          <!-- Fichier sélectionné -->
+          <div v-if="addFile" class="docs-file-selected">
+            <CheckCircle2 :size="18" class="docs-file-selected-icon" />
+            <span class="docs-file-selected-name">{{ addFileName }}</span>
+            <button class="docs-file-selected-clear" type="button" title="Changer de fichier" @click="clearFile">
+              <X :size="13" />
+            </button>
+          </div>
+          <!-- Pas encore de fichier -->
+          <button v-else class="docs-file-picker" type="button" @click="pickFile">
+            <Upload :size="20" class="docs-file-picker-icon" />
+            <span class="docs-file-picker-label">Cliquer pour choisir un fichier</span>
+            <span class="docs-file-picker-hint">PDF, images, vidéos, archives…</span>
           </button>
         </div>
 
@@ -431,14 +414,14 @@
 
       </div>
 
-      <div class="modal-footer" style="padding:12px 16px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px">
+      <div class="modal-footer docs-modal-footer">
         <button class="btn-ghost" @click="showAddModal = false">Annuler</button>
         <button
           class="btn-primary"
           :disabled="!addName.trim() || !addChannelId || (addType === 'file' && !addFile) || (addType === 'link' && !addLink.trim()) || adding"
           @click="submitAdd"
         >
-          {{ adding ? 'Ajout…' : 'Ajouter' }}
+          {{ adding ? 'Ajout en cours…' : 'Ajouter' }}
         </button>
       </div>
     </Modal>
@@ -499,13 +482,6 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  flex-wrap: wrap;
-}
-
-.docs-select {
-  font-size: 12px;
-  padding: 5px 10px;
-  height: 32px;
 }
 
 /* Barre de recherche */
@@ -793,6 +769,33 @@
   gap: 14px;
 }
 
+.form-label-hint {
+  font-weight: 400;
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-left: 4px;
+}
+
+/* Badge canal read-only */
+.docs-channel-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  background: var(--accent-subtle);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-sm);
+  color: var(--accent-light);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.docs-channel-badge-hash {
+  font-weight: 700;
+  opacity: .7;
+}
+
+/* Toggle fichier / lien */
 .docs-type-toggle {
   display: flex;
   gap: 8px;
@@ -822,25 +825,83 @@
   border-color: var(--accent);
 }
 
+/* Zone de dépôt fichier */
 .docs-file-picker {
   width: 100%;
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 10px;
-  padding: 12px 14px;
+  gap: 6px;
+  padding: 24px 14px;
   border: 1.5px dashed var(--border-input);
   border-radius: var(--radius-sm);
-  background: rgba(255,255,255,.03);
+  background: rgba(255,255,255,.02);
   color: var(--text-muted);
   font-family: var(--font);
-  font-size: 13px;
   cursor: pointer;
   transition: border-color .15s, color .15s, background .15s;
+  text-align: center;
 }
 
 .docs-file-picker:hover {
   border-color: var(--accent);
   color: var(--text-secondary);
   background: var(--accent-subtle);
+}
+
+.docs-file-picker-icon { margin-bottom: 2px; }
+.docs-file-picker-label { font-size: 13px; font-weight: 500; }
+.docs-file-picker-hint  { font-size: 11px; opacity: .6; }
+
+/* Fichier sélectionné */
+.docs-file-selected {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border: 1.5px solid #27AE60;
+  border-radius: var(--radius-sm);
+  background: rgba(39,174,96,.08);
+}
+
+.docs-file-selected-icon {
+  color: #27AE60;
+  flex-shrink: 0;
+}
+
+.docs-file-selected-name {
+  flex: 1;
+  font-size: 13px;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.docs-file-selected-clear {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 2px;
+  display: flex;
+  align-items: center;
+  border-radius: 4px;
+  flex-shrink: 0;
+  transition: color .12s, background .12s;
+}
+
+.docs-file-selected-clear:hover {
+  color: #ff6b6b;
+  background: rgba(231,76,60,.12);
+}
+
+/* Footer modal */
+.docs-modal-footer {
+  padding: 12px 16px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
 }
 </style>
