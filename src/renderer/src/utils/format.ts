@@ -25,12 +25,16 @@ export function formatGrade(note: string | number | null): string {
 }
 
 export function gradeClass(note: string | number | null): string {
-  if (note == null) return ''
-  if (typeof note === 'string' && ['A', 'B', 'C', 'D'].includes(note)) {
-    return note === 'A' ? 'note-good' : note === 'D' ? 'note-low' : 'note-mid'
-  }
-  const n = parseFloat(String(note))
-  return n >= 14 ? 'note-good' : n >= 10 ? 'note-mid' : 'note-low'
+  if (note == null) return 'grade-empty'
+  const s = String(note).toUpperCase()
+  if (s === 'A')  return 'grade-a'
+  if (s === 'B')  return 'grade-b'
+  if (s === 'C')  return 'grade-c'
+  if (s === 'D')  return 'grade-d'
+  if (s === 'NA') return 'grade-na'
+  const n = parseFloat(s)
+  if (isNaN(n)) return 'grade-empty'
+  return n >= 14 ? 'grade-a' : n >= 10 ? 'grade-b' : n >= 8 ? 'grade-c' : 'grade-d'
 }
 
 // ─── Initiales ────────────────────────────────────────────────────────────────
