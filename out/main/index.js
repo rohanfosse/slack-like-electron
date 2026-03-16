@@ -31,7 +31,7 @@ function requireSchema() {
   if (hasRequiredSchema) return schema;
   hasRequiredSchema = 1;
   const { getDb } = requireConnection();
-  const CURRENT_VERSION = 5;
+  const CURRENT_VERSION = 6;
   function initSchema() {
     const db2 = getDb();
     db2.exec(`
@@ -48,7 +48,8 @@ function requireSchema() {
       description TEXT,
       type        TEXT NOT NULL DEFAULT 'chat' CHECK(type IN ('chat', 'annonce')),
       is_private  INTEGER NOT NULL DEFAULT 0,
-      members     TEXT DEFAULT NULL
+      members     TEXT DEFAULT NULL,
+      category    TEXT DEFAULT NULL
     );
 
     CREATE TABLE IF NOT EXISTS students (
@@ -198,6 +199,10 @@ function requireSchema() {
         tryAlter(db3, "ALTER TABLE channels ADD COLUMN is_private INTEGER NOT NULL DEFAULT 0");
         tryAlter(db3, "ALTER TABLE channels ADD COLUMN members TEXT DEFAULT NULL");
         tryAlter(db3, "ALTER TABLE students ADD COLUMN password TEXT DEFAULT 'cesi1234'");
+      },
+      // v6 : catégories de canaux
+      (db3) => {
+        tryAlter(db3, "ALTER TABLE channels ADD COLUMN category TEXT DEFAULT NULL");
       }
     ];
     db2.transaction(() => {
@@ -810,7 +815,7 @@ function requirePromotions() {
   }
   function getChannels(promoId) {
     return getDb().prepare(
-      "SELECT * FROM channels WHERE promo_id = ? ORDER BY type DESC, name ASC"
+      "SELECT * FROM channels WHERE promo_id = ? ORDER BY COALESCE(category, 'zzz') ASC, type DESC, name ASC"
     ).all(promoId);
   }
   function createPromotion({ name, color }) {
@@ -823,12 +828,13 @@ function requirePromotions() {
   function deletePromotion(promoId) {
     return getDb().prepare("DELETE FROM promotions WHERE id = ?").run(promoId);
   }
-  function createChannel({ promoId, name, isPrivate, members }) {
+  function createChannel({ promoId, name, type, isPrivate, members, category }) {
     const db2 = getDb();
     const membersJson = isPrivate && members?.length ? JSON.stringify(members) : null;
+    const chType = type === "annonce" ? "annonce" : "chat";
     return db2.prepare(
-      "INSERT INTO channels (promo_id, name, description, type, is_private, members) VALUES (?, ?, ?, ?, ?, ?)"
-    ).run(promoId, name, "", "chat", isPrivate ? 1 : 0, membersJson).lastInsertRowid;
+      "INSERT INTO channels (promo_id, name, description, type, is_private, members, category) VALUES (?, ?, ?, ?, ?, ?, ?)"
+    ).run(promoId, name, "", chType, isPrivate ? 1 : 0, membersJson, category ?? null).lastInsertRowid;
   }
   promotions = { getPromotions, getChannels, createPromotion, deletePromotion, createChannel };
   return promotions;

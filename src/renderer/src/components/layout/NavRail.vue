@@ -1,7 +1,7 @@
 <script setup lang="ts">
   import { computed } from 'vue'
   import { useRouter, useRoute } from 'vue-router'
-  import { MessageSquare, BookOpen, FileText, Settings, Calendar } from 'lucide-vue-next'
+  import { MessageSquare, BookOpen, FileText, Calendar, UserCheck, Settings } from 'lucide-vue-next'
   import { useAppStore }    from '@/stores/app'
   import { useModalsStore } from '@/stores/modals'
   import { useTravauxStore } from '@/stores/travaux'
@@ -29,10 +29,10 @@
   <nav class="nav-rail" aria-label="Navigation principale">
     <!-- Logo -->
     <div class="nav-logo">
-      <div class="logo-mark" style="font-size:10px;width:32px;height:32px;letter-spacing:-0.5px">CeS</div>
+      <div class="logo-mark" style="font-size:10px;letter-spacing:-0.5px">CeS</div>
     </div>
 
-    <!-- Sections -->
+    <!-- ── Navigation principale ── -->
     <button
       class="nav-btn"
       :class="{ active: route.name === 'messages' }"
@@ -41,6 +41,7 @@
       @click="router.push('/messages')"
     >
       <MessageSquare :size="20" />
+      <span class="nav-label">Messages</span>
     </button>
 
     <button
@@ -48,10 +49,10 @@
       :class="{ active: route.name === 'travaux' }"
       title="Travaux"
       aria-label="Section Travaux"
-      style="position:relative"
       @click="router.push('/travaux')"
     >
       <BookOpen :size="20" />
+      <span class="nav-label">Travaux</span>
       <span
         v-if="appStore.isStudent && pendingCount > 0"
         id="nav-badge-travaux"
@@ -69,56 +70,102 @@
       @click="router.push('/documents')"
     >
       <FileText :size="20" />
+      <span class="nav-label">Documents</span>
     </button>
 
     <!-- Espaceur -->
     <div style="flex:1" />
 
-    <!-- Échéancier (prof seulement) -->
-    <button
-      v-if="appStore.isTeacher"
-      class="nav-btn"
-      title="Échéancier"
-      aria-label="Ouvrir l'échéancier"
-      @click="modals.echeancier = true"
-    >
-      <Calendar :size="20" />
-    </button>
+    <!-- ── Outils professeur ── -->
+    <template v-if="appStore.isTeacher">
+      <div class="nav-divider" />
 
-    <!-- Avatar / Paramètres -->
+      <button
+        class="nav-btn"
+        title="Simuler la vue d'un étudiant"
+        aria-label="Simuler la vue d'un étudiant"
+        @click="modals.impersonate = true"
+      >
+        <UserCheck :size="20" />
+        <span class="nav-label">Simuler</span>
+      </button>
+
+      <button
+        class="nav-btn"
+        title="Échéancier"
+        aria-label="Ouvrir l'échéancier"
+        @click="modals.echeancier = true"
+      >
+        <Calendar :size="20" />
+        <span class="nav-label">Agenda</span>
+      </button>
+    </template>
+
+    <!-- ── Avatar / Paramètres ── -->
+    <div class="nav-divider" />
+
     <button
       id="nav-user-avatar"
-      class="nav-btn nav-avatar"
+      class="nav-avatar-btn"
       :style="avatarStyle"
-      :title="user?.name"
+      :title="`${user?.name} — Paramètres`"
       aria-label="Paramètres du compte"
       @click="modals.settings = true"
     >
-      <img v-if="user?.photo_data" :src="user.photo_data" :alt="user.name" />
+      <img v-if="user?.photo_data" :src="user.photo_data" :alt="user?.name" />
       <span v-else>{{ user?.avatar_initials }}</span>
     </button>
   </nav>
 </template>
 
 <style scoped>
-  .nav-avatar {
-    width: 34px;
-    height: 34px;
-    border-radius: 50%;
-    overflow: hidden;
-    padding: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 13px;
-    font-weight: 700;
-    color: #fff;
-    margin: 4px 0 8px;
-  }
+/* Avatar circulaire en bas du rail */
+.nav-avatar-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: none;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+  color: #fff;
+  margin: 4px 0 6px;
+  cursor: pointer;
+  flex-shrink: 0;
+  -webkit-app-region: no-drag;
+  outline-offset: 2px;
+  transition: box-shadow .15s, transform .15s;
+  position: relative;
+}
 
-  .nav-avatar img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-  }
+.nav-avatar-btn::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: rgba(255,255,255,0);
+  transition: background .15s;
+}
+
+.nav-avatar-btn:hover::after {
+  background: rgba(255,255,255,.15);
+}
+
+.nav-avatar-btn:hover {
+  box-shadow: 0 0 0 2px rgba(255,255,255,.25);
+}
+
+.nav-avatar-btn:focus-visible {
+  outline: 2px solid var(--accent);
+}
+
+.nav-avatar-btn img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
 </style>

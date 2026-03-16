@@ -29,10 +29,21 @@
   --text-muted:     #64686F;
 
   /* Accent */
-  --accent:       #4A90D9;
-  --accent-hover: #5ca3f5;
-  --accent-dark:  #2e6dae;
+  --accent:        #4A90D9;
+  --accent-hover:  #5ca3f5;
+  --accent-dark:   #2e6dae;
+  --accent-light:  #7EB6FF;   /* noms de prof dans les messages */
   --accent-subtle: rgba(74,144,217,.15);
+
+  /* Ombres */
+  --shadow-sm: 0 1px 4px rgba(0,0,0,.3);
+  --shadow-md: 0 4px 16px rgba(0,0,0,.45);
+  --shadow-lg: 0 12px 40px rgba(0,0,0,.6);
+
+  /* Timings de transition */
+  --t-fast: .12s;
+  --t-base: .18s;
+  --t-slow: .28s;
 
   /* Bordures — plus subtiles */
   --border:       rgba(255,255,255,.06);
@@ -61,7 +72,7 @@
   --radius-lg: 12px;
 
   /* Dimensions de layout */
-  --rail-width:    54px;
+  --rail-width:    72px;
   --sidebar-width: 240px;
   --header-height: 49px;
   --input-height:  auto;

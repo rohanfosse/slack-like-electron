@@ -10,6 +10,7 @@ export const useAppStore = defineStore('app', () => {
 
   // ── État ──────────────────────────────────────────────────────────────────
   const currentUser       = ref<User | null>(null)
+  const teacherUser       = ref<User | null>(null)   // sauvegarde pendant simulation
   const activeChannelId   = ref<number | null>(null)
   const activeDmStudentId = ref<number | null>(null)
   const activePromoId     = ref<number | null>(null)
@@ -21,9 +22,10 @@ export const useAppStore = defineStore('app', () => {
   const unread            = ref<Record<number, number>>({})
 
   // ── Calculs ───────────────────────────────────────────────────────────────
-  const isStudent = computed(() => currentUser.value?.type === 'student')
-  const isTeacher = computed(() => currentUser.value?.type === 'teacher')
-  const isReadonly = computed(
+  const isStudent    = computed(() => currentUser.value?.type === 'student')
+  const isTeacher    = computed(() => currentUser.value?.type === 'teacher')
+  const isSimulating = computed(() => teacherUser.value !== null)
+  const isReadonly   = computed(
     () => activeChannelType.value === 'annonce' && isStudent.value,
   )
 
@@ -51,6 +53,25 @@ export const useAppStore = defineStore('app', () => {
   // Impersonnification (prof → étudiant) : pas de sauvegarde en session
   function impersonate(user: User): void {
     currentUser.value = user
+  }
+
+  // Simulation vue étudiant (prof voit l'app comme un étudiant donné)
+  function startSimulation(student: User): void {
+    teacherUser.value   = currentUser.value
+    currentUser.value   = student
+    activeChannelId.value   = null
+    activeDmStudentId.value = null
+    activeChannelName.value = ''
+    activePromoId.value = student.promo_id
+  }
+
+  function stopSimulation(): void {
+    if (!teacherUser.value) return
+    currentUser.value   = teacherUser.value
+    teacherUser.value   = null
+    activeChannelId.value   = null
+    activeDmStudentId.value = null
+    activeChannelName.value = ''
   }
 
   // ── Navigation ────────────────────────────────────────────────────────────
@@ -109,9 +130,10 @@ export const useAppStore = defineStore('app', () => {
     activeChannelType, activeChannelName, rightPanel, currentTravailId,
     pendingNoteDepotId, unread,
     // calculs
-    isStudent, isTeacher, isReadonly,
+    isStudent, isTeacher, isSimulating, isReadonly,
     // actions
     restoreSession, login, logout, impersonate,
+    startSimulation, stopSimulation,
     openChannel, openDm, markRead, initUnreadListener,
     api,
   }

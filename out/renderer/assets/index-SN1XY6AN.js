@@ -9748,15 +9748,6 @@ const ChevronDown = createLucideIcon("chevron-down", [
  * This source code is licensed under the ISC license.
  * See the LICENSE file in the root directory of this source tree.
  */
-const ChevronUp = createLucideIcon("chevron-up", [
-  ["path", { d: "m18 15-6-6-6 6", key: "153udz" }]
-]);
-/**
- * @license lucide-vue-next v0.577.0 - ISC
- *
- * This source code is licensed under the ISC license.
- * See the LICENSE file in the root directory of this source tree.
- */
 const CircleCheck = createLucideIcon("circle-check", [
   ["circle", { cx: "12", cy: "12", r: "10", key: "1mglay" }],
   ["path", { d: "m9 12 2 2 4-4", key: "dzmm74" }]
@@ -10734,7 +10725,7 @@ const _hoisted_2$n = {
 };
 const _hoisted_3$l = { class: "msg-body" };
 const _hoisted_4$j = { class: "msg-author" };
-const _hoisted_5$f = { class: "msg-time" };
+const _hoisted_5$g = { class: "msg-time" };
 const _hoisted_6$e = {
   key: 0,
   class: "pin-badge",
@@ -10797,7 +10788,7 @@ const _sfc_main$q = /* @__PURE__ */ defineComponent({
         createBaseVNode("div", _hoisted_3$l, [
           !__props.grouped ? (openBlock(), createElementBlock(Fragment, { key: 0 }, [
             createBaseVNode("span", _hoisted_4$j, toDisplayString(__props.msg.author_name), 1),
-            createBaseVNode("span", _hoisted_5$f, toDisplayString(unref(formatTime)(__props.msg.created_at)), 1),
+            createBaseVNode("span", _hoisted_5$g, toDisplayString(unref(formatTime)(__props.msg.created_at)), 1),
             isPinned.value ? (openBlock(), createElementBlock("span", _hoisted_6$e, "📌")) : createCommentVNode("", true)
           ], 64)) : createCommentVNode("", true),
           createBaseVNode("p", {
@@ -11116,7 +11107,6 @@ const _sfc_main$n = /* @__PURE__ */ defineComponent({
               class: normalizeClass(["btn-icon", { active: showToolbar.value }]),
               title: "Mise en forme",
               "aria-label": "Afficher la barre de mise en forme",
-              style: { "flex-shrink": "0" },
               onClick: _cache[0] || (_cache[0] = ($event) => showToolbar.value = !showToolbar.value)
             }, [
               createVNode(unref(Type), { size: 16 })
@@ -11151,16 +11141,15 @@ const _sfc_main$n = /* @__PURE__ */ defineComponent({
 });
 const _hoisted_1$l = {
   key: 0,
-  id: "pinned-messages-banner",
   class: "pinned-messages-banner"
 };
-const _hoisted_2$k = {
+const _hoisted_2$k = ["aria-expanded"];
+const _hoisted_3$i = {
   key: 0,
-  id: "pinned-messages-list",
   class: "pinned-list"
 };
-const _hoisted_3$i = { class: "pinned-author" };
-const _hoisted_4$g = ["innerHTML"];
+const _hoisted_4$g = { class: "pinned-author" };
+const _hoisted_5$f = ["innerHTML"];
 const _sfc_main$m = /* @__PURE__ */ defineComponent({
   __name: "PinnedBanner",
   setup(__props) {
@@ -11169,40 +11158,42 @@ const _sfc_main$m = /* @__PURE__ */ defineComponent({
     const hasPinned = computed(() => store.pinned.length > 0);
     return (_ctx, _cache) => {
       return hasPinned.value ? (openBlock(), createElementBlock("div", _hoisted_1$l, [
-        createBaseVNode("div", {
+        createBaseVNode("button", {
           class: "pinned-header",
+          "aria-expanded": expanded.value,
           onClick: _cache[0] || (_cache[0] = ($event) => expanded.value = !expanded.value)
         }, [
-          createVNode(unref(Pin), { size: 14 }),
+          createVNode(unref(Pin), { size: 13 }),
           createBaseVNode("span", null, toDisplayString(unref(store).pinned.length) + " message" + toDisplayString(unref(store).pinned.length > 1 ? "s" : "") + " épinglé" + toDisplayString(unref(store).pinned.length > 1 ? "s" : ""), 1),
-          expanded.value ? (openBlock(), createBlock(unref(ChevronUp), {
-            key: 0,
+          createVNode(unref(ChevronDown), {
             size: 14,
-            style: { "margin-left": "auto" }
-          })) : (openBlock(), createBlock(unref(ChevronDown), {
-            key: 1,
-            size: 14,
-            style: { "margin-left": "auto" }
-          }))
-        ]),
-        expanded.value ? (openBlock(), createElementBlock("ul", _hoisted_2$k, [
-          (openBlock(true), createElementBlock(Fragment, null, renderList(unref(store).pinned, (m) => {
-            return openBlock(), createElementBlock("li", {
-              key: m.id,
-              class: "pinned-item"
-            }, [
-              createBaseVNode("strong", _hoisted_3$i, toDisplayString(m.author_name), 1),
-              createBaseVNode("span", {
-                class: "pinned-text",
-                innerHTML: unref(renderMessageContent)(m.content)
-              }, null, 8, _hoisted_4$g)
-            ]);
-          }), 128))
-        ])) : createCommentVNode("", true)
+            class: normalizeClass(["pinned-chevron", { rotated: expanded.value }])
+          }, null, 8, ["class"])
+        ], 8, _hoisted_2$k),
+        createVNode(Transition, { name: "pinned-expand" }, {
+          default: withCtx(() => [
+            expanded.value ? (openBlock(), createElementBlock("ul", _hoisted_3$i, [
+              (openBlock(true), createElementBlock(Fragment, null, renderList(unref(store).pinned, (m) => {
+                return openBlock(), createElementBlock("li", {
+                  key: m.id,
+                  class: "pinned-item"
+                }, [
+                  createBaseVNode("strong", _hoisted_4$g, toDisplayString(m.author_name), 1),
+                  createBaseVNode("span", {
+                    class: "pinned-text",
+                    innerHTML: unref(renderMessageContent)(m.content)
+                  }, null, 8, _hoisted_5$f)
+                ]);
+              }), 128))
+            ])) : createCommentVNode("", true)
+          ]),
+          _: 1
+        })
       ])) : createCommentVNode("", true);
     };
   }
 });
+const PinnedBanner = /* @__PURE__ */ _export_sfc(_sfc_main$m, [["__scopeId", "data-v-ed9286c0"]]);
 const _hoisted_1$k = {
   id: "main-area",
   class: "main-area"
@@ -11343,23 +11334,21 @@ const _sfc_main$l = /* @__PURE__ */ defineComponent({
             ])) : createCommentVNode("", true)
           ])
         ])) : createCommentVNode("", true),
-        unref(appStore).activeChannelId ? (openBlock(), createBlock(_sfc_main$m, { key: 1 })) : createCommentVNode("", true),
+        unref(appStore).activeChannelId ? (openBlock(), createBlock(PinnedBanner, { key: 1 })) : createCommentVNode("", true),
         pendingForChannel.value.length ? (openBlock(), createElementBlock("div", {
           key: 2,
-          id: "channel-pending-banner",
           class: normalizeClass(["channel-pending-banner", { "channel-pending-urgent": bannerUrgent.value }])
         }, [
           createBaseVNode("span", null, [
             createVNode(unref(ClipboardList), {
               size: 14,
-              style: { "margin-right": "6px", "vertical-align": "middle" }
+              class: "icon-inline"
             }),
             createTextVNode(" " + toDisplayString(pendingForChannel.value.length) + " travail" + toDisplayString(pendingForChannel.value.length > 1 ? "x" : "") + " à rendre dans ce canal" + toDisplayString(bannerUrgent.value ? " — " : "") + " ", 1),
             bannerUrgent.value ? (openBlock(), createElementBlock("strong", _hoisted_9$9, "urgent !")) : createCommentVNode("", true)
           ]),
           createBaseVNode("button", {
-            class: "btn-primary",
-            style: { "font-size": "11px", "padding": "3px 10px" },
+            class: "btn-primary btn-xs",
             onClick: _cache[2] || (_cache[2] = ($event) => _ctx.$router.push("/travaux"))
           }, " Voir mes travaux ")
         ], 2)) : createCommentVNode("", true),
@@ -12571,33 +12560,27 @@ const _sfc_main$e = /* @__PURE__ */ defineComponent({
 });
 const _hoisted_1$c = { id: "login-overlay" };
 const _hoisted_2$c = {
-  key: 0,
+  key: "login",
   id: "login-panel"
 };
 const _hoisted_3$b = { class: "form-group" };
 const _hoisted_4$a = { class: "form-group" };
 const _hoisted_5$9 = {
   key: 0,
-  class: "field-error"
+  class: "field-error login-error-block"
 };
 const _hoisted_6$9 = ["disabled"];
 const _hoisted_7$6 = {
-  key: 1,
+  key: "register",
   id: "login-panel",
-  style: { "max-width": "480px" }
+  class: "login-panel-wide"
 };
 const _hoisted_8$5 = { class: "register-photo-row" };
 const _hoisted_9$5 = ["src"];
 const _hoisted_10$5 = { key: 1 };
-const _hoisted_11$5 = { style: { "display": "flex", "gap": "10px" } };
-const _hoisted_12$4 = {
-  class: "form-group",
-  style: { "flex": "1" }
-};
-const _hoisted_13$4 = {
-  class: "form-group",
-  style: { "flex": "1" }
-};
+const _hoisted_11$5 = { class: "login-name-row" };
+const _hoisted_12$4 = { class: "form-group" };
+const _hoisted_13$4 = { class: "form-group" };
 const _hoisted_14$4 = { class: "form-group" };
 const _hoisted_15$4 = {
   key: 0,
@@ -12606,7 +12589,7 @@ const _hoisted_15$4 = {
 const _hoisted_16$4 = { class: "form-group" };
 const _hoisted_17$3 = ["value"];
 const _hoisted_18$3 = { class: "form-group" };
-const _hoisted_19$3 = { style: { "display": "flex", "gap": "10px", "margin-top": "6px" } };
+const _hoisted_19$3 = { class: "login-form-actions" };
 const _hoisted_20$3 = ["disabled"];
 const _sfc_main$d = /* @__PURE__ */ defineComponent({
   __name: "LoginOverlay",
@@ -12697,182 +12680,204 @@ const _sfc_main$d = /* @__PURE__ */ defineComponent({
     }
     return (_ctx, _cache) => {
       return openBlock(), createElementBlock("div", _hoisted_1$c, [
-        screen.value === "login" ? (openBlock(), createElementBlock("div", _hoisted_2$c, [
-          _cache[11] || (_cache[11] = createStaticVNode('<div id="login-logo"><div class="logo-mark">CeS</div><span class="logo-text">CeSlack</span></div><h2 id="login-title">Connexion</h2><p id="login-subtitle">Entrez vos identifiants pour continuer</p>', 3)),
-          createBaseVNode("form", {
-            style: { "width": "100%", "display": "flex", "flex-direction": "column", "gap": "12px", "margin-top": "8px" },
-            onSubmit: withModifiers(handleLogin, ["prevent"])
-          }, [
-            createBaseVNode("div", _hoisted_3$b, [
-              _cache[9] || (_cache[9] = createBaseVNode("label", {
-                class: "form-label",
-                for: "login-email"
-              }, "Adresse email", -1)),
-              withDirectives(createBaseVNode("input", {
-                id: "login-email",
-                "onUpdate:modelValue": _cache[0] || (_cache[0] = ($event) => email.value = $event),
-                type: "email",
-                class: "form-input",
-                placeholder: "prenom.nom@viacesi.fr",
-                autocomplete: "email",
-                required: "",
-                autofocus: ""
-              }, null, 512), [
-                [vModelText, email.value]
-              ])
-            ]),
-            createBaseVNode("div", _hoisted_4$a, [
-              _cache[10] || (_cache[10] = createBaseVNode("label", {
-                class: "form-label",
-                for: "login-password"
-              }, "Mot de passe", -1)),
-              withDirectives(createBaseVNode("input", {
-                id: "login-password",
-                "onUpdate:modelValue": _cache[1] || (_cache[1] = ($event) => password.value = $event),
-                type: "password",
-                class: "form-input",
-                placeholder: "••••••••",
-                autocomplete: "current-password",
-                required: ""
-              }, null, 512), [
-                [vModelText, password.value]
-              ])
-            ]),
-            loginErr.value ? (openBlock(), createElementBlock("span", _hoisted_5$9, toDisplayString(loginErr.value), 1)) : createCommentVNode("", true),
-            createBaseVNode("button", {
-              type: "submit",
-              class: "btn-primary",
-              style: { "margin-top": "4px" },
-              disabled: submitting.value
-            }, toDisplayString(submitting.value ? "Connexion…" : "Se connecter"), 9, _hoisted_6$9)
-          ], 32),
-          createBaseVNode("button", {
-            class: "btn-ghost",
-            style: { "margin-top": "16px", "width": "100%", "font-size": "13px" },
-            onClick: goToRegister
-          }, " Nouveau compte étudiant ")
-        ])) : (openBlock(), createElementBlock("div", _hoisted_7$6, [
-          _cache[18] || (_cache[18] = createStaticVNode('<div id="login-logo"><div class="logo-mark">CeS</div><span class="logo-text">CeSlack</span></div><h2 id="login-title">Nouveau compte étudiant</h2><p id="login-subtitle">Seules les adresses @viacesi.fr sont acceptées</p>', 3)),
-          createBaseVNode("form", {
-            style: { "width": "100%", "display": "flex", "flex-direction": "column", "gap": "12px", "margin-top": "8px" },
-            onSubmit: withModifiers(handleRegister, ["prevent"])
-          }, [
-            createBaseVNode("div", _hoisted_8$5, [
-              createBaseVNode("div", {
-                id: "register-avatar-preview",
-                class: "register-avatar-preview",
-                style: normalizeStyle({ background: pendingPhoto.value ? "transparent" : previewColor() })
+        createVNode(Transition, {
+          name: "login-screen",
+          mode: "out-in"
+        }, {
+          default: withCtx(() => [
+            screen.value === "login" ? (openBlock(), createElementBlock("div", _hoisted_2$c, [
+              _cache[11] || (_cache[11] = createBaseVNode("div", { id: "login-logo" }, [
+                createBaseVNode("div", { class: "logo-mark" }, "CeS"),
+                createBaseVNode("span", { class: "logo-text" }, "CeSlack")
+              ], -1)),
+              _cache[12] || (_cache[12] = createBaseVNode("h2", { id: "login-title" }, "Connexion", -1)),
+              _cache[13] || (_cache[13] = createBaseVNode("p", { id: "login-subtitle" }, "Entrez vos identifiants pour continuer", -1)),
+              createBaseVNode("form", {
+                class: "login-form",
+                onSubmit: withModifiers(handleLogin, ["prevent"])
               }, [
-                pendingPhoto.value ? (openBlock(), createElementBlock("img", {
-                  key: 0,
-                  src: pendingPhoto.value,
-                  style: { "width": "100%", "height": "100%", "object-fit": "cover", "border-radius": "50%" }
-                }, null, 8, _hoisted_9$5)) : (openBlock(), createElementBlock("span", _hoisted_10$5, toDisplayString(previewInitials()), 1))
-              ], 4),
+                createBaseVNode("div", _hoisted_3$b, [
+                  _cache[9] || (_cache[9] = createBaseVNode("label", {
+                    class: "form-label",
+                    for: "login-email"
+                  }, "Adresse email", -1)),
+                  withDirectives(createBaseVNode("input", {
+                    id: "login-email",
+                    "onUpdate:modelValue": _cache[0] || (_cache[0] = ($event) => email.value = $event),
+                    type: "email",
+                    class: "form-input",
+                    placeholder: "prenom.nom@viacesi.fr",
+                    autocomplete: "email",
+                    required: "",
+                    autofocus: ""
+                  }, null, 512), [
+                    [vModelText, email.value]
+                  ])
+                ]),
+                createBaseVNode("div", _hoisted_4$a, [
+                  _cache[10] || (_cache[10] = createBaseVNode("label", {
+                    class: "form-label",
+                    for: "login-password"
+                  }, "Mot de passe", -1)),
+                  withDirectives(createBaseVNode("input", {
+                    id: "login-password",
+                    "onUpdate:modelValue": _cache[1] || (_cache[1] = ($event) => password.value = $event),
+                    type: "password",
+                    class: "form-input",
+                    placeholder: "••••••••",
+                    autocomplete: "current-password",
+                    required: ""
+                  }, null, 512), [
+                    [vModelText, password.value]
+                  ])
+                ]),
+                createVNode(Transition, { name: "error-pop" }, {
+                  default: withCtx(() => [
+                    loginErr.value ? (openBlock(), createElementBlock("span", _hoisted_5$9, toDisplayString(loginErr.value), 1)) : createCommentVNode("", true)
+                  ]),
+                  _: 1
+                }),
+                createBaseVNode("button", {
+                  type: "submit",
+                  class: "btn-primary login-submit",
+                  disabled: submitting.value
+                }, toDisplayString(submitting.value ? "Connexion…" : "Se connecter"), 9, _hoisted_6$9)
+              ], 32),
               createBaseVNode("button", {
-                type: "button",
-                class: "btn-ghost",
-                style: { "font-size": "12px" },
-                onClick: pickPhoto
-              }, "Choisir une photo"),
-              pendingPhoto.value ? (openBlock(), createElementBlock("button", {
-                key: 0,
-                type: "button",
-                class: "btn-ghost register-btn-remove",
-                style: { "font-size": "12px" },
-                onClick: _cache[2] || (_cache[2] = ($event) => pendingPhoto.value = null)
-              }, "Supprimer")) : createCommentVNode("", true)
-            ]),
-            createBaseVNode("div", _hoisted_11$5, [
-              createBaseVNode("div", _hoisted_12$4, [
-                _cache[12] || (_cache[12] = createBaseVNode("label", { class: "form-label" }, "Prénom", -1)),
-                withDirectives(createBaseVNode("input", {
-                  "onUpdate:modelValue": _cache[3] || (_cache[3] = ($event) => firstName.value = $event),
-                  type: "text",
-                  class: "form-input",
-                  placeholder: "ex : Alice",
-                  required: ""
-                }, null, 512), [
-                  [vModelText, firstName.value]
-                ])
-              ]),
-              createBaseVNode("div", _hoisted_13$4, [
-                _cache[13] || (_cache[13] = createBaseVNode("label", { class: "form-label" }, "Nom", -1)),
-                withDirectives(createBaseVNode("input", {
-                  "onUpdate:modelValue": _cache[4] || (_cache[4] = ($event) => lastName.value = $event),
-                  type: "text",
-                  class: "form-input",
-                  placeholder: "ex : Martin",
-                  required: ""
-                }, null, 512), [
-                  [vModelText, lastName.value]
-                ])
-              ])
-            ]),
-            createBaseVNode("div", _hoisted_14$4, [
-              _cache[14] || (_cache[14] = createBaseVNode("label", { class: "form-label" }, "Adresse email CESI", -1)),
-              withDirectives(createBaseVNode("input", {
-                "onUpdate:modelValue": _cache[5] || (_cache[5] = ($event) => regEmail.value = $event),
-                type: "email",
-                class: "form-input",
-                placeholder: "prenom.nom@viacesi.fr",
-                required: ""
-              }, null, 512), [
-                [vModelText, regEmail.value]
-              ]),
-              regEmailErr.value ? (openBlock(), createElementBlock("span", _hoisted_15$4, toDisplayString(regEmailErr.value), 1)) : createCommentVNode("", true)
-            ]),
-            createBaseVNode("div", _hoisted_16$4, [
-              _cache[16] || (_cache[16] = createBaseVNode("label", { class: "form-label" }, "Promotion", -1)),
-              withDirectives(createBaseVNode("select", {
-                "onUpdate:modelValue": _cache[6] || (_cache[6] = ($event) => regPromoId.value = $event),
-                class: "form-select",
-                required: ""
+                class: "btn-ghost login-switch-btn",
+                onClick: goToRegister
+              }, " Nouveau compte étudiant ")
+            ])) : (openBlock(), createElementBlock("div", _hoisted_7$6, [
+              _cache[20] || (_cache[20] = createBaseVNode("div", { id: "login-logo" }, [
+                createBaseVNode("div", { class: "logo-mark" }, "CeS"),
+                createBaseVNode("span", { class: "logo-text" }, "CeSlack")
+              ], -1)),
+              _cache[21] || (_cache[21] = createBaseVNode("h2", { id: "login-title" }, "Nouveau compte étudiant", -1)),
+              _cache[22] || (_cache[22] = createBaseVNode("p", { id: "login-subtitle" }, "Seules les adresses @viacesi.fr sont acceptées", -1)),
+              createBaseVNode("form", {
+                class: "login-form",
+                onSubmit: withModifiers(handleRegister, ["prevent"])
               }, [
-                _cache[15] || (_cache[15] = createBaseVNode("option", { value: "" }, "Choisir une promotion…", -1)),
-                (openBlock(true), createElementBlock(Fragment, null, renderList(promotions.value, (p2) => {
-                  return openBlock(), createElementBlock("option", {
-                    key: p2.id,
-                    value: p2.id
-                  }, toDisplayString(p2.name), 9, _hoisted_17$3);
-                }), 128))
-              ], 512), [
-                [vModelSelect, regPromoId.value]
-              ])
-            ]),
-            createBaseVNode("div", _hoisted_18$3, [
-              _cache[17] || (_cache[17] = createBaseVNode("label", { class: "form-label" }, "Mot de passe", -1)),
-              withDirectives(createBaseVNode("input", {
-                "onUpdate:modelValue": _cache[7] || (_cache[7] = ($event) => regPassword.value = $event),
-                type: "password",
-                class: "form-input",
-                placeholder: "Choisissez un mot de passe",
-                required: "",
-                minlength: "4"
-              }, null, 512), [
-                [vModelText, regPassword.value]
-              ])
-            ]),
-            createBaseVNode("div", _hoisted_19$3, [
-              createBaseVNode("button", {
-                type: "button",
-                class: "btn-ghost",
-                style: { "flex": "1" },
-                onClick: _cache[8] || (_cache[8] = ($event) => screen.value = "login")
-              }, "Retour"),
-              createBaseVNode("button", {
-                type: "submit",
-                class: "btn-primary",
-                style: { "flex": "2" },
-                disabled: regSubmitting.value
-              }, toDisplayString(regSubmitting.value ? "Création…" : "Créer mon compte"), 9, _hoisted_20$3)
-            ])
-          ], 32)
-        ]))
+                createBaseVNode("div", _hoisted_8$5, [
+                  createBaseVNode("div", {
+                    class: "register-avatar-preview",
+                    style: normalizeStyle({ background: pendingPhoto.value ? "transparent" : previewColor() })
+                  }, [
+                    pendingPhoto.value ? (openBlock(), createElementBlock("img", {
+                      key: 0,
+                      src: pendingPhoto.value,
+                      class: "register-avatar-img"
+                    }, null, 8, _hoisted_9$5)) : (openBlock(), createElementBlock("span", _hoisted_10$5, toDisplayString(previewInitials()), 1))
+                  ], 4),
+                  createBaseVNode("button", {
+                    type: "button",
+                    class: "btn-ghost btn-sm",
+                    onClick: pickPhoto
+                  }, "Choisir une photo"),
+                  pendingPhoto.value ? (openBlock(), createElementBlock("button", {
+                    key: 0,
+                    type: "button",
+                    class: "btn-ghost btn-sm register-btn-remove",
+                    onClick: _cache[2] || (_cache[2] = ($event) => pendingPhoto.value = null)
+                  }, " Supprimer ")) : createCommentVNode("", true)
+                ]),
+                createBaseVNode("div", _hoisted_11$5, [
+                  createBaseVNode("div", _hoisted_12$4, [
+                    _cache[14] || (_cache[14] = createBaseVNode("label", { class: "form-label" }, "Prénom", -1)),
+                    withDirectives(createBaseVNode("input", {
+                      "onUpdate:modelValue": _cache[3] || (_cache[3] = ($event) => firstName.value = $event),
+                      type: "text",
+                      class: "form-input",
+                      placeholder: "ex : Alice",
+                      required: ""
+                    }, null, 512), [
+                      [vModelText, firstName.value]
+                    ])
+                  ]),
+                  createBaseVNode("div", _hoisted_13$4, [
+                    _cache[15] || (_cache[15] = createBaseVNode("label", { class: "form-label" }, "Nom", -1)),
+                    withDirectives(createBaseVNode("input", {
+                      "onUpdate:modelValue": _cache[4] || (_cache[4] = ($event) => lastName.value = $event),
+                      type: "text",
+                      class: "form-input",
+                      placeholder: "ex : Martin",
+                      required: ""
+                    }, null, 512), [
+                      [vModelText, lastName.value]
+                    ])
+                  ])
+                ]),
+                createBaseVNode("div", _hoisted_14$4, [
+                  _cache[16] || (_cache[16] = createBaseVNode("label", { class: "form-label" }, "Adresse email CESI", -1)),
+                  withDirectives(createBaseVNode("input", {
+                    "onUpdate:modelValue": _cache[5] || (_cache[5] = ($event) => regEmail.value = $event),
+                    type: "email",
+                    class: "form-input",
+                    placeholder: "prenom.nom@viacesi.fr",
+                    required: ""
+                  }, null, 512), [
+                    [vModelText, regEmail.value]
+                  ]),
+                  createVNode(Transition, { name: "error-pop" }, {
+                    default: withCtx(() => [
+                      regEmailErr.value ? (openBlock(), createElementBlock("span", _hoisted_15$4, toDisplayString(regEmailErr.value), 1)) : createCommentVNode("", true)
+                    ]),
+                    _: 1
+                  })
+                ]),
+                createBaseVNode("div", _hoisted_16$4, [
+                  _cache[18] || (_cache[18] = createBaseVNode("label", { class: "form-label" }, "Promotion", -1)),
+                  withDirectives(createBaseVNode("select", {
+                    "onUpdate:modelValue": _cache[6] || (_cache[6] = ($event) => regPromoId.value = $event),
+                    class: "form-select",
+                    required: ""
+                  }, [
+                    _cache[17] || (_cache[17] = createBaseVNode("option", { value: "" }, "Choisir une promotion…", -1)),
+                    (openBlock(true), createElementBlock(Fragment, null, renderList(promotions.value, (p2) => {
+                      return openBlock(), createElementBlock("option", {
+                        key: p2.id,
+                        value: p2.id
+                      }, toDisplayString(p2.name), 9, _hoisted_17$3);
+                    }), 128))
+                  ], 512), [
+                    [vModelSelect, regPromoId.value]
+                  ])
+                ]),
+                createBaseVNode("div", _hoisted_18$3, [
+                  _cache[19] || (_cache[19] = createBaseVNode("label", { class: "form-label" }, "Mot de passe", -1)),
+                  withDirectives(createBaseVNode("input", {
+                    "onUpdate:modelValue": _cache[7] || (_cache[7] = ($event) => regPassword.value = $event),
+                    type: "password",
+                    class: "form-input",
+                    placeholder: "Choisissez un mot de passe",
+                    required: "",
+                    minlength: "4"
+                  }, null, 512), [
+                    [vModelText, regPassword.value]
+                  ])
+                ]),
+                createBaseVNode("div", _hoisted_19$3, [
+                  createBaseVNode("button", {
+                    type: "button",
+                    class: "btn-ghost",
+                    onClick: _cache[8] || (_cache[8] = ($event) => screen.value = "login")
+                  }, "Retour"),
+                  createBaseVNode("button", {
+                    type: "submit",
+                    class: "btn-primary login-submit-wide",
+                    disabled: regSubmitting.value
+                  }, toDisplayString(regSubmitting.value ? "Création…" : "Créer mon compte"), 9, _hoisted_20$3)
+                ])
+              ], 32)
+            ]))
+          ]),
+          _: 1
+        })
       ]);
     };
   }
 });
+const LoginOverlay = /* @__PURE__ */ _export_sfc(_sfc_main$d, [["__scopeId", "data-v-9f055726"]]);
 const _hoisted_1$b = { class: "cmd-palette-box" };
 const _hoisted_2$b = { class: "cmd-search-bar" };
 const _hoisted_3$a = ["onClick", "onMouseenter"];
@@ -14811,7 +14816,7 @@ const _sfc_main = /* @__PURE__ */ defineComponent({
       const _component_RouterView = resolveComponent("RouterView");
       return openBlock(), createElementBlock(Fragment, null, [
         createVNode(Toast),
-        !unref(appStore).currentUser ? (openBlock(), createBlock(_sfc_main$d, { key: 0 })) : (openBlock(), createElementBlock("div", _hoisted_1, [
+        !unref(appStore).currentUser ? (openBlock(), createBlock(LoginOverlay, { key: 0 })) : (openBlock(), createElementBlock("div", _hoisted_1, [
           createVNode(NavRail),
           createBaseVNode("aside", _hoisted_2, [
             createVNode(_sfc_main$e)

@@ -59,7 +59,6 @@
           :class="{ active: showToolbar }"
           title="Mise en forme"
           aria-label="Afficher la barre de mise en forme"
-          style="flex-shrink:0"
           @click="showToolbar = !showToolbar"
         >
           <Type :size="16" />

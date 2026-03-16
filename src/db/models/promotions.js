@@ -6,7 +6,7 @@ function getPromotions() {
 
 function getChannels(promoId) {
   return getDb().prepare(
-    'SELECT * FROM channels WHERE promo_id = ? ORDER BY type DESC, name ASC'
+    "SELECT * FROM channels WHERE promo_id = ? ORDER BY COALESCE(category, 'zzz') ASC, type DESC, name ASC"
   ).all(promoId);
 }
 
@@ -22,12 +22,13 @@ function deletePromotion(promoId) {
   return getDb().prepare('DELETE FROM promotions WHERE id = ?').run(promoId);
 }
 
-function createChannel({ promoId, name, isPrivate, members }) {
+function createChannel({ promoId, name, type, isPrivate, members, category }) {
   const db          = getDb();
   const membersJson = isPrivate && members?.length ? JSON.stringify(members) : null;
+  const chType      = type === 'annonce' ? 'annonce' : 'chat';
   return db.prepare(
-    'INSERT INTO channels (promo_id, name, description, type, is_private, members) VALUES (?, ?, ?, ?, ?, ?)'
-  ).run(promoId, name, '', 'chat', isPrivate ? 1 : 0, membersJson).lastInsertRowid;
+    'INSERT INTO channels (promo_id, name, description, type, is_private, members, category) VALUES (?, ?, ?, ?, ?, ?, ?)'
+  ).run(promoId, name, '', chType, isPrivate ? 1 : 0, membersJson, category ?? null).lastInsertRowid;
 }
 
 module.exports = { getPromotions, getChannels, createPromotion, deletePromotion, createChannel };

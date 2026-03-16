@@ -51,6 +51,11 @@
   watch(promoFilter, loadChannels)
   watch(channelFilter, loadDocuments)
 
+  // Réagir au canal sélectionné depuis la sidebar (quand on est sur /documents)
+  watch(() => appStore.activeChannelId, (chId) => {
+    if (chId !== null) channelFilter.value = chId
+  })
+
   const filtered = computed(() => {
     const q = docStore.searchQuery.trim().toLowerCase()
     return docStore.documents.filter((d) => {

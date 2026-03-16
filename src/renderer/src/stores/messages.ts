@@ -147,7 +147,8 @@ export const useMessagesStore = defineStore('messages', () => {
     await window.api.sendMessage({
       channelId:   appStore.activeChannelId   ?? undefined,
       dmStudentId: appStore.activeDmStudentId ?? undefined,
-      authorId:    appStore.currentUser.id,
+      authorName:  appStore.currentUser.name,
+      authorType:  appStore.currentUser.type,
       content:     content.trim(),
     })
     // Le push msg:new déclenche un rechargement via le listener dans App.vue

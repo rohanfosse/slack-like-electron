@@ -69,6 +69,11 @@
   watch(() => travauxStore.view, loadView)
   watch(promoFilter, loadView)
 
+  // Recharger les travaux étudiant quand le canal change depuis la sidebar
+  watch(() => appStore.activeChannelId, () => {
+    if (appStore.isStudent) travauxStore.fetchStudentTravaux()
+  })
+
   // ── Dépôt étudiant ────────────────────────────────────────────────────────
   function startDeposit(t: Travail) {
     depositingTravailId.value = t.id

@@ -12,6 +12,8 @@
   const { showToast } = useToast()
 
   const channelName  = ref('')
+  const channelType  = ref<'chat' | 'annonce'>('chat')
+  const category     = ref('')
   const visibility   = ref<'public' | 'private'>('public')
   const members      = ref<number[]>([])
   const students     = ref<Student[]>([])
@@ -22,6 +24,8 @@
       const res = await window.api.getStudents(appStore.activePromoId)
       students.value = res?.ok ? res.data : []
       channelName.value = ''
+      channelType.value  = 'chat'
+      category.value    = ''
       visibility.value  = 'public'
       members.value     = []
     }
@@ -34,8 +38,10 @@
       const res = await window.api.createChannel({
         name: channelName.value.trim(),
         promoId: appStore.activePromoId,
+        type: channelType.value,
         isPrivate: visibility.value === 'private',
         members: visibility.value === 'private' ? members.value : [],
+        category: category.value.trim() || null,
       })
       if (!res?.ok) { showToast(res?.error ?? 'Erreur lors de la création.'); return }
       showToast('Canal créé.', 'success')
@@ -65,6 +71,33 @@
           placeholder="ex : général, tp-réseaux…"
           autofocus
         />
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Catégorie <span style="opacity:.55;font-weight:400">(optionnelle)</span></label>
+        <input
+          v-model="category"
+          type="text"
+          class="form-input"
+          placeholder="ex : Cours, Projets, Ressources…"
+        />
+        <span style="font-size:11px;color:var(--text-muted);margin-top:3px;display:block">
+          Les canaux d'une même catégorie sont regroupés dans la barre latérale.
+        </span>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Type</label>
+        <div style="display:flex;gap:16px">
+          <label class="radio-label">
+            <input v-model="channelType" type="radio" value="chat" />
+            Chat
+          </label>
+          <label class="radio-label">
+            <input v-model="channelType" type="radio" value="annonce" />
+            Annonces (lecture seule pour les étudiants)
+          </label>
+        </div>
       </div>
 
       <div class="form-group">

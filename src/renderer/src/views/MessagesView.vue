@@ -124,17 +124,16 @@
     <!-- Bannière travaux en attente (étudiant) -->
     <div
       v-if="pendingForChannel.length"
-      id="channel-pending-banner"
       class="channel-pending-banner"
       :class="{ 'channel-pending-urgent': bannerUrgent }"
     >
       <span>
-        <ClipboardList :size="14" style="margin-right:6px;vertical-align:middle" />
+        <ClipboardList :size="14" class="icon-inline" />
         {{ pendingForChannel.length }} travail{{ pendingForChannel.length > 1 ? 'x' : '' }}
         à rendre dans ce canal{{ bannerUrgent ? ' — ' : '' }}
         <strong v-if="bannerUrgent">urgent !</strong>
       </span>
-      <button class="btn-primary" style="font-size:11px;padding:3px 10px" @click="$router.push('/travaux')">
+      <button class="btn-primary btn-xs" @click="$router.push('/travaux')">
         Voir mes travaux
       </button>
     </div>

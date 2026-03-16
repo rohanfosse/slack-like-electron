@@ -1,6 +1,6 @@
 const { getDb } = require('./connection');
 
-const CURRENT_VERSION = 5;
+const CURRENT_VERSION = 6;
 
 // ─── Schema initial ───────────────────────────────────────────────────────────
 // Crée toutes les tables avec leur schéma complet (colonnes UTC, toutes colonnes incluses).
@@ -23,7 +23,8 @@ function initSchema() {
       description TEXT,
       type        TEXT NOT NULL DEFAULT 'chat' CHECK(type IN ('chat', 'annonce')),
       is_private  INTEGER NOT NULL DEFAULT 0,
-      members     TEXT DEFAULT NULL
+      members     TEXT DEFAULT NULL,
+      category    TEXT DEFAULT NULL
     );
 
     CREATE TABLE IF NOT EXISTS students (
@@ -185,6 +186,11 @@ function runMigrations(db) {
       tryAlter(db, 'ALTER TABLE channels ADD COLUMN is_private INTEGER NOT NULL DEFAULT 0');
       tryAlter(db, 'ALTER TABLE channels ADD COLUMN members TEXT DEFAULT NULL');
       tryAlter(db, "ALTER TABLE students ADD COLUMN password TEXT DEFAULT 'cesi1234'");
+    },
+
+    // v6 : catégories de canaux
+    (db) => {
+      tryAlter(db, 'ALTER TABLE channels ADD COLUMN category TEXT DEFAULT NULL');
     },
   ];
 

@@ -1,7 +1,7 @@
 <script setup lang="ts">
   import { ref, watch, computed, onMounted } from 'vue'
-  import { useRoute } from 'vue-router'
-  import { Plus } from 'lucide-vue-next'
+  import { useRoute, useRouter } from 'vue-router'
+  import { Plus, ChevronDown } from 'lucide-vue-next'
   import { useAppStore }    from '@/stores/app'
   import { useModalsStore } from '@/stores/modals'
   import { useMessagesStore } from '@/stores/messages'
@@ -16,12 +16,15 @@
   const messagesStore = useMessagesStore()
   const travauxStore  = useTravauxStore()
   const route         = useRoute()
+  const router        = useRouter()
 
   // ── État local ────────────────────────────────────────────────────────────
   const promotions  = ref<Promotion[]>([])
   const channels    = ref<Channel[]>([])
   const students    = ref<Student[]>([])
   const loading     = ref(false)
+  // Set des catégories repliées
+  const collapsed   = ref<Set<string>>(new Set())
 
   const user = computed(() => appStore.currentUser)
 
@@ -83,21 +86,79 @@
     })
   })
 
+  // Grouper les canaux par catégorie
+  // null/undefined category → groupe "Sans catégorie" mis en dernier
+  const NO_CAT = '__no_category__'
+
+  interface CategoryGroup {
+    label: string
+    key: string
+    channels: Channel[]
+  }
+
+  const channelGroups = computed((): CategoryGroup[] => {
+    const map = new Map<string, Channel[]>()
+    for (const ch of visibleChannels.value) {
+      const key = ch.category?.trim() || NO_CAT
+      if (!map.has(key)) map.set(key, [])
+      map.get(key)!.push(ch)
+    }
+
+    const groups: CategoryGroup[] = []
+    for (const [key, chs] of map) {
+      if (key !== NO_CAT) groups.push({ label: key, key, channels: chs })
+    }
+    // Sans catégorie toujours en dernier
+    if (map.has(NO_CAT)) {
+      const hasCats = groups.length > 0
+      groups.push({ label: hasCats ? 'Autres' : 'Canaux', key: NO_CAT, channels: map.get(NO_CAT)! })
+    }
+    return groups
+  })
+
+  function toggleCategory(key: string) {
+    const next = new Set(collapsed.value)
+    if (next.has(key)) next.delete(key)
+    else next.add(key)
+    collapsed.value = next
+  }
+
   const dmStudents = computed(() =>
     students.value.filter((s) => s.id !== user.value?.id),
   )
 
+  // ── Contexte sidebar selon la route ───────────────────────────────────────
+  const sectionLabel = computed(() => {
+    if (route.name === 'travaux')   return 'Travaux'
+    if (route.name === 'documents') return 'Documents'
+    return 'Messages'
+  })
+
+  const channelSectionLabel = computed(() => {
+    if (route.name === 'travaux')   return 'Travaux par canal'
+    if (route.name === 'documents') return 'Docs par canal'
+    return 'Canaux'
+  })
+
+  const channelActionLabel = computed(() => {
+    if (route.name === 'travaux')   return 'Voir les travaux de ce canal'
+    if (route.name === 'documents') return 'Voir les docs de ce canal'
+    return undefined
+  })
+
   // ── Interactions ──────────────────────────────────────────────────────────
   function selectChannel(ch: Channel) {
     appStore.openChannel(ch.id, ch.promo_id, ch.name, ch.type)
-    messagesStore.fetchMessages()
-    messagesStore.fetchPinned(ch.id)
-    if (appStore.isStudent) travauxStore.fetchStudentTravaux()
+    // Naviguer vers la section active pour que la vue charge le bon contenu
+    if (route.name !== 'messages') {
+      router.push(`/${route.name as string}`)
+    }
+    // MessagesView, TravauxView, DocumentsView ont chacun leur watcher sur activeChannelId
   }
 
   function selectDm(s: Student) {
     appStore.openDm(s.id, s.promo_id, s.name)
-    messagesStore.fetchMessages()
+    if (route.name !== 'messages') router.push('/messages')
   }
 
   async function selectPromo(promoId: number) {
@@ -108,11 +169,10 @@
   // ── Réactivité ────────────────────────────────────────────────────────────
   onMounted(load)
 
-  // Recharger quand on revient sur la section Messages
   watch(() => route.name, (n) => { if (n === 'messages') load() })
-
-  // Recharger après création d'un canal
   watch(() => modals.createChannel, (open) => { if (!open) load() })
+  // Recharger quand l'utilisateur change (simulation étudiant)
+  watch(() => appStore.currentUser?.id, () => load())
 </script>
 
 <template>
@@ -138,6 +198,11 @@
       </div>
     </div>
 
+    <!-- Indicateur de section actuelle -->
+    <div class="sidebar-section-indicator" :class="`sidebar-section--${route.name as string}`">
+      {{ sectionLabel }}
+    </div>
+
     <!-- Section Messages -->
     <div id="sidebar-section-messages">
       <!-- Rail des promos (prof) -->
@@ -155,10 +220,10 @@
         </div>
       </template>
 
-      <!-- Canaux -->
+      <!-- Canaux groupés par catégorie -->
       <template v-else>
         <div id="sidebar-channels-header" class="sidebar-section-header">
-          <span>Canaux</span>
+          <span>{{ channelSectionLabel }}</span>
           <button
             v-if="appStore.isTeacher"
             class="btn-icon"
@@ -171,17 +236,42 @@
           </button>
         </div>
 
-        <nav id="sidebar-nav" aria-label="Canaux">
-          <ChannelItem
-            v-for="ch in visibleChannels"
-            :key="ch.id"
-            :channel-id="ch.id"
-            :name="ch.name"
-            :prefix="ch.type === 'annonce' ? '📢' : '#'"
-            :type="ch.type"
-            @click="selectChannel(ch)"
-          />
-        </nav>
+        <div
+          v-for="group in channelGroups"
+          :key="group.key"
+          class="sidebar-category"
+        >
+          <!-- En-tête de catégorie (affiché seulement s'il y a plusieurs groupes) -->
+          <button
+            v-if="channelGroups.length > 1"
+            class="sidebar-category-header"
+            :aria-expanded="!collapsed.has(group.key)"
+            @click="toggleCategory(group.key)"
+          >
+            <ChevronDown
+              :size="12"
+              class="sidebar-category-chevron"
+              :class="{ rotated: collapsed.has(group.key) }"
+            />
+            <span class="sidebar-category-label">{{ group.label }}</span>
+            <span class="sidebar-category-count">{{ group.channels.length }}</span>
+          </button>
+
+          <nav
+            v-show="!collapsed.has(group.key)"
+            :aria-label="group.label"
+          >
+            <ChannelItem
+              v-for="ch in group.channels"
+              :key="ch.id"
+              :channel-id="ch.id"
+              :name="ch.name"
+              :prefix="ch.type === 'annonce' ? '📢' : '#'"
+              :type="ch.type"
+              @click="selectChannel(ch)"
+            />
+          </nav>
+        </div>
 
         <!-- Messages directs (étudiant) -->
         <template v-if="appStore.isStudent && dmStudents.length">
@@ -203,3 +293,83 @@
     </div>
   </div>
 </template>
+
+<style scoped>
+/* ── Indicateur de section ── */
+.sidebar-section-indicator {
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .8px;
+  padding: 6px 16px 5px;
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Accent coloré selon la section active */
+.sidebar-section-indicator::before {
+  content: '';
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--text-muted);
+  flex-shrink: 0;
+}
+.sidebar-section--messages::before { background: var(--accent); }
+.sidebar-section--travaux::before  { background: #F39C12; }
+.sidebar-section--documents::before{ background: #27AE60; }
+.sidebar-section--messages { color: var(--accent); }
+.sidebar-section--travaux  { color: #F39C12; }
+.sidebar-section--documents{ color: #27AE60; }
+
+/* ── Catégories de canaux ── */
+.sidebar-category {
+  margin-bottom: 4px;
+}
+
+.sidebar-category-header {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  width: 100%;
+  background: transparent;
+  border: none;
+  padding: 4px 12px 4px 10px;
+  cursor: pointer;
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  font-family: var(--font);
+  transition: color var(--t-fast);
+}
+
+.sidebar-category-header:hover { color: var(--text-secondary); }
+.sidebar-category-header:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; border-radius: 3px; }
+
+.sidebar-category-chevron {
+  flex-shrink: 0;
+  transition: transform .18s ease;
+}
+.sidebar-category-chevron.rotated { transform: rotate(-90deg); }
+
+.sidebar-category-label {
+  flex: 1;
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sidebar-category-count {
+  font-size: 10px;
+  opacity: .5;
+  font-weight: 400;
+}
+</style>

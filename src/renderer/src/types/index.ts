@@ -23,6 +23,7 @@ export interface Channel {
   type: 'chat' | 'annonce'
   is_private: boolean | 0 | 1
   members?: number[]
+  category?: string | null
 }
 
 export interface Message {
@@ -113,6 +114,7 @@ export interface Student {
 export interface SendMessagePayload {
   channelId?: number | null
   dmStudentId?: number | null
-  authorId: number
+  authorName: string
+  authorType: 'teacher' | 'student'
   content: string
 }
