@@ -12,6 +12,7 @@ export const useMessagesStore = defineStore('messages', () => {
   const pinned         = ref<Message[]>([])
   const loading        = ref(false)
   const searchTerm     = ref('')
+  const firstUnreadId  = ref<number | null>(null)
 
   // Réactions en mémoire — non persistées (client-side uniquement)
   const reactions  = reactive<Record<number, Record<string, number>>>({})
@@ -26,11 +27,24 @@ export const useMessagesStore = defineStore('messages', () => {
   }
 
   // ── Fetch ─────────────────────────────────────────────────────────────────
+  function _lrKey(): string | null {
+    const { activeChannelId, activeDmStudentId } = appStore
+    if (activeChannelId)   return `lastRead:ch:${activeChannelId}`
+    if (activeDmStudentId) return `lastRead:dm:${activeDmStudentId}`
+    return null
+  }
+
   async function fetchMessages() {
     loading.value = true
     try {
       const { activeChannelId, activeDmStudentId } = appStore
       let res: { ok: boolean; data: Message[] } | null = null
+
+      // Lire le marqueur de lecture avant le fetch (pour les nouveaux messages)
+      const lrKey = _lrKey()
+      const lastReadId = lrKey
+        ? parseInt(localStorage.getItem(lrKey) ?? '0', 10)
+        : 0
 
       if (searchTerm.value && activeChannelId) {
         res = await window.api.searchMessages(activeChannelId, searchTerm.value)
@@ -40,7 +54,22 @@ export const useMessagesStore = defineStore('messages', () => {
         res = await window.api.getDmMessages(activeDmStudentId)
       }
 
-      messages.value = res?.ok ? res.data : []
+      const fetched = res?.ok ? res.data : []
+      messages.value = fetched
+
+      // Calculer le premier message non lu (seulement hors recherche)
+      if (!searchTerm.value && lastReadId > 0) {
+        const first = fetched.find((m) => m.id > lastReadId)
+        firstUnreadId.value = first?.id ?? null
+      } else {
+        firstUnreadId.value = null
+      }
+
+      // Sauvegarder le dernier message comme "lu"
+      if (lrKey && fetched.length) {
+        const lastId = fetched[fetched.length - 1].id
+        localStorage.setItem(lrKey, String(lastId))
+      }
     } finally {
       loading.value = false
     }
@@ -94,7 +123,7 @@ export const useMessagesStore = defineStore('messages', () => {
   }
 
   return {
-    messages, pinned, loading, searchTerm,
+    messages, pinned, loading, searchTerm, firstUnreadId,
     reactions, userVotes,
     isGrouped, fetchMessages, fetchPinned,
     sendMessage, togglePin,

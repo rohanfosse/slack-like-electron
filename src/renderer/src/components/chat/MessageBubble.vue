@@ -21,7 +21,9 @@
   const appStore      = useAppStore()
   const messagesStore = useMessagesStore()
 
-  const content = computed(() => renderMessageContent(props.msg.content, props.searchTerm))
+  const content = computed(() =>
+    renderMessageContent(props.msg.content, props.searchTerm, appStore.currentUser?.name ?? ''),
+  )
   const color   = computed(() => avatarColor(props.msg.author_name))
   const isPinned = computed(() => !!props.msg.is_pinned)
 

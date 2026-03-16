@@ -5,7 +5,7 @@
   import { formatDateSeparator } from '@/utils/date'
   import type { Message } from '@/types'
 
-  const store = useMessagesStore()
+  const store  = useMessagesStore()
   const listEl = ref<HTMLElement | null>(null)
 
   // Initialiser les réactions à chaque changement de liste
@@ -15,22 +15,44 @@
     { immediate: true },
   )
 
-  // Auto-scroll vers le bas à chaque nouveau message
+  // Auto-scroll : seulement si on est déjà en bas (± 100px)
+  // Si des "nouveaux messages" existent, scroller jusqu'au marqueur la première fois
+  let initialScrollDone = false
   watch(
     () => store.messages.length,
     () => nextTick(() => {
-      if (listEl.value) listEl.value.scrollTop = listEl.value.scrollHeight
+      if (!listEl.value) return
+      if (!initialScrollDone && store.firstUnreadId) {
+        // Scroller jusqu'au marqueur "nouveaux messages"
+        const marker = listEl.value.querySelector('.unread-divider')
+        if (marker) {
+          marker.scrollIntoView({ block: 'center' })
+          initialScrollDone = true
+          return
+        }
+      }
+      // Sinon scroll vers le bas
+      const el = listEl.value
+      const atBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 120
+      if (atBottom || !initialScrollDone) {
+        el.scrollTop = el.scrollHeight
+        initialScrollDone = true
+      }
     }),
   )
 
-  // Regrouper les messages par date + calculer grouped
-  interface GroupedMessage { msg: Message; grouped: boolean }
-  interface DateGroup { date: string; messages: GroupedMessage[] }
+  // Réinitialiser le scroll à chaque changement de canal
+  watch(() => store.loading, (loading) => { if (loading) initialScrollDone = false })
+
+  // ── Groupement par date ────────────────────────────────────────────────────
+  interface GroupedMessage { msg: Message; grouped: boolean; isFirstUnread: boolean }
+  interface DateGroup      { date: string; messages: GroupedMessage[] }
 
   const dateGroups = computed<DateGroup[]>(() => {
     const groups: DateGroup[] = []
     let lastDate = ''
     let lastMsg: Message | null = null
+    let unreadMarked = false
 
     for (const msg of store.messages) {
       const date = new Date(msg.created_at).toDateString()
@@ -40,7 +62,15 @@
         groups.push({ date: formatDateSeparator(msg.created_at), messages: [] })
       }
       const grp = groups[groups.length - 1]
-      grp.messages.push({ msg, grouped: store.isGrouped(msg, lastMsg) })
+
+      const isFirstUnread =
+        !unreadMarked &&
+        store.firstUnreadId !== null &&
+        msg.id === store.firstUnreadId
+
+      if (isFirstUnread) unreadMarked = true
+
+      grp.messages.push({ msg, grouped: store.isGrouped(msg, lastMsg), isFirstUnread })
       lastMsg = msg
     }
     return groups
@@ -65,13 +95,19 @@
     <template v-else-if="store.messages.length">
       <template v-for="group in dateGroups" :key="group.date">
         <div class="date-separator"><span>{{ group.date }}</span></div>
-        <MessageBubble
-          v-for="{ msg, grouped } in group.messages"
-          :key="msg.id"
-          :msg="msg"
-          :grouped="grouped"
-          :search-term="store.searchTerm"
-        />
+
+        <template v-for="{ msg, grouped, isFirstUnread } in group.messages" :key="msg.id">
+          <!-- Séparateur "Nouveaux messages" -->
+          <div v-if="isFirstUnread" class="unread-divider">
+            <span class="unread-divider-label">Nouveaux messages</span>
+          </div>
+
+          <MessageBubble
+            :msg="msg"
+            :grouped="grouped"
+            :search-term="store.searchTerm"
+          />
+        </template>
       </template>
     </template>
 
@@ -81,3 +117,32 @@
     </div>
   </div>
 </template>
+
+<style scoped>
+/* Séparateur "Nouveaux messages" — style Slack */
+.unread-divider {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 8px 20px;
+  position: relative;
+}
+
+.unread-divider::before,
+.unread-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--color-danger);
+  opacity: .5;
+}
+
+.unread-divider-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--color-danger);
+  white-space: nowrap;
+  padding: 0 8px;
+  flex-shrink: 0;
+}
+</style>

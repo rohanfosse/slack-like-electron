@@ -10199,6 +10199,7 @@ const useMessagesStore = /* @__PURE__ */ defineStore("messages", () => {
   const pinned = /* @__PURE__ */ ref([]);
   const loading = /* @__PURE__ */ ref(false);
   const searchTerm = /* @__PURE__ */ ref("");
+  const firstUnreadId = /* @__PURE__ */ ref(null);
   const reactions = /* @__PURE__ */ reactive({});
   const userVotes = /* @__PURE__ */ reactive({});
   function isGrouped(msg, prev) {
@@ -10206,11 +10207,19 @@ const useMessagesStore = /* @__PURE__ */ defineStore("messages", () => {
     if (msg.author_name !== prev.author_name) return false;
     return new Date(msg.created_at).getTime() - new Date(prev.created_at).getTime() < GROUP_THRESHOLD_MS;
   }
+  function _lrKey() {
+    const { activeChannelId, activeDmStudentId } = appStore;
+    if (activeChannelId) return `lastRead:ch:${activeChannelId}`;
+    if (activeDmStudentId) return `lastRead:dm:${activeDmStudentId}`;
+    return null;
+  }
   async function fetchMessages() {
     loading.value = true;
     try {
       const { activeChannelId, activeDmStudentId } = appStore;
       let res = null;
+      const lrKey = _lrKey();
+      const lastReadId = lrKey ? parseInt(localStorage.getItem(lrKey) ?? "0", 10) : 0;
       if (searchTerm.value && activeChannelId) {
         res = await window.api.searchMessages(activeChannelId, searchTerm.value);
       } else if (activeChannelId) {
@@ -10218,7 +10227,18 @@ const useMessagesStore = /* @__PURE__ */ defineStore("messages", () => {
       } else if (activeDmStudentId) {
         res = await window.api.getDmMessages(activeDmStudentId);
       }
-      messages.value = res?.ok ? res.data : [];
+      const fetched = res?.ok ? res.data : [];
+      messages.value = fetched;
+      if (!searchTerm.value && lastReadId > 0) {
+        const first = fetched.find((m) => m.id > lastReadId);
+        firstUnreadId.value = first?.id ?? null;
+      } else {
+        firstUnreadId.value = null;
+      }
+      if (lrKey && fetched.length) {
+        const lastId = fetched[fetched.length - 1].id;
+        localStorage.setItem(lrKey, String(lastId));
+      }
     } finally {
       loading.value = false;
     }
@@ -10275,6 +10295,7 @@ const useMessagesStore = /* @__PURE__ */ defineStore("messages", () => {
     pinned,
     loading,
     searchTerm,
+    firstUnreadId,
     reactions,
     userVotes,
     isGrouped,
@@ -10543,7 +10564,7 @@ const _hoisted_2$o = {
   class: "reaction-picker",
   style: { "position": "absolute", "bottom": "28px", "left": "0", "z-index": "200" }
 };
-const _hoisted_3$l = ["aria-label", "onClick"];
+const _hoisted_3$m = ["aria-label", "onClick"];
 const _sfc_main$r = /* @__PURE__ */ defineComponent({
   __name: "ReactionPicker",
   props: {
@@ -10590,7 +10611,7 @@ const _sfc_main$r = /* @__PURE__ */ defineComponent({
               class: "reaction-picker-btn",
               "aria-label": r.type,
               onClick: withModifiers(($event) => pick(r.type), ["stop"])
-            }, toDisplayString(r.emoji), 9, _hoisted_3$l);
+            }, toDisplayString(r.emoji), 9, _hoisted_3$m);
           }), 64))
         ])) : createCommentVNode("", true)
       ]);
@@ -10650,22 +10671,24 @@ function highlightTerm(text, term) {
 function parseMarkdown(html) {
   return html.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>").replace(/\*(.*?)\*/g, "<em>$1</em>").replace(/`(.*?)`/g, '<code class="inline-code">$1</code>');
 }
-function applyMentions(html) {
-  return html.replace(
-    /@(everyone|\w[\w\s]*?\w)/g,
-    (match) => `<span class="mention-tag">${match}</span>`
-  );
+function applyMentions(html, currentUserName = "") {
+  return html.replace(/@([\w][\w.\-]*)/g, (match, name) => {
+    const isEveryone = name.toLowerCase() === "everyone";
+    const isMine = !isEveryone && !!currentUserName && currentUserName.toLowerCase().includes(name.toLowerCase());
+    const cls = isEveryone || isMine ? "mention-me" : "mention-tag";
+    return `<span class="${cls}">${match}</span>`;
+  });
 }
-function renderMessageContent(raw, searchTerm = "") {
+function renderMessageContent(raw, searchTerm = "", currentUserName = "") {
   const escaped = searchTerm ? highlightTerm(raw, searchTerm) : escapeHtml(raw);
-  return applyMentions(parseMarkdown(escaped));
+  return applyMentions(parseMarkdown(escaped), currentUserName);
 }
 const _hoisted_1$p = ["data-msg-id"];
 const _hoisted_2$n = {
   key: 1,
   class: "msg-avatar-placeholder"
 };
-const _hoisted_3$k = { class: "msg-body" };
+const _hoisted_3$l = { class: "msg-body" };
 const _hoisted_4$i = { class: "msg-author" };
 const _hoisted_5$f = { class: "msg-time" };
 const _hoisted_6$e = {
@@ -10692,7 +10715,9 @@ const _sfc_main$q = /* @__PURE__ */ defineComponent({
     const props = __props;
     const appStore = useAppStore();
     const messagesStore = useMessagesStore();
-    const content = computed(() => renderMessageContent(props.msg.content, props.searchTerm));
+    const content = computed(
+      () => renderMessageContent(props.msg.content, props.searchTerm, appStore.currentUser?.name ?? "")
+    );
     const color = computed(() => avatarColor(props.msg.author_name));
     const isPinned = computed(() => !!props.msg.is_pinned);
     function togglePin() {
@@ -10725,7 +10750,7 @@ const _sfc_main$q = /* @__PURE__ */ defineComponent({
           color: color.value,
           "photo-data": __props.msg.author_photo
         }, null, 8, ["initials", "color", "photo-data"])) : (openBlock(), createElementBlock("div", _hoisted_2$n)),
-        createBaseVNode("div", _hoisted_3$k, [
+        createBaseVNode("div", _hoisted_3$l, [
           !__props.grouped ? (openBlock(), createElementBlock(Fragment, { key: 0 }, [
             createBaseVNode("span", _hoisted_4$i, toDisplayString(__props.msg.author_name), 1),
             createBaseVNode("span", _hoisted_5$f, toDisplayString(unref(formatTime)(__props.msg.created_at)), 1),
@@ -10774,6 +10799,10 @@ const _sfc_main$q = /* @__PURE__ */ defineComponent({
 });
 const _hoisted_1$o = { class: "date-separator" };
 const _hoisted_2$m = {
+  key: 0,
+  class: "unread-divider"
+};
+const _hoisted_3$k = {
   key: 2,
   class: "empty-state"
 };
@@ -10787,16 +10816,35 @@ const _sfc_main$p = /* @__PURE__ */ defineComponent({
       (msgs) => msgs.forEach((m) => store.initReactions(m.id, m.reactions)),
       { immediate: true }
     );
+    let initialScrollDone = false;
     watch(
       () => store.messages.length,
       () => nextTick(() => {
-        if (listEl.value) listEl.value.scrollTop = listEl.value.scrollHeight;
+        if (!listEl.value) return;
+        if (!initialScrollDone && store.firstUnreadId) {
+          const marker = listEl.value.querySelector(".unread-divider");
+          if (marker) {
+            marker.scrollIntoView({ block: "center" });
+            initialScrollDone = true;
+            return;
+          }
+        }
+        const el = listEl.value;
+        const atBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 120;
+        if (atBottom || !initialScrollDone) {
+          el.scrollTop = el.scrollHeight;
+          initialScrollDone = true;
+        }
       })
     );
+    watch(() => store.loading, (loading) => {
+      if (loading) initialScrollDone = false;
+    });
     const dateGroups = computed(() => {
       const groups = [];
       let lastDate = "";
       let lastMsg = null;
+      let unreadMarked = false;
       for (const msg of store.messages) {
         const date = new Date(msg.created_at).toDateString();
         if (date !== lastDate) {
@@ -10805,7 +10853,9 @@ const _sfc_main$p = /* @__PURE__ */ defineComponent({
           groups.push({ date: formatDateSeparator(msg.created_at), messages: [] });
         }
         const grp = groups[groups.length - 1];
-        grp.messages.push({ msg, grouped: store.isGrouped(msg, lastMsg) });
+        const isFirstUnread = !unreadMarked && store.firstUnreadId !== null && msg.id === store.firstUnreadId;
+        if (isFirstUnread) unreadMarked = true;
+        grp.messages.push({ msg, grouped: store.isGrouped(msg, lastMsg), isFirstUnread });
         lastMsg = msg;
       }
       return groups;
@@ -10822,7 +10872,7 @@ const _sfc_main$p = /* @__PURE__ */ defineComponent({
             key: i,
             class: "skel-msg-row"
           }, [..._cache[0] || (_cache[0] = [
-            createStaticVNode('<div class="skel skel-avatar"></div><div class="skel-msg-body"><div class="skel skel-line skel-w30"></div><div class="skel skel-line skel-w90"></div><div class="skel skel-line skel-w70"></div></div>', 2)
+            createStaticVNode('<div class="skel skel-avatar" data-v-7e39a9fa></div><div class="skel-msg-body" data-v-7e39a9fa><div class="skel skel-line skel-w30" data-v-7e39a9fa></div><div class="skel skel-line skel-w90" data-v-7e39a9fa></div><div class="skel skel-line skel-w70" data-v-7e39a9fa></div></div>', 2)
           ])]);
         }), 64)) : unref(store).messages.length ? (openBlock(true), createElementBlock(Fragment, { key: 1 }, renderList(dateGroups.value, (group) => {
           return openBlock(), createElementBlock(Fragment, {
@@ -10831,22 +10881,36 @@ const _sfc_main$p = /* @__PURE__ */ defineComponent({
             createBaseVNode("div", _hoisted_1$o, [
               createBaseVNode("span", null, toDisplayString(group.date), 1)
             ]),
-            (openBlock(true), createElementBlock(Fragment, null, renderList(group.messages, ({ msg, grouped }) => {
-              return openBlock(), createBlock(_sfc_main$q, {
-                key: msg.id,
-                msg,
-                grouped,
-                "search-term": unref(store).searchTerm
-              }, null, 8, ["msg", "grouped", "search-term"]);
+            (openBlock(true), createElementBlock(Fragment, null, renderList(group.messages, ({ msg, grouped, isFirstUnread }) => {
+              return openBlock(), createElementBlock(Fragment, {
+                key: msg.id
+              }, [
+                isFirstUnread ? (openBlock(), createElementBlock("div", _hoisted_2$m, [..._cache[1] || (_cache[1] = [
+                  createBaseVNode("span", { class: "unread-divider-label" }, "Nouveaux messages", -1)
+                ])])) : createCommentVNode("", true),
+                createVNode(_sfc_main$q, {
+                  msg,
+                  grouped,
+                  "search-term": unref(store).searchTerm
+                }, null, 8, ["msg", "grouped", "search-term"])
+              ], 64);
             }), 128))
           ], 64);
-        }), 128)) : (openBlock(), createElementBlock("div", _hoisted_2$m, [
+        }), 128)) : (openBlock(), createElementBlock("div", _hoisted_3$k, [
           createBaseVNode("p", null, toDisplayString(unref(store).searchTerm ? "Aucun message ne correspond à cette recherche." : "Aucun message pour l'instant."), 1)
         ]))
       ], 512);
     };
   }
 });
+const _export_sfc = (sfc, props) => {
+  const target = sfc.__vccOpts || sfc;
+  for (const [key, val] of props) {
+    target[key] = val;
+  }
+  return target;
+};
+const MessageList = /* @__PURE__ */ _export_sfc(_sfc_main$p, [["__scopeId", "data-v-7e39a9fa"]]);
 const _hoisted_1$n = {
   id: "chat-format-toolbar",
   class: "chat-format-toolbar"
@@ -11211,7 +11275,7 @@ const _sfc_main$l = /* @__PURE__ */ defineComponent({
           }, " Voir mes travaux ")
         ], 2)) : createCommentVNode("", true),
         unref(appStore).activeChannelId || unref(appStore).activeDmStudentId ? (openBlock(), createElementBlock("div", _hoisted_10$9, [
-          createVNode(_sfc_main$p),
+          createVNode(MessageList),
           createVNode(_sfc_main$n)
         ])) : (openBlock(), createElementBlock("div", _hoisted_11$9, [..._cache[3] || (_cache[3] = [
           createBaseVNode("p", null, "Sélectionnez un canal dans la barre latérale pour commencer.", -1)
@@ -11263,36 +11327,36 @@ const _hoisted_18$4 = {
   class: "deposit-form"
 };
 const _hoisted_19$4 = { class: "deposit-tabs" };
-const _hoisted_20$3 = {
+const _hoisted_20$4 = {
   key: 0,
   class: "deposit-file-row"
 };
-const _hoisted_21$2 = {
+const _hoisted_21$3 = {
   key: 1,
   class: "deposit-link-row"
 };
-const _hoisted_22$2 = { class: "deposit-actions" };
-const _hoisted_23$2 = ["disabled", "onClick"];
-const _hoisted_24$2 = {
+const _hoisted_22$3 = { class: "deposit-actions" };
+const _hoisted_23$3 = ["disabled", "onClick"];
+const _hoisted_24$3 = {
   key: 3,
   class: "travail-card-footer"
 };
-const _hoisted_25$2 = { class: "travail-deadline-date" };
-const _hoisted_26$2 = ["onClick"];
-const _hoisted_27$2 = {
+const _hoisted_25$3 = { class: "travail-deadline-date" };
+const _hoisted_26$3 = ["onClick"];
+const _hoisted_27$3 = {
   key: 0,
   class: "empty-hint"
 };
-const _hoisted_28$1 = {
+const _hoisted_28$2 = {
   key: 1,
   class: "empty-hint"
 };
-const _hoisted_29 = {
+const _hoisted_29$2 = {
   key: 2,
   class: "gantt-wrapper"
 };
-const _hoisted_30 = { class: "gantt-chart" };
-const _hoisted_31 = ["onClick"];
+const _hoisted_30$2 = { class: "gantt-chart" };
+const _hoisted_31$1 = ["onClick"];
 const _hoisted_32 = { class: "gantt-row-label" };
 const _hoisted_33 = { class: "gantt-label-name" };
 const _hoisted_34 = { class: "gantt-track" };
@@ -11558,7 +11622,7 @@ const _sfc_main$k = /* @__PURE__ */ defineComponent({
                         _cache[16] || (_cache[16] = createTextVNode(" Lien ", -1))
                       ], 2)
                     ]),
-                    depositMode.value === "file" ? (openBlock(), createElementBlock("div", _hoisted_20$3, [
+                    depositMode.value === "file" ? (openBlock(), createElementBlock("div", _hoisted_20$4, [
                       createBaseVNode("button", {
                         class: "btn-ghost",
                         style: { "font-size": "12px", "flex": "1" },
@@ -11567,7 +11631,7 @@ const _sfc_main$k = /* @__PURE__ */ defineComponent({
                         createVNode(unref(Upload), { size: 13 }),
                         createTextVNode(" " + toDisplayString(depositFileName.value ?? "Choisir un fichier…"), 1)
                       ])
-                    ])) : (openBlock(), createElementBlock("div", _hoisted_21$2, [
+                    ])) : (openBlock(), createElementBlock("div", _hoisted_21$3, [
                       withDirectives(createBaseVNode("input", {
                         "onUpdate:modelValue": _cache[6] || (_cache[6] = ($event) => depositLink.value = $event),
                         class: "form-input",
@@ -11577,7 +11641,7 @@ const _sfc_main$k = /* @__PURE__ */ defineComponent({
                         [vModelText, depositLink.value]
                       ])
                     ])),
-                    createBaseVNode("div", _hoisted_22$2, [
+                    createBaseVNode("div", _hoisted_22$3, [
                       createBaseVNode("button", {
                         class: "btn-ghost",
                         style: { "font-size": "12px" },
@@ -11594,10 +11658,10 @@ const _sfc_main$k = /* @__PURE__ */ defineComponent({
                       }, [
                         createVNode(unref(Upload), { size: 12 }),
                         createTextVNode(" " + toDisplayString(depositing.value ? "Dépôt…" : "Déposer"), 1)
-                      ], 8, _hoisted_23$2)
+                      ], 8, _hoisted_23$3)
                     ])
-                  ])) : (openBlock(), createElementBlock("div", _hoisted_24$2, [
-                    createBaseVNode("span", _hoisted_25$2, "Échéance : " + toDisplayString(unref(formatDate)(t.deadline)), 1),
+                  ])) : (openBlock(), createElementBlock("div", _hoisted_24$3, [
+                    createBaseVNode("span", _hoisted_25$3, "Échéance : " + toDisplayString(unref(formatDate)(t.deadline)), 1),
                     createBaseVNode("button", {
                       class: "btn-primary",
                       style: { "font-size": "12px", "padding": "5px 12px" },
@@ -11605,13 +11669,13 @@ const _sfc_main$k = /* @__PURE__ */ defineComponent({
                     }, [
                       createVNode(unref(Upload), { size: 12 }),
                       _cache[18] || (_cache[18] = createTextVNode(" Déposer ", -1))
-                    ], 8, _hoisted_26$2)
+                    ], 8, _hoisted_26$3)
                   ]))
                 ], 2);
               }), 128))
             ]))
           ], 64)) : unref(travauxStore).view === "gantt" ? (openBlock(), createElementBlock(Fragment, { key: 1 }, [
-            unref(travauxStore).loading ? (openBlock(), createElementBlock("div", _hoisted_27$2, [..._cache[19] || (_cache[19] = [
+            unref(travauxStore).loading ? (openBlock(), createElementBlock("div", _hoisted_27$3, [..._cache[19] || (_cache[19] = [
               createBaseVNode("div", {
                 class: "skel skel-line skel-w70",
                 style: { "height": "14px", "margin": "0 auto 8px" }
@@ -11624,16 +11688,16 @@ const _sfc_main$k = /* @__PURE__ */ defineComponent({
                 class: "skel skel-line skel-w50",
                 style: { "height": "14px", "margin": "0 auto" }
               }, null, -1)
-            ])])) : ganttItems.value.length === 0 ? (openBlock(), createElementBlock("div", _hoisted_28$1, [..._cache[20] || (_cache[20] = [
+            ])])) : ganttItems.value.length === 0 ? (openBlock(), createElementBlock("div", _hoisted_28$2, [..._cache[20] || (_cache[20] = [
               createBaseVNode("h3", null, "Aucun travail créé", -1),
               createBaseVNode("p", null, "Créez un premier travail pour visualiser le Gantt.", -1)
-            ])])) : (openBlock(), createElementBlock("div", _hoisted_29, [
+            ])])) : (openBlock(), createElementBlock("div", _hoisted_29$2, [
               _cache[21] || (_cache[21] = createBaseVNode("div", { class: "gantt-legend" }, [
                 createBaseVNode("span", { class: "gantt-legend-item type-devoir" }, "Devoir"),
                 createBaseVNode("span", { class: "gantt-legend-item type-projet" }, "Projet"),
                 createBaseVNode("span", { class: "gantt-legend-item type-jalon" }, "Jalon")
               ], -1)),
-              createBaseVNode("div", _hoisted_30, [
+              createBaseVNode("div", _hoisted_30$2, [
                 (openBlock(true), createElementBlock(Fragment, null, renderList(ganttItems.value, (item) => {
                   return openBlock(), createElementBlock("div", {
                     key: item.id,
@@ -11654,7 +11718,7 @@ const _sfc_main$k = /* @__PURE__ */ defineComponent({
                         title: item.title
                       }, null, 14, _hoisted_35)
                     ])
-                  ], 8, _hoisted_31);
+                  ], 8, _hoisted_31$1);
                 }), 128))
               ])
             ]))
@@ -11718,13 +11782,6 @@ const _sfc_main$k = /* @__PURE__ */ defineComponent({
     };
   }
 });
-const _export_sfc = (sfc, props) => {
-  const target = sfc.__vccOpts || sfc;
-  for (const [key, val] of props) {
-    target[key] = val;
-  }
-  return target;
-};
 const TravauxView = /* @__PURE__ */ _export_sfc(_sfc_main$k, [["__scopeId", "data-v-4ef782bb"]]);
 const useDocumentsStore = /* @__PURE__ */ defineStore("documents", () => {
   const appStore = useAppStore();
@@ -12439,7 +12496,7 @@ const _hoisted_16$4 = { class: "form-group" };
 const _hoisted_17$3 = ["value"];
 const _hoisted_18$3 = { class: "form-group" };
 const _hoisted_19$3 = { style: { "display": "flex", "gap": "10px", "margin-top": "6px" } };
-const _hoisted_20$2 = ["disabled"];
+const _hoisted_20$3 = ["disabled"];
 const _sfc_main$d = /* @__PURE__ */ defineComponent({
   __name: "LoginOverlay",
   setup(__props) {
@@ -12697,7 +12754,7 @@ const _sfc_main$d = /* @__PURE__ */ defineComponent({
                 class: "btn-primary",
                 style: { "flex": "2" },
                 disabled: regSubmitting.value
-              }, toDisplayString(regSubmitting.value ? "Création…" : "Créer mon compte"), 9, _hoisted_20$2)
+              }, toDisplayString(regSubmitting.value ? "Création…" : "Créer mon compte"), 9, _hoisted_20$3)
             ])
           ], 32)
         ]))
@@ -13284,14 +13341,44 @@ const _hoisted_14$2 = { style: { "display": "flex", "gap": "16px", "padding-top"
 const _hoisted_15$2 = { class: "radio-label" };
 const _hoisted_16$2 = { class: "radio-label" };
 const _hoisted_17$2 = {
+  key: 0,
+  class: "group-builder"
+};
+const _hoisted_18$2 = {
+  class: "form-label",
+  style: { "margin-bottom": "8px" }
+};
+const _hoisted_19$2 = {
+  key: 0,
+  class: "group-list"
+};
+const _hoisted_20$2 = ["onClick"];
+const _hoisted_21$2 = { class: "group-card-name" };
+const _hoisted_22$2 = {
+  key: 0,
+  class: "group-card-count"
+};
+const _hoisted_23$2 = {
+  key: 1,
+  class: "group-empty"
+};
+const _hoisted_24$2 = {
+  key: 2,
+  class: "group-form"
+};
+const _hoisted_25$2 = { class: "group-members-grid" };
+const _hoisted_26$2 = ["onClick"];
+const _hoisted_27$2 = { style: { "display": "flex", "gap": "8px", "justify-content": "flex-end", "margin-top": "8px" } };
+const _hoisted_28$1 = ["disabled"];
+const _hoisted_29$1 = {
   class: "checkbox-label",
   style: { "display": "flex", "align-items": "center", "gap": "8px" }
 };
-const _hoisted_18$2 = {
+const _hoisted_30$1 = {
   class: "modal-footer",
-  style: { "padding": "12px 16px", "border-top": "1px solid var(--border)", "display": "flex", "justify-content": "flex-end", "gap": "8px" }
+  style: { "padding": "12px 16px", "border-top": "1px solid var(--border)", "display": "flex", "justify-content": "flex-end", "gap": "8px", "flex-shrink": "0" }
 };
-const _hoisted_19$2 = ["disabled"];
+const _hoisted_31 = ["disabled"];
 const _sfc_main$8 = /* @__PURE__ */ defineComponent({
   __name: "NewTravailModal",
   props: {
@@ -13315,18 +13402,67 @@ const _sfc_main$8 = /* @__PURE__ */ defineComponent({
     const channelId = /* @__PURE__ */ ref(null);
     const channels = /* @__PURE__ */ ref([]);
     const creating = /* @__PURE__ */ ref(false);
+    const students = /* @__PURE__ */ ref([]);
+    const groups = /* @__PURE__ */ ref([]);
+    const selectedGroupId = /* @__PURE__ */ ref(null);
+    const newGroupName = /* @__PURE__ */ ref("");
+    const newGroupMembers = /* @__PURE__ */ ref([]);
+    const creatingGroup = /* @__PURE__ */ ref(false);
+    const showGroupForm = /* @__PURE__ */ ref(false);
+    const groupMembers = /* @__PURE__ */ ref({});
     watch(() => props.modelValue, async (open) => {
       if (open && appStore.activePromoId) {
-        const res = await window.api.getChannels(appStore.activePromoId);
-        channels.value = res?.ok ? res.data : [];
+        const [chRes, stuRes, grpRes] = await Promise.all([
+          window.api.getChannels(appStore.activePromoId),
+          window.api.getStudents(appStore.activePromoId),
+          window.api.getGroups(appStore.activePromoId)
+        ]);
+        channels.value = chRes?.ok ? chRes.data : [];
+        students.value = stuRes?.ok ? stuRes.data : [];
+        groups.value = grpRes?.ok ? grpRes.data : [];
         channelId.value = appStore.activeChannelId;
         title.value = description.value = category.value = "";
         type.value = "devoir";
         assignTo.value = "all";
         isDraft.value = false;
         deadline.value = startDate.value = isoForDatetimeLocal();
+        selectedGroupId.value = null;
+        showGroupForm.value = false;
+        newGroupName.value = "";
+        newGroupMembers.value = [];
       }
     });
+    async function selectGroup(g) {
+      selectedGroupId.value = g.id;
+      if (!groupMembers.value[g.id]) {
+        const res = await window.api.getGroupMembers(g.id);
+        groupMembers.value[g.id] = res?.ok ? res.data.map((m) => m.student_id) : [];
+      }
+    }
+    async function createGroup() {
+      if (!newGroupName.value.trim() || !appStore.activePromoId) return;
+      creatingGroup.value = true;
+      try {
+        const res = await window.api.createGroup({ name: newGroupName.value.trim(), promoId: appStore.activePromoId });
+        if (!res?.ok) return;
+        const newId = res.data.id;
+        await window.api.setGroupMembers({ groupId: newId, memberIds: newGroupMembers.value });
+        groupMembers.value[newId] = [...newGroupMembers.value];
+        const grpRes = await window.api.getGroups(appStore.activePromoId);
+        groups.value = grpRes?.ok ? grpRes.data : [];
+        selectedGroupId.value = newId;
+        showGroupForm.value = false;
+        newGroupName.value = "";
+        newGroupMembers.value = [];
+      } finally {
+        creatingGroup.value = false;
+      }
+    }
+    function toggleMember(studentId) {
+      const idx = newGroupMembers.value.indexOf(studentId);
+      if (idx >= 0) newGroupMembers.value.splice(idx, 1);
+      else newGroupMembers.value.push(studentId);
+    }
     const isJalon = computed(() => type.value === "jalon");
     async function submit() {
       if (!title.value.trim() || !channelId.value) return;
@@ -13341,6 +13477,7 @@ const _sfc_main$8 = /* @__PURE__ */ defineComponent({
           startDate: isJalon.value ? null : startDate.value,
           isPublished: !isDraft.value,
           assignedTo: assignTo.value,
+          groupId: assignTo.value === "group" ? selectedGroupId.value : null,
           channelId: channelId.value
         });
         if (!res) return;
@@ -13355,7 +13492,7 @@ const _sfc_main$8 = /* @__PURE__ */ defineComponent({
         "model-value": __props.modelValue,
         title: "Nouveau travail",
         "max-width": "620px",
-        "onUpdate:modelValue": _cache[11] || (_cache[11] = ($event) => emit2("update:modelValue", $event))
+        "onUpdate:modelValue": _cache[14] || (_cache[14] = ($event) => emit2("update:modelValue", $event))
       }, {
         default: withCtx(() => [
           createBaseVNode("form", {
@@ -13363,13 +13500,13 @@ const _sfc_main$8 = /* @__PURE__ */ defineComponent({
             onSubmit: withModifiers(submit, ["prevent"])
           }, [
             createBaseVNode("div", _hoisted_1$7, [
-              _cache[13] || (_cache[13] = createBaseVNode("label", { class: "form-label" }, "Canal", -1)),
+              _cache[16] || (_cache[16] = createBaseVNode("label", { class: "form-label" }, "Canal", -1)),
               withDirectives(createBaseVNode("select", {
                 "onUpdate:modelValue": _cache[0] || (_cache[0] = ($event) => channelId.value = $event),
                 class: "form-select",
                 required: ""
               }, [
-                _cache[12] || (_cache[12] = createBaseVNode("option", { value: null }, "Choisir un canal…", -1)),
+                _cache[15] || (_cache[15] = createBaseVNode("option", { value: null }, "Choisir un canal…", -1)),
                 (openBlock(true), createElementBlock(Fragment, null, renderList(channels.value, (c) => {
                   return openBlock(), createElementBlock("option", {
                     key: c.id,
@@ -13382,7 +13519,7 @@ const _sfc_main$8 = /* @__PURE__ */ defineComponent({
             ]),
             createBaseVNode("div", _hoisted_3$7, [
               createBaseVNode("div", _hoisted_4$6, [
-                _cache[14] || (_cache[14] = createBaseVNode("label", { class: "form-label" }, "Titre", -1)),
+                _cache[17] || (_cache[17] = createBaseVNode("label", { class: "form-label" }, "Titre", -1)),
                 withDirectives(createBaseVNode("input", {
                   "onUpdate:modelValue": _cache[1] || (_cache[1] = ($event) => title.value = $event),
                   type: "text",
@@ -13394,11 +13531,11 @@ const _sfc_main$8 = /* @__PURE__ */ defineComponent({
                 ])
               ]),
               createBaseVNode("div", _hoisted_5$5, [
-                _cache[16] || (_cache[16] = createBaseVNode("label", { class: "form-label" }, "Type", -1)),
+                _cache[19] || (_cache[19] = createBaseVNode("label", { class: "form-label" }, "Type", -1)),
                 withDirectives(createBaseVNode("select", {
                   "onUpdate:modelValue": _cache[2] || (_cache[2] = ($event) => type.value = $event),
                   class: "form-select"
-                }, [..._cache[15] || (_cache[15] = [
+                }, [..._cache[18] || (_cache[18] = [
                   createBaseVNode("option", { value: "devoir" }, "Devoir", -1),
                   createBaseVNode("option", { value: "jalon" }, "Jalon", -1),
                   createBaseVNode("option", { value: "projet" }, "Projet", -1)
@@ -13408,7 +13545,7 @@ const _sfc_main$8 = /* @__PURE__ */ defineComponent({
               ])
             ]),
             createBaseVNode("div", _hoisted_6$5, [
-              _cache[17] || (_cache[17] = createBaseVNode("label", { class: "form-label" }, [
+              _cache[20] || (_cache[20] = createBaseVNode("label", { class: "form-label" }, [
                 createTextVNode("Description "),
                 createBaseVNode("span", { style: { "opacity": ".6" } }, "(optionnel)")
               ], -1)),
@@ -13424,7 +13561,7 @@ const _sfc_main$8 = /* @__PURE__ */ defineComponent({
             ]),
             createBaseVNode("div", _hoisted_7$2, [
               !isJalon.value ? (openBlock(), createElementBlock("div", _hoisted_8$2, [
-                _cache[18] || (_cache[18] = createBaseVNode("label", { class: "form-label" }, "Date de début", -1)),
+                _cache[21] || (_cache[21] = createBaseVNode("label", { class: "form-label" }, "Date de début", -1)),
                 withDirectives(createBaseVNode("input", {
                   "onUpdate:modelValue": _cache[4] || (_cache[4] = ($event) => startDate.value = $event),
                   type: "datetime-local",
@@ -13447,7 +13584,7 @@ const _sfc_main$8 = /* @__PURE__ */ defineComponent({
             ]),
             createBaseVNode("div", _hoisted_11$2, [
               createBaseVNode("div", _hoisted_12$2, [
-                _cache[19] || (_cache[19] = createBaseVNode("label", { class: "form-label" }, [
+                _cache[22] || (_cache[22] = createBaseVNode("label", { class: "form-label" }, [
                   createTextVNode("Catégorie "),
                   createBaseVNode("span", { style: { "opacity": ".6" } }, "(optionnel)")
                 ], -1)),
@@ -13461,7 +13598,7 @@ const _sfc_main$8 = /* @__PURE__ */ defineComponent({
                 ])
               ]),
               !isJalon.value ? (openBlock(), createElementBlock("div", _hoisted_13$2, [
-                _cache[22] || (_cache[22] = createBaseVNode("label", { class: "form-label" }, "Assigné à", -1)),
+                _cache[25] || (_cache[25] = createBaseVNode("label", { class: "form-label" }, "Assigné à", -1)),
                 createBaseVNode("div", _hoisted_14$2, [
                   createBaseVNode("label", _hoisted_15$2, [
                     withDirectives(createBaseVNode("input", {
@@ -13471,7 +13608,7 @@ const _sfc_main$8 = /* @__PURE__ */ defineComponent({
                     }, null, 512), [
                       [vModelRadio, assignTo.value]
                     ]),
-                    _cache[20] || (_cache[20] = createTextVNode(" Toute la promo", -1))
+                    _cache[23] || (_cache[23] = createTextVNode(" Toute la promo", -1))
                   ]),
                   createBaseVNode("label", _hoisted_16$2, [
                     withDirectives(createBaseVNode("input", {
@@ -13481,31 +13618,107 @@ const _sfc_main$8 = /* @__PURE__ */ defineComponent({
                     }, null, 512), [
                       [vModelRadio, assignTo.value]
                     ]),
-                    _cache[21] || (_cache[21] = createTextVNode(" Par groupe", -1))
+                    _cache[24] || (_cache[24] = createTextVNode(" Par groupe", -1))
                   ])
                 ])
               ])) : createCommentVNode("", true)
             ]),
-            createBaseVNode("label", _hoisted_17$2, [
+            assignTo.value === "group" && !isJalon.value ? (openBlock(), createElementBlock("div", _hoisted_17$2, [
+              createBaseVNode("div", _hoisted_18$2, [
+                createVNode(unref(Users), {
+                  size: 13,
+                  style: { "vertical-align": "middle", "margin-right": "4px" }
+                }),
+                _cache[26] || (_cache[26] = createTextVNode(" Groupes disponibles ", -1))
+              ]),
+              groups.value.length ? (openBlock(), createElementBlock("div", _hoisted_19$2, [
+                (openBlock(true), createElementBlock(Fragment, null, renderList(groups.value, (g) => {
+                  return openBlock(), createElementBlock("button", {
+                    key: g.id,
+                    class: normalizeClass(["group-card", { selected: selectedGroupId.value === g.id }]),
+                    type: "button",
+                    onClick: ($event) => selectGroup(g)
+                  }, [
+                    createBaseVNode("span", _hoisted_21$2, toDisplayString(g.name), 1),
+                    groupMembers.value[g.id] ? (openBlock(), createElementBlock("span", _hoisted_22$2, toDisplayString(groupMembers.value[g.id].length) + " membre" + toDisplayString(groupMembers.value[g.id].length > 1 ? "s" : ""), 1)) : createCommentVNode("", true)
+                  ], 10, _hoisted_20$2);
+                }), 128))
+              ])) : !showGroupForm.value ? (openBlock(), createElementBlock("p", _hoisted_23$2, "Aucun groupe créé pour cette promotion.")) : createCommentVNode("", true),
+              showGroupForm.value ? (openBlock(), createElementBlock("div", _hoisted_24$2, [
+                withDirectives(createBaseVNode("input", {
+                  "onUpdate:modelValue": _cache[9] || (_cache[9] = ($event) => newGroupName.value = $event),
+                  class: "form-input",
+                  placeholder: "Nom du groupe…",
+                  style: { "font-size": "13px" }
+                }, null, 512), [
+                  [vModelText, newGroupName.value]
+                ]),
+                createBaseVNode("div", _hoisted_25$2, [
+                  (openBlock(true), createElementBlock(Fragment, null, renderList(students.value, (s) => {
+                    return openBlock(), createElementBlock("button", {
+                      key: s.id,
+                      class: normalizeClass(["group-member-btn", { selected: newGroupMembers.value.includes(s.id) }]),
+                      type: "button",
+                      onClick: ($event) => toggleMember(s.id)
+                    }, [
+                      createBaseVNode("div", {
+                        class: "avatar",
+                        style: normalizeStyle({ background: unref(avatarColor)(s.name), width: "22px", height: "22px", fontSize: "9px", borderRadius: "4px" })
+                      }, toDisplayString(unref(initials)(s.name)), 5),
+                      createBaseVNode("span", null, toDisplayString(s.name), 1)
+                    ], 10, _hoisted_26$2);
+                  }), 128))
+                ]),
+                createBaseVNode("div", _hoisted_27$2, [
+                  createBaseVNode("button", {
+                    class: "btn-ghost",
+                    type: "button",
+                    style: { "font-size": "12px" },
+                    onClick: _cache[10] || (_cache[10] = ($event) => showGroupForm.value = false)
+                  }, [
+                    createVNode(unref(X), { size: 12 }),
+                    _cache[27] || (_cache[27] = createTextVNode(" Annuler ", -1))
+                  ]),
+                  createBaseVNode("button", {
+                    class: "btn-primary",
+                    type: "button",
+                    style: { "font-size": "12px" },
+                    disabled: !newGroupName.value.trim() || creatingGroup.value,
+                    onClick: createGroup
+                  }, toDisplayString(creatingGroup.value ? "Création…" : "Créer le groupe"), 9, _hoisted_28$1)
+                ])
+              ])) : createCommentVNode("", true),
+              !showGroupForm.value ? (openBlock(), createElementBlock("button", {
+                key: 3,
+                class: "btn-ghost",
+                type: "button",
+                style: { "font-size": "12px", "margin-top": "8px" },
+                onClick: _cache[11] || (_cache[11] = ($event) => showGroupForm.value = true)
+              }, [
+                createVNode(unref(Plus), { size: 12 }),
+                _cache[28] || (_cache[28] = createTextVNode(" Nouveau groupe ", -1))
+              ])) : createCommentVNode("", true)
+            ])) : createCommentVNode("", true),
+            createBaseVNode("label", _hoisted_29$1, [
               withDirectives(createBaseVNode("input", {
-                "onUpdate:modelValue": _cache[9] || (_cache[9] = ($event) => isDraft.value = $event),
+                "onUpdate:modelValue": _cache[12] || (_cache[12] = ($event) => isDraft.value = $event),
                 type: "checkbox"
               }, null, 512), [
                 [vModelCheckbox, isDraft.value]
               ]),
-              _cache[23] || (_cache[23] = createTextVNode(" Enregistrer comme brouillon (non visible par les étudiants) ", -1))
+              _cache[29] || (_cache[29] = createTextVNode(" Enregistrer comme brouillon (non visible par les étudiants) ", -1))
             ])
           ], 32),
-          createBaseVNode("div", _hoisted_18$2, [
+          createBaseVNode("div", _hoisted_30$1, [
             createBaseVNode("button", {
               class: "btn-ghost",
-              onClick: _cache[10] || (_cache[10] = ($event) => emit2("update:modelValue", false))
+              onClick: _cache[13] || (_cache[13] = ($event) => emit2("update:modelValue", false))
             }, "Annuler"),
             createBaseVNode("button", {
               class: "btn-primary",
               disabled: !title.value.trim() || !channelId.value || creating.value,
               onClick: submit
-            }, toDisplayString(creating.value ? "Création…" : isDraft.value ? "Enregistrer brouillon" : "Publier"), 9, _hoisted_19$2)
+            }, toDisplayString(creating.value ? "Création…" : isDraft.value ? "Enregistrer brouillon" : "Publier"), 9, _hoisted_31)
           ])
         ]),
         _: 1
@@ -13513,6 +13726,7 @@ const _sfc_main$8 = /* @__PURE__ */ defineComponent({
     };
   }
 });
+const NewTravailModal = /* @__PURE__ */ _export_sfc(_sfc_main$8, [["__scopeId", "data-v-13ade38d"]]);
 const _hoisted_1$6 = {
   key: 0,
   class: "depots-subheader"
@@ -13545,18 +13759,20 @@ const _hoisted_16$1 = {
   key: 1,
   class: "depot-feedback-form"
 };
-const _hoisted_17$1 = { class: "depot-feedback-actions" };
-const _hoisted_18$1 = ["disabled", "onClick"];
-const _hoisted_19$1 = { class: "depot-card-actions" };
-const _hoisted_20$1 = { class: "note-selector" };
-const _hoisted_21$1 = ["onClick"];
-const _hoisted_22$1 = { style: { "display": "flex", "gap": "6px", "margin-top": "6px" } };
-const _hoisted_23$1 = ["disabled", "onClick"];
-const _hoisted_24$1 = ["title", "onClick"];
-const _hoisted_25$1 = ["onClick"];
-const _hoisted_26$1 = ["onClick"];
-const _hoisted_27$1 = { class: "depots-footer" };
-const _hoisted_28 = { style: { "display": "flex", "gap": "8px" } };
+const _hoisted_17$1 = { class: "feedback-bank" };
+const _hoisted_18$1 = ["onClick"];
+const _hoisted_19$1 = { class: "depot-feedback-actions" };
+const _hoisted_20$1 = ["disabled", "onClick"];
+const _hoisted_21$1 = { class: "depot-card-actions" };
+const _hoisted_22$1 = { class: "note-selector" };
+const _hoisted_23$1 = ["onClick"];
+const _hoisted_24$1 = { style: { "display": "flex", "gap": "6px", "margin-top": "6px" } };
+const _hoisted_25$1 = ["disabled", "onClick"];
+const _hoisted_26$1 = ["title", "onClick"];
+const _hoisted_27$1 = ["onClick"];
+const _hoisted_28 = ["onClick"];
+const _hoisted_29 = { class: "depots-footer" };
+const _hoisted_30 = { style: { "display": "flex", "gap": "8px" } };
 const _sfc_main$7 = /* @__PURE__ */ defineComponent({
   __name: "DepotsModal",
   props: {
@@ -13575,6 +13791,19 @@ const _sfc_main$7 = /* @__PURE__ */ defineComponent({
     const feedbackInput = /* @__PURE__ */ ref("");
     const saving = /* @__PURE__ */ ref(false);
     const NOTES = ["A", "B", "C", "D", "NA"];
+    const FEEDBACK_BANK = [
+      "Excellent travail, bravo !",
+      "Bonne structure et organisation",
+      "Code insuffisamment commenté",
+      "Rendu incomplet",
+      "Hors sujet par rapport aux consignes",
+      "À retravailler et soumettre à nouveau",
+      "Manque de profondeur dans l'analyse",
+      "Bon effort, quelques ajustements nécessaires"
+    ];
+    function insertFeedback(text) {
+      feedbackInput.value = feedbackInput.value ? feedbackInput.value.trimEnd() + " " + text : text;
+    }
     watch(() => props.modelValue, async (open) => {
       if (open && appStore.currentTravailId) {
         await travauxStore.openTravail(appStore.currentTravailId);
@@ -13693,6 +13922,16 @@ const _sfc_main$7 = /* @__PURE__ */ defineComponent({
                   ], 8, _hoisted_14$1),
                   d.feedback && editingFeedbackId.value !== d.id ? (openBlock(), createElementBlock("p", _hoisted_15$1, " 💬 " + toDisplayString(d.feedback), 1)) : createCommentVNode("", true),
                   editingFeedbackId.value === d.id ? (openBlock(), createElementBlock("div", _hoisted_16$1, [
+                    createBaseVNode("div", _hoisted_17$1, [
+                      (openBlock(), createElementBlock(Fragment, null, renderList(FEEDBACK_BANK, (fb) => {
+                        return createBaseVNode("button", {
+                          key: fb,
+                          class: "feedback-bank-pill",
+                          type: "button",
+                          onClick: ($event) => insertFeedback(fb)
+                        }, toDisplayString(fb), 9, _hoisted_18$1);
+                      }), 64))
+                    ]),
                     withDirectives(createBaseVNode("textarea", {
                       "onUpdate:modelValue": _cache[0] || (_cache[0] = ($event) => feedbackInput.value = $event),
                       class: "form-textarea",
@@ -13702,7 +13941,7 @@ const _sfc_main$7 = /* @__PURE__ */ defineComponent({
                     }, null, 512), [
                       [vModelText, feedbackInput.value]
                     ]),
-                    createBaseVNode("div", _hoisted_17$1, [
+                    createBaseVNode("div", _hoisted_19$1, [
                       createBaseVNode("button", {
                         class: "btn-ghost",
                         style: { "font-size": "12px" },
@@ -13716,22 +13955,22 @@ const _sfc_main$7 = /* @__PURE__ */ defineComponent({
                         style: { "font-size": "12px" },
                         disabled: saving.value,
                         onClick: ($event) => saveFeedback(d)
-                      }, " Enregistrer ", 8, _hoisted_18$1)
+                      }, " Enregistrer ", 8, _hoisted_20$1)
                     ])
                   ])) : createCommentVNode("", true)
                 ]),
-                createBaseVNode("div", _hoisted_19$1, [
+                createBaseVNode("div", _hoisted_21$1, [
                   editingNoteId.value === d.id ? (openBlock(), createElementBlock(Fragment, { key: 0 }, [
-                    createBaseVNode("div", _hoisted_20$1, [
+                    createBaseVNode("div", _hoisted_22$1, [
                       (openBlock(), createElementBlock(Fragment, null, renderList(NOTES, (n) => {
                         return createBaseVNode("button", {
                           key: n,
                           class: normalizeClass(["note-btn", { active: noteInput.value === n, [unref(gradeClass)(n)]: true }]),
                           onClick: ($event) => noteInput.value = n
-                        }, toDisplayString(n), 11, _hoisted_21$1);
+                        }, toDisplayString(n), 11, _hoisted_23$1);
                       }), 64))
                     ]),
-                    createBaseVNode("div", _hoisted_22$1, [
+                    createBaseVNode("div", _hoisted_24$1, [
                       createBaseVNode("button", {
                         class: "btn-ghost",
                         style: { "font-size": "11px", "padding": "3px 8px" },
@@ -13742,14 +13981,14 @@ const _sfc_main$7 = /* @__PURE__ */ defineComponent({
                         style: { "font-size": "11px", "padding": "3px 8px" },
                         disabled: saving.value || !noteInput.value,
                         onClick: ($event) => saveNote(d)
-                      }, " OK ", 8, _hoisted_23$1)
+                      }, " OK ", 8, _hoisted_25$1)
                     ])
                   ], 64)) : (openBlock(), createElementBlock("button", {
                     key: 1,
                     class: normalizeClass(["note-display-btn", d.note ? unref(gradeClass)(d.note) : "grade-empty"]),
                     title: d.note ? `Note : ${d.note}` : "Cliquer pour noter",
                     onClick: ($event) => startNote(d)
-                  }, toDisplayString(d.note ? unref(formatGrade)(d.note) : "—"), 11, _hoisted_24$1)),
+                  }, toDisplayString(d.note ? unref(formatGrade)(d.note) : "—"), 11, _hoisted_26$1)),
                   createBaseVNode("button", {
                     class: "btn-icon",
                     title: "Ajouter un commentaire",
@@ -13757,7 +13996,7 @@ const _sfc_main$7 = /* @__PURE__ */ defineComponent({
                     onClick: ($event) => startFeedback(d)
                   }, [
                     createVNode(unref(MessageSquare), { size: 13 })
-                  ], 8, _hoisted_25$1),
+                  ], 8, _hoisted_27$1),
                   d.type === "file" ? (openBlock(), createElementBlock("button", {
                     key: 2,
                     class: "btn-icon",
@@ -13765,18 +14004,18 @@ const _sfc_main$7 = /* @__PURE__ */ defineComponent({
                     onClick: ($event) => downloadDepot(d)
                   }, [
                     createVNode(unref(Download), { size: 13 })
-                  ], 8, _hoisted_26$1)) : createCommentVNode("", true)
+                  ], 8, _hoisted_28)) : createCommentVNode("", true)
                 ])
               ], 2);
             }), 128))
           ]),
-          createBaseVNode("div", _hoisted_27$1, [
+          createBaseVNode("div", _hoisted_29, [
             createBaseVNode("button", {
               class: "btn-ghost",
               style: { "font-size": "13px" },
               onClick: markAllD
             }, " Marquer non soumis → D "),
-            createBaseVNode("div", _hoisted_28, [
+            createBaseVNode("div", _hoisted_30, [
               createBaseVNode("button", {
                 class: "btn-ghost",
                 style: { "font-size": "13px" },
@@ -13795,7 +14034,7 @@ const _sfc_main$7 = /* @__PURE__ */ defineComponent({
     };
   }
 });
-const DepotsModal = /* @__PURE__ */ _export_sfc(_sfc_main$7, [["__scopeId", "data-v-a918ef25"]]);
+const DepotsModal = /* @__PURE__ */ _export_sfc(_sfc_main$7, [["__scopeId", "data-v-509f6477"]]);
 const _hoisted_1$5 = { style: { "padding": "24px", "min-height": "200px" } };
 const _hoisted_2$5 = { style: { "margin-bottom": "16px" } };
 const _hoisted_3$5 = { style: { "display": "flex", "justify-content": "space-between", "font-size": "13px", "margin-bottom": "6px" } };
@@ -14430,7 +14669,7 @@ const _sfc_main = /* @__PURE__ */ defineComponent({
             modelValue: unref(modals).createChannel,
             "onUpdate:modelValue": _cache[1] || (_cache[1] = ($event) => unref(modals).createChannel = $event)
           }, null, 8, ["modelValue"]),
-          createVNode(_sfc_main$8, {
+          createVNode(NewTravailModal, {
             modelValue: unref(modals).newTravail,
             "onUpdate:modelValue": _cache[2] || (_cache[2] = ($event) => unref(modals).newTravail = $event)
           }, null, 8, ["modelValue"]),

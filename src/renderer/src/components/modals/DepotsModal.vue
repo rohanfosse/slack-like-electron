@@ -25,6 +25,23 @@
 
   const NOTES = ['A', 'B', 'C', 'D', 'NA']
 
+  const FEEDBACK_BANK = [
+    'Excellent travail, bravo !',
+    'Bonne structure et organisation',
+    'Code insuffisamment commenté',
+    'Rendu incomplet',
+    'Hors sujet par rapport aux consignes',
+    'À retravailler et soumettre à nouveau',
+    'Manque de profondeur dans l\'analyse',
+    'Bon effort, quelques ajustements nécessaires',
+  ]
+
+  function insertFeedback(text: string) {
+    feedbackInput.value = feedbackInput.value
+      ? feedbackInput.value.trimEnd() + ' ' + text
+      : text
+  }
+
   watch(() => props.modelValue, async (open) => {
     if (open && appStore.currentTravailId) {
       await travauxStore.openTravail(appStore.currentTravailId)
@@ -172,6 +189,18 @@
 
           <!-- Formulaire feedback inline -->
           <div v-if="editingFeedbackId === d.id" class="depot-feedback-form">
+            <!-- Banque de commentaires rapides -->
+            <div class="feedback-bank">
+              <button
+                v-for="fb in FEEDBACK_BANK"
+                :key="fb"
+                class="feedback-bank-pill"
+                type="button"
+                @click="insertFeedback(fb)"
+              >
+                {{ fb }}
+              </button>
+            </div>
             <textarea
               v-model="feedbackInput"
               class="form-textarea"
@@ -400,6 +429,32 @@
   flex-direction: column;
   gap: 6px;
   margin-top: 4px;
+}
+
+.feedback-bank {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.feedback-bank-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 8px;
+  border: 1px solid var(--border-input);
+  border-radius: 20px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-family: var(--font);
+  cursor: pointer;
+  transition: background .1s, color .1s, border-color .1s;
+  white-space: nowrap;
+}
+.feedback-bank-pill:hover {
+  background: rgba(74,144,217,.1);
+  color: var(--accent);
+  border-color: rgba(74,144,217,.4);
 }
 
 .depot-feedback-actions {

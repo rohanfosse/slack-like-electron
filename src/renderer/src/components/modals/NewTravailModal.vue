@@ -13,11 +13,14 @@
    * Référence : renderer/js/views/travaux.js → openNewTravailModal(), bindNewTravailForm()
    */
   import { ref, watch, computed } from 'vue'
+  import { Users, Plus, X } from 'lucide-vue-next'
   import { useAppStore }     from '@/stores/app'
   import { useTravauxStore } from '@/stores/travaux'
   import { useToast }        from '@/composables/useToast'
+  import { avatarColor, initials } from '@/utils/format'
   import Modal from '@/components/ui/Modal.vue'
   import { isoForDatetimeLocal } from '@/utils/date'
+  import type { Student, Group } from '@/types'
 
   const props = defineProps<{ modelValue: boolean }>()
   const emit  = defineEmits<{ 'update:modelValue': [v: boolean] }>()
@@ -39,10 +42,27 @@
   const channels    = ref<{ id: number; name: string }[]>([])
   const creating    = ref(false)
 
+  // ── Gestion des groupes ────────────────────────────────────────────────────
+  const students        = ref<Student[]>([])
+  const groups          = ref<Group[]>([])
+  const selectedGroupId = ref<number | null>(null)
+  const newGroupName    = ref('')
+  const newGroupMembers = ref<number[]>([])
+  const creatingGroup   = ref(false)
+  const showGroupForm   = ref(false)
+  const groupMembers    = ref<Record<number, number[]>>({}) // groupId → studentIds
+
   watch(() => props.modelValue, async (open) => {
     if (open && appStore.activePromoId) {
-      const res = await window.api.getChannels(appStore.activePromoId)
-      channels.value = res?.ok ? res.data : []
+      const [chRes, stuRes, grpRes] = await Promise.all([
+        window.api.getChannels(appStore.activePromoId),
+        window.api.getStudents(appStore.activePromoId),
+        window.api.getGroups(appStore.activePromoId),
+      ])
+      channels.value = chRes?.ok ? chRes.data : []
+      students.value = stuRes?.ok ? stuRes.data : []
+      groups.value   = grpRes?.ok ? grpRes.data : []
+
       // Pré-sélectionner le canal actif
       channelId.value = appStore.activeChannelId
       title.value = description.value = category.value = ''
@@ -50,8 +70,50 @@
       assignTo.value = 'all'
       isDraft.value  = false
       deadline.value = startDate.value = isoForDatetimeLocal()
+      selectedGroupId.value = null
+      showGroupForm.value   = false
+      newGroupName.value    = ''
+      newGroupMembers.value = []
     }
   })
+
+  // Charger les membres d'un groupe à la sélection
+  async function selectGroup(g: Group) {
+    selectedGroupId.value = g.id
+    if (!groupMembers.value[g.id]) {
+      const res = await window.api.getGroupMembers(g.id)
+      groupMembers.value[g.id] = res?.ok ? res.data.map((m: { student_id: number }) => m.student_id) : []
+    }
+  }
+
+  async function createGroup() {
+    if (!newGroupName.value.trim() || !appStore.activePromoId) return
+    creatingGroup.value = true
+    try {
+      const res = await window.api.createGroup({ name: newGroupName.value.trim(), promoId: appStore.activePromoId })
+      if (!res?.ok) return
+      const newId = res.data.id
+      await window.api.setGroupMembers({ groupId: newId, memberIds: newGroupMembers.value })
+      groupMembers.value[newId] = [...newGroupMembers.value]
+
+      // Rafraîchir la liste des groupes
+      const grpRes = await window.api.getGroups(appStore.activePromoId)
+      groups.value = grpRes?.ok ? grpRes.data : []
+
+      selectedGroupId.value = newId
+      showGroupForm.value   = false
+      newGroupName.value    = ''
+      newGroupMembers.value = []
+    } finally {
+      creatingGroup.value = false
+    }
+  }
+
+  function toggleMember(studentId: number) {
+    const idx = newGroupMembers.value.indexOf(studentId)
+    if (idx >= 0) newGroupMembers.value.splice(idx, 1)
+    else newGroupMembers.value.push(studentId)
+  }
 
   const isJalon = computed(() => type.value === 'jalon')
 
@@ -68,6 +130,7 @@
         startDate:    isJalon.value ? null : startDate.value,
         isPublished:  !isDraft.value,
         assignedTo:   assignTo.value,
+        groupId:      assignTo.value === 'group' ? selectedGroupId.value : null,
         channelId:    channelId.value,
       })
       if (!res) return
@@ -141,8 +204,82 @@
         </div>
       </div>
 
-      <!-- TODO: Constructeur de groupes si assignTo === 'group' -->
-      <!-- Référence : renderer/js/views/travaux.js → group-builder-list -->
+      <!-- ── Constructeur de groupes ──────────────────────────────────── -->
+      <div v-if="assignTo === 'group' && !isJalon" class="group-builder">
+        <div class="form-label" style="margin-bottom:8px">
+          <Users :size="13" style="vertical-align:middle;margin-right:4px" /> Groupes disponibles
+        </div>
+
+        <!-- Liste des groupes existants -->
+        <div v-if="groups.length" class="group-list">
+          <button
+            v-for="g in groups"
+            :key="g.id"
+            class="group-card"
+            :class="{ selected: selectedGroupId === g.id }"
+            type="button"
+            @click="selectGroup(g)"
+          >
+            <span class="group-card-name">{{ g.name }}</span>
+            <span v-if="groupMembers[g.id]" class="group-card-count">
+              {{ groupMembers[g.id].length }} membre{{ groupMembers[g.id].length > 1 ? 's' : '' }}
+            </span>
+          </button>
+        </div>
+        <p v-else-if="!showGroupForm" class="group-empty">Aucun groupe créé pour cette promotion.</p>
+
+        <!-- Formulaire de création de groupe -->
+        <div v-if="showGroupForm" class="group-form">
+          <input
+            v-model="newGroupName"
+            class="form-input"
+            placeholder="Nom du groupe…"
+            style="font-size:13px"
+          />
+          <div class="group-members-grid">
+            <button
+              v-for="s in students"
+              :key="s.id"
+              class="group-member-btn"
+              :class="{ selected: newGroupMembers.includes(s.id) }"
+              type="button"
+              @click="toggleMember(s.id)"
+            >
+              <div
+                class="avatar"
+                :style="{ background: avatarColor(s.name), width:'22px', height:'22px', fontSize:'9px', borderRadius:'4px' }"
+              >
+                {{ initials(s.name) }}
+              </div>
+              <span>{{ s.name }}</span>
+            </button>
+          </div>
+          <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px">
+            <button class="btn-ghost" type="button" style="font-size:12px" @click="showGroupForm = false">
+              <X :size="12" /> Annuler
+            </button>
+            <button
+              class="btn-primary"
+              type="button"
+              style="font-size:12px"
+              :disabled="!newGroupName.trim() || creatingGroup"
+              @click="createGroup"
+            >
+              {{ creatingGroup ? 'Création…' : 'Créer le groupe' }}
+            </button>
+          </div>
+        </div>
+
+        <button
+          v-if="!showGroupForm"
+          class="btn-ghost"
+          type="button"
+          style="font-size:12px;margin-top:8px"
+          @click="showGroupForm = true"
+        >
+          <Plus :size="12" /> Nouveau groupe
+        </button>
+      </div>
 
       <!-- Brouillon -->
       <label class="checkbox-label" style="display:flex;align-items:center;gap:8px">
@@ -151,7 +288,7 @@
       </label>
     </form>
 
-    <div class="modal-footer" style="padding:12px 16px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px">
+    <div class="modal-footer" style="padding:12px 16px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px;flex-shrink:0">
       <button class="btn-ghost" @click="emit('update:modelValue', false)">Annuler</button>
       <button class="btn-primary" :disabled="!title.trim() || !channelId || creating" @click="submit">
         {{ creating ? 'Création…' : isDraft ? 'Enregistrer brouillon' : 'Publier' }}
@@ -159,3 +296,102 @@
     </div>
   </Modal>
 </template>
+
+<style scoped>
+.group-builder {
+  background: rgba(255,255,255,.04);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.group-empty {
+  font-size: 12.5px;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.group-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.group-card {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border: 1.5px solid var(--border-input);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-family: var(--font);
+  cursor: pointer;
+  transition: all .12s;
+}
+.group-card:hover    { border-color: var(--accent); color: var(--text-primary); }
+.group-card.selected { border-color: var(--accent); background: rgba(74,144,217,.15); color: var(--accent); }
+
+.group-card-name  { font-size: 13px; font-weight: 600; }
+.group-card-count { font-size: 11px; opacity: .7; }
+
+.group-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  border-top: 1px solid var(--border);
+  padding-top: 10px;
+  margin-top: 2px;
+}
+
+.group-members-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 4px;
+  max-height: 180px;
+  overflow-y: auto;
+}
+
+.group-member-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 8px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-family: var(--font);
+  font-size: 12.5px;
+  cursor: pointer;
+  transition: all .1s;
+  text-align: left;
+}
+.group-member-btn:hover   { background: var(--bg-hover); color: var(--text-primary); }
+.group-member-btn.selected {
+  background: rgba(74,144,217,.15);
+  border-color: rgba(74,144,217,.4);
+  color: var(--accent);
+}
+
+.radio-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+.radio-label input { accent-color: var(--accent); }
+
+.checkbox-label {
+  font-size: 13px;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+.checkbox-label input { accent-color: var(--accent); }
+</style>
