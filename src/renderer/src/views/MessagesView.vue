@@ -1,6 +1,6 @@
 <script setup lang="ts">
   import { computed, watch, ref } from 'vue'
-  import { Search, X as XIcon, ClipboardList, BookOpen } from '@lucide/vue-next'
+  import { Search, X as XIcon, ClipboardList, BookOpen } from 'lucide-vue-next'
   import { useAppStore }      from '@/stores/app'
   import { useMessagesStore } from '@/stores/messages'
   import { useTravauxStore }  from '@/stores/travaux'

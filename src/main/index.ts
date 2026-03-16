@@ -1,11 +1,15 @@
 import { app, BrowserWindow } from 'electron'
 import { join } from 'path'
 
-// Modules CommonJS — la couche DB et IPC restent en JS pour compatibilité better-sqlite3
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const db = require('../db/index') as { init: () => void }
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const ipc = require('./ipc') as { register: () => void }
+// Modules CommonJS — import default : Rollup + @rollup/plugin-commonjs convertit
+// module.exports en export default, ce qui permet le bundling correct.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+import dbRaw  from '../db/index'
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+import ipcRaw from './ipc'
+
+const db  = dbRaw  as unknown as { init:     () => void }
+const ipc = ipcRaw as unknown as { register: () => void }
 
 function createWindow(): void {
   const win = new BrowserWindow({
@@ -13,7 +17,7 @@ function createWindow(): void {
     height: 800,
     minWidth: 960,
     minHeight: 640,
-    title: 'CESI Cours',
+    title: 'CeSlack',
     backgroundColor: '#111214',
     titleBarStyle: 'hidden',
     titleBarOverlay: {

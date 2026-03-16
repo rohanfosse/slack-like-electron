@@ -1,6 +1,6 @@
 <script setup lang="ts">
   import { ref, computed } from 'vue'
-  import { Pin, ChevronDown, ChevronUp } from '@lucide/vue-next'
+  import { Pin, ChevronDown, ChevronUp } from 'lucide-vue-next'
   import { useMessagesStore } from '@/stores/messages'
   import { renderMessageContent } from '@/utils/html'
 

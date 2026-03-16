@@ -106,8 +106,8 @@
     <!-- ── Connexion ──────────────────────────────────────────────────────── -->
     <div v-if="screen === 'login'" id="login-panel">
       <div id="login-logo">
-        <div class="logo-mark">CC</div>
-        <span class="logo-text">CESI Cours</span>
+        <div class="logo-mark">CeS</div>
+        <span class="logo-text">CeSlack</span>
       </div>
       <h2 id="login-title">Connexion</h2>
       <p id="login-subtitle">Entrez vos identifiants pour continuer</p>
@@ -152,8 +152,8 @@
     <!-- ── Inscription ────────────────────────────────────────────────────── -->
     <div v-else id="login-panel" style="max-width:480px">
       <div id="login-logo">
-        <div class="logo-mark">CC</div>
-        <span class="logo-text">CESI Cours</span>
+        <div class="logo-mark">CeS</div>
+        <span class="logo-text">CeSlack</span>
       </div>
       <h2 id="login-title">Nouveau compte étudiant</h2>
       <p id="login-subtitle">Seules les adresses @viacesi.fr sont acceptées</p>

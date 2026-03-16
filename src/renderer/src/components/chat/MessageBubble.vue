@@ -1,6 +1,6 @@
 <script setup lang="ts">
   import { computed } from 'vue'
-  import { Pin, PinOff } from '@lucide/vue-next'
+  import { Pin, PinOff } from 'lucide-vue-next'
   import { useAppStore }      from '@/stores/app'
   import { useMessagesStore } from '@/stores/messages'
   import Avatar from '@/components/ui/Avatar.vue'

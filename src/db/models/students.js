@@ -47,7 +47,7 @@ function getStudentByEmail(email) {
 }
 
 function loginWithCredentials(email, password) {
-  const TEACHER_EMAIL    = 'rohan.fosse@cesi.fr';
+  const TEACHER_EMAIL    = 'rfosse@cesi.fr';
   const TEACHER_PASSWORD = 'admin';
   if (email.trim().toLowerCase() === TEACHER_EMAIL && password === TEACHER_PASSWORD) {
     return { id: 0, name: 'Rohan Fosse', avatar_initials: 'RF', photo_data: null, type: 'teacher', promo_name: null, promo_id: null };

@@ -1,6 +1,6 @@
 <script setup lang="ts">
   import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
-  import { Search } from '@lucide/vue-next'
+  import { Search } from 'lucide-vue-next'
   import { useAppStore }    from '@/stores/app'
   import { useModalsStore } from '@/stores/modals'
   import { useMessagesStore } from '@/stores/messages'

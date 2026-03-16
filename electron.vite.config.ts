@@ -1,10 +1,43 @@
-import { resolve } from 'path'
+import { resolve }         from 'path'
+import { builtinModules }  from 'module'
 import { defineConfig, externalizeDepsPlugin } from 'electron-vite'
-import vue from '@vitejs/plugin-vue'
+import vue       from '@vitejs/plugin-vue'
+import commonjs  from '@rollup/plugin-commonjs'
+
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const { dependencies = {} } = require('./package.json') as {
+  dependencies?: Record<string, string>
+}
+
+// Modules qui doivent rester en require() natif dans le bundle Node.js —
+// @rollup/plugin-commonjs ne doit PAS les envelopper dans son helper interne.
+const cjsIgnore = [
+  'electron',
+  ...builtinModules,
+  ...builtinModules.map((m) => `node:${m}`),
+  ...Object.keys(dependencies),
+]
 
 export default defineConfig({
   main: {
-    plugins: [externalizeDepsPlugin()],
+    // commonjs({ include }) : ne traite que les fichiers locaux (db + ipc).
+    // ignore : garde les require() de electron/Node/node_modules en natif.
+    plugins: [
+      commonjs({
+        include: [/src\/db\//, /src\/main\/ipc/],
+        ignore:  cjsIgnore,
+      }),
+    ],
+    build: {
+      rollupOptions: {
+        external: [
+          'electron',
+          ...builtinModules,
+          ...builtinModules.map((m) => `node:${m}`),
+          ...Object.keys(dependencies),
+        ],
+      },
+    },
   },
   preload: {
     plugins: [externalizeDepsPlugin()],
@@ -19,7 +52,6 @@ export default defineConfig({
     resolve: {
       alias: {
         '@': resolve(__dirname, 'src/renderer/src'),
-        // Répertoire CSS existant — pas besoin de déplacer les fichiers
         '@css': resolve(__dirname, 'renderer/css'),
       },
     },

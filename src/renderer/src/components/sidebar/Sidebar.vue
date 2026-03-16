@@ -1,7 +1,7 @@
 <script setup lang="ts">
   import { ref, watch, computed, onMounted } from 'vue'
   import { useRoute } from 'vue-router'
-  import { Plus } from '@lucide/vue-next'
+  import { Plus } from 'lucide-vue-next'
   import { useAppStore }    from '@/stores/app'
   import { useModalsStore } from '@/stores/modals'
   import { useMessagesStore } from '@/stores/messages'

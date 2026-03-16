@@ -1,6 +1,6 @@
 <script setup lang="ts">
   import { ref, onMounted, onUnmounted } from 'vue'
-  import { Smile } from '@lucide/vue-next'
+  import { Smile } from 'lucide-vue-next'
   import { useMessagesStore } from '@/stores/messages'
 
   interface Props { msgId: number }

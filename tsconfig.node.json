@@ -7,7 +7,8 @@
     "target": "ES2020",
     "lib": ["ES2020"],
     "strict": true,
-    "noEmit": true,
+    "outDir": "out/.tsc-node",
+    "allowJs": true,
     "types": ["node"]
   },
   "include": [

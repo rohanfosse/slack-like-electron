@@ -1,6 +1,6 @@
 <script setup lang="ts">
   import { ref, computed } from 'vue'
-  import { Send, Type } from '@lucide/vue-next'
+  import { Send, Type } from 'lucide-vue-next'
   import { useAppStore }      from '@/stores/app'
   import { useMessagesStore } from '@/stores/messages'
   import FormatToolbar from './FormatToolbar.vue'

@@ -1,7 +1,7 @@
 <script setup lang="ts">
   import { computed } from 'vue'
   import { useRouter, useRoute } from 'vue-router'
-  import { MessageSquare, BookOpen, FileText, Settings, Calendar } from '@lucide/vue-next'
+  import { MessageSquare, BookOpen, FileText, Settings, Calendar } from 'lucide-vue-next'
   import { useAppStore }    from '@/stores/app'
   import { useModalsStore } from '@/stores/modals'
   import { useTravauxStore } from '@/stores/travaux'
@@ -29,7 +29,7 @@
   <nav class="nav-rail" aria-label="Navigation principale">
     <!-- Logo -->
     <div class="nav-logo">
-      <div class="logo-mark" style="font-size:13px;width:32px;height:32px">CC</div>
+      <div class="logo-mark" style="font-size:10px;width:32px;height:32px;letter-spacing:-0.5px">CeS</div>
     </div>
 
     <!-- Sections -->

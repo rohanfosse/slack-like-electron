@@ -9,7 +9,7 @@
    *   gantt.js, rendus.js, student-dashboard.js
    */
   import { ref, computed, onMounted, watch } from 'vue'
-  import { BarChart2, List, Plus } from '@lucide/vue-next'
+  import { BarChart2, List, Plus } from 'lucide-vue-next'
   import { useAppStore }     from '@/stores/app'
   import { useTravauxStore } from '@/stores/travaux'
   import { useModalsStore }  from '@/stores/modals'

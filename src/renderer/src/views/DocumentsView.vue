@@ -7,13 +7,14 @@
    * Référence : renderer/js/views/documents-view.js
    */
   import { ref, computed, onMounted, watch } from 'vue'
-  import { FileText, Plus, Trash2, ExternalLink, Download } from '@lucide/vue-next'
+  import { FileText, Plus, Trash2, ExternalLink, Download } from 'lucide-vue-next'
   import { useAppStore }       from '@/stores/app'
   import { useDocumentsStore } from '@/stores/documents'
   import { useModalsStore }    from '@/stores/modals'
   import Modal from '@/components/ui/Modal.vue'
   import { formatDate } from '@/utils/date'
 
+  const api       = window.api
   const appStore  = useAppStore()
   const docStore  = useDocumentsStore()
   const modals    = useModalsStore()
@@ -24,7 +25,7 @@
   const channelsList   = ref<{ id: number; name: string }[]>([])
 
   onMounted(async () => {
-    const res = await window.api.getPromotions()
+    const res = await api.getPromotions()
     promotions.value = res?.ok ? res.data : []
     if (!promoFilter.value && promotions.value.length) {
       promoFilter.value = promotions.value[0].id
@@ -34,7 +35,7 @@
 
   async function loadChannels() {
     if (!promoFilter.value) return
-    const res = await window.api.getChannels(promoFilter.value)
+    const res = await api.getChannels(promoFilter.value)
     channelsList.value = res?.ok ? res.data : []
     await loadDocuments()
   }
@@ -61,9 +62,9 @@
 
   async function openDoc(doc: typeof docStore.documents[0]) {
     if (doc.type === 'link') {
-      await window.api.openExternal(doc.content)
+      await api.openExternal(doc.content)
     } else {
-      const res = await window.api.readFileBase64(doc.content)
+      const res = await api.readFileBase64(doc.content)
       if (res?.ok && res.data) {
         docStore.openPreview(doc)
         modals.documentPreview = true
@@ -169,7 +170,7 @@
                 v-if="doc.type === 'link'"
                 class="btn-icon"
                 title="Ouvrir le lien"
-                @click.stop="window.api.openExternal(doc.content)"
+                @click.stop="api.openExternal(doc.content)"
               >
                 <ExternalLink :size="14" />
               </button>
@@ -177,7 +178,7 @@
                 v-else
                 class="btn-icon"
                 title="Télécharger"
-                @click.stop="window.api.downloadFile(doc.content)"
+                @click.stop="api.downloadFile(doc.content)"
               >
                 <Download :size="14" />
               </button>
