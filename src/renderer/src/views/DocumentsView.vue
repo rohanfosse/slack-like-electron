@@ -94,10 +94,20 @@
     file:  'Fichier',
   }
 
+  // ── Normalise une URL (ajoute https:// si pas de protocole) ─────────────
+  function normalizeUrl(url: string): string {
+    const u = url.trim()
+    if (!u) return u
+    if (/^(https?:\/\/|mailto:)/i.test(u)) return u
+    return 'https://' + u
+  }
+
   // ── Actions ─────────────────────────────────────────────────────────────
   async function openDoc(doc: AppDocument) {
     if (doc.type === 'link') {
-      await api.openExternal(doc.content)
+      const url = normalizeUrl(doc.content)
+      const res = await api.openExternal(url)
+      if (!res?.ok) showToast(res?.error ?? 'Impossible d\'ouvrir le lien.')
     } else {
       docStore.openPreview(doc)
       modals.documentPreview = true
@@ -145,7 +155,7 @@
         project:     appStore.activeProject ?? null,
         name:        addName.value.trim(),
         type:        addType.value,
-        pathOrUrl:   addType.value === 'link' ? addLink.value.trim() : addFile.value,
+        pathOrUrl:   addType.value === 'link' ? normalizeUrl(addLink.value) : addFile.value,
         category:    addCategory.value.trim() || null,
         description: null,
       })

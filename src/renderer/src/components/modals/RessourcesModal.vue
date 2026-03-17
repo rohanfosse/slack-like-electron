@@ -76,8 +76,13 @@
     }
   }
 
+  function normalizeUrl(url: string): string {
+    const u = url.trim()
+    return /^(https?:\/\/|mailto:)/i.test(u) ? u : 'https://' + u
+  }
+
   async function openResource(content: string, type: string) {
-    if (type === 'link') await window.api.openExternal(content)
+    if (type === 'link') await window.api.openExternal(normalizeUrl(content))
     else await window.api.openPath(content)
   }
 

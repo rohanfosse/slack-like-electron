@@ -92,9 +92,14 @@
   }
 
   // ── Ouvrir / télécharger ─────────────────────────────────────────────────
+  function normalizeUrl(url: string): string {
+    const u = url.trim()
+    return /^(https?:\/\/|mailto:)/i.test(u) ? u : 'https://' + u
+  }
+
   async function openDepot(d: Depot) {
     if (d.type === 'link') {
-      await window.api.openExternal(d.content)
+      await window.api.openExternal(normalizeUrl(d.content))
     } else {
       await window.api.openPath(d.content)
     }
