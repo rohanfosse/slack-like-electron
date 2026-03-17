@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import {
   Clock, CheckCircle2, CalendarDays, Award, AlertTriangle, Upload,
 } from 'lucide-vue-next'
@@ -15,6 +15,11 @@ defineEmits<{ 'update:modelValue': [v: boolean] }>()
 
 const travauxStore = useTravauxStore()
 const appStore     = useAppStore()
+
+const now = ref(Date.now())
+let clockInterval: ReturnType<typeof setInterval> | null = null
+onMounted(() => { clockInterval = setInterval(() => { now.value = Date.now() }, 30_000) })
+onBeforeUnmount(() => { if (clockInterval) clearInterval(clockInterval) })
 
 const TYPE_LABELS: Record<string, string> = {
   livrable: 'Livrable', soutenance: 'Soutenance', cctl: 'CCTL',
@@ -39,14 +44,12 @@ const byMonth = computed(() => {
   return map
 })
 
-const now = Date.now()
-
-function isExpired(d: string)  { return now >= new Date(d).getTime() }
+function isExpired(d: string)  { return now.value >= new Date(d).getTime() }
 function isEventType(t: Devoir){ return t.type === 'soutenance' || t.type === 'cctl' }
 function isOverdue(t: Devoir)  { return t.depot_id == null && !isEventType(t) && isExpired(t.deadline) }
 function isUrgent(t: Devoir)   {
   if (t.depot_id != null || isExpired(t.deadline) || isEventType(t)) return false
-  return new Date(t.deadline).getTime() - now < 3 * 86_400_000
+  return new Date(t.deadline).getTime() - now.value < 3 * 86_400_000
 }
 
 function statusIcon(t: Devoir) {

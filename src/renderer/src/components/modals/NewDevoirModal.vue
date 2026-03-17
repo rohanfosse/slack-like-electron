@@ -5,9 +5,11 @@
   import { useTravauxStore } from '@/stores/travaux'
   import { useToast }        from '@/composables/useToast'
   import { avatarColor, initials } from '@/utils/format'
+  import { parseCategoryIcon } from '@/utils/categoryIcon'
   import Modal from '@/components/ui/Modal.vue'
   import { isoForDatetimeLocal } from '@/utils/date'
   import type { Student, Group } from '@/types'
+  import type { ProjectMeta } from '@/components/modals/NewProjectModal.vue'
 
   const props = defineProps<{ modelValue: boolean }>()
   const emit  = defineEmits<{ 'update:modelValue': [v: boolean] }>()
@@ -42,6 +44,15 @@
   const channels    = ref<{ id: number; name: string }[]>([])
   const creating    = ref(false)
 
+  // ── Projets disponibles (depuis localStorage) ─────────────────────────────
+  const projects = computed((): ProjectMeta[] => {
+    if (!appStore.activePromoId) return []
+    try {
+      const raw = localStorage.getItem(`cc_projects_${appStore.activePromoId}`)
+      return raw ? (JSON.parse(raw) as ProjectMeta[]) : []
+    } catch { return [] }
+  })
+
   // ── Comportements selon le type ───────────────────────────────────────────
   /** Pour soutenance et cctl : pas de date de début (présence à une date fixe) */
   const isEventType = computed(() => type.value === 'soutenance' || type.value === 'cctl')
@@ -70,9 +81,21 @@
       students.value = stuRes?.ok ? stuRes.data : []
       groups.value   = grpRes?.ok ? grpRes.data : []
 
-      // Pré-sélectionner le canal actif
-      channelId.value = appStore.activeChannelId
-      title.value = description.value = category.value = ''
+      // Pré-sélectionner le projet actif (ou vider)
+      category.value = appStore.activeProject ?? ''
+
+      // Pré-sélectionner le canal : priorité canal actif, sinon premier canal du projet
+      if (appStore.activeChannelId) {
+        channelId.value = appStore.activeChannelId
+      } else if (appStore.activeProject) {
+        const projChannel = (channels.value as { id: number; name: string; category?: string }[])
+          .find(c => c.category?.trim() === appStore.activeProject)
+        channelId.value = projChannel?.id ?? null
+      } else {
+        channelId.value = null
+      }
+
+      title.value = description.value = ''
       type.value = 'livrable'
       assignTo.value = 'all'
       isDraft.value  = false
@@ -192,11 +215,17 @@
         </div>
       </div>
 
-      <!-- Catégorie + Assignation -->
+      <!-- Projet + Assignation -->
       <div style="display:flex;gap:10px">
         <div class="form-group" style="flex:1">
-          <label class="form-label">Catégorie <span style="opacity:.6">(optionnel)</span></label>
-          <input v-model="category" type="text" class="form-input" placeholder="ex : Bloc 1, Module 3…" />
+          <label class="form-label">Projet <span style="opacity:.6">(optionnel)</span></label>
+          <select v-if="projects.length" v-model="category" class="form-select">
+            <option value="">Aucun projet</option>
+            <option v-for="p in projects" :key="p.name" :value="p.name">
+              {{ parseCategoryIcon(p.name).label || p.name }}
+            </option>
+          </select>
+          <input v-else v-model="category" type="text" class="form-input" placeholder="ex : Bloc 1, Module 3…" />
         </div>
         <div v-if="!isEventType" class="form-group" style="flex:1">
           <label class="form-label">Assigné à</label>

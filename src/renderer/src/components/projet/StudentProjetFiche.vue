@@ -10,6 +10,7 @@ import { useAppStore }          from '@/stores/app'
 import { useTravauxStore }      from '@/stores/travaux'
 import { useDocumentsStore }    from '@/stores/documents'
 import { useModalsStore }       from '@/stores/modals'
+import { useToast }             from '@/composables/useToast'
 import { parseCategoryIcon }    from '@/utils/categoryIcon'
 import { formatDate, deadlineClass, deadlineLabel } from '@/utils/date'
 import { avatarColor } from '@/utils/format'
@@ -28,6 +29,7 @@ const appStore     = useAppStore()
 const travauxStore = useTravauxStore()
 const docStore     = useDocumentsStore()
 const modals       = useModalsStore()
+const { showToast } = useToast()
 
 // ── Métadonnées projet (localStorage) ────────────────────────────────────────
 const projectMeta = computed((): ProjectMeta | null => {
@@ -170,8 +172,11 @@ async function submitDeposit(devoir: Devoir) {
       file_name:  depositMode.value === 'file' ? depositFileName.value : null,
     })
     if (ok) {
+      showToast('Dépôt enregistré.', 'success')
       cancelDeposit()
       await travauxStore.fetchStudentDevoirs()
+    } else {
+      showToast('Erreur lors du dépôt.', 'error')
     }
   } finally { depositing.value = false }
 }
