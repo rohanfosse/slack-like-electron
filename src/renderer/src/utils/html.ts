@@ -52,9 +52,21 @@ export function hasMention(text: string, userName: string): boolean {
   return parts.some((p) => text.toLowerCase().includes('@' + p))
 }
 
+// ─── Liens cliquables ────────────────────────────────────────────────────────
+
+/** Transforme les URLs brutes en <a data-url="..."> dans du HTML déjà échappé. */
+function linkifyHtml(html: string): string {
+  return html.replace(/https?:\/\/[^\s<>"]+/gi, (url) => {
+    // Retire la ponctuation finale qui ne fait probablement pas partie de l'URL
+    const trimmed = url.replace(/[.,;:!?)\]]+$/, '')
+    const tail    = url.slice(trimmed.length)
+    return `<a class="msg-link" data-url="${trimmed}" href="#" tabindex="0">${trimmed}</a>${tail}`
+  })
+}
+
 // ─── Formatage du contenu d'un message ───────────────────────────────────────
 
 export function renderMessageContent(raw: string, searchTerm = '', currentUserName = ''): string {
   const escaped = searchTerm ? highlightTerm(raw, searchTerm) : escapeHtml(raw)
-  return applyMentions(parseMarkdown(escaped), currentUserName)
+  return linkifyHtml(applyMentions(parseMarkdown(escaped), currentUserName))
 }

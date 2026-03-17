@@ -39,6 +39,14 @@
     { type: 'eye',      icon: 'eye'         },
   ]
 
+  function onMsgClick(e: MouseEvent) {
+    const a = (e.target as HTMLElement).closest('a[data-url]') as HTMLAnchorElement | null
+    if (!a) return
+    e.preventDefault()
+    const url = a.dataset.url
+    if (url) window.api.openExternal(url)
+  }
+
   const reactionsToShow = computed(() => {
     const r    = messagesStore.reactions[props.msg.id] ?? {}
     const mine = messagesStore.userVotes[props.msg.id] ?? new Set()
@@ -75,7 +83,7 @@
       </template>
 
       <!-- eslint-disable vue/no-v-html -->
-      <p class="msg-text" v-html="content" />
+      <p class="msg-text" v-html="content" @click="onMsgClick" />
       <!-- eslint-enable vue/no-v-html -->
 
       <!-- Réactions affichées -->
