@@ -28,7 +28,8 @@
   const students    = ref<Student[]>([])
   const loading     = ref(false)
   // Set des catégories repliées
-  const collapsed   = ref<Set<string>>(new Set())
+  const collapsed          = ref<Set<string>>(new Set())
+  const collapsedDashboard = ref<Set<string>>(new Set())
 
   const user = computed(() => appStore.currentUser)
 
@@ -120,6 +121,13 @@
     return groups
   })
 
+  function toggleDashboardProject(key: string) {
+    const next = new Set(collapsedDashboard.value)
+    if (next.has(key)) next.delete(key)
+    else next.add(key)
+    collapsedDashboard.value = next
+  }
+
   function toggleCategory(key: string) {
     const next = new Set(collapsed.value)
     if (next.has(key)) next.delete(key)
@@ -165,8 +173,33 @@
     router.push('/devoirs')
   }
 
+  // ── Arbre projets pour le dashboard ──────────────────────────────────────
+  interface DashboardProjectGroup {
+    key: string     // category raw value (e.g. "monitor Développement Web")
+    label: string   // parsed label
+    channels: Channel[]
+  }
+
+  const dashboardProjectGroups = computed((): DashboardProjectGroup[] => {
+    const all = [...allProjects.value]
+    const groups: DashboardProjectGroup[] = []
+
+    for (const proj of all) {
+      const chs = visibleChannels.value.filter(ch => ch.category?.trim() === proj)
+      if (chs.length) groups.push({ key: proj, label: parseCategoryIcon(proj).label, channels: chs })
+    }
+
+    // Canaux sans projet
+    const uncategorized = visibleChannels.value.filter(ch => !ch.category?.trim())
+    if (uncategorized.length) {
+      groups.push({ key: NO_CAT, label: 'Autres canaux', channels: uncategorized })
+    }
+    return groups
+  })
+
   // ── Contexte sidebar selon la route ───────────────────────────────────────
   const sectionLabel = computed(() => {
+    if (route.name === 'dashboard') return 'Accueil'
     if (route.name === 'devoirs')   return 'Devoirs'
     if (route.name === 'documents') return 'Documents'
     return 'Messages'
@@ -205,11 +238,14 @@
   }
 
   // ── Réactivité ────────────────────────────────────────────────────────────
-  onMounted(() => { load(); loadCustomProjects(); if (route.name === 'devoirs') loadDbProjects() })
+  onMounted(() => {
+    load(); loadCustomProjects()
+    if (route.name === 'devoirs' || route.name === 'dashboard') loadDbProjects()
+  })
 
   watch(() => route.name, (n) => {
-    if (n === 'messages') load()
-    if (n === 'devoirs')  loadDbProjects()
+    if (n === 'messages' || n === 'dashboard') load()
+    if (n === 'devoirs' || n === 'dashboard')  loadDbProjects()
   })
   watch(() => modals.createChannel, (open) => { if (!open) load() })
   // Recharger quand l'utilisateur change (simulation étudiant)
@@ -245,8 +281,9 @@
       {{ sectionLabel }}
     </div>
 
-    <!-- Raccourci "Tous les documents" -->
+    <!-- Raccourci "Tous les documents" (caché sur le dashboard) -->
     <button
+      v-if="route.name !== 'dashboard'"
       class="sidebar-all-docs-btn"
       :class="{ active: route.name === 'documents' && !appStore.activeChannelId }"
       @click="appStore.activeChannelId = null; router.push('/documents')"
@@ -270,6 +307,86 @@
           <div class="skel skel-avatar skel-avatar-sm" />
           <div class="skel skel-line skel-w70" />
         </div>
+      </template>
+
+      <!-- Arbre projets (Accueil / dashboard) -->
+      <template v-else-if="route.name === 'dashboard'">
+        <div class="sidebar-section-header">
+          <span>Projets &amp; canaux</span>
+          <button
+            v-if="appStore.isTeacher"
+            class="btn-icon"
+            title="Nouveau projet"
+            aria-label="Nouveau projet"
+            style="padding:2px"
+            @click="modals.newProject = true"
+          >
+            <Plus :size="14" />
+          </button>
+        </div>
+
+        <nav aria-label="Projets et canaux">
+          <div
+            v-for="group in dashboardProjectGroups"
+            :key="group.key"
+            class="dash-project-group"
+          >
+            <!-- En-tête projet -->
+            <div class="dash-project-header">
+              <button
+                class="dash-project-toggle"
+                :aria-expanded="!collapsedDashboard.has(group.key)"
+                @click="toggleDashboardProject(group.key)"
+              >
+                <ChevronDown
+                  :size="12"
+                  class="sidebar-category-chevron"
+                  :class="{ rotated: collapsedDashboard.has(group.key) }"
+                />
+                <component
+                  v-if="group.key !== '__no_category__' && parseCategoryIcon(group.key).icon"
+                  :is="parseCategoryIcon(group.key).icon!"
+                  :size="12"
+                  class="dash-project-icon"
+                />
+                <span class="dash-project-label">{{ group.label }}</span>
+                <span class="sidebar-category-count">{{ group.channels.length }}</span>
+              </button>
+              <button
+                v-if="group.key !== '__no_category__'"
+                class="dash-devoirs-link"
+                :title="`Devoirs — ${group.label}`"
+                @click="selectProject(group.key)"
+              >
+                Devoirs
+              </button>
+            </div>
+
+            <!-- Canaux du projet -->
+            <nav
+              v-show="!collapsedDashboard.has(group.key)"
+              class="dash-project-channels"
+              :aria-label="`Canaux — ${group.label}`"
+            >
+              <ChannelItem
+                v-for="ch in group.channels"
+                :key="ch.id"
+                :channel-id="ch.id"
+                :name="ch.name"
+                :prefix="ch.type === 'annonce' ? '📢' : '#'"
+                :type="ch.type"
+                @click="selectChannel(ch)"
+              />
+            </nav>
+          </div>
+
+          <!-- État vide -->
+          <div v-if="!dashboardProjectGroups.length" class="dash-empty">
+            Aucun canal pour l'instant.
+          </div>
+        </nav>
+
+        <NewProjectModal v-model="modals.newProject" @created="onProjectCreated" />
       </template>
 
       <!-- Liste des projets (section Devoirs) -->
@@ -450,12 +567,14 @@
   background: var(--text-muted);
   flex-shrink: 0;
 }
-.sidebar-section--messages::before { background: var(--accent); }
-.sidebar-section--devoirs::before  { background: #9B87F5; }
-.sidebar-section--documents::before{ background: #27AE60; }
-.sidebar-section--messages { color: var(--accent); }
-.sidebar-section--devoirs  { color: #9B87F5; }
-.sidebar-section--documents{ color: #27AE60; }
+.sidebar-section--messages::before  { background: var(--accent); }
+.sidebar-section--devoirs::before   { background: #9B87F5; }
+.sidebar-section--documents::before { background: #27AE60; }
+.sidebar-section--dashboard::before { background: #E5A842; }
+.sidebar-section--messages  { color: var(--accent); }
+.sidebar-section--devoirs   { color: #9B87F5; }
+.sidebar-section--documents { color: #27AE60; }
+.sidebar-section--dashboard { color: #E5A842; }
 
 /* ── Catégories de canaux ── */
 .sidebar-category {
@@ -547,4 +666,77 @@
   min-width: 0;
 }
 .project-add-input:focus { border-color: #9B87F5; box-shadow: 0 0 0 2px rgba(155,135,245,.2); }
+
+/* ── Arbre projets (dashboard) ── */
+.dash-project-group {
+  margin-bottom: 2px;
+}
+
+.dash-project-header {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.dash-project-toggle {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: transparent;
+  border: none;
+  padding: 4px 6px 4px 10px;
+  cursor: pointer;
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  font-family: var(--font);
+  transition: color var(--t-fast);
+  text-align: left;
+}
+.dash-project-toggle:hover { color: var(--text-secondary); }
+.dash-project-toggle:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; border-radius: 3px; }
+
+.dash-project-icon {
+  flex-shrink: 0;
+  opacity: .7;
+}
+
+.dash-project-label {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dash-devoirs-link {
+  flex-shrink: 0;
+  font-size: 10px;
+  font-weight: 500;
+  padding: 2px 6px;
+  border: 1px solid rgba(155,135,245,.3);
+  border-radius: 4px;
+  background: transparent;
+  color: #9B87F5;
+  cursor: pointer;
+  font-family: var(--font);
+  margin-right: 8px;
+  transition: background var(--t-fast), color var(--t-fast);
+  white-space: nowrap;
+}
+.dash-devoirs-link:hover { background: rgba(155,135,245,.15); color: #b8a8f7; }
+
+.dash-project-channels {
+  padding-left: 10px;
+}
+
+.dash-empty {
+  padding: 12px 16px;
+  font-size: 12px;
+  color: var(--text-muted);
+  font-style: italic;
+}
 </style>
