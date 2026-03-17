@@ -11,7 +11,17 @@ function getDepots(travailId) {
   `).all(travailId);
 }
 
-function addDepot({ travailId, studentId, fileName, filePath, linkUrl, deployUrl }) {
+function addDepot(payload) {
+  // Accepte snake_case (frontend) ou camelCase (legacy)
+  const travailId  = payload.travail_id  ?? payload.travailId
+  const studentId  = payload.student_id  ?? payload.studentId
+  const type       = payload.type        ?? 'file'
+  const content    = payload.content     ?? payload.filePath ?? payload.linkUrl ?? ''
+  const fileName   = payload.file_name   ?? payload.fileName ?? (type === 'link' ? '🔗 Lien web' : '')
+  const filePath   = type === 'file' ? content : (payload.filePath ?? '')
+  const linkUrl    = type === 'link' ? content : (payload.linkUrl  ?? null)
+  const deployUrl  = payload.deploy_url  ?? payload.deployUrl ?? null
+
   return getDb().prepare(`
     INSERT INTO depots (travail_id, student_id, file_name, file_path, link_url, deploy_url)
     VALUES (?, ?, ?, ?, ?, ?)
@@ -21,7 +31,7 @@ function addDepot({ travailId, studentId, fileName, filePath, linkUrl, deployUrl
       deploy_url   = excluded.deploy_url,
       file_path    = excluded.file_path,
       submitted_at = datetime('now')
-  `).run(travailId, studentId, fileName ?? '🔗 Lien web', filePath ?? '', linkUrl ?? null, deployUrl ?? null);
+  `).run(travailId, studentId, fileName, filePath, linkUrl, deployUrl);
 }
 
 function setNote({ depotId, note }) {

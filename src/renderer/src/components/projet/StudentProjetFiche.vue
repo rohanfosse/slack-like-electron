@@ -138,6 +138,7 @@ const depositLink        = ref('')
 const depositFile        = ref<string | null>(null)
 const depositFileName    = ref<string | null>(null)
 const depositing         = ref(false)
+const dragOver           = ref(false)
 
 function startDeposit(t: Devoir) {
   depositingDevoirId.value = t.id
@@ -145,8 +146,9 @@ function startDeposit(t: Devoir) {
   depositLink.value        = ''
   depositFile.value        = null
   depositFileName.value    = null
+  dragOver.value           = false
 }
-function cancelDeposit() { depositingDevoirId.value = null }
+function cancelDeposit() { depositingDevoirId.value = null; dragOver.value = false }
 
 async function pickFile() {
   const res = await window.api.openFileDialog()
@@ -156,6 +158,27 @@ async function pickFile() {
   }
 }
 function clearDepositFile() { depositFile.value = null; depositFileName.value = null }
+
+// ── Drag & drop ───────────────────────────────────────────────────────────────
+function onDragOver(e: DragEvent) {
+  e.preventDefault()
+  if (depositMode.value === 'file') dragOver.value = true
+}
+function onDragLeave() { dragOver.value = false }
+function onDrop(e: DragEvent) {
+  e.preventDefault()
+  dragOver.value = false
+  if (depositMode.value !== 'file') return
+  const file = e.dataTransfer?.files?.[0]
+  if (file) {
+    // Electron expose le chemin natif via file.path
+    const path = (file as File & { path?: string }).path ?? ''
+    if (path) {
+      depositFile.value     = path
+      depositFileName.value = file.name
+    }
+  }
+}
 
 async function submitDeposit(devoir: Devoir) {
   if (depositing.value || !appStore.currentUser) return
@@ -349,9 +372,17 @@ function gradeColor(note: string | null | undefined): string {
                         <span class="spf-file-name">{{ depositFileName }}</span>
                         <button class="spf-file-clear" @click.stop="clearDepositFile"><X :size="11" /></button>
                       </div>
-                      <div v-else class="spf-file-zone" @click="pickFile">
+                      <div
+                        v-else
+                        class="spf-file-zone"
+                        :class="{ 'spf-file-zone--drag': dragOver }"
+                        @click="pickFile"
+                        @dragover="onDragOver"
+                        @dragleave="onDragLeave"
+                        @drop="onDrop"
+                      >
                         <Upload :size="18" class="spf-file-zone-icon" />
-                        <span>Cliquer pour choisir un fichier</span>
+                        <span>{{ dragOver ? 'Relâcher pour déposer' : 'Glisser un fichier ou cliquer' }}</span>
                       </div>
                     </div>
                     <input v-else v-model="depositLink" class="form-input" placeholder="https://…" type="url" />
@@ -905,7 +936,9 @@ function gradeColor(note: string | null | undefined): string {
   font-size: 12px;
   transition: border-color var(--t-fast), background var(--t-fast);
 }
-.spf-file-zone:hover { border-color: #9B87F5; background: rgba(155,135,245,.05); }
+.spf-file-zone:hover   { border-color: #9B87F5; background: rgba(155,135,245,.05); }
+.spf-file-zone--drag   { border-color: #9B87F5; background: rgba(155,135,245,.10); border-style: solid; }
+.spf-file-zone--drag span { color: #9B87F5; font-weight: 600; }
 .spf-file-zone-icon { opacity: .5; }
 
 .spf-file-selected {
