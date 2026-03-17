@@ -1,7 +1,7 @@
 <script setup lang="ts">
   import { computed } from 'vue'
   import { useRouter, useRoute } from 'vue-router'
-  import { MessageSquare, BookOpen, FileText, Calendar, UserCheck, Settings } from 'lucide-vue-next'
+  import { MessageSquare, BookOpen, FileText, Calendar, UserCheck, LayoutDashboard } from 'lucide-vue-next'
   import { useAppStore }    from '@/stores/app'
   import { useModalsStore } from '@/stores/modals'
   import { useTravauxStore } from '@/stores/travaux'
@@ -27,10 +27,28 @@
 
 <template>
   <nav class="nav-rail" aria-label="Navigation principale">
-    <!-- Logo -->
+    <!-- Logo — cliquable pour le prof -->
     <div class="nav-logo">
-      <div class="logo-mark" style="font-size:10px;letter-spacing:-0.5px">CeS</div>
+      <div
+        class="logo-mark"
+        style="font-size:10px;letter-spacing:-0.5px"
+        :style="appStore.isTeacher ? { cursor: 'pointer' } : {}"
+        :title="appStore.isTeacher ? 'Tableau de bord' : undefined"
+        @click="appStore.isTeacher && router.push('/dashboard')"
+      >CeS</div>
     </div>
+
+    <!-- ── Tableau de bord ── -->
+    <button
+      class="nav-btn"
+      :class="{ active: route.name === 'dashboard' }"
+      title="Tableau de bord"
+      aria-label="Tableau de bord"
+      @click="router.push('/dashboard')"
+    >
+      <LayoutDashboard :size="20" />
+      <span class="nav-label">Accueil</span>
+    </button>
 
     <!-- ── Navigation principale ── -->
     <button
