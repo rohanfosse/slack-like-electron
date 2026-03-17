@@ -3,6 +3,7 @@
   import { useRouter } from 'vue-router'
   import { useAppStore }    from '@/stores/app'
   import { useModalsStore } from '@/stores/modals'
+  import { usePrefs }       from '@/composables/usePrefs'
   import Toast    from '@/components/ui/Toast.vue'
   import NavRail  from '@/components/layout/NavRail.vue'
   import Sidebar  from '@/components/sidebar/Sidebar.vue'
@@ -24,10 +25,14 @@
   const appStore = useAppStore()
   const modals   = useModalsStore()
   const router   = useRouter()
+  const { getPref } = usePrefs()
 
   let unsubUnread: (() => void) | null = null
 
   onMounted(() => {
+    // Appliquer le thème sauvegardé
+    document.body.classList.toggle('light', getPref('theme') === 'light')
+
     // Restaurer la session depuis localStorage
     const restored = appStore.restoreSession()
     if (restored) router.replace('/messages')

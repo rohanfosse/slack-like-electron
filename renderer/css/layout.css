@@ -761,3 +761,17 @@ nav[aria-label="Messages directs"] {
   overflow: hidden;
   height: 100%;
 }
+
+/* ════════════════════════════════════════════
+   OVERRIDES THÈME CLAIR — couleurs hardcodées
+════════════════════════════════════════════ */
+body.light .nav-divider           { background: rgba(0,0,0,.1); }
+body.light .nav-btn:hover         { background: rgba(0,0,0,.06); }
+body.light .nav-btn-icon:hover    { background: rgba(0,0,0,.06); }
+body.light .nav-btn.active        { background: var(--accent-subtle); color: var(--accent); }
+body.light .nav-btn.active .nav-label { color: var(--accent); }
+body.light .nav-promo-btn         { background: rgba(0,0,0,.04); border-color: rgba(0,0,0,.1); }
+body.light .nav-promo-btn:hover   { background: rgba(0,0,0,.08); border-color: rgba(0,0,0,.18); }
+body.light .skel                  { background: rgba(0,0,0,.08); }
+body.light .sidebar-search-input  { background: rgba(0,0,0,.04); }
+body.light .msg-input-inner       { background: rgba(0,0,0,.04); }

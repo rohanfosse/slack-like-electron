@@ -20,18 +20,25 @@
 
   const activeSection  = ref<Section>('general')
   const docsDefault    = ref(getPref('docsOpenByDefault'))
+  const lightMode      = ref(getPref('theme') === 'light')
   const pendingPhoto   = ref<string | null>(null)
   const photoChanged   = ref(false)
 
   watch(() => props.modelValue, (open) => {
     if (open) {
       activeSection.value = 'general'
+      lightMode.value     = getPref('theme') === 'light'
       pendingPhoto.value  = appStore.currentUser?.photo_data ?? null
       photoChanged.value  = false
     }
   })
 
   watch(docsDefault, (v) => setPref('docsOpenByDefault', v))
+
+  watch(lightMode, (v) => {
+    setPref('theme', v ? 'light' : 'dark')
+    document.body.classList.toggle('light', v)
+  })
 
   async function pickPhoto() {
     const res = await window.api.openImageDialog()
@@ -127,10 +134,15 @@
 
           <div class="stg-group">
             <h4 class="stg-group-title">Interface</h4>
-            <div class="stg-info-row">
-              <span class="stg-info-label">Thème</span>
-              <span class="stg-info-value">Sombre (par défaut)</span>
-            </div>
+            <label class="stg-toggle-row">
+              <div class="stg-toggle-info">
+                <span class="stg-toggle-label">Mode clair</span>
+                <span class="stg-toggle-desc">Bascule l'interface vers un thème fond blanc.</span>
+              </div>
+              <div class="stg-switch" :class="{ on: lightMode }" @click="lightMode = !lightMode">
+                <div class="stg-switch-thumb" />
+              </div>
+            </label>
             <div class="stg-info-row">
               <span class="stg-info-label">Langue</span>
               <span class="stg-info-value">Français</span>
