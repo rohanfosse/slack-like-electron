@@ -5,6 +5,7 @@ import {
   FileText, CheckCircle2, Clock, Lock, AlertTriangle, ChevronRight,
   Users, Award,
 } from 'lucide-vue-next'
+import { parseCategoryIcon } from '@/utils/categoryIcon'
 import { useAppStore }     from '@/stores/app'
 import { useTravauxStore } from '@/stores/travaux'
 import { useModalsStore }  from '@/stores/modals'
@@ -259,7 +260,13 @@ const filteredRendusByTravail = computed(() => {
         <BookOpen :size="18" />
         <span>Travaux</span>
         <span v-if="appStore.activeProject" class="header-channel-ctx">
-          {{ appStore.activeProject }}
+          <component
+            v-if="parseCategoryIcon(appStore.activeProject).icon"
+            :is="parseCategoryIcon(appStore.activeProject).icon!"
+            :size="13"
+            style="flex-shrink:0"
+          />
+          {{ parseCategoryIcon(appStore.activeProject).label }}
         </span>
       </div>
 
@@ -358,7 +365,10 @@ const filteredRendusByTravail = computed(() => {
                 <div class="travail-card-header">
                   <div class="travail-card-meta">
                     <span class="travail-type-badge" :class="`type-${t.type}`">{{ t.type }}</span>
-                    <span v-if="t.category" class="tag-badge">{{ t.category }}</span>
+                    <span v-if="t.category" class="tag-badge">
+                      <component v-if="parseCategoryIcon(t.category).icon" :is="parseCategoryIcon(t.category).icon!" :size="10" style="flex-shrink:0" />
+                      {{ parseCategoryIcon(t.category).label }}
+                    </span>
                     <span v-if="t.channel_name" class="travail-channel"># {{ t.channel_name }}</span>
                   </div>
                   <span class="deadline-badge" :class="deadlineClass(t.deadline)">
@@ -428,7 +438,10 @@ const filteredRendusByTravail = computed(() => {
                 <div class="travail-card-header">
                   <div class="travail-card-meta">
                     <span class="travail-type-badge" :class="`type-${t.type}`">{{ t.type }}</span>
-                    <span v-if="t.category" class="tag-badge">{{ t.category }}</span>
+                    <span v-if="t.category" class="tag-badge">
+                      <component v-if="parseCategoryIcon(t.category).icon" :is="parseCategoryIcon(t.category).icon!" :size="10" style="flex-shrink:0" />
+                      {{ parseCategoryIcon(t.category).label }}
+                    </span>
                     <span v-if="t.channel_name" class="travail-channel"># {{ t.channel_name }}</span>
                   </div>
                   <span class="deadline-badge" :class="deadlineClass(t.deadline)">
@@ -496,7 +509,10 @@ const filteredRendusByTravail = computed(() => {
                 <div class="travail-card-header">
                   <div class="travail-card-meta">
                     <span class="travail-type-badge" :class="`type-${t.type}`">{{ t.type }}</span>
-                    <span v-if="t.category" class="tag-badge">{{ t.category }}</span>
+                    <span v-if="t.category" class="tag-badge">
+                      <component v-if="parseCategoryIcon(t.category).icon" :is="parseCategoryIcon(t.category).icon!" :size="10" style="flex-shrink:0" />
+                      {{ parseCategoryIcon(t.category).label }}
+                    </span>
                     <span v-if="t.channel_name" class="travail-channel"># {{ t.channel_name }}</span>
                   </div>
                   <span class="deadline-badge" :class="deadlineClass(t.deadline)">
@@ -564,7 +580,10 @@ const filteredRendusByTravail = computed(() => {
                 <div class="travail-card-header">
                   <div class="travail-card-meta">
                     <span class="travail-type-badge" :class="`type-${t.type}`">{{ t.type }}</span>
-                    <span v-if="t.category" class="tag-badge">{{ t.category }}</span>
+                    <span v-if="t.category" class="tag-badge">
+                      <component v-if="parseCategoryIcon(t.category).icon" :is="parseCategoryIcon(t.category).icon!" :size="10" style="flex-shrink:0" />
+                      {{ parseCategoryIcon(t.category).label }}
+                    </span>
                     <span v-if="t.channel_name" class="travail-channel"># {{ t.channel_name }}</span>
                   </div>
                   <span class="deadline-badge" :class="deadlineClass(t.deadline)">
@@ -672,7 +691,10 @@ const filteredRendusByTravail = computed(() => {
             <h3 class="liste-card-title">{{ t.title }}</h3>
             <div class="liste-card-meta">
               <span v-if="t.channel_name" class="liste-card-channel"># {{ t.channel_name }}</span>
-              <span v-if="t.category" class="tag-badge">{{ t.category }}</span>
+              <span v-if="t.category" class="tag-badge">
+                <component v-if="parseCategoryIcon(t.category).icon" :is="parseCategoryIcon(t.category).icon!" :size="10" style="flex-shrink:0" />
+                {{ parseCategoryIcon(t.category).label }}
+              </span>
             </div>
             <div class="liste-card-footer">
               <span class="deadline-badge" :class="deadlineClass(t.deadline)">

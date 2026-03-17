@@ -1,15 +1,13 @@
 <script setup lang="ts">
   import { ref, watch } from 'vue'
-  import { useAppStore }    from '@/stores/app'
-  import { useTravauxStore } from '@/stores/travaux'
-  import { useToast }       from '@/composables/useToast'
+  import { useAppStore } from '@/stores/app'
+  import { useToast }    from '@/composables/useToast'
   import { isoForDatetimeLocal } from '@/utils/date'
+  import { CATEGORY_ICONS } from '@/utils/categoryIcon'
   import Modal from '@/components/ui/Modal.vue'
 
   const CUSTOM_PROJECTS_KEY = 'cc_custom_projects'
   const PROJECTS_META_KEY   = (promoId: number) => `cc_projects_${promoId}`
-
-  const EMOJIS = ['💻','⚙️','🗄️','📡','🔌','📊','🌐','🎓','📐','🔧','📝','📚','🧮','🏆','🎯','🖥️','🔬','💬','🧪','🌍']
 
   export interface ProjectMeta {
     emoji: string
@@ -26,11 +24,10 @@
   }>()
 
   const appStore     = useAppStore()
-  const travauxStore = useTravauxStore()
   const { showToast } = useToast()
 
-  const selectedEmoji = ref('💻')
-  const name          = ref('')
+  const selectedIconKey = ref('monitor')
+  const name            = ref('')
   const description   = ref('')
   const startDate     = ref(isoForDatetimeLocal())
   const endDate       = ref(isoForDatetimeLocal())
@@ -38,7 +35,7 @@
 
   watch(() => props.modelValue, (open) => {
     if (open) {
-      selectedEmoji.value = '💻'
+      selectedIconKey.value = 'monitor'
       name.value          = ''
       description.value   = ''
       startDate.value     = isoForDatetimeLocal()
@@ -47,7 +44,13 @@
   })
 
   function fullName() {
-    return `${selectedEmoji.value} ${name.value.trim()}`
+    return selectedIconKey.value
+      ? `${selectedIconKey.value} ${name.value.trim()}`
+      : name.value.trim()
+  }
+
+  function selectedIconComponent() {
+    return CATEGORY_ICONS.find(i => i.key === selectedIconKey.value)?.component ?? null
   }
 
   function save() {
@@ -70,7 +73,7 @@
         const key  = PROJECTS_META_KEY(promoId)
         const metas: ProjectMeta[] = (() => { try { return JSON.parse(localStorage.getItem(key) ?? '[]') } catch { return [] } })()
         if (!metas.find(m => m.name === full)) {
-          metas.push({ emoji: selectedEmoji.value, name: full, description: description.value.trim(), startDate: startDate.value, endDate: endDate.value })
+          metas.push({ emoji: selectedIconKey.value, name: full, description: description.value.trim(), startDate: startDate.value, endDate: endDate.value })
           localStorage.setItem(key, JSON.stringify(metas))
         }
       }
@@ -88,19 +91,21 @@
   <Modal :model-value="modelValue" title="Nouveau projet" max-width="480px" @update:model-value="emit('update:modelValue', $event)">
     <div style="padding:16px;display:flex;flex-direction:column;gap:14px">
 
-      <!-- Emoji picker -->
+      <!-- Lucide icon picker -->
       <div class="form-group">
         <label class="form-label">Icône</label>
-        <div class="emoji-grid">
+        <div class="np-icon-grid">
           <button
-            v-for="e in EMOJIS"
-            :key="e"
-            class="emoji-btn"
-            :class="{ selected: selectedEmoji === e }"
+            v-for="ic in CATEGORY_ICONS"
+            :key="ic.key"
+            class="np-icon-btn"
+            :class="{ selected: selectedIconKey === ic.key }"
             type="button"
-            :title="e"
-            @click="selectedEmoji = e"
-          >{{ e }}</button>
+            :title="ic.label"
+            @click="selectedIconKey = ic.key"
+          >
+            <component :is="ic.component" :size="16" />
+          </button>
         </div>
       </div>
 
@@ -108,7 +113,12 @@
       <div class="form-group">
         <label class="form-label">Nom du projet</label>
         <div style="display:flex;align-items:center;gap:8px">
-          <span class="emoji-preview">{{ selectedEmoji }}</span>
+          <component
+            v-if="selectedIconComponent()"
+            :is="selectedIconComponent()!"
+            :size="18"
+            class="np-icon-preview"
+          />
           <input
             v-model="name"
             type="text"
@@ -157,32 +167,30 @@
 </template>
 
 <style scoped>
-.emoji-grid {
+.np-icon-grid {
   display: flex;
   flex-wrap: wrap;
   gap: 4px;
 }
 
-.emoji-btn {
+.np-icon-btn {
   width: 34px;
   height: 34px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 16px;
   border: 1.5px solid transparent;
   border-radius: 6px;
   background: rgba(255,255,255,.04);
+  color: var(--text-muted);
   cursor: pointer;
   transition: all .1s;
-  line-height: 1;
 }
-.emoji-btn:hover    { background: var(--bg-hover); border-color: var(--border-input); }
-.emoji-btn.selected { border-color: var(--accent); background: rgba(74,144,217,.15); }
+.np-icon-btn:hover    { background: var(--bg-hover); border-color: var(--border-input); color: var(--text-primary); }
+.np-icon-btn.selected { border-color: var(--accent); background: rgba(74,144,217,.15); color: var(--accent); }
 
-.emoji-preview {
-  font-size: 20px;
-  line-height: 1;
+.np-icon-preview {
   flex-shrink: 0;
+  color: var(--accent);
 }
 </style>

@@ -2,6 +2,7 @@
   import { ref, watch } from 'vue'
   import { useAppStore } from '@/stores/app'
   import { useToast }    from '@/composables/useToast'
+  import { CATEGORY_ICONS } from '@/utils/categoryIcon'
   import Modal from '@/components/ui/Modal.vue'
   import type { Student } from '@/types'
 
@@ -11,12 +12,10 @@
   const appStore = useAppStore()
   const { showToast } = useToast()
 
-  const CATEGORY_EMOJIS = ['💬','💻','⚙️','🗄️','📡','🔌','📊','🌐','🎓','📐','🔧','📝','📚','🧮','🏆','🎯','🖥️','🔬']
-
-  const channelName     = ref('')
-  const channelType     = ref<'chat' | 'annonce'>('chat')
-  const categoryEmoji   = ref('')
-  const categoryText    = ref('')
+  const channelName      = ref('')
+  const channelType      = ref<'chat' | 'annonce'>('chat')
+  const categoryIconKey  = ref('')
+  const categoryText     = ref('')
   const visibility      = ref<'public' | 'private'>('public')
   const members         = ref<number[]>([])
   const students        = ref<Student[]>([])
@@ -26,10 +25,10 @@
     if (open && appStore.activePromoId) {
       const res = await window.api.getStudents(appStore.activePromoId)
       students.value = res?.ok ? res.data : []
-      channelName.value   = ''
-      channelType.value   = 'chat'
-      categoryEmoji.value = ''
-      categoryText.value  = ''
+      channelName.value     = ''
+      channelType.value     = 'chat'
+      categoryIconKey.value = ''
+      categoryText.value    = ''
       visibility.value    = 'public'
       members.value       = []
     }
@@ -48,7 +47,7 @@
         category: (() => {
           const t = categoryText.value.trim()
           if (!t) return null
-          return categoryEmoji.value ? `${categoryEmoji.value} ${t}` : t
+          return categoryIconKey.value ? `${categoryIconKey.value} ${t}` : t
         })(),
       })
       if (!res?.ok) { showToast(res?.error ?? 'Erreur lors de la création.'); return }
@@ -83,26 +82,33 @@
 
       <div class="form-group">
         <label class="form-label">Catégorie <span style="opacity:.55;font-weight:400">(optionnelle)</span></label>
-        <!-- Emoji picker -->
-        <div class="cc-emoji-grid" style="margin-bottom:6px">
+        <!-- Lucide icon picker -->
+        <div class="cc-icon-grid" style="margin-bottom:6px">
           <button
-            v-for="e in CATEGORY_EMOJIS"
-            :key="e"
-            class="cc-emoji-btn"
-            :class="{ selected: categoryEmoji === e }"
+            v-for="ic in CATEGORY_ICONS"
+            :key="ic.key"
+            class="cc-icon-btn"
+            :class="{ selected: categoryIconKey === ic.key }"
             type="button"
-            :title="e"
-            @click="categoryEmoji = categoryEmoji === e ? '' : e"
-          >{{ e }}</button>
+            :title="ic.label"
+            @click="categoryIconKey = categoryIconKey === ic.key ? '' : ic.key"
+          >
+            <component :is="ic.component" :size="15" />
+          </button>
         </div>
         <div style="display:flex;align-items:center;gap:8px">
-          <span v-if="categoryEmoji" class="cc-emoji-preview">{{ categoryEmoji }}</span>
+          <component
+            v-if="categoryIconKey"
+            :is="CATEGORY_ICONS.find(i => i.key === categoryIconKey)!.component"
+            :size="16"
+            class="cc-icon-preview"
+          />
           <input
             v-model="categoryText"
             type="text"
             class="form-input"
             style="flex:1"
-            placeholder="ex : Cours, Projets, Ressources…"
+            placeholder="ex : Cours, Développement, Réseaux…"
           />
         </div>
         <span style="font-size:11px;color:var(--text-muted);margin-top:3px;display:block">
@@ -168,32 +174,30 @@
 </template>
 
 <style scoped>
-.cc-emoji-grid {
+.cc-icon-grid {
   display: flex;
   flex-wrap: wrap;
   gap: 3px;
 }
 
-.cc-emoji-btn {
+.cc-icon-btn {
   width: 30px;
   height: 30px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 15px;
   border: 1.5px solid transparent;
   border-radius: 5px;
   background: rgba(255,255,255,.04);
+  color: var(--text-muted);
   cursor: pointer;
   transition: all .1s;
-  line-height: 1;
 }
-.cc-emoji-btn:hover    { background: var(--bg-hover); border-color: var(--border-input); }
-.cc-emoji-btn.selected { border-color: var(--accent); background: rgba(74,144,217,.15); }
+.cc-icon-btn:hover    { background: var(--bg-hover); border-color: var(--border-input); color: var(--text-primary); }
+.cc-icon-btn.selected { border-color: var(--accent); background: rgba(74,144,217,.15); color: var(--accent); }
 
-.cc-emoji-preview {
-  font-size: 18px;
-  line-height: 1;
+.cc-icon-preview {
   flex-shrink: 0;
+  color: var(--accent);
 }
 </style>

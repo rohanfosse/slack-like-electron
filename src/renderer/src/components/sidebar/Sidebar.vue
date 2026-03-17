@@ -3,6 +3,7 @@
   import { useRoute, useRouter } from 'vue-router'
   import { Plus, ChevronDown, FolderOpen, Layers } from 'lucide-vue-next'
   import NewProjectModal from '@/components/modals/NewProjectModal.vue'
+  import { parseCategoryIcon } from '@/utils/categoryIcon'
   import { useAppStore }    from '@/stores/app'
   import { useModalsStore } from '@/stores/modals'
   import { useMessagesStore } from '@/stores/messages'
@@ -305,8 +306,14 @@
             :class="{ active: appStore.activeProject === proj }"
             @click="selectProject(proj)"
           >
-            <span class="project-bullet" />
-            <span class="channel-name">{{ proj }}</span>
+            <component
+              v-if="parseCategoryIcon(proj).icon"
+              :is="parseCategoryIcon(proj).icon!"
+              :size="13"
+              class="project-icon"
+            />
+            <span v-else class="project-bullet" />
+            <span class="channel-name">{{ parseCategoryIcon(proj).label }}</span>
           </button>
         </nav>
 
@@ -346,7 +353,13 @@
               class="sidebar-category-chevron"
               :class="{ rotated: collapsed.has(group.key) }"
             />
-            <span class="sidebar-category-label">{{ group.label }}</span>
+            <component
+              v-if="parseCategoryIcon(group.label).icon"
+              :is="parseCategoryIcon(group.label).icon!"
+              :size="11"
+              class="sidebar-category-icon"
+            />
+            <span class="sidebar-category-label">{{ parseCategoryIcon(group.label).label }}</span>
             <span class="sidebar-category-count">{{ group.channels.length }}</span>
           </button>
 
@@ -469,6 +482,11 @@
 
 .sidebar-category-header:hover { color: var(--text-secondary); }
 .sidebar-category-header:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; border-radius: 3px; }
+
+.sidebar-category-icon {
+  flex-shrink: 0;
+  opacity: .7;
+}
 
 .sidebar-category-chevron {
   flex-shrink: 0;
