@@ -31,7 +31,7 @@ function createTravail({ promoId, channelId, groupId, title, description, startD
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `).run(
     promoId, channelId ?? null, groupId ?? null, title, description, startDate ?? null,
-    deadline, category ?? null, type ?? 'devoir',
+    deadline, category ?? null, type ?? 'livrable',
     published != null ? (published ? 1 : 0) : 1
   );
   if (groupId) {
@@ -197,7 +197,7 @@ function getTeacherSchedule() {
     FROM travaux t
     JOIN promotions p ON p.id = t.promo_id
     LEFT JOIN channels ch ON ch.id = t.channel_id
-    WHERE t.type = 'jalon'
+    WHERE t.type = 'soutenance'
       AND t.published = 1
       AND t.deadline >= datetime('now')
       AND t.deadline <= datetime('now', '+30 days')
@@ -227,7 +227,7 @@ function getTeacherSchedule() {
     FROM travaux t
     JOIN promotions p ON p.id = t.promo_id
     LEFT JOIN channels ch ON ch.id = t.channel_id
-    WHERE t.type = 'devoir'
+    WHERE t.type IN ('livrable', 'etude_de_cas', 'memoire', 'autre')
       AND t.published = 1
       AND t.deadline >= datetime('now')
       AND t.deadline <= datetime('now', '+7 days')

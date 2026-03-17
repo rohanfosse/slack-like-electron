@@ -249,6 +249,17 @@ const filteredRendusByTravail = computed(() => {
   if (!proj) return rendusByTravail.value
   return rendusByTravail.value.filter(g => (g.travail as Travail).category === proj)
 })
+
+// ── Labels de type ────────────────────────────────────────────────────────────
+const TYPE_LABELS: Record<string, string> = {
+  livrable:     'Livrable',
+  soutenance:   'Soutenance',
+  cctl:         'CCTL',
+  etude_de_cas: 'Étude de cas',
+  memoire:      'Mémoire',
+  autre:        'Autre',
+}
+function typeLabel(t: string | undefined): string { return TYPE_LABELS[t ?? ''] ?? t ?? '' }
 </script>
 
 <template>
@@ -364,7 +375,7 @@ const filteredRendusByTravail = computed(() => {
                 <!-- Carte meta -->
                 <div class="travail-card-header">
                   <div class="travail-card-meta">
-                    <span class="travail-type-badge" :class="`type-${t.type}`">{{ t.type }}</span>
+                    <span class="travail-type-badge" :class="`type-${t.type}`">{{ typeLabel(t.type) }}</span>
                     <span v-if="t.category" class="tag-badge">
                       <component v-if="parseCategoryIcon(t.category).icon" :is="parseCategoryIcon(t.category).icon!" :size="10" style="flex-shrink:0" />
                       {{ parseCategoryIcon(t.category).label }}
@@ -437,7 +448,7 @@ const filteredRendusByTravail = computed(() => {
               <div v-for="t in filteredStudentGroups.urgent" :key="t.id" class="travail-card travail-card--urgent">
                 <div class="travail-card-header">
                   <div class="travail-card-meta">
-                    <span class="travail-type-badge" :class="`type-${t.type}`">{{ t.type }}</span>
+                    <span class="travail-type-badge" :class="`type-${t.type}`">{{ typeLabel(t.type) }}</span>
                     <span v-if="t.category" class="tag-badge">
                       <component v-if="parseCategoryIcon(t.category).icon" :is="parseCategoryIcon(t.category).icon!" :size="10" style="flex-shrink:0" />
                       {{ parseCategoryIcon(t.category).label }}
@@ -508,7 +519,7 @@ const filteredRendusByTravail = computed(() => {
               <div v-for="t in filteredStudentGroups.pending" :key="t.id" class="travail-card travail-card--pending">
                 <div class="travail-card-header">
                   <div class="travail-card-meta">
-                    <span class="travail-type-badge" :class="`type-${t.type}`">{{ t.type }}</span>
+                    <span class="travail-type-badge" :class="`type-${t.type}`">{{ typeLabel(t.type) }}</span>
                     <span v-if="t.category" class="tag-badge">
                       <component v-if="parseCategoryIcon(t.category).icon" :is="parseCategoryIcon(t.category).icon!" :size="10" style="flex-shrink:0" />
                       {{ parseCategoryIcon(t.category).label }}
@@ -579,7 +590,7 @@ const filteredRendusByTravail = computed(() => {
               <div v-for="t in filteredStudentGroups.submitted" :key="t.id" class="travail-card travail-card--submitted">
                 <div class="travail-card-header">
                   <div class="travail-card-meta">
-                    <span class="travail-type-badge" :class="`type-${t.type}`">{{ t.type }}</span>
+                    <span class="travail-type-badge" :class="`type-${t.type}`">{{ typeLabel(t.type) }}</span>
                     <span v-if="t.category" class="tag-badge">
                       <component v-if="parseCategoryIcon(t.category).icon" :is="parseCategoryIcon(t.category).icon!" :size="10" style="flex-shrink:0" />
                       {{ parseCategoryIcon(t.category).label }}
@@ -622,10 +633,12 @@ const filteredRendusByTravail = computed(() => {
         <div v-else class="gantt-wrapper">
           <!-- Légende -->
           <div class="gantt-legend">
-            <span class="legend-pill type-devoir">Devoir</span>
-            <span class="legend-pill type-projet">Projet</span>
-            <span class="legend-pill type-jalon">Jalon</span>
-            <span class="legend-pill type-tp">TP</span>
+            <span class="legend-pill type-livrable">Livrable</span>
+            <span class="legend-pill type-soutenance">Soutenance</span>
+            <span class="legend-pill type-cctl">CCTL</span>
+            <span class="legend-pill type-etude_de_cas">Étude de cas</span>
+            <span class="legend-pill type-memoire">Mémoire</span>
+            <span class="legend-pill type-autre">Autre</span>
             <span class="legend-separator" />
             <span class="legend-today">
               <span class="legend-today-line" /> Aujourd'hui
@@ -641,7 +654,7 @@ const filteredRendusByTravail = computed(() => {
               @click="openTravail(item.id)"
             >
               <div class="gantt-row-label">
-                <span class="gantt-label-type travail-type-badge" :class="`type-${item.type}`">{{ item.type }}</span>
+                <span class="gantt-label-type travail-type-badge" :class="`type-${item.type}`">{{ typeLabel(item.type) }}</span>
                 <span class="gantt-label-name">{{ item.title }}</span>
                 <span class="deadline-badge" :class="item.dlClass">{{ formatDate(item.deadline) }}</span>
               </div>
@@ -685,7 +698,7 @@ const filteredRendusByTravail = computed(() => {
             @click="openTravail(t.id)"
           >
             <div class="liste-card-top">
-              <span class="travail-type-badge" :class="`type-${t.type}`">{{ t.type }}</span>
+              <span class="travail-type-badge" :class="`type-${t.type}`">{{ typeLabel(t.type) }}</span>
               <ChevronRight :size="14" class="liste-card-chevron" />
             </div>
             <h3 class="liste-card-title">{{ t.title }}</h3>
@@ -734,7 +747,7 @@ const filteredRendusByTravail = computed(() => {
                   class="travail-type-badge"
                   :class="`type-${(group.travail as Travail).type}`"
                 >
-                  {{ (group.travail as Travail).type }}
+                  {{ typeLabel((group.travail as Travail).type) }}
                 </span>
                 <span class="rendus-group-title">
                   {{ (group.travail as Travail).title ?? `Travail #${group.travail.id}` }}
@@ -1215,10 +1228,12 @@ const filteredRendusByTravail = computed(() => {
   border-radius: 4px;
 }
 
-.type-devoir { background: rgba(74, 144, 217, 0.2);  color: var(--accent); }
-.type-projet { background: rgba(123, 104, 238, 0.2); color: #9b87f5; }
-.type-jalon  { background: rgba(243, 156, 18, 0.2);  color: var(--color-warning); }
-.type-tp     { background: rgba(39, 174, 96, 0.2);   color: var(--color-success); }
+.type-livrable     { background: rgba(74, 144, 217, 0.2);  color: var(--accent); }
+.type-soutenance   { background: rgba(243, 156, 18, 0.2);  color: var(--color-warning); }
+.type-cctl         { background: rgba(123, 104, 238, 0.2); color: #9b87f5; }
+.type-etude_de_cas { background: rgba(39, 174, 96, 0.2);   color: var(--color-success); }
+.type-memoire      { background: rgba(231, 76, 60, 0.2);   color: #e74c3c; }
+.type-autre        { background: rgba(127, 140, 141, 0.2); color: #95a5a6; }
 
 /* ── Gantt ───────────────────────────────────────────────────────────────── */
 .gantt-wrapper { max-width: 1000px; margin: 0 auto; }
@@ -1247,14 +1262,18 @@ const filteredRendusByTravail = computed(() => {
   height: 10px;
   border-radius: 3px;
 }
-.legend-pill.type-devoir { color: var(--accent); }
-.legend-pill.type-projet { color: #9b87f5; }
-.legend-pill.type-jalon  { color: var(--color-warning); }
-.legend-pill.type-tp     { color: var(--color-success); }
-.legend-pill.type-devoir::before { background: var(--accent); }
-.legend-pill.type-projet::before { background: #9b87f5; }
-.legend-pill.type-jalon::before  { background: var(--color-warning); }
-.legend-pill.type-tp::before     { background: var(--color-success); }
+.legend-pill.type-livrable     { color: var(--accent); }
+.legend-pill.type-soutenance   { color: var(--color-warning); }
+.legend-pill.type-cctl         { color: #9b87f5; }
+.legend-pill.type-etude_de_cas { color: var(--color-success); }
+.legend-pill.type-memoire      { color: #e74c3c; }
+.legend-pill.type-autre        { color: #95a5a6; }
+.legend-pill.type-livrable::before     { background: var(--accent); }
+.legend-pill.type-soutenance::before   { background: var(--color-warning); }
+.legend-pill.type-cctl::before         { background: #9b87f5; }
+.legend-pill.type-etude_de_cas::before { background: var(--color-success); }
+.legend-pill.type-memoire::before      { background: #e74c3c; }
+.legend-pill.type-autre::before        { background: #95a5a6; }
 
 .legend-separator { width: 1px; height: 16px; background: var(--border); }
 
@@ -1338,10 +1357,12 @@ const filteredRendusByTravail = computed(() => {
   z-index: 1;
 }
 .gantt-bar:hover            { opacity: 1; }
-.gantt-bar.type-devoir      { background: var(--accent); }
-.gantt-bar.type-projet      { background: #9b87f5; }
-.gantt-bar.type-jalon       { background: var(--color-warning); }
-.gantt-bar.type-tp          { background: var(--color-success); }
+.gantt-bar.type-livrable     { background: var(--accent); }
+.gantt-bar.type-soutenance   { background: var(--color-warning); }
+.gantt-bar.type-cctl         { background: #9b87f5; }
+.gantt-bar.type-etude_de_cas { background: var(--color-success); }
+.gantt-bar.type-memoire      { background: #e74c3c; }
+.gantt-bar.type-autre        { background: #95a5a6; }
 
 .gantt-skel {
   display: flex;

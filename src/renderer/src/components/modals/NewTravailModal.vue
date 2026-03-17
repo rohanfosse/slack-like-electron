@@ -19,6 +19,7 @@
   import { useToast }        from '@/composables/useToast'
   import { avatarColor, initials } from '@/utils/format'
   import Modal from '@/components/ui/Modal.vue'
+  import { parseCategoryIcon } from '@/utils/categoryIcon'
   import { isoForDatetimeLocal } from '@/utils/date'
   import type { Student, Group } from '@/types'
 
@@ -34,7 +35,7 @@
   // ── Formulaire ────────────────────────────────────────────────────────────
   const title       = ref('')
   const description = ref('')
-  const type        = ref<'devoir' | 'jalon' | 'projet'>('devoir')
+  const type        = ref<'livrable' | 'soutenance' | 'cctl' | 'etude_de_cas' | 'memoire' | 'autre'>('livrable')
   const category    = ref('')
   const deadline    = ref(isoForDatetimeLocal())
   const startDate   = ref(isoForDatetimeLocal())
@@ -72,7 +73,7 @@
       title.value = description.value = ''
       // Pré-remplir avec le projet actif depuis la sidebar
       category.value = appStore.activeProject ?? ''
-      type.value = 'devoir'
+      type.value = 'livrable'
       assignTo.value = 'all'
       isDraft.value  = false
       deadline.value = startDate.value = isoForDatetimeLocal()
@@ -121,7 +122,8 @@
     else newGroupMembers.value.push(studentId)
   }
 
-  const isJalon = computed(() => type.value === 'jalon')
+  // Soutenance et CCTL sont des événements ponctuels — pas de date de début
+  const isEvent = computed(() => type.value === 'soutenance' || type.value === 'cctl')
 
   async function submit() {
     if (!title.value.trim()) return
@@ -133,7 +135,7 @@
         type:         type.value,
         category:     category.value.trim() || null,
         deadline:     deadline.value,
-        startDate:    isJalon.value ? null : startDate.value,
+        startDate:    isEvent.value ? null : startDate.value,
         isPublished:  !isDraft.value,
         assignedTo:   assignTo.value,
         groupId:      assignTo.value === 'group' ? selectedGroupId.value : null,
@@ -156,23 +158,22 @@
       <div style="display:flex;gap:10px">
         <div class="form-group" style="flex:2">
           <label class="form-label">Projet</label>
-          <input
-            v-model="category"
-            type="text"
-            class="form-input"
-            placeholder="ex : Développement Web, ADS…"
-            list="project-suggestions"
-          />
-          <datalist id="project-suggestions">
-            <option v-for="p in allProjects" :key="p" :value="p" />
-          </datalist>
+          <select v-model="category" class="form-select">
+            <option value="">— Aucun projet —</option>
+            <option v-for="p in allProjects" :key="p" :value="p">
+              {{ parseCategoryIcon(p).label }}
+            </option>
+          </select>
         </div>
         <div class="form-group" style="flex:1">
           <label class="form-label">Type</label>
           <select v-model="type" class="form-select">
-            <option value="devoir">Devoir</option>
-            <option value="jalon">Jalon</option>
-            <option value="projet">Projet</option>
+            <option value="livrable">Livrable</option>
+            <option value="soutenance">Soutenance</option>
+            <option value="cctl">CCTL</option>
+            <option value="etude_de_cas">Étude de cas</option>
+            <option value="memoire">Mémoire</option>
+            <option value="autre">Autre</option>
           </select>
         </div>
       </div>
@@ -191,18 +192,18 @@
 
       <!-- Dates -->
       <div style="display:flex;gap:10px">
-        <div v-if="!isJalon" class="form-group" style="flex:1">
+        <div v-if="!isEvent" class="form-group" style="flex:1">
           <label class="form-label">Date de début</label>
           <input v-model="startDate" type="datetime-local" class="form-input" />
         </div>
         <div class="form-group" style="flex:1">
-          <label class="form-label">{{ isJalon ? 'Date du jalon' : 'Date limite' }}</label>
+          <label class="form-label">{{ isEvent ? 'Date de l\'événement' : 'Date limite' }}</label>
           <input v-model="deadline" type="datetime-local" class="form-input" required />
         </div>
       </div>
 
       <!-- Assignation -->
-      <div v-if="!isJalon" class="form-group">
+      <div v-if="!isEvent" class="form-group">
         <label class="form-label">Assigné à</label>
         <div style="display:flex;gap:16px;padding-top:6px">
           <label class="radio-label"><input v-model="assignTo" type="radio" value="all" /> Toute la promo</label>
@@ -211,7 +212,7 @@
       </div>
 
       <!-- ── Constructeur de groupes ──────────────────────────────────── -->
-      <div v-if="assignTo === 'group' && !isJalon" class="group-builder">
+      <div v-if="assignTo === 'group' && !isEvent" class="group-builder">
         <div class="form-label" style="margin-bottom:8px">
           <Users :size="13" style="vertical-align:middle;margin-right:4px" /> Groupes disponibles
         </div>

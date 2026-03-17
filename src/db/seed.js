@@ -384,7 +384,7 @@ function doSeed(db) {
   const t_web1 = it.run(p1,null,null,
     'Livrable 1 — Maquette & spécifications',
     'Concevoir et documenter la maquette de votre application web :\n- Wireframes de tous les ecrans (desktop + mobile)\n- Diagramme de cas d\'utilisation\n- Modele de donnees (schema BDD)\n- Charte graphique\nRendu PDF via la section Travaux.',
-    '2026-01-15','2026-03-27 23:59:00','monitor Développement Web','devoir',1).lastInsertRowid
+    '2026-01-15','2026-03-27 23:59:00','monitor Développement Web','livrable',1).lastInsertRowid
   ir.run(t_web1,'file','Cahier des charges projet Web', pdf('cahier_charges_web.pdf'))
   ir.run(t_web1,'link','Draw.io — Diagrammes gratuits','https://app.diagrams.net/')
   ir.run(t_web1,'link','Figma — Maquettes UI','https://figma.com/')
@@ -392,69 +392,69 @@ function doSeed(db) {
   const t_web2 = it.run(p1,null,null,
     'Livrable 2 — Version bêta fonctionnelle',
     'Remettre une version beta de votre application :\n- Authentification fonctionnelle\n- Au moins 2 fonctionnalites CRUD completes\n- Tests unitaires (couverture > 60%)\n- README avec instructions d\'installation\nRendu : archive ZIP (code source) + rapport PDF.',
-    '2026-03-28','2026-05-08 23:59:00','monitor Développement Web','devoir',1).lastInsertRowid
+    '2026-03-28','2026-05-08 23:59:00','monitor Développement Web','livrable',1).lastInsertRowid
   ir.run(t_web2,'link','Flask documentation','https://flask.palletsprojects.com/')
   ir.run(t_web2,'link','pytest — Tests Python','https://docs.pytest.org/')
 
   it.run(p1,null,null,
     'Soutenance finale — Projet Web',
     'Presentation de votre application finalisee.\nDuree : 15 min demo + 5 min questions.\nCriteres : qualite du code, fonctionnalites, design, tests.',
-    '2026-06-12','2026-06-12 09:00:00','monitor Développement Web','jalon',1)
+    '2026-06-12','2026-06-12 09:00:00','monitor Développement Web','soutenance',1)
 
   // Projet : cog Algorithmique
   const t_algo1 = it.run(p1,null,null,
     'TP — Structures de données fondamentales',
     'Implementer en Python :\n1. Pile (Stack) avec push/pop/peek\n2. File (Queue) avec enqueue/dequeue\n3. Table de hachage avec gestion des collisions\nChaque structure doit avoir ses tests unitaires. Fichier .py unique.',
-    '2026-02-01','2026-04-03 23:59:00','cog Algorithmique','devoir',1).lastInsertRowid
+    '2026-02-01','2026-04-03 23:59:00','cog Algorithmique','livrable',1).lastInsertRowid
   ir.run(t_algo1,'link','Visualgo — Structures de données','https://visualgo.net/en/list')
   ir.run(t_algo1,'link','Documentation Python collections','https://docs.python.org/3/library/collections.html')
 
   const t_algo2 = it.run(p1,null,null,
     'TP — Algorithmes de tri & complexité',
     'Implementer et comparer :\n- Bubble sort, Insertion sort, Merge sort, Quicksort\nMesurer les performances avec timeit sur des tableaux de 100, 1000, 10000 elements.\nRendu : .py + tableau de complexites commenté.',
-    '2026-04-04','2026-05-02 23:59:00','cog Algorithmique','devoir',1).lastInsertRowid
+    '2026-04-04','2026-05-02 23:59:00','cog Algorithmique','livrable',1).lastInsertRowid
   ir.run(t_algo2,'link','Big-O Cheat Sheet','https://www.bigocheatsheet.com/')
 
   it.run(p1,null,null,
     'Examen algorithmique — Mi-parcours',
     'Examen sur table, 2h. Programme : structures de donnees + complexite + tris.\nQCM (20 pts) + exercice de code (20 pts). Pas de ressources autorisees.',
-    '2026-05-22','2026-05-22 09:00:00','cog Algorithmique','jalon',1)
+    '2026-05-22','2026-05-22 09:00:00','cog Algorithmique','soutenance',1)
 
   // Projet : database Bases de données
   const t_bdd1 = it.run(p1,null,null,
     'DM — Modélisation UML',
     'Modeliser un systeme de gestion de bibliotheque :\n- Diagramme de cas d\'utilisation (avec acteurs, includes, extends)\n- Diagramme de classes (avec multiplicites et types)\n- Diagramme de sequence pour "Emprunter un ouvrage"\nRendu PDF.',
-    '2026-02-15','2026-03-28 23:59:00','database Bases de données','devoir',1).lastInsertRowid
+    '2026-02-15','2026-03-28 23:59:00','database Bases de données','livrable',1).lastInsertRowid
   ir.run(t_bdd1,'link','PlantUML — UML en texte','https://plantuml.com/')
   ir.run(t_bdd1,'link','UML Resource Center','https://www.uml.org/')
 
   const t_bdd2 = it.run(p1,null,null,
     'TP — Requêtes SQL avancées',
     'Exercices sur :\n- Jointures (INNER, LEFT, FULL)\n- Sous-requetes correlees\n- Fonctions d\'agregation et GROUP BY / HAVING\n- Vues et index\nBase de donnees fournie en ressource. Rendu : fichier .sql.',
-    '2026-03-29','2026-05-09 23:59:00','database Bases de données','devoir',1).lastInsertRowid
+    '2026-03-29','2026-05-09 23:59:00','database Bases de données','livrable',1).lastInsertRowid
   ir.run(t_bdd2,'link','SQLZoo — Pratique SQL interactive','https://sqlzoo.net/')
 
   it.run(p1,null,null,
     'Examen BDD — Modélisation & SQL',
     'Examen 2h. Partie 1 : modelisation UML (40%) — Partie 2 : requetes SQL (60%).\nBDD fournie. Pas de ressources autorisees.',
-    '2026-05-28','2026-05-28 09:00:00','database Bases de données','jalon',1)
+    '2026-05-28','2026-05-28 09:00:00','database Bases de données','soutenance',1)
 
   // Projet : wifi Réseaux
   const t_net1 = it.run(p1,null,null,
     'TP — Configuration réseau d\'entreprise',
     'Configurer un petit reseau d\'entreprise sous Cisco Packet Tracer :\n- 2 VLANs (utilisateurs / serveurs)\n- Routage inter-VLAN\n- DHCP + DNS\n- Pare-feu basique\nRendu : fichier .pkt + rapport PDF.',
-    '2026-03-01','2026-04-17 23:59:00','wifi Réseaux','devoir',1).lastInsertRowid
+    '2026-03-01','2026-04-17 23:59:00','wifi Réseaux','livrable',1).lastInsertRowid
   ir.run(t_net1,'link','Cisco Packet Tracer (telechargement)','https://www.netacad.com/courses/packet-tracer')
 
   it.run(p1,null,null,
     'Rapport — Mini-réseau d\'entreprise (projet final)',
     'Concevoir et documenter un reseau complet pour une PME de 50 employes :\n- Schema d\'architecture logique et physique\n- Adressage IP et plan de sous-reseaux\n- Choix des equipements justifies\n- Politique de securite\nRendu : rapport PDF (15-20 pages).',
-    '2026-04-18','2026-06-05 23:59:00','wifi Réseaux','devoir',1)
+    '2026-04-18','2026-06-05 23:59:00','wifi Réseaux','livrable',1)
 
   it.run(p1,null,null,
     'Soutenance — Projet Réseaux',
     'Presentation de votre architecture reseau.\nDuree : 10 min presentation + 5 min questions.\nSupport : slides + Packet Tracer demo.',
-    '2026-06-19','2026-06-19 14:00:00','wifi Réseaux','jalon',1)
+    '2026-06-19','2026-06-19 14:00:00','wifi Réseaux','soutenance',1)
 
   // ── Dépôts CPIA2 ───────────────────────
   // t_web1 : Maquette
@@ -571,85 +571,85 @@ function doSeed(db) {
   const f_auto1 = it.run(p2,null,null,
     'TP — Programmation S7-1200 (TIA Portal)',
     'Programmer un automate Siemens S7-1200 pour controler un convoyeur simule :\n- GRAFCET de niveau 1 et 2\n- Traduction en Ladder (OB1 + FC)\n- Gestion des defauts et arret urgence\n- Test avec PLCSIM V17\nRendu : fichier projet TIA (.zap) + rapport PDF.',
-    '2026-01-20','2026-04-03 17:00:00','zap Automatisme Siemens','devoir',1).lastInsertRowid
+    '2026-01-20','2026-04-03 17:00:00','zap Automatisme Siemens','livrable',1).lastInsertRowid
   ir.run(f_auto1,'link','Documentation TIA Portal Siemens','https://support.industry.siemens.com/')
   ir.run(f_auto1,'link','Introduction GRAFCET','https://www.plcopen.org/')
 
   const f_auto2 = it.run(p2,null,null,
     'Projet — Ligne de tri automatique',
     'Concevoir et programmer une ligne de tri automatique selon le CDC fourni :\n- Analyse fonctionnelle complete (GRAFCET multi-niveau)\n- Programme automate (TIA Portal V17)\n- Interface SCADA basique (WinCC Basic)\n- Rapport de tests\nTravail par groupes (A/B/C).',
-    '2026-04-04','2026-05-22 17:00:00','zap Automatisme Siemens','devoir',1).lastInsertRowid
+    '2026-04-04','2026-05-22 17:00:00','zap Automatisme Siemens','livrable',1).lastInsertRowid
   ir.run(f_auto2,'link','Siemens Industry Online Support','https://support.industry.siemens.com/')
 
   it.run(p2,null,null,
     'Soutenance — Automatisme Siemens',
     'Presentation et demo de votre projet ligne de tri.\nDuree : 20 min presentation + 10 min questions.\nJury : M. Fosse + ingenieur partenaire.',
-    '2026-06-05','2026-06-05 09:00:00','zap Automatisme Siemens','jalon',1)
+    '2026-06-05','2026-06-05 09:00:00','zap Automatisme Siemens','soutenance',1)
 
   // Projet : bar-chart-2 Supervision SCADA
   const f_scada1 = it.run(p2,null,null,
     'TP — Interface WinCC (supervision de process)',
     'Creer une interface de supervision WinCC Comfort pour un process de remplissage :\n- 3 ecrans : vue generale, detail cuves, historique alarmes\n- Communication OPC-UA avec automate S7-1500\n- Courbes de tendance\n- Archivage des variables\nRendu : projet WinCC + rapport PDF.',
-    '2026-02-10','2026-04-17 17:00:00','bar-chart-2 Supervision SCADA','devoir',1).lastInsertRowid
+    '2026-02-10','2026-04-17 17:00:00','bar-chart-2 Supervision SCADA','livrable',1).lastInsertRowid
   ir.run(f_scada1,'link','WinCC Unified documentation','https://support.industry.siemens.com/')
 
   it.run(p2,null,null,
     'Projet — Supervision complète (SCADA avancé)',
     'Developper une solution de supervision complete pour un atelier de production :\n- Interface multi-ecrans\n- Gestion des alarmes (priorites, acquittement, rapport)\n- Historisation et export CSV\n- Rapport de sécurité (droits utilisateurs)\nRendu complet attendu.',
-    '2026-04-18','2026-06-06 17:00:00','bar-chart-2 Supervision SCADA','devoir',1)
+    '2026-04-18','2026-06-06 17:00:00','bar-chart-2 Supervision SCADA','livrable',1)
 
   it.run(p2,null,null,
     'Soutenance — Projet SCADA',
     'Presentation de votre solution de supervision.\nDuree : 20 min demo + 10 min questions.\nCriteres : ergonomie, fonctionnalites, securite, gestion alarmes.',
-    '2026-06-19','2026-06-19 14:00:00','bar-chart-2 Supervision SCADA','jalon',1)
+    '2026-06-19','2026-06-19 14:00:00','bar-chart-2 Supervision SCADA','soutenance',1)
 
   // Projet : globe Réseaux industriels
   const f_net1 = it.run(p2,null,null,
     'TP — Réseaux industriels Profinet',
     'Configurer un reseau Profinet avec TIA Portal :\n- 1 CPU S7-1500 + 2 ET200SP en reseau\n- Adressage Profinet (Device Name, IP)\n- Echange de donnees I/O\n- Diagnostic reseau\nRendu : projet TIA + rapport PDF.',
-    '2026-02-20','2026-04-10 17:00:00','globe Réseaux industriels','devoir',1).lastInsertRowid
+    '2026-02-20','2026-04-10 17:00:00','globe Réseaux industriels','livrable',1).lastInsertRowid
   ir.run(f_net1,'link','Profinet University','https://profinetuniversity.com/')
 
   it.run(p2,null,null,
     'Projet — Intégration réseau industriel',
     'Integrer un reseau industriel complet pour un atelier simule :\n- Profinet (capteurs, actionneurs, variateurs)\n- OPC-UA (communication avec SCADA)\n- Diagnostic et maintenance preventive\nRendu : architecture + programme + rapport.',
-    '2026-04-11','2026-05-29 17:00:00','globe Réseaux industriels','devoir',1)
+    '2026-04-11','2026-05-29 17:00:00','globe Réseaux industriels','livrable',1)
 
   it.run(p2,null,null,
     'Examen — Réseaux industriels',
     'Examen 2h sur table. QCM (40%) + exercice de configuration (60%).\nProgramme : Profinet, OPC-UA, diagnostic reseau.',
-    '2026-06-05','2026-06-05 14:00:00','globe Réseaux industriels','jalon',1)
+    '2026-06-05','2026-06-05 14:00:00','globe Réseaux industriels','soutenance',1)
 
   // Projet : graduation-cap Projet E5
   const f_e5_1 = it.run(p2,null,null,
     'Dossier — Contexte professionnel E5',
     'Rediger le contexte professionnel selon le referentiel BTS FISAA :\n- Presentation entreprise\n- Contexte et enjeux du projet\n- Missions realisees et livrables\n- Competences demontrées\n- Bilan\nFormat : PDF, 5-8 pages hors annexes.',
-    '2025-09-01','2026-04-01 23:59:00','graduation-cap Projet E5','devoir',1).lastInsertRowid
+    '2025-09-01','2026-04-01 23:59:00','graduation-cap Projet E5','livrable',1).lastInsertRowid
   ir.run(f_e5_1,'file','Référentiel officiel E5 BTS FISAA',pdf('referentiel_e5.pdf'))
   ir.run(f_e5_1,'link','Eduscol — Épreuves BTS','https://eduscol.education.fr/')
 
   const f_e5_2 = it.run(p2,null,null,
     'Rapport de stage — Période industrie',
     'Rediger le rapport de stage de votre periode industrie :\n- Introduction et presentation de l\'entreprise\n- Deroulement de la periode (planning, missions)\n- Competences acquises\n- Retour d\'experience et perspectives\nFormat : PDF, 20-30 pages.',
-    '2025-09-01','2026-04-15 23:59:00','graduation-cap Projet E5','devoir',1).lastInsertRowid
+    '2025-09-01','2026-04-15 23:59:00','graduation-cap Projet E5','livrable',1).lastInsertRowid
   ir.run(f_e5_2,'link','Guide de redaction rapport de stage CESI','https://www.cesi.fr/')
 
   const f_e5_3a = it.run(p2,null,ga,
     'Soutenance E5 — Groupe A',
     'Soutenance individuelle devant jury.\nDuree : 20 min expose + 10 min questions.\nJury : M. Fosse + representant entreprise.\nLieu : salle conference CESI.',
-    '2026-04-18','2026-04-18 09:00:00','graduation-cap Projet E5','jalon',1).lastInsertRowid
+    '2026-04-18','2026-04-18 09:00:00','graduation-cap Projet E5','soutenance',1).lastInsertRowid
   itgm.run(f_e5_3a,f1,ga); itgm.run(f_e5_3a,f2,ga); itgm.run(f_e5_3a,f3,ga); itgm.run(f_e5_3a,f4,ga)
 
   const f_e5_3b = it.run(p2,null,gb,
     'Soutenance E5 — Groupe B',
     'Memes modalites que Groupe A.',
-    '2026-04-19','2026-04-19 09:00:00','graduation-cap Projet E5','jalon',1).lastInsertRowid
+    '2026-04-19','2026-04-19 09:00:00','graduation-cap Projet E5','soutenance',1).lastInsertRowid
   itgm.run(f_e5_3b,f5,gb); itgm.run(f_e5_3b,f6,gb); itgm.run(f_e5_3b,f7,gb); itgm.run(f_e5_3b,f8,gb)
 
   const f_e5_3c = it.run(p2,null,gc,
     'Soutenance E5 — Groupe C',
     'Memes modalites que Groupe A.',
-    '2026-04-20','2026-04-20 09:00:00','graduation-cap Projet E5','jalon',1).lastInsertRowid
+    '2026-04-20','2026-04-20 09:00:00','graduation-cap Projet E5','soutenance',1).lastInsertRowid
   itgm.run(f_e5_3c,f9,gc); itgm.run(f_e5_3c,f10,gc); itgm.run(f_e5_3c,f11,gc); itgm.run(f_e5_3c,f12,gc)
 
   // ── Dépôts FISAA4 ──────────────────────

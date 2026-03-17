@@ -1,6 +1,6 @@
 const { getDb } = require('./connection');
 
-const CURRENT_VERSION = 8;
+const CURRENT_VERSION = 9;
 
 // ─── Schema initial ───────────────────────────────────────────────────────────
 // Crée toutes les tables avec leur schéma complet (colonnes UTC, toutes colonnes incluses).
@@ -243,7 +243,7 @@ function runMigrations(db) {
         DROP TABLE travaux;
         ALTER TABLE travaux_v8 RENAME TO travaux;
 
-        -- Reconstruction de channel_documents avec promo_id + project et channel_id nullable
+        -- (suite v8) Reconstruction de channel_documents avec promo_id + project et channel_id nullable
         CREATE TABLE IF NOT EXISTS channel_documents_v8 (
           id          INTEGER PRIMARY KEY AUTOINCREMENT,
           promo_id    INTEGER NOT NULL REFERENCES promotions(id) ON DELETE CASCADE,
@@ -265,6 +265,38 @@ function runMigrations(db) {
           FROM channel_documents cd;
         DROP TABLE channel_documents;
         ALTER TABLE channel_documents_v8 RENAME TO channel_documents;
+      `);
+    },
+  ];
+
+    // v9 : nouveau système de types (livrable / soutenance / cctl / etude_de_cas / memoire / autre)
+    (db) => {
+      db.exec(`
+        CREATE TABLE IF NOT EXISTS travaux_v9 (
+          id          INTEGER PRIMARY KEY AUTOINCREMENT,
+          promo_id    INTEGER NOT NULL REFERENCES promotions(id) ON DELETE CASCADE,
+          channel_id  INTEGER REFERENCES channels(id) ON DELETE SET NULL,
+          group_id    INTEGER REFERENCES groups(id) ON DELETE SET NULL,
+          title       TEXT NOT NULL,
+          description TEXT,
+          deadline    TEXT NOT NULL,
+          category    TEXT,
+          type        TEXT NOT NULL DEFAULT 'livrable'
+                      CHECK(type IN ('livrable','soutenance','cctl','etude_de_cas','memoire','autre')),
+          published   INTEGER NOT NULL DEFAULT 1,
+          start_date  TEXT
+        );
+        INSERT INTO travaux_v9
+          SELECT id, promo_id, channel_id, group_id, title, description, deadline, category,
+            CASE type
+              WHEN 'jalon'  THEN 'soutenance'
+              WHEN 'projet' THEN 'livrable'
+              ELSE               'livrable'
+            END,
+            published, start_date
+          FROM travaux;
+        DROP TABLE travaux;
+        ALTER TABLE travaux_v9 RENAME TO travaux;
       `);
     },
   ];

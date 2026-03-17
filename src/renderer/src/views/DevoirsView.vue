@@ -1279,16 +1279,12 @@ function typeLabel(t: string): string {
   border-radius: 4px;
 }
 
-.type-livrable    { background: rgba(74,144,217,.2);   color: var(--accent); }
-.type-soutenance  { background: rgba(155,135,245,.2);  color: #9b87f5; }
-.type-cctl        { background: rgba(231,76,60,.2);    color: #E74C3C; }
-.type-etude_de_cas { background: rgba(230,126,34,.2);  color: #E67E22; }
-.type-memoire     { background: rgba(39,174,96,.2);    color: #27AE60; }
-.type-autre       { background: rgba(149,165,166,.2);  color: #95a5a6; }
-/* backward compat for old DB records */
-.type-devoir { background: rgba(74,144,217,.2);  color: var(--accent); }
-.type-projet { background: rgba(155,135,245,.2); color: #9b87f5; }
-.type-jalon  { background: rgba(243,156,18,.2);  color: var(--color-warning); }
+.type-livrable     { background: rgba(74,144,217,.2);   color: var(--accent); }
+.type-soutenance   { background: rgba(243,156,18,.2);   color: var(--color-warning); }
+.type-cctl         { background: rgba(123,104,238,.2);  color: #9b87f5; }
+.type-etude_de_cas { background: rgba(39,174,96,.2);    color: var(--color-success); }
+.type-memoire      { background: rgba(231,76,60,.2);    color: #e74c3c; }
+.type-autre        { background: rgba(127,140,141,.2);  color: #95a5a6; }
 
 /* ── Gantt ───────────────────────────────────────────────────────────────── */
 .gantt-wrapper { max-width: 1000px; margin: 0 auto; }
@@ -1317,18 +1313,18 @@ function typeLabel(t: string): string {
   height: 10px;
   border-radius: 3px;
 }
-.legend-pill.type-livrable    { color: var(--accent); }
-.legend-pill.type-soutenance  { color: #9b87f5; }
-.legend-pill.type-cctl        { color: #E74C3C; }
-.legend-pill.type-etude_de_cas { color: #E67E22; }
-.legend-pill.type-memoire     { color: #27AE60; }
-.legend-pill.type-autre       { color: #95a5a6; }
-.legend-pill.type-livrable::before    { background: var(--accent); }
-.legend-pill.type-soutenance::before  { background: #9b87f5; }
-.legend-pill.type-cctl::before        { background: #E74C3C; }
-.legend-pill.type-etude_de_cas::before { background: #E67E22; }
-.legend-pill.type-memoire::before     { background: #27AE60; }
-.legend-pill.type-autre::before       { background: #95a5a6; }
+.legend-pill.type-livrable     { color: var(--accent); }
+.legend-pill.type-soutenance   { color: var(--color-warning); }
+.legend-pill.type-cctl         { color: #9b87f5; }
+.legend-pill.type-etude_de_cas { color: var(--color-success); }
+.legend-pill.type-memoire      { color: #e74c3c; }
+.legend-pill.type-autre        { color: #95a5a6; }
+.legend-pill.type-livrable::before     { background: var(--accent); }
+.legend-pill.type-soutenance::before   { background: var(--color-warning); }
+.legend-pill.type-cctl::before         { background: #9b87f5; }
+.legend-pill.type-etude_de_cas::before { background: var(--color-success); }
+.legend-pill.type-memoire::before      { background: #e74c3c; }
+.legend-pill.type-autre::before        { background: #95a5a6; }
 
 .legend-separator { width: 1px; height: 16px; background: var(--border); }
 
@@ -1413,15 +1409,12 @@ function typeLabel(t: string): string {
 }
 .gantt-bar:hover              { opacity: 1; }
 .gantt-bar.type-livrable      { background: var(--accent); }
-.gantt-bar.type-soutenance    { background: #9b87f5; }
-.gantt-bar.type-cctl          { background: #E74C3C; }
-.gantt-bar.type-etude_de_cas  { background: #E67E22; }
-.gantt-bar.type-memoire       { background: #27AE60; }
-.gantt-bar.type-autre         { background: #95a5a6; }
-/* backward compat */
-.gantt-bar.type-devoir        { background: var(--accent); }
-.gantt-bar.type-projet        { background: #9b87f5; }
-.gantt-bar.type-jalon         { background: var(--color-warning); }
+.gantt-bar.type-livrable     { background: var(--accent); }
+.gantt-bar.type-soutenance   { background: var(--color-warning); }
+.gantt-bar.type-cctl         { background: #9b87f5; }
+.gantt-bar.type-etude_de_cas { background: var(--color-success); }
+.gantt-bar.type-memoire      { background: #e74c3c; }
+.gantt-bar.type-autre        { background: #95a5a6; }
 
 .gantt-skel {
   display: flex;

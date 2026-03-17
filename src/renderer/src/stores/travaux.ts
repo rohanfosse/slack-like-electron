@@ -18,6 +18,7 @@ export const useTravauxStore = defineStore('travaux', () => {
   const view           = ref<'gantt' | 'rendus' | 'student'>('gantt')
 
   // ── Calculs ───────────────────────────────────────────────────────────────
+  // Soutenances et CCTL n'ont pas de dépôt → exclus des "à rendre"
   const pendingDevoirs = computed(() =>
     devoirs.value.filter((t) => t.depot_id == null && t.type !== 'soutenance' && t.type !== 'cctl'),
   )

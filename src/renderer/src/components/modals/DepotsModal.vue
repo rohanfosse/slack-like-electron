@@ -528,9 +528,12 @@
   padding: 2px 7px;
   border-radius: 4px;
 }
-.type-devoir { background: rgba(74,144,217,.2);  color: var(--accent); }
-.type-projet { background: rgba(123,104,238,.2); color: #9b87f5; }
-.type-jalon  { background: rgba(243,156,18,.2);  color: var(--color-warning); }
+.type-livrable     { background: rgba(74,144,217,.2);   color: var(--accent); }
+.type-soutenance   { background: rgba(243,156,18,.2);   color: var(--color-warning); }
+.type-cctl         { background: rgba(123,104,238,.2);  color: #9b87f5; }
+.type-etude_de_cas { background: rgba(39,174,96,.2);    color: var(--color-success); }
+.type-memoire      { background: rgba(231,76,60,.2);    color: #e74c3c; }
+.type-autre        { background: rgba(127,140,141,.2);  color: #95a5a6; }
 
 /* Footer */
 .depots-footer {

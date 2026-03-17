@@ -341,16 +341,12 @@
   padding: 2px 7px;
   border-radius: 4px;
 }
-.type-livrable    { background: rgba(74,144,217,.2);   color: var(--accent); }
-.type-soutenance  { background: rgba(155,135,245,.2);  color: #9b87f5; }
-.type-cctl        { background: rgba(231,76,60,.2);    color: #E74C3C; }
-.type-etude_de_cas { background: rgba(230,126,34,.2);  color: #E67E22; }
-.type-memoire     { background: rgba(39,174,96,.2);    color: #27AE60; }
-.type-autre       { background: rgba(149,165,166,.2);  color: #95a5a6; }
-/* backward compat for old DB records */
-.type-devoir { background: rgba(74,144,217,.2);  color: var(--accent); }
-.type-projet { background: rgba(155,135,245,.2); color: #9b87f5; }
-.type-jalon  { background: rgba(243,156,18,.2);  color: var(--color-warning); }
+.type-livrable     { background: rgba(74,144,217,.2);   color: var(--accent); }
+.type-soutenance   { background: rgba(243,156,18,.2);   color: var(--color-warning); }
+.type-cctl         { background: rgba(123,104,238,.2);  color: #9b87f5; }
+.type-etude_de_cas { background: rgba(39,174,96,.2);    color: var(--color-success); }
+.type-memoire      { background: rgba(231,76,60,.2);    color: #e74c3c; }
+.type-autre        { background: rgba(127,140,141,.2);  color: #95a5a6; }
 
 /* Pied */
 .gd-footer {
