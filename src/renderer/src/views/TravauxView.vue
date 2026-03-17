@@ -99,10 +99,10 @@ const studentGroups = computed(() => {
 })
 
 const studentStats = computed(() => ({
-  total:     travauxStore.devoirs.length,
-  pending:   studentGroups.value.overdue.length + studentGroups.value.urgent.length + studentGroups.value.pending.length,
-  urgent:    studentGroups.value.overdue.length + studentGroups.value.urgent.length,
-  submitted: studentGroups.value.submitted.length,
+  total:     filteredStudentGroups.value.overdue.length + filteredStudentGroups.value.urgent.length + filteredStudentGroups.value.pending.length + filteredStudentGroups.value.submitted.length,
+  pending:   filteredStudentGroups.value.overdue.length + filteredStudentGroups.value.urgent.length + filteredStudentGroups.value.pending.length,
+  urgent:    filteredStudentGroups.value.overdue.length + filteredStudentGroups.value.urgent.length,
+  submitted: filteredStudentGroups.value.submitted.length,
 }))
 
 // ── Dépôt étudiant ─────────────────────────────────────────────────────────────
@@ -210,6 +210,44 @@ const rendusByTravail = computed(() => {
   }
   return [...map.values()]
 })
+
+// ── Filtre projet ──────────────────────────────────────────────────────────────
+function matchProject<T extends { category?: string | null }>(items: T[]): T[] {
+  const proj = appStore.activeProject
+  if (!proj) return items
+  return items.filter(t => t.category === proj)
+}
+
+const filteredGanttItems = computed(() => {
+  const { items, todayPct } = ganttItems.value
+  return { items: matchProject(items), todayPct }
+})
+
+const filteredListItems = computed(() =>
+  matchProject(travauxStore.ganttData as Travail[]),
+)
+
+const filteredStudentGroups = computed(() => {
+  const all = matchProject(travauxStore.devoirs)
+  return {
+    overdue:   all.filter(t => t.depot_id == null && isExpired(t.deadline)),
+    urgent:    all.filter(t => {
+      if (t.depot_id != null || isExpired(t.deadline)) return false
+      return new Date(t.deadline).getTime() - now.value < 3 * 86_400_000
+    }),
+    pending:   all.filter(t => {
+      if (t.depot_id != null || isExpired(t.deadline)) return false
+      return new Date(t.deadline).getTime() - now.value >= 3 * 86_400_000
+    }),
+    submitted: all.filter(t => t.depot_id != null),
+  }
+})
+
+const filteredRendusByTravail = computed(() => {
+  const proj = appStore.activeProject
+  if (!proj) return rendusByTravail.value
+  return rendusByTravail.value.filter(g => (g.travail as Travail).category === proj)
+})
 </script>
 
 <template>
@@ -220,8 +258,8 @@ const rendusByTravail = computed(() => {
       <div class="travaux-header-title">
         <BookOpen :size="18" />
         <span>Travaux</span>
-        <span v-if="appStore.activeChannelName" class="header-channel-ctx">
-          # {{ appStore.activeChannelName }}
+        <span v-if="appStore.activeProject" class="header-channel-ctx">
+          {{ appStore.activeProject }}
         </span>
       </div>
 
@@ -309,13 +347,13 @@ const rendusByTravail = computed(() => {
         <div v-else class="travaux-grouped">
 
           <!-- ▸ EN RETARD -->
-          <template v-if="studentGroups.overdue.length">
+          <template v-if="filteredStudentGroups.overdue.length">
             <div class="group-header group-header--danger">
               <Lock :size="12" /> En retard
-              <span class="group-count">{{ studentGroups.overdue.length }}</span>
+              <span class="group-count">{{ filteredStudentGroups.overdue.length }}</span>
             </div>
             <div class="travaux-list">
-              <div v-for="t in studentGroups.overdue" :key="t.id" class="travail-card travail-card--overdue">
+              <div v-for="t in filteredStudentGroups.overdue" :key="t.id" class="travail-card travail-card--overdue">
                 <!-- Carte meta -->
                 <div class="travail-card-header">
                   <div class="travail-card-meta">
@@ -380,13 +418,13 @@ const rendusByTravail = computed(() => {
           </template>
 
           <!-- ▸ URGENT -->
-          <template v-if="studentGroups.urgent.length">
+          <template v-if="filteredStudentGroups.urgent.length">
             <div class="group-header group-header--warning">
               <AlertTriangle :size="12" /> Urgent
-              <span class="group-count">{{ studentGroups.urgent.length }}</span>
+              <span class="group-count">{{ filteredStudentGroups.urgent.length }}</span>
             </div>
             <div class="travaux-list">
-              <div v-for="t in studentGroups.urgent" :key="t.id" class="travail-card travail-card--urgent">
+              <div v-for="t in filteredStudentGroups.urgent" :key="t.id" class="travail-card travail-card--urgent">
                 <div class="travail-card-header">
                   <div class="travail-card-meta">
                     <span class="travail-type-badge" :class="`type-${t.type}`">{{ t.type }}</span>
@@ -448,13 +486,13 @@ const rendusByTravail = computed(() => {
           </template>
 
           <!-- ▸ À RENDRE -->
-          <template v-if="studentGroups.pending.length">
+          <template v-if="filteredStudentGroups.pending.length">
             <div class="group-header group-header--accent">
               <Clock :size="12" /> À rendre
-              <span class="group-count">{{ studentGroups.pending.length }}</span>
+              <span class="group-count">{{ filteredStudentGroups.pending.length }}</span>
             </div>
             <div class="travaux-list">
-              <div v-for="t in studentGroups.pending" :key="t.id" class="travail-card travail-card--pending">
+              <div v-for="t in filteredStudentGroups.pending" :key="t.id" class="travail-card travail-card--pending">
                 <div class="travail-card-header">
                   <div class="travail-card-meta">
                     <span class="travail-type-badge" :class="`type-${t.type}`">{{ t.type }}</span>
@@ -516,13 +554,13 @@ const rendusByTravail = computed(() => {
           </template>
 
           <!-- ▸ RENDUS -->
-          <template v-if="studentGroups.submitted.length">
+          <template v-if="filteredStudentGroups.submitted.length">
             <div class="group-header group-header--success">
               <CheckCircle2 :size="12" /> Rendus
-              <span class="group-count">{{ studentGroups.submitted.length }}</span>
+              <span class="group-count">{{ filteredStudentGroups.submitted.length }}</span>
             </div>
             <div class="travaux-list">
-              <div v-for="t in studentGroups.submitted" :key="t.id" class="travail-card travail-card--submitted">
+              <div v-for="t in filteredStudentGroups.submitted" :key="t.id" class="travail-card travail-card--submitted">
                 <div class="travail-card-header">
                   <div class="travail-card-meta">
                     <span class="travail-type-badge" :class="`type-${t.type}`">{{ t.type }}</span>
@@ -556,7 +594,7 @@ const rendusByTravail = computed(() => {
           </div>
         </div>
 
-        <div v-else-if="ganttItems.items.length === 0" class="empty-state-custom">
+        <div v-else-if="filteredGanttItems.items.length === 0" class="empty-state-custom">
           <BarChart2 :size="48" class="empty-icon" />
           <h3>Aucun travail créé</h3>
           <p>Créez un premier travail pour visualiser le Gantt.</p>
@@ -578,7 +616,7 @@ const rendusByTravail = computed(() => {
           <!-- Grille Gantt -->
           <div class="gantt-chart">
             <div
-              v-for="item in ganttItems.items"
+              v-for="item in filteredGanttItems.items"
               :key="item.id"
               class="gantt-row"
               @click="openTravail(item.id)"
@@ -589,7 +627,7 @@ const rendusByTravail = computed(() => {
                 <span class="deadline-badge" :class="item.dlClass">{{ formatDate(item.deadline) }}</span>
               </div>
               <div class="gantt-track">
-                <div class="gantt-today-marker" :style="{ left: ganttItems.todayPct + '%' }" />
+                <div class="gantt-today-marker" :style="{ left: filteredGanttItems.todayPct + '%' }" />
                 <div
                   class="gantt-bar"
                   :class="`type-${item.type}`"
@@ -614,7 +652,7 @@ const rendusByTravail = computed(() => {
           </div>
         </div>
 
-        <div v-else-if="(travauxStore.ganttData as Travail[]).length === 0" class="empty-state-custom">
+        <div v-else-if="filteredListItems.length === 0" class="empty-state-custom">
           <Grid :size="48" class="empty-icon" />
           <h3>Aucun travail créé</h3>
           <p>Créez un premier travail pour le voir ici.</p>
@@ -622,7 +660,7 @@ const rendusByTravail = computed(() => {
 
         <div v-else class="liste-grid">
           <div
-            v-for="t in (travauxStore.ganttData as Travail[])"
+            v-for="t in filteredListItems"
             :key="t.id"
             class="liste-card"
             @click="openTravail(t.id)"
@@ -655,7 +693,7 @@ const rendusByTravail = computed(() => {
           </div>
         </div>
 
-        <div v-else-if="rendusByTravail.length === 0" class="empty-state-custom">
+        <div v-else-if="filteredRendusByTravail.length === 0" class="empty-state-custom">
           <Users :size="48" class="empty-icon" />
           <h3>Aucun rendu pour cette promotion</h3>
           <p>Les rendus des étudiants apparaîtront ici.</p>
@@ -663,7 +701,7 @@ const rendusByTravail = computed(() => {
 
         <div v-else class="travaux-list">
           <div
-            v-for="group in rendusByTravail"
+            v-for="group in filteredRendusByTravail"
             :key="group.travail.id"
             class="rendus-group"
           >

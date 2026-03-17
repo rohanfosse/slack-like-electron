@@ -1,7 +1,7 @@
 <script setup lang="ts">
-  import { ref, watch, computed, onMounted } from 'vue'
+  import { ref, watch, computed, onMounted, nextTick } from 'vue'
   import { useRoute, useRouter } from 'vue-router'
-  import { Plus, ChevronDown, FolderOpen } from 'lucide-vue-next'
+  import { Plus, ChevronDown, FolderOpen, Layers, Check, X as XIcon } from 'lucide-vue-next'
   import { useAppStore }    from '@/stores/app'
   import { useModalsStore } from '@/stores/modals'
   import { useMessagesStore } from '@/stores/messages'
@@ -10,6 +10,8 @@
   import ChannelItem  from './ChannelItem.vue'
   import { avatarColor }  from '@/utils/format'
   import type { Channel, Student, Promotion } from '@/types'
+
+  const CUSTOM_PROJECTS_KEY = 'cc_custom_projects'
 
   const appStore      = useAppStore()
   const modals        = useModalsStore()
@@ -127,6 +129,66 @@
     students.value.filter((s) => s.id !== user.value?.id),
   )
 
+  // ── Projets (section Devoirs) ─────────────────────────────────────────────
+  const dbProjects     = ref<string[]>([])
+  const customProjects = ref<string[]>([])
+  const addingProject  = ref(false)
+  const newProjectName = ref('')
+  const addProjectInput = ref<HTMLInputElement | null>(null)
+
+  function loadCustomProjects() {
+    try {
+      const raw = localStorage.getItem(CUSTOM_PROJECTS_KEY)
+      customProjects.value = raw ? JSON.parse(raw) : []
+    } catch { customProjects.value = [] }
+  }
+
+  function saveCustomProjects() {
+    try { localStorage.setItem(CUSTOM_PROJECTS_KEY, JSON.stringify(customProjects.value)) } catch {}
+  }
+
+  async function loadDbProjects() {
+    const promoId = appStore.activePromoId ?? user.value?.promo_id
+    if (!promoId) return
+    const res = await window.api.getTravailCategories(promoId)
+    dbProjects.value = res?.ok ? res.data : []
+  }
+
+  const allProjects = computed(() => {
+    const set = new Set([...dbProjects.value, ...customProjects.value])
+    return Array.from(set).sort((a, b) => a.localeCompare(b, 'fr'))
+  })
+
+  async function startAddProject() {
+    addingProject.value = true
+    newProjectName.value = ''
+    await nextTick()
+    addProjectInput.value?.focus()
+  }
+
+  function confirmAddProject() {
+    const name = newProjectName.value.trim()
+    if (name && !allProjects.value.includes(name)) {
+      customProjects.value = [...customProjects.value, name]
+      saveCustomProjects()
+    }
+    addingProject.value = false
+    if (name) {
+      appStore.activeProject = name
+      router.push('/devoirs')
+    }
+  }
+
+  function cancelAddProject() {
+    addingProject.value = false
+    newProjectName.value = ''
+  }
+
+  function selectProject(name: string | null) {
+    appStore.activeProject = name
+    router.push('/devoirs')
+  }
+
   // ── Contexte sidebar selon la route ───────────────────────────────────────
   const sectionLabel = computed(() => {
     if (route.name === 'devoirs')   return 'Devoirs'
@@ -167,12 +229,16 @@
   }
 
   // ── Réactivité ────────────────────────────────────────────────────────────
-  onMounted(load)
+  onMounted(() => { load(); loadCustomProjects() })
 
-  watch(() => route.name, (n) => { if (n === 'messages') load() })
+  watch(() => route.name, (n) => {
+    if (n === 'messages') load()
+    if (n === 'devoirs')  loadDbProjects()
+  })
   watch(() => modals.createChannel, (open) => { if (!open) load() })
   // Recharger quand l'utilisateur change (simulation étudiant)
   watch(() => appStore.currentUser?.id, () => load())
+  watch(() => appStore.activePromoId, () => { if (route.name === 'devoirs') loadDbProjects() })
 </script>
 
 <template>
@@ -230,7 +296,62 @@
         </div>
       </template>
 
-      <!-- Canaux groupés par catégorie -->
+      <!-- Liste des projets (section Devoirs) -->
+      <template v-else-if="route.name === 'devoirs'">
+        <div class="sidebar-section-header">
+          <span>Projets</span>
+          <button
+            class="btn-icon"
+            title="Nouveau projet"
+            aria-label="Nouveau projet"
+            style="padding:2px"
+            @click="startAddProject"
+          >
+            <Plus :size="14" />
+          </button>
+        </div>
+
+        <nav aria-label="Projets">
+          <!-- Tous les devoirs -->
+          <button
+            class="sidebar-item"
+            :class="{ active: appStore.activeProject === null }"
+            @click="selectProject(null)"
+          >
+            <Layers :size="13" class="project-icon" />
+            <span class="channel-name">Tous les devoirs</span>
+          </button>
+
+          <!-- Projets -->
+          <button
+            v-for="proj in allProjects"
+            :key="proj"
+            class="sidebar-item"
+            :class="{ active: appStore.activeProject === proj }"
+            @click="selectProject(proj)"
+          >
+            <span class="project-bullet" />
+            <span class="channel-name">{{ proj }}</span>
+          </button>
+
+          <!-- Saisie inline nouveau projet -->
+          <div v-if="addingProject" class="project-add-row">
+            <input
+              ref="addProjectInput"
+              v-model="newProjectName"
+              class="project-add-input"
+              placeholder="Nom du projet…"
+              maxlength="60"
+              @keydown.enter.prevent="confirmAddProject"
+              @keydown.escape.prevent="cancelAddProject"
+            />
+            <button class="btn-icon" title="Confirmer" @click="confirmAddProject"><Check :size="13" /></button>
+            <button class="btn-icon" title="Annuler"   @click="cancelAddProject"><XIcon  :size="13" /></button>
+          </div>
+        </nav>
+      </template>
+
+      <!-- Canaux groupés par catégorie (autres sections) -->
       <template v-else>
         <div id="sidebar-channels-header" class="sidebar-section-header">
           <span>{{ channelSectionLabel }}</span>
@@ -406,4 +527,44 @@
   opacity: .5;
   font-weight: 400;
 }
+
+/* ── Projets (section Devoirs) ── */
+.project-icon {
+  flex-shrink: 0;
+  opacity: .6;
+}
+
+.project-bullet {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #9B87F5;
+  flex-shrink: 0;
+  margin-left: 4px;
+  margin-right: 2px;
+  opacity: .7;
+}
+
+.sidebar-item.active .project-bullet { opacity: 1; background: #9B87F5; }
+
+.project-add-row {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  padding: 3px 8px 3px 14px;
+}
+
+.project-add-input {
+  flex: 1;
+  background: var(--bg-input);
+  border: 1px solid var(--border-input);
+  border-radius: 4px;
+  color: var(--text-primary);
+  font-size: 12px;
+  font-family: var(--font);
+  padding: 3px 7px;
+  outline: none;
+  min-width: 0;
+}
+.project-add-input:focus { border-color: #9B87F5; box-shadow: 0 0 0 2px rgba(155,135,245,.2); }
 </style>

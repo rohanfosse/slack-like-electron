@@ -269,9 +269,23 @@ function markNonSubmittedAsD(travailId) {
   return students.length;
 }
 
+// ─── Projets (catégories distinctes) ─────────────────────────────────────────
+
+function getTravailCategories(promoId) {
+  const rows = getDb().prepare(`
+    SELECT DISTINCT t.category
+    FROM travaux t
+    JOIN channels ch ON ch.id = t.channel_id
+    WHERE ch.promo_id = ? AND t.category IS NOT NULL AND t.category != ''
+    ORDER BY t.category ASC
+  `).all(promoId);
+  return rows.map(r => r.category);
+}
+
 module.exports = {
   getTravaux, getTravailById, createTravail, updateTravailPublished,
   getTravauxSuivi, getStudentTravaux,
   getTravailGroupMembers, setTravailGroupMember,
   getGanttData, getAllRendus, getTeacherSchedule, markNonSubmittedAsD,
+  getTravailCategories,
 };

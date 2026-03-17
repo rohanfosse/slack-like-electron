@@ -22,6 +22,8 @@
   import { isoForDatetimeLocal } from '@/utils/date'
   import type { Student, Group } from '@/types'
 
+  const CUSTOM_PROJECTS_KEY = 'cc_custom_projects'
+
   const props = defineProps<{ modelValue: boolean }>()
   const emit  = defineEmits<{ 'update:modelValue': [v: boolean] }>()
 
@@ -39,7 +41,13 @@
   const isDraft     = ref(false)
   const assignTo    = ref<'all' | 'group'>('all')
   const channelId   = ref<number | null>(null)
-  const channels    = ref<{ id: number; name: string }[]>([])
+  const channels      = ref<{ id: number; name: string }[]>([])
+  const dbProjects    = ref<string[]>([])
+  const allProjects   = computed(() => {
+    const custom = (() => { try { return JSON.parse(localStorage.getItem(CUSTOM_PROJECTS_KEY) ?? '[]') as string[] } catch { return [] } })()
+    const set = new Set([...dbProjects.value, ...custom])
+    return Array.from(set).sort((a, b) => a.localeCompare(b, 'fr'))
+  })
   const creating    = ref(false)
 
   // ── Gestion des groupes ────────────────────────────────────────────────────
@@ -54,18 +62,22 @@
 
   watch(() => props.modelValue, async (open) => {
     if (open && appStore.activePromoId) {
-      const [chRes, stuRes, grpRes] = await Promise.all([
+      const [chRes, stuRes, grpRes, projRes] = await Promise.all([
         window.api.getChannels(appStore.activePromoId),
         window.api.getStudents(appStore.activePromoId),
         window.api.getGroups(appStore.activePromoId),
+        window.api.getTravailCategories(appStore.activePromoId),
       ])
-      channels.value = chRes?.ok ? chRes.data : []
-      students.value = stuRes?.ok ? stuRes.data : []
-      groups.value   = grpRes?.ok ? grpRes.data : []
+      channels.value   = chRes?.ok ? chRes.data : []
+      students.value   = stuRes?.ok ? stuRes.data : []
+      groups.value     = grpRes?.ok ? grpRes.data : []
+      dbProjects.value = projRes?.ok ? projRes.data : []
 
       // Pré-sélectionner le canal actif
       channelId.value = appStore.activeChannelId
-      title.value = description.value = category.value = ''
+      title.value = description.value = ''
+      // Pré-remplir avec le projet actif depuis la sidebar
+      category.value = appStore.activeProject ?? ''
       type.value = 'devoir'
       assignTo.value = 'all'
       isDraft.value  = false
@@ -146,20 +158,20 @@
   <Modal :model-value="modelValue" title="Nouveau travail" max-width="620px" @update:model-value="emit('update:modelValue', $event)">
     <form style="padding:16px;display:flex;flex-direction:column;gap:12px" @submit.prevent="submit">
 
-      <!-- Canal -->
-      <div class="form-group">
-        <label class="form-label">Canal</label>
-        <select v-model="channelId" class="form-select" required>
-          <option :value="null">Choisir un canal…</option>
-          <option v-for="c in channels" :key="c.id" :value="c.id">{{ c.name }}</option>
-        </select>
-      </div>
-
-      <!-- Titre + Type -->
+      <!-- Projet (champ principal) + Type -->
       <div style="display:flex;gap:10px">
         <div class="form-group" style="flex:2">
-          <label class="form-label">Titre</label>
-          <input v-model="title" type="text" class="form-input" placeholder="Titre du travail" required />
+          <label class="form-label">Projet</label>
+          <input
+            v-model="category"
+            type="text"
+            class="form-input"
+            placeholder="ex : Développement Web, ADS…"
+            list="project-suggestions"
+          />
+          <datalist id="project-suggestions">
+            <option v-for="p in allProjects" :key="p" :value="p" />
+          </datalist>
         </div>
         <div class="form-group" style="flex:1">
           <label class="form-label">Type</label>
@@ -169,6 +181,12 @@
             <option value="projet">Projet</option>
           </select>
         </div>
+      </div>
+
+      <!-- Titre -->
+      <div class="form-group">
+        <label class="form-label">Titre</label>
+        <input v-model="title" type="text" class="form-input" placeholder="Titre du travail" required />
       </div>
 
       <!-- Description -->
@@ -189,18 +207,12 @@
         </div>
       </div>
 
-      <!-- Catégorie + Assignation -->
-      <div style="display:flex;gap:10px">
-        <div class="form-group" style="flex:1">
-          <label class="form-label">Catégorie <span style="opacity:.6">(optionnel)</span></label>
-          <input v-model="category" type="text" class="form-input" placeholder="ex : TP, Projet…" />
-        </div>
-        <div v-if="!isJalon" class="form-group" style="flex:1">
-          <label class="form-label">Assigné à</label>
-          <div style="display:flex;gap:16px;padding-top:8px">
-            <label class="radio-label"><input v-model="assignTo" type="radio" value="all" /> Toute la promo</label>
-            <label class="radio-label"><input v-model="assignTo" type="radio" value="group" /> Par groupe</label>
-          </div>
+      <!-- Assignation -->
+      <div v-if="!isJalon" class="form-group">
+        <label class="form-label">Assigné à</label>
+        <div style="display:flex;gap:16px;padding-top:6px">
+          <label class="radio-label"><input v-model="assignTo" type="radio" value="all" /> Toute la promo</label>
+          <label class="radio-label"><input v-model="assignTo" type="radio" value="group" /> Par groupe</label>
         </div>
       </div>
 
@@ -279,6 +291,15 @@
         >
           <Plus :size="12" /> Nouveau groupe
         </button>
+      </div>
+
+      <!-- Canal (secondaire) -->
+      <div class="form-group">
+        <label class="form-label">Canal <span style="opacity:.6">(section)</span></label>
+        <select v-model="channelId" class="form-select" required>
+          <option :value="null">Choisir un canal…</option>
+          <option v-for="c in channels" :key="c.id" :value="c.id">{{ c.name }}</option>
+        </select>
       </div>
 
       <!-- Brouillon -->

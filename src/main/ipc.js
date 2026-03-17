@@ -108,7 +108,8 @@ function register() {
   handle('db:updateTravailPublished', (payload) => queries.updateTravailPublished(payload))
 
   // ── Échéancier prof ───────────────────────────────────────────────────────
-  handle('db:getTeacherSchedule', () => queries.getTeacherSchedule())
+  handle('db:getTeacherSchedule',     ()         => queries.getTeacherSchedule())
+  handle('db:getTravailCategories',   (promoId)  => queries.getTravailCategories(promoId))
 
   // ── Gantt + rendus ────────────────────────────────────────────────────────
   handle('db:getGanttData',  (promoId) => queries.getGanttData(promoId ?? null))
