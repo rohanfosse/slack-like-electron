@@ -126,8 +126,8 @@ function fileName() {
   return doc.value?.content?.split(/[\\/]/).pop() ?? doc.value?.name ?? ''
 }
 
-function openExternal() {
-  if (doc.value) api.openExternal(doc.value.content)
+function openExternalFile() {
+  if (doc.value) openExternal(doc.value.content)
 }
 function download() {
   if (doc.value) api.downloadFile(doc.value.content)
