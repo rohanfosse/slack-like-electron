@@ -267,7 +267,6 @@ function runMigrations(db) {
         ALTER TABLE channel_documents_v8 RENAME TO channel_documents;
       `);
     },
-  ];
 
     // v9 : nouveau système de types (livrable / soutenance / cctl / etude_de_cas / memoire / autre)
     (db) => {
