@@ -31,7 +31,7 @@ function requireSchema() {
   if (hasRequiredSchema) return schema;
   hasRequiredSchema = 1;
   const { getDb } = requireConnection();
-  const CURRENT_VERSION = 8;
+  const CURRENT_VERSION = 9;
   function initSchema() {
     const db2 = getDb();
     db2.exec(`
@@ -253,7 +253,7 @@ function requireSchema() {
         DROP TABLE travaux;
         ALTER TABLE travaux_v8 RENAME TO travaux;
 
-        -- Reconstruction de channel_documents avec promo_id + project et channel_id nullable
+        -- (suite v8) Reconstruction de channel_documents avec promo_id + project et channel_id nullable
         CREATE TABLE IF NOT EXISTS channel_documents_v8 (
           id          INTEGER PRIMARY KEY AUTOINCREMENT,
           promo_id    INTEGER NOT NULL REFERENCES promotions(id) ON DELETE CASCADE,
@@ -275,6 +275,36 @@ function requireSchema() {
           FROM channel_documents cd;
         DROP TABLE channel_documents;
         ALTER TABLE channel_documents_v8 RENAME TO channel_documents;
+      `);
+      },
+      // v9 : nouveau système de types (livrable / soutenance / cctl / etude_de_cas / memoire / autre)
+      (db3) => {
+        db3.exec(`
+        CREATE TABLE IF NOT EXISTS travaux_v9 (
+          id          INTEGER PRIMARY KEY AUTOINCREMENT,
+          promo_id    INTEGER NOT NULL REFERENCES promotions(id) ON DELETE CASCADE,
+          channel_id  INTEGER REFERENCES channels(id) ON DELETE SET NULL,
+          group_id    INTEGER REFERENCES groups(id) ON DELETE SET NULL,
+          title       TEXT NOT NULL,
+          description TEXT,
+          deadline    TEXT NOT NULL,
+          category    TEXT,
+          type        TEXT NOT NULL DEFAULT 'livrable'
+                      CHECK(type IN ('livrable','soutenance','cctl','etude_de_cas','memoire','autre')),
+          published   INTEGER NOT NULL DEFAULT 1,
+          start_date  TEXT
+        );
+        INSERT INTO travaux_v9
+          SELECT id, promo_id, channel_id, group_id, title, description, deadline, category,
+            CASE type
+              WHEN 'jalon'  THEN 'soutenance'
+              WHEN 'projet' THEN 'livrable'
+              ELSE               'livrable'
+            END,
+            published, start_date
+          FROM travaux;
+        DROP TABLE travaux;
+        ALTER TABLE travaux_v9 RENAME TO travaux;
       `);
       }
     ];
@@ -691,7 +721,7 @@ ${cur}
       "2026-01-15",
       "2026-03-27 23:59:00",
       "monitor Développement Web",
-      "devoir",
+      "livrable",
       1
     ).lastInsertRowid;
     ir.run(t_web1, "file", "Cahier des charges projet Web", pdf("cahier_charges_web.pdf"));
@@ -706,7 +736,7 @@ ${cur}
       "2026-03-28",
       "2026-05-08 23:59:00",
       "monitor Développement Web",
-      "devoir",
+      "livrable",
       1
     ).lastInsertRowid;
     ir.run(t_web2, "link", "Flask documentation", "https://flask.palletsprojects.com/");
@@ -720,7 +750,7 @@ ${cur}
       "2026-06-12",
       "2026-06-12 09:00:00",
       "monitor Développement Web",
-      "jalon",
+      "soutenance",
       1
     );
     const t_algo1 = it.run(
@@ -732,7 +762,7 @@ ${cur}
       "2026-02-01",
       "2026-04-03 23:59:00",
       "cog Algorithmique",
-      "devoir",
+      "livrable",
       1
     ).lastInsertRowid;
     ir.run(t_algo1, "link", "Visualgo — Structures de données", "https://visualgo.net/en/list");
@@ -746,7 +776,7 @@ ${cur}
       "2026-04-04",
       "2026-05-02 23:59:00",
       "cog Algorithmique",
-      "devoir",
+      "livrable",
       1
     ).lastInsertRowid;
     ir.run(t_algo2, "link", "Big-O Cheat Sheet", "https://www.bigocheatsheet.com/");
@@ -759,7 +789,7 @@ ${cur}
       "2026-05-22",
       "2026-05-22 09:00:00",
       "cog Algorithmique",
-      "jalon",
+      "soutenance",
       1
     );
     const t_bdd1 = it.run(
@@ -775,7 +805,7 @@ Rendu PDF.`,
       "2026-02-15",
       "2026-03-28 23:59:00",
       "database Bases de données",
-      "devoir",
+      "livrable",
       1
     ).lastInsertRowid;
     ir.run(t_bdd1, "link", "PlantUML — UML en texte", "https://plantuml.com/");
@@ -789,7 +819,7 @@ Rendu PDF.`,
       "2026-03-29",
       "2026-05-09 23:59:00",
       "database Bases de données",
-      "devoir",
+      "livrable",
       1
     ).lastInsertRowid;
     ir.run(t_bdd2, "link", "SQLZoo — Pratique SQL interactive", "https://sqlzoo.net/");
@@ -802,7 +832,7 @@ Rendu PDF.`,
       "2026-05-28",
       "2026-05-28 09:00:00",
       "database Bases de données",
-      "jalon",
+      "soutenance",
       1
     );
     const t_net1 = it.run(
@@ -814,7 +844,7 @@ Rendu PDF.`,
       "2026-03-01",
       "2026-04-17 23:59:00",
       "wifi Réseaux",
-      "devoir",
+      "livrable",
       1
     ).lastInsertRowid;
     ir.run(t_net1, "link", "Cisco Packet Tracer (telechargement)", "https://www.netacad.com/courses/packet-tracer");
@@ -827,7 +857,7 @@ Rendu PDF.`,
       "2026-04-18",
       "2026-06-05 23:59:00",
       "wifi Réseaux",
-      "devoir",
+      "livrable",
       1
     );
     it.run(
@@ -839,7 +869,7 @@ Rendu PDF.`,
       "2026-06-19",
       "2026-06-19 14:00:00",
       "wifi Réseaux",
-      "jalon",
+      "soutenance",
       1
     );
     id_.run(t_web1, s1, "DUPONT_Lucas_maquette_web.pdf", pdf("rapport_maquette_dupont.pdf"), "B", "Bonne maquette. L'arborescence est logique et les wireframes sont lisibles. Le modele de donnees manque de quelques relations. Pensez a documenter les contraintes de validation.", "2026-03-24 21:00:00");
@@ -944,7 +974,7 @@ Rendu PDF.`,
       "2026-01-20",
       "2026-04-03 17:00:00",
       "zap Automatisme Siemens",
-      "devoir",
+      "livrable",
       1
     ).lastInsertRowid;
     ir.run(f_auto1, "link", "Documentation TIA Portal Siemens", "https://support.industry.siemens.com/");
@@ -958,7 +988,7 @@ Rendu PDF.`,
       "2026-04-04",
       "2026-05-22 17:00:00",
       "zap Automatisme Siemens",
-      "devoir",
+      "livrable",
       1
     ).lastInsertRowid;
     ir.run(f_auto2, "link", "Siemens Industry Online Support", "https://support.industry.siemens.com/");
@@ -971,7 +1001,7 @@ Rendu PDF.`,
       "2026-06-05",
       "2026-06-05 09:00:00",
       "zap Automatisme Siemens",
-      "jalon",
+      "soutenance",
       1
     );
     const f_scada1 = it.run(
@@ -983,7 +1013,7 @@ Rendu PDF.`,
       "2026-02-10",
       "2026-04-17 17:00:00",
       "bar-chart-2 Supervision SCADA",
-      "devoir",
+      "livrable",
       1
     ).lastInsertRowid;
     ir.run(f_scada1, "link", "WinCC Unified documentation", "https://support.industry.siemens.com/");
@@ -996,7 +1026,7 @@ Rendu PDF.`,
       "2026-04-18",
       "2026-06-06 17:00:00",
       "bar-chart-2 Supervision SCADA",
-      "devoir",
+      "livrable",
       1
     );
     it.run(
@@ -1008,7 +1038,7 @@ Rendu PDF.`,
       "2026-06-19",
       "2026-06-19 14:00:00",
       "bar-chart-2 Supervision SCADA",
-      "jalon",
+      "soutenance",
       1
     );
     const f_net1 = it.run(
@@ -1020,7 +1050,7 @@ Rendu PDF.`,
       "2026-02-20",
       "2026-04-10 17:00:00",
       "globe Réseaux industriels",
-      "devoir",
+      "livrable",
       1
     ).lastInsertRowid;
     ir.run(f_net1, "link", "Profinet University", "https://profinetuniversity.com/");
@@ -1033,7 +1063,7 @@ Rendu PDF.`,
       "2026-04-11",
       "2026-05-29 17:00:00",
       "globe Réseaux industriels",
-      "devoir",
+      "livrable",
       1
     );
     it.run(
@@ -1045,7 +1075,7 @@ Rendu PDF.`,
       "2026-06-05",
       "2026-06-05 14:00:00",
       "globe Réseaux industriels",
-      "jalon",
+      "soutenance",
       1
     );
     const f_e5_1 = it.run(
@@ -1057,7 +1087,7 @@ Rendu PDF.`,
       "2025-09-01",
       "2026-04-01 23:59:00",
       "graduation-cap Projet E5",
-      "devoir",
+      "livrable",
       1
     ).lastInsertRowid;
     ir.run(f_e5_1, "file", "Référentiel officiel E5 BTS FISAA", pdf("referentiel_e5.pdf"));
@@ -1071,7 +1101,7 @@ Rendu PDF.`,
       "2025-09-01",
       "2026-04-15 23:59:00",
       "graduation-cap Projet E5",
-      "devoir",
+      "livrable",
       1
     ).lastInsertRowid;
     ir.run(f_e5_2, "link", "Guide de redaction rapport de stage CESI", "https://www.cesi.fr/");
@@ -1084,7 +1114,7 @@ Rendu PDF.`,
       "2026-04-18",
       "2026-04-18 09:00:00",
       "graduation-cap Projet E5",
-      "jalon",
+      "soutenance",
       1
     ).lastInsertRowid;
     itgm.run(f_e5_3a, f1, ga);
@@ -1100,7 +1130,7 @@ Rendu PDF.`,
       "2026-04-19",
       "2026-04-19 09:00:00",
       "graduation-cap Projet E5",
-      "jalon",
+      "soutenance",
       1
     ).lastInsertRowid;
     itgm.run(f_e5_3b, f5, gb);
@@ -1116,7 +1146,7 @@ Rendu PDF.`,
       "2026-04-20",
       "2026-04-20 09:00:00",
       "graduation-cap Projet E5",
-      "jalon",
+      "soutenance",
       1
     ).lastInsertRowid;
     itgm.run(f_e5_3c, f9, gc);
@@ -1187,7 +1217,29 @@ function requirePromotions() {
       "INSERT INTO channels (promo_id, name, description, type, is_private, members, category) VALUES (?, ?, ?, ?, ?, ?, ?)"
     ).run(promoId, name, "", chType, isPrivate ? 1 : 0, membersJson, category ?? null).lastInsertRowid;
   }
-  promotions = { getPromotions, getChannels, createPromotion, deletePromotion, createChannel };
+  function renameChannel(id, name) {
+    return getDb().prepare("UPDATE channels SET name = ? WHERE id = ?").run(name, id);
+  }
+  function deleteChannel(id) {
+    return getDb().prepare("DELETE FROM channels WHERE id = ?").run(id);
+  }
+  function renameCategory(promoId, oldCategory, newCategory) {
+    return getDb().prepare("UPDATE channels SET category = ? WHERE promo_id = ? AND category = ?").run(newCategory, promoId, oldCategory);
+  }
+  function deleteCategory(promoId, category) {
+    return getDb().prepare("UPDATE channels SET category = NULL WHERE promo_id = ? AND category = ?").run(promoId, category);
+  }
+  promotions = {
+    getPromotions,
+    getChannels,
+    createPromotion,
+    deletePromotion,
+    createChannel,
+    renameChannel,
+    deleteChannel,
+    renameCategory,
+    deleteCategory
+  };
   return promotions;
 }
 var students;
@@ -1434,7 +1486,7 @@ function requireAssignments() {
       startDate ?? null,
       deadline,
       category ?? null,
-      type ?? "devoir",
+      type ?? "livrable",
       published != null ? published ? 1 : 0 : 1
     );
     if (groupId) {
@@ -1578,7 +1630,7 @@ function requireAssignments() {
     FROM travaux t
     JOIN promotions p ON p.id = t.promo_id
     LEFT JOIN channels ch ON ch.id = t.channel_id
-    WHERE t.type = 'jalon'
+    WHERE t.type = 'soutenance'
       AND t.published = 1
       AND t.deadline >= datetime('now')
       AND t.deadline <= datetime('now', '+30 days')
@@ -1606,7 +1658,7 @@ function requireAssignments() {
     FROM travaux t
     JOIN promotions p ON p.id = t.promo_id
     LEFT JOIN channels ch ON ch.id = t.channel_id
-    WHERE t.type = 'devoir'
+    WHERE t.type IN ('livrable', 'etude_de_cas', 'memoire', 'autre')
       AND t.published = 1
       AND t.deadline >= datetime('now')
       AND t.deadline <= datetime('now', '+7 days')
@@ -1672,7 +1724,15 @@ function requireSubmissions() {
     ORDER BY d.submitted_at DESC
   `).all(travailId);
   }
-  function addDepot({ travailId, studentId, fileName, filePath, linkUrl, deployUrl }) {
+  function addDepot(payload) {
+    const travailId = payload.travail_id ?? payload.travailId;
+    const studentId = payload.student_id ?? payload.studentId;
+    const type = payload.type ?? "file";
+    const content = payload.content ?? payload.filePath ?? payload.linkUrl ?? "";
+    const fileName = payload.file_name ?? payload.fileName ?? (type === "link" ? "🔗 Lien web" : "");
+    const filePath = type === "file" ? content : payload.filePath ?? "";
+    const linkUrl = type === "link" ? content : payload.linkUrl ?? null;
+    const deployUrl = payload.deploy_url ?? payload.deployUrl ?? null;
     return getDb().prepare(`
     INSERT INTO depots (travail_id, student_id, file_name, file_path, link_url, deploy_url)
     VALUES (?, ?, ?, ?, ?, ?)
@@ -1682,7 +1742,7 @@ function requireSubmissions() {
       deploy_url   = excluded.deploy_url,
       file_path    = excluded.file_path,
       submitted_at = datetime('now')
-  `).run(travailId, studentId, fileName ?? "🔗 Lien web", filePath ?? "", linkUrl ?? null, deployUrl ?? null);
+  `).run(travailId, studentId, fileName, filePath, linkUrl, deployUrl);
   }
   function setNote({ depotId, note }) {
     return getDb().prepare("UPDATE depots SET note = ? WHERE id = ?").run(note, depotId);
@@ -1933,6 +1993,10 @@ function requireIpc() {
     handle("db:createPromotion", (payload) => queries.createPromotion(payload));
     handle("db:deletePromotion", (promoId) => queries.deletePromotion(promoId));
     handle("db:createChannel", (payload) => queries.createChannel(payload));
+    handle("db:renameChannel", (id, name) => queries.renameChannel(id, name));
+    handle("db:deleteChannel", (id) => queries.deleteChannel(id));
+    handle("db:renameCategory", (promoId, old, next) => queries.renameCategory(promoId, old, next));
+    handle("db:deleteCategory", (promoId, category) => queries.deleteCategory(promoId, category));
     handle("db:resetAndSeed", () => {
       queries.resetAndSeed();
       return null;

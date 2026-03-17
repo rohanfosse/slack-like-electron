@@ -16,7 +16,8 @@ export const useAppStore = defineStore('app', () => {
   const activePromoId     = ref<number | null>(null)
   const activeChannelType = ref<'chat' | 'annonce'>('chat')
   const activeChannelName = ref<string>('')
-  const activeProject     = ref<string | null>(null)   // filtre projet Devoirs
+  const activeProject            = ref<string | null>(null)   // filtre projet Devoirs
+  const pendingChannelCategory   = ref<string | null>(null)   // pré-remplissage CreateChannelModal
   const rightPanel        = ref<'travaux' | 'profil' | null>(null)
   const currentTravailId  = ref<number | null>(null)
   const pendingNoteDepotId = ref<number | null>(null)
@@ -128,7 +129,7 @@ export const useAppStore = defineStore('app', () => {
   return {
     // état
     currentUser, activeChannelId, activeDmStudentId, activePromoId,
-    activeChannelType, activeChannelName, activeProject, rightPanel, currentTravailId,
+    activeChannelType, activeChannelName, activeProject, pendingChannelCategory, rightPanel, currentTravailId,
     pendingNoteDepotId, unread,
     // calculs
     isStudent, isTeacher, isSimulating, isReadonly,

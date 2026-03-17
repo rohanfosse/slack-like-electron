@@ -2,7 +2,7 @@
   import { ref, watch } from 'vue'
   import { useAppStore } from '@/stores/app'
   import { useToast }    from '@/composables/useToast'
-  import { CATEGORY_ICONS } from '@/utils/categoryIcon'
+  import { CATEGORY_ICONS, parseCategoryIcon } from '@/utils/categoryIcon'
   import Modal from '@/components/ui/Modal.vue'
   import type { Student } from '@/types'
 
@@ -25,12 +25,21 @@
     if (open && appStore.activePromoId) {
       const res = await window.api.getStudents(appStore.activePromoId)
       students.value = res?.ok ? res.data : []
-      channelName.value     = ''
-      channelType.value     = 'chat'
-      categoryIconKey.value = ''
-      categoryText.value    = ''
+      channelName.value   = ''
+      channelType.value   = 'chat'
       visibility.value    = 'public'
       members.value       = []
+      // Pré-remplir la catégorie si demandé depuis le menu contextuel
+      const pending = appStore.pendingChannelCategory
+      if (pending) {
+        const { label } = parseCategoryIcon(pending)
+        categoryIconKey.value = pending.includes(' ') ? pending.split(' ')[0] : ''
+        categoryText.value    = label || pending
+        appStore.pendingChannelCategory = null
+      } else {
+        categoryIconKey.value = ''
+        categoryText.value    = ''
+      }
     }
   })
 

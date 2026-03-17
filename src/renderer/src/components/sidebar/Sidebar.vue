@@ -1,13 +1,16 @@
 <script setup lang="ts">
-  import { ref, watch, computed, onMounted } from 'vue'
+  import { ref, watch, computed, onMounted, nextTick } from 'vue'
   import { useRoute, useRouter } from 'vue-router'
-  import { Plus, ChevronDown, FolderOpen, Layers } from 'lucide-vue-next'
+  import { Plus, ChevronDown, FolderOpen, Layers, PlusCircle, Pencil, Trash2, VolumeX, Volume2 } from 'lucide-vue-next'
   import NewProjectModal from '@/components/modals/NewProjectModal.vue'
+  import ContextMenu from '@/components/ui/ContextMenu.vue'
+  import type { ContextMenuItem } from '@/components/ui/ContextMenu.vue'
   import { parseCategoryIcon } from '@/utils/categoryIcon'
   import { useAppStore }    from '@/stores/app'
   import { useModalsStore } from '@/stores/modals'
   import { useMessagesStore } from '@/stores/messages'
   import { useTravauxStore } from '@/stores/travaux'
+  import { useToast } from '@/composables/useToast'
   import PromoRail    from './PromoRail.vue'
   import ChannelItem  from './ChannelItem.vue'
   import { avatarColor }  from '@/utils/format'
@@ -21,6 +24,7 @@
   const travauxStore  = useTravauxStore()
   const route         = useRoute()
   const router        = useRouter()
+  const { showToast } = useToast()
 
   // ── État local ────────────────────────────────────────────────────────────
   const promotions  = ref<Promotion[]>([])
@@ -248,6 +252,149 @@
   async function selectPromo(promoId: number) {
     appStore.activePromoId = promoId
     await loadTeacherChannels()
+  }
+
+  // ── Mute (localStorage) ───────────────────────────────────────────────────
+  const MUTE_KEY = computed(() => `cc_muted_${appStore.activePromoId ?? appStore.currentUser?.promo_id ?? 0}`)
+
+  function loadMuted(): Set<number> {
+    try { return new Set(JSON.parse(localStorage.getItem(MUTE_KEY.value) ?? '[]') as number[]) }
+    catch { return new Set() }
+  }
+  function saveMuted(s: Set<number>) {
+    localStorage.setItem(MUTE_KEY.value, JSON.stringify([...s]))
+  }
+
+  const mutedIds = ref<Set<number>>(loadMuted())
+  watch(MUTE_KEY, () => { mutedIds.value = loadMuted() })
+
+  function isMuted(id: number) { return mutedIds.value.has(id) }
+  function toggleMute(ch: Channel) {
+    const next = new Set(mutedIds.value)
+    if (next.has(ch.id)) { next.delete(ch.id); showToast(`"${ch.name}" retiré de la sourdine.`) }
+    else                  { next.add(ch.id);    showToast(`"${ch.name}" mis en sourdine.`) }
+    mutedIds.value = next
+    saveMuted(next)
+  }
+
+  // ── Renommage inline ──────────────────────────────────────────────────────
+  const renamingChannelId  = ref<number | null>(null)
+  const renamingCategory   = ref<string | null>(null)
+  const renameValue        = ref('')
+  const renameInputEl      = ref<HTMLInputElement | null>(null)
+
+  async function startRenameChannel(ch: Channel) {
+    renamingCategory.value  = null
+    renamingChannelId.value = ch.id
+    renameValue.value       = ch.name
+    await nextTick(); renameInputEl.value?.select()
+  }
+  async function startRenameCategory(cat: string) {
+    renamingChannelId.value = null
+    renamingCategory.value  = cat
+    renameValue.value       = parseCategoryIcon(cat).label || cat
+    await nextTick(); renameInputEl.value?.select()
+  }
+  function cancelRename() {
+    renamingChannelId.value = null
+    renamingCategory.value  = null
+    renameValue.value       = ''
+  }
+
+  async function commitRenameChannel() {
+    const id   = renamingChannelId.value
+    const name = renameValue.value.trim()
+    cancelRename()
+    if (!id || !name) return
+    const res = await window.api.renameChannel(id, name)
+    if ((res as any)?.ok === false) { showToast('Erreur lors du renommage.', 'error'); return }
+    await loadTeacherChannels()
+    showToast('Canal renommé.', 'success')
+  }
+
+  async function commitRenameCategory() {
+    const old  = renamingCategory.value
+    const next = renameValue.value.trim()
+    cancelRename()
+    if (!old || !next || !appStore.activePromoId) return
+    // Reconstruire la clé catégorie : on conserve l'icône prefix si présente
+    const iconPrefix = old.includes(' ') ? old.split(' ')[0] + ' ' : ''
+    const newKey = iconPrefix + next
+    const res = await window.api.renameCategory(appStore.activePromoId, old, newKey)
+    if ((res as any)?.ok === false) { showToast('Erreur lors du renommage.', 'error'); return }
+    await loadTeacherChannels()
+    showToast('Catégorie renommée.', 'success')
+  }
+
+  // ── Menu contextuel ───────────────────────────────────────────────────────
+  interface CtxState { x: number; y: number; items: ContextMenuItem[] }
+  const ctx = ref<CtxState | null>(null)
+
+  function openCtxCategory(e: MouseEvent, group: { key: string; label: string }) {
+    if (!appStore.isTeacher) return
+    ctx.value = {
+      x: e.clientX, y: e.clientY,
+      items: [
+        {
+          label: 'Ajouter un canal ici',
+          icon:  PlusCircle,
+          action: () => {
+            appStore.pendingChannelCategory = group.key
+            modals.createChannel = true
+          },
+        },
+        {
+          label: 'Renommer la catégorie',
+          icon:  Pencil,
+          action: () => startRenameCategory(group.key),
+        },
+        {
+          label: 'Dissoudre la catégorie',
+          icon:  Trash2,
+          danger: true,
+          separator: true,
+          action: async () => {
+            if (!appStore.activePromoId) return
+            const res = await window.api.deleteCategory(appStore.activePromoId, group.key)
+            if ((res as any)?.ok === false) { showToast('Erreur.', 'error'); return }
+            await loadTeacherChannels()
+            showToast('Catégorie dissoute.', 'success')
+          },
+        },
+      ],
+    }
+  }
+
+  function openCtxChannel(e: MouseEvent, ch: Channel) {
+    if (!appStore.isTeacher) return
+    ctx.value = {
+      x: e.clientX, y: e.clientY,
+      items: [
+        {
+          label: 'Renommer',
+          icon:  Pencil,
+          action: () => startRenameChannel(ch),
+        },
+        {
+          label:  isMuted(ch.id) ? 'Retirer la sourdine' : 'Mettre en sourdine',
+          icon:   isMuted(ch.id) ? Volume2 : VolumeX,
+          action: () => toggleMute(ch),
+        },
+        {
+          label: 'Supprimer le canal',
+          icon:  Trash2,
+          danger: true,
+          separator: true,
+          action: async () => {
+            const res = await window.api.deleteChannel(ch.id)
+            if ((res as any)?.ok === false) { showToast('Erreur.', 'error'); return }
+            if (appStore.activeChannelId === ch.id) appStore.activeChannelId = null
+            await loadTeacherChannels()
+            showToast('Canal supprimé.', 'success')
+          },
+        },
+      ],
+    }
   }
 
   // ── Réactivité ────────────────────────────────────────────────────────────
@@ -514,40 +661,71 @@
           class="sidebar-category"
         >
           <!-- En-tête de catégorie (affiché seulement s'il y a plusieurs groupes) -->
-          <button
+          <div
             v-if="channelGroups.length > 1"
-            class="sidebar-category-header"
-            :aria-expanded="!collapsed.has(group.key)"
-            @click="toggleCategory(group.key)"
+            class="sidebar-category-header-wrap"
           >
-            <ChevronDown
-              :size="12"
-              class="sidebar-category-chevron"
-              :class="{ rotated: collapsed.has(group.key) }"
-            />
-            <component
-              v-if="parseCategoryIcon(group.label).icon"
-              :is="parseCategoryIcon(group.label).icon!"
-              :size="11"
-              class="sidebar-category-icon"
-            />
-            <span class="sidebar-category-label">{{ parseCategoryIcon(group.label).label }}</span>
-            <span class="sidebar-category-count">{{ group.channels.length }}</span>
-          </button>
+            <!-- Renommage inline -->
+            <div v-if="renamingCategory === group.key" class="sidebar-rename-row">
+              <input
+                ref="renameInputEl"
+                v-model="renameValue"
+                class="sidebar-rename-input"
+                @keydown.enter.prevent="commitRenameCategory"
+                @keydown.escape.prevent="cancelRename"
+                @blur="commitRenameCategory"
+              />
+            </div>
+            <button
+              v-else
+              class="sidebar-category-header"
+              :aria-expanded="!collapsed.has(group.key)"
+              @click="toggleCategory(group.key)"
+              @contextmenu.prevent="openCtxCategory($event, group)"
+            >
+              <ChevronDown
+                :size="12"
+                class="sidebar-category-chevron"
+                :class="{ rotated: collapsed.has(group.key) }"
+              />
+              <component
+                v-if="parseCategoryIcon(group.label).icon"
+                :is="parseCategoryIcon(group.label).icon!"
+                :size="11"
+                class="sidebar-category-icon"
+              />
+              <span class="sidebar-category-label">{{ parseCategoryIcon(group.label).label }}</span>
+              <span class="sidebar-category-count">{{ group.channels.length }}</span>
+            </button>
+          </div>
 
           <nav
             v-show="!collapsed.has(group.key)"
             :aria-label="group.label"
           >
-            <ChannelItem
-              v-for="ch in group.channels"
-              :key="ch.id"
-              :channel-id="ch.id"
-              :name="ch.name"
-              :prefix="ch.type === 'annonce' ? '📢' : '#'"
-              :type="ch.type"
-              @click="selectChannel(ch)"
-            />
+            <!-- Renommage inline canal -->
+            <template v-for="ch in group.channels" :key="ch.id">
+              <div v-if="renamingChannelId === ch.id" class="sidebar-rename-row sidebar-rename-channel">
+                <input
+                  ref="renameInputEl"
+                  v-model="renameValue"
+                  class="sidebar-rename-input"
+                  @keydown.enter.prevent="commitRenameChannel"
+                  @keydown.escape.prevent="cancelRename"
+                  @blur="commitRenameChannel"
+                />
+              </div>
+              <ChannelItem
+                v-else
+                :channel-id="ch.id"
+                :name="ch.name"
+                :prefix="ch.type === 'annonce' ? '📢' : '#'"
+                :type="ch.type"
+                :muted="isMuted(ch.id)"
+                @click="selectChannel(ch)"
+                @contextmenu="openCtxChannel($event, ch)"
+              />
+            </template>
           </nav>
         </div>
 
@@ -570,6 +748,15 @@
       </template>
     </div>
   </div>
+
+  <!-- Menu contextuel global sidebar -->
+  <ContextMenu
+    v-if="ctx"
+    :x="ctx.x"
+    :y="ctx.y"
+    :items="ctx.items"
+    @close="ctx = null"
+  />
 </template>
 
 <style scoped>
@@ -630,6 +817,27 @@
 .sidebar-section--devoirs   { color: #9B87F5; }
 .sidebar-section--documents { color: #27AE60; }
 .sidebar-section--dashboard { color: #E5A842; }
+
+/* ── Renommage inline ── */
+.sidebar-category-header-wrap { position: relative; }
+.sidebar-rename-row {
+  padding: 3px 8px 3px 10px;
+}
+.sidebar-rename-channel {
+  padding: 2px 8px;
+}
+.sidebar-rename-input {
+  width: 100%;
+  background: var(--bg-input, rgba(255,255,255,.07));
+  border: 1px solid var(--accent, #4A90D9);
+  border-radius: 4px;
+  color: var(--text-primary);
+  font-size: 12px;
+  font-family: var(--font);
+  padding: 3px 7px;
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(74,144,217,.2);
+}
 
 /* ── Catégories de canaux ── */
 .sidebar-category {

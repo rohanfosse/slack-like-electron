@@ -31,4 +31,27 @@ function createChannel({ promoId, name, type, isPrivate, members, category }) {
   ).run(promoId, name, '', chType, isPrivate ? 1 : 0, membersJson, category ?? null).lastInsertRowid;
 }
 
-module.exports = { getPromotions, getChannels, createPromotion, deletePromotion, createChannel };
+function renameChannel(id, name) {
+  return getDb().prepare('UPDATE channels SET name = ? WHERE id = ?').run(name, id);
+}
+
+function deleteChannel(id) {
+  return getDb().prepare('DELETE FROM channels WHERE id = ?').run(id);
+}
+
+/** Renomme la catégorie pour tous les canaux d'une promo */
+function renameCategory(promoId, oldCategory, newCategory) {
+  return getDb().prepare('UPDATE channels SET category = ? WHERE promo_id = ? AND category = ?')
+    .run(newCategory, promoId, oldCategory);
+}
+
+/** Dégroupe la catégorie (met category = null) sans supprimer les canaux */
+function deleteCategory(promoId, category) {
+  return getDb().prepare('UPDATE channels SET category = NULL WHERE promo_id = ? AND category = ?')
+    .run(promoId, category);
+}
+
+module.exports = {
+  getPromotions, getChannels, createPromotion, deletePromotion, createChannel,
+  renameChannel, deleteChannel, renameCategory, deleteCategory,
+};

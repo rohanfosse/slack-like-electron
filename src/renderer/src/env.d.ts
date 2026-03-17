@@ -70,6 +70,10 @@ declare global {
       createPromotion(payload: object): Promise<IpcResponse<{ id: number }>>
       deletePromotion(promoId: number): Promise<IpcResponse<null>>
       createChannel(payload: object): Promise<IpcResponse<{ id: number }>>
+      renameChannel(id: number, name: string): Promise<IpcResponse<null>>
+      deleteChannel(id: number): Promise<IpcResponse<null>>
+      renameCategory(promoId: number, oldCategory: string, newCategory: string): Promise<IpcResponse<null>>
+      deleteCategory(promoId: number, category: string): Promise<IpcResponse<null>>
 
       // Inscription
       getStudentByEmail(email: string): Promise<IpcResponse<Student>>

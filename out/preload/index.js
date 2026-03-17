@@ -49,6 +49,10 @@ electron.contextBridge.exposeInMainWorld("api", {
   createPromotion: (payload) => invoke("db:createPromotion", payload),
   deletePromotion: (promoId) => invoke("db:deletePromotion", promoId),
   createChannel: (payload) => invoke("db:createChannel", payload),
+  renameChannel: (id, name) => invoke("db:renameChannel", id, name),
+  deleteChannel: (id) => invoke("db:deleteChannel", id),
+  renameCategory: (promoId, old, next) => invoke("db:renameCategory", promoId, old, next),
+  deleteCategory: (promoId, category) => invoke("db:deleteCategory", promoId, category),
   // ── Inscription ────────────────────────────────────────────────────────────
   getStudentByEmail: (email) => invoke("db:getStudentByEmail", email),
   registerStudent: (payload) => invoke("db:registerStudent", payload),

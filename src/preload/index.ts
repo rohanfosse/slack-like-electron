@@ -56,9 +56,13 @@ contextBridge.exposeInMainWorld('api', {
   updateTravailPublished: (payload: unknown) => invoke('db:updateTravailPublished', payload),
 
   // ── Promotions & canaux ────────────────────────────────────────────────────
-  createPromotion: (payload: unknown)  => invoke('db:createPromotion', payload),
-  deletePromotion: (promoId: number)   => invoke('db:deletePromotion', promoId),
-  createChannel:   (payload: unknown)  => invoke('db:createChannel',   payload),
+  createPromotion:  (payload: unknown)                           => invoke('db:createPromotion',  payload),
+  deletePromotion:  (promoId: number)                            => invoke('db:deletePromotion',  promoId),
+  createChannel:    (payload: unknown)                           => invoke('db:createChannel',    payload),
+  renameChannel:    (id: number, name: string)                   => invoke('db:renameChannel',    id, name),
+  deleteChannel:    (id: number)                                 => invoke('db:deleteChannel',    id),
+  renameCategory:   (promoId: number, old: string, next: string) => invoke('db:renameCategory',   promoId, old, next),
+  deleteCategory:   (promoId: number, category: string)          => invoke('db:deleteCategory',   promoId, category),
 
   // ── Inscription ────────────────────────────────────────────────────────────
   getStudentByEmail: (email: string)   => invoke('db:getStudentByEmail', email),
