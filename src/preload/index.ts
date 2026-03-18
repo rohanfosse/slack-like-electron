@@ -93,6 +93,21 @@ contextBridge.exposeInMainWorld('api', {
   getStudentByEmail: (email: string) => get(`/api/auth/student-by-email?email=${encodeURIComponent(email)}`),
   registerStudent:   (payload: unknown) => post('/api/auth/register', payload),
 
+  importStudents: async (promoId: number) => {
+    const fileRes = await invoke('dialog:openFile') as { ok: boolean; data?: string | null }
+    if (!fileRes?.ok || !fileRes.data) return { ok: false, error: 'Annulé' }
+    const b64Res = await invoke('fs:readFileBase64', fileRes.data) as { ok: boolean; data?: { b64: string } }
+    if (!b64Res?.ok || !b64Res.data?.b64) return { ok: false, error: 'Lecture échouée' }
+    const text = atob(b64Res.data.b64)
+    const lines = text.split('\n').filter((l: string) => l.trim())
+    if (lines.length < 2) return { ok: false, error: 'Fichier vide' }
+    const students = lines.slice(1).map((line: string) => {
+      const cols = line.split(',').map((v: string) => v.trim().replace(/^"|"$/g, ''))
+      return { nom: cols[0], prenom: cols[1], email: cols[2] }
+    }).filter((s: { email?: string }) => s.email)
+    return post('/api/students/bulk-import', { promoId, students })
+  },
+
   // ── Promotions & canaux ─────────────────────────────────────────────────────
   getPromotions:  ()              => get('/api/promotions'),
   createPromotion:(payload: unknown) => post('/api/promotions', payload),

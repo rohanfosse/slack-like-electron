@@ -6,6 +6,7 @@ const isMaximized = ref(false)
 
 // Sur macOS les boutons natifs (traffic lights) gèrent déjà la fenêtre
 const isMac = window.api.platform === 'darwin'
+const isWeb = window.api.platform === 'web'
 
 async function minimize()       { await window.api.windowMinimize() }
 async function toggleMaximize() { await window.api.windowMaximize() }
@@ -27,7 +28,7 @@ onUnmounted(() => { unsubMaximize?.() })
 
 <template>
   <!-- Masqué sur macOS (traffic lights natifs dans le coin) -->
-  <div v-if="!isMac" class="titlebar" :class="{ maximized: isMaximized }">
+  <div v-if="!isMac && !isWeb" class="titlebar" :class="{ maximized: isMaximized }">
     <!-- Zone draggable (toute la largeur sauf les boutons) -->
     <div class="titlebar-drag" aria-hidden="true" />
 

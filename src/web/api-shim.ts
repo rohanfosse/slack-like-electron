@@ -1,0 +1,366 @@
+// ─── Shim window.api pour le build web (sans Electron) ───────────────────────
+// Implémente exactement la même interface que src/preload/index.ts,
+// en remplaçant les appels IPC par fetch + socket.io + APIs browser natives.
+
+import { io, Socket } from 'socket.io-client'
+
+// ─── Config ──────────────────────────────────────────────────────────────────
+const SERVER_URL: string = (import.meta.env.VITE_SERVER_URL as string) ?? 'http://localhost:3001'
+
+// ─── État ────────────────────────────────────────────────────────────────────
+let jwtToken: string | null = null
+let socket:   Socket | null = null
+
+type MsgNewPayload = {
+  channelId: number | null; dmStudentId: number | null; authorName: string | null
+  channelName: string | null; promoId: number | null; preview: string | null
+  mentionEveryone: boolean; mentionNames: string[]
+}
+const msgCallbacks: Array<(data: MsgNewPayload) => void> = []
+
+// Cache pour les fichiers ouverts via <input type="file">
+// Clé : pseudo-path "__web__<timestamp>", valeur : données du fichier
+const fileCache = new Map<string, { mime: string; b64: string; ext: string; name: string }>()
+
+// ─── Socket.io ───────────────────────────────────────────────────────────────
+function connectSocket(token: string): void {
+  socket?.disconnect()
+  socket = io(SERVER_URL, {
+    auth: { token },
+    transports: ['websocket', 'polling'],
+    reconnectionAttempts: 10,
+  })
+  socket.on('msg:new', (data: MsgNewPayload) => msgCallbacks.forEach(cb => cb(data)))
+  socket.on('connect_error', (err) => console.warn('[Socket.io]', err.message))
+}
+
+// ─── fetch helpers ────────────────────────────────────────────────────────────
+async function apiFetch(path: string, options: RequestInit = {}): Promise<unknown> {
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    ...(jwtToken ? { Authorization: `Bearer ${jwtToken}` } : {}),
+    ...(options.headers as Record<string, string> ?? {}),
+  }
+  const res = await fetch(`${SERVER_URL}${path}`, { ...options, headers })
+  if (res.status === 401) { jwtToken = null; socket?.disconnect() }
+  return res.json()
+}
+
+const get  = (p: string)              => apiFetch(p)
+const post = (p: string, b: unknown)  => apiFetch(p, { method: 'POST',   body: JSON.stringify(b) })
+const patch = (p: string, b: unknown) => apiFetch(p, { method: 'PATCH',  body: JSON.stringify(b) })
+const del  = (p: string)              => apiFetch(p, { method: 'DELETE' })
+
+// ─── Utilitaires browser ─────────────────────────────────────────────────────
+
+/** Ouvre un sélecteur de fichier et résout avec le File sélectionné (ou null). */
+function pickFile(accept = '*'): Promise<File | null> {
+  return new Promise((resolve) => {
+    const input = document.createElement('input')
+    input.type   = 'file'
+    input.accept = accept
+    input.style.display = 'none'
+    document.body.appendChild(input)
+    input.onchange = () => { document.body.removeChild(input); resolve(input.files?.[0] ?? null) }
+    input.oncancel = () => { document.body.removeChild(input); resolve(null) }
+    input.click()
+  })
+}
+
+/** Lit un File comme base64 + mime. */
+function fileToBase64(file: File): Promise<{ mime: string; b64: string; ext: string }> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload  = () => {
+      const dataUrl = reader.result as string
+      const b64  = dataUrl.split(',')[1] ?? ''
+      const mime = file.type || 'application/octet-stream'
+      const ext  = file.name.split('.').pop()?.toLowerCase() ?? ''
+      resolve({ mime, b64, ext })
+    }
+    reader.onerror = reject
+    reader.readAsDataURL(file)
+  })
+}
+
+/** Déclenche un téléchargement browser depuis un Blob. */
+function triggerDownload(blob: Blob, filename: string): void {
+  const url = URL.createObjectURL(blob)
+  const a   = document.createElement('a')
+  a.href     = url
+  a.download = filename
+  document.body.appendChild(a)
+  a.click()
+  document.body.removeChild(a)
+  setTimeout(() => URL.revokeObjectURL(url), 1000)
+}
+
+/** Génère et télécharge le CSV des notes d'un travail (côté client). */
+async function exportCsvBrowser(travailId: number): Promise<unknown> {
+  const [travailRes, depotsRes] = await Promise.all([
+    get(`/api/assignments/${travailId}`),
+    get(`/api/depots?travailId=${travailId}`),
+  ]) as [{ ok: boolean; data: { title: string } }, { ok: boolean; data: unknown[] }]
+
+  if (!travailRes.ok) return { ok: false, error: 'Travail introuvable.' }
+
+  const depots = depotsRes.data as Array<{
+    student_name: string; note: number | null; feedback: string | null
+    submitted_at: string | null; type: string | null; link_url: string | null; file_name: string | null
+  }>
+
+  const esc = (v: unknown) => `"${String(v ?? '').replace(/"/g, '""')}"`
+  const headers = ['Étudiant', 'Note', 'Feedback', 'Soumis le', 'Type', 'Fichier / Lien']
+  const rows = depots.map(d => [
+    esc(d.student_name), esc(d.note ?? ''), esc(d.feedback ?? ''),
+    esc(d.submitted_at ?? ''), esc(d.type ?? ''),
+    esc(d.type === 'link' ? (d.link_url ?? '') : (d.file_name ?? '')),
+  ])
+  const csv = [headers.join(';'), ...rows.map(r => r.join(';'))].join('\r\n')
+  const safeName = travailRes.data.title.replace(/[\\/:*?"<>|]/g, '_')
+
+  triggerDownload(
+    new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8' }),
+    `notes_${safeName}.csv`,
+  )
+  return { ok: true, data: `notes_${safeName}.csv` }
+}
+
+/** Parse et importe un CSV étudiant (remplace le handler IPC). */
+async function importStudentsBrowser(promoId: number): Promise<unknown> {
+  const file = await pickFile('.csv,.txt')
+  if (!file) return { ok: true, data: null }
+  if (file.size > 10 * 1024 * 1024) return { ok: false, error: 'Fichier trop volumineux (max 10 Mo).' }
+
+  const raw  = (await file.text()).replace(/^\uFEFF/, '')
+  const sep  = raw.includes(';') ? ';' : ','
+  const lines = raw.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n').filter(Boolean)
+  if (lines.length < 2) return { ok: false, error: 'Fichier CSV vide ou sans données.' }
+
+  const headers = lines[0].split(sep).map(h => h.trim().toLowerCase().replace(/^"|"$/g, ''))
+  const rows: Record<string, string>[] = []
+  for (let i = 1; i < lines.length; i++) {
+    const cols = lines[i].split(sep).map(c => c.trim().replace(/^"|"$/g, ''))
+    const row: Record<string, string> = {}
+    headers.forEach((h, j) => { row[h] = cols[j] ?? '' })
+    rows.push(row)
+  }
+  return post('/api/students/bulk-import', { promoId, rows })
+}
+
+// ─── Exposition de window.api ─────────────────────────────────────────────────
+;(window as unknown as { api: unknown }).api = {
+
+  // ── Auth / session ──────────────────────────────────────────────────────────
+  setToken(token: string) { jwtToken = token; connectSocket(token) },
+
+  getIdentities: () => get('/api/auth/identities'),
+
+  async loginWithCredentials(email: string, pwd: string) {
+    const res = await post('/api/auth/login', { email, password: pwd }) as { ok: boolean; data?: { token?: string; [k: string]: unknown }; error?: string }
+    if (res?.ok && res.data?.token) {
+      jwtToken = res.data.token as string
+      connectSocket(jwtToken)
+    }
+    return res
+  },
+
+  changePassword:    (userId: number, isTeacher: boolean, currentPwd: string, newPwd: string) =>
+    post('/api/auth/change-password', { userId, isTeacher, currentPwd, newPwd }),
+  exportPersonalData:(studentId: number) => get(`/api/auth/export/${studentId}`),
+  getStudentByEmail: (email: string)     => get(`/api/auth/student-by-email?email=${encodeURIComponent(email)}`),
+  registerStudent:   (payload: unknown)  => post('/api/auth/register', payload),
+
+  // ── Promotions & canaux ─────────────────────────────────────────────────────
+  getPromotions:  () => get('/api/promotions'),
+  createPromotion:(payload: unknown) => post('/api/promotions', payload),
+  deletePromotion:(promoId: number)  => del(`/api/promotions/${promoId}`),
+  getChannels:    (promoId: number)  => get(`/api/promotions/${promoId}/channels`),
+  createChannel:  (payload: unknown) => post('/api/promotions/channels', payload),
+  renameChannel:  (id: number, name: string) => patch(`/api/promotions/channels/${id}/name`, { name }),
+  deleteChannel:  (id: number)       => del(`/api/promotions/channels/${id}`),
+  renameCategory: (promoId: number, old: string, next: string) =>
+    post('/api/promotions/categories/rename', { promoId, old, next }),
+  deleteCategory: (promoId: number, category: string) =>
+    post('/api/promotions/categories/delete', { promoId, category }),
+  updateChannelMembers:  (payload: unknown) => post('/api/promotions/channels/members', payload),
+  updateChannelCategory: (channelId: number, category: string | null) =>
+    patch(`/api/promotions/channels/${channelId}/category`, { category }),
+
+  // ── Étudiants ───────────────────────────────────────────────────────────────
+  getStudents:      (promoId: number)   => get(`/api/promotions/${promoId}/students`),
+  getAllStudents:    ()                  => get('/api/students'),
+  getStudentProfile:(studentId: number) => get(`/api/students/${studentId}/profile`),
+  getStudentTravaux:(studentId: number) => get(`/api/students/${studentId}/assignments`),
+  updateStudentPhoto:(payload: { studentId: number; photoData: string | null }) =>
+    post('/api/students/photo', payload),
+  getClasseStats:   (promoId: number)   => get(`/api/students/stats?promoId=${promoId}`),
+
+  // ── Messages ────────────────────────────────────────────────────────────────
+  getChannelMessages:     (channelId: number) => get(`/api/messages/channel/${channelId}`),
+  getDmMessages:          (studentId: number) => get(`/api/messages/dm/${studentId}`),
+  getChannelMessagesPage: (channelId: number, beforeId?: number) => {
+    const qs = beforeId != null ? `?before=${beforeId}` : ''
+    return get(`/api/messages/channel/${channelId}/page${qs}`)
+  },
+  getDmMessagesPage: (studentId: number, beforeId?: number) => {
+    const qs = beforeId != null ? `?before=${beforeId}` : ''
+    return get(`/api/messages/dm/${studentId}/page${qs}`)
+  },
+  searchMessages:    (channelId: number, q: string) =>
+    get(`/api/messages/search?channelId=${channelId}&q=${encodeURIComponent(q)}`),
+  searchAllMessages: (args: { promoId: number | null; query: string; limit?: number }) =>
+    post('/api/messages/search-all', args),
+  sendMessage:       (payload: unknown) => post('/api/messages', payload),
+  getPinnedMessages: (channelId: number) => get(`/api/messages/pinned/${channelId}`),
+  togglePinMessage:  (payload: unknown) => post('/api/messages/pin', payload),
+  updateReactions:   (msgId: number, reactionsJson: string) =>
+    post('/api/messages/reactions', { msgId, reactionsJson }),
+  deleteMessage: (id: number)                  => del(`/api/messages/${id}`),
+  editMessage:   (id: number, content: string) => patch(`/api/messages/${id}`, { content }),
+
+  // ── Travaux ─────────────────────────────────────────────────────────────────
+  getTravaux:             (channelId: number) => get(`/api/assignments?channelId=${channelId}`),
+  getTravailById:         (travailId: number) => get(`/api/assignments/${travailId}`),
+  createTravail:          (payload: unknown)  => post('/api/assignments', payload),
+  getTravauxSuivi:        (travailId: number) => get(`/api/assignments/${travailId}/suivi`),
+  updateTravailPublished: (payload: unknown)  => post('/api/assignments/publish', payload),
+  getTravailCategories:   (promoId: number)   => get(`/api/assignments/categories?promoId=${promoId}`),
+  getGanttData:           (promoId: number)   => get(`/api/assignments/gantt?promoId=${promoId}`),
+  getAllRendus:            (promoId: number)   => get(`/api/assignments/rendus?promoId=${promoId}`),
+  getTeacherSchedule:     ()                  => get('/api/assignments/teacher-schedule'),
+  markNonSubmittedAsD:    (travailId: number) => post(`/api/assignments/${travailId}/mark-missing`, {}),
+  getTravailGroupMembers: (travailId: number) => get(`/api/assignments/${travailId}/group-members`),
+  setTravailGroupMember:  (payload: unknown)  => post('/api/assignments/group-member', payload),
+
+  // ── Dépôts ──────────────────────────────────────────────────────────────────
+  getDepots:   (travailId: number) => get(`/api/depots?travailId=${travailId}`),
+  addDepot:    (payload: unknown)  => post('/api/depots', payload),
+  setNote:     (payload: unknown)  => post('/api/depots/note', payload),
+  setFeedback: (payload: unknown)  => post('/api/depots/feedback', payload),
+
+  // ── Groupes ─────────────────────────────────────────────────────────────────
+  getGroups:       (promoId: number)  => get(`/api/groups?promoId=${promoId}`),
+  createGroup:     (payload: unknown) => post('/api/groups', payload),
+  deleteGroup:     (groupId: number)  => del(`/api/groups/${groupId}`),
+  getGroupMembers: (groupId: number)  => get(`/api/groups/${groupId}/members`),
+  setGroupMembers: (payload: unknown) => post(`/api/groups/${(payload as { groupId: number }).groupId}/members`, payload),
+
+  // ── Ressources ──────────────────────────────────────────────────────────────
+  getRessources:  (travailId: number) => get(`/api/resources?travailId=${travailId}`),
+  addRessource:   (payload: unknown)  => post('/api/resources', payload),
+  deleteRessource:(id: number)        => del(`/api/resources/${id}`),
+
+  // ── Documents ───────────────────────────────────────────────────────────────
+  getChannelDocuments:          (channelId: number) => get(`/api/documents/channel/${channelId}`),
+  getChannelDocumentCategories: (channelId: number) => get(`/api/documents/channel/${channelId}/categories`),
+  getPromoDocuments:            (promoId: number)   => get(`/api/documents/promo/${promoId}`),
+  addChannelDocument:           (payload: unknown)  => post('/api/documents/channel', payload),
+  deleteChannelDocument:        (id: number)        => del(`/api/documents/channel/${id}`),
+  getProjectDocuments:          (promoId: number, project?: string | null) => {
+    const qs = project ? `&project=${encodeURIComponent(project)}` : ''
+    return get(`/api/documents/project?promoId=${promoId}${qs}`)
+  },
+  addProjectDocument:           (payload: unknown)  => post('/api/documents/project', payload),
+  getProjectDocumentCategories: (promoId: number, project?: string | null) => {
+    const qs = project ? `&project=${encodeURIComponent(project)}` : ''
+    return get(`/api/documents/project/categories?promoId=${promoId}${qs}`)
+  },
+
+  // ── Intervenants ────────────────────────────────────────────────────────────
+  getIntervenants:    ()                 => get('/api/teachers'),
+  createIntervenant:  (payload: unknown) => post('/api/teachers', payload),
+  deleteIntervenant:  (id: number)       => del(`/api/teachers/${id}`),
+  getTeacherChannels: (id: number)       => get(`/api/teachers/${id}/channels`),
+  setTeacherChannels: (payload: unknown) => post(`/api/teachers/${(payload as { teacherId: number }).teacherId}/channels`, payload),
+
+  // ── Rubriques ───────────────────────────────────────────────────────────────
+  getRubric:      (travailId: number) => get(`/api/rubrics/${travailId}`),
+  upsertRubric:   (payload: unknown)  => post('/api/rubrics', payload),
+  deleteRubric:   (travailId: number) => del(`/api/rubrics/${travailId}`),
+  getDepotScores: (depotId: number)   => get(`/api/rubrics/scores/${depotId}`),
+  setDepotScores: (payload: unknown)  => post('/api/rubrics/scores', payload),
+
+  // ── Admin ────────────────────────────────────────────────────────────────────
+  resetAndSeed: () => post('/api/admin/reset-seed', {}),
+
+  // ── Fichiers — implémentation browser ────────────────────────────────────────
+  async openImageDialog() {
+    const file = await pickFile('image/*')
+    if (!file) return { ok: true, data: null }
+    const reader = new FileReader()
+    return new Promise((resolve) => {
+      reader.onload  = () => resolve({ ok: true, data: reader.result as string })
+      reader.onerror = () => resolve({ ok: false, error: 'Erreur lecture fichier' })
+      reader.readAsDataURL(file)
+    })
+  },
+
+  async openFileDialog() {
+    const file = await pickFile()
+    if (!file) return { ok: true, data: null }
+    const data = await fileToBase64(file)
+    const id = `__web__${Date.now()}_${Math.random().toString(36).slice(2)}`
+    fileCache.set(id, { ...data, name: file.name })
+    return { ok: true, data: id }  // pseudo-path
+  },
+
+  readFileBase64(filePath: string) {
+    if (filePath.startsWith('__web__')) {
+      const cached = fileCache.get(filePath)
+      return Promise.resolve(cached
+        ? { ok: true, data: { mime: cached.mime, b64: cached.b64, ext: cached.ext } }
+        : { ok: false, error: 'Fichier introuvable (expiré)' })
+    }
+    return Promise.resolve({ ok: false, error: 'Chemin local non supporté sur le web.' })
+  },
+
+  downloadFile(filePath: string) {
+    if (filePath.startsWith('__web__')) {
+      const cached = fileCache.get(filePath)
+      if (cached) {
+        const bytes  = Uint8Array.from(atob(cached.b64), c => c.charCodeAt(0))
+        const blob   = new Blob([bytes], { type: cached.mime })
+        triggerDownload(blob, cached.name)
+        return Promise.resolve({ ok: true, data: null })
+      }
+    }
+    return Promise.resolve({ ok: false, error: 'Fichier non disponible.' })
+  },
+
+  exportCsv: (travailId: number) => exportCsvBrowser(travailId),
+
+  importStudents: (promoId: number) => importStudentsBrowser(promoId),
+
+  // ── Shell → browser ──────────────────────────────────────────────────────────
+  openPath    (url: string) { window.open(url, '_blank'); return Promise.resolve({ ok: true, data: null }) },
+  openExternal(url: string) { window.open(url, '_blank'); return Promise.resolve({ ok: true, data: null }) },
+  openPdf     (path: string) {
+    if (path.startsWith('__web__')) {
+      const cached = fileCache.get(path)
+      if (cached) {
+        const bytes = Uint8Array.from(atob(cached.b64), c => c.charCodeAt(0))
+        const blob  = new Blob([bytes], { type: 'application/pdf' })
+        window.open(URL.createObjectURL(blob), '_blank')
+        return Promise.resolve({ ok: true, data: null })
+      }
+    }
+    window.open(path, '_blank')
+    return Promise.resolve({ ok: true, data: null })
+  },
+
+  // ── Contrôles fenêtre — no-ops ────────────────────────────────────────────
+  windowMinimize:    () => Promise.resolve({ ok: true, data: null }),
+  windowMaximize:    () => Promise.resolve({ ok: true, data: null }),
+  windowClose:       () => Promise.resolve({ ok: true, data: null }),
+  windowIsMaximized: () => Promise.resolve({ ok: true, data: false }),
+  onMaximizeChange:  (_cb: unknown) => () => {},
+
+  platform: 'web',
+
+  // ── Temps réel (Socket.io) ───────────────────────────────────────────────────
+  onNewMessage(cb: (data: MsgNewPayload) => void) {
+    msgCallbacks.push(cb)
+    return () => { const i = msgCallbacks.indexOf(cb); if (i !== -1) msgCallbacks.splice(i, 1) }
+  },
+}

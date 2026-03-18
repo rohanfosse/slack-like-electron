@@ -47,6 +47,18 @@ app.use('/api/teachers',    require('./routes/teachers'))
 app.use('/api/rubrics',     require('./routes/rubrics'))
 app.use('/api/admin',       require('./routes/admin'))
 
+// ── Web app (SPA statique) ────────────────────────────────────────────────────
+const path = require('path')
+const WEB_DIST = path.join(__dirname, '../dist-web')
+const fs = require('fs')
+if (fs.existsSync(WEB_DIST)) {
+  app.use(express.static(WEB_DIST))
+  // Fallback SPA — toutes les routes non-API renvoient index.html
+  app.get(/^(?!\/api|\/socket\.io).*/, (_req, res) => {
+    res.sendFile(path.join(WEB_DIST, 'index.html'))
+  })
+}
+
 // ── Health check ─────────────────────────────────────────────────────────────
 app.get('/health', (_req, res) => res.json({ ok: true, version: '2.0.0' }))
 
