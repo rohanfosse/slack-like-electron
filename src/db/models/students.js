@@ -106,7 +106,42 @@ function getIdentities() {
   return [...teachers, ...students];
 }
 
+/**
+ * Import en masse depuis un CSV parsé.
+ * rows = [{ name, email, password? }]
+ * Ignore les lignes sans name/email. Retourne { imported, errors }.
+ */
+function bulkImportStudents(promoId, rows) {
+  const db      = getDb();
+  const ins     = db.prepare(`
+    INSERT OR IGNORE INTO students (promo_id, name, email, avatar_initials, photo_data, password)
+    VALUES (?, ?, ?, ?, NULL, ?)
+  `);
+  let imported = 0;
+  const errors = [];
+
+  db.transaction(() => {
+    for (const row of rows) {
+      const name  = (row.name  || row.nom   || '').trim();
+      const email = (row.email || row.mail  || '').trim().toLowerCase();
+      if (!name || !email) continue;
+      const initials = name.split(/\s+/).map(w => w[0]).join('').toUpperCase().slice(0, 2);
+      const pwd = (row.password || row.mdp || 'cesi1234').trim() || 'cesi1234';
+      try {
+        const res = ins.run(promoId, name, email, initials, pwd);
+        if (res.changes) imported++;
+        else errors.push(`${email} : déjà existant (ignoré)`);
+      } catch (e) {
+        errors.push(`${email} : ${e.message}`);
+      }
+    }
+  })();
+
+  return { imported, errors };
+}
+
 module.exports = {
   getStudents, getAllStudents, getStudentProfile,
   getStudentByEmail, loginWithCredentials, registerStudent, getIdentities,
+  bulkImportStudents,
 };

@@ -192,6 +192,9 @@ function register() {
   handle('db:getPinnedMessages', (channelId) => queries.getPinnedMessages(channelId))
   handle('db:togglePinMessage',  (payload)   => queries.togglePinMessage(payload.messageId, payload.pinned))
 
+  // ── Réactions (persistance) ───────────────────────────────────────────────
+  handle('db:updateReactions', (msgId, reactionsJson) => queries.updateReactions(msgId, reactionsJson))
+
   // ── Action de masse ───────────────────────────────────────────────────────
   handle('db:markNonSubmittedAsD', (travailId) => queries.markNonSubmittedAsD(travailId))
 
@@ -235,6 +238,38 @@ function register() {
       return { ok: true, data: path.basename(dest) }
     } catch (err) {
       console.error('[IPC export:csv]', err.message)
+      return { ok: false, error: err.message }
+    }
+  })
+
+  // ── Import CSV étudiants ──────────────────────────────────────────────────
+  ipcMain.handle('import:students', async (_event, promoId) => {
+    try {
+      const { canceled, filePaths } = await dialog.showOpenDialog({
+        title: 'Importer des étudiants (CSV)',
+        filters: [{ name: 'Fichiers CSV', extensions: ['csv', 'txt'] }],
+        properties: ['openFile'],
+      })
+      if (canceled || !filePaths.length) return { ok: true, data: null }
+
+      const raw  = fs.readFileSync(filePaths[0], 'utf8').replace(/^\uFEFF/, '') // strip BOM
+      const sep  = raw.indexOf(';') !== -1 ? ';' : ','
+      const lines = raw.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n').filter(Boolean)
+      if (lines.length < 2) return { ok: false, error: 'Fichier CSV vide ou sans données.' }
+
+      const headers = lines[0].split(sep).map(h => h.trim().toLowerCase().replace(/^"|"$/g, ''))
+      const rows = []
+      for (let i = 1; i < lines.length; i++) {
+        const cols = lines[i].split(sep).map(c => c.trim().replace(/^"|"$/g, ''))
+        const row = {}
+        headers.forEach((h, j) => { row[h] = cols[j] ?? '' })
+        rows.push(row)
+      }
+
+      const result = queries.bulkImportStudents(promoId, rows)
+      return { ok: true, data: result }
+    } catch (err) {
+      console.error('[IPC import:students]', err.message)
       return { ok: false, error: err.message }
     }
   })

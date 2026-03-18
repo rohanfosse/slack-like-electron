@@ -178,6 +178,8 @@ export const useMessagesStore = defineStore('messages', () => {
     if (!r || !mine) return
     if (mine.has(type)) { mine.delete(type); r[type] = Math.max(0, (r[type] ?? 1) - 1) }
     else                { mine.add(type);    r[type] = (r[type] ?? 0) + 1 }
+    // Persister en DB (fire-and-forget)
+    window.api.updateReactions(msgId, JSON.stringify(r))
   }
 
   function clearSearch() {

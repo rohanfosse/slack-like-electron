@@ -1387,6 +1387,32 @@ function requireStudents() {
     }));
     return [...teachers, ...students2];
   }
+  function bulkImportStudents(promoId, rows) {
+    const db2 = getDb();
+    const ins = db2.prepare(`
+    INSERT OR IGNORE INTO students (promo_id, name, email, avatar_initials, photo_data, password)
+    VALUES (?, ?, ?, ?, NULL, ?)
+  `);
+    let imported = 0;
+    const errors = [];
+    db2.transaction(() => {
+      for (const row of rows) {
+        const name = (row.name || row.nom || "").trim();
+        const email = (row.email || row.mail || "").trim().toLowerCase();
+        if (!name || !email) continue;
+        const initials = name.split(/\s+/).map((w) => w[0]).join("").toUpperCase().slice(0, 2);
+        const pwd = (row.password || row.mdp || "cesi1234").trim() || "cesi1234";
+        try {
+          const res = ins.run(promoId, name, email, initials, pwd);
+          if (res.changes) imported++;
+          else errors.push(`${email} : déjà existant (ignoré)`);
+        } catch (e) {
+          errors.push(`${email} : ${e.message}`);
+        }
+      }
+    })();
+    return { imported, errors };
+  }
   students = {
     getStudents,
     getAllStudents,
@@ -1394,7 +1420,8 @@ function requireStudents() {
     getStudentByEmail,
     loginWithCredentials,
     registerStudent,
-    getIdentities
+    getIdentities,
+    bulkImportStudents
   };
   return students;
 }
@@ -1501,10 +1528,14 @@ function requireMessages() {
   `).all(channelId, query);
   }
   function sendMessage({ channelId, dmStudentId, authorName, authorType, content }) {
+    const safeType = authorType === "ta" ? "teacher" : authorType;
     return getDb().prepare(`
     INSERT INTO messages (channel_id, dm_student_id, author_name, author_type, content)
     VALUES (?, ?, ?, ?, ?)
-  `).run(channelId ?? null, dmStudentId ?? null, authorName, authorType, content);
+  `).run(channelId ?? null, dmStudentId ?? null, authorName, safeType, content);
+  }
+  function updateReactions(msgId, reactionsJson) {
+    return getDb().prepare("UPDATE messages SET reactions = ? WHERE id = ?").run(reactionsJson, msgId).changes;
   }
   function getPinnedMessages(channelId) {
     return getDb().prepare(`
@@ -1524,7 +1555,8 @@ function requireMessages() {
     searchMessages,
     sendMessage,
     getPinnedMessages,
-    togglePinMessage
+    togglePinMessage,
+    updateReactions
   };
   return messages;
 }
@@ -2212,6 +2244,7 @@ function requireIpc() {
     handle("db:getProjectDocumentCategories", (promoId, project) => queries.getProjectDocumentCategories(promoId, project ?? null));
     handle("db:getPinnedMessages", (channelId) => queries.getPinnedMessages(channelId));
     handle("db:togglePinMessage", (payload) => queries.togglePinMessage(payload.messageId, payload.pinned));
+    handle("db:updateReactions", (msgId, reactionsJson) => queries.updateReactions(msgId, reactionsJson));
     handle("db:markNonSubmittedAsD", (travailId) => queries.markNonSubmittedAsD(travailId));
     handle("db:getRubric", (travailId) => queries.getRubric(travailId));
     handle("db:upsertRubric", (payload) => queries.upsertRubric(payload));
@@ -2244,6 +2277,35 @@ function requireIpc() {
         return { ok: true, data: path2.basename(dest) };
       } catch (err) {
         console.error("[IPC export:csv]", err.message);
+        return { ok: false, error: err.message };
+      }
+    });
+    ipcMain.handle("import:students", async (_event, promoId) => {
+      try {
+        const { canceled, filePaths } = await dialog.showOpenDialog({
+          title: "Importer des étudiants (CSV)",
+          filters: [{ name: "Fichiers CSV", extensions: ["csv", "txt"] }],
+          properties: ["openFile"]
+        });
+        if (canceled || !filePaths.length) return { ok: true, data: null };
+        const raw = fs.readFileSync(filePaths[0], "utf8").replace(/^\uFEFF/, "");
+        const sep = raw.indexOf(";") !== -1 ? ";" : ",";
+        const lines = raw.replace(/\r\n/g, "\n").replace(/\r/g, "\n").split("\n").filter(Boolean);
+        if (lines.length < 2) return { ok: false, error: "Fichier CSV vide ou sans données." };
+        const headers = lines[0].split(sep).map((h) => h.trim().toLowerCase().replace(/^"|"$/g, ""));
+        const rows = [];
+        for (let i = 1; i < lines.length; i++) {
+          const cols = lines[i].split(sep).map((c) => c.trim().replace(/^"|"$/g, ""));
+          const row = {};
+          headers.forEach((h, j) => {
+            row[h] = cols[j] ?? "";
+          });
+          rows.push(row);
+        }
+        const result = queries.bulkImportStudents(promoId, rows);
+        return { ok: true, data: result };
+      } catch (err) {
+        console.error("[IPC import:students]", err.message);
         return { ok: false, error: err.message };
       }
     });

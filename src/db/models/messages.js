@@ -50,10 +50,17 @@ function searchMessages(channelId, query) {
 }
 
 function sendMessage({ channelId, dmStudentId, authorName, authorType, content }) {
+  // 'ta' n'est pas dans le CHECK constraint de la table — on le stocke comme 'teacher'
+  const safeType = authorType === 'ta' ? 'teacher' : authorType;
   return getDb().prepare(`
     INSERT INTO messages (channel_id, dm_student_id, author_name, author_type, content)
     VALUES (?, ?, ?, ?, ?)
-  `).run(channelId ?? null, dmStudentId ?? null, authorName, authorType, content);
+  `).run(channelId ?? null, dmStudentId ?? null, authorName, safeType, content);
+}
+
+function updateReactions(msgId, reactionsJson) {
+  return getDb().prepare('UPDATE messages SET reactions = ? WHERE id = ?')
+    .run(reactionsJson, msgId).changes;
 }
 
 function getPinnedMessages(channelId) {
@@ -73,5 +80,5 @@ module.exports = {
   getChannelMessages, getChannelMessagesPage,
   getDmMessages, getDmMessagesPage,
   searchMessages, sendMessage,
-  getPinnedMessages, togglePinMessage,
+  getPinnedMessages, togglePinMessage, updateReactions,
 };

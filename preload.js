@@ -12,10 +12,13 @@ contextBridge.exposeInMainWorld('api', {
   getAllStudents:      ()               => invoke('db:getAllStudents'),
 
   // Messages
-  getChannelMessages: (channelId)      => invoke('db:getChannelMessages', channelId),
-  getDmMessages:      (studentId)      => invoke('db:getDmMessages',      studentId),
-  searchMessages:     (channelId, q)   => invoke('db:searchMessages',     channelId, q),
-  sendMessage:        (payload)        => invoke('db:sendMessage',        payload),
+  getChannelMessages:     (channelId)            => invoke('db:getChannelMessages',      channelId),
+  getDmMessages:          (studentId)            => invoke('db:getDmMessages',           studentId),
+  getChannelMessagesPage: (channelId, beforeId)  => invoke('db:getChannelMessagesPage',  channelId, beforeId ?? null),
+  getDmMessagesPage:      (studentId, beforeId)  => invoke('db:getDmMessagesPage',       studentId, beforeId ?? null),
+  searchMessages:         (channelId, q)         => invoke('db:searchMessages',          channelId, q),
+  sendMessage:            (payload)              => invoke('db:sendMessage',             payload),
+  updateReactions:        (msgId, reactionsJson) => invoke('db:updateReactions',         msgId, reactionsJson),
 
   // Travaux
   getTravaux:         (channelId)      => invoke('db:getTravaux',         channelId),
@@ -60,6 +63,7 @@ contextBridge.exposeInMainWorld('api', {
   // Inscription
   getStudentByEmail:  (email)          => invoke('db:getStudentByEmail',      email),
   registerStudent:    (payload)        => invoke('db:registerStudent',        payload),
+  importStudents:     (promoId)        => invoke('import:students',           promoId),
 
   // Identites (login)
   getIdentities:          ()                   => invoke('db:getIdentities'),

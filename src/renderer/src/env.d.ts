@@ -31,6 +31,7 @@ declare global {
       getDmMessagesPage(studentId: number, beforeId?: number | null): Promise<IpcResponse<Message[]>>
       searchMessages(channelId: number, q: string): Promise<IpcResponse<Message[]>>
       sendMessage(payload: SendMessagePayload): Promise<IpcResponse<{ id: number }>>
+      updateReactions(msgId: number, reactionsJson: string): Promise<IpcResponse<number>>
 
       // Travaux / Devoirs
       getTravaux(channelId: number): Promise<IpcResponse<Devoir[]>>
@@ -79,6 +80,7 @@ declare global {
       // Inscription
       getStudentByEmail(email: string): Promise<IpcResponse<Student>>
       registerStudent(payload: object): Promise<IpcResponse<{ id: number }>>
+      importStudents(promoId: number): Promise<IpcResponse<{ imported: number; errors: string[] } | null>>
 
       // Identité / login
       getIdentities(): Promise<IpcResponse<Student[]>>
