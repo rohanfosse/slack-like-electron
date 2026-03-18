@@ -2380,35 +2380,6 @@ function requireIpc() {
         return { ok: false, error: err.message };
       }
     });
-    ipcMain.handle("export:csv", async (_event, travailId) => {
-      try {
-        const travail = queries.getTravailById(travailId);
-        const rows = queries.getTravauxSuivi(travailId);
-        const safeName = (travail?.title ?? "export").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-zA-Z0-9_-]/g, "_").slice(0, 60);
-        const { canceled, filePath } = await dialog.showSaveDialog({
-          title: "Exporter les notes",
-          defaultPath: `notes_${safeName}.csv`,
-          filters: [{ name: "CSV", extensions: ["csv"] }]
-        });
-        if (canceled || !filePath) return { ok: true, data: null };
-        const headers = ["Etudiant", "Fichier depose", "Date de depot", "Note /20", "Commentaire"];
-        const lines = rows.map(
-          (r) => [
-            r.student_name,
-            r.file_name ?? "",
-            r.submitted_at ?? "",
-            r.note != null ? String(r.note) : "",
-            r.feedback ?? ""
-          ].map((v) => `"${String(v).replace(/"/g, '""')}"`).join(";")
-        );
-        const csv = "\uFEFF" + [headers.join(";"), ...lines].join("\r\n");
-        fs.writeFileSync(filePath, csv, "utf8");
-        return { ok: true, data: path2.basename(filePath) };
-      } catch (err) {
-        console.error("[IPC export:csv]", err.message);
-        return { ok: false, error: err.message };
-      }
-    });
   }
   ipc$1 = { register };
   return ipc$1;
