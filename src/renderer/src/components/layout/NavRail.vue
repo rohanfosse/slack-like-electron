@@ -1,7 +1,7 @@
 <script setup lang="ts">
   import { computed, ref, onMounted } from 'vue'
   import { useRouter, useRoute } from 'vue-router'
-  import { MessageSquare, BookOpen, FileText, Calendar, UserCheck, LayoutDashboard, X, UserPlus, Bell, Users, GraduationCap } from 'lucide-vue-next'
+  import { MessageSquare, BookOpen, FileText, Calendar, UserCheck, LayoutDashboard, X, UserPlus, Bell, Users, GraduationCap, Flame } from 'lucide-vue-next'
   import logoUrl from '@/assets/logo.png'
   import { useAppStore }    from '@/stores/app'
   import { useModalsStore } from '@/stores/modals'
@@ -267,6 +267,7 @@
       @click="modals.settings = true"
     >
       <img v-if="user?.photo_data" :src="user.photo_data" :alt="user?.name" />
+      <Flame v-else-if="user?.type === 'teacher'" :size="18" style="color:#fff;opacity:.95" />
       <span v-else>{{ user?.avatar_initials }}</span>
     </button>
   </nav>
@@ -364,11 +365,11 @@
   letter-spacing: 0;
 }
 
-/* Avatar circulaire en bas du rail */
+/* Avatar carré arrondi en bas du rail (même style que les avatars dans le chat) */
 .nav-avatar-btn {
   width: 36px;
   height: 36px;
-  border-radius: 50%;
+  border-radius: 8px;
   overflow: hidden;
   border: none;
   padding: 0;
@@ -377,13 +378,14 @@
   justify-content: center;
   font-size: 13px;
   font-weight: 700;
+  letter-spacing: -.3px;
   color: #fff;
   margin: 4px 0 6px;
   cursor: pointer;
   flex-shrink: 0;
   -webkit-app-region: no-drag;
   outline-offset: 2px;
-  transition: box-shadow .15s, transform .15s;
+  transition: box-shadow .15s, border-radius .15s;
   position: relative;
 }
 
@@ -391,7 +393,7 @@
   content: '';
   position: absolute;
   inset: 0;
-  border-radius: 50%;
+  border-radius: 8px;
   background: rgba(255,255,255,0);
   transition: background .15s;
 }
@@ -402,6 +404,7 @@
 
 .nav-avatar-btn:hover {
   box-shadow: 0 0 0 2px rgba(255,255,255,.25);
+  border-radius: 10px;
 }
 
 .nav-avatar-btn:focus-visible {

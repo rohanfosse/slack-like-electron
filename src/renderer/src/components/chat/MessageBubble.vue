@@ -2,7 +2,7 @@
 import { ref, computed, nextTick } from 'vue'
 import {
   Pin, PinOff, MoreHorizontal, Copy, Trash2, Check, Pencil,
-  SmilePlus, Bookmark, BookmarkCheck, Reply, AlertTriangle,
+  SmilePlus, Bookmark, BookmarkCheck, Reply, AlertTriangle, Flame,
 } from 'lucide-vue-next'
 import { useAppStore }      from '@/stores/app'
 import { useMessagesStore } from '@/stores/messages'
@@ -76,7 +76,14 @@ const ctxItems = computed<ContextMenuItem[]>(() => [
 const content  = computed(() =>
   renderMessageContent(props.msg.content, props.searchTerm, appStore.currentUser?.name ?? ''),
 )
-const color    = computed(() => avatarColor(props.msg.author_name))
+const color    = computed(() => {
+  if (isMine.value && appStore.currentUser) {
+    const t = appStore.currentUser.type
+    if (t === 'teacher') return 'var(--accent)'
+    if (t === 'ta')      return '#7B5EA7'
+  }
+  return avatarColor(props.msg.author_name)
+})
 const isPinned = computed(() => !!props.msg.is_pinned)
 const isEdited = computed(() => !!props.msg.edited)
 const isMine   = computed(() => props.msg.author_name === appStore.currentUser?.name)
@@ -195,6 +202,7 @@ function closeAll() { showMenu.value = false; showPicker.value = false; confirmi
         :initials="msg.author_initials || msg.author_name.slice(0, 2).toUpperCase()"
         :color="color"
         :photo-data="msg.author_photo"
+        :icon="isMine && appStore.currentUser?.type === 'teacher' && !msg.author_photo ? Flame : null"
       />
     </template>
     <div v-else class="msg-avatar-placeholder" />
