@@ -47,26 +47,25 @@ app.use('/api/teachers',    require('./routes/teachers'))
 app.use('/api/rubrics',     require('./routes/rubrics'))
 app.use('/api/admin',       require('./routes/admin'))
 
-// ── Fichiers uploadés — servis sans auth (UUID suffisamment sécurisé) ─────────
-const path     = require('path')
-const fs       = require('fs')
+// ── Fichiers statiques & SPA ──────────────────────────────────────────────────
+const path = require('path')
+const fs   = require('fs')
+
+// Fichiers uploadés — servis sans auth (nom UUID suffisamment sécurisé)
 const UPLOAD_DIR = process.env.UPLOAD_DIR
   ? path.join(process.env.UPLOAD_DIR, 'uploads')
   : path.join(__dirname, '../uploads')
 if (!fs.existsSync(UPLOAD_DIR)) fs.mkdirSync(UPLOAD_DIR, { recursive: true })
 app.use('/uploads', express.static(UPLOAD_DIR))
 
-// ── Route upload (nécessite auth — montée APRÈS authMiddleware global) ─────────
+// Route upload (auth requise — montée après authMiddleware global /api)
 app.use('/api/files', require('./routes/files'))
 
-// ── Web app (SPA statique) ────────────────────────────────────────────────────
-const path = require('path')
+// SPA web — toutes les routes non-API renvoient index.html
 const WEB_DIST = path.join(__dirname, '../dist-web')
-const fs = require('fs')
 if (fs.existsSync(WEB_DIST)) {
   app.use(express.static(WEB_DIST))
-  // Fallback SPA — toutes les routes non-API renvoient index.html
-  app.get(/^(?!\/api|\/socket\.io).*/, (_req, res) => {
+  app.get(/^(?!\/api|\/socket\.io|\/uploads).*/, (_req, res) => {
     res.sendFile(path.join(WEB_DIST, 'index.html'))
   })
 }
