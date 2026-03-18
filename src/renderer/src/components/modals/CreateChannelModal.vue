@@ -1,5 +1,6 @@
 <script setup lang="ts">
-  import { ref, watch } from 'vue'
+  import { ref, watch, computed } from 'vue'
+  import { Plus } from 'lucide-vue-next'
   import { useAppStore } from '@/stores/app'
   import { useToast }    from '@/composables/useToast'
   import { CATEGORY_ICONS, parseCategoryIcon } from '@/utils/categoryIcon'
@@ -12,52 +13,81 @@
   const appStore = useAppStore()
   const { showToast } = useToast()
 
-  const channelName      = ref('')
-  const channelType      = ref<'chat' | 'annonce'>('chat')
-  const categoryIconKey  = ref('')
-  const categoryText     = ref('')
-  const visibility      = ref<'public' | 'private'>('public')
-  const members         = ref<number[]>([])
-  const students        = ref<Student[]>([])
-  const creating        = ref(false)
+  const channelName         = ref('')
+  const channelType         = ref<'chat' | 'annonce'>('chat')
+  const visibility          = ref<'public' | 'private'>('public')
+  const members             = ref<number[]>([])
+  const students            = ref<Student[]>([])
+  const creating            = ref(false)
+
+  // Catégorie — liste déroulante
+  const existingCategories  = ref<string[]>([])
+  const selectedCategory    = ref<string>('')   // '' = aucune, '__new__' = créer, sinon valeur existante
+  const newCategoryIconKey  = ref('')
+  const newCategoryText     = ref('')
+
+  const isCreatingNew = computed(() => selectedCategory.value === '__new__')
 
   watch(() => props.modelValue, async (open) => {
-    if (open && appStore.activePromoId) {
-      const res = await window.api.getStudents(appStore.activePromoId)
-      students.value = res?.ok ? res.data : []
-      channelName.value   = ''
-      channelType.value   = 'chat'
-      visibility.value    = 'public'
-      members.value       = []
-      // Pré-remplir la catégorie si demandé depuis le menu contextuel
-      const pending = appStore.pendingChannelCategory
-      if (pending) {
-        const { label } = parseCategoryIcon(pending)
-        categoryIconKey.value = pending.includes(' ') ? pending.split(' ')[0] : ''
-        categoryText.value    = label || pending
-        appStore.pendingChannelCategory = null
+    if (!open || !appStore.activePromoId) return
+
+    const [stuRes, chRes] = await Promise.all([
+      window.api.getStudents(appStore.activePromoId),
+      window.api.getChannels(appStore.activePromoId),
+    ])
+    students.value = stuRes?.ok ? stuRes.data : []
+
+    // Extraire les catégories uniques
+    const chs: any[] = chRes?.ok ? chRes.data : []
+    const cats = [...new Set(chs.map((c: any) => c.category).filter(Boolean))] as string[]
+    existingCategories.value = cats
+
+    // Reset
+    channelName.value     = ''
+    channelType.value     = 'chat'
+    visibility.value      = 'public'
+    members.value         = []
+    newCategoryIconKey.value = ''
+    newCategoryText.value    = ''
+
+    // Pré-remplir si demandé depuis le menu contextuel
+    const pending = appStore.pendingChannelCategory
+    if (pending) {
+      appStore.pendingChannelCategory = null
+      if (cats.includes(pending)) {
+        selectedCategory.value = pending
       } else {
-        categoryIconKey.value = ''
-        categoryText.value    = ''
+        selectedCategory.value = '__new__'
+        const { label } = parseCategoryIcon(pending)
+        newCategoryIconKey.value = pending.includes(' ') ? pending.split(' ')[0] : ''
+        newCategoryText.value    = label || pending
       }
+    } else {
+      selectedCategory.value = cats.length ? '' : '__new__'
     }
   })
 
   async function create() {
     if (!channelName.value.trim() || !appStore.activePromoId) return
+
+    // Calculer la catégorie finale
+    let category: string | null = null
+    if (selectedCategory.value && selectedCategory.value !== '__new__') {
+      category = selectedCategory.value
+    } else if (isCreatingNew.value) {
+      const t = newCategoryText.value.trim()
+      if (t) category = newCategoryIconKey.value ? `${newCategoryIconKey.value} ${t}` : t
+    }
+
     creating.value = true
     try {
       const res = await window.api.createChannel({
-        name: channelName.value.trim(),
-        promoId: appStore.activePromoId,
-        type: channelType.value,
+        name:      channelName.value.trim(),
+        promoId:   appStore.activePromoId,
+        type:      channelType.value,
         isPrivate: visibility.value === 'private',
-        members: visibility.value === 'private' ? members.value : [],
-        category: (() => {
-          const t = categoryText.value.trim()
-          if (!t) return null
-          return categoryIconKey.value ? `${categoryIconKey.value} ${t}` : t
-        })(),
+        members:   visibility.value === 'private' ? members.value : [],
+        category,
       })
       if (!res?.ok) { showToast(res?.error ?? 'Erreur lors de la création.'); return }
       showToast('Canal créé.', 'success')
@@ -77,6 +107,8 @@
 <template>
   <Modal :model-value="modelValue" title="Créer un canal" @update:model-value="emit('update:modelValue', $event)">
     <div style="padding:16px;display:flex;flex-direction:column;gap:14px">
+
+      <!-- Nom -->
       <div class="form-group">
         <label class="form-label">Nom du canal</label>
         <input
@@ -89,42 +121,58 @@
         />
       </div>
 
+      <!-- Catégorie — liste déroulante -->
       <div class="form-group">
         <label class="form-label">Catégorie <span style="opacity:.55;font-weight:400">(optionnelle)</span></label>
-        <!-- Lucide icon picker -->
-        <div class="cc-icon-grid" style="margin-bottom:6px">
-          <button
-            v-for="ic in CATEGORY_ICONS"
-            :key="ic.key"
-            class="cc-icon-btn"
-            :class="{ selected: categoryIconKey === ic.key }"
-            type="button"
-            :title="ic.label"
-            @click="categoryIconKey = categoryIconKey === ic.key ? '' : ic.key"
-          >
-            <component :is="ic.component" :size="15" />
-          </button>
+
+        <select v-model="selectedCategory" class="form-input cc-cat-select">
+          <option value="">— Aucune catégorie —</option>
+          <optgroup v-if="existingCategories.length" label="Catégories existantes">
+            <option
+              v-for="cat in existingCategories"
+              :key="cat"
+              :value="cat"
+            >
+              {{ parseCategoryIcon(cat).label }}
+            </option>
+          </optgroup>
+          <option value="__new__">+ Créer une nouvelle catégorie…</option>
+        </select>
+
+        <!-- Formulaire catégorie nouvelle -->
+        <div v-if="isCreatingNew" class="cc-new-cat">
+          <div class="cc-icon-grid">
+            <button
+              v-for="ic in CATEGORY_ICONS"
+              :key="ic.key"
+              class="cc-icon-btn"
+              :class="{ selected: newCategoryIconKey === ic.key }"
+              type="button"
+              :title="ic.label"
+              @click="newCategoryIconKey = newCategoryIconKey === ic.key ? '' : ic.key"
+            >
+              <component :is="ic.component" :size="15" />
+            </button>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;margin-top:6px">
+            <component
+              v-if="newCategoryIconKey"
+              :is="CATEGORY_ICONS.find(i => i.key === newCategoryIconKey)!.component"
+              :size="16"
+              class="cc-icon-preview"
+            />
+            <input
+              v-model="newCategoryText"
+              type="text"
+              class="form-input"
+              style="flex:1"
+              placeholder="Nom de la catégorie…"
+            />
+          </div>
         </div>
-        <div style="display:flex;align-items:center;gap:8px">
-          <component
-            v-if="categoryIconKey"
-            :is="CATEGORY_ICONS.find(i => i.key === categoryIconKey)!.component"
-            :size="16"
-            class="cc-icon-preview"
-          />
-          <input
-            v-model="categoryText"
-            type="text"
-            class="form-input"
-            style="flex:1"
-            placeholder="ex : Cours, Développement, Réseaux…"
-          />
-        </div>
-        <span style="font-size:11px;color:var(--text-muted);margin-top:3px;display:block">
-          Les canaux d'une même catégorie sont regroupés dans la barre latérale.
-        </span>
       </div>
 
+      <!-- Type -->
       <div class="form-group">
         <label class="form-label">Type</label>
         <div style="display:flex;gap:16px">
@@ -139,6 +187,7 @@
         </div>
       </div>
 
+      <!-- Visibilité -->
       <div class="form-group">
         <label class="form-label">Visibilité</label>
         <div style="display:flex;gap:16px">
@@ -153,6 +202,7 @@
         </div>
       </div>
 
+      <!-- Membres (canal privé) -->
       <div v-if="visibility === 'private'" class="form-group">
         <label class="form-label">Membres autorisés</label>
         <div id="channel-members-checkboxes" style="max-height:180px;overflow-y:auto;display:flex;flex-direction:column;gap:4px">
@@ -171,6 +221,7 @@
           </label>
         </div>
       </div>
+
     </div>
 
     <div class="modal-footer" style="padding:12px 16px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px">
@@ -183,6 +234,25 @@
 </template>
 
 <style scoped>
+/* Select catégorie */
+.cc-cat-select {
+  cursor: pointer;
+}
+.cc-cat-select option,
+.cc-cat-select optgroup {
+  background: var(--bg-modal, #1e2127);
+  color: var(--text-primary);
+}
+
+/* Nouvelle catégorie */
+.cc-new-cat {
+  margin-top: 10px;
+  padding: 12px;
+  background: rgba(74,144,217,.05);
+  border: 1px solid rgba(74,144,217,.18);
+  border-radius: 6px;
+}
+
 .cc-icon-grid {
   display: flex;
   flex-wrap: wrap;
