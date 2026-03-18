@@ -3,7 +3,7 @@ import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue'
 import {
   BookOpen, BarChart2, List, Grid, Plus, Upload, Link2, X,
   FileText, CheckCircle2, Clock, Lock, AlertTriangle, ChevronRight,
-  Users, Award, Calendar,
+  Users, Award, Calendar, LayoutList,
 } from 'lucide-vue-next'
 import { useAppStore }     from '@/stores/app'
 import { useTravauxStore } from '@/stores/travaux'
@@ -11,7 +11,7 @@ import { useModalsStore }  from '@/stores/modals'
 import { deadlineClass, deadlineLabel, formatDate } from '@/utils/date'
 import { avatarColor, initials } from '@/utils/format'
 import { parseCategoryIcon } from '@/utils/categoryIcon'
-import type { Devoir } from '@/types'
+import type { Devoir, Rubric } from '@/types'
 import ProjetFiche        from '@/components/projet/ProjetFiche.vue'
 import StudentProjetFiche from '@/components/projet/StudentProjetFiche.vue'
 
@@ -43,6 +43,7 @@ const depositLink        = ref('')
 const depositFile        = ref<string | null>(null)
 const depositFileName    = ref<string | null>(null)
 const depositing         = ref(false)
+const rubricPreview      = ref<Rubric | null>(null)
 
 // ── Notation inline (prof, vue rendus) ────────────────────────────────────────
 const editingDepotId      = ref<number | null>(null)
@@ -126,16 +127,20 @@ const studentStats = computed(() => ({
 }))
 
 // ── Dépôt étudiant ─────────────────────────────────────────────────────────────
-function startDeposit(t: Devoir) {
+async function startDeposit(t: Devoir) {
   depositingDevoirId.value = t.id
   depositMode.value        = 'file'
   depositLink.value        = ''
   depositFile.value        = null
   depositFileName.value    = null
+  rubricPreview.value      = null
+  const res = await window.api.getRubric(t.id)
+  rubricPreview.value = res?.ok && res.data ? res.data : null
 }
 
 function cancelDeposit() {
   depositingDevoirId.value = null
+  rubricPreview.value      = null
 }
 
 async function pickFile() {
@@ -503,6 +508,23 @@ function typeLabel(t: string): string {
                       </div>
                     </div>
                     <input v-else v-model="depositLink" class="form-input" placeholder="https://…" type="url" />
+                    <!-- Grille d'évaluation (lecture seule) -->
+                    <div v-if="rubricPreview" class="rubric-preview">
+                      <div class="rubric-preview-header">
+                        <LayoutList :size="12" />
+                        <span>{{ rubricPreview.title }}</span>
+                      </div>
+                      <div class="rubric-preview-criteria">
+                        <div
+                          v-for="c in rubricPreview.criteria"
+                          :key="c.id"
+                          class="rubric-preview-criterion"
+                        >
+                          <span class="rubric-preview-label">{{ c.label }}</span>
+                          <span class="rubric-preview-pts">/ {{ c.max_pts }} pt{{ c.max_pts > 1 ? 's' : '' }}</span>
+                        </div>
+                      </div>
+                    </div>
                     <div class="deposit-actions">
                       <button class="btn-ghost btn-deposit-cancel" @click="cancelDeposit"><X :size="12" /> Annuler</button>
                       <button
@@ -571,6 +593,23 @@ function typeLabel(t: string): string {
                       </div>
                     </div>
                     <input v-else v-model="depositLink" class="form-input" placeholder="https://…" type="url" />
+                    <!-- Grille d'évaluation (lecture seule) -->
+                    <div v-if="rubricPreview" class="rubric-preview">
+                      <div class="rubric-preview-header">
+                        <LayoutList :size="12" />
+                        <span>{{ rubricPreview.title }}</span>
+                      </div>
+                      <div class="rubric-preview-criteria">
+                        <div
+                          v-for="c in rubricPreview.criteria"
+                          :key="c.id"
+                          class="rubric-preview-criterion"
+                        >
+                          <span class="rubric-preview-label">{{ c.label }}</span>
+                          <span class="rubric-preview-pts">/ {{ c.max_pts }} pt{{ c.max_pts > 1 ? 's' : '' }}</span>
+                        </div>
+                      </div>
+                    </div>
                     <div class="deposit-actions">
                       <button class="btn-ghost btn-deposit-cancel" @click="cancelDeposit"><X :size="12" /> Annuler</button>
                       <button
@@ -1387,6 +1426,59 @@ function typeLabel(t: string): string {
 
 .btn-deposit-submit { font-size: 12px; padding: 6px 14px; }
 .btn-deposit-cancel { font-size: 12px; padding: 6px 12px; }
+
+/* ── Aperçu grille d'évaluation (étudiant) ───────────────────────────────── */
+.rubric-preview {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.rubric-preview-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  background: rgba(255, 255, 255, 0.04);
+  border-bottom: 1px solid var(--border);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: var(--text-muted);
+}
+
+.rubric-preview-criteria {
+  display: flex;
+  flex-direction: column;
+}
+
+.rubric-preview-criterion {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 5px 10px;
+  font-size: 12px;
+  border-bottom: 1px solid var(--border);
+}
+.rubric-preview-criterion:last-child { border-bottom: none; }
+
+.rubric-preview-label {
+  color: var(--text-secondary);
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rubric-preview-pts {
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 600;
+  flex-shrink: 0;
+  margin-left: 8px;
+}
 
 /* ── Squelettes ──────────────────────────────────────────────────────────── */
 .skel-card {
