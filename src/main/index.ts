@@ -1,4 +1,4 @@
-import { app, BrowserWindow } from 'electron'
+import { app, BrowserWindow, dialog } from 'electron'
 import { join } from 'path'
 
 // Modules CommonJS — import default : Rollup + @rollup/plugin-commonjs convertit
@@ -10,9 +10,19 @@ import ipcRaw           from './ipc'
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 import notificationsRaw from './notifications'
 
-const db            = dbRaw            as unknown as { init:     () => void }
+const db            = dbRaw            as unknown as { init: () => void; close: () => void }
 const ipc           = ipcRaw           as unknown as { register: () => void }
-const notifications = notificationsRaw as unknown as { start:    () => void }
+const notifications = notificationsRaw as unknown as { start: () => void }
+
+// ── Gestionnaires d'erreurs globaux ──────────────────────────────────────────
+process.on('uncaughtException', (err) => {
+  console.error('[Main] uncaughtException:', err)
+  dialog.showErrorBox('Erreur inattendue', `${err.message}\n\nL'application va continuer, mais redémarrez si le problème persiste.`)
+})
+
+process.on('unhandledRejection', (reason) => {
+  console.error('[Main] unhandledRejection:', reason)
+})
 
 function createWindow(): void {
   const win = new BrowserWindow({
@@ -28,6 +38,7 @@ function createWindow(): void {
       preload: join(__dirname, '../preload/index.js'),
       contextIsolation: true,
       nodeIntegration: false,
+      devTools: !app.isPackaged,
     },
   })
 
@@ -56,4 +67,9 @@ app.whenReady().then(() => {
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit()
+})
+
+// ── Fermeture propre de la base de données ────────────────────────────────────
+app.on('before-quit', () => {
+  db.close()
 })

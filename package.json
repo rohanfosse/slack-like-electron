@@ -62,19 +62,19 @@
       "out/**/*",
       "node_modules/**/*",
       "!node_modules/.cache",
-      "renderer/assets/**/*"
+      "resources/**/*"
     ],
     "win": {
       "target": "nsis",
-      "icon": "renderer/assets/icon.ico"
+      "icon": "resources/icon.ico"
     },
     "mac": {
       "target": "dmg",
-      "icon": "renderer/assets/icon.icns"
+      "icon": "resources/icon.icns"
     },
     "linux": {
       "target": "AppImage",
-      "icon": "renderer/assets/icon.png"
+      "icon": "resources/icon.png"
     },
     "nsis": {
       "oneClick": false,

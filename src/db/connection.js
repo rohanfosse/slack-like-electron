@@ -14,4 +14,11 @@ function getDb() {
   return db;
 }
 
-module.exports = { getDb };
+function closeDb() {
+  if (db) {
+    try { db.close() } catch {}
+    db = null
+  }
+}
+
+module.exports = { getDb, closeDb };

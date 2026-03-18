@@ -313,6 +313,9 @@ function register() {
       })
       if (canceled || !filePaths.length) return { ok: true, data: null }
 
+      const csvStats = fs.statSync(filePaths[0])
+      if (csvStats.size > 10 * 1024 * 1024) return { ok: false, error: 'Fichier trop volumineux (max 10 Mo).' }
+
       const raw  = fs.readFileSync(filePaths[0], 'utf8').replace(/^\uFEFF/, '') // strip BOM
       const sep  = raw.indexOf(';') !== -1 ? ';' : ','
       const lines = raw.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n').filter(Boolean)

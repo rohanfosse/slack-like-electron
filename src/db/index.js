@@ -1,5 +1,6 @@
 const { initSchema }   = require('./schema');
 const { seedIfEmpty, resetAndSeed } = require('./seed');
+const { closeDb }      = require('./connection');
 
 const promotions  = require('./models/promotions');
 const students    = require('./models/students');
@@ -19,6 +20,7 @@ function init() {
 
 module.exports = {
   init,
+  close: closeDb,
   resetAndSeed,
   ...promotions,
   ...students,
