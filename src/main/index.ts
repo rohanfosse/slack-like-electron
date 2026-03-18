@@ -24,17 +24,16 @@ function createWindow(): void {
     icon: join(__dirname, '../../resources/icon.png'),
     backgroundColor: '#111214',
     titleBarStyle: 'hidden',
-    titleBarOverlay: {
-      color: '#111214',
-      symbolColor: '#9aa0a6',
-      height: 32,
-    },
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       contextIsolation: true,
       nodeIntegration: false,
     },
   })
+
+  // Push événements maximize/unmaximize vers le renderer
+  win.on('maximize',   () => win.webContents.send('window:maximizeState', true))
+  win.on('unmaximize', () => win.webContents.send('window:maximizeState', false))
 
   // En développement, electron-vite fournit l'URL du serveur Vite (HMR)
   if (process.env['ELECTRON_RENDERER_URL']) {

@@ -1,9 +1,23 @@
 /* ════════════════════════════════════════════
-   APP SHELL  (NavRail | Sidebar | Main)
+   APP SHELL  (TitleBar / NavRail | Sidebar | Main)
 ════════════════════════════════════════════ */
+
+/* Hauteur réservée à la barre de titre custom */
+:root { --titlebar-height: 32px; }
+
+/* Conteneur racine : colonne [TitleBar] + [colonnes] */
 .app-shell {
   display: flex;
+  flex-direction: column;
   height: 100vh;
+  overflow: hidden;
+}
+
+/* Les 3 colonnes horizontales sous la titlebar */
+.app-columns {
+  display: flex;
+  flex: 1;
+  min-height: 0;
   overflow: hidden;
 }
 

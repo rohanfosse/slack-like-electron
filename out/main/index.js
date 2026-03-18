@@ -2132,7 +2132,7 @@ var hasRequiredIpc;
 function requireIpc() {
   if (hasRequiredIpc) return ipc$1;
   hasRequiredIpc = 1;
-  const { ipcMain, dialog, shell } = require("electron");
+  const { ipcMain, dialog, shell, BrowserWindow } = require("electron");
   const fs = require("fs");
   const path2 = require("path");
   const queries = requireDb();
@@ -2173,7 +2173,7 @@ function requireIpc() {
     ipcMain.handle("db:sendMessage", async (_event, payload) => {
       try {
         const result = queries.sendMessage(payload);
-        const { BrowserWindow } = require("electron");
+        const { BrowserWindow: BrowserWindow2 } = require("electron");
         const rawContent = payload.content ?? "";
         const mentionEveryone = /@everyone\b/i.test(rawContent);
         const mentionNames = [];
@@ -2190,7 +2190,7 @@ function requireIpc() {
           mentionEveryone,
           mentionNames
         };
-        for (const win of BrowserWindow.getAllWindows()) {
+        for (const win of BrowserWindow2.getAllWindows()) {
           if (!win.isDestroyed()) win.webContents.send("msg:new", push);
         }
         return { ok: true, data: result };
@@ -2226,8 +2226,8 @@ function requireIpc() {
     handle("db:getAllRendus", (promoId) => queries.getAllRendus(promoId ?? null));
     ipcMain.handle("window:openPdf", async (_event, filePath) => {
       try {
-        const { BrowserWindow } = require("electron");
-        const win = new BrowserWindow({
+        const { BrowserWindow: BrowserWindow2 } = require("electron");
+        const win = new BrowserWindow2({
           width: 960,
           height: 780,
           title: "Visualisation — CeSlack",
@@ -2446,6 +2446,38 @@ function requireIpc() {
         return { ok: false, error: err.message };
       }
     });
+    ipcMain.handle("window:minimize", (_event) => {
+      try {
+        _event.sender.getOwnerBrowserWindow()?.minimize();
+        return { ok: true, data: null };
+      } catch (err) {
+        return { ok: false, error: err.message };
+      }
+    });
+    ipcMain.handle("window:maximize", (_event) => {
+      try {
+        const win = _event.sender.getOwnerBrowserWindow();
+        if (win) win.isMaximized() ? win.unmaximize() : win.maximize();
+        return { ok: true, data: null };
+      } catch (err) {
+        return { ok: false, error: err.message };
+      }
+    });
+    ipcMain.handle("window:close", (_event) => {
+      try {
+        _event.sender.getOwnerBrowserWindow()?.close();
+        return { ok: true, data: null };
+      } catch (err) {
+        return { ok: false, error: err.message };
+      }
+    });
+    ipcMain.handle("window:isMaximized", (_event) => {
+      try {
+        return { ok: true, data: _event.sender.getOwnerBrowserWindow()?.isMaximized() ?? false };
+      } catch (err) {
+        return { ok: false, error: err.message };
+      }
+    });
   }
   ipc$1 = { register };
   return ipc$1;
@@ -2505,17 +2537,14 @@ function createWindow() {
     icon: path.join(__dirname, "../../resources/icon.png"),
     backgroundColor: "#111214",
     titleBarStyle: "hidden",
-    titleBarOverlay: {
-      color: "#111214",
-      symbolColor: "#9aa0a6",
-      height: 32
-    },
     webPreferences: {
       preload: path.join(__dirname, "../preload/index.js"),
       contextIsolation: true,
       nodeIntegration: false
     }
   });
+  win.on("maximize", () => win.webContents.send("window:maximizeState", true));
+  win.on("unmaximize", () => win.webContents.send("window:maximizeState", false));
   if (process.env["ELECTRON_RENDERER_URL"]) {
     win.loadURL(process.env["ELECTRON_RENDERER_URL"]);
   } else {

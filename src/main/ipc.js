@@ -3,7 +3,7 @@
 // avec better-sqlite3 (module natif CommonJS).
 // Les types sont déclarés dans src/renderer/src/env.d.ts côté renderer.
 
-const { ipcMain, dialog, shell } = require('electron')
+const { ipcMain, dialog, shell, BrowserWindow } = require('electron')
 const fs      = require('fs')
 const path    = require('path')
 // Chemin relatif depuis src/main/ vers src/db/
@@ -385,6 +385,30 @@ function register() {
     } catch (err) {
       return { ok: false, error: err.message }
     }
+  })
+
+  // ── Contrôles de fenêtre ──────────────────────────────────────────────────
+  ipcMain.handle('window:minimize', (_event) => {
+    try { _event.sender.getOwnerBrowserWindow()?.minimize(); return { ok: true, data: null } }
+    catch (err) { return { ok: false, error: err.message } }
+  })
+
+  ipcMain.handle('window:maximize', (_event) => {
+    try {
+      const win = _event.sender.getOwnerBrowserWindow()
+      if (win) win.isMaximized() ? win.unmaximize() : win.maximize()
+      return { ok: true, data: null }
+    } catch (err) { return { ok: false, error: err.message } }
+  })
+
+  ipcMain.handle('window:close', (_event) => {
+    try { _event.sender.getOwnerBrowserWindow()?.close(); return { ok: true, data: null } }
+    catch (err) { return { ok: false, error: err.message } }
+  })
+
+  ipcMain.handle('window:isMaximized', (_event) => {
+    try { return { ok: true, data: _event.sender.getOwnerBrowserWindow()?.isMaximized() ?? false } }
+    catch (err) { return { ok: false, error: err.message } }
   })
 
 }

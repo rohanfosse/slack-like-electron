@@ -3850,6 +3850,107 @@ to { transform: rotate(360deg);
   object-fit: cover;
 }
 
+/* ── Barre de titre ── */
+.titlebar[data-v-9aa538fd] {
+  height: var(--titlebar-height, 32px);
+  width: 100%;
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  /* Fond en dégradé hard-stop : chaque tranche matche la colonne du dessous */
+  background:
+    linear-gradient(
+      to right,
+      var(--bg-rail)    0px,
+      var(--bg-rail)    var(--rail-width),
+      var(--bg-sidebar) var(--rail-width),
+      var(--bg-sidebar) calc(var(--rail-width) + var(--sidebar-width)),
+      var(--bg-main)    calc(var(--rail-width) + var(--sidebar-width))
+    );
+  border-bottom: 1px solid rgba(255, 255, 255, .04);
+  /* Zone de déplacement Electron sur toute la barre */
+  -webkit-app-region: drag;
+  user-select: none;
+  position: relative;
+  z-index: 100;
+}
+
+/* Zone draggable — occupe l'espace restant */
+.titlebar-drag[data-v-9aa538fd] {
+  flex: 1;
+  height: 100%;
+  -webkit-app-region: drag;
+}
+
+/* ── Groupe de boutons ── */
+.titlebar-controls[data-v-9aa538fd] {
+  display: flex;
+  align-items: stretch;
+  height: 100%;
+  -webkit-app-region: no-drag;
+  flex-shrink: 0;
+}
+
+/* ── Bouton générique ── */
+.wctrl-btn[data-v-9aa538fd] {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 46px;
+  height: 100%;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: background .12s ease, color .12s ease;
+  -webkit-app-region: no-drag;
+  padding: 0;
+  border-radius: 0;
+  outline: none;
+}
+
+/* Hover neutre pour min/max */
+.wctrl-min[data-v-9aa538fd]:hover,
+.wctrl-max[data-v-9aa538fd]:hover {
+  background: rgba(255, 255, 255, .1);
+  color: var(--text-primary);
+}
+
+/* Hover rouge (style Windows 11) pour close */
+.wctrl-close[data-v-9aa538fd]:hover {
+  background: #C42B1C;
+  color: #fff;
+}
+.wctrl-close[data-v-9aa538fd]:active { background: #a01b0e;
+}
+
+/* Active pour min/max */
+.wctrl-min[data-v-9aa538fd]:active,
+.wctrl-max[data-v-9aa538fd]:active { background: rgba(255, 255, 255, .06);
+}
+
+/* Thème clair */
+body.light .titlebar[data-v-9aa538fd] {
+  background:
+    linear-gradient(
+      to right,
+      #2c2f3a 0px,
+      #2c2f3a var(--rail-width),
+      #f0f1f3 var(--rail-width),
+      #f0f1f3 calc(var(--rail-width) + var(--sidebar-width)),
+      #fafafa calc(var(--rail-width) + var(--sidebar-width))
+    );
+  border-bottom-color: rgba(0, 0, 0, .08);
+}
+body.light .wctrl-btn[data-v-9aa538fd] {
+  color: rgba(0, 0, 0, .5);
+}
+body.light .wctrl-min[data-v-9aa538fd]:hover,
+body.light .wctrl-max[data-v-9aa538fd]:hover {
+  background: rgba(0, 0, 0, .08);
+  color: rgba(0, 0, 0, .8);
+}
+
 .np-icon-grid[data-v-eec8e5e0] {
   display: flex;
   flex-wrap: wrap;
@@ -7220,7 +7321,7 @@ to { transform: rotate(360deg);
   /* ── Bandeau simulation étudiant ── */
 .simulation-banner {
     position: fixed;
-    top: 0;
+    top: var(--titlebar-height, 32px);
     left: 0;
     right: 0;
     z-index: 200;
@@ -7248,7 +7349,7 @@ to { transform: rotate(360deg);
   /* Bandeau hors-ligne */
 .offline-banner {
     position: fixed;
-    top: 0;
+    top: var(--titlebar-height, 32px);
     left: 0;
     right: 0;
     z-index: 201;
@@ -7263,7 +7364,7 @@ to { transform: rotate(360deg);
     font-weight: 500;
     border-bottom: 1px solid rgba(255,255,255,.07);
 }
-.simulation-banner.banner-shift { top: 36px;
+.simulation-banner.banner-shift { top: calc(var(--titlebar-height, 32px) + 36px);
 }
 
   /* Décaler le shell quand le bandeau est visible */
@@ -7428,11 +7529,25 @@ body.light ::-webkit-scrollbar-thumb       { background: rgba(0,0,0,.2); }
 body.light ::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,.35); }
 body.light * { scrollbar-color: rgba(0,0,0,.2) transparent; }
 /* ════════════════════════════════════════════
-   APP SHELL  (NavRail | Sidebar | Main)
+   APP SHELL  (TitleBar / NavRail | Sidebar | Main)
 ════════════════════════════════════════════ */
+
+/* Hauteur réservée à la barre de titre custom */
+:root { --titlebar-height: 32px; }
+
+/* Conteneur racine : colonne [TitleBar] + [colonnes] */
 .app-shell {
   display: flex;
+  flex-direction: column;
   height: 100vh;
+  overflow: hidden;
+}
+
+/* Les 3 colonnes horizontales sous la titlebar */
+.app-columns {
+  display: flex;
+  flex: 1;
+  min-height: 0;
   overflow: hidden;
 }
 

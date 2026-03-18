@@ -139,6 +139,14 @@ declare global {
       // Données de démo
       resetAndSeed(): Promise<IpcResponse<null>>
 
+      // Contrôles de fenêtre
+      windowMinimize(): Promise<IpcResponse<null>>
+      windowMaximize(): Promise<IpcResponse<null>>
+      windowClose(): Promise<IpcResponse<null>>
+      windowIsMaximized(): Promise<IpcResponse<boolean>>
+      onMaximizeChange(cb: (maximized: boolean) => void): () => void
+      platform: string
+
       // Temps réel — push du Main process
       onNewMessage(cb: (data: {
         channelId:       number | null

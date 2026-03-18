@@ -96,6 +96,19 @@ electron.contextBridge.exposeInMainWorld("api", {
   // ── Fichiers ───────────────────────────────────────────────────────────────
   readFileBase64: (filePath) => invoke("fs:readFileBase64", filePath),
   downloadFile: (filePath) => invoke("fs:downloadFile", filePath),
+  // ── Contrôles de fenêtre ──────────────────────────────────────────────────
+  windowMinimize: () => invoke("window:minimize"),
+  windowMaximize: () => invoke("window:maximize"),
+  windowClose: () => invoke("window:close"),
+  windowIsMaximized: () => invoke("window:isMaximized"),
+  // Écoute les changements d'état maximize (push depuis Main)
+  onMaximizeChange: (cb) => {
+    const listener = (_event, maximized) => cb(maximized);
+    electron.ipcRenderer.on("window:maximizeState", listener);
+    return () => electron.ipcRenderer.removeListener("window:maximizeState", listener);
+  },
+  // Plateforme (pour afficher/cacher les boutons selon l'OS)
+  platform: process.platform,
   // ── Temps réel ─────────────────────────────────────────────────────────────
   // Retourne une fonction de désabonnement pour le cleanup Vue.
   onNewMessage: (cb) => {

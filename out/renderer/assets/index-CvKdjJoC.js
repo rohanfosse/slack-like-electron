@@ -10573,6 +10573,18 @@ const LogOut = createLucideIcon("log-out", [
  * This source code is licensed under the ISC license.
  * See the LICENSE file in the root directory of this source tree.
  */
+const Maximize2 = createLucideIcon("maximize-2", [
+  ["path", { d: "M15 3h6v6", key: "1q9fwt" }],
+  ["path", { d: "m21 3-7 7", key: "1l2asr" }],
+  ["path", { d: "m3 21 7-7", key: "tjx5ai" }],
+  ["path", { d: "M9 21H3v-6", key: "wtvkvv" }]
+]);
+/**
+ * @license lucide-vue-next v0.577.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
 const Megaphone = createLucideIcon("megaphone", [
   [
     "path",
@@ -10599,6 +10611,25 @@ const MessageSquare = createLucideIcon("message-square", [
     }
   ]
 ]);
+/**
+ * @license lucide-vue-next v0.577.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+const Minimize2 = createLucideIcon("minimize-2", [
+  ["path", { d: "m14 10 7-7", key: "oa77jy" }],
+  ["path", { d: "M20 10h-6V4", key: "mjg0md" }],
+  ["path", { d: "m3 21 7-7", key: "tjx5ai" }],
+  ["path", { d: "M4 14h6v6", key: "rmj7iw" }]
+]);
+/**
+ * @license lucide-vue-next v0.577.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+const Minus = createLucideIcon("minus", [["path", { d: "M5 12h14", key: "1ays0h" }]]);
 /**
  * @license lucide-vue-next v0.577.0 - ISC
  *
@@ -11711,9 +11742,9 @@ const useModalsStore = /* @__PURE__ */ defineStore("modals", () => {
     closeAll
   };
 });
-const _hoisted_1$A = ["src", "alt"];
-const _hoisted_2$y = { key: 1 };
-const _sfc_main$A = /* @__PURE__ */ defineComponent({
+const _hoisted_1$B = ["src", "alt"];
+const _hoisted_2$z = { key: 1 };
+const _sfc_main$B = /* @__PURE__ */ defineComponent({
   __name: "Avatar",
   props: {
     initials: {},
@@ -11745,17 +11776,17 @@ const _sfc_main$A = /* @__PURE__ */ defineComponent({
           src: props2.photoData,
           alt: props2.initials,
           style: { "width": "100%", "height": "100%", "object-fit": "cover" }
-        }, null, 8, _hoisted_1$A)) : (openBlock(), createElementBlock("span", _hoisted_2$y, toDisplayString(props2.initials), 1))
+        }, null, 8, _hoisted_1$B)) : (openBlock(), createElementBlock("span", _hoisted_2$z, toDisplayString(props2.initials), 1))
       ], 4);
     };
   }
 });
-const _hoisted_1$z = {
+const _hoisted_1$A = {
   key: 0,
   class: "ctx-separator"
 };
-const _hoisted_2$x = ["tabindex", "onClick", "onKeydown"];
-const _sfc_main$z = /* @__PURE__ */ defineComponent({
+const _hoisted_2$y = ["tabindex", "onClick", "onKeydown"];
+const _sfc_main$A = /* @__PURE__ */ defineComponent({
   __name: "ContextMenu",
   props: {
     x: {},
@@ -11806,7 +11837,7 @@ const _sfc_main$z = /* @__PURE__ */ defineComponent({
         }, [
           (openBlock(true), createElementBlock(Fragment, null, renderList(__props.items, (item, i) => {
             return openBlock(), createElementBlock(Fragment, { key: i }, [
-              item.separator ? (openBlock(), createElementBlock("div", _hoisted_1$z)) : createCommentVNode("", true),
+              item.separator ? (openBlock(), createElementBlock("div", _hoisted_1$A)) : createCommentVNode("", true),
               createBaseVNode("button", {
                 class: normalizeClass(["ctx-item", { "ctx-item--danger": item.danger, "ctx-item--disabled": item.disabled }]),
                 role: "menuitem",
@@ -11820,7 +11851,7 @@ const _sfc_main$z = /* @__PURE__ */ defineComponent({
                   class: "ctx-icon"
                 })) : createCommentVNode("", true),
                 createBaseVNode("span", null, toDisplayString(item.label), 1)
-              ], 42, _hoisted_2$x)
+              ], 42, _hoisted_2$y)
             ], 64);
           }), 128))
         ], 4)
@@ -11835,7 +11866,7 @@ const _export_sfc = (sfc, props2) => {
   }
   return target;
 };
-const ContextMenu = /* @__PURE__ */ _export_sfc(_sfc_main$z, [["__scopeId", "data-v-cb5ed6f3"]]);
+const ContextMenu = /* @__PURE__ */ _export_sfc(_sfc_main$A, [["__scopeId", "data-v-cb5ed6f3"]]);
 const PALETTE = [
   "#e53935",
   "#8e24aa",
@@ -65076,12 +65107,12 @@ function useOpenExternal() {
   }
   return { openExternal };
 }
-const _hoisted_1$y = ["data-msg-id"];
-const _hoisted_2$w = {
+const _hoisted_1$z = ["data-msg-id"];
+const _hoisted_2$x = {
   key: 1,
   class: "msg-avatar-placeholder"
 };
-const _hoisted_3$t = { class: "msg-body" };
+const _hoisted_3$u = { class: "msg-body" };
 const _hoisted_4$t = {
   key: 0,
   class: "msg-meta"
@@ -65138,7 +65169,7 @@ const _hoisted_26$e = {
   class: "msg-menu",
   role: "menu"
 };
-const _sfc_main$y = /* @__PURE__ */ defineComponent({
+const _sfc_main$z = /* @__PURE__ */ defineComponent({
   __name: "MessageBubble",
   props: {
     msg: {},
@@ -65281,13 +65312,13 @@ const _sfc_main$y = /* @__PURE__ */ defineComponent({
         onClick: withModifiers(closeAll, ["self"]),
         onContextmenu: withModifiers(onContextMenu, ["prevent"])
       }, [
-        !__props.grouped ? (openBlock(), createBlock(_sfc_main$A, {
+        !__props.grouped ? (openBlock(), createBlock(_sfc_main$B, {
           key: 0,
           initials: __props.msg.author_initials || __props.msg.author_name.slice(0, 2).toUpperCase(),
           color: color.value,
           "photo-data": __props.msg.author_photo
-        }, null, 8, ["initials", "color", "photo-data"])) : (openBlock(), createElementBlock("div", _hoisted_2$w)),
-        createBaseVNode("div", _hoisted_3$t, [
+        }, null, 8, ["initials", "color", "photo-data"])) : (openBlock(), createElementBlock("div", _hoisted_2$x)),
+        createBaseVNode("div", _hoisted_3$u, [
           !__props.grouped ? (openBlock(), createElementBlock("div", _hoisted_4$t, [
             createBaseVNode("span", _hoisted_5$s, toDisplayString(__props.msg.author_name), 1),
             createBaseVNode("span", _hoisted_6$r, toDisplayString(unref(formatTime)(__props.msg.created_at)), 1),
@@ -65477,17 +65508,17 @@ const _sfc_main$y = /* @__PURE__ */ defineComponent({
           items: ctxItems.value,
           onClose: _cache[6] || (_cache[6] = ($event) => ctxVisible.value = false)
         }, null, 8, ["x", "y", "items"])) : createCommentVNode("", true)
-      ], 42, _hoisted_1$y);
+      ], 42, _hoisted_1$z);
     };
   }
 });
-const MessageBubble = /* @__PURE__ */ _export_sfc(_sfc_main$y, [["__scopeId", "data-v-a92f8991"]]);
-const _hoisted_1$x = {
+const MessageBubble = /* @__PURE__ */ _export_sfc(_sfc_main$z, [["__scopeId", "data-v-a92f8991"]]);
+const _hoisted_1$y = {
   key: 0,
   class: "skel-container"
 };
-const _hoisted_2$v = { class: "skel-msg-body" };
-const _hoisted_3$s = {
+const _hoisted_2$w = { class: "skel-msg-body" };
+const _hoisted_3$t = {
   key: 0,
   class: "skel skel-line skel-w70"
 };
@@ -65504,7 +65535,7 @@ const _hoisted_7$q = {
   key: 0,
   class: "scroll-badge"
 };
-const _sfc_main$x = /* @__PURE__ */ defineComponent({
+const _sfc_main$y = /* @__PURE__ */ defineComponent({
   __name: "MessageList",
   setup(__props) {
     const store = useMessagesStore();
@@ -65614,17 +65645,17 @@ const _sfc_main$x = /* @__PURE__ */ defineComponent({
       }, [
         createVNode(Transition, { name: "skel-fade" }, {
           default: withCtx(() => [
-            unref(store).loading ? (openBlock(), createElementBlock("div", _hoisted_1$x, [
+            unref(store).loading ? (openBlock(), createElementBlock("div", _hoisted_1$y, [
               (openBlock(), createElementBlock(Fragment, null, renderList(6, (i) => {
                 return createBaseVNode("div", {
                   key: i,
                   class: "skel-msg-row"
                 }, [
                   _cache[2] || (_cache[2] = createBaseVNode("div", { class: "skel skel-avatar" }, null, -1)),
-                  createBaseVNode("div", _hoisted_2$v, [
+                  createBaseVNode("div", _hoisted_2$w, [
                     _cache[0] || (_cache[0] = createBaseVNode("div", { class: "skel skel-line skel-w30" }, null, -1)),
                     _cache[1] || (_cache[1] = createBaseVNode("div", { class: "skel skel-line skel-w90" }, null, -1)),
-                    i % 3 !== 0 ? (openBlock(), createElementBlock("div", _hoisted_3$s)) : createCommentVNode("", true)
+                    i % 3 !== 0 ? (openBlock(), createElementBlock("div", _hoisted_3$t)) : createCommentVNode("", true)
                   ])
                 ]);
               }), 64))
@@ -65706,12 +65737,12 @@ const _sfc_main$x = /* @__PURE__ */ defineComponent({
     };
   }
 });
-const MessageList = /* @__PURE__ */ _export_sfc(_sfc_main$x, [["__scopeId", "data-v-638bb293"]]);
-const _hoisted_1$w = {
+const MessageList = /* @__PURE__ */ _export_sfc(_sfc_main$y, [["__scopeId", "data-v-638bb293"]]);
+const _hoisted_1$x = {
   id: "chat-format-toolbar",
   class: "chat-format-toolbar"
 };
-const _sfc_main$w = /* @__PURE__ */ defineComponent({
+const _sfc_main$x = /* @__PURE__ */ defineComponent({
   __name: "FormatToolbar",
   props: {
     inputEl: {}
@@ -65744,7 +65775,7 @@ const _sfc_main$w = /* @__PURE__ */ defineComponent({
       el.dispatchEvent(new Event("input"));
     }
     return (_ctx, _cache) => {
-      return openBlock(), createElementBlock("div", _hoisted_1$w, [
+      return openBlock(), createElementBlock("div", _hoisted_1$x, [
         createBaseVNode("button", {
           class: "fmt-btn btn-icon",
           title: "Gras",
@@ -65781,15 +65812,15 @@ const _sfc_main$w = /* @__PURE__ */ defineComponent({
     };
   }
 });
-const _hoisted_1$v = {
+const _hoisted_1$w = {
   class: "mi-typing",
   "aria-live": "polite"
 };
-const _hoisted_2$u = {
+const _hoisted_2$v = {
   key: 0,
   class: "mi-typing-text"
 };
-const _hoisted_3$r = {
+const _hoisted_3$s = {
   key: 0,
   class: "mi-quote-preview"
 };
@@ -65817,7 +65848,7 @@ const _hoisted_15$k = {
   key: 1,
   class: "readonly-notice"
 };
-const _sfc_main$v = /* @__PURE__ */ defineComponent({
+const _sfc_main$w = /* @__PURE__ */ defineComponent({
   __name: "MessageInput",
   setup(__props) {
     const appStore = useAppStore();
@@ -65959,12 +65990,12 @@ ${filePath}` : filePath;
         class: normalizeClass(["message-input-area", { readonly: unref(appStore).isReadonly }])
       }, [
         !unref(appStore).isReadonly ? (openBlock(), createElementBlock(Fragment, { key: 0 }, [
-          createBaseVNode("div", _hoisted_1$v, [
-            unref(messagesStore).typingText ? (openBlock(), createElementBlock("span", _hoisted_2$u, toDisplayString(unref(messagesStore).typingText), 1)) : createCommentVNode("", true)
+          createBaseVNode("div", _hoisted_1$w, [
+            unref(messagesStore).typingText ? (openBlock(), createElementBlock("span", _hoisted_2$v, toDisplayString(unref(messagesStore).typingText), 1)) : createCommentVNode("", true)
           ]),
           createVNode(Transition, { name: "quote-slide" }, {
             default: withCtx(() => [
-              unref(messagesStore).quotedMessage ? (openBlock(), createElementBlock("div", _hoisted_3$r, [
+              unref(messagesStore).quotedMessage ? (openBlock(), createElementBlock("div", _hoisted_3$s, [
                 createVNode(unref(Reply), {
                   size: 13,
                   class: "mi-quote-icon"
@@ -65984,7 +66015,7 @@ ${filePath}` : filePath;
             ]),
             _: 1
           }),
-          showToolbar.value ? (openBlock(), createBlock(_sfc_main$w, {
+          showToolbar.value ? (openBlock(), createBlock(_sfc_main$x, {
             key: 0,
             "input-el": inputEl.value
           }, null, 8, ["input-el"])) : createCommentVNode("", true),
@@ -66066,26 +66097,26 @@ ${filePath}` : filePath;
     };
   }
 });
-const MessageInput = /* @__PURE__ */ _export_sfc(_sfc_main$v, [["__scopeId", "data-v-2af72dcc"]]);
-const _hoisted_1$u = {
+const MessageInput = /* @__PURE__ */ _export_sfc(_sfc_main$w, [["__scopeId", "data-v-2af72dcc"]]);
+const _hoisted_1$v = {
   key: 0,
   class: "pinned-messages-banner"
 };
-const _hoisted_2$t = ["aria-expanded"];
-const _hoisted_3$q = {
+const _hoisted_2$u = ["aria-expanded"];
+const _hoisted_3$r = {
   key: 0,
   class: "pinned-list"
 };
 const _hoisted_4$q = { class: "pinned-author" };
 const _hoisted_5$p = ["innerHTML"];
-const _sfc_main$u = /* @__PURE__ */ defineComponent({
+const _sfc_main$v = /* @__PURE__ */ defineComponent({
   __name: "PinnedBanner",
   setup(__props) {
     const store = useMessagesStore();
     const expanded = /* @__PURE__ */ ref(false);
     const hasPinned = computed(() => store.pinned.length > 0);
     return (_ctx, _cache) => {
-      return hasPinned.value ? (openBlock(), createElementBlock("div", _hoisted_1$u, [
+      return hasPinned.value ? (openBlock(), createElementBlock("div", _hoisted_1$v, [
         createBaseVNode("button", {
           class: "pinned-header",
           "aria-expanded": expanded.value,
@@ -66097,10 +66128,10 @@ const _sfc_main$u = /* @__PURE__ */ defineComponent({
             size: 14,
             class: normalizeClass(["pinned-chevron", { rotated: expanded.value }])
           }, null, 8, ["class"])
-        ], 8, _hoisted_2$t),
+        ], 8, _hoisted_2$u),
         createVNode(Transition, { name: "pinned-expand" }, {
           default: withCtx(() => [
-            expanded.value ? (openBlock(), createElementBlock("ul", _hoisted_3$q, [
+            expanded.value ? (openBlock(), createElementBlock("ul", _hoisted_3$r, [
               (openBlock(true), createElementBlock(Fragment, null, renderList(unref(store).pinned, (m2) => {
                 return openBlock(), createElementBlock("li", {
                   key: m2.id,
@@ -66121,14 +66152,14 @@ const _sfc_main$u = /* @__PURE__ */ defineComponent({
     };
   }
 });
-const PinnedBanner = /* @__PURE__ */ _export_sfc(_sfc_main$u, [["__scopeId", "data-v-a521dd95"]]);
-const _hoisted_1$t = {
+const PinnedBanner = /* @__PURE__ */ _export_sfc(_sfc_main$v, [["__scopeId", "data-v-a521dd95"]]);
+const _hoisted_1$u = {
   key: 0,
   id: "channel-header",
   class: "channel-header"
 };
-const _hoisted_2$s = { class: "channel-header-left" };
-const _hoisted_3$p = { id: "channel-icon" };
+const _hoisted_2$t = { class: "channel-header-left" };
+const _hoisted_3$q = { id: "channel-icon" };
 const _hoisted_4$p = {
   id: "channel-name",
   class: "channel-name"
@@ -66171,7 +66202,7 @@ const _hoisted_16$j = {
 };
 const _hoisted_17$i = { class: "drop-overlay-inner" };
 const _hoisted_18$i = { class: "drop-overlay-sub" };
-const _sfc_main$t = /* @__PURE__ */ defineComponent({
+const _sfc_main$u = /* @__PURE__ */ defineComponent({
   __name: "MessagesView",
   setup(__props) {
     const appStore = useAppStore();
@@ -66291,9 +66322,9 @@ const _sfc_main$t = /* @__PURE__ */ defineComponent({
         onDragover: onDragOver,
         onDrop
       }, [
-        unref(appStore).activeChannelId || unref(appStore).activeDmStudentId ? (openBlock(), createElementBlock("header", _hoisted_1$t, [
-          createBaseVNode("div", _hoisted_2$s, [
-            createBaseVNode("span", _hoisted_3$p, toDisplayString(unref(appStore).activeDmStudentId ? "@" : "#"), 1),
+        unref(appStore).activeChannelId || unref(appStore).activeDmStudentId ? (openBlock(), createElementBlock("header", _hoisted_1$u, [
+          createBaseVNode("div", _hoisted_2$t, [
+            createBaseVNode("span", _hoisted_3$q, toDisplayString(unref(appStore).activeDmStudentId ? "@" : "#"), 1),
             createBaseVNode("span", _hoisted_4$p, toDisplayString(unref(appStore).activeChannelName), 1),
             channelHeader.value?.type === "annonce" ? (openBlock(), createElementBlock("span", _hoisted_5$o, " Annonce ")) : createCommentVNode("", true)
           ]),
@@ -66450,7 +66481,7 @@ const _sfc_main$t = /* @__PURE__ */ defineComponent({
     };
   }
 });
-const MessagesView = /* @__PURE__ */ _export_sfc(_sfc_main$t, [["__scopeId", "data-v-cc4ec5fe"]]);
+const MessagesView = /* @__PURE__ */ _export_sfc(_sfc_main$u, [["__scopeId", "data-v-cc4ec5fe"]]);
 const CATEGORY_ICONS = [
   { key: "monitor", component: Monitor, label: "Informatique" },
   { key: "cog", component: Cog, label: "Technique" },
@@ -66540,9 +66571,9 @@ const useDocumentsStore = /* @__PURE__ */ defineStore("documents", () => {
     closePreview
   };
 });
-const _hoisted_1$s = { class: "pf-shell" };
-const _hoisted_2$r = { class: "pf-header" };
-const _hoisted_3$o = { class: "pf-header-top" };
+const _hoisted_1$t = { class: "pf-shell" };
+const _hoisted_2$s = { class: "pf-header" };
+const _hoisted_3$p = { class: "pf-header-top" };
 const _hoisted_4$o = { class: "pf-header-identity" };
 const _hoisted_5$n = { class: "pf-icon-wrap" };
 const _hoisted_6$n = { class: "pf-header-text" };
@@ -66632,7 +66663,7 @@ const _hoisted_48$3 = {
 };
 const _hoisted_49$3 = ["onClick"];
 const _hoisted_50$3 = { class: "pf-ch-name" };
-const _sfc_main$s = /* @__PURE__ */ defineComponent({
+const _sfc_main$t = /* @__PURE__ */ defineComponent({
   __name: "ProjetFiche",
   props: {
     projectKey: {},
@@ -66737,9 +66768,9 @@ const _sfc_main$s = /* @__PURE__ */ defineComponent({
       return `Depuis ${fmt(start)}`;
     }
     return (_ctx, _cache) => {
-      return openBlock(), createElementBlock("div", _hoisted_1$s, [
-        createBaseVNode("header", _hoisted_2$r, [
-          createBaseVNode("div", _hoisted_3$o, [
+      return openBlock(), createElementBlock("div", _hoisted_1$t, [
+        createBaseVNode("header", _hoisted_2$s, [
+          createBaseVNode("div", _hoisted_3$p, [
             createBaseVNode("button", {
               class: "pf-back-btn",
               title: "Tous les devoirs",
@@ -66952,10 +66983,10 @@ const _sfc_main$s = /* @__PURE__ */ defineComponent({
     };
   }
 });
-const ProjetFiche = /* @__PURE__ */ _export_sfc(_sfc_main$s, [["__scopeId", "data-v-48409cc6"]]);
-const _hoisted_1$r = { class: "spf-shell" };
-const _hoisted_2$q = { class: "spf-header" };
-const _hoisted_3$n = { class: "spf-header-top" };
+const ProjetFiche = /* @__PURE__ */ _export_sfc(_sfc_main$t, [["__scopeId", "data-v-48409cc6"]]);
+const _hoisted_1$s = { class: "spf-shell" };
+const _hoisted_2$r = { class: "spf-header" };
+const _hoisted_3$o = { class: "spf-header-top" };
 const _hoisted_4$n = { class: "spf-header-identity" };
 const _hoisted_5$m = { class: "spf-icon-wrap" };
 const _hoisted_6$m = { class: "spf-header-text" };
@@ -67165,7 +67196,7 @@ const _hoisted_95$1 = {
   key: 0,
   class: "spf-results-avg"
 };
-const _sfc_main$r = /* @__PURE__ */ defineComponent({
+const _sfc_main$s = /* @__PURE__ */ defineComponent({
   __name: "StudentProjetFiche",
   props: {
     projectKey: {},
@@ -67385,9 +67416,9 @@ const _sfc_main$r = /* @__PURE__ */ defineComponent({
       return "grade-d";
     }
     return (_ctx, _cache) => {
-      return openBlock(), createElementBlock("div", _hoisted_1$r, [
-        createBaseVNode("header", _hoisted_2$q, [
-          createBaseVNode("div", _hoisted_3$n, [
+      return openBlock(), createElementBlock("div", _hoisted_1$s, [
+        createBaseVNode("header", _hoisted_2$r, [
+          createBaseVNode("div", _hoisted_3$o, [
             createBaseVNode("button", {
               class: "spf-back-btn",
               onClick: _cache[0] || (_cache[0] = ($event) => unref(appStore).activeProject = null)
@@ -67821,10 +67852,10 @@ const _sfc_main$r = /* @__PURE__ */ defineComponent({
     };
   }
 });
-const StudentProjetFiche = /* @__PURE__ */ _export_sfc(_sfc_main$r, [["__scopeId", "data-v-0ddf3887"]]);
-const _hoisted_1$q = { class: "devoirs-area" };
-const _hoisted_2$p = { class: "devoirs-header" };
-const _hoisted_3$m = { class: "devoirs-header-title" };
+const StudentProjetFiche = /* @__PURE__ */ _export_sfc(_sfc_main$s, [["__scopeId", "data-v-0ddf3887"]]);
+const _hoisted_1$r = { class: "devoirs-area" };
+const _hoisted_2$q = { class: "devoirs-header" };
+const _hoisted_3$n = { class: "devoirs-header-title" };
 const _hoisted_4$m = { class: "header-project-ctx" };
 const _hoisted_5$l = {
   key: 1,
@@ -68090,7 +68121,7 @@ const _hoisted_136 = {
   key: 2,
   class: "rendu-feedback"
 };
-const _sfc_main$q = /* @__PURE__ */ defineComponent({
+const _sfc_main$r = /* @__PURE__ */ defineComponent({
   __name: "DevoirsView",
   setup(__props) {
     const appStore = useAppStore();
@@ -68310,9 +68341,9 @@ const _sfc_main$q = /* @__PURE__ */ defineComponent({
       return TYPE_LABELS[t] ?? t;
     }
     return (_ctx, _cache) => {
-      return openBlock(), createElementBlock("div", _hoisted_1$q, [
-        createBaseVNode("header", _hoisted_2$p, [
-          createBaseVNode("div", _hoisted_3$m, [
+      return openBlock(), createElementBlock("div", _hoisted_1$r, [
+        createBaseVNode("header", _hoisted_2$q, [
+          createBaseVNode("div", _hoisted_3$n, [
             createVNode(unref(BookOpen), { size: 18 }),
             _cache[14] || (_cache[14] = createBaseVNode("span", null, "Devoirs", -1)),
             unref(appStore).activeProject ? (openBlock(), createElementBlock(Fragment, { key: 0 }, [
@@ -69057,13 +69088,13 @@ const _sfc_main$q = /* @__PURE__ */ defineComponent({
     };
   }
 });
-const DevoirsView = /* @__PURE__ */ _export_sfc(_sfc_main$q, [["__scopeId", "data-v-93a581be"]]);
-const _hoisted_1$p = {
+const DevoirsView = /* @__PURE__ */ _export_sfc(_sfc_main$r, [["__scopeId", "data-v-93a581be"]]);
+const _hoisted_1$q = {
   key: 0,
   class: "modal-header"
 };
-const _hoisted_2$o = { class: "modal-title" };
-const _sfc_main$p = /* @__PURE__ */ defineComponent({
+const _hoisted_2$p = { class: "modal-title" };
+const _sfc_main$q = /* @__PURE__ */ defineComponent({
   __name: "Modal",
   props: {
     modelValue: { type: Boolean },
@@ -69095,8 +69126,8 @@ const _sfc_main$p = /* @__PURE__ */ defineComponent({
                 class: "modal-box",
                 style: normalizeStyle({ maxWidth: __props.maxWidth })
               }, [
-                __props.title ? (openBlock(), createElementBlock("div", _hoisted_1$p, [
-                  createBaseVNode("h3", _hoisted_2$o, toDisplayString(__props.title), 1),
+                __props.title ? (openBlock(), createElementBlock("div", _hoisted_1$q, [
+                  createBaseVNode("h3", _hoisted_2$p, toDisplayString(__props.title), 1),
                   createBaseVNode("button", {
                     class: "modal-close",
                     "aria-label": "Fermer",
@@ -69115,13 +69146,13 @@ const _sfc_main$p = /* @__PURE__ */ defineComponent({
     };
   }
 });
-const Modal = /* @__PURE__ */ _export_sfc(_sfc_main$p, [["__scopeId", "data-v-46ccdc0a"]]);
-const _hoisted_1$o = {
+const Modal = /* @__PURE__ */ _export_sfc(_sfc_main$q, [["__scopeId", "data-v-46ccdc0a"]]);
+const _hoisted_1$p = {
   id: "documents-area",
   class: "docs-layout"
 };
-const _hoisted_2$n = { class: "docs-header" };
-const _hoisted_3$l = { class: "docs-header-left" };
+const _hoisted_2$o = { class: "docs-header" };
+const _hoisted_3$m = { class: "docs-header-left" };
 const _hoisted_4$l = { class: "docs-header-title-block" };
 const _hoisted_5$k = {
   key: 0,
@@ -69180,7 +69211,7 @@ const _hoisted_35$4 = {
 };
 const _hoisted_36$4 = { class: "modal-footer docs-modal-footer" };
 const _hoisted_37$3 = ["disabled"];
-const _sfc_main$o = /* @__PURE__ */ defineComponent({
+const _sfc_main$p = /* @__PURE__ */ defineComponent({
   __name: "DocumentsView",
   setup(__props) {
     const api = window.api;
@@ -69309,9 +69340,9 @@ const _sfc_main$o = /* @__PURE__ */ defineComponent({
       }
     }
     return (_ctx, _cache) => {
-      return openBlock(), createElementBlock("div", _hoisted_1$o, [
-        createBaseVNode("header", _hoisted_2$n, [
-          createBaseVNode("div", _hoisted_3$l, [
+      return openBlock(), createElementBlock("div", _hoisted_1$p, [
+        createBaseVNode("header", _hoisted_2$o, [
+          createBaseVNode("div", _hoisted_3$m, [
             createVNode(unref(FolderOpen), {
               size: 18,
               class: "docs-header-icon"
@@ -69601,13 +69632,13 @@ const _sfc_main$o = /* @__PURE__ */ defineComponent({
     };
   }
 });
-const DocumentsView = /* @__PURE__ */ _export_sfc(_sfc_main$o, [["__scopeId", "data-v-f2b98386"]]);
-const _hoisted_1$n = { class: "dashboard-shell" };
-const _hoisted_2$m = {
+const DocumentsView = /* @__PURE__ */ _export_sfc(_sfc_main$p, [["__scopeId", "data-v-f2b98386"]]);
+const _hoisted_1$o = { class: "dashboard-shell" };
+const _hoisted_2$n = {
   key: 0,
   class: "db-loading"
 };
-const _hoisted_3$k = { class: "db-skel-content" };
+const _hoisted_3$l = { class: "db-skel-content" };
 const _hoisted_4$k = { class: "db-header" };
 const _hoisted_5$j = { class: "db-header-left" };
 const _hoisted_6$j = { class: "db-title" };
@@ -69745,7 +69776,7 @@ const _hoisted_87 = {
 };
 const _hoisted_88 = { class: "frise-ms-title" };
 const _hoisted_89 = { class: "frise-ms-date" };
-const _sfc_main$n = /* @__PURE__ */ defineComponent({
+const _sfc_main$o = /* @__PURE__ */ defineComponent({
   __name: "DashboardView",
   setup(__props) {
     const appStore = useAppStore();
@@ -69989,16 +70020,16 @@ const _sfc_main$n = /* @__PURE__ */ defineComponent({
       } else router2.push("/devoirs");
     }
     return (_ctx, _cache) => {
-      return openBlock(), createElementBlock("div", _hoisted_1$n, [
+      return openBlock(), createElementBlock("div", _hoisted_1$o, [
         unref(appStore).isTeacher ? (openBlock(), createElementBlock(Fragment, { key: 0 }, [
-          loadingTeacher.value ? (openBlock(), createElementBlock("div", _hoisted_2$m, [
+          loadingTeacher.value ? (openBlock(), createElementBlock("div", _hoisted_2$n, [
             (openBlock(), createElementBlock(Fragment, null, renderList(4, (i) => {
               return createBaseVNode("div", {
                 key: i,
                 class: "skel db-skel-card"
               });
             }), 64)),
-            createBaseVNode("div", _hoisted_3$k, [
+            createBaseVNode("div", _hoisted_3$l, [
               (openBlock(), createElementBlock(Fragment, null, renderList(6, (i) => {
                 return createBaseVNode("div", {
                   key: i,
@@ -70479,7 +70510,7 @@ const _sfc_main$n = /* @__PURE__ */ defineComponent({
     };
   }
 });
-const DashboardView = /* @__PURE__ */ _export_sfc(_sfc_main$n, [["__scopeId", "data-v-a0a051a5"]]);
+const DashboardView = /* @__PURE__ */ _export_sfc(_sfc_main$o, [["__scopeId", "data-v-a0a051a5"]]);
 const router = createRouter({
   history: createWebHashHistory(),
   routes: [
@@ -70521,8 +70552,8 @@ function usePrefs() {
   }
   return { getPref, setPref };
 }
-const _hoisted_1$m = { class: "toast-msg" };
-const _sfc_main$m = /* @__PURE__ */ defineComponent({
+const _hoisted_1$n = { class: "toast-msg" };
+const _sfc_main$n = /* @__PURE__ */ defineComponent({
   __name: "Toast",
   setup(__props) {
     return (_ctx, _cache) => {
@@ -70534,7 +70565,7 @@ const _sfc_main$m = /* @__PURE__ */ defineComponent({
               id: "app-toast",
               class: normalizeClass(`toast-${unref(toastState).type}`)
             }, [
-              createBaseVNode("span", _hoisted_1$m, toDisplayString(unref(toastState).message), 1),
+              createBaseVNode("span", _hoisted_1$n, toDisplayString(unref(toastState).message), 1),
               unref(toastState).type === "undo" && unref(toastState).onUndo ? (openBlock(), createElementBlock("button", {
                 key: 0,
                 class: "toast-undo-btn",
@@ -70548,14 +70579,14 @@ const _sfc_main$m = /* @__PURE__ */ defineComponent({
     };
   }
 });
-const Toast = /* @__PURE__ */ _export_sfc(_sfc_main$m, [["__scopeId", "data-v-b8289ba3"]]);
+const Toast = /* @__PURE__ */ _export_sfc(_sfc_main$n, [["__scopeId", "data-v-b8289ba3"]]);
 const logoUrl = "" + new URL("logo-Bj-BUEWf.png", import.meta.url).href;
-const _hoisted_1$l = {
+const _hoisted_1$m = {
   class: "nav-rail",
   "aria-label": "Navigation principale"
 };
-const _hoisted_2$l = { class: "nav-logo" };
-const _hoisted_3$j = ["src", "title"];
+const _hoisted_2$m = { class: "nav-logo" };
+const _hoisted_3$k = ["src", "title"];
 const _hoisted_4$j = {
   key: 0,
   id: "nav-badge-devoirs",
@@ -70570,7 +70601,7 @@ const _hoisted_7$i = ["src", "alt"];
 const _hoisted_8$i = ["title"];
 const _hoisted_9$h = ["src", "alt"];
 const _hoisted_10$h = { key: 1 };
-const _sfc_main$l = /* @__PURE__ */ defineComponent({
+const _sfc_main$m = /* @__PURE__ */ defineComponent({
   __name: "NavRail",
   setup(__props) {
     const appStore = useAppStore();
@@ -70613,8 +70644,8 @@ const _sfc_main$l = /* @__PURE__ */ defineComponent({
       }
     }
     return (_ctx, _cache) => {
-      return openBlock(), createElementBlock("nav", _hoisted_1$l, [
-        createBaseVNode("div", _hoisted_2$l, [
+      return openBlock(), createElementBlock("nav", _hoisted_1$m, [
+        createBaseVNode("div", _hoisted_2$m, [
           createBaseVNode("img", {
             src: unref(logoUrl),
             class: "nav-logo-img",
@@ -70622,7 +70653,7 @@ const _sfc_main$l = /* @__PURE__ */ defineComponent({
             style: normalizeStyle(unref(appStore).isStaff ? { cursor: "pointer" } : {}),
             title: unref(appStore).isStaff ? "Tableau de bord" : void 0,
             onClick: _cache[0] || (_cache[0] = ($event) => unref(appStore).isStaff && unref(router2).push("/dashboard"))
-          }, null, 12, _hoisted_3$j)
+          }, null, 12, _hoisted_3$k)
         ]),
         createBaseVNode("button", {
           class: normalizeClass(["nav-btn", { active: unref(route).name === "dashboard" }]),
@@ -70735,10 +70766,91 @@ const _sfc_main$l = /* @__PURE__ */ defineComponent({
     };
   }
 });
-const NavRail = /* @__PURE__ */ _export_sfc(_sfc_main$l, [["__scopeId", "data-v-3e364c72"]]);
+const NavRail = /* @__PURE__ */ _export_sfc(_sfc_main$m, [["__scopeId", "data-v-3e364c72"]]);
+const _hoisted_1$l = { class: "titlebar-controls" };
+const _hoisted_2$l = ["title", "aria-label"];
+const _sfc_main$l = /* @__PURE__ */ defineComponent({
+  __name: "TitleBar",
+  setup(__props) {
+    const isMaximized = /* @__PURE__ */ ref(false);
+    const isMac = window.api.platform === "darwin";
+    async function minimize() {
+      await window.api.windowMinimize();
+    }
+    async function toggleMaximize() {
+      await window.api.windowMaximize();
+    }
+    async function close() {
+      await window.api.windowClose();
+    }
+    let unsubMaximize = null;
+    onMounted(async () => {
+      const res = await window.api.windowIsMaximized();
+      if (res?.ok) isMaximized.value = res.data;
+      unsubMaximize = window.api.onMaximizeChange((maximized) => {
+        isMaximized.value = maximized;
+      });
+    });
+    onUnmounted(() => {
+      unsubMaximize?.();
+    });
+    return (_ctx, _cache) => {
+      return !isMac ? (openBlock(), createElementBlock("div", {
+        key: 0,
+        class: normalizeClass(["titlebar", { maximized: isMaximized.value }])
+      }, [
+        _cache[0] || (_cache[0] = createBaseVNode("div", {
+          class: "titlebar-drag",
+          "aria-hidden": "true"
+        }, null, -1)),
+        createBaseVNode("div", _hoisted_1$l, [
+          createBaseVNode("button", {
+            class: "wctrl-btn wctrl-min",
+            title: "Réduire",
+            "aria-label": "Réduire la fenêtre",
+            onClick: withModifiers(minimize, ["stop"])
+          }, [
+            createVNode(unref(Minus), {
+              size: 10,
+              "stroke-width": "2.5"
+            })
+          ]),
+          createBaseVNode("button", {
+            class: "wctrl-btn wctrl-max",
+            title: isMaximized.value ? "Restaurer" : "Agrandir",
+            "aria-label": isMaximized.value ? "Restaurer la fenêtre" : "Agrandir la fenêtre",
+            onClick: withModifiers(toggleMaximize, ["stop"])
+          }, [
+            isMaximized.value ? (openBlock(), createBlock(unref(Minimize2), {
+              key: 0,
+              size: 10,
+              "stroke-width": "2.5"
+            })) : (openBlock(), createBlock(unref(Maximize2), {
+              key: 1,
+              size: 10,
+              "stroke-width": "2.5"
+            }))
+          ], 8, _hoisted_2$l),
+          createBaseVNode("button", {
+            class: "wctrl-btn wctrl-close",
+            title: "Fermer",
+            "aria-label": "Fermer la fenêtre",
+            onClick: withModifiers(close, ["stop"])
+          }, [
+            createVNode(unref(X$1), {
+              size: 11,
+              "stroke-width": "2.5"
+            })
+          ])
+        ])
+      ], 2)) : createCommentVNode("", true);
+    };
+  }
+});
+const TitleBar = /* @__PURE__ */ _export_sfc(_sfc_main$l, [["__scopeId", "data-v-9aa538fd"]]);
 const _hoisted_1$k = { style: { "padding": "16px", "display": "flex", "flex-direction": "column", "gap": "14px" } };
 const _hoisted_2$k = { class: "form-group" };
-const _hoisted_3$i = { class: "np-icon-grid" };
+const _hoisted_3$j = { class: "np-icon-grid" };
 const _hoisted_4$i = ["title", "onClick"];
 const _hoisted_5$h = { class: "form-group" };
 const _hoisted_6$h = { style: { "display": "flex", "align-items": "center", "gap": "8px" } };
@@ -70841,7 +70953,7 @@ const _sfc_main$k = /* @__PURE__ */ defineComponent({
           createBaseVNode("div", _hoisted_1$k, [
             createBaseVNode("div", _hoisted_2$k, [
               _cache[6] || (_cache[6] = createBaseVNode("label", { class: "form-label" }, "Icône", -1)),
-              createBaseVNode("div", _hoisted_3$i, [
+              createBaseVNode("div", _hoisted_3$j, [
                 (openBlock(true), createElementBlock(Fragment, null, renderList(unref(CATEGORY_ICONS), (ic) => {
                   return openBlock(), createElementBlock("button", {
                     key: ic.key,
@@ -70968,7 +71080,7 @@ const _sfc_main$j = /* @__PURE__ */ defineComponent({
 });
 const _hoisted_1$i = { class: "channel-prefix" };
 const _hoisted_2$i = { class: "channel-name" };
-const _hoisted_3$h = {
+const _hoisted_3$i = {
   key: 0,
   class: "mention-ping-badge",
   "aria-label": "Vous êtes mentionné"
@@ -71007,7 +71119,7 @@ const _sfc_main$i = /* @__PURE__ */ defineComponent({
       }, [
         createBaseVNode("span", _hoisted_1$i, toDisplayString(__props.muted ? "🔇" : __props.prefix), 1),
         createBaseVNode("span", _hoisted_2$i, toDisplayString(__props.name), 1),
-        mentionPing.value > 0 ? (openBlock(), createElementBlock("span", _hoisted_3$h, "@")) : unread.value > 0 ? (openBlock(), createElementBlock("span", _hoisted_4$h, toDisplayString(unread.value > 9 ? "9+" : unread.value), 1)) : createCommentVNode("", true)
+        mentionPing.value > 0 ? (openBlock(), createElementBlock("span", _hoisted_3$i, "@")) : unread.value > 0 ? (openBlock(), createElementBlock("span", _hoisted_4$h, toDisplayString(unread.value > 9 ? "9+" : unread.value), 1)) : createCommentVNode("", true)
       ], 34);
     };
   }
@@ -71021,7 +71133,7 @@ const _hoisted_2$h = {
   id: "sidebar-header",
   class: "sidebar-header"
 };
-const _hoisted_3$g = {
+const _hoisted_3$h = {
   key: 0,
   id: "teacher-badge",
   class: "teacher-badge"
@@ -71438,7 +71550,7 @@ const _sfc_main$h = /* @__PURE__ */ defineComponent({
       return openBlock(), createElementBlock(Fragment, null, [
         createBaseVNode("div", _hoisted_1$h, [
           createBaseVNode("div", _hoisted_2$h, [
-            user.value ? (openBlock(), createElementBlock("div", _hoisted_3$g, [
+            user.value ? (openBlock(), createElementBlock("div", _hoisted_3$h, [
               createBaseVNode("div", {
                 class: "avatar teacher-avatar",
                 style: normalizeStyle({
@@ -71761,7 +71873,7 @@ const _sfc_main$h = /* @__PURE__ */ defineComponent({
 const Sidebar = /* @__PURE__ */ _export_sfc(_sfc_main$h, [["__scopeId", "data-v-1168a023"]]);
 const _hoisted_1$g = { class: "auth-shell" };
 const _hoisted_2$g = { class: "auth-brand" };
-const _hoisted_3$f = { class: "auth-brand-inner" };
+const _hoisted_3$g = { class: "auth-brand-inner" };
 const _hoisted_4$f = ["src"];
 const _hoisted_5$f = { class: "auth-form-panel" };
 const _hoisted_6$f = {
@@ -71894,7 +72006,7 @@ const _sfc_main$g = /* @__PURE__ */ defineComponent({
     return (_ctx, _cache) => {
       return openBlock(), createElementBlock("div", _hoisted_1$g, [
         createBaseVNode("div", _hoisted_2$g, [
-          createBaseVNode("div", _hoisted_3$f, [
+          createBaseVNode("div", _hoisted_3$g, [
             createBaseVNode("img", {
               src: unref(logoUrl),
               class: "auth-brand-logo",
@@ -72121,7 +72233,7 @@ const _sfc_main$g = /* @__PURE__ */ defineComponent({
 const LoginOverlay = /* @__PURE__ */ _export_sfc(_sfc_main$g, [["__scopeId", "data-v-26cb3b86"]]);
 const _hoisted_1$f = { class: "cmd-palette-box" };
 const _hoisted_2$f = { class: "cmd-search-bar" };
-const _hoisted_3$e = ["src"];
+const _hoisted_3$f = ["src"];
 const _hoisted_4$e = ["onClick", "onMouseenter"];
 const _hoisted_5$e = { class: "cmd-result-label" };
 const _hoisted_6$e = { class: "cmd-result-sub" };
@@ -72267,7 +72379,7 @@ const _sfc_main$f = /* @__PURE__ */ defineComponent({
                 src: unref(logoUrl),
                 class: "cmd-logo",
                 alt: "CESIA"
-              }, null, 8, _hoisted_3$e),
+              }, null, 8, _hoisted_3$f),
               withDirectives(createBaseVNode("input", {
                 ref_key: "inputEl",
                 ref: inputEl,
@@ -72313,7 +72425,7 @@ const _sfc_main$f = /* @__PURE__ */ defineComponent({
 const CmdPalette = /* @__PURE__ */ _export_sfc(_sfc_main$f, [["__scopeId", "data-v-65692bd9"]]);
 const _hoisted_1$e = { class: "stg-layout" };
 const _hoisted_2$e = { class: "stg-nav" };
-const _hoisted_3$d = ["onClick"];
+const _hoisted_3$e = ["onClick"];
 const _hoisted_4$d = { class: "stg-body" };
 const _hoisted_5$d = {
   key: 0,
@@ -72473,7 +72585,7 @@ const _sfc_main$e = /* @__PURE__ */ defineComponent({
                     class: "stg-nav-icon"
                   })),
                   createTextVNode(" " + toDisplayString(item.label), 1)
-                ], 10, _hoisted_3$d);
+                ], 10, _hoisted_3$e);
               }), 64)),
               _cache[5] || (_cache[5] = createBaseVNode("div", { class: "stg-nav-spacer" }, null, -1)),
               createBaseVNode("button", {
@@ -72654,7 +72766,7 @@ const _sfc_main$e = /* @__PURE__ */ defineComponent({
 const SettingsModal = /* @__PURE__ */ _export_sfc(_sfc_main$e, [["__scopeId", "data-v-486deb35"]]);
 const _hoisted_1$d = { style: { "padding": "16px", "display": "flex", "flex-direction": "column", "gap": "14px" } };
 const _hoisted_2$d = { class: "form-group" };
-const _hoisted_3$c = { class: "form-group" };
+const _hoisted_3$d = { class: "form-group" };
 const _hoisted_4$c = {
   class: "cc-icon-grid",
   style: { "margin-bottom": "6px" }
@@ -72774,7 +72886,7 @@ const _sfc_main$d = /* @__PURE__ */ defineComponent({
                 [vModelText, channelName.value]
               ])
             ]),
-            createBaseVNode("div", _hoisted_3$c, [
+            createBaseVNode("div", _hoisted_3$d, [
               _cache[9] || (_cache[9] = createBaseVNode("label", { class: "form-label" }, [
                 createTextVNode("Catégorie "),
                 createBaseVNode("span", { style: { "opacity": ".55", "font-weight": "400" } }, "(optionnelle)")
@@ -72900,7 +73012,7 @@ const _sfc_main$d = /* @__PURE__ */ defineComponent({
 const CreateChannelModal = /* @__PURE__ */ _export_sfc(_sfc_main$d, [["__scopeId", "data-v-54d3d6a3"]]);
 const _hoisted_1$c = { class: "form-group" };
 const _hoisted_2$c = ["value"];
-const _hoisted_3$b = { style: { "display": "flex", "gap": "10px" } };
+const _hoisted_3$c = { style: { "display": "flex", "gap": "10px" } };
 const _hoisted_4$b = {
   class: "form-group",
   style: { "flex": "2" }
@@ -73147,7 +73259,7 @@ const _sfc_main$c = /* @__PURE__ */ defineComponent({
                 [vModelSelect, channelId.value]
               ])
             ]),
-            createBaseVNode("div", _hoisted_3$b, [
+            createBaseVNode("div", _hoisted_3$c, [
               createBaseVNode("div", _hoisted_4$b, [
                 _cache[19] || (_cache[19] = createBaseVNode("label", { class: "form-label" }, "Titre", -1)),
                 withDirectives(createBaseVNode("input", {
@@ -73389,7 +73501,7 @@ const _hoisted_1$b = {
   class: "depots-subheader"
 };
 const _hoisted_2$b = { class: "depots-meta-row" };
-const _hoisted_3$a = { class: "depots-deadline" };
+const _hoisted_3$b = { class: "depots-deadline" };
 const _hoisted_4$a = { class: "depots-progress-row" };
 const _hoisted_5$a = { class: "depots-progress-label" };
 const _hoisted_6$a = {
@@ -73617,7 +73729,7 @@ const _sfc_main$b = /* @__PURE__ */ defineComponent({
               createBaseVNode("span", {
                 class: normalizeClass(["travail-type-badge", `type-${unref(travauxStore).currentDevoir.type}`])
               }, toDisplayString(unref(travauxStore).currentDevoir.type), 3),
-              createBaseVNode("span", _hoisted_3$a, " Échéance : " + toDisplayString(unref(formatDate)(unref(travauxStore).currentDevoir.deadline)), 1)
+              createBaseVNode("span", _hoisted_3$b, " Échéance : " + toDisplayString(unref(formatDate)(unref(travauxStore).currentDevoir.deadline)), 1)
             ]),
             createBaseVNode("div", _hoisted_4$a, [
               createBaseVNode("span", _hoisted_5$a, [
@@ -73818,7 +73930,7 @@ const _sfc_main$b = /* @__PURE__ */ defineComponent({
 const DepotsModal = /* @__PURE__ */ _export_sfc(_sfc_main$b, [["__scopeId", "data-v-52537be3"]]);
 const _hoisted_1$a = { class: "suivi-body" };
 const _hoisted_2$a = { class: "suivi-progress-header" };
-const _hoisted_3$9 = { class: "suivi-progress-labels" };
+const _hoisted_3$a = { class: "suivi-progress-labels" };
 const _hoisted_4$9 = { class: "suivi-progress-pct" };
 const _hoisted_5$9 = { class: "suivi-progress-track" };
 const _hoisted_6$9 = {
@@ -73956,7 +74068,7 @@ const _sfc_main$a = /* @__PURE__ */ defineComponent({
         default: withCtx(() => [
           createBaseVNode("div", _hoisted_1$a, [
             createBaseVNode("div", _hoisted_2$a, [
-              createBaseVNode("div", _hoisted_3$9, [
+              createBaseVNode("div", _hoisted_3$a, [
                 _cache[8] || (_cache[8] = createBaseVNode("span", { class: "suivi-progress-title" }, "Progression des rendus", -1)),
                 createBaseVNode("span", _hoisted_4$9, toDisplayString(submitted.value.length) + " / " + toDisplayString(rows.value.length) + " — " + toDisplayString(pct.value) + "%", 1)
               ]),
@@ -74124,7 +74236,7 @@ const _hoisted_1$9 = {
   class: "gd-loading"
 };
 const _hoisted_2$9 = { class: "gd-meta" };
-const _hoisted_3$8 = { class: "gd-meta-badges" };
+const _hoisted_3$9 = { class: "gd-meta-badges" };
 const _hoisted_4$8 = {
   key: 0,
   class: "tag-badge"
@@ -74226,7 +74338,7 @@ const _sfc_main$9 = /* @__PURE__ */ defineComponent({
             }, null, -1)
           ])])) : (openBlock(), createElementBlock(Fragment, { key: 1 }, [
             createBaseVNode("div", _hoisted_2$9, [
-              createBaseVNode("div", _hoisted_3$8, [
+              createBaseVNode("div", _hoisted_3$9, [
                 createBaseVNode("span", {
                   class: normalizeClass(["travail-type-badge", `type-${travail.value.type}`])
                 }, toDisplayString(travail.value.type), 3),
@@ -74357,7 +74469,7 @@ const _sfc_main$9 = /* @__PURE__ */ defineComponent({
 const GestionDevoirModal = /* @__PURE__ */ _export_sfc(_sfc_main$9, [["__scopeId", "data-v-36b6d230"]]);
 const _hoisted_1$8 = { class: "ress-body" };
 const _hoisted_2$8 = { class: "ress-list" };
-const _hoisted_3$7 = {
+const _hoisted_3$8 = {
   key: 0,
   class: "ress-empty"
 };
@@ -74468,7 +74580,7 @@ const _sfc_main$8 = /* @__PURE__ */ defineComponent({
         default: withCtx(() => [
           createBaseVNode("div", _hoisted_1$8, [
             createBaseVNode("ul", _hoisted_2$8, [
-              !unref(travauxStore).ressources.length && !showForm.value ? (openBlock(), createElementBlock("li", _hoisted_3$7, " Aucune ressource attachée à ce travail. ")) : createCommentVNode("", true),
+              !unref(travauxStore).ressources.length && !showForm.value ? (openBlock(), createElementBlock("li", _hoisted_3$8, " Aucune ressource attachée à ce travail. ")) : createCommentVNode("", true),
               (openBlock(true), createElementBlock(Fragment, null, renderList(unref(travauxStore).ressources, (r) => {
                 return openBlock(), createElementBlock("li", {
                   key: r.id,
@@ -74617,7 +74729,7 @@ const _sfc_main$8 = /* @__PURE__ */ defineComponent({
 const RessourcesModal = /* @__PURE__ */ _export_sfc(_sfc_main$8, [["__scopeId", "data-v-1403a1fd"]]);
 const _hoisted_1$7 = { class: "tl-layout" };
 const _hoisted_2$7 = { class: "tl-filters" };
-const _hoisted_3$6 = ["onClick"];
+const _hoisted_3$7 = ["onClick"];
 const _hoisted_4$6 = { class: "tl-filter-count" };
 const _hoisted_5$6 = { class: "tl-content" };
 const _hoisted_6$6 = {
@@ -74726,7 +74838,7 @@ const _sfc_main$7 = /* @__PURE__ */ defineComponent({
                 }, [
                   createTextVNode(toDisplayString(f === "all" ? "Tous" : f === "etude_de_cas" ? "Étude de cas" : f.charAt(0).toUpperCase() + f.slice(1)) + " ", 1),
                   createBaseVNode("span", _hoisted_4$6, toDisplayString(typeCounts.value[f]), 1)
-                ], 10, _hoisted_3$6);
+                ], 10, _hoisted_3$7);
               }), 64))
             ]),
             createBaseVNode("div", _hoisted_5$6, [
@@ -74826,7 +74938,7 @@ const _sfc_main$7 = /* @__PURE__ */ defineComponent({
 const TimelineModal = /* @__PURE__ */ _export_sfc(_sfc_main$7, [["__scopeId", "data-v-d1d5e7c0"]]);
 const _hoisted_1$6 = { class: "ech-layout" };
 const _hoisted_2$6 = { class: "ech-tabs" };
-const _hoisted_3$5 = ["onClick"];
+const _hoisted_3$6 = ["onClick"];
 const _hoisted_4$5 = { class: "ech-tab-label" };
 const _hoisted_5$5 = { class: "ech-content" };
 const _hoisted_6$5 = {
@@ -74961,7 +75073,7 @@ const _sfc_main$6 = /* @__PURE__ */ defineComponent({
                     key: 0,
                     class: normalizeClass(["ech-tab-badge", `badge-${tab}`])
                   }, toDisplayString(tabCounts.value[tab]), 3)) : createCommentVNode("", true)
-                ], 10, _hoisted_3$5);
+                ], 10, _hoisted_3$6);
               }), 64))
             ]),
             createBaseVNode("div", _hoisted_5$5, [
@@ -123652,7 +123764,7 @@ const _hoisted_2$5 = {
   key: 0,
   class: "preview-state"
 };
-const _hoisted_3$4 = {
+const _hoisted_3$5 = {
   key: 1,
   class: "preview-state"
 };
@@ -123823,7 +123935,7 @@ const _sfc_main$5 = /* @__PURE__ */ defineComponent({
             previewType.value === "loading" ? (openBlock(), createElementBlock("div", _hoisted_2$5, [..._cache[2] || (_cache[2] = [
               createBaseVNode("div", { class: "preview-spinner" }, null, -1),
               createBaseVNode("span", null, "Chargement…", -1)
-            ])])) : previewType.value === "error" ? (openBlock(), createElementBlock("div", _hoisted_3$4, [
+            ])])) : previewType.value === "error" ? (openBlock(), createElementBlock("div", _hoisted_3$5, [
               createVNode(unref(File$1), {
                 size: 36,
                 style: { "color": "var(--color-danger)", "opacity": ".6" }
@@ -123954,7 +124066,7 @@ const _sfc_main$5 = /* @__PURE__ */ defineComponent({
 const DocumentPreviewModal = /* @__PURE__ */ _export_sfc(_sfc_main$5, [["__scopeId", "data-v-29e4265c"]]);
 const _hoisted_1$4 = { class: "impersonate-body" };
 const _hoisted_2$4 = { class: "impersonate-search" };
-const _hoisted_3$3 = {
+const _hoisted_3$4 = {
   key: 0,
   class: "impersonate-loading"
 };
@@ -124047,7 +124159,7 @@ const _sfc_main$4 = /* @__PURE__ */ defineComponent({
                 [vModelText, query.value]
               ])
             ]),
-            loading.value ? (openBlock(), createElementBlock("div", _hoisted_3$3, "Chargement…")) : (openBlock(), createElementBlock("ul", _hoisted_4$3, [
+            loading.value ? (openBlock(), createElementBlock("div", _hoisted_3$4, "Chargement…")) : (openBlock(), createElementBlock("ul", _hoisted_4$3, [
               !filtered.value.length ? (openBlock(), createElementBlock("li", _hoisted_5$3, "Aucun étudiant trouvé")) : createCommentVNode("", true),
               (openBlock(true), createElementBlock(Fragment, null, renderList(filtered.value, (s) => {
                 return openBlock(), createElementBlock("li", {
@@ -124096,7 +124208,7 @@ const _hoisted_2$3 = {
   key: 0,
   class: "stl-loading"
 };
-const _hoisted_3$2 = {
+const _hoisted_3$3 = {
   key: 1,
   class: "stl-empty"
 };
@@ -124219,7 +124331,7 @@ const _sfc_main$3 = /* @__PURE__ */ defineComponent({
                   }, null, -1)
                 ])]);
               }), 64))
-            ])) : !sorted.value.length ? (openBlock(), createElementBlock("div", _hoisted_3$2, [
+            ])) : !sorted.value.length ? (openBlock(), createElementBlock("div", _hoisted_3$3, [
               createVNode(unref(CalendarDays), {
                 size: 36,
                 class: "stl-empty-icon"
@@ -124327,7 +124439,7 @@ const _hoisted_1$2 = {
   class: "rubric-loading"
 };
 const _hoisted_2$2 = { class: "rubric-body" };
-const _hoisted_3$1 = { class: "rubric-field" };
+const _hoisted_3$2 = { class: "rubric-field" };
 const _hoisted_4$1 = { class: "rubric-criteria-header" };
 const _hoisted_5$1 = { class: "rubric-criteria-list" };
 const _hoisted_6$1 = ["onUpdate:modelValue"];
@@ -124507,7 +124619,7 @@ const _sfc_main$2 = /* @__PURE__ */ defineComponent({
         default: withCtx(() => [
           loading.value ? (openBlock(), createElementBlock("div", _hoisted_1$2, "Chargement…")) : !isScoring.value ? (openBlock(), createElementBlock(Fragment, { key: 1 }, [
             createBaseVNode("div", _hoisted_2$2, [
-              createBaseVNode("div", _hoisted_3$1, [
+              createBaseVNode("div", _hoisted_3$2, [
                 _cache[1] || (_cache[1] = createBaseVNode("label", { class: "rubric-label" }, "Titre", -1)),
                 withDirectives(createBaseVNode("input", {
                   "onUpdate:modelValue": _cache[0] || (_cache[0] = ($event) => rubricTitle.value = $event),
@@ -124667,7 +124779,7 @@ const _sfc_main$2 = /* @__PURE__ */ defineComponent({
 const RubricModal = /* @__PURE__ */ _export_sfc(_sfc_main$2, [["__scopeId", "data-v-7a8ca9f7"]]);
 const _hoisted_1$1 = { class: "import-body" };
 const _hoisted_2$1 = { class: "import-field" };
-const _hoisted_3 = ["value"];
+const _hoisted_3$1 = ["value"];
 const _hoisted_4 = {
   key: 0,
   class: "import-result"
@@ -124764,7 +124876,7 @@ const _sfc_main$1 = /* @__PURE__ */ defineComponent({
                   return openBlock(), createElementBlock("option", {
                     key: p2.id,
                     value: p2.id
-                  }, toDisplayString(p2.name), 9, _hoisted_3);
+                  }, toDisplayString(p2.name), 9, _hoisted_3$1);
                 }), 128))
               ], 512), [
                 [
@@ -124813,7 +124925,8 @@ const _hoisted_1 = {
   id: "app-shell",
   class: "app-shell"
 };
-const _hoisted_2 = {
+const _hoisted_2 = { class: "app-columns" };
+const _hoisted_3 = {
   key: 0,
   class: "offline-banner"
 };
@@ -124842,35 +124955,38 @@ const _sfc_main = /* @__PURE__ */ defineComponent({
       return openBlock(), createElementBlock(Fragment, null, [
         createVNode(Toast),
         !unref(appStore).currentUser ? (openBlock(), createBlock(LoginOverlay, { key: 0 })) : (openBlock(), createElementBlock("div", _hoisted_1, [
-          createVNode(NavRail),
-          !unref(appStore).isOnline ? (openBlock(), createElementBlock("div", _hoisted_2, [..._cache[15] || (_cache[15] = [
-            createBaseVNode("span", null, "⚡ Mode hors-ligne — les données locales restent accessibles, les liens externes sont indisponibles.", -1)
-          ])])) : createCommentVNode("", true),
-          unref(appStore).isSimulating ? (openBlock(), createElementBlock("div", {
-            key: 1,
-            id: "simulation-banner",
-            class: normalizeClass(["simulation-banner", { "banner-shift": !unref(appStore).isOnline }])
-          }, [
-            createBaseVNode("span", null, [
-              _cache[16] || (_cache[16] = createTextVNode(" Simulation : ", -1)),
-              createBaseVNode("strong", null, toDisplayString(unref(appStore).currentUser?.name), 1),
-              _cache[17] || (_cache[17] = createTextVNode(" — vous voyez l'app comme cet étudiant ", -1))
-            ]),
-            createBaseVNode("button", {
-              class: "btn-ghost simulation-stop-btn",
-              onClick: _cache[0] || (_cache[0] = ($event) => unref(appStore).stopSimulation())
-            }, " Quitter la simulation ")
-          ], 2)) : createCommentVNode("", true),
-          createBaseVNode("aside", {
-            class: normalizeClass(["sidebar-wrapper", { "sidebar-with-banner": unref(appStore).isSimulating || !unref(appStore).isOnline }])
-          }, [
-            createVNode(Sidebar)
-          ], 2),
-          createBaseVNode("main", {
-            class: normalizeClass(["main-wrapper", { "main-with-banner": unref(appStore).isSimulating || !unref(appStore).isOnline }])
-          }, [
-            createVNode(_component_RouterView)
-          ], 2)
+          createVNode(TitleBar),
+          createBaseVNode("div", _hoisted_2, [
+            createVNode(NavRail),
+            !unref(appStore).isOnline ? (openBlock(), createElementBlock("div", _hoisted_3, [..._cache[15] || (_cache[15] = [
+              createBaseVNode("span", null, "⚡ Mode hors-ligne — les données locales restent accessibles, les liens externes sont indisponibles.", -1)
+            ])])) : createCommentVNode("", true),
+            unref(appStore).isSimulating ? (openBlock(), createElementBlock("div", {
+              key: 1,
+              id: "simulation-banner",
+              class: normalizeClass(["simulation-banner", { "banner-shift": !unref(appStore).isOnline }])
+            }, [
+              createBaseVNode("span", null, [
+                _cache[16] || (_cache[16] = createTextVNode(" Simulation : ", -1)),
+                createBaseVNode("strong", null, toDisplayString(unref(appStore).currentUser?.name), 1),
+                _cache[17] || (_cache[17] = createTextVNode(" — vous voyez l'app comme cet étudiant ", -1))
+              ]),
+              createBaseVNode("button", {
+                class: "btn-ghost simulation-stop-btn",
+                onClick: _cache[0] || (_cache[0] = ($event) => unref(appStore).stopSimulation())
+              }, " Quitter la simulation ")
+            ], 2)) : createCommentVNode("", true),
+            createBaseVNode("aside", {
+              class: normalizeClass(["sidebar-wrapper", { "sidebar-with-banner": unref(appStore).isSimulating || !unref(appStore).isOnline }])
+            }, [
+              createVNode(Sidebar)
+            ], 2),
+            createBaseVNode("main", {
+              class: normalizeClass(["main-wrapper", { "main-with-banner": unref(appStore).isSimulating || !unref(appStore).isOnline }])
+            }, [
+              createVNode(_component_RouterView)
+            ], 2)
+          ])
         ])),
         unref(appStore).currentUser ? (openBlock(), createElementBlock(Fragment, { key: 2 }, [
           createVNode(CmdPalette),

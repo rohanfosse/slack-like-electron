@@ -6,6 +6,7 @@
   import { usePrefs }       from '@/composables/usePrefs'
   import Toast    from '@/components/ui/Toast.vue'
   import NavRail  from '@/components/layout/NavRail.vue'
+  import TitleBar from '@/components/layout/TitleBar.vue'
   import Sidebar  from '@/components/sidebar/Sidebar.vue'
   import LoginOverlay from '@/components/auth/LoginOverlay.vue'
   // Modales
@@ -60,6 +61,11 @@
 
   <!-- Shell principal (après connexion) -->
   <div v-else id="app-shell" class="app-shell">
+    <!-- Barre de titre custom (fenêtre sans chrome natif) -->
+    <TitleBar />
+
+    <!-- Colonnes nav + sidebar + main -->
+    <div class="app-columns">
     <NavRail />
 
     <!-- Bandeau hors-ligne -->
@@ -86,6 +92,7 @@
       <!-- Vue active (messages / travaux / documents) -->
       <RouterView />
     </main>
+    </div><!-- /.app-columns -->
   </div>
 
   <!-- Modales globales — montées une fois, visibilité gérée par le store modals -->
@@ -114,7 +121,7 @@
   /* ── Bandeau simulation étudiant ── */
   .simulation-banner {
     position: fixed;
-    top: 0;
+    top: var(--titlebar-height, 32px);
     left: 0;
     right: 0;
     z-index: 200;
@@ -142,7 +149,7 @@
   /* Bandeau hors-ligne */
   .offline-banner {
     position: fixed;
-    top: 0;
+    top: var(--titlebar-height, 32px);
     left: 0;
     right: 0;
     z-index: 201;
@@ -158,7 +165,7 @@
     border-bottom: 1px solid rgba(255,255,255,.07);
   }
 
-  .simulation-banner.banner-shift { top: 36px; }
+  .simulation-banner.banner-shift { top: calc(var(--titlebar-height, 32px) + 36px); }
 
   /* Décaler le shell quand le bandeau est visible */
   .sidebar-with-banner,
