@@ -626,14 +626,14 @@ button { font-family: var(--font); }
 
 .modal {
   background: var(--bg-modal);
-  border: 1px solid rgba(255,255,255,.1);
+  border: 1px solid rgba(255,255,255,.09);
   border-radius: var(--radius-lg);
   max-width: 95vw;
   max-height: 88vh;
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  box-shadow: 0 20px 60px rgba(0,0,0,.7);
+  box-shadow: 0 24px 80px rgba(0,0,0,.75), 0 0 0 1px rgba(255,255,255,.04) inset;
 }
 
 .modal-sm  { width: 400px; }

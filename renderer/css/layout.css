@@ -12,6 +12,7 @@
   width: var(--rail-width);
   min-width: var(--rail-width);
   background: var(--bg-rail);
+  background-image: linear-gradient(180deg, #1e2538 0%, var(--bg-rail) 35%);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -19,6 +20,7 @@
   gap: 1px;
   flex-shrink: 0;
   overflow: hidden;
+  border-right: 1px solid rgba(255,255,255,.04);
   /* Zone de déplacement de fenêtre Electron (sous titleBarOverlay) */
   -webkit-app-region: drag;
 }
@@ -120,7 +122,7 @@
   transform: translateY(-50%) scaleY(0);
   width: 4px;
   height: 22px;
-  background: #fff;
+  background: var(--accent);
   border-radius: 0 3px 3px 0;
   transition: transform .2s cubic-bezier(.34,1.56,.64,1), opacity .15s;
   opacity: 0;
@@ -134,17 +136,17 @@
 
 .nav-btn:hover::before {
   transform: translateY(-50%) scaleY(1);
-  opacity: .35;
+  opacity: .4;
   height: 10px;
 }
 
 .nav-btn.active {
-  background: rgba(255,255,255,.11);
-  color: #fff;
+  background: rgba(74,144,217,.18);
+  color: var(--accent-light);
 }
 
 .nav-btn.active .nav-label {
-  color: #fff;
+  color: var(--accent-light);
 }
 
 .nav-btn.active::before {
@@ -185,10 +187,11 @@
   max-width: 320px;
   flex-shrink: 0;
   background: var(--bg-sidebar);
-  border-right: 1px solid var(--border);
+  border-right: 1px solid rgba(255,255,255,.06);
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  box-shadow: 2px 0 12px rgba(0,0,0,.15);
 }
 
 .sidebar {
@@ -314,7 +317,8 @@ nav[aria-label="Messages directs"] {
 .sidebar-item.active {
   background: var(--bg-active);
   color: #fff;
-  font-weight: 500;
+  font-weight: 600;
+  box-shadow: inset 2px 0 0 var(--accent);
 }
 
 /* ── Non-lu : nom en gras + couleur primaire (comme Slack) ── */
@@ -461,6 +465,8 @@ nav[aria-label="Messages directs"] {
   gap: 12px;
   background: var(--bg-main);
   border-bottom: 1px solid var(--border);
+  box-shadow: 0 2px 8px rgba(0,0,0,.2);
+  z-index: 10;
 }
 
 .channel-header-left {
@@ -632,16 +638,17 @@ nav[aria-label="Messages directs"] {
   display: flex;
   align-items: flex-end;
   gap: 8px;
-  background: rgba(255,255,255,.07);
+  background: rgba(255,255,255,.06);
   border: 1px solid var(--border-input);
-  border-radius: 8px;
-  padding: 4px 4px 4px 8px;
-  transition: border-color .15s, box-shadow .15s;
+  border-radius: 12px;
+  padding: 4px 4px 4px 12px;
+  transition: border-color .2s, box-shadow .2s, background .2s;
 }
 
 .message-input-wrapper:focus-within {
-  border-color: rgba(74,144,217,.5);
-  box-shadow: 0 0 0 2px rgba(74,144,217,.1);
+  border-color: rgba(74,144,217,.55);
+  background: rgba(255,255,255,.08);
+  box-shadow: 0 0 0 3px rgba(74,144,217,.12), 0 2px 8px rgba(0,0,0,.2);
 }
 
 .message-input {
@@ -768,8 +775,13 @@ nav[aria-label="Messages directs"] {
 body.light .nav-divider           { background: rgba(0,0,0,.1); }
 body.light .nav-btn:hover         { background: rgba(0,0,0,.06); }
 body.light .nav-btn-icon:hover    { background: rgba(0,0,0,.06); }
-body.light .nav-btn.active        { background: var(--accent-subtle); color: var(--accent); }
+body.light .nav-btn               { color: rgba(0,0,0,.55); }
+body.light .nav-btn.active        { background: var(--accent-subtle); color: var(--accent); box-shadow: none; }
 body.light .nav-btn.active .nav-label { color: var(--accent); }
+body.light .sidebar-wrapper       { border-right-color: rgba(0,0,0,.09); box-shadow: 2px 0 12px rgba(0,0,0,.06); }
+body.light .channel-header        { box-shadow: 0 2px 8px rgba(0,0,0,.07); }
+body.light .message-input-wrapper { background: rgba(0,0,0,.04); }
+body.light .message-input-wrapper:focus-within { background: rgba(0,0,0,.06); box-shadow: 0 0 0 3px rgba(74,144,217,.15); }
 body.light .nav-promo-btn         { background: rgba(0,0,0,.04); border-color: rgba(0,0,0,.1); }
 body.light .nav-promo-btn:hover   { background: rgba(0,0,0,.08); border-color: rgba(0,0,0,.18); }
 body.light .skel                  { background: rgba(0,0,0,.08); }

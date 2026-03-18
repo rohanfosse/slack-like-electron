@@ -7623,6 +7623,45 @@ function getCheckboxValue(el, checked) {
   const key = checked ? "_trueValue" : "_falseValue";
   return key in el ? el[key] : checked;
 }
+const vModelDynamic = {
+  created(el, binding, vnode) {
+    callModelHook(el, binding, vnode, null, "created");
+  },
+  mounted(el, binding, vnode) {
+    callModelHook(el, binding, vnode, null, "mounted");
+  },
+  beforeUpdate(el, binding, vnode, prevVNode) {
+    callModelHook(el, binding, vnode, prevVNode, "beforeUpdate");
+  },
+  updated(el, binding, vnode, prevVNode) {
+    callModelHook(el, binding, vnode, prevVNode, "updated");
+  }
+};
+function resolveDynamicModel(tagName, type) {
+  switch (tagName) {
+    case "SELECT":
+      return vModelSelect;
+    case "TEXTAREA":
+      return vModelText;
+    default:
+      switch (type) {
+        case "checkbox":
+          return vModelCheckbox;
+        case "radio":
+          return vModelRadio;
+        default:
+          return vModelText;
+      }
+  }
+}
+function callModelHook(el, binding, vnode, prevVNode, hook) {
+  const modelToUse = resolveDynamicModel(
+    el.tagName,
+    vnode.props && vnode.props.type
+  );
+  const fn = modelToUse[hook];
+  fn && fn(el, binding, vnode, prevVNode);
+}
 const systemModifiers = ["ctrl", "shift", "alt", "meta"];
 const modifierGuards = {
   stop: (e) => e.stopPropagation(),
@@ -65643,23 +65682,23 @@ const _hoisted_20$g = {
   key: 1,
   class: "pf-travaux-list"
 };
-const _hoisted_21$f = ["onClick"];
-const _hoisted_22$e = { class: "pf-travail-top" };
-const _hoisted_23$e = { class: "pf-travail-title" };
-const _hoisted_24$e = {
+const _hoisted_21$g = ["onClick"];
+const _hoisted_22$f = { class: "pf-travail-top" };
+const _hoisted_23$f = { class: "pf-travail-title" };
+const _hoisted_24$f = {
   key: 0,
   class: "pf-progress-row"
 };
-const _hoisted_25$d = { class: "pf-progress-bar" };
-const _hoisted_26$c = { class: "pf-progress-label" };
-const _hoisted_27$c = {
+const _hoisted_25$e = { class: "pf-progress-bar" };
+const _hoisted_26$d = { class: "pf-progress-label" };
+const _hoisted_27$d = {
   class: "pf-section-header pf-section-header--draft",
   style: { "margin-top": "16px" }
 };
-const _hoisted_28$9 = { class: "pf-count" };
-const _hoisted_29$8 = { class: "pf-travaux-list" };
-const _hoisted_30$8 = ["onClick"];
-const _hoisted_31$8 = { class: "pf-travail-top" };
+const _hoisted_28$a = { class: "pf-count" };
+const _hoisted_29$9 = { class: "pf-travaux-list" };
+const _hoisted_30$9 = ["onClick"];
+const _hoisted_31$9 = { class: "pf-travail-top" };
 const _hoisted_32$8 = { class: "pf-deadline pf-deadline--muted" };
 const _hoisted_33$8 = { class: "pf-travail-title" };
 const _hoisted_34$8 = { class: "pf-col-aside" };
@@ -65877,7 +65916,7 @@ const _sfc_main$t = /* @__PURE__ */ defineComponent({
                   class: "pf-travail-card",
                   onClick: ($event) => openTravail(t.id)
                 }, [
-                  createBaseVNode("div", _hoisted_22$e, [
+                  createBaseVNode("div", _hoisted_22$f, [
                     createBaseVNode("span", {
                       class: normalizeClass(["pf-type-badge", `type-${t.type}`])
                     }, toDisplayString(TYPE_LABELS[t.type] ?? t.type), 3),
@@ -65885,32 +65924,32 @@ const _sfc_main$t = /* @__PURE__ */ defineComponent({
                       class: normalizeClass(["pf-deadline", unref(deadlineClass)(t.deadline)])
                     }, toDisplayString(unref(formatDate)(t.deadline)), 3)
                   ]),
-                  createBaseVNode("div", _hoisted_23$e, toDisplayString(t.title), 1),
-                  t.students_total ? (openBlock(), createElementBlock("div", _hoisted_24$e, [
-                    createBaseVNode("div", _hoisted_25$d, [
+                  createBaseVNode("div", _hoisted_23$f, toDisplayString(t.title), 1),
+                  t.students_total ? (openBlock(), createElementBlock("div", _hoisted_24$f, [
+                    createBaseVNode("div", _hoisted_25$e, [
                       createBaseVNode("div", {
                         class: normalizeClass(["pf-progress-fill", submitPct(t) === 100 ? "fill-complete" : submitPct(t) > 50 ? "fill-good" : ""]),
                         style: normalizeStyle({ width: submitPct(t) + "%" })
                       }, null, 6)
                     ]),
-                    createBaseVNode("span", _hoisted_26$c, toDisplayString(t.depots_count ?? 0) + "/" + toDisplayString(t.students_total), 1)
+                    createBaseVNode("span", _hoisted_26$d, toDisplayString(t.depots_count ?? 0) + "/" + toDisplayString(t.students_total), 1)
                   ])) : createCommentVNode("", true)
-                ], 8, _hoisted_21$f);
+                ], 8, _hoisted_21$g);
               }), 128))
             ])),
             travauxDraft.value.length ? (openBlock(), createElementBlock(Fragment, { key: 2 }, [
-              createBaseVNode("div", _hoisted_27$c, [
+              createBaseVNode("div", _hoisted_27$d, [
                 _cache[4] || (_cache[4] = createBaseVNode("span", null, "Brouillons", -1)),
-                createBaseVNode("span", _hoisted_28$9, toDisplayString(travauxDraft.value.length), 1)
+                createBaseVNode("span", _hoisted_28$a, toDisplayString(travauxDraft.value.length), 1)
               ]),
-              createBaseVNode("div", _hoisted_29$8, [
+              createBaseVNode("div", _hoisted_29$9, [
                 (openBlock(true), createElementBlock(Fragment, null, renderList(travauxDraft.value, (t) => {
                   return openBlock(), createElementBlock("button", {
                     key: t.id,
                     class: "pf-travail-card pf-travail-card--draft",
                     onClick: ($event) => openTravail(t.id)
                   }, [
-                    createBaseVNode("div", _hoisted_31$8, [
+                    createBaseVNode("div", _hoisted_31$9, [
                       createBaseVNode("span", {
                         class: normalizeClass(["pf-type-badge", `type-${t.type}`])
                       }, toDisplayString(TYPE_LABELS[t.type] ?? t.type), 3),
@@ -65918,7 +65957,7 @@ const _sfc_main$t = /* @__PURE__ */ defineComponent({
                       createBaseVNode("span", _hoisted_32$8, toDisplayString(unref(formatDate)(t.deadline)), 1)
                     ]),
                     createBaseVNode("div", _hoisted_33$8, toDisplayString(t.title), 1)
-                  ], 8, _hoisted_30$8);
+                  ], 8, _hoisted_30$9);
                 }), 128))
               ])
             ], 64)) : createCommentVNode("", true)
@@ -66065,23 +66104,23 @@ const _hoisted_18$g = {
 };
 const _hoisted_19$g = { class: "spf-global-bar" };
 const _hoisted_20$f = { class: "spf-body" };
-const _hoisted_21$e = { class: "spf-col-main" };
-const _hoisted_22$d = {
+const _hoisted_21$f = { class: "spf-col-main" };
+const _hoisted_22$e = {
   key: 0,
   class: "spf-loading"
 };
-const _hoisted_23$d = {
+const _hoisted_23$e = {
   key: 1,
   class: "spf-empty"
 };
-const _hoisted_24$d = { class: "spf-section-label" };
-const _hoisted_25$c = { class: "spf-section-count" };
-const _hoisted_26$b = { class: "spf-devoir-list" };
-const _hoisted_27$b = { class: "spf-card-top" };
-const _hoisted_28$8 = { class: "spf-card-title" };
-const _hoisted_29$7 = { class: "spf-card-sub" };
-const _hoisted_30$7 = { class: "spf-card-date" };
-const _hoisted_31$7 = {
+const _hoisted_24$e = { class: "spf-section-label" };
+const _hoisted_25$d = { class: "spf-section-count" };
+const _hoisted_26$c = { class: "spf-devoir-list" };
+const _hoisted_27$c = { class: "spf-card-top" };
+const _hoisted_28$9 = { class: "spf-card-title" };
+const _hoisted_29$8 = { class: "spf-card-sub" };
+const _hoisted_30$8 = { class: "spf-card-date" };
+const _hoisted_31$8 = {
   key: 0,
   class: "spf-card-group"
 };
@@ -66523,8 +66562,8 @@ const _sfc_main$s = /* @__PURE__ */ defineComponent({
           ])) : createCommentVNode("", true)
         ]),
         createBaseVNode("div", _hoisted_20$f, [
-          createBaseVNode("section", _hoisted_21$e, [
-            unref(travauxStore).loading ? (openBlock(), createElementBlock("div", _hoisted_22$d, [
+          createBaseVNode("section", _hoisted_21$f, [
+            unref(travauxStore).loading ? (openBlock(), createElementBlock("div", _hoisted_22$e, [
               (openBlock(), createElementBlock(Fragment, null, renderList(3, (i) => {
                 return createBaseVNode("div", {
                   key: i,
@@ -66540,7 +66579,7 @@ const _sfc_main$s = /* @__PURE__ */ defineComponent({
                   }, null, -1)
                 ])]);
               }), 64))
-            ])) : !devoirs.value.length ? (openBlock(), createElementBlock("div", _hoisted_23$d, [
+            ])) : !devoirs.value.length ? (openBlock(), createElementBlock("div", _hoisted_23$e, [
               createVNode(unref(BookOpen), {
                 size: 32,
                 class: "spf-empty-icon"
@@ -66548,22 +66587,22 @@ const _sfc_main$s = /* @__PURE__ */ defineComponent({
               _cache[6] || (_cache[6] = createBaseVNode("p", null, "Aucun devoir pour ce projet.", -1))
             ])) : (openBlock(), createElementBlock(Fragment, { key: 2 }, [
               devoirsPending.value.length ? (openBlock(), createElementBlock(Fragment, { key: 0 }, [
-                createBaseVNode("div", _hoisted_24$d, [
+                createBaseVNode("div", _hoisted_24$e, [
                   createVNode(unref(Clock), { size: 12 }),
                   _cache[7] || (_cache[7] = createTextVNode(" À rendre ", -1)),
-                  createBaseVNode("span", _hoisted_25$c, toDisplayString(devoirsPending.value.length), 1)
+                  createBaseVNode("span", _hoisted_25$d, toDisplayString(devoirsPending.value.length), 1)
                 ]),
-                createBaseVNode("div", _hoisted_26$b, [
+                createBaseVNode("div", _hoisted_26$c, [
                   (openBlock(true), createElementBlock(Fragment, null, renderList(devoirsPending.value, (t) => {
                     return openBlock(), createElementBlock("div", {
                       key: t.id,
                       class: normalizeClass(["spf-devoir-card", { "spf-card--overdue": isOverdue(t), "spf-card--urgent": isUrgent(t) }])
                     }, [
-                      createBaseVNode("div", _hoisted_27$b, [
+                      createBaseVNode("div", _hoisted_27$c, [
                         createBaseVNode("span", {
                           class: normalizeClass(["spf-type-badge", `type-${t.type}`])
                         }, toDisplayString(TYPE_LABELS[t.type] ?? t.type), 3),
-                        createBaseVNode("span", _hoisted_28$8, toDisplayString(t.title), 1),
+                        createBaseVNode("span", _hoisted_28$9, toDisplayString(t.title), 1),
                         createBaseVNode("span", {
                           class: normalizeClass(["spf-deadline-badge", unref(deadlineClass)(t.deadline)])
                         }, [
@@ -66571,9 +66610,9 @@ const _sfc_main$s = /* @__PURE__ */ defineComponent({
                           createTextVNode(toDisplayString(unref(deadlineLabel)(t.deadline)), 1)
                         ], 2)
                       ]),
-                      createBaseVNode("div", _hoisted_29$7, [
-                        createBaseVNode("span", _hoisted_30$7, toDisplayString(isOverdue(t) ? "🔒 Délai expiré" : "Échéance : " + unref(formatDate)(t.deadline)), 1),
-                        t.group_name ? (openBlock(), createElementBlock("span", _hoisted_31$7, [
+                      createBaseVNode("div", _hoisted_29$8, [
+                        createBaseVNode("span", _hoisted_30$8, toDisplayString(isOverdue(t) ? "🔒 Délai expiré" : "Échéance : " + unref(formatDate)(t.deadline)), 1),
+                        t.group_name ? (openBlock(), createElementBlock("span", _hoisted_31$8, [
                           createVNode(unref(Users), { size: 10 }),
                           createTextVNode(" " + toDisplayString(t.group_name), 1)
                         ])) : createCommentVNode("", true)
@@ -66922,29 +66961,29 @@ const _hoisted_17$f = ["onClick"];
 const _hoisted_18$f = { class: "student-proj-label" };
 const _hoisted_19$f = { class: "student-proj-stat" };
 const _hoisted_20$e = { class: "student-proj-submitted" };
-const _hoisted_21$d = {
+const _hoisted_21$e = {
   key: 0,
   class: "student-proj-pending"
 };
-const _hoisted_22$c = { class: "student-proj-bar" };
-const _hoisted_23$c = {
+const _hoisted_22$d = { class: "student-proj-bar" };
+const _hoisted_23$d = {
   key: 4,
   class: "devoirs-grouped"
 };
-const _hoisted_24$c = { class: "group-header group-header--danger" };
-const _hoisted_25$b = { class: "group-count" };
-const _hoisted_26$a = { class: "devoirs-list" };
-const _hoisted_27$a = { class: "devoir-card-header" };
-const _hoisted_28$7 = { class: "devoir-card-meta" };
-const _hoisted_29$6 = {
+const _hoisted_24$d = { class: "group-header group-header--danger" };
+const _hoisted_25$c = { class: "group-count" };
+const _hoisted_26$b = { class: "devoirs-list" };
+const _hoisted_27$b = { class: "devoir-card-header" };
+const _hoisted_28$8 = { class: "devoir-card-meta" };
+const _hoisted_29$7 = {
   key: 0,
   class: "tag-badge"
 };
-const _hoisted_30$6 = {
+const _hoisted_30$7 = {
   key: 1,
   class: "devoir-channel"
 };
-const _hoisted_31$6 = { class: "devoir-card-title" };
+const _hoisted_31$7 = { class: "devoir-card-title" };
 const _hoisted_32$6 = {
   key: 0,
   class: "devoir-card-desc"
@@ -67494,9 +67533,9 @@ const _sfc_main$r = /* @__PURE__ */ defineComponent({
                   createBaseVNode("span", _hoisted_18$f, toDisplayString(p2.label), 1),
                   createBaseVNode("span", _hoisted_19$f, [
                     createBaseVNode("span", _hoisted_20$e, toDisplayString(p2.submitted) + " rendu" + toDisplayString(p2.submitted > 1 ? "s" : ""), 1),
-                    p2.pending ? (openBlock(), createElementBlock("span", _hoisted_21$d, " · " + toDisplayString(p2.pending) + " à faire", 1)) : createCommentVNode("", true)
+                    p2.pending ? (openBlock(), createElementBlock("span", _hoisted_21$e, " · " + toDisplayString(p2.pending) + " à faire", 1)) : createCommentVNode("", true)
                   ]),
-                  createBaseVNode("div", _hoisted_22$c, [
+                  createBaseVNode("div", _hoisted_22$d, [
                     createBaseVNode("div", {
                       class: "student-proj-bar-fill",
                       style: normalizeStyle({ width: (p2.total ? Math.round(p2.submitted / p2.total * 100) : 0) + "%" })
@@ -67504,26 +67543,26 @@ const _sfc_main$r = /* @__PURE__ */ defineComponent({
                   ])
                 ], 8, _hoisted_17$f);
               }), 128))
-            ])) : (openBlock(), createElementBlock("div", _hoisted_23$c, [
+            ])) : (openBlock(), createElementBlock("div", _hoisted_23$d, [
               studentGroups.value.overdue.length ? (openBlock(), createElementBlock(Fragment, { key: 0 }, [
-                createBaseVNode("div", _hoisted_24$c, [
+                createBaseVNode("div", _hoisted_24$d, [
                   createVNode(unref(Lock), { size: 12 }),
                   _cache[29] || (_cache[29] = createTextVNode(" En retard ", -1)),
-                  createBaseVNode("span", _hoisted_25$b, toDisplayString(studentGroups.value.overdue.length), 1)
+                  createBaseVNode("span", _hoisted_25$c, toDisplayString(studentGroups.value.overdue.length), 1)
                 ]),
-                createBaseVNode("div", _hoisted_26$a, [
+                createBaseVNode("div", _hoisted_26$b, [
                   (openBlock(true), createElementBlock(Fragment, null, renderList(studentGroups.value.overdue, (t) => {
                     return openBlock(), createElementBlock("div", {
                       key: t.id,
                       class: "devoir-card devoir-card--overdue"
                     }, [
-                      createBaseVNode("div", _hoisted_27$a, [
-                        createBaseVNode("div", _hoisted_28$7, [
+                      createBaseVNode("div", _hoisted_27$b, [
+                        createBaseVNode("div", _hoisted_28$8, [
                           createBaseVNode("span", {
                             class: normalizeClass(["devoir-type-badge", `type-${t.type}`])
                           }, toDisplayString(typeLabel(t.type)), 3),
-                          t.category ? (openBlock(), createElementBlock("span", _hoisted_29$6, toDisplayString(unref(parseCategoryIcon)(t.category).label || t.category), 1)) : createCommentVNode("", true),
-                          t.channel_name ? (openBlock(), createElementBlock("span", _hoisted_30$6, "# " + toDisplayString(t.channel_name), 1)) : createCommentVNode("", true)
+                          t.category ? (openBlock(), createElementBlock("span", _hoisted_29$7, toDisplayString(unref(parseCategoryIcon)(t.category).label || t.category), 1)) : createCommentVNode("", true),
+                          t.channel_name ? (openBlock(), createElementBlock("span", _hoisted_30$7, "# " + toDisplayString(t.channel_name), 1)) : createCommentVNode("", true)
                         ]),
                         createBaseVNode("span", {
                           class: normalizeClass(["deadline-badge", unref(deadlineClass)(t.deadline)])
@@ -67532,7 +67571,7 @@ const _sfc_main$r = /* @__PURE__ */ defineComponent({
                           createTextVNode(toDisplayString(unref(deadlineLabel)(t.deadline)), 1)
                         ], 2)
                       ]),
-                      createBaseVNode("h3", _hoisted_31$6, toDisplayString(t.title), 1),
+                      createBaseVNode("h3", _hoisted_31$7, toDisplayString(t.title), 1),
                       t.description ? (openBlock(), createElementBlock("p", _hoisted_32$6, toDisplayString(t.description), 1)) : createCommentVNode("", true),
                       createBaseVNode("div", _hoisted_33$6, [
                         createBaseVNode("span", _hoisted_34$6, "Échéance : " + toDisplayString(unref(formatDate)(t.deadline)), 1),
@@ -68216,20 +68255,20 @@ const _hoisted_17$e = { class: "docs-grid" };
 const _hoisted_18$e = ["title", "onClick"];
 const _hoisted_19$e = { class: "doc-card-name" };
 const _hoisted_20$d = { class: "doc-card-meta" };
-const _hoisted_21$c = { key: 0 };
-const _hoisted_22$b = ["title", "onClick"];
-const _hoisted_23$b = ["onClick"];
-const _hoisted_24$b = ["onClick"];
-const _hoisted_25$a = {
+const _hoisted_21$d = { key: 0 };
+const _hoisted_22$c = ["title", "onClick"];
+const _hoisted_23$c = ["onClick"];
+const _hoisted_24$c = ["onClick"];
+const _hoisted_25$b = {
   key: 2,
   class: "docs-empty"
 };
-const _hoisted_26$9 = { class: "docs-empty-sub" };
-const _hoisted_27$9 = { class: "docs-add-form" };
-const _hoisted_28$6 = { class: "form-group" };
-const _hoisted_29$5 = { class: "form-group" };
-const _hoisted_30$5 = { class: "form-group" };
-const _hoisted_31$5 = { class: "docs-type-toggle" };
+const _hoisted_26$a = { class: "docs-empty-sub" };
+const _hoisted_27$a = { class: "docs-add-form" };
+const _hoisted_28$7 = { class: "form-group" };
+const _hoisted_29$6 = { class: "form-group" };
+const _hoisted_30$6 = { class: "form-group" };
+const _hoisted_31$6 = { class: "docs-type-toggle" };
 const _hoisted_32$5 = {
   key: 0,
   class: "form-group"
@@ -68492,7 +68531,7 @@ const _sfc_main$p = /* @__PURE__ */ defineComponent({
                     }, toDisplayString(iconLabels[docIconType(doc2)]), 5),
                     createBaseVNode("p", _hoisted_19$e, toDisplayString(doc2.name), 1),
                     createBaseVNode("p", _hoisted_20$d, [
-                      !unref(appStore).activeChannelId && doc2.channel_name ? (openBlock(), createElementBlock("span", _hoisted_21$c, "#" + toDisplayString(doc2.channel_name), 1)) : createCommentVNode("", true),
+                      !unref(appStore).activeChannelId && doc2.channel_name ? (openBlock(), createElementBlock("span", _hoisted_21$d, "#" + toDisplayString(doc2.channel_name), 1)) : createCommentVNode("", true),
                       createBaseVNode("span", null, toDisplayString(unref(formatDate)(doc2.created_at)), 1)
                     ]),
                     createBaseVNode("div", {
@@ -68512,7 +68551,7 @@ const _sfc_main$p = /* @__PURE__ */ defineComponent({
                           key: 1,
                           size: 14
                         }))
-                      ], 8, _hoisted_22$b),
+                      ], 8, _hoisted_22$c),
                       doc2.type === "file" ? (openBlock(), createElementBlock("button", {
                         key: 0,
                         class: "doc-card-action-btn",
@@ -68520,7 +68559,7 @@ const _sfc_main$p = /* @__PURE__ */ defineComponent({
                         onClick: ($event) => unref(api).downloadFile(doc2.content)
                       }, [
                         createVNode(unref(Download), { size: 14 })
-                      ], 8, _hoisted_23$b)) : createCommentVNode("", true),
+                      ], 8, _hoisted_23$c)) : createCommentVNode("", true),
                       unref(appStore).isTeacher ? (openBlock(), createElementBlock("button", {
                         key: 1,
                         class: "doc-card-action-btn doc-card-action-btn--danger",
@@ -68528,19 +68567,19 @@ const _sfc_main$p = /* @__PURE__ */ defineComponent({
                         onClick: ($event) => deleteDoc(doc2.id)
                       }, [
                         createVNode(unref(Trash2), { size: 14 })
-                      ], 8, _hoisted_24$b)) : createCommentVNode("", true)
+                      ], 8, _hoisted_24$c)) : createCommentVNode("", true)
                     ])
                   ], 8, _hoisted_18$e);
                 }), 128))
               ])
             ], 64);
-          }), 128)) : (openBlock(), createElementBlock("div", _hoisted_25$a, [
+          }), 128)) : (openBlock(), createElementBlock("div", _hoisted_25$b, [
             createVNode(unref(FolderOpen), {
               size: 40,
               class: "docs-empty-icon"
             }),
             _cache[16] || (_cache[16] = createBaseVNode("p", { class: "docs-empty-title" }, "Aucun document", -1)),
-            createBaseVNode("p", _hoisted_26$9, toDisplayString(unref(docStore).searchQuery ? "Aucun résultat pour cette recherche." : "Ce canal ne contient pas encore de document."), 1),
+            createBaseVNode("p", _hoisted_26$a, toDisplayString(unref(docStore).searchQuery ? "Aucun résultat pour cette recherche." : "Ce canal ne contient pas encore de document."), 1),
             unref(appStore).isTeacher && !unref(docStore).searchQuery ? (openBlock(), createElementBlock("button", {
               key: 0,
               class: "btn-primary",
@@ -68558,8 +68597,8 @@ const _sfc_main$p = /* @__PURE__ */ defineComponent({
           "max-width": "480px"
         }, {
           default: withCtx(() => [
-            createBaseVNode("div", _hoisted_27$9, [
-              createBaseVNode("div", _hoisted_28$6, [
+            createBaseVNode("div", _hoisted_27$a, [
+              createBaseVNode("div", _hoisted_28$7, [
                 _cache[17] || (_cache[17] = createBaseVNode("label", { class: "form-label" }, "Nom du document", -1)),
                 withDirectives(createBaseVNode("input", {
                   "onUpdate:modelValue": _cache[4] || (_cache[4] = ($event) => addName.value = $event),
@@ -68571,7 +68610,7 @@ const _sfc_main$p = /* @__PURE__ */ defineComponent({
                   [vModelText, addName.value]
                 ])
               ]),
-              createBaseVNode("div", _hoisted_29$5, [
+              createBaseVNode("div", _hoisted_29$6, [
                 _cache[18] || (_cache[18] = createBaseVNode("label", { class: "form-label" }, [
                   createTextVNode(" Catégorie "),
                   createBaseVNode("span", { class: "form-label-hint" }, "(optionnelle)")
@@ -68585,9 +68624,9 @@ const _sfc_main$p = /* @__PURE__ */ defineComponent({
                   [vModelText, addCategory.value]
                 ])
               ]),
-              createBaseVNode("div", _hoisted_30$5, [
+              createBaseVNode("div", _hoisted_30$6, [
                 _cache[21] || (_cache[21] = createBaseVNode("label", { class: "form-label" }, "Type", -1)),
-                createBaseVNode("div", _hoisted_31$5, [
+                createBaseVNode("div", _hoisted_31$6, [
                   createBaseVNode("button", {
                     class: normalizeClass(["docs-type-btn", { active: addType.value === "file" }]),
                     type: "button",
@@ -68691,17 +68730,17 @@ const _hoisted_18$d = {
 };
 const _hoisted_19$d = { class: "db-section-header" };
 const _hoisted_20$c = { class: "db-section-title" };
-const _hoisted_21$b = { class: "db-project-grid" };
-const _hoisted_22$a = ["onClick"];
-const _hoisted_23$a = { class: "db-project-icon" };
-const _hoisted_24$a = { class: "db-project-info" };
-const _hoisted_25$9 = { class: "db-project-name" };
-const _hoisted_26$8 = { class: "db-project-stats" };
-const _hoisted_27$8 = { class: "db-body" };
-const _hoisted_28$5 = { class: "db-section db-section-left" };
-const _hoisted_29$4 = { class: "db-section-header" };
-const _hoisted_30$4 = { class: "db-section-title" };
-const _hoisted_31$4 = {
+const _hoisted_21$c = { class: "db-project-grid" };
+const _hoisted_22$b = ["onClick"];
+const _hoisted_23$b = { class: "db-project-icon" };
+const _hoisted_24$b = { class: "db-project-info" };
+const _hoisted_25$a = { class: "db-project-name" };
+const _hoisted_26$9 = { class: "db-project-stats" };
+const _hoisted_27$9 = { class: "db-body" };
+const _hoisted_28$6 = { class: "db-section db-section-left" };
+const _hoisted_29$5 = { class: "db-section-header" };
+const _hoisted_30$5 = { class: "db-section-title" };
+const _hoisted_31$5 = {
   key: 0,
   class: "db-section-badge db-badge-danger"
 };
@@ -69122,14 +69161,14 @@ const _sfc_main$o = /* @__PURE__ */ defineComponent({
                   onClick: _cache[1] || (_cache[1] = ($event) => unref(router2).push("/devoirs"))
                 }, "Voir tous les devoirs →")
               ]),
-              createBaseVNode("div", _hoisted_21$b, [
+              createBaseVNode("div", _hoisted_21$c, [
                 (openBlock(true), createElementBlock(Fragment, null, renderList(projectCards.value, (p2) => {
                   return openBlock(), createElementBlock("div", {
                     key: p2.key,
                     class: "db-project-card",
                     onClick: ($event) => goToProject(p2.key)
                   }, [
-                    createBaseVNode("div", _hoisted_23$a, [
+                    createBaseVNode("div", _hoisted_23$b, [
                       p2.icon ? (openBlock(), createBlock(resolveDynamicComponent(p2.icon), {
                         key: 0,
                         size: 20
@@ -69138,9 +69177,9 @@ const _sfc_main$o = /* @__PURE__ */ defineComponent({
                         size: 20
                       }))
                     ]),
-                    createBaseVNode("div", _hoisted_24$a, [
-                      createBaseVNode("span", _hoisted_25$9, toDisplayString(p2.label), 1),
-                      createBaseVNode("span", _hoisted_26$8, [
+                    createBaseVNode("div", _hoisted_24$b, [
+                      createBaseVNode("span", _hoisted_25$a, toDisplayString(p2.label), 1),
+                      createBaseVNode("span", _hoisted_26$9, [
                         createTextVNode(toDisplayString(p2.published) + " devoir" + toDisplayString(p2.published > 1 ? "s" : "") + " publiés ", 1),
                         p2.expected ? (openBlock(), createElementBlock(Fragment, { key: 0 }, [
                           createTextVNode(" · " + toDisplayString(p2.depots) + "/" + toDisplayString(p2.expected) + " rendus", 1)
@@ -69158,17 +69197,17 @@ const _sfc_main$o = /* @__PURE__ */ defineComponent({
                       size: 14,
                       class: "db-project-chevron"
                     })
-                  ], 8, _hoisted_22$a);
+                  ], 8, _hoisted_22$b);
                 }), 128))
               ])
             ])) : createCommentVNode("", true),
-            createBaseVNode("div", _hoisted_27$8, [
-              createBaseVNode("section", _hoisted_28$5, [
-                createBaseVNode("div", _hoisted_29$4, [
-                  createBaseVNode("h2", _hoisted_30$4, [
+            createBaseVNode("div", _hoisted_27$9, [
+              createBaseVNode("section", _hoisted_28$6, [
+                createBaseVNode("div", _hoisted_29$5, [
+                  createBaseVNode("h2", _hoisted_30$5, [
                     createVNode(unref(PenLine), { size: 15 }),
                     _cache[13] || (_cache[13] = createTextVNode(" Rendus à noter ", -1)),
-                    aNoter.value.length ? (openBlock(), createElementBlock("span", _hoisted_31$4, toDisplayString(aNoter.value.length), 1)) : createCommentVNode("", true)
+                    aNoter.value.length ? (openBlock(), createElementBlock("span", _hoisted_31$5, toDisplayString(aNoter.value.length), 1)) : createCommentVNode("", true)
                   ])
                 ]),
                 aNoter.value.length === 0 ? (openBlock(), createElementBlock("div", _hoisted_32$4, [
@@ -70227,29 +70266,29 @@ const _hoisted_20$b = {
   key: 1,
   class: "project-bullet"
 };
-const _hoisted_21$a = { class: "channel-name" };
-const _hoisted_22$9 = { "aria-label": "Filtrer les documents par projet" };
-const _hoisted_23$9 = ["onClick"];
-const _hoisted_24$9 = {
+const _hoisted_21$b = { class: "channel-name" };
+const _hoisted_22$a = { "aria-label": "Filtrer les documents par projet" };
+const _hoisted_23$a = ["onClick"];
+const _hoisted_24$a = {
   key: 1,
   class: "project-bullet"
 };
-const _hoisted_25$8 = { class: "channel-name" };
-const _hoisted_26$7 = {
+const _hoisted_25$9 = { class: "channel-name" };
+const _hoisted_26$8 = {
   id: "sidebar-channels-header",
   class: "sidebar-section-header"
 };
-const _hoisted_27$7 = {
+const _hoisted_27$8 = {
   key: 0,
   class: "sidebar-category-header-wrap"
 };
-const _hoisted_28$4 = {
+const _hoisted_28$5 = {
   key: 0,
   class: "sidebar-rename-row"
 };
-const _hoisted_29$3 = ["onKeydown"];
-const _hoisted_30$3 = ["aria-expanded", "onClick", "onContextmenu"];
-const _hoisted_31$3 = { class: "sidebar-category-label" };
+const _hoisted_29$4 = ["onKeydown"];
+const _hoisted_30$4 = ["aria-expanded", "onClick", "onContextmenu"];
+const _hoisted_31$4 = { class: "sidebar-category-label" };
 const _hoisted_32$3 = { class: "sidebar-category-count" };
 const _hoisted_33$3 = ["aria-label"];
 const _hoisted_34$3 = {
@@ -70767,7 +70806,7 @@ const _sfc_main$h = /* @__PURE__ */ defineComponent({
                       size: 13,
                       class: "project-icon"
                     })) : (openBlock(), createElementBlock("span", _hoisted_20$b)),
-                    createBaseVNode("span", _hoisted_21$a, toDisplayString(unref(parseCategoryIcon)(proj).label), 1),
+                    createBaseVNode("span", _hoisted_21$b, toDisplayString(unref(parseCategoryIcon)(proj).label), 1),
                     unref(appStore).isStaff && projectStats.value[proj] ? (openBlock(), createElementBlock("span", {
                       key: 2,
                       class: normalizeClass(["project-rendus-badge", { "badge-complete": projectStats.value[proj].depots >= projectStats.value[proj].expected && projectStats.value[proj].expected > 0 }])
@@ -70784,7 +70823,7 @@ const _sfc_main$h = /* @__PURE__ */ defineComponent({
               _cache[17] || (_cache[17] = createBaseVNode("div", { class: "sidebar-section-header" }, [
                 createBaseVNode("span", null, "Projets")
               ], -1)),
-              createBaseVNode("nav", _hoisted_22$9, [
+              createBaseVNode("nav", _hoisted_22$a, [
                 createBaseVNode("button", {
                   class: normalizeClass(["sidebar-item", { active: unref(appStore).activeProject === null }]),
                   onClick: _cache[6] || (_cache[6] = ($event) => unref(appStore).activeProject = null)
@@ -70805,13 +70844,13 @@ const _sfc_main$h = /* @__PURE__ */ defineComponent({
                       key: 0,
                       size: 13,
                       class: "project-icon"
-                    })) : (openBlock(), createElementBlock("span", _hoisted_24$9)),
-                    createBaseVNode("span", _hoisted_25$8, toDisplayString(unref(parseCategoryIcon)(proj).label), 1)
-                  ], 10, _hoisted_23$9);
+                    })) : (openBlock(), createElementBlock("span", _hoisted_24$a)),
+                    createBaseVNode("span", _hoisted_25$9, toDisplayString(unref(parseCategoryIcon)(proj).label), 1)
+                  ], 10, _hoisted_23$a);
                 }), 128))
               ])
             ], 64)) : (openBlock(), createElementBlock(Fragment, { key: 5 }, [
-              createBaseVNode("div", _hoisted_26$7, [
+              createBaseVNode("div", _hoisted_26$8, [
                 createBaseVNode("span", null, toDisplayString(channelSectionLabel.value), 1),
                 unref(appStore).isTeacher ? (openBlock(), createElementBlock("button", {
                   key: 0,
@@ -70829,8 +70868,8 @@ const _sfc_main$h = /* @__PURE__ */ defineComponent({
                   key: group2.key,
                   class: "sidebar-category"
                 }, [
-                  channelGroups.value.length > 1 ? (openBlock(), createElementBlock("div", _hoisted_27$7, [
-                    renamingCategory.value === group2.key ? (openBlock(), createElementBlock("div", _hoisted_28$4, [
+                  channelGroups.value.length > 1 ? (openBlock(), createElementBlock("div", _hoisted_27$8, [
+                    renamingCategory.value === group2.key ? (openBlock(), createElementBlock("div", _hoisted_28$5, [
                       withDirectives(createBaseVNode("input", {
                         ref_for: true,
                         ref_key: "renameInputEl",
@@ -70842,7 +70881,7 @@ const _sfc_main$h = /* @__PURE__ */ defineComponent({
                           withKeys(withModifiers(cancelRename, ["prevent"]), ["escape"])
                         ],
                         onBlur: commitRenameCategory
-                      }, null, 40, _hoisted_29$3), [
+                      }, null, 40, _hoisted_29$4), [
                         [vModelText, renameValue.value]
                       ])
                     ])) : (openBlock(), createElementBlock("button", {
@@ -70861,9 +70900,9 @@ const _sfc_main$h = /* @__PURE__ */ defineComponent({
                         size: 11,
                         class: "sidebar-category-icon"
                       })) : createCommentVNode("", true),
-                      createBaseVNode("span", _hoisted_31$3, toDisplayString(unref(parseCategoryIcon)(group2.label).label), 1),
+                      createBaseVNode("span", _hoisted_31$4, toDisplayString(unref(parseCategoryIcon)(group2.label).label), 1),
                       createBaseVNode("span", _hoisted_32$3, toDisplayString(group2.channels.length), 1)
-                    ], 40, _hoisted_30$3))
+                    ], 40, _hoisted_30$4))
                   ])) : createCommentVNode("", true),
                   withDirectives(createBaseVNode("nav", {
                     "aria-label": group2.label
@@ -70937,39 +70976,55 @@ const _sfc_main$h = /* @__PURE__ */ defineComponent({
   }
 });
 const Sidebar = /* @__PURE__ */ _export_sfc(_sfc_main$h, [["__scopeId", "data-v-1168a023"]]);
-const _hoisted_1$g = { id: "login-overlay" };
-const _hoisted_2$g = {
+const _hoisted_1$g = { class: "auth-shell" };
+const _hoisted_2$g = { class: "auth-brand" };
+const _hoisted_3$f = { class: "auth-brand-inner" };
+const _hoisted_4$f = ["src"];
+const _hoisted_5$f = { class: "auth-form-panel" };
+const _hoisted_6$f = {
   key: "login",
-  id: "login-panel"
+  class: "auth-card"
 };
-const _hoisted_3$f = { class: "form-group" };
-const _hoisted_4$f = { class: "form-group" };
-const _hoisted_5$f = {
+const _hoisted_7$f = { class: "auth-field" };
+const _hoisted_8$f = { class: "auth-field" };
+const _hoisted_9$e = { class: "auth-input-wrap" };
+const _hoisted_10$e = ["type"];
+const _hoisted_11$d = ["aria-label"];
+const _hoisted_12$d = {
   key: 0,
-  class: "field-error login-error-block"
+  class: "auth-error"
 };
-const _hoisted_6$f = ["disabled"];
-const _hoisted_7$f = {
-  key: "register",
-  id: "login-panel",
-  class: "login-panel-wide"
+const _hoisted_13$c = ["disabled"];
+const _hoisted_14$c = {
+  key: 0,
+  class: "auth-spinner"
 };
-const _hoisted_8$f = { class: "register-photo-row" };
-const _hoisted_9$e = ["src"];
-const _hoisted_10$e = { key: 1 };
-const _hoisted_11$d = { class: "login-name-row" };
-const _hoisted_12$d = { class: "form-group" };
-const _hoisted_13$c = { class: "form-group" };
-const _hoisted_14$c = { class: "form-group" };
 const _hoisted_15$c = {
-  key: 0,
-  class: "field-error"
+  key: "register",
+  class: "auth-card auth-card-wide"
 };
-const _hoisted_16$c = { class: "form-group" };
-const _hoisted_17$b = ["value"];
-const _hoisted_18$b = { class: "form-group" };
-const _hoisted_19$b = { class: "login-form-actions" };
-const _hoisted_20$a = ["disabled"];
+const _hoisted_16$c = { class: "auth-avatar-row" };
+const _hoisted_17$b = ["src"];
+const _hoisted_18$b = { key: 1 };
+const _hoisted_19$b = { class: "auth-avatar-actions" };
+const _hoisted_20$a = { class: "auth-row-2" };
+const _hoisted_21$a = { class: "auth-field" };
+const _hoisted_22$9 = { class: "auth-field" };
+const _hoisted_23$9 = { class: "auth-field" };
+const _hoisted_24$9 = {
+  key: 0,
+  class: "auth-field-error"
+};
+const _hoisted_25$8 = { class: "auth-row-2" };
+const _hoisted_26$7 = { class: "auth-field" };
+const _hoisted_27$7 = ["value"];
+const _hoisted_28$4 = { class: "auth-field" };
+const _hoisted_29$3 = { class: "auth-form-actions" };
+const _hoisted_30$3 = ["disabled"];
+const _hoisted_31$3 = {
+  key: 0,
+  class: "auth-spinner"
+};
 const _sfc_main$g = /* @__PURE__ */ defineComponent({
   __name: "LoginOverlay",
   setup(__props) {
@@ -70980,19 +71035,19 @@ const _sfc_main$g = /* @__PURE__ */ defineComponent({
     const password = /* @__PURE__ */ ref("");
     const loginErr = /* @__PURE__ */ ref("");
     const submitting = /* @__PURE__ */ ref(false);
+    const showPwd = /* @__PURE__ */ ref(false);
     async function handleLogin() {
       loginErr.value = "";
       submitting.value = true;
       try {
         const res = await window.api.loginWithCredentials(email.value.trim(), password.value);
-        if (!res.ok || !res.data) {
+        if (!res?.ok || !res.data) {
           loginErr.value = "Email ou mot de passe incorrect.";
           password.value = "";
           return;
         }
         const u3 = res.data;
-        const initials_ = u3.avatar_initials ?? u3.name.split(" ").map((w2) => w2[0]).join("").toUpperCase().slice(0, 2);
-        appStore.login({ ...u3, avatar_initials: initials_ });
+        appStore.login({ ...u3, avatar_initials: u3.avatar_initials ?? u3.name.slice(0, 2).toUpperCase() });
         router2.replace("/messages");
       } finally {
         submitting.value = false;
@@ -71007,9 +71062,10 @@ const _sfc_main$g = /* @__PURE__ */ defineComponent({
     const regSubmitting = /* @__PURE__ */ ref(false);
     const pendingPhoto = /* @__PURE__ */ ref(null);
     const promotions = /* @__PURE__ */ ref([]);
-    async function loadPromos() {
+    async function goRegister() {
       const res = await window.api.getPromotions();
       promotions.value = res?.ok ? res.data : [];
+      screen.value = "register";
     }
     const previewInitials = () => {
       const n = `${firstName.value} ${lastName.value}`.trim();
@@ -71044,219 +71100,242 @@ const _sfc_main$g = /* @__PURE__ */ defineComponent({
         const stuRes = await window.api.getStudentByEmail(regEmail.value.trim().toLowerCase());
         if (!stuRes?.ok || !stuRes.data) return;
         const stu = stuRes.data;
-        const initials_ = fullName.split(/\s+/).map((w2) => w2[0]).join("").toUpperCase().slice(0, 2);
-        appStore.login({ ...stu, avatar_initials: initials_, type: "student" });
+        appStore.login({ ...stu, type: "student" });
         router2.replace("/messages");
       } catch (e) {
-        regEmailErr.value = e.message ?? "Erreur lors de la création du compte.";
+        regEmailErr.value = e.message ?? "Erreur.";
       } finally {
         regSubmitting.value = false;
       }
     }
-    async function goToRegister() {
-      screen.value = "register";
-      await loadPromos();
-    }
     return (_ctx, _cache) => {
       return openBlock(), createElementBlock("div", _hoisted_1$g, [
-        createVNode(Transition, {
-          name: "login-screen",
-          mode: "out-in"
-        }, {
-          default: withCtx(() => [
-            screen.value === "login" ? (openBlock(), createElementBlock("div", _hoisted_2$g, [
-              _cache[11] || (_cache[11] = createBaseVNode("div", { id: "login-logo" }, [
-                createBaseVNode("div", { class: "logo-mark" }, "CeS"),
-                createBaseVNode("span", { class: "logo-text" }, "CeSlack")
-              ], -1)),
-              _cache[12] || (_cache[12] = createBaseVNode("h2", { id: "login-title" }, "Connexion", -1)),
-              _cache[13] || (_cache[13] = createBaseVNode("p", { id: "login-subtitle" }, "Entrez vos identifiants pour continuer", -1)),
-              createBaseVNode("form", {
-                class: "login-form",
-                onSubmit: withModifiers(handleLogin, ["prevent"])
-              }, [
-                createBaseVNode("div", _hoisted_3$f, [
-                  _cache[9] || (_cache[9] = createBaseVNode("label", {
-                    class: "form-label",
-                    for: "login-email"
-                  }, "Adresse email", -1)),
-                  withDirectives(createBaseVNode("input", {
-                    id: "login-email",
-                    "onUpdate:modelValue": _cache[0] || (_cache[0] = ($event) => email.value = $event),
-                    type: "email",
-                    class: "form-input",
-                    placeholder: "prenom.nom@viacesi.fr",
-                    autocomplete: "email",
-                    required: "",
-                    autofocus: ""
-                  }, null, 512), [
-                    [vModelText, email.value]
-                  ])
-                ]),
-                createBaseVNode("div", _hoisted_4$f, [
-                  _cache[10] || (_cache[10] = createBaseVNode("label", {
-                    class: "form-label",
-                    for: "login-password"
-                  }, "Mot de passe", -1)),
-                  withDirectives(createBaseVNode("input", {
-                    id: "login-password",
-                    "onUpdate:modelValue": _cache[1] || (_cache[1] = ($event) => password.value = $event),
-                    type: "password",
-                    class: "form-input",
-                    placeholder: "••••••••",
-                    autocomplete: "current-password",
-                    required: ""
-                  }, null, 512), [
-                    [vModelText, password.value]
-                  ])
-                ]),
-                createVNode(Transition, { name: "error-pop" }, {
-                  default: withCtx(() => [
-                    loginErr.value ? (openBlock(), createElementBlock("span", _hoisted_5$f, toDisplayString(loginErr.value), 1)) : createCommentVNode("", true)
-                  ]),
-                  _: 1
-                }),
-                createBaseVNode("button", {
-                  type: "submit",
-                  class: "btn-primary login-submit",
-                  disabled: submitting.value
-                }, toDisplayString(submitting.value ? "Connexion…" : "Se connecter"), 9, _hoisted_6$f)
-              ], 32),
-              createBaseVNode("button", {
-                class: "btn-ghost login-switch-btn",
-                onClick: goToRegister
-              }, " Nouveau compte étudiant ")
-            ])) : (openBlock(), createElementBlock("div", _hoisted_7$f, [
-              _cache[20] || (_cache[20] = createBaseVNode("div", { id: "login-logo" }, [
-                createBaseVNode("div", { class: "logo-mark" }, "CeS"),
-                createBaseVNode("span", { class: "logo-text" }, "CeSlack")
-              ], -1)),
-              _cache[21] || (_cache[21] = createBaseVNode("h2", { id: "login-title" }, "Nouveau compte étudiant", -1)),
-              _cache[22] || (_cache[22] = createBaseVNode("p", { id: "login-subtitle" }, "Seules les adresses @viacesi.fr sont acceptées", -1)),
-              createBaseVNode("form", {
-                class: "login-form",
-                onSubmit: withModifiers(handleRegister, ["prevent"])
-              }, [
-                createBaseVNode("div", _hoisted_8$f, [
-                  createBaseVNode("div", {
-                    class: "register-avatar-preview",
-                    style: normalizeStyle({ background: pendingPhoto.value ? "transparent" : previewColor() })
-                  }, [
-                    pendingPhoto.value ? (openBlock(), createElementBlock("img", {
-                      key: 0,
-                      src: pendingPhoto.value,
-                      class: "register-avatar-img"
-                    }, null, 8, _hoisted_9$e)) : (openBlock(), createElementBlock("span", _hoisted_10$e, toDisplayString(previewInitials()), 1))
-                  ], 4),
-                  createBaseVNode("button", {
-                    type: "button",
-                    class: "btn-ghost btn-sm",
-                    onClick: pickPhoto
-                  }, "Choisir une photo"),
-                  pendingPhoto.value ? (openBlock(), createElementBlock("button", {
-                    key: 0,
-                    type: "button",
-                    class: "btn-ghost btn-sm register-btn-remove",
-                    onClick: _cache[2] || (_cache[2] = ($event) => pendingPhoto.value = null)
-                  }, " Supprimer ")) : createCommentVNode("", true)
-                ]),
-                createBaseVNode("div", _hoisted_11$d, [
-                  createBaseVNode("div", _hoisted_12$d, [
-                    _cache[14] || (_cache[14] = createBaseVNode("label", { class: "form-label" }, "Prénom", -1)),
+        createBaseVNode("div", _hoisted_2$g, [
+          createBaseVNode("div", _hoisted_3$f, [
+            createBaseVNode("img", {
+              src: unref(logoUrl),
+              class: "auth-brand-logo",
+              alt: "CeSlack"
+            }, null, 8, _hoisted_4$f),
+            _cache[10] || (_cache[10] = createStaticVNode('<h1 class="auth-brand-name" data-v-26cb3b86>CeSlack</h1><p class="auth-brand-tagline" data-v-26cb3b86>La plateforme pédagogique<br data-v-26cb3b86>de votre formation CESI</p><ul class="auth-feature-list" data-v-26cb3b86><li data-v-26cb3b86><span class="auth-feature-dot" data-v-26cb3b86></span>Messagerie par promotion &amp; canal</li><li data-v-26cb3b86><span class="auth-feature-dot" data-v-26cb3b86></span>Suivi des devoirs et rendus</li><li data-v-26cb3b86><span class="auth-feature-dot" data-v-26cb3b86></span>Documents et ressources centralisés</li><li data-v-26cb3b86><span class="auth-feature-dot" data-v-26cb3b86></span>Notifications en temps réel</li></ul>', 3))
+          ])
+        ]),
+        createBaseVNode("div", _hoisted_5$f, [
+          createVNode(Transition, {
+            name: "auth-slide",
+            mode: "out-in"
+          }, {
+            default: withCtx(() => [
+              screen.value === "login" ? (openBlock(), createElementBlock("div", _hoisted_6$f, [
+                _cache[13] || (_cache[13] = createBaseVNode("h2", { class: "auth-card-title" }, "Connexion", -1)),
+                _cache[14] || (_cache[14] = createBaseVNode("p", { class: "auth-card-sub" }, "Entrez vos identifiants pour accéder à votre espace", -1)),
+                createBaseVNode("form", {
+                  class: "auth-form",
+                  onSubmit: withModifiers(handleLogin, ["prevent"])
+                }, [
+                  createBaseVNode("div", _hoisted_7$f, [
+                    _cache[11] || (_cache[11] = createBaseVNode("label", {
+                      class: "auth-label",
+                      for: "auth-email"
+                    }, "Adresse email", -1)),
                     withDirectives(createBaseVNode("input", {
-                      "onUpdate:modelValue": _cache[3] || (_cache[3] = ($event) => firstName.value = $event),
-                      type: "text",
-                      class: "form-input",
-                      placeholder: "ex : Alice",
-                      required: ""
+                      id: "auth-email",
+                      "onUpdate:modelValue": _cache[0] || (_cache[0] = ($event) => email.value = $event),
+                      type: "email",
+                      class: "auth-input",
+                      placeholder: "prenom.nom@viacesi.fr",
+                      autocomplete: "email",
+                      required: "",
+                      autofocus: ""
                     }, null, 512), [
-                      [vModelText, firstName.value]
+                      [vModelText, email.value]
                     ])
                   ]),
-                  createBaseVNode("div", _hoisted_13$c, [
-                    _cache[15] || (_cache[15] = createBaseVNode("label", { class: "form-label" }, "Nom", -1)),
-                    withDirectives(createBaseVNode("input", {
-                      "onUpdate:modelValue": _cache[4] || (_cache[4] = ($event) => lastName.value = $event),
-                      type: "text",
-                      class: "form-input",
-                      placeholder: "ex : Martin",
-                      required: ""
-                    }, null, 512), [
-                      [vModelText, lastName.value]
+                  createBaseVNode("div", _hoisted_8$f, [
+                    _cache[12] || (_cache[12] = createBaseVNode("label", {
+                      class: "auth-label",
+                      for: "auth-pwd"
+                    }, "Mot de passe", -1)),
+                    createBaseVNode("div", _hoisted_9$e, [
+                      withDirectives(createBaseVNode("input", {
+                        id: "auth-pwd",
+                        "onUpdate:modelValue": _cache[1] || (_cache[1] = ($event) => password.value = $event),
+                        type: showPwd.value ? "text" : "password",
+                        class: "auth-input auth-input-pwd",
+                        placeholder: "••••••••",
+                        autocomplete: "current-password",
+                        required: ""
+                      }, null, 8, _hoisted_10$e), [
+                        [vModelDynamic, password.value]
+                      ]),
+                      createBaseVNode("button", {
+                        type: "button",
+                        class: "auth-pwd-toggle",
+                        "aria-label": showPwd.value ? "Masquer" : "Afficher",
+                        onClick: _cache[2] || (_cache[2] = ($event) => showPwd.value = !showPwd.value)
+                      }, toDisplayString(showPwd.value ? "🙈" : "👁"), 9, _hoisted_11$d)
                     ])
-                  ])
-                ]),
-                createBaseVNode("div", _hoisted_14$c, [
-                  _cache[16] || (_cache[16] = createBaseVNode("label", { class: "form-label" }, "Adresse email CESI", -1)),
-                  withDirectives(createBaseVNode("input", {
-                    "onUpdate:modelValue": _cache[5] || (_cache[5] = ($event) => regEmail.value = $event),
-                    type: "email",
-                    class: "form-input",
-                    placeholder: "prenom.nom@viacesi.fr",
-                    required: ""
-                  }, null, 512), [
-                    [vModelText, regEmail.value]
                   ]),
-                  createVNode(Transition, { name: "error-pop" }, {
+                  createVNode(Transition, { name: "err-pop" }, {
                     default: withCtx(() => [
-                      regEmailErr.value ? (openBlock(), createElementBlock("span", _hoisted_15$c, toDisplayString(regEmailErr.value), 1)) : createCommentVNode("", true)
+                      loginErr.value ? (openBlock(), createElementBlock("div", _hoisted_12$d, toDisplayString(loginErr.value), 1)) : createCommentVNode("", true)
                     ]),
                     _: 1
-                  })
-                ]),
-                createBaseVNode("div", _hoisted_16$c, [
-                  _cache[18] || (_cache[18] = createBaseVNode("label", { class: "form-label" }, "Promotion", -1)),
-                  withDirectives(createBaseVNode("select", {
-                    "onUpdate:modelValue": _cache[6] || (_cache[6] = ($event) => regPromoId.value = $event),
-                    class: "form-select",
-                    required: ""
-                  }, [
-                    _cache[17] || (_cache[17] = createBaseVNode("option", { value: "" }, "Choisir une promotion…", -1)),
-                    (openBlock(true), createElementBlock(Fragment, null, renderList(promotions.value, (p2) => {
-                      return openBlock(), createElementBlock("option", {
-                        key: p2.id,
-                        value: p2.id
-                      }, toDisplayString(p2.name), 9, _hoisted_17$b);
-                    }), 128))
-                  ], 512), [
-                    [vModelSelect, regPromoId.value]
-                  ])
-                ]),
-                createBaseVNode("div", _hoisted_18$b, [
-                  _cache[19] || (_cache[19] = createBaseVNode("label", { class: "form-label" }, "Mot de passe", -1)),
-                  withDirectives(createBaseVNode("input", {
-                    "onUpdate:modelValue": _cache[7] || (_cache[7] = ($event) => regPassword.value = $event),
-                    type: "password",
-                    class: "form-input",
-                    placeholder: "Choisissez un mot de passe",
-                    required: "",
-                    minlength: "4"
-                  }, null, 512), [
-                    [vModelText, regPassword.value]
-                  ])
-                ]),
-                createBaseVNode("div", _hoisted_19$b, [
-                  createBaseVNode("button", {
-                    type: "button",
-                    class: "btn-ghost",
-                    onClick: _cache[8] || (_cache[8] = ($event) => screen.value = "login")
-                  }, "Retour"),
+                  }),
                   createBaseVNode("button", {
                     type: "submit",
-                    class: "btn-primary login-submit-wide",
-                    disabled: regSubmitting.value
-                  }, toDisplayString(regSubmitting.value ? "Création…" : "Créer mon compte"), 9, _hoisted_20$a)
-                ])
-              ], 32)
-            ]))
-          ]),
-          _: 1
-        })
+                    class: "auth-submit",
+                    disabled: submitting.value
+                  }, [
+                    submitting.value ? (openBlock(), createElementBlock("span", _hoisted_14$c)) : createCommentVNode("", true),
+                    createTextVNode(" " + toDisplayString(submitting.value ? "Connexion…" : "Se connecter"), 1)
+                  ], 8, _hoisted_13$c)
+                ], 32),
+                _cache[15] || (_cache[15] = createBaseVNode("div", { class: "auth-divider" }, [
+                  createBaseVNode("span", null, "Pas encore de compte ?")
+                ], -1)),
+                createBaseVNode("button", {
+                  class: "auth-secondary-btn",
+                  onClick: goRegister
+                }, " Créer un compte étudiant ")
+              ])) : (openBlock(), createElementBlock("div", _hoisted_15$c, [
+                _cache[22] || (_cache[22] = createBaseVNode("h2", { class: "auth-card-title" }, "Créer un compte", -1)),
+                _cache[23] || (_cache[23] = createBaseVNode("p", { class: "auth-card-sub" }, [
+                  createTextVNode("Réservé aux adresses "),
+                  createBaseVNode("strong", null, "@viacesi.fr")
+                ], -1)),
+                createBaseVNode("form", {
+                  class: "auth-form",
+                  onSubmit: withModifiers(handleRegister, ["prevent"])
+                }, [
+                  createBaseVNode("div", _hoisted_16$c, [
+                    createBaseVNode("div", {
+                      class: "auth-avatar-preview",
+                      style: normalizeStyle({ background: pendingPhoto.value ? "transparent" : previewColor() })
+                    }, [
+                      pendingPhoto.value ? (openBlock(), createElementBlock("img", {
+                        key: 0,
+                        src: pendingPhoto.value,
+                        class: "auth-avatar-img"
+                      }, null, 8, _hoisted_17$b)) : (openBlock(), createElementBlock("span", _hoisted_18$b, toDisplayString(previewInitials()), 1))
+                    ], 4),
+                    createBaseVNode("div", _hoisted_19$b, [
+                      createBaseVNode("button", {
+                        type: "button",
+                        class: "auth-outline-btn",
+                        onClick: pickPhoto
+                      }, " Choisir une photo "),
+                      pendingPhoto.value ? (openBlock(), createElementBlock("button", {
+                        key: 0,
+                        type: "button",
+                        class: "auth-link-btn",
+                        onClick: _cache[3] || (_cache[3] = ($event) => pendingPhoto.value = null)
+                      }, " Supprimer ")) : createCommentVNode("", true)
+                    ])
+                  ]),
+                  createBaseVNode("div", _hoisted_20$a, [
+                    createBaseVNode("div", _hoisted_21$a, [
+                      _cache[16] || (_cache[16] = createBaseVNode("label", { class: "auth-label" }, "Prénom", -1)),
+                      withDirectives(createBaseVNode("input", {
+                        "onUpdate:modelValue": _cache[4] || (_cache[4] = ($event) => firstName.value = $event),
+                        type: "text",
+                        class: "auth-input",
+                        placeholder: "Alice",
+                        required: ""
+                      }, null, 512), [
+                        [vModelText, firstName.value]
+                      ])
+                    ]),
+                    createBaseVNode("div", _hoisted_22$9, [
+                      _cache[17] || (_cache[17] = createBaseVNode("label", { class: "auth-label" }, "Nom", -1)),
+                      withDirectives(createBaseVNode("input", {
+                        "onUpdate:modelValue": _cache[5] || (_cache[5] = ($event) => lastName.value = $event),
+                        type: "text",
+                        class: "auth-input",
+                        placeholder: "Martin",
+                        required: ""
+                      }, null, 512), [
+                        [vModelText, lastName.value]
+                      ])
+                    ])
+                  ]),
+                  createBaseVNode("div", _hoisted_23$9, [
+                    _cache[18] || (_cache[18] = createBaseVNode("label", { class: "auth-label" }, "Email CESI", -1)),
+                    withDirectives(createBaseVNode("input", {
+                      "onUpdate:modelValue": _cache[6] || (_cache[6] = ($event) => regEmail.value = $event),
+                      type: "email",
+                      class: "auth-input",
+                      placeholder: "prenom.nom@viacesi.fr",
+                      required: ""
+                    }, null, 512), [
+                      [vModelText, regEmail.value]
+                    ]),
+                    createVNode(Transition, { name: "err-pop" }, {
+                      default: withCtx(() => [
+                        regEmailErr.value ? (openBlock(), createElementBlock("span", _hoisted_24$9, toDisplayString(regEmailErr.value), 1)) : createCommentVNode("", true)
+                      ]),
+                      _: 1
+                    })
+                  ]),
+                  createBaseVNode("div", _hoisted_25$8, [
+                    createBaseVNode("div", _hoisted_26$7, [
+                      _cache[20] || (_cache[20] = createBaseVNode("label", { class: "auth-label" }, "Promotion", -1)),
+                      withDirectives(createBaseVNode("select", {
+                        "onUpdate:modelValue": _cache[7] || (_cache[7] = ($event) => regPromoId.value = $event),
+                        class: "auth-input",
+                        required: ""
+                      }, [
+                        _cache[19] || (_cache[19] = createBaseVNode("option", { value: "" }, "Choisir…", -1)),
+                        (openBlock(true), createElementBlock(Fragment, null, renderList(promotions.value, (p2) => {
+                          return openBlock(), createElementBlock("option", {
+                            key: p2.id,
+                            value: p2.id
+                          }, toDisplayString(p2.name), 9, _hoisted_27$7);
+                        }), 128))
+                      ], 512), [
+                        [vModelSelect, regPromoId.value]
+                      ])
+                    ]),
+                    createBaseVNode("div", _hoisted_28$4, [
+                      _cache[21] || (_cache[21] = createBaseVNode("label", { class: "auth-label" }, "Mot de passe", -1)),
+                      withDirectives(createBaseVNode("input", {
+                        "onUpdate:modelValue": _cache[8] || (_cache[8] = ($event) => regPassword.value = $event),
+                        type: "password",
+                        class: "auth-input",
+                        placeholder: "Min. 4 caractères",
+                        required: "",
+                        minlength: "4"
+                      }, null, 512), [
+                        [vModelText, regPassword.value]
+                      ])
+                    ])
+                  ]),
+                  createBaseVNode("div", _hoisted_29$3, [
+                    createBaseVNode("button", {
+                      type: "button",
+                      class: "auth-back-btn",
+                      onClick: _cache[9] || (_cache[9] = ($event) => screen.value = "login")
+                    }, " ← Retour "),
+                    createBaseVNode("button", {
+                      type: "submit",
+                      class: "auth-submit auth-submit-flex",
+                      disabled: regSubmitting.value
+                    }, [
+                      regSubmitting.value ? (openBlock(), createElementBlock("span", _hoisted_31$3)) : createCommentVNode("", true),
+                      createTextVNode(" " + toDisplayString(regSubmitting.value ? "Création…" : "Créer mon compte"), 1)
+                    ], 8, _hoisted_30$3)
+                  ])
+                ], 32)
+              ]))
+            ]),
+            _: 1
+          })
+        ])
       ]);
     };
   }
 });
-const LoginOverlay = /* @__PURE__ */ _export_sfc(_sfc_main$g, [["__scopeId", "data-v-1d79b180"]]);
+const LoginOverlay = /* @__PURE__ */ _export_sfc(_sfc_main$g, [["__scopeId", "data-v-26cb3b86"]]);
 const _hoisted_1$f = { class: "cmd-palette-box" };
 const _hoisted_2$f = { class: "cmd-search-bar" };
 const _hoisted_3$e = ["src"];

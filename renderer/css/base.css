@@ -8,20 +8,20 @@
 ════════════════════════════════════════════ */
 :root {
   /* Fonds — thème sombre doux (Notion / Linear / Slack) */
-  --bg-rail:    #1C1E23;   /* Rail de navigation tout à gauche */
-  --bg-sidebar: #22242A;   /* Sidebar canaux */
-  --bg-main:    #282C34;   /* Zone principale */
-  --bg-input:   #22242A;   /* Zone de saisie / entrées */
+  --bg-rail:    #181c27;   /* Rail de navigation tout à gauche — bleu nuit */
+  --bg-sidebar: #1f2230;   /* Sidebar canaux */
+  --bg-main:    #272b36;   /* Zone principale */
+  --bg-input:   #1f2230;   /* Zone de saisie / entrées */
   --bg-hover:   rgba(255,255,255,.07);
-  --bg-active:  rgba(255,255,255,.12);
-  --bg-modal:   #252830;
+  --bg-active:  rgba(74,144,217,.18);
+  --bg-modal:   #232632;
 
   /* Alias legacy (composants existants) */
-  --bg-darkest: #151720;
-  --bg-dark:    #22242A;
-  --bg-medium:  #282C34;
-  --bg-light:   #2E3240;
-  --bg-primary: #151720;
+  --bg-darkest: #131620;
+  --bg-dark:    #1f2230;
+  --bg-medium:  #272b36;
+  --bg-light:   #2e3347;
+  --bg-primary: #131620;
 
   /* Texte — contraste soigné sans éblouir */
   --text-primary:   #DDDFE2;

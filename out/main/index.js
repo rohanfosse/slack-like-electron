@@ -1371,7 +1371,7 @@ function requireStudents() {
   function getIdentities() {
     const db2 = getDb();
     const students2 = db2.prepare(`
-    SELECT s.id, s.name, s.avatar_initials, s.photo_data, 'student' AS type,
+    SELECT s.id, s.name, s.email, s.avatar_initials, s.photo_data, 'student' AS type,
            p.name AS promo_name, p.id AS promo_id
     FROM students s JOIN promotions p ON s.promo_id = p.id
     ORDER BY p.name, s.name
@@ -1379,6 +1379,7 @@ function requireStudents() {
     const teachers = db2.prepare("SELECT * FROM teachers ORDER BY id ASC").all().map((t) => ({
       id: -t.id,
       name: t.name,
+      email: t.email,
       avatar_initials: t.name.split(/\s+/).map((w) => w[0]).join("").toUpperCase().slice(0, 2),
       photo_data: null,
       type: t.role,
