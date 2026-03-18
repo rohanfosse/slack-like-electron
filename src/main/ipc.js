@@ -195,6 +195,43 @@ function register() {
   // ── Action de masse ───────────────────────────────────────────────────────
   handle('db:markNonSubmittedAsD', (travailId) => queries.markNonSubmittedAsD(travailId))
 
+  // ── Export CSV des notes ──────────────────────────────────────────────────
+  ipcMain.handle('export:csv', async (_event, travailId) => {
+    try {
+      const travail = queries.getTravailById(travailId)
+      if (!travail) return { ok: false, error: 'Travail introuvable.' }
+
+      const depots = queries.getDepots(travailId)
+
+      // En-têtes + lignes
+      const escape = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`
+      const headers = ['Étudiant', 'Note', 'Feedback', 'Soumis le', 'Type', 'Fichier / Lien']
+      const rows = depots.map((d) => [
+        escape(d.student_name),
+        escape(d.note ?? ''),
+        escape(d.feedback ?? ''),
+        escape(d.submitted_at ?? ''),
+        escape(d.type ?? ''),
+        escape(d.type === 'link' ? (d.link_url ?? '') : (d.file_name ?? '')),
+      ])
+      const csv = [headers.join(';'), ...rows.map((r) => r.join(';'))].join('\r\n')
+
+      // Boîte de dialogue de sauvegarde
+      const safeName = travail.title.replace(/[\\/:*?"<>|]/g, '_')
+      const { canceled, filePath: dest } = await dialog.showSaveDialog({
+        defaultPath: `notes_${safeName}.csv`,
+        filters: [{ name: 'CSV', extensions: ['csv'] }],
+      })
+      if (canceled || !dest) return { ok: true, data: null }
+
+      fs.writeFileSync(dest, '\uFEFF' + csv, 'utf8') // BOM UTF-8 pour Excel
+      return { ok: true, data: path.basename(dest) }
+    } catch (err) {
+      console.error('[IPC export:csv]', err.message)
+      return { ok: false, error: err.message }
+    }
+  })
+
   // ── Fichiers ──────────────────────────────────────────────────────────────
   ipcMain.handle('fs:readFileBase64', async (_event, filePath) => {
     try {

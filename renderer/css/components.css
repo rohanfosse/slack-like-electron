@@ -261,6 +261,45 @@ button { font-family: var(--font); }
   font-family: 'Menlo', 'Monaco', 'Consolas', monospace;
 }
 
+/* Blocs de code avec coloration syntaxique */
+.msg-text .code-block {
+  margin: 6px 0;
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,.1);
+  font-size: 13px;
+}
+
+.msg-text .code-lang {
+  display: block;
+  background: rgba(255,255,255,.07);
+  color: var(--text-muted);
+  font-size: 11px;
+  font-family: 'Menlo', 'Monaco', 'Consolas', monospace;
+  padding: 3px 10px;
+  letter-spacing: .3px;
+  text-transform: uppercase;
+}
+
+.msg-text .code-block pre {
+  margin: 0;
+  padding: 10px 12px;
+  overflow-x: auto;
+}
+
+.msg-text .code-block code {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 12.5px;
+  font-family: 'Menlo', 'Monaco', 'Consolas', monospace;
+  line-height: 1.6;
+}
+
+/* Reset marges paragraphes générés par marked */
+.msg-text > p { margin: 0; }
+.msg-text > p + p { margin-top: 4px; }
+
 .msg-link {
   color: var(--accent, #4a90d9);
   text-decoration: underline;

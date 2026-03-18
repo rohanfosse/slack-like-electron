@@ -14,6 +14,20 @@
     el.selectionEnd   = start + pre.length + sel.length
     el.dispatchEvent(new Event('input'))
   }
+
+  function insertCodeBlock() {
+    const el = props.inputEl
+    if (!el) return
+    const start = el.selectionStart
+    const end   = el.selectionEnd
+    const sel   = el.value.slice(start, end) || 'code'
+    const block = '```\n' + sel + '\n```'
+    el.value = el.value.slice(0, start) + block + el.value.slice(end)
+    el.focus()
+    el.selectionStart = start + 4
+    el.selectionEnd   = start + 4 + sel.length
+    el.dispatchEvent(new Event('input'))
+  }
 </script>
 
 <template>
@@ -26,6 +40,9 @@
     </button>
     <button class="fmt-btn btn-icon" title="Code" aria-label="Code" @click="wrap('`', '`')">
       <code style="font-size:11px">{ }</code>
+    </button>
+    <button class="fmt-btn btn-icon" title="Bloc de code" aria-label="Bloc de code" @click="insertCodeBlock">
+      <code style="font-size:10px">```</code>
     </button>
   </div>
 </template>
