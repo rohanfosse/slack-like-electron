@@ -9,13 +9,14 @@ const PAGE_SIZE          = 50
 export const useMessagesStore = defineStore('messages', () => {
   const appStore = useAppStore()
 
-  const messages      = ref<Message[]>([])
-  const pinned        = ref<Message[]>([])
-  const loading       = ref(false)
-  const loadingMore   = ref(false)
-  const hasMore       = ref(false)
-  const searchTerm    = ref('')
-  const firstUnreadId = ref<number | null>(null)
+  const messages           = ref<Message[]>([])
+  const pinned             = ref<Message[]>([])
+  const loading            = ref(false)
+  const loadingMore        = ref(false)
+  const hasMore            = ref(false)
+  const searchTerm         = ref('')
+  const firstUnreadId      = ref<number | null>(null)
+  const highlightMessageId = ref<number | null>(null)
 
   // ── Citation (reply-to) ───────────────────────────────────────────────────
   const quotedMessage = ref<Message | null>(null)
@@ -211,7 +212,7 @@ export const useMessagesStore = defineStore('messages', () => {
 
   return {
     messages, pinned, loading, loadingMore, hasMore,
-    searchTerm, firstUnreadId,
+    searchTerm, firstUnreadId, highlightMessageId,
     reactions, userVotes,
     quotedMessage, setQuote, clearQuote,
     typingText, setTyping, stopTyping,

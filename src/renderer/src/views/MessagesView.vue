@@ -1,5 +1,5 @@
 <script setup lang="ts">
-  import { computed, watch, ref } from 'vue'
+  import { computed, watch, ref, nextTick } from 'vue'
   import { Search, X as XIcon, ClipboardList, BookCheck, FileText, FolderPlus, X as Close, CalendarRange } from 'lucide-vue-next'
   import { useAppStore }      from '@/stores/app'
   import { useMessagesStore } from '@/stores/messages'
@@ -100,6 +100,23 @@
       }
     },
   )
+
+  // ── Scroll vers message surligné (depuis CmdPalette) ─────────────────────
+  watch(() => messagesStore.highlightMessageId, async (id) => {
+    if (!id) return
+    await nextTick()
+    const el = document.querySelector<HTMLElement>(`[data-msg-id="${id}"]`)
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      el.classList.add('msg-highlight')
+      setTimeout(() => {
+        el.classList.remove('msg-highlight')
+        messagesStore.highlightMessageId = null
+      }, 2200)
+    } else {
+      messagesStore.highlightMessageId = null
+    }
+  })
 
   // ── Recherche ─────────────────────────────────────────────────────────────
   async function doSearch() {
@@ -273,6 +290,15 @@
     </Transition>
   </div>
 </template>
+
+<style>
+/* Animation surbrillance message depuis la recherche (non-scoped pour toucher MessageBubble) */
+@keyframes msg-flash {
+  0%, 10%  { background: rgba(74, 144, 217, .28); border-radius: 6px; }
+  100%      { background: transparent; }
+}
+.msg-highlight { animation: msg-flash 2s ease forwards !important; }
+</style>
 
 <style scoped>
 /* ── #main-area doit être position:relative pour l'overlay ── */

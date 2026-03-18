@@ -141,8 +141,57 @@ function bulkImportStudents(promoId, rows) {
   return { imported, errors };
 }
 
+/**
+ * Statistiques de classe pour un responsable pédagogique.
+ * Retourne par étudiant : rendus, total devoirs publiés, notés, note moyenne, dernière activité.
+ */
+function getClasseStats(promoId) {
+  return getDb().prepare(`
+    SELECT
+      s.id,
+      s.name,
+      s.avatar_initials,
+      s.photo_data,
+      (
+        SELECT COUNT(*)
+        FROM depots d
+        WHERE d.student_id = s.id
+      ) AS submitted_count,
+      (
+        SELECT COUNT(*)
+        FROM travaux t
+        WHERE t.promo_id = s.promo_id
+          AND t.published = 1
+          AND t.type NOT IN ('soutenance', 'cctl')
+      ) AS total_count,
+      (
+        SELECT COUNT(*)
+        FROM depots d
+        WHERE d.student_id = s.id
+          AND d.note IS NOT NULL
+          AND d.note != ''
+      ) AS graded_count,
+      (
+        SELECT AVG(CAST(d.note AS REAL))
+        FROM depots d
+        WHERE d.student_id = s.id
+          AND d.note IS NOT NULL
+          AND d.note != ''
+      ) AS avg_grade,
+      (
+        SELECT MAX(m.created_at)
+        FROM messages m
+        WHERE m.author_name = s.name
+          AND m.channel_id IS NOT NULL
+      ) AS last_message_at
+    FROM students s
+    WHERE s.promo_id = ?
+    ORDER BY s.name
+  `).all(promoId);
+}
+
 module.exports = {
   getStudents, getAllStudents, getStudentProfile,
   getStudentByEmail, loginWithCredentials, registerStudent, getIdentities,
-  bulkImportStudents,
+  bulkImportStudents, getClasseStats,
 };

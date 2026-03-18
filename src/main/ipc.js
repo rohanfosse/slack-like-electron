@@ -77,6 +77,7 @@ function register() {
         authorName:     payload.authorName  ?? null,
         channelName:    payload.channelName ?? null,
         promoId:        payload.promoId     ?? null,
+        preview:        rawContent.replace(/[*_`>#[\]!]/g, '').slice(0, 80),
         mentionEveryone,
         mentionNames,
       }
@@ -239,6 +240,9 @@ function register() {
   // ── Suppression / modification de messages ────────────────────────────────
   handle('db:deleteMessage', (id) => queries.deleteMessage(id))
   handle('db:editMessage',   (id, content) => queries.editMessage(id, content))
+
+  // ── Vue Classe ────────────────────────────────────────────────────────────
+  handle('db:getClasseStats', (promoId) => queries.getClasseStats(promoId))
 
   // ── Intervenants (TA) ─────────────────────────────────────────────────────
   handle('db:getIntervenants',    ()        => queries.getIntervenants())

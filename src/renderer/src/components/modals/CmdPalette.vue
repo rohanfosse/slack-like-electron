@@ -6,6 +6,7 @@
   import { useModalsStore }   from '@/stores/modals'
   import { useMessagesStore } from '@/stores/messages'
   import { useRouter }        from 'vue-router'
+  import { formatDate } from '@/utils/date'
   import type { Channel, Student, Promotion } from '@/types'
 
   const appStore      = useAppStore()
@@ -115,7 +116,7 @@
     const msgs: ResultItem[] = msgResults.value.map((m): ResultItem => ({
       type:  'message',
       label: excerpt(m.content, query.value.trim()),
-      sub:   `#${m.channel_name}`,
+      sub:   `#${m.channel_name} · ${formatDate(m.created_at)}`,
       data:  m,
     }))
     return [...structureResults.value, ...msgs]
@@ -127,7 +128,7 @@
     msgSearching.value = true
     try {
       const promoId = appStore.activePromoId ?? appStore.currentUser?.promo_id ?? null
-      const res = await window.api.searchAllMessages({ promoId, query: q, limit: 6 })
+      const res = await window.api.searchAllMessages({ promoId, query: q, limit: 10 })
       msgResults.value = res?.ok ? res.data : []
     } finally {
       msgSearching.value = false
@@ -175,10 +176,11 @@
       router.push('/' + item.data)
     } else if (item.type === 'message') {
       const m = item.data as MsgResult
-      // Naviguer vers le canal du message
       const ch = allChannels.value.find((c) => c.id === m.channel_id)
       if (ch) {
+        messagesStore.highlightMessageId = m.id
         appStore.openChannel(ch.id, ch.promo_id, ch.name, ch.type)
+        router.push('/messages')
         messagesStore.fetchMessages()
       }
     }

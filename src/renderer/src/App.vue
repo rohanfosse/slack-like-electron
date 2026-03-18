@@ -26,6 +26,7 @@
   import RubricModal             from '@/components/modals/RubricModal.vue'
   import ImportStudentsModal     from '@/components/modals/ImportStudentsModal.vue'
   import IntervenantsModal       from '@/components/modals/IntervenantsModal.vue'
+  import ClasseModal             from '@/components/modals/ClasseModal.vue'
 
   const appStore = useAppStore()
   const modals   = useModalsStore()
@@ -38,6 +39,11 @@
   onMounted(() => {
     // Appliquer le thème sauvegardé
     document.body.classList.toggle('light', getPref('theme') === 'light')
+
+    // Demander la permission pour les notifications natives
+    if ('Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission()
+    }
 
     // Restaurer la session depuis localStorage
     const restored = appStore.restoreSession()
@@ -114,6 +120,7 @@
     <RubricModal             v-model="modals.rubric"             />
     <ImportStudentsModal     v-model="modals.importStudents"    />
     <IntervenantsModal       v-model="modals.intervenants"      />
+    <ClasseModal             v-model="modals.classe"            />
   </template>
 </template>
 

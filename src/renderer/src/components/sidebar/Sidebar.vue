@@ -1,7 +1,7 @@
 <script setup lang="ts">
   import { ref, watch, computed, onMounted, nextTick } from 'vue'
   import { useRoute, useRouter } from 'vue-router'
-  import { Plus, ChevronDown, FolderOpen, Layers, PlusCircle, Pencil, Trash2, VolumeX, Volume2 } from 'lucide-vue-next'
+  import { Plus, ChevronDown, FolderOpen, Layers, PlusCircle, Pencil, Trash2, VolumeX, Volume2, MessageSquare, BookOpen, BarChart2, CalendarDays } from 'lucide-vue-next'
   import NewProjectModal from '@/components/modals/NewProjectModal.vue'
   import ContextMenu from '@/components/ui/ContextMenu.vue'
   import type { ContextMenuItem } from '@/components/ui/ContextMenu.vue'
@@ -219,6 +219,46 @@
       groups.push({ key: NO_CAT, label: 'Autres canaux', channels: uncategorized })
     }
     return groups
+  })
+
+  // ── Raccourci "Tout afficher" contextuel ──────────────────────────────────
+  const sectionShortcut = computed(() => {
+    switch (route.name) {
+      case 'messages':
+        return {
+          label:  'Tous les canaux',
+          icon:   MessageSquare,
+          active: !appStore.activeChannelId && !appStore.activeDmStudentId,
+          action: () => {
+            appStore.activeChannelId   = null
+            appStore.activeDmStudentId = null
+            router.push('/messages')
+          },
+        }
+      case 'devoirs':
+        return {
+          label:  'Tous les devoirs',
+          icon:   BookOpen,
+          active: !appStore.activeProject,
+          action: () => {
+            appStore.activeProject = null
+            router.push('/devoirs')
+          },
+        }
+      case 'documents':
+        return {
+          label:  'Tous les documents',
+          icon:   FolderOpen,
+          active: !appStore.activeChannelId && !appStore.activeProject,
+          action: () => {
+            appStore.activeChannelId = null
+            appStore.activeProject   = null
+            router.push('/documents')
+          },
+        }
+      default:
+        return null
+    }
   })
 
   // ── Contexte sidebar selon la route ───────────────────────────────────────
@@ -461,15 +501,15 @@
       {{ sectionLabel }}
     </div>
 
-    <!-- Raccourci "Tous les documents" (caché sur le dashboard) -->
+    <!-- Raccourci contextuel "Tout afficher" (caché sur le dashboard) -->
     <button
-      v-if="route.name !== 'dashboard'"
+      v-if="sectionShortcut"
       class="sidebar-all-docs-btn"
-      :class="{ active: route.name === 'documents' && !appStore.activeChannelId }"
-      @click="appStore.activeChannelId = null; router.push('/documents')"
+      :class="{ active: sectionShortcut.active, [`section-${route.name as string}`]: true }"
+      @click="sectionShortcut.action()"
     >
-      <FolderOpen :size="13" class="sidebar-all-docs-icon" />
-      Tous les documents
+      <component :is="sectionShortcut.icon" :size="13" class="sidebar-all-docs-icon" />
+      {{ sectionShortcut.label }}
     </button>
 
     <!-- Section Messages -->
@@ -489,82 +529,95 @@
         </div>
       </template>
 
-      <!-- Arbre projets (Accueil / dashboard) -->
+      <!-- Tableau de bord -->
       <template v-else-if="route.name === 'dashboard'">
+        <!-- Onglets de la vue dashboard -->
         <div class="sidebar-section-header">
-          <span>Projets &amp; canaux</span>
-          <button
-            v-if="appStore.isTeacher"
-            class="btn-icon"
-            title="Nouveau projet"
-            aria-label="Nouveau projet"
-            style="padding:2px"
-            @click="modals.newProject = true"
-          >
-            <Plus :size="14" />
-          </button>
+          <span>Vue</span>
         </div>
-
-        <nav aria-label="Projets et canaux">
-          <div
-            v-for="group in dashboardProjectGroups"
-            :key="group.key"
-            class="dash-project-group"
+        <nav aria-label="Onglets du tableau de bord">
+          <button
+            class="sidebar-item"
+            :class="{ active: !route.query.tab || route.query.tab === 'projets' }"
+            @click="router.push('/dashboard')"
           >
-            <!-- En-tête projet -->
-            <div class="dash-project-header">
-              <button
-                class="dash-project-toggle"
-                :aria-expanded="!collapsedDashboard.has(group.key)"
-                @click="toggleDashboardProject(group.key)"
-              >
-                <ChevronDown
-                  :size="12"
-                  class="sidebar-category-chevron"
-                  :class="{ rotated: collapsedDashboard.has(group.key) }"
-                />
-                <component
-                  v-if="group.key !== '__no_category__' && parseCategoryIcon(group.key).icon"
-                  :is="parseCategoryIcon(group.key).icon!"
-                  :size="12"
-                  class="dash-project-icon"
-                />
-                <span class="dash-project-label">{{ group.label }}</span>
-                <span class="sidebar-category-count">{{ group.channels.length }}</span>
-              </button>
-              <button
-                v-if="group.key !== '__no_category__'"
-                class="dash-devoirs-link"
-                :title="`Devoirs — ${group.label}`"
-                @click="selectProject(group.key)"
-              >
-                Devoirs
-              </button>
-            </div>
-
-            <!-- Canaux du projet -->
-            <nav
-              v-show="!collapsedDashboard.has(group.key)"
-              class="dash-project-channels"
-              :aria-label="`Canaux — ${group.label}`"
-            >
-              <ChannelItem
-                v-for="ch in group.channels"
-                :key="ch.id"
-                :channel-id="ch.id"
-                :name="ch.name"
-                :prefix="ch.type === 'annonce' ? '📢' : '#'"
-                :type="ch.type"
-                @click="selectChannel(ch)"
-              />
-            </nav>
-          </div>
-
-          <!-- État vide -->
-          <div v-if="!dashboardProjectGroups.length" class="dash-empty">
-            Aucun canal pour l'instant.
-          </div>
+            <FolderOpen :size="13" class="project-icon" />
+            <span class="channel-name">Projets</span>
+          </button>
+          <button
+            class="sidebar-item"
+            :class="{ active: route.query.tab === 'frise' }"
+            @click="router.push({ path: '/dashboard', query: { tab: 'frise' } })"
+          >
+            <BarChart2 :size="13" class="project-icon" />
+            <span class="channel-name">Frise chronologique</span>
+          </button>
         </nav>
+
+        <!-- Raccourcis rapides -->
+        <div class="sidebar-section-header" style="margin-top:8px">
+          <span>Raccourcis</span>
+        </div>
+        <nav aria-label="Raccourcis">
+          <template v-if="appStore.isTeacher">
+            <button class="sidebar-item" @click="modals.classe = true">
+              <Layers :size="13" class="project-icon" />
+              <span class="channel-name">Vue Classe</span>
+            </button>
+            <button class="sidebar-item" @click="modals.echeancier = true">
+              <CalendarDays :size="13" class="project-icon" />
+              <span class="channel-name">Échéancier</span>
+            </button>
+            <button class="sidebar-item" @click="router.push('/devoirs')">
+              <BookOpen :size="13" class="project-icon" />
+              <span class="channel-name">Tous les devoirs</span>
+            </button>
+          </template>
+          <template v-else-if="appStore.isStudent">
+            <button class="sidebar-item" @click="modals.studentTimeline = true">
+              <CalendarDays :size="13" class="project-icon" />
+              <span class="channel-name">Ma timeline</span>
+            </button>
+            <button class="sidebar-item" @click="router.push('/devoirs')">
+              <BookOpen :size="13" class="project-icon" />
+              <span class="channel-name">Mes devoirs</span>
+            </button>
+          </template>
+        </nav>
+
+        <!-- Liste des projets -->
+        <template v-if="allProjects.length">
+          <div class="sidebar-section-header" style="margin-top:8px">
+            <span>Projets</span>
+            <button
+              v-if="appStore.isTeacher"
+              class="btn-icon"
+              title="Nouveau projet"
+              aria-label="Nouveau projet"
+              style="padding:2px"
+              @click="modals.newProject = true"
+            >
+              <Plus :size="14" />
+            </button>
+          </div>
+          <nav aria-label="Filtrer par projet">
+            <button
+              v-for="proj in allProjects"
+              :key="proj"
+              class="sidebar-item"
+              @click="selectProject(proj)"
+            >
+              <component
+                v-if="parseCategoryIcon(proj).icon"
+                :is="parseCategoryIcon(proj).icon!"
+                :size="13"
+                class="project-icon"
+              />
+              <span v-else class="project-bullet" />
+              <span class="channel-name">{{ parseCategoryIcon(proj).label }}</span>
+            </button>
+          </nav>
+        </template>
 
         <NewProjectModal v-model="modals.newProject" @created="onProjectCreated" />
       </template>
@@ -868,10 +921,19 @@
   transition: background var(--t-fast), color var(--t-fast);
   flex-shrink: 0;
 }
-.sidebar-all-docs-btn:hover  { background: var(--bg-hover); color: var(--text-primary); }
-.sidebar-all-docs-btn.active { color: #27AE60; background: rgba(39,174,96,.08); }
+.sidebar-all-docs-btn:hover { background: var(--bg-hover); color: var(--text-primary); }
 
-.sidebar-all-docs-icon { flex-shrink: 0; color: #27AE60; }
+/* Couleurs actives par section */
+.sidebar-all-docs-btn.section-messages .sidebar-all-docs-icon { color: var(--accent); }
+.sidebar-all-docs-btn.section-messages.active { color: var(--accent); background: rgba(74,144,217,.08); }
+
+.sidebar-all-docs-btn.section-devoirs .sidebar-all-docs-icon  { color: #9B87F5; }
+.sidebar-all-docs-btn.section-devoirs.active  { color: #9B87F5; background: rgba(155,135,245,.08); }
+
+.sidebar-all-docs-btn.section-documents .sidebar-all-docs-icon { color: #27AE60; }
+.sidebar-all-docs-btn.section-documents.active { color: #27AE60; background: rgba(39,174,96,.08); }
+
+.sidebar-all-docs-icon { flex-shrink: 0; }
 
 /* Accent coloré selon la section active */
 .sidebar-section-indicator::before {
@@ -1114,4 +1176,6 @@
   color: var(--text-muted);
   font-style: italic;
 }
+
+
 </style>

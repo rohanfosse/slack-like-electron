@@ -111,6 +111,7 @@ contextBridge.exposeInMainWorld('api', {
   // ── Messages épinglés ──────────────────────────────────────────────────────
   getPinnedMessages: (channelId: number) => invoke('db:getPinnedMessages', channelId),
   togglePinMessage:  (payload: unknown)  => invoke('db:togglePinMessage',  payload),
+  updateReactions:   (msgId: number, reactionsJson: string) => invoke('db:updateReactions', msgId, reactionsJson),
   deleteMessage:     (id: number)        => invoke('db:deleteMessage',     id),
   editMessage:       (id: number, content: string) => invoke('db:editMessage', id, content),
 
@@ -122,6 +123,7 @@ contextBridge.exposeInMainWorld('api', {
   downloadFile:   (filePath: string) => invoke('fs:downloadFile',   filePath),
 
   // ── Intervenants ──────────────────────────────────────────────────────────
+  getClasseStats:     (promoId: number)  => invoke('db:getClasseStats', promoId),
   getIntervenants:    ()                 => invoke('db:getIntervenants'),
   createIntervenant:  (payload: unknown) => invoke('db:createIntervenant',  payload),
   deleteIntervenant:  (id: number)       => invoke('db:deleteIntervenant',  id),
@@ -152,6 +154,7 @@ contextBridge.exposeInMainWorld('api', {
     authorName:     string | null
     channelName:    string | null
     promoId:        number | null
+    preview:        string | null
     mentionEveryone: boolean
     mentionNames:   string[]
   }) => void) => {
@@ -161,6 +164,7 @@ contextBridge.exposeInMainWorld('api', {
       authorName:     string | null
       channelName:    string | null
       promoId:        number | null
+      preview:        string | null
       mentionEveryone: boolean
       mentionNames:   string[]
     }) => cb(data)

@@ -171,7 +171,7 @@ export const useAppStore = defineStore('app', () => {
 
   // Listener temps-réel — appelé une seule fois au démarrage (App.vue onMounted)
   function initUnreadListener(): () => void {
-    return window.api.onNewMessage(({ channelId, dmStudentId, authorName, channelName, promoId, mentionEveryone, mentionNames }) => {
+    return window.api.onNewMessage(({ channelId, dmStudentId, authorName, channelName, promoId, preview, mentionEveryone, mentionNames }) => {
       // Ne pas compter ses propres messages
       if (authorName && authorName === currentUser.value?.name) return
 
@@ -188,11 +188,19 @@ export const useAppStore = defineStore('app', () => {
             dmStudentId,
             promoId:     promoId ?? null,
             authorName:  senderName,
-            isMention:   true, // DM = toujours une mention directe
+            isMention:   true,
             timestamp:   Date.now(),
             read:        false,
           }
           notificationHistory.value = [dmEntry, ...notificationHistory.value].slice(0, 50)
+
+          // Notification native OS pour DM
+          if (document.hidden && Notification.permission === 'granted') {
+            new Notification(`✉️ Message de ${senderName}`, {
+              body:   preview ?? '',
+              silent: false,
+            })
+          }
         }
         return
       }
@@ -237,6 +245,17 @@ export const useAppStore = defineStore('app', () => {
           read:        false,
         }
         notificationHistory.value = [entry, ...notificationHistory.value].slice(0, 50)
+
+        // ── Notification native OS (si fenêtre non visible) ─────────────────
+        if (document.hidden && Notification.permission === 'granted') {
+          const title = isMention
+            ? `📣 Mention dans #${channelName ?? 'canal'}`
+            : `💬 #${channelName ?? 'Nouveau message'}`
+          new Notification(title, {
+            body:   preview ? `${authorName ?? ''}: ${preview}` : authorName ?? '',
+            silent: !isMention,
+          })
+        }
       }
     })
   }

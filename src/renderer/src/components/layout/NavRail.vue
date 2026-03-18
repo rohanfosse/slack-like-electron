@@ -1,7 +1,7 @@
 <script setup lang="ts">
   import { computed, ref, onMounted } from 'vue'
   import { useRouter, useRoute } from 'vue-router'
-  import { MessageSquare, BookOpen, FileText, Calendar, UserCheck, LayoutDashboard, X, UserPlus, Bell, Users } from 'lucide-vue-next'
+  import { MessageSquare, BookOpen, FileText, Calendar, UserCheck, LayoutDashboard, X, UserPlus, Bell, Users, GraduationCap } from 'lucide-vue-next'
   import logoUrl from '@/assets/logo.png'
   import { useAppStore }    from '@/stores/app'
   import { useModalsStore } from '@/stores/modals'
@@ -172,6 +172,15 @@
     <!-- ── Outils Responsable Pédagogique uniquement ── -->
     <template v-if="appStore.isTeacher">
       <div class="nav-divider" />
+      <button
+        class="nav-btn"
+        title="Vue Classe — suivi des étudiants"
+        aria-label="Vue Classe"
+        @click="modals.classe = true"
+      >
+        <GraduationCap :size="20" />
+        <span class="nav-label">Classe</span>
+      </button>
       <button
         class="nav-btn"
         title="Gérer les intervenants"

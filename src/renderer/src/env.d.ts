@@ -162,9 +162,15 @@ declare global {
         authorName:      string | null
         channelName:     string | null
         promoId:         number | null
+        preview:         string | null
         mentionEveryone: boolean
         mentionNames:    string[]
       }) => void): () => void
+      getClasseStats(promoId: number): Promise<IpcResponse<{
+        id: number; name: string; avatar_initials: string; photo_data: string | null
+        submitted_count: number; total_count: number; graded_count: number; avg_grade: number | null
+        last_message_at: string | null
+      }[]>>
     }
   }
 }

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import {
   Clock, Edit3, Users, BookOpen, AlertTriangle,
   ChevronRight, CheckCircle2, FileText, LayoutDashboard,
@@ -8,7 +8,7 @@ import {
 import { useAppStore }    from '@/stores/app'
 import { useModalsStore } from '@/stores/modals'
 import { useTravauxStore } from '@/stores/travaux'
-import { useRouter }      from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { deadlineClass, deadlineLabel, formatDate } from '@/utils/date'
 import { parseCategoryIcon } from '@/utils/categoryIcon'
 import type { Component } from 'vue'
@@ -18,6 +18,7 @@ const appStore     = useAppStore()
 const modals       = useModalsStore()
 const travauxStore = useTravauxStore()
 const router       = useRouter()
+const route        = useRoute()
 
 // ── Types locaux ──────────────────────────────────────────────────────────────
 interface GanttRow {
@@ -173,7 +174,8 @@ const studentProjectCards = computed((): StudentProjectCard[] => {
 })
 
 // ── Frise chronologique ────────────────────────────────────────────────────────
-const dashTab = ref<'projets' | 'frise'>('projets')
+const dashTab = ref<'projets' | 'frise'>(route.query.tab === 'frise' ? 'frise' : 'projets')
+watch(() => route.query.tab, (tab) => { dashTab.value = tab === 'frise' ? 'frise' : 'projets' })
 
 interface FriseMilestone { id: number; title: string; type: string; deadline: string; published: boolean; done: boolean }
 interface FriseProject   { key: string; label: string; icon: Component | null; milestones: FriseMilestone[] }
