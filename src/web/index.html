@@ -6,15 +6,20 @@
     <meta
       http-equiv="Content-Security-Policy"
       content="
-        default-src 'self' http://148.230.115.73:3001 ws://148.230.115.73:3001;
+        default-src 'self' http://148.230.115.73:3001 ws://148.230.115.73:3001
+                           https://ceslack.devrohan.cloud wss://ceslack.devrohan.cloud;
         script-src  'self' 'unsafe-inline';
         style-src   'self' 'unsafe-inline';
-        img-src     'self' data: blob:;
-        media-src   'self' data: blob:;
+        img-src     'self' data: blob:
+                    http://148.230.115.73:3001 https://ceslack.devrohan.cloud;
+        media-src   'self' data: blob:
+                    http://148.230.115.73:3001 https://ceslack.devrohan.cloud;
         font-src    'self' data:;
         frame-src   'self' blob:;
         object-src  'none';
-        connect-src 'self' http://148.230.115.73:3001 ws://148.230.115.73:3001;
+        connect-src 'self'
+                    http://148.230.115.73:3001 ws://148.230.115.73:3001
+                    https://ceslack.devrohan.cloud wss://ceslack.devrohan.cloud;
       "
     />
     <title>CeSlack</title>

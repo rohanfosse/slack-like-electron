@@ -12,8 +12,19 @@ export default defineConfig({
   build: {
     outDir:   resolve(__dirname, 'dist-web'),
     emptyOutDir: true,
+    chunkSizeWarningLimit: 600,
     rollupOptions: {
       input: resolve(__dirname, 'src/web/index.html'),
+      output: {
+        manualChunks: {
+          'vue':       ['vue', 'vue-router', 'pinia'],
+          'socket':    ['socket.io-client'],
+          'icons':     ['lucide-vue-next'],
+          'highlight': ['highlight.js'],
+          'office':    ['mammoth', 'xlsx'],
+          'markdown':  ['marked'],
+        },
+      },
     },
   },
 
