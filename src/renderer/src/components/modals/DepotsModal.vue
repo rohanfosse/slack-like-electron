@@ -1,6 +1,6 @@
 <script setup lang="ts">
   import { ref, computed, watch } from 'vue'
-  import { Download, FileText, Link2, MessageSquare, X } from 'lucide-vue-next'
+  import { AlertTriangle, Download, FileText, Link2, MessageSquare, X } from 'lucide-vue-next'
   import { useTravauxStore } from '@/stores/travaux'
   import { useAppStore }     from '@/stores/app'
   import { useToast }        from '@/composables/useToast'
@@ -56,6 +56,27 @@
   const progressPct   = computed(() =>
     totalStudents.value ? Math.round((notedCount.value / totalStudents.value) * 100) : 0,
   )
+
+  // ── Analytics #3 : distribution des notes ────────────────────────────────
+  const GRADE_ORDER = ['A', 'B', 'C', 'D', 'NA']
+  const gradeDistribution = computed(() => {
+    const counts: Record<string, number> = {}
+    for (const d of travauxStore.depots) {
+      if (d.note) counts[d.note] = (counts[d.note] ?? 0) + 1
+    }
+    return GRADE_ORDER
+      .filter((g) => counts[g])
+      .map((g) => ({ grade: g, count: counts[g] }))
+  })
+
+  // ── Helpers retard #7 ─────────────────────────────────────────────────────
+  function formatLate(seconds: number): string {
+    if (seconds <= 0) return ''
+    const h = Math.floor(seconds / 3600)
+    const d = Math.floor(h / 24)
+    if (d >= 1) return `+${d}j ${h % 24}h`
+    return `+${h}h${Math.floor((seconds % 3600) / 60)}min`
+  }
 
   // ── Actions note ─────────────────────────────────────────────────────────
   function startNote(d: Depot) {
@@ -150,6 +171,19 @@
         </div>
         <span class="depots-progress-pct">{{ progressPct }} %</span>
       </div>
+
+      <!-- Distribution des notes (#3) -->
+      <div v-if="gradeDistribution.length" class="depots-grade-dist">
+        <span
+          v-for="g in gradeDistribution"
+          :key="g.grade"
+          class="grade-dist-pill"
+          :class="gradeClass(g.grade)"
+          :title="`${g.count} étudiant${g.count > 1 ? 's' : ''} — ${g.grade}`"
+        >
+          {{ g.grade }} <strong>{{ g.count }}</strong>
+        </span>
+      </div>
     </div>
 
     <!-- Liste des dépôts -->
@@ -176,6 +210,13 @@
           <div class="depot-card-top">
             <span class="depot-student-name">{{ d.student_name }}</span>
             <span class="depot-date">{{ formatDate(d.submitted_at) }}</span>
+            <span
+              v-if="d.late_seconds && d.late_seconds > 0"
+              class="depot-late-badge"
+              :title="`Rendu en retard de ${formatLate(d.late_seconds)}`"
+            >
+              <AlertTriangle :size="9" /> {{ formatLate(d.late_seconds) }}
+            </span>
           </div>
 
           <!-- Fichier / lien -->
@@ -536,6 +577,47 @@
 .type-etude_de_cas { background: rgba(39,174,96,.2);    color: var(--color-success); }
 .type-memoire      { background: rgba(231,76,60,.2);    color: #e74c3c; }
 .type-autre        { background: rgba(127,140,141,.2);  color: #95a5a6; }
+
+/* Distribution des notes (#3) */
+.depots-grade-dist {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 2px;
+}
+
+.grade-dist-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  border: 1px solid transparent;
+}
+.grade-dist-pill.grade-a  { background: rgba(39,174,96,.12);   color: var(--color-success); border-color: rgba(39,174,96,.25); }
+.grade-dist-pill.grade-b  { background: rgba(39,174,96,.07);   color: #27ae60;              border-color: rgba(39,174,96,.15); }
+.grade-dist-pill.grade-c  { background: rgba(243,156,18,.12);  color: var(--color-warning); border-color: rgba(243,156,18,.25); }
+.grade-dist-pill.grade-d  { background: rgba(231,76,60,.12);   color: var(--color-danger);  border-color: rgba(231,76,60,.25); }
+.grade-dist-pill.grade-na { background: rgba(255,255,255,.05); color: var(--text-muted);    border-color: var(--border); }
+.grade-dist-pill strong { font-weight: 800; }
+
+/* Badge retard (#7) */
+.depot-late-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 10px;
+  background: rgba(231,76,60,.15);
+  color: var(--color-danger);
+  border: 1px solid rgba(231,76,60,.3);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
 
 /* Footer */
 .depots-footer {

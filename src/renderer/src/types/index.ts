@@ -76,6 +76,7 @@ export interface Depot {
   submitted_at: string
   note: string | null
   feedback: string | null
+  late_seconds?: number | null
 }
 
 export interface AppDocument {
