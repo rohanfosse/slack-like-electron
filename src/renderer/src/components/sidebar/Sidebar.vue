@@ -430,7 +430,7 @@
         <div class="sidebar-user-info">
           <span class="sidebar-user-name">{{ user.name }}</span>
           <span class="sidebar-user-role">
-            {{ user.type === 'teacher' ? 'Professeur' : user.type === 'ta' ? 'Assistant (TA)' : user.promo_name ?? '' }}
+            {{ user.type === 'teacher' ? 'Responsable Pédagogique' : user.type === 'ta' ? 'Intervenant' : user.promo_name ?? '' }}
           </span>
         </div>
       </div>

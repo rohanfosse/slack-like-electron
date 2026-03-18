@@ -222,7 +222,7 @@
             <div class="form-group" style="margin-top:10px">
               <label class="form-label">Rôle</label>
               <input
-                :value="appStore.currentUser?.type === 'teacher' ? 'Professeur' : 'Étudiant'"
+                :value="appStore.currentUser?.type === 'teacher' ? 'Enseignant Responsable Pédagogique' : appStore.currentUser?.type === 'ta' ? 'Intervenant' : 'Étudiant'"
                 type="text"
                 class="form-input stg-input-readonly"
                 disabled

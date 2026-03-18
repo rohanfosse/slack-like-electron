@@ -329,8 +329,8 @@ watch(
               <span class="mi-mention-name">{{ user.name }}</span>
 
               <span v-if="user.name === 'everyone'" class="mi-mention-hint">Notifie tout le monde</span>
-              <span v-else-if="user.type === 'teacher'" class="mi-mention-badge mi-badge-teacher">Enseignant</span>
-              <span v-else-if="user.type === 'ta'" class="mi-mention-badge mi-badge-ta">Assistant</span>
+              <span v-else-if="user.type === 'teacher'" class="mi-mention-badge mi-badge-teacher">Resp. Péda.</span>
+              <span v-else-if="user.type === 'ta'" class="mi-mention-badge mi-badge-ta">Intervenant</span>
             </button>
           </div>
         </Transition>
