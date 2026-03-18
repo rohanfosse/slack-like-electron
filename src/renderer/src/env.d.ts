@@ -17,6 +17,9 @@ interface IpcResponse<T> {
 declare global {
   interface Window {
     api: {
+      // Auth / session
+      setToken(token: string): void
+
       // Structure
       getPromotions(): Promise<IpcResponse<Promotion[]>>
       getChannels(promoId: number): Promise<IpcResponse<Channel[]>>

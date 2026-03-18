@@ -56,7 +56,10 @@ export const useAppStore = defineStore('app', () => {
     try {
       const raw = localStorage.getItem(SESSION_KEY)
       if (raw) {
-        currentUser.value = JSON.parse(raw)
+        const parsed = JSON.parse(raw)
+        currentUser.value = parsed
+        // Reconnecter le socket avec le token JWT stocké
+        if (parsed?.token) window.api.setToken(parsed.token)
         if (currentUser.value?.type === 'ta') loadTaChannels()
         return true
       }

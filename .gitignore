@@ -18,5 +18,10 @@ npm-debug.log*
 
 # Variables d'environnement
 .env
+.env.production
+server/.env
+
+# Logs serveur
+logs/
 
 *.pdf

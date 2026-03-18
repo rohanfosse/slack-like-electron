@@ -13,7 +13,10 @@
     "typecheck": "vue-tsc --noEmit",
     "lint": "eslint src --ext .ts,.vue --fix",
     "rebuild": "electron-rebuild -f -w better-sqlite3",
-    "postinstall": "electron-rebuild -f -w better-sqlite3"
+    "postinstall": "node scripts/postinstall.js",
+    "server": "node server/index.js",
+    "server:dev": "node --watch server/index.js",
+    "server:pm2": "pm2 start ecosystem.config.js --env production"
   },
   "keywords": [
     "electron",
@@ -26,11 +29,17 @@
   "dependencies": {
     "bcryptjs": "^3.0.3",
     "better-sqlite3": "^9.4.3",
+    "cors": "^2.8.6",
+    "dotenv": "^16.6.1",
+    "express": "^4.22.1",
     "highlight.js": "^11.11.1",
+    "jsonwebtoken": "^9.0.3",
     "lucide-vue-next": "^0.577.0",
     "mammoth": "^1.12.0",
     "marked": "^17.0.4",
     "pinia": "^2.3.1",
+    "socket.io": "^4.8.3",
+    "socket.io-client": "^4.8.3",
     "vue": "^3.5.30",
     "vue-router": "^4.6.4",
     "xlsx": "^0.18.5"
@@ -38,6 +47,9 @@
   "devDependencies": {
     "@electron/rebuild": "^3.6.0",
     "@rollup/plugin-commonjs": "^29.0.2",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^25.5.0",
     "@typescript-eslint/eslint-plugin": "^8.19.0",
     "@typescript-eslint/parser": "^8.19.0",

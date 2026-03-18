@@ -1,179 +1,246 @@
 import { contextBridge, ipcRenderer } from 'electron'
+import { io, Socket } from 'socket.io-client'
 
+// ─── Configuration serveur ────────────────────────────────────────────────────
+const SERVER_URL: string = (import.meta.env.VITE_SERVER_URL as string) ?? 'http://localhost:3001'
+
+// ─── État module-level ────────────────────────────────────────────────────────
+let jwtToken: string | null = null
+let socket:   Socket | null  = null
+
+// ─── Callbacks "msg:new" enregistrés avant la connexion socket ────────────────
+type MsgNewPayload = {
+  channelId:       number | null
+  dmStudentId:     number | null
+  authorName:      string | null
+  channelName:     string | null
+  promoId:         number | null
+  preview:         string | null
+  mentionEveryone: boolean
+  mentionNames:    string[]
+}
+const msgCallbacks: Array<(data: MsgNewPayload) => void> = []
+
+// ─── Socket.io ────────────────────────────────────────────────────────────────
+function connectSocket(token: string): void {
+  socket?.disconnect()
+  socket = io(SERVER_URL, {
+    auth: { token },
+    transports: ['websocket', 'polling'],
+    reconnectionAttempts: 5,
+  })
+  socket.on('msg:new', (data: MsgNewPayload) => {
+    msgCallbacks.forEach((cb) => cb(data))
+  })
+  socket.on('connect_error', (err) => {
+    console.warn('[Socket.io] Erreur connexion:', err.message)
+  })
+}
+
+// ─── Fetch vers le serveur ────────────────────────────────────────────────────
+async function apiFetch(path: string, options: RequestInit = {}): Promise<unknown> {
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    ...(jwtToken ? { Authorization: `Bearer ${jwtToken}` } : {}),
+    ...(options.headers as Record<string, string> ?? {}),
+  }
+  const res = await fetch(`${SERVER_URL}${path}`, { ...options, headers })
+  if (!res.ok && res.status === 401) {
+    jwtToken = null
+    socket?.disconnect()
+  }
+  return res.json()
+}
+
+function get(path: string)                      { return apiFetch(path) }
+function post(path: string, body: unknown)      { return apiFetch(path, { method: 'POST',   body: JSON.stringify(body) }) }
+function patch(path: string, body: unknown)     { return apiFetch(path, { method: 'PATCH',  body: JSON.stringify(body) }) }
+function del(path: string)                      { return apiFetch(path, { method: 'DELETE' }) }
+
+// ─── IPC local (fenêtre, dialogs, shell, fs) ─────────────────────────────────
 function invoke(channel: string, ...args: unknown[]): Promise<unknown> {
   return ipcRenderer.invoke(channel, ...args)
 }
 
+// ─── Exposition à la page renderer ───────────────────────────────────────────
 contextBridge.exposeInMainWorld('api', {
-  // ── Structure ──────────────────────────────────────────────────────────────
-  getPromotions:    ()              => invoke('db:getPromotions'),
-  getChannels:      (promoId: number)    => invoke('db:getChannels',       promoId),
-  getStudents:      (promoId: number)    => invoke('db:getStudents',       promoId),
-  getAllStudents:    ()              => invoke('db:getAllStudents'),
 
-  // ── Messages ───────────────────────────────────────────────────────────────
-  getChannelMessages:     (channelId: number)                    => invoke('db:getChannelMessages',     channelId),
-  getDmMessages:          (studentId: number)                    => invoke('db:getDmMessages',          studentId),
-  // Pagination par curseur — beforeId = undefined pour la page initiale
-  getChannelMessagesPage: (channelId: number, beforeId?: number) => invoke('db:getChannelMessagesPage', channelId, beforeId ?? null),
-  getDmMessagesPage:      (studentId: number, beforeId?: number) => invoke('db:getDmMessagesPage',      studentId, beforeId ?? null),
-  searchMessages:         (channelId: number, q: string)         => invoke('db:searchMessages',         channelId, q),
-  searchAllMessages:      (args: { promoId: number | null; query: string; limit?: number }) => invoke('db:searchAllMessages', args),
-  sendMessage:            (payload: unknown)                     => invoke('db:sendMessage',             payload),
+  // ── Auth / session ──────────────────────────────────────────────────────────
+  setToken: (token: string) => {
+    jwtToken = token
+    connectSocket(token)
+  },
 
-  // ── Travaux ────────────────────────────────────────────────────────────────
-  getTravaux:        (channelId: number)  => invoke('db:getTravaux',       channelId),
-  getTravailById:    (travailId: number)  => invoke('db:getTravailById',    travailId),
-  createTravail:     (payload: unknown)   => invoke('db:createTravail',    payload),
-  getTravauxSuivi:   (travailId: number)  => invoke('db:getTravauxSuivi',  travailId),
+  getIdentities: () => get('/api/auth/identities'),
 
-  // ── Dépôts ─────────────────────────────────────────────────────────────────
-  getDepots:   (travailId: number)  => invoke('db:getDepots',   travailId),
-  addDepot:    (payload: unknown)   => invoke('db:addDepot',    payload),
-  setNote:     (payload: unknown)   => invoke('db:setNote',     payload),
-  setFeedback: (payload: unknown)   => invoke('db:setFeedback', payload),
+  loginWithCredentials: async (email: string, pwd: string) => {
+    const res = await post('/api/auth/login', { email, password: pwd }) as { ok: boolean; data?: { token?: string; [k: string]: unknown }; error?: string }
+    if (res?.ok && res.data?.token) {
+      jwtToken = res.data.token as string
+      connectSocket(jwtToken)
+      // Retourner sans exposer le token dans l'objet user
+      const { token: _t, ...user } = res.data
+      return { ok: true, data: { ...user, token: res.data.token } }
+    }
+    return res
+  },
 
-  // ── Groupes ────────────────────────────────────────────────────────────────
-  getGroups:       (promoId: number)  => invoke('db:getGroups',       promoId),
-  createGroup:     (payload: unknown) => invoke('db:createGroup',     payload),
-  deleteGroup:     (groupId: number)  => invoke('db:deleteGroup',     groupId),
-  getGroupMembers: (groupId: number)  => invoke('db:getGroupMembers', groupId),
-  setGroupMembers: (payload: unknown) => invoke('db:setGroupMembers', payload),
+  changePassword: (userId: number, isTeacher: boolean, currentPwd: string, newPwd: string) =>
+    post('/api/auth/change-password', { userId, isTeacher, currentPwd, newPwd }),
 
-  // ── Profil & travaux étudiant ──────────────────────────────────────────────
-  getStudentProfile: (studentId: number) => invoke('db:getStudentProfile', studentId),
-  getStudentTravaux: (studentId: number) => invoke('db:getStudentTravaux', studentId),
+  exportPersonalData: (studentId: number) => get(`/api/auth/export/${studentId}`),
 
-  // ── Ressources ─────────────────────────────────────────────────────────────
-  getRessources:  (travailId: number) => invoke('db:getRessources',  travailId),
-  addRessource:   (payload: unknown)  => invoke('db:addRessource',   payload),
-  deleteRessource:(id: number)        => invoke('db:deleteRessource', id),
+  getStudentByEmail: (email: string) => get(`/api/auth/student-by-email?email=${encodeURIComponent(email)}`),
+  registerStudent:   (payload: unknown) => post('/api/auth/register', payload),
 
-  // ── Groupes par projet ─────────────────────────────────────────────────────
-  getTravailGroupMembers: (travailId: number) => invoke('db:getTravailGroupMembers', travailId),
-  setTravailGroupMember:  (payload: unknown)  => invoke('db:setTravailGroupMember',  payload),
+  // ── Promotions & canaux ─────────────────────────────────────────────────────
+  getPromotions:  ()              => get('/api/promotions'),
+  createPromotion:(payload: unknown) => post('/api/promotions', payload),
+  deletePromotion:(promoId: number)  => del(`/api/promotions/${promoId}`),
 
-  // ── Brouillon ──────────────────────────────────────────────────────────────
-  updateTravailPublished: (payload: unknown) => invoke('db:updateTravailPublished', payload),
+  getChannels:    (promoId: number) => get(`/api/promotions/${promoId}/channels`),
+  createChannel:  (payload: unknown) => post('/api/promotions/channels', payload),
+  renameChannel:  (id: number, name: string) => patch(`/api/promotions/channels/${id}/name`, { name }),
+  deleteChannel:  (id: number)       => del(`/api/promotions/channels/${id}`),
+  renameCategory: (promoId: number, old: string, next: string) =>
+    post('/api/promotions/categories/rename', { promoId, old, next }),
+  deleteCategory: (promoId: number, category: string) =>
+    post('/api/promotions/categories/delete', { promoId, category }),
+  updateChannelMembers:  (payload: unknown) => post('/api/promotions/channels/members', payload),
+  updateChannelCategory: (channelId: number, category: string | null) =>
+    patch(`/api/promotions/channels/${channelId}/category`, { category }),
 
-  // ── Promotions & canaux ────────────────────────────────────────────────────
-  createPromotion:  (payload: unknown)                           => invoke('db:createPromotion',  payload),
-  deletePromotion:  (promoId: number)                            => invoke('db:deletePromotion',  promoId),
-  createChannel:    (payload: unknown)                           => invoke('db:createChannel',    payload),
-  renameChannel:    (id: number, name: string)                   => invoke('db:renameChannel',    id, name),
-  deleteChannel:    (id: number)                                 => invoke('db:deleteChannel',    id),
-  renameCategory:         (promoId: number, old: string, next: string)    => invoke('db:renameCategory',        promoId, old, next),
-  deleteCategory:         (promoId: number, category: string)             => invoke('db:deleteCategory',        promoId, category),
-  updateChannelMembers:   (payload: unknown)                              => invoke('db:updateChannelMembers',  payload),
-  updateChannelCategory:  (channelId: number, category: string | null)    => invoke('db:updateChannelCategory', channelId, category),
+  // ── Étudiants ───────────────────────────────────────────────────────────────
+  getStudents:      (promoId: number) => get(`/api/promotions/${promoId}/students`),
+  getAllStudents:    ()                => get('/api/students'),
+  getStudentProfile:(studentId: number) => get(`/api/students/${studentId}/profile`),
+  getStudentTravaux:(studentId: number) => get(`/api/students/${studentId}/assignments`),
+  updateStudentPhoto:(payload: { studentId: number; photoData: string | null }) =>
+    post('/api/students/photo', payload),
+  getClasseStats:   (promoId: number) => get(`/api/students/stats?promoId=${promoId}`),
 
-  // ── Inscription ────────────────────────────────────────────────────────────
-  getStudentByEmail: (email: string)   => invoke('db:getStudentByEmail', email),
-  registerStudent:   (payload: unknown) => invoke('db:registerStudent',  payload),
+  // ── Messages ────────────────────────────────────────────────────────────────
+  getChannelMessages:     (channelId: number) => get(`/api/messages/channel/${channelId}`),
+  getDmMessages:          (studentId: number) => get(`/api/messages/dm/${studentId}`),
+  getChannelMessagesPage: (channelId: number, beforeId?: number) => {
+    const qs = beforeId != null ? `?before=${beforeId}` : ''
+    return get(`/api/messages/channel/${channelId}/page${qs}`)
+  },
+  getDmMessagesPage: (studentId: number, beforeId?: number) => {
+    const qs = beforeId != null ? `?before=${beforeId}` : ''
+    return get(`/api/messages/dm/${studentId}/page${qs}`)
+  },
+  searchMessages:    (channelId: number, q: string) =>
+    get(`/api/messages/search?channelId=${channelId}&q=${encodeURIComponent(q)}`),
+  searchAllMessages: (args: { promoId: number | null; query: string; limit?: number }) =>
+    post('/api/messages/search-all', args),
+  sendMessage:       (payload: unknown) => post('/api/messages', payload),
+  getPinnedMessages: (channelId: number) => get(`/api/messages/pinned/${channelId}`),
+  togglePinMessage:  (payload: unknown) => post('/api/messages/pin', payload),
+  updateReactions:   (msgId: number, reactionsJson: string) =>
+    post('/api/messages/reactions', { msgId, reactionsJson }),
+  deleteMessage: (id: number)                  => del(`/api/messages/${id}`),
+  editMessage:   (id: number, content: string) => patch(`/api/messages/${id}`, { content }),
 
-  // ── Identité / login ───────────────────────────────────────────────────────
-  getIdentities:        ()                          => invoke('db:getIdentities'),
-  loginWithCredentials: (email: string, pwd: string) => invoke('db:loginWithCredentials', email, pwd),
-  changePassword:       (userId: number, isTeacher: boolean, currentPwd: string, newPwd: string) => invoke('db:changePassword', userId, isTeacher, currentPwd, newPwd),
-  exportPersonalData:   (studentId: number)          => invoke('db:exportPersonalData', studentId),
+  // ── Travaux ─────────────────────────────────────────────────────────────────
+  getTravaux:             (channelId: number)  => get(`/api/assignments?channelId=${channelId}`),
+  getTravailById:         (travailId: number)  => get(`/api/assignments/${travailId}`),
+  createTravail:          (payload: unknown)   => post('/api/assignments', payload),
+  getTravauxSuivi:        (travailId: number)  => get(`/api/assignments/${travailId}/suivi`),
+  updateTravailPublished: (payload: unknown)   => post('/api/assignments/publish', payload),
+  getTravailCategories:   (promoId: number)    => get(`/api/assignments/categories?promoId=${promoId}`),
+  getGanttData:           (promoId: number)    => get(`/api/assignments/gantt?promoId=${promoId}`),
+  getAllRendus:            (promoId: number)    => get(`/api/assignments/rendus?promoId=${promoId}`),
+  getTeacherSchedule:     ()                   => get('/api/assignments/teacher-schedule'),
+  markNonSubmittedAsD:    (travailId: number)  => post(`/api/assignments/${travailId}/mark-missing`, {}),
+  getTravailGroupMembers: (travailId: number)  => get(`/api/assignments/${travailId}/group-members`),
+  setTravailGroupMember:  (payload: unknown)   => post('/api/assignments/group-member', payload),
 
-  // ── Shell ──────────────────────────────────────────────────────────────────
+  // ── Dépôts ──────────────────────────────────────────────────────────────────
+  getDepots:   (travailId: number) => get(`/api/depots?travailId=${travailId}`),
+  addDepot:    (payload: unknown)  => post('/api/depots', payload),
+  setNote:     (payload: unknown)  => post('/api/depots/note', payload),
+  setFeedback: (payload: unknown)  => post('/api/depots/feedback', payload),
+
+  // ── Groupes ─────────────────────────────────────────────────────────────────
+  getGroups:       (promoId: number)  => get(`/api/groups?promoId=${promoId}`),
+  createGroup:     (payload: unknown) => post('/api/groups', payload),
+  deleteGroup:     (groupId: number)  => del(`/api/groups/${groupId}`),
+  getGroupMembers: (groupId: number)  => get(`/api/groups/${groupId}/members`),
+  setGroupMembers: (payload: unknown) => post(`/api/groups/${(payload as { groupId: number }).groupId}/members`, payload),
+
+  // ── Ressources ──────────────────────────────────────────────────────────────
+  getRessources:  (travailId: number) => get(`/api/resources?travailId=${travailId}`),
+  addRessource:   (payload: unknown)  => post('/api/resources', payload),
+  deleteRessource:(id: number)        => del(`/api/resources/${id}`),
+
+  // ── Documents ───────────────────────────────────────────────────────────────
+  getChannelDocuments:          (channelId: number) => get(`/api/documents/channel/${channelId}`),
+  getChannelDocumentCategories: (channelId: number) => get(`/api/documents/channel/${channelId}/categories`),
+  getPromoDocuments:            (promoId: number)   => get(`/api/documents/promo/${promoId}`),
+  addChannelDocument:           (payload: unknown)  => post('/api/documents/channel', payload),
+  deleteChannelDocument:        (id: number)        => del(`/api/documents/channel/${id}`),
+  getProjectDocuments:          (promoId: number, project?: string | null) => {
+    const qs = project ? `&project=${encodeURIComponent(project)}` : ''
+    return get(`/api/documents/project?promoId=${promoId}${qs}`)
+  },
+  addProjectDocument:           (payload: unknown)  => post('/api/documents/project', payload),
+  getProjectDocumentCategories: (promoId: number, project?: string | null) => {
+    const qs = project ? `&project=${encodeURIComponent(project)}` : ''
+    return get(`/api/documents/project/categories?promoId=${promoId}${qs}`)
+  },
+
+  // ── Intervenants ────────────────────────────────────────────────────────────
+  getIntervenants:    ()                 => get('/api/teachers'),
+  createIntervenant:  (payload: unknown) => post('/api/teachers', payload),
+  deleteIntervenant:  (id: number)       => del(`/api/teachers/${id}`),
+  getTeacherChannels: (id: number)       => get(`/api/teachers/${id}/channels`),
+  setTeacherChannels: (payload: unknown) => post(`/api/teachers/${(payload as { teacherId: number }).teacherId}/channels`, payload),
+
+  // ── Rubriques ───────────────────────────────────────────────────────────────
+  getRubric:      (travailId: number) => get(`/api/rubrics/${travailId}`),
+  upsertRubric:   (payload: unknown)  => post('/api/rubrics', payload),
+  deleteRubric:   (travailId: number) => del(`/api/rubrics/${travailId}`),
+  getDepotScores: (depotId: number)   => get(`/api/rubrics/scores/${depotId}`),
+  setDepotScores: (payload: unknown)  => post('/api/rubrics/scores', payload),
+
+  // ── Admin ────────────────────────────────────────────────────────────────────
+  resetAndSeed: () => post('/api/admin/reset-seed', {}),
+
+  // ── Shell ───────────────────────────────────────────────────────────────────
   openPath:     (filePath: string) => invoke('shell:openPath',     filePath),
   openExternal: (url: string)      => invoke('shell:openExternal', url),
 
-  // ── Fichiers & export ──────────────────────────────────────────────────────
+  // ── Fichiers & export (restent locaux — dialogue OS) ─────────────────────────
   openImageDialog: () => invoke('dialog:openImage'),
   openFileDialog:  () => invoke('dialog:openFile'),
   exportCsv:       (travailId: number) => invoke('export:csv', travailId),
+  readFileBase64:  (filePath: string)  => invoke('fs:readFileBase64', filePath),
+  downloadFile:    (filePath: string)  => invoke('fs:downloadFile',   filePath),
 
-  // ── Échéancier prof ────────────────────────────────────────────────────────
-  getTeacherSchedule: () => invoke('db:getTeacherSchedule'),
-
-  // ── Gantt + rendus ─────────────────────────────────────────────────────────
-  getGanttData:         (promoId: number) => invoke('db:getGanttData',         promoId),
-  getAllRendus:          (promoId: number) => invoke('db:getAllRendus',          promoId),
-  getTravailCategories: (promoId: number) => invoke('db:getTravailCategories',  promoId),
-
-  // ── Données de démonstration ───────────────────────────────────────────────
-  resetAndSeed: () => invoke('db:resetAndSeed'),
-
-  // ── PDF viewer ─────────────────────────────────────────────────────────────
+  // ── PDF viewer (fenêtre native) ──────────────────────────────────────────────
   openPdf: (filePath: string) => invoke('window:openPdf', filePath),
 
-  // ── Documents ──────────────────────────────────────────────────────────────
-  getChannelDocuments:          (channelId: number) => invoke('db:getChannelDocuments',          channelId),
-  getPromoDocuments:            (promoId: number)   => invoke('db:getPromoDocuments',            promoId),
-  addChannelDocument:           (payload: unknown)  => invoke('db:addChannelDocument',           payload),
-  deleteChannelDocument:        (id: number)        => invoke('db:deleteChannelDocument',        id),
-  getChannelDocumentCategories: (channelId: number) => invoke('db:getChannelDocumentCategories', channelId),
-
-  // ── Documents de projet (nouveau) ──────────────────────────────────────────
-  getProjectDocuments:          (promoId: number, project?: string | null) => invoke('db:getProjectDocuments', promoId, project ?? null),
-  addProjectDocument:           (payload: unknown)                          => invoke('db:addProjectDocument', payload),
-  getProjectDocumentCategories: (promoId: number, project?: string | null) => invoke('db:getProjectDocumentCategories', promoId, project ?? null),
-
-  // ── Messages épinglés ──────────────────────────────────────────────────────
-  getPinnedMessages: (channelId: number) => invoke('db:getPinnedMessages', channelId),
-  togglePinMessage:  (payload: unknown)  => invoke('db:togglePinMessage',  payload),
-  updateReactions:   (msgId: number, reactionsJson: string) => invoke('db:updateReactions', msgId, reactionsJson),
-  deleteMessage:     (id: number)        => invoke('db:deleteMessage',     id),
-  editMessage:       (id: number, content: string) => invoke('db:editMessage', id, content),
-
-  // ── Actions de masse ───────────────────────────────────────────────────────
-  markNonSubmittedAsD: (travailId: number) => invoke('db:markNonSubmittedAsD', travailId),
-
-  // ── Fichiers ───────────────────────────────────────────────────────────────
-  readFileBase64: (filePath: string) => invoke('fs:readFileBase64', filePath),
-  downloadFile:   (filePath: string) => invoke('fs:downloadFile',   filePath),
-
-  // ── Intervenants ──────────────────────────────────────────────────────────
-  getClasseStats:     (promoId: number)  => invoke('db:getClasseStats', promoId),
-  updateStudentPhoto: (payload: { studentId: number; photoData: string | null }) => invoke('db:updateStudentPhoto', payload),
-  getIntervenants:    ()                 => invoke('db:getIntervenants'),
-  createIntervenant:  (payload: unknown) => invoke('db:createIntervenant',  payload),
-  deleteIntervenant:  (id: number)       => invoke('db:deleteIntervenant',  id),
-  getTeacherChannels: (id: number)       => invoke('db:getTeacherChannels', id),
-  setTeacherChannels: (payload: unknown) => invoke('db:setTeacherChannels', payload),
-
-  // ── Contrôles de fenêtre ──────────────────────────────────────────────────
+  // ── Contrôles de fenêtre ─────────────────────────────────────────────────────
   windowMinimize:    () => invoke('window:minimize'),
   windowMaximize:    () => invoke('window:maximize'),
   windowClose:       () => invoke('window:close'),
   windowIsMaximized: () => invoke('window:isMaximized'),
 
-  // Écoute les changements d'état maximize (push depuis Main)
   onMaximizeChange: (cb: (maximized: boolean) => void) => {
     const listener = (_event: Electron.IpcRendererEvent, maximized: boolean) => cb(maximized)
     ipcRenderer.on('window:maximizeState', listener)
     return () => ipcRenderer.removeListener('window:maximizeState', listener)
   },
 
-  // Plateforme (pour afficher/cacher les boutons selon l'OS)
   platform: process.platform,
 
-  // ── Temps réel ─────────────────────────────────────────────────────────────
-  // Retourne une fonction de désabonnement pour le cleanup Vue.
-  onNewMessage: (cb: (data: {
-    channelId:      number | null
-    dmStudentId:    number | null
-    authorName:     string | null
-    channelName:    string | null
-    promoId:        number | null
-    preview:        string | null
-    mentionEveryone: boolean
-    mentionNames:   string[]
-  }) => void) => {
-    const listener = (_event: Electron.IpcRendererEvent, data: {
-      channelId:      number | null
-      dmStudentId:    number | null
-      authorName:     string | null
-      channelName:    string | null
-      promoId:        number | null
-      preview:        string | null
-      mentionEveryone: boolean
-      mentionNames:   string[]
-    }) => cb(data)
-    ipcRenderer.on('msg:new', listener)
-    return () => ipcRenderer.removeListener('msg:new', listener)
+  // ── Temps réel (Socket.io) ───────────────────────────────────────────────────
+  onNewMessage: (cb: (data: MsgNewPayload) => void) => {
+    msgCallbacks.push(cb)
+    return () => {
+      const idx = msgCallbacks.indexOf(cb)
+      if (idx !== -1) msgCallbacks.splice(idx, 1)
+    }
   },
 })
