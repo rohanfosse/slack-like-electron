@@ -1,9 +1,14 @@
 <script setup lang="ts">
 import { ref, computed, nextTick } from 'vue'
-import { Pin, PinOff, MoreHorizontal, Copy, Trash2, Check, Pencil, SmilePlus, Bookmark } from 'lucide-vue-next'
+import {
+  Pin, PinOff, MoreHorizontal, Copy, Trash2, Check, Pencil,
+  SmilePlus, Bookmark, Reply,
+} from 'lucide-vue-next'
 import { useAppStore }      from '@/stores/app'
 import { useMessagesStore } from '@/stores/messages'
-import Avatar from '@/components/ui/Avatar.vue'
+import Avatar       from '@/components/ui/Avatar.vue'
+import ContextMenu  from '@/components/ui/ContextMenu.vue'
+import type { ContextMenuItem } from '@/components/ui/ContextMenu.vue'
 import { avatarColor }          from '@/utils/format'
 import { formatTime }           from '@/utils/date'
 import { renderMessageContent } from '@/utils/html'
@@ -29,6 +34,28 @@ const editing     = ref(false)
 const editContent = ref('')
 const editEl      = ref<HTMLTextAreaElement | null>(null)
 
+// ── Menu contextuel (clic droit)
+const ctxVisible = ref(false)
+const ctxX       = ref(0)
+const ctxY       = ref(0)
+
+function onContextMenu(e: MouseEvent) {
+  e.preventDefault()
+  ctxX.value = e.clientX
+  ctxY.value = e.clientY
+  ctxVisible.value = true
+}
+
+const ctxItems = computed<ContextMenuItem[]>(() => [
+  { label: 'Répondre',  icon: Reply,  action: onReply },
+  { label: 'Copier',    icon: Copy,   action: copyMessage },
+  ...(canEdit.value    ? [{ label: 'Modifier',   icon: Pencil, action: startEdit }] : []),
+  ...(appStore.isTeacher
+    ? [{ label: isPinned.value ? 'Désépingler' : 'Épingler', icon: isPinned.value ? PinOff : Pin, action: togglePin }]
+    : []),
+  ...(canDelete.value  ? [{ label: 'Supprimer',  icon: Trash2, danger: true, separator: true, action: deleteMessage }] : []),
+])
+
 // ── Computed
 const content  = computed(() =>
   renderMessageContent(props.msg.content, props.searchTerm, appStore.currentUser?.name ?? ''),
@@ -39,8 +66,17 @@ const isEdited = computed(() => !!props.msg.edited)
 const isMine   = computed(() => props.msg.author_name === appStore.currentUser?.name)
 const canEdit   = computed(() => isMine.value)
 const canDelete = computed(() => appStore.isTeacher || isMine.value)
+const hasQuote  = computed(() => !!props.msg.reply_to_author)
 
-// ── Réactions — types disponibles
+// Prévisualisation d'image — première URL image trouvée dans le contenu brut
+const imagePreviewUrl = computed<string | null>(() => {
+  const m = props.msg.content.match(
+    /(https?:\/\/[^\s"<>]+\.(?:png|jpg|jpeg|gif|webp|svg))(?:\s|$)/i,
+  )
+  return m ? m[1] : null
+})
+
+// ── Réactions
 const REACT_TYPES = [
   { type: 'check', emoji: '✅' },
   { type: 'thumb', emoji: '👍' },
@@ -49,13 +85,9 @@ const REACT_TYPES = [
   { type: 'think', emoji: '🤔' },
   { type: 'eyes',  emoji: '👀' },
 ]
-// Raccourcis rapides visibles dans la pill (les 4 premiers)
 const QUICK_REACTS = REACT_TYPES.slice(0, 4)
 
-function quickReact(type: string) {
-  messagesStore.toggleReaction(props.msg.id, type)
-}
-
+function quickReact(type: string) { messagesStore.toggleReaction(props.msg.id, type) }
 function pickReact(type: string) {
   messagesStore.toggleReaction(props.msg.id, type)
   showPicker.value = false
@@ -71,7 +103,12 @@ const reactionsToShow = computed(() => {
   }))
 })
 
-// ── Actions menu
+// ── Actions
+function onReply() {
+  messagesStore.setQuote(props.msg)
+  showMenu.value = false
+}
+
 function togglePin() {
   messagesStore.togglePin(props.msg.id, !isPinned.value)
   showMenu.value = false
@@ -128,6 +165,7 @@ function closeAll() { showMenu.value = false; showPicker.value = false }
     :class="{ grouped, pinned: isPinned, editing }"
     :data-msg-id="msg.id"
     @click.self="closeAll"
+    @contextmenu.prevent="onContextMenu"
   >
     <!-- Avatar -->
     <template v-if="!grouped">
@@ -152,11 +190,23 @@ function closeAll() { showMenu.value = false; showPicker.value = false }
         </div>
       </template>
 
+      <!-- Citation (reply-to) -->
+      <div v-if="hasQuote" class="msg-quote" @click="closeAll">
+        <Reply :size="11" class="msg-quote-icon" />
+        <span class="msg-quote-author">{{ msg.reply_to_author }}</span>
+        <span class="msg-quote-preview">{{ msg.reply_to_preview }}</span>
+      </div>
+
       <!-- Texte — mode lecture -->
       <template v-if="!editing">
         <!-- eslint-disable vue/no-v-html -->
         <p class="msg-text" v-html="content" @click="onMsgClick" />
         <!-- eslint-enable vue/no-v-html -->
+
+        <!-- Prévisualisation image inline -->
+        <div v-if="imagePreviewUrl" class="msg-img-preview">
+          <img :src="imagePreviewUrl" alt="Aperçu" loading="lazy" @click="openExternal(imagePreviewUrl!)" />
+        </div>
       </template>
 
       <!-- Texte — mode édition inline -->
@@ -196,6 +246,11 @@ function closeAll() { showMenu.value = false; showPicker.value = false }
          PILL D'ACTIONS (style Slack) — au survol
     ════════════════════════════════════════════ -->
     <div v-if="!editing" class="msg-action-pill">
+
+      <!-- Répondre -->
+      <button class="pill-btn" title="Répondre" @click.stop="onReply">
+        <Reply :size="15" />
+      </button>
 
       <!-- Raccourcis réactions rapides -->
       <button
@@ -256,6 +311,9 @@ function closeAll() { showMenu.value = false; showPicker.value = false }
         </button>
 
         <div v-if="showMenu" class="msg-menu" role="menu">
+          <button class="msg-menu-item" role="menuitem" @click="onReply">
+            <Reply :size="12" /> Répondre
+          </button>
           <button class="msg-menu-item" role="menuitem" @click="copyMessage">
             <Copy :size="12" /> Copier le texte
           </button>
@@ -272,20 +330,175 @@ function closeAll() { showMenu.value = false; showPicker.value = false }
       </div>
     </div>
 
+    <!-- Menu contextuel (clic droit) -->
+    <ContextMenu
+      v-if="ctxVisible"
+      :x="ctxX"
+      :y="ctxY"
+      :items="ctxItems"
+      @close="ctxVisible = false"
+    />
+
   </div>
 </template>
 
 <style scoped>
 /* ════════════════════════════════════════════
+   LIGNE DE MESSAGE — hover + états
+════════════════════════════════════════════ */
+
+/* Fond subtil au survol — effet Discord */
+.msg-row:hover {
+  background: rgba(255, 255, 255, 0.025);
+  border-radius: 4px;
+}
+.msg-row.editing { background: rgba(74, 144, 217, .04); border-radius: 6px; }
+.msg-row.pinned  { background: rgba(243, 156, 18, .04); }
+
+/* ════════════════════════════════════════════
+   TYPOGRAPHIE & MÉTA
+════════════════════════════════════════════ */
+.msg-meta {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 1px;
+}
+
+/* Nom de l'auteur — plus impactant */
+.msg-author {
+  font-weight: 700;
+  font-size: 13.5px;
+  color: var(--text-primary);
+  letter-spacing: .01em;
+}
+/* Légère teinte accent sur hover de la row */
+.msg-row:hover .msg-author { color: var(--accent-light, #7db8f0); }
+
+/* Heure — plus discrète */
+.msg-time {
+  font-size: 10.5px;
+  color: var(--text-muted);
+  font-weight: 400;
+  opacity: .75;
+}
+.msg-edited-tag { font-size: 10px; color: var(--text-muted); font-style: italic; }
+
+/* ════════════════════════════════════════════
+   CITATION (reply-to)
+════════════════════════════════════════════ */
+.msg-quote {
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
+  padding: 3px 8px;
+  margin-bottom: 4px;
+  border-left: 3px solid var(--accent);
+  background: rgba(74, 144, 217, .06);
+  border-radius: 0 4px 4px 0;
+  max-width: 100%;
+  overflow: hidden;
+  cursor: default;
+}
+.msg-quote-icon   { color: var(--accent); flex-shrink: 0; opacity: .7; }
+.msg-quote-author {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--accent-light, #7db8f0);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.msg-quote-preview {
+  font-size: 11.5px;
+  color: var(--text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+  min-width: 0;
+}
+
+/* ════════════════════════════════════════════
+   CONTENU ENRICHI — blockquote, code, pre
+════════════════════════════════════════════ */
+/* Blockquotes markdown */
+:deep(.msg-text blockquote) {
+  margin: 6px 0;
+  padding: 6px 12px;
+  border-left: 3px solid var(--accent);
+  background: rgba(74, 144, 217, .06);
+  border-radius: 0 6px 6px 0;
+  color: var(--text-secondary);
+  font-style: italic;
+}
+
+/* Code inline */
+:deep(.msg-text code) {
+  font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+  font-size: .85em;
+  background: rgba(255, 255, 255, .07);
+  border: 1px solid rgba(255, 255, 255, .1);
+  border-radius: 4px;
+  padding: 1px 5px;
+  color: #e8a87c;
+}
+
+/* Blocs de code highlight.js */
+:deep(.code-block) {
+  position: relative;
+  margin: 8px 0;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, .08);
+  background: rgba(0, 0, 0, .3);
+}
+:deep(.code-lang) {
+  display: block;
+  padding: 4px 12px;
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  color: var(--text-muted);
+  background: rgba(255, 255, 255, .04);
+  border-bottom: 1px solid rgba(255, 255, 255, .06);
+}
+:deep(.code-block pre) {
+  margin: 0;
+  padding: 10px 14px;
+  overflow-x: auto;
+  font-size: 12.5px;
+  line-height: 1.6;
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+}
+
+/* ════════════════════════════════════════════
+   PRÉVISUALISATION IMAGE
+════════════════════════════════════════════ */
+.msg-img-preview {
+  margin-top: 6px;
+  max-width: 340px;
+}
+.msg-img-preview img {
+  max-width: 100%;
+  max-height: 220px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  cursor: pointer;
+  display: block;
+  object-fit: cover;
+  transition: opacity .15s;
+}
+.msg-img-preview img:hover { opacity: .88; }
+
+/* ════════════════════════════════════════════
    PILL D'ACTIONS — style Slack
 ════════════════════════════════════════════ */
 .msg-action-pill {
-  /* Positionnée en absolu en haut à droite de la row */
   position: absolute;
   top: -14px;
   right: 16px;
-
-  /* Invisible par défaut */
   display: flex;
   align-items: center;
   gap: 1px;
@@ -293,8 +506,6 @@ function closeAll() { showMenu.value = false; showPicker.value = false }
   pointer-events: none;
   transition: opacity .12s ease, transform .12s ease;
   transform: translateY(4px);
-
-  /* Apparence pill */
   background: var(--bg-modal);
   border: 1px solid var(--border);
   border-radius: 8px;
@@ -303,14 +514,12 @@ function closeAll() { showMenu.value = false; showPicker.value = false }
   z-index: 30;
 }
 
-/* Affichage au survol de la row */
 .msg-row:hover .msg-action-pill {
   opacity: 1;
   pointer-events: auto;
   transform: translateY(0);
 }
 
-/* Bouton générique de la pill */
 .pill-btn {
   display: flex;
   align-items: center;
@@ -334,11 +543,9 @@ function closeAll() { showMenu.value = false; showPicker.value = false }
 }
 .pill-btn:disabled { opacity: .35; cursor: default; }
 
-/* Emoji rapide — légèrement plus large */
 .pill-emoji-btn { width: 32px; font-size: 16px; }
 .pill-emoji-btn:hover:not(:disabled) { transform: scale(1.25); background: rgba(255,255,255,.07); }
 
-/* Séparateur vertical */
 .pill-sep {
   display: block;
   width: 1px;
@@ -348,7 +555,7 @@ function closeAll() { showMenu.value = false; showPicker.value = false }
   flex-shrink: 0;
 }
 
-/* ── Picker complet ── */
+/* Picker complet */
 .pill-picker-wrap { position: relative; }
 .full-picker {
   position: absolute;
@@ -380,7 +587,7 @@ function closeAll() { showMenu.value = false; showPicker.value = false }
 }
 .full-picker-btn:hover { background: rgba(255,255,255,.1); transform: scale(1.2); }
 
-/* ── Menu ··· ── */
+/* Menu ··· */
 .pill-menu-wrap { position: relative; }
 .msg-menu {
   position: absolute;
@@ -418,52 +625,66 @@ function closeAll() { showMenu.value = false; showPicker.value = false }
 .msg-menu-danger:hover { background: rgba(231,76,60,.12); color: #ff8070; }
 
 /* ════════════════════════════════════════════
-   RÉACTIONS affichées sous le texte
+   RÉACTIONS — design "juicy"
 ════════════════════════════════════════════ */
 .msg-reactions-row {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 4px;
-  margin-top: 4px;
+  margin-top: 5px;
 }
+
 .msg-reaction-pill {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  min-width: 44px;
+  min-width: 46px;
   height: 26px;
   padding: 0 8px;
   border-radius: 13px;
   border: 1px solid var(--border);
-  background: rgba(255,255,255,.04);
+  background: rgba(255, 255, 255, .04);
   color: var(--text-secondary);
   font-size: 12px;
   cursor: pointer;
-  transition: background .1s, border-color .1s, transform .1s;
+  /* transition douce sur plusieurs propriétés */
+  transition:
+    background .12s ease,
+    border-color .12s ease,
+    transform .15s cubic-bezier(.34, 1.56, .64, 1),
+    box-shadow .12s ease;
   line-height: 1;
+  box-shadow: 0 1px 3px rgba(0,0,0,.2);
 }
-.msg-reaction-pill:hover { background: rgba(255,255,255,.09); transform: translateY(-1px); }
+
+/* Survol rebondissant */
+.msg-reaction-pill:hover {
+  background: rgba(255, 255, 255, .1);
+  transform: translateY(-2px) scale(1.06);
+  box-shadow: 0 4px 12px rgba(0,0,0,.25);
+}
+
+/* Réaction de l'utilisateur courant — visuel accentué */
 .msg-reaction-pill.mine {
-  background: rgba(74,144,217,.18);
-  border-color: rgba(74,144,217,.5);
-  color: var(--accent-light);
+  background: rgba(74, 144, 217, .2);
+  border-color: rgba(74, 144, 217, .65);
+  color: var(--accent-light, #7db8f0);
   font-weight: 700;
+  box-shadow: 0 0 0 1px rgba(74, 144, 217, .3), 0 2px 8px rgba(74, 144, 217, .15);
 }
+.msg-reaction-pill.mine:hover {
+  background: rgba(74, 144, 217, .3);
+  border-color: rgba(74, 144, 217, .8);
+  box-shadow: 0 0 0 1px rgba(74, 144, 217, .5), 0 4px 14px rgba(74, 144, 217, .2);
+}
+
 .reaction-emoji { font-size: 14px; line-height: 1; }
 .reaction-count { font-size: 11.5px; font-weight: 600; }
 
 /* ════════════════════════════════════════════
-   MÉTADONNÉES & ÉDITION
+   ÉDITION INLINE
 ════════════════════════════════════════════ */
-.msg-meta {
-  display: flex;
-  align-items: baseline;
-  gap: 6px;
-  flex-wrap: wrap;
-}
-.msg-edited-tag { font-size: 10px; color: var(--text-muted); font-style: italic; }
-
 .msg-edit-box { margin-top: 2px; }
 .msg-edit-input {
   width: 100%;
@@ -489,6 +710,4 @@ function closeAll() { showMenu.value = false; showPicker.value = false }
 .msg-edit-hint { font-size: 10.5px; color: var(--text-muted); }
 .msg-edit-save { color: var(--color-success); }
 .msg-edit-save:hover { background: rgba(39,174,96,.12); }
-
-.msg-row.editing { background: rgba(74,144,217,.04); border-radius: 6px; }
 </style>

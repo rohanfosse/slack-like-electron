@@ -49,13 +49,24 @@ function searchMessages(channelId, query) {
   `).all(channelId, query);
 }
 
-function sendMessage({ channelId, dmStudentId, authorName, authorType, content }) {
+function sendMessage({ channelId, dmStudentId, authorName, authorType, content, replyToId, replyToAuthor, replyToPreview }) {
   // 'ta' n'est pas dans le CHECK constraint de la table — on le stocke comme 'teacher'
   const safeType = authorType === 'ta' ? 'teacher' : authorType;
   return getDb().prepare(`
-    INSERT INTO messages (channel_id, dm_student_id, author_name, author_type, content)
-    VALUES (?, ?, ?, ?, ?)
-  `).run(channelId ?? null, dmStudentId ?? null, authorName, safeType, content);
+    INSERT INTO messages
+      (channel_id, dm_student_id, author_name, author_type, content,
+       reply_to_id, reply_to_author, reply_to_preview)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+  `).run(
+    channelId ?? null,
+    dmStudentId ?? null,
+    authorName,
+    safeType,
+    content,
+    replyToId      ?? null,
+    replyToAuthor  ?? null,
+    replyToPreview ?? null,
+  );
 }
 
 function updateReactions(msgId, reactionsJson) {

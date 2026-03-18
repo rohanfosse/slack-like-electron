@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
-import { Send, Type, Paperclip, Loader2 } from 'lucide-vue-next'
+import { ref, computed, nextTick, watch } from 'vue'
+import { Send, Type, Paperclip, Loader2, X as XIcon, Reply } from 'lucide-vue-next'
 import { useAppStore }      from '@/stores/app'
 import { useMessagesStore } from '@/stores/messages'
 import FormatToolbar from './FormatToolbar.vue'
@@ -13,28 +13,130 @@ const content     = ref('')
 const showToolbar = ref(false)
 const sending     = ref(false)
 
+// ── Mention autocomplete (@) ──────────────────────────────────────────────
+interface MentionUser { name: string }
+const allUsers       = ref<MentionUser[]>([])
+const mentionActive  = ref(false)
+const mentionSearch  = ref('')
+const mentionStart   = ref(-1)
+const mentionResults = computed(() => {
+  if (!mentionActive.value) return []
+  const q = mentionSearch.value.toLowerCase()
+  return allUsers.value
+    .filter((u) => u.name.toLowerCase().includes(q))
+    .slice(0, 7)
+})
+
+async function loadUsers() {
+  if (allUsers.value.length) return
+  const res = await window.api.getAllStudents()
+  if (res?.ok) {
+    allUsers.value = res.data.map((s) => ({ name: s.name }))
+  }
+  // Ajouter @everyone comme option spéciale
+  if (!allUsers.value.some((u) => u.name === 'everyone')) {
+    allUsers.value = [{ name: 'everyone' }, ...allUsers.value]
+  }
+}
+
+function insertMention(name: string) {
+  if (!inputEl.value) return
+  const cursorPos = inputEl.value.selectionStart ?? 0
+  const before    = content.value.slice(0, mentionStart.value)
+  const after     = content.value.slice(cursorPos)
+  content.value   = `${before}@${name} ${after}`
+  mentionActive.value = false
+  nextTick(() => {
+    const pos = mentionStart.value + name.length + 2
+    inputEl.value?.setSelectionRange(pos, pos)
+    inputEl.value?.focus()
+    autoResize()
+  })
+}
+
+function closeMention() { mentionActive.value = false }
+
+// ── Placeholder ───────────────────────────────────────────────────────────
 const placeholder = computed(() => {
   if (appStore.isReadonly) return 'Canal d\'annonces — lecture seule'
   if (appStore.activeChannelName) return `Envoyer dans #${appStore.activeChannelName}`
   return 'Votre message…'
 })
 
-// Placeholder: will be populated when typing-presence is implemented
-const typingText = computed(() => '')
-
+// ── Auto-resize textarea ──────────────────────────────────────────────────
 function autoResize() {
   if (!inputEl.value) return
   inputEl.value.style.height = 'auto'
   inputEl.value.style.height = inputEl.value.scrollHeight + 'px'
 }
 
+// ── Détection mention + typing indicator ─────────────────────────────────
+function onInput() {
+  autoResize()
+
+  if (!inputEl.value) return
+  const cursor = inputEl.value.selectionStart ?? 0
+  const before = content.value.slice(0, cursor)
+
+  // Détecter @query en fin de texte avant le curseur
+  const match = before.match(/@(\w*)$/)
+  if (match) {
+    mentionSearch.value = match[1]
+    mentionStart.value  = cursor - match[0].length
+    mentionActive.value = true
+    loadUsers()
+    // Filtrer sans attendre — allUsers se remplit en parallèle
+  } else {
+    mentionActive.value = false
+  }
+
+  // Indicateur de frappe (infrastructure prête pour temps-réel)
+  if (appStore.currentUser?.name) {
+    messagesStore.setTyping(appStore.currentUser.name)
+  }
+}
+
+// Fermer la mention au clic ailleurs
+function onBlur() {
+  setTimeout(closeMention, 150) // délai pour laisser le click s'exécuter
+}
+
+// Clavier dans la mention
+function onMentionKeydown(e: KeyboardEvent) {
+  if (e.key === 'Escape') { closeMention(); e.preventDefault() }
+}
+
+// ── Pièce jointe (Paperclip) ──────────────────────────────────────────────
+const attaching = ref(false)
+
+async function attachFile() {
+  if (attaching.value) return
+  attaching.value = true
+  try {
+    const res = await window.api.openFileDialog()
+    if (!res?.ok || !res.data) return
+    const filePath = res.data as string
+    // Insère le chemin sous forme de lien markdown
+    const insert = content.value
+      ? `\n${filePath}`
+      : filePath
+    content.value += insert
+    nextTick(() => { autoResize(); inputEl.value?.focus() })
+  } finally {
+    attaching.value = false
+  }
+}
+
+// ── Envoi ──────────────────────────────────────────────────────────────────
 async function send() {
   if (!content.value.trim() || sending.value || appStore.isReadonly) return
+  mentionActive.value = false
   sending.value = true
   try {
     await messagesStore.sendMessage(content.value)
     content.value = ''
     if (inputEl.value) inputEl.value.style.height = 'auto'
+    if (appStore.currentUser?.name) messagesStore.stopTyping(appStore.currentUser.name)
   } finally {
     sending.value = false
     inputEl.value?.focus()
@@ -44,9 +146,27 @@ async function send() {
 function onKeydown(e: KeyboardEvent) {
   if (e.key === 'Enter' && !e.shiftKey) {
     e.preventDefault()
-    send()
+    if (mentionActive.value && mentionResults.value.length) {
+      insertMention(mentionResults.value[0].name)
+    } else {
+      send()
+    }
+  }
+  if (e.key === 'Escape' && mentionActive.value) {
+    closeMention()
+    e.preventDefault()
   }
 }
+
+// Réinitialiser le resize quand le canal change
+watch(
+  () => [appStore.activeChannelId, appStore.activeDmStudentId],
+  () => {
+    content.value = ''
+    mentionActive.value = false
+    if (inputEl.value) inputEl.value.style.height = 'auto'
+  },
+)
 </script>
 
 <template>
@@ -55,12 +175,29 @@ function onKeydown(e: KeyboardEvent) {
 
       <!-- Zone indicateur de frappe -->
       <div class="mi-typing" aria-live="polite">
-        <span v-if="typingText" class="mi-typing-text">{{ typingText }}</span>
+        <span v-if="messagesStore.typingText" class="mi-typing-text">
+          {{ messagesStore.typingText }}
+        </span>
       </div>
+
+      <!-- Prévisualisation de la citation -->
+      <Transition name="quote-slide">
+        <div v-if="messagesStore.quotedMessage" class="mi-quote-preview">
+          <Reply :size="13" class="mi-quote-icon" />
+          <div class="mi-quote-body">
+            <span class="mi-quote-author">{{ messagesStore.quotedMessage.author_name }}</span>
+            <span class="mi-quote-text">{{ messagesStore.quotedMessage.content.slice(0, 100) }}</span>
+          </div>
+          <button class="btn-icon mi-quote-close" aria-label="Annuler la citation" @click="messagesStore.clearQuote()">
+            <XIcon :size="13" />
+          </button>
+        </div>
+      </Transition>
 
       <!-- Barre de formatage -->
       <FormatToolbar v-if="showToolbar" :input-el="inputEl" />
 
+      <!-- Zone de saisie principale -->
       <div id="message-input-wrapper" class="message-input-wrapper">
 
         <button
@@ -74,6 +211,19 @@ function onKeydown(e: KeyboardEvent) {
           <Type :size="16" />
         </button>
 
+        <!-- Autocomplete mentions -->
+        <div v-if="mentionActive && mentionResults.length" class="mi-mention-popup">
+          <button
+            v-for="user in mentionResults"
+            :key="user.name"
+            class="mi-mention-item"
+            @mousedown.prevent="insertMention(user.name)"
+          >
+            <span class="mi-mention-at">@</span>
+            <span class="mi-mention-name">{{ user.name }}</span>
+          </button>
+        </div>
+
         <textarea
           id="message-input"
           ref="inputEl"
@@ -81,18 +231,23 @@ function onKeydown(e: KeyboardEvent) {
           class="message-input"
           :placeholder="placeholder"
           rows="1"
-          @input="autoResize"
+          @input="onInput"
           @keydown="onKeydown"
+          @blur="onBlur"
+          @keydown.esc="closeMention"
         />
 
+        <!-- Paperclip actif -->
         <button
           class="btn-icon mi-attach-btn"
+          :class="{ attaching }"
           title="Joindre un fichier"
           aria-label="Joindre un fichier"
-          tabindex="-1"
-          disabled
+          :disabled="attaching"
+          @click="attachFile"
         >
-          <Paperclip :size="16" />
+          <Loader2 v-if="attaching" :size="16" class="mi-spinner" />
+          <Paperclip v-else :size="16" />
         </button>
 
         <button
@@ -114,7 +269,7 @@ function onKeydown(e: KeyboardEvent) {
 </template>
 
 <style scoped>
-/* Indicateur de frappe */
+/* ── Indicateur de frappe ── */
 .mi-typing {
   min-height: 18px;
   padding: 0 4px 2px 4px;
@@ -134,21 +289,103 @@ function onKeydown(e: KeyboardEvent) {
   animation: mi-pulse 1.4s ease-in-out infinite;
 }
 
-/* Bouton paperclip */
-.mi-attach-btn {
-  opacity: .45;
-  cursor: not-allowed;
+/* ── Prévisualisation citation ── */
+.mi-quote-preview {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 6px 12px;
+  margin: 0 0 2px;
+  background: rgba(74, 144, 217, .07);
+  border-left: 3px solid var(--accent);
+  border-radius: 0 4px 4px 0;
 }
+.mi-quote-icon { color: var(--accent); flex-shrink: 0; margin-top: 2px; }
+.mi-quote-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.mi-quote-author {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--accent-light, #7db8f0);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.mi-quote-text {
+  font-size: 11.5px;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.mi-quote-close {
+  flex-shrink: 0;
+  padding: 3px;
+  opacity: .6;
+  transition: opacity var(--t-fast);
+}
+.mi-quote-close:hover { opacity: 1; }
 
-/* Bouton envoi */
+/* Transition entrée/sortie quote */
+.quote-slide-enter-active,
+.quote-slide-leave-active { transition: all .15s ease; }
+.quote-slide-enter-from,
+.quote-slide-leave-to     { opacity: 0; transform: translateY(-4px); max-height: 0; }
+
+/* ── Autocomplete mention ── */
+.mi-mention-popup {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  z-index: 50;
+  background: var(--bg-modal);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 -6px 24px rgba(0,0,0,.4);
+  overflow: hidden;
+  max-height: 260px;
+  overflow-y: auto;
+}
+.mi-mention-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 8px 14px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-family: var(--font);
+  font-size: 13px;
+  color: var(--text-secondary);
+  text-align: left;
+  transition: background .1s, color .1s;
+}
+.mi-mention-item:hover {
+  background: rgba(255,255,255,.07);
+  color: var(--text-primary);
+}
+.mi-mention-at {
+  font-weight: 700;
+  color: var(--accent);
+  font-size: 13px;
+}
+.mi-mention-name { font-weight: 500; }
+
+/* ── Bouton paperclip actif ── */
+.mi-attach-btn {
+  transition: color .15s, opacity .15s;
+}
+.mi-attach-btn:not(:disabled):hover { color: var(--accent); }
+.mi-attach-btn:disabled:not(.attaching) { opacity: .4; cursor: not-allowed; }
+
+/* ── Bouton envoi ── */
 .mi-send-btn {
   transition: opacity .15s, transform .15s, background .15s;
 }
-.mi-send-btn:not(:disabled):hover {
-  transform: scale(1.06);
-}
+.mi-send-btn:not(:disabled):hover { transform: scale(1.06); }
 
-/* Spinner */
+/* ── Spinner ── */
 @keyframes mi-spin { to { transform: rotate(360deg); } }
 .mi-spinner { animation: mi-spin .65s linear infinite; }
 

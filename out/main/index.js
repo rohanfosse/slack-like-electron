@@ -31,7 +31,7 @@ function requireSchema() {
   if (hasRequiredSchema) return schema;
   hasRequiredSchema = 1;
   const { getDb } = requireConnection();
-  const CURRENT_VERSION = 13;
+  const CURRENT_VERSION = 14;
   function initSchema() {
     const db2 = getDb();
     db2.exec(`
@@ -355,6 +355,12 @@ function requireSchema() {
       // v13 : colonne edited sur messages (suivi des modifications)
       (db3) => {
         tryAlter(db3, "ALTER TABLE messages ADD COLUMN edited INTEGER NOT NULL DEFAULT 0");
+      },
+      // v14 : citations (reply-to) sur les messages
+      (db3) => {
+        tryAlter(db3, "ALTER TABLE messages ADD COLUMN reply_to_id      INTEGER DEFAULT NULL");
+        tryAlter(db3, "ALTER TABLE messages ADD COLUMN reply_to_author  TEXT    DEFAULT NULL");
+        tryAlter(db3, "ALTER TABLE messages ADD COLUMN reply_to_preview TEXT    DEFAULT NULL");
       }
     ];
     db2.transaction(() => {
@@ -1532,12 +1538,23 @@ function requireMessages() {
     ORDER BY created_at ASC LIMIT 200
   `).all(channelId, query);
   }
-  function sendMessage({ channelId, dmStudentId, authorName, authorType, content }) {
+  function sendMessage({ channelId, dmStudentId, authorName, authorType, content, replyToId, replyToAuthor, replyToPreview }) {
     const safeType = authorType === "ta" ? "teacher" : authorType;
     return getDb().prepare(`
-    INSERT INTO messages (channel_id, dm_student_id, author_name, author_type, content)
-    VALUES (?, ?, ?, ?, ?)
-  `).run(channelId ?? null, dmStudentId ?? null, authorName, safeType, content);
+    INSERT INTO messages
+      (channel_id, dm_student_id, author_name, author_type, content,
+       reply_to_id, reply_to_author, reply_to_preview)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+  `).run(
+      channelId ?? null,
+      dmStudentId ?? null,
+      authorName,
+      safeType,
+      content,
+      replyToId ?? null,
+      replyToAuthor ?? null,
+      replyToPreview ?? null
+    );
   }
   function updateReactions(msgId, reactionsJson) {
     return getDb().prepare("UPDATE messages SET reactions = ? WHERE id = ?").run(reactionsJson, msgId).changes;

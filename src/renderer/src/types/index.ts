@@ -66,6 +66,9 @@ export interface Message {
   reactions: string | null
   is_pinned: boolean | 0 | 1
   edited:    0 | 1 | boolean
+  reply_to_id?:      number | null
+  reply_to_author?:  string | null
+  reply_to_preview?: string | null
 }
 
 export interface Devoir {
@@ -152,4 +155,7 @@ export interface SendMessagePayload {
   authorName: string
   authorType: 'teacher' | 'ta' | 'student'
   content: string
+  replyToId?:      number | null
+  replyToAuthor?:  string | null
+  replyToPreview?: string | null
 }

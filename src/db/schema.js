@@ -1,6 +1,6 @@
 const { getDb } = require('./connection');
 
-const CURRENT_VERSION = 13;
+const CURRENT_VERSION = 14;
 
 // ─── Schema initial ───────────────────────────────────────────────────────────
 // Crée toutes les tables avec leur schéma complet (colonnes UTC, toutes colonnes incluses).
@@ -350,6 +350,13 @@ function runMigrations(db) {
     // v13 : colonne edited sur messages (suivi des modifications)
     (db) => {
       tryAlter(db, 'ALTER TABLE messages ADD COLUMN edited INTEGER NOT NULL DEFAULT 0');
+    },
+
+    // v14 : citations (reply-to) sur les messages
+    (db) => {
+      tryAlter(db, 'ALTER TABLE messages ADD COLUMN reply_to_id      INTEGER DEFAULT NULL');
+      tryAlter(db, 'ALTER TABLE messages ADD COLUMN reply_to_author  TEXT    DEFAULT NULL');
+      tryAlter(db, 'ALTER TABLE messages ADD COLUMN reply_to_preview TEXT    DEFAULT NULL');
     },
   ];
 

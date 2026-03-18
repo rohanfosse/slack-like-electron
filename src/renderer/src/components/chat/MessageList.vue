@@ -166,18 +166,20 @@ const dateGroups = computed<DateGroup[]>(() => {
         <template v-for="group in dateGroups" :key="group.date">
           <div class="date-separator"><span>{{ group.date }}</span></div>
 
-          <template v-for="{ msg, grouped, isFirstUnread } in group.messages" :key="msg.id">
-            <div v-if="isFirstUnread" class="unread-divider">
-              <span class="unread-divider-label">Nouveaux messages</span>
-            </div>
+          <TransitionGroup name="msg-fade" tag="div" class="msg-group-wrap">
+            <template v-for="{ msg, grouped, isFirstUnread } in group.messages" :key="msg.id">
+              <div v-if="isFirstUnread" :key="`unread-${msg.id}`" class="unread-divider">
+                <span class="unread-divider-label">Nouveaux messages</span>
+              </div>
 
-            <MessageBubble
-              :msg="msg"
-              :grouped="grouped"
-              :search-term="store.searchTerm"
-              :class="{ 'msg-highlight': store.searchTerm && msg.content.toLowerCase().includes(store.searchTerm.toLowerCase()) }"
-            />
-          </template>
+              <MessageBubble
+                :msg="msg"
+                :grouped="grouped"
+                :search-term="store.searchTerm"
+                :class="{ 'msg-highlight': store.searchTerm && msg.content.toLowerCase().includes(store.searchTerm.toLowerCase()) }"
+              />
+            </template>
+          </TransitionGroup>
         </template>
       </template>
 
@@ -209,6 +211,18 @@ const dateGroups = computed<DateGroup[]>(() => {
 <style scoped>
 /* ── Messages list doit être position:relative pour le bouton scroll ── */
 .messages-list { position: relative; }
+
+/* ── Wrapper de groupe (TransitionGroup tag) ── */
+.msg-group-wrap { display: contents; }
+
+/* ── Animation d'entrée — nouveaux messages seulement ── */
+.msg-fade-enter-active {
+  transition: opacity .18s ease-out, transform .18s ease-out;
+}
+.msg-fade-enter-from {
+  opacity: 0;
+  transform: translateY(7px);
+}
 
 /* ── Sentinelle ── */
 .scroll-sentinel { height: 1px; flex-shrink: 0; }
