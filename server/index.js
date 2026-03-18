@@ -61,17 +61,17 @@ app.use('/uploads', express.static(UPLOAD_DIR))
 // Route upload (auth requise — montée après authMiddleware global /api)
 app.use('/api/files', require('./routes/files'))
 
-// SPA web — toutes les routes non-API renvoient index.html
+// ── Health check ─────────────────────────────────────────────────────────────
+app.get('/health', (_req, res) => res.json({ ok: true, version: '2.0.0' }))
+
+// SPA web — fallback en dernier pour ne pas écraser les routes API/health
 const WEB_DIST = path.join(__dirname, '../dist-web')
 if (fs.existsSync(WEB_DIST)) {
   app.use(express.static(WEB_DIST))
-  app.get(/^(?!\/api|\/socket\.io|\/uploads).*/, (_req, res) => {
+  app.get(/^(?!\/api|\/socket\.io|\/uploads|\/health).*/, (_req, res) => {
     res.sendFile(path.join(WEB_DIST, 'index.html'))
   })
 }
-
-// ── Health check ─────────────────────────────────────────────────────────────
-app.get('/health', (_req, res) => res.json({ ok: true, version: '2.0.0' }))
 
 // ── Socket.io — authentification ──────────────────────────────────────────────
 io.use((socket, next) => {
