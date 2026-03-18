@@ -33,7 +33,7 @@
   padding: 10px 0 8px;
   gap: 1px;
   flex-shrink: 0;
-  overflow: hidden;
+  overflow: visible;
   border-right: 1px solid rgba(255,255,255,.04);
   /* Zone de déplacement de fenêtre Electron (sous titleBarOverlay) */
   -webkit-app-region: drag;
