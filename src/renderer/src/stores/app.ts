@@ -83,6 +83,12 @@ export const useAppStore = defineStore('app', () => {
     try { localStorage.removeItem(SESSION_KEY) } catch {}
   }
 
+  function clearMustChangePassword(): void {
+    if (!currentUser.value) return
+    currentUser.value = { ...currentUser.value, must_change_password: 0 }
+    try { localStorage.setItem(SESSION_KEY, JSON.stringify(currentUser.value)) } catch {}
+  }
+
   // Impersonnification (prof → étudiant) : pas de sauvegarde en session
   function impersonate(user: User): void {
     currentUser.value = user
@@ -284,7 +290,7 @@ export const useAppStore = defineStore('app', () => {
     // calculs
     isStudent, isTeacher, isStaff, isSimulating, isReadonly,
     // actions
-    restoreSession, login, logout, impersonate,
+    restoreSession, login, logout, impersonate, clearMustChangePassword,
     startSimulation, stopSimulation,
     openChannel, openDm, markRead, markDmRead, markAllRead, loadTaChannels, initUnreadListener, initOnlineListener,
     api,

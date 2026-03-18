@@ -1,5 +1,5 @@
 <script setup lang="ts">
-  import { onMounted, onUnmounted, ref } from 'vue'
+  import { onMounted, onUnmounted, ref, computed, watch } from 'vue'
   import { useRouter } from 'vue-router'
   import { useAppStore }    from '@/stores/app'
   import { useModalsStore } from '@/stores/modals'
@@ -8,7 +8,8 @@
   import NavRail  from '@/components/layout/NavRail.vue'
   import TitleBar from '@/components/layout/TitleBar.vue'
   import Sidebar  from '@/components/sidebar/Sidebar.vue'
-  import LoginOverlay from '@/components/auth/LoginOverlay.vue'
+  import LoginOverlay        from '@/components/auth/LoginOverlay.vue'
+  import ChangePasswordModal from '@/components/modals/ChangePasswordModal.vue'
   // Modales
   import CmdPalette           from '@/components/modals/CmdPalette.vue'
   import SettingsModal        from '@/components/modals/SettingsModal.vue'
@@ -36,6 +37,26 @@
 
   const promoCreatedKey = ref(0)
   function onPromoCreated() { promoCreatedKey.value++ }
+
+  // ── Changement de mot de passe forcé (première connexion) ─────────────────
+  const showForcedPasswordChange = computed(() =>
+    !!appStore.currentUser && appStore.currentUser.must_change_password === 1,
+  )
+
+  // ── Bannière de confidentialité RGPD (première ouverture) ─────────────────
+  const PRIVACY_KEY  = 'cc_privacy_seen'
+  const showPrivacy  = ref(false)
+  function acceptPrivacy() {
+    localStorage.setItem(PRIVACY_KEY, '1')
+    showPrivacy.value = false
+  }
+
+  // Réinitialiser après déconnexion/reconnexion
+  watch(() => appStore.currentUser, (user) => {
+    if (user && !localStorage.getItem(PRIVACY_KEY)) {
+      showPrivacy.value = true
+    }
+  })
 
   let unsubUnread:  (() => void) | null = null
   let unsubOnline:  (() => void) | null = null
@@ -128,7 +149,44 @@
     <IntervenantsModal       v-model="modals.intervenants"      />
     <ClasseModal             v-model="modals.classe"            />
     <CreatePromoModal        v-model="modals.createPromo"       @created="onPromoCreated" />
+
+    <!-- Changement de mot de passe forcé (première connexion) -->
+    <ChangePasswordModal
+      :model-value="showForcedPasswordChange"
+      :forced="true"
+      @update:model-value="() => {}"
+      @changed="() => {}"
+    />
   </template>
+
+  <!-- Bannière RGPD (première utilisation) -->
+  <Transition name="privacy-fade">
+    <div v-if="showPrivacy && appStore.currentUser" class="privacy-overlay" role="dialog" aria-modal="true" aria-label="Politique de confidentialité">
+      <div class="privacy-box">
+        <div class="privacy-icon">🔒</div>
+        <h3 class="privacy-title">Vos données &amp; confidentialité</h3>
+        <div class="privacy-body">
+          <p>CESIA stocke localement les données suivantes :</p>
+          <ul>
+            <li><strong>Messages</strong> — conservés dans la base de données locale de l'établissement.</li>
+            <li><strong>Rendus &amp; notes</strong> — accessibles à votre responsable pédagogique.</li>
+            <li><strong>Photo de profil</strong> — visible par les membres de votre promotion.</li>
+            <li><strong>Mot de passe</strong> — stocké de façon chiffrée (bcrypt), jamais transmis en clair.</li>
+          </ul>
+          <p>Conformément au <strong>RGPD (Art. 17 &amp; 20)</strong>, vous pouvez à tout moment :</p>
+          <ul>
+            <li>Supprimer vos propres messages</li>
+            <li>Exporter vos données personnelles (Paramètres → Compte)</li>
+            <li>Demander la suppression de votre compte à l'administrateur</li>
+          </ul>
+          <p class="privacy-note">Ces données sont exclusivement utilisées dans le cadre de votre formation et ne sont jamais transmises à des tiers.</p>
+        </div>
+        <button class="btn-primary privacy-accept" @click="acceptPrivacy">
+          J'ai compris
+        </button>
+      </div>
+    </div>
+  </Transition>
 </template>
 
 <style>
@@ -182,6 +240,71 @@
   }
 
   .simulation-banner.banner-shift { top: calc(var(--titlebar-height, 32px) + 36px); }
+
+  /* ── Bannière RGPD ── */
+  .privacy-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 2000;
+    background: rgba(0, 0, 0, .65);
+    backdrop-filter: blur(6px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+
+  .privacy-box {
+    background: var(--bg-modal);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 28px 32px;
+    max-width: 520px;
+    width: 100%;
+    box-shadow: 0 32px 80px rgba(0, 0, 0, .7);
+  }
+
+  .privacy-icon {
+    font-size: 32px;
+    margin-bottom: 12px;
+    line-height: 1;
+  }
+
+  .privacy-title {
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0 0 14px;
+  }
+
+  .privacy-body {
+    font-size: 13px;
+    color: var(--text-secondary);
+    line-height: 1.6;
+  }
+  .privacy-body p { margin: 0 0 8px; }
+  .privacy-body ul { margin: 0 0 8px; padding-left: 20px; }
+  .privacy-body li { margin-bottom: 4px; }
+
+  .privacy-note {
+    font-size: 11.5px !important;
+    color: var(--text-muted) !important;
+    font-style: italic;
+    border-top: 1px solid var(--border);
+    padding-top: 10px;
+    margin-top: 10px !important;
+  }
+
+  .privacy-accept {
+    margin-top: 18px;
+    width: 100%;
+    justify-content: center;
+    padding: 10px;
+    font-size: 14px;
+  }
+
+  .privacy-fade-enter-active, .privacy-fade-leave-active { transition: opacity .2s ease; }
+  .privacy-fade-enter-from, .privacy-fade-leave-to       { opacity: 0; }
 
   /* Décaler le shell quand le bandeau est visible */
   .sidebar-with-banner,

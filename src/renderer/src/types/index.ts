@@ -8,6 +8,7 @@ export interface User {
   type: 'teacher' | 'ta' | 'student'
   promo_id: number | null
   promo_name: string | null
+  must_change_password?: number  // 1 = doit changer, 0 = ok
 }
 
 export interface RubricCriterion {

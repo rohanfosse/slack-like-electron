@@ -1,6 +1,10 @@
 const { getDb } = require('./connection');
-const path = require('path');
-const fs   = require('fs');
+const path   = require('path');
+const fs     = require('fs');
+const bcrypt = require('bcryptjs');
+
+// Mot de passe par défaut pour les comptes de démonstration (hashé une seule fois)
+const DEFAULT_PWD_HASH = bcrypt.hashSync('cesi1234', 10);
 
 // ─── Générateur de PDF minimal ────────────────────────────────────────────────
 function makePdfBuffer(title, author, bodyLines) {
@@ -303,7 +307,7 @@ function doSeed(db) {
 
   const ip   = db.prepare('INSERT INTO promotions (name, color) VALUES (?, ?)')
   const ic   = db.prepare('INSERT INTO channels (promo_id, name, description, type, category) VALUES (?, ?, ?, ?, ?)')
-  const is_  = db.prepare('INSERT INTO students (promo_id, name, email, avatar_initials) VALUES (?, ?, ?, ?)')
+  const is_  = db.prepare('INSERT INTO students (promo_id, name, email, avatar_initials, password, must_change_password) VALUES (?, ?, ?, ?, ?, 1)')
   const ig   = db.prepare('INSERT INTO groups (promo_id, name) VALUES (?, ?)')
   const im   = db.prepare('INSERT INTO group_members (group_id, student_id) VALUES (?, ?)')
   const imsg = db.prepare('INSERT INTO messages (channel_id, dm_student_id, author_name, author_type, content, created_at) VALUES (?, ?, ?, ?, ?, ?)')
@@ -328,14 +332,14 @@ function doSeed(db) {
   const c1_tpbdd  = ic.run(p1, 'tp-bdd',         'Dépôt des TPs bases de données',     'chat', 'database Bases de données').lastInsertRowid
   const c1_net    = ic.run(p1, 'reseaux',        'Réseaux & administration système',    'chat', 'wifi Réseaux').lastInsertRowid
 
-  const s1 = is_.run(p1, 'Lucas Dupont',    'lucas.dupont@viacesi.fr',    'LD').lastInsertRowid
-  const s2 = is_.run(p1, 'Manon Bernard',   'manon.bernard@viacesi.fr',   'MB').lastInsertRowid
-  const s3 = is_.run(p1, 'Theo Leclerc',    'theo.leclerc@viacesi.fr',    'TL').lastInsertRowid
-  const s4 = is_.run(p1, 'Camille Rousseau','camille.rousseau@viacesi.fr','CR').lastInsertRowid
-  const s5 = is_.run(p1, 'Hugo Martin',     'hugo.martin@viacesi.fr',     'HM').lastInsertRowid
-  const s6 = is_.run(p1, 'Jade Petit',      'jade.petit@viacesi.fr',      'JP').lastInsertRowid
-  const s7 = is_.run(p1, 'Nathan Dubois',   'nathan.dubois@viacesi.fr',   'ND').lastInsertRowid
-  const s8 = is_.run(p1, 'Lea Fontaine',    'lea.fontaine@viacesi.fr',    'LF').lastInsertRowid
+  const s1 = is_.run(p1, 'Lucas Dupont',    'lucas.dupont@viacesi.fr',    'LD', DEFAULT_PWD_HASH).lastInsertRowid
+  const s2 = is_.run(p1, 'Manon Bernard',   'manon.bernard@viacesi.fr',   'MB', DEFAULT_PWD_HASH).lastInsertRowid
+  const s3 = is_.run(p1, 'Theo Leclerc',    'theo.leclerc@viacesi.fr',    'TL', DEFAULT_PWD_HASH).lastInsertRowid
+  const s4 = is_.run(p1, 'Camille Rousseau','camille.rousseau@viacesi.fr','CR', DEFAULT_PWD_HASH).lastInsertRowid
+  const s5 = is_.run(p1, 'Hugo Martin',     'hugo.martin@viacesi.fr',     'HM', DEFAULT_PWD_HASH).lastInsertRowid
+  const s6 = is_.run(p1, 'Jade Petit',      'jade.petit@viacesi.fr',      'JP', DEFAULT_PWD_HASH).lastInsertRowid
+  const s7 = is_.run(p1, 'Nathan Dubois',   'nathan.dubois@viacesi.fr',   'ND', DEFAULT_PWD_HASH).lastInsertRowid
+  const s8 = is_.run(p1, 'Lea Fontaine',    'lea.fontaine@viacesi.fr',    'LF', DEFAULT_PWD_HASH).lastInsertRowid
 
   const g1 = ig.run(p1, 'Groupe 1').lastInsertRowid
   const g2 = ig.run(p1, 'Groupe 2').lastInsertRowid
@@ -517,18 +521,18 @@ function doSeed(db) {
   const c2_profinet = ic.run(p2,'reseaux-industriels','Réseaux industriels & Profinet',         'chat','globe Réseaux industriels').lastInsertRowid
   const c2_e5       = ic.run(p2,'preparation-e5',    'Préparation projet E5',                  'chat','graduation-cap Projet E5').lastInsertRowid
 
-  const f1  = is_.run(p2,'Alexandre Moreau',  'alexandre.moreau@viacesi.fr',  'AM').lastInsertRowid
-  const f2  = is_.run(p2,'Chloe Simon',       'chloe.simon@viacesi.fr',       'CS').lastInsertRowid
-  const f3  = is_.run(p2,'Maxime Laurent',    'maxime.laurent@viacesi.fr',    'ML').lastInsertRowid
-  const f4  = is_.run(p2,'Elisa Garnier',     'elisa.garnier@viacesi.fr',     'EG').lastInsertRowid
-  const f5  = is_.run(p2,'Raphael Lefebvre',  'raphael.lefebvre@viacesi.fr',  'RL').lastInsertRowid
-  const f6  = is_.run(p2,'Ines Thomas',       'ines.thomas@viacesi.fr',       'IT').lastInsertRowid
-  const f7  = is_.run(p2,'Quentin Roux',      'quentin.roux@viacesi.fr',      'QR').lastInsertRowid
-  const f8  = is_.run(p2,'Amelie Girard',     'amelie.girard@viacesi.fr',     'AG').lastInsertRowid
-  const f9  = is_.run(p2,'Pierre Bonnet',     'pierre.bonnet@viacesi.fr',     'PB').lastInsertRowid
-  const f10 = is_.run(p2,'Sofia Dumont',      'sofia.dumont@viacesi.fr',      'SD').lastInsertRowid
-  const f11 = is_.run(p2,'Antoine Chevalier', 'antoine.chevalier@viacesi.fr', 'AC').lastInsertRowid
-  const f12 = is_.run(p2,'Laura Vincent',     'laura.vincent@viacesi.fr',     'LV').lastInsertRowid
+  const f1  = is_.run(p2,'Alexandre Moreau',  'alexandre.moreau@viacesi.fr',  'AM', DEFAULT_PWD_HASH).lastInsertRowid
+  const f2  = is_.run(p2,'Chloe Simon',       'chloe.simon@viacesi.fr',       'CS', DEFAULT_PWD_HASH).lastInsertRowid
+  const f3  = is_.run(p2,'Maxime Laurent',    'maxime.laurent@viacesi.fr',    'ML', DEFAULT_PWD_HASH).lastInsertRowid
+  const f4  = is_.run(p2,'Elisa Garnier',     'elisa.garnier@viacesi.fr',     'EG', DEFAULT_PWD_HASH).lastInsertRowid
+  const f5  = is_.run(p2,'Raphael Lefebvre',  'raphael.lefebvre@viacesi.fr',  'RL', DEFAULT_PWD_HASH).lastInsertRowid
+  const f6  = is_.run(p2,'Ines Thomas',       'ines.thomas@viacesi.fr',       'IT', DEFAULT_PWD_HASH).lastInsertRowid
+  const f7  = is_.run(p2,'Quentin Roux',      'quentin.roux@viacesi.fr',      'QR', DEFAULT_PWD_HASH).lastInsertRowid
+  const f8  = is_.run(p2,'Amelie Girard',     'amelie.girard@viacesi.fr',     'AG', DEFAULT_PWD_HASH).lastInsertRowid
+  const f9  = is_.run(p2,'Pierre Bonnet',     'pierre.bonnet@viacesi.fr',     'PB', DEFAULT_PWD_HASH).lastInsertRowid
+  const f10 = is_.run(p2,'Sofia Dumont',      'sofia.dumont@viacesi.fr',      'SD', DEFAULT_PWD_HASH).lastInsertRowid
+  const f11 = is_.run(p2,'Antoine Chevalier', 'antoine.chevalier@viacesi.fr', 'AC', DEFAULT_PWD_HASH).lastInsertRowid
+  const f12 = is_.run(p2,'Laura Vincent',     'laura.vincent@viacesi.fr',     'LV', DEFAULT_PWD_HASH).lastInsertRowid
 
   const ga = ig.run(p2,'Groupe A').lastInsertRowid
   const gb = ig.run(p2,'Groupe B').lastInsertRowid

@@ -172,6 +172,8 @@ function register() {
   // ── Identité / login ──────────────────────────────────────────────────────
   handle('db:getIdentities',        ()                 => queries.getIdentities())
   handle('db:loginWithCredentials', (email, password)  => queries.loginWithCredentials(email, password))
+  handle('db:changePassword',       (userId, isTeacher, currentPwd, newPwd) => queries.changePassword(userId, isTeacher, currentPwd, newPwd))
+  handle('db:exportPersonalData',   (studentId)        => queries.exportStudentData(studentId))
 
   // ── Shell — ouvrir fichier/lien ───────────────────────────────────────────
   ipcMain.handle('shell:openPath', async (_event, filePath) => {

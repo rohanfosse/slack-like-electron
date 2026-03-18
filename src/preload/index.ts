@@ -74,6 +74,8 @@ contextBridge.exposeInMainWorld('api', {
   // ── Identité / login ───────────────────────────────────────────────────────
   getIdentities:        ()                          => invoke('db:getIdentities'),
   loginWithCredentials: (email: string, pwd: string) => invoke('db:loginWithCredentials', email, pwd),
+  changePassword:       (userId: number, isTeacher: boolean, currentPwd: string, newPwd: string) => invoke('db:changePassword', userId, isTeacher, currentPwd, newPwd),
+  exportPersonalData:   (studentId: number)          => invoke('db:exportPersonalData', studentId),
 
   // ── Shell ──────────────────────────────────────────────────────────────────
   openPath:     (filePath: string) => invoke('shell:openPath',     filePath),

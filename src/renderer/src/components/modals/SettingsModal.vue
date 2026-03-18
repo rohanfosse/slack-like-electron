@@ -1,6 +1,7 @@
 <script setup lang="ts">
   import { ref, watch, computed } from 'vue'
-  import { LogOut, Settings, User, Info, Camera, X, RotateCcw } from 'lucide-vue-next'
+  import { LogOut, Settings, User, Info, Camera, X, RotateCcw, KeyRound, Download, ShieldCheck } from 'lucide-vue-next'
+  import ChangePasswordModal from '@/components/modals/ChangePasswordModal.vue'
   import { useAppStore } from '@/stores/app'
   import { useRouter }   from 'vue-router'
   import { usePrefs }    from '@/composables/usePrefs'
@@ -89,6 +90,31 @@
       ? 'var(--accent)'
       : avatarColor(appStore.currentUser?.name ?? ''),
   )
+
+  const showChangePwd = ref(false)
+
+  const exporting = ref(false)
+  async function exportData() {
+    if (!appStore.currentUser || appStore.currentUser.type !== 'student') return
+    exporting.value = true
+    try {
+      const res = await window.api.exportPersonalData(Math.abs(appStore.currentUser.id))
+      if (!res?.ok) throw new Error(res?.error ?? 'Erreur export')
+      const json = JSON.stringify(res.data, null, 2)
+      const blob = new Blob([json], { type: 'application/json' })
+      const url  = URL.createObjectURL(blob)
+      const a    = document.createElement('a')
+      a.href     = url
+      a.download = `mes-donnees-${appStore.currentUser.name.replace(/\s+/g, '_')}.json`
+      a.click()
+      URL.revokeObjectURL(url)
+      showToast('Export téléchargé.', 'success')
+    } catch (e: any) {
+      showToast(e.message ?? 'Erreur lors de l\'export.', 'error')
+    } finally {
+      exporting.value = false
+    }
+  }
 
   const resetting = ref(false)
   async function resetDemoData() {
@@ -266,6 +292,36 @@
             </div>
           </div>
 
+          <!-- Sécurité -->
+          <div class="stg-group">
+            <h4 class="stg-group-title">Sécurité</h4>
+            <div class="stg-toggle-row" style="cursor:default">
+              <div class="stg-toggle-info">
+                <span class="stg-toggle-label">Mot de passe</span>
+                <span class="stg-toggle-desc">Modifiez votre mot de passe de connexion.</span>
+              </div>
+              <button class="btn-ghost stg-action-btn" @click="showChangePwd = true">
+                <KeyRound :size="13" />
+                Changer
+              </button>
+            </div>
+          </div>
+
+          <!-- Données personnelles (étudiants uniquement) -->
+          <div v-if="appStore.isStudent" class="stg-group">
+            <h4 class="stg-group-title">Données personnelles (RGPD)</h4>
+            <div class="stg-toggle-row" style="cursor:default">
+              <div class="stg-toggle-info">
+                <span class="stg-toggle-label">Exporter mes données</span>
+                <span class="stg-toggle-desc">Téléchargez un fichier JSON contenant vos messages, rendus et informations de profil (Art. 20 RGPD).</span>
+              </div>
+              <button class="btn-ghost stg-action-btn" :disabled="exporting" @click="exportData">
+                <Download :size="13" />
+                {{ exporting ? 'Export…' : 'Exporter' }}
+              </button>
+            </div>
+          </div>
+
           <div v-if="appStore.isSimulating" class="stg-simulation-banner">
             <span>Simulation active en tant que <strong>{{ appStore.currentUser?.name }}</strong></span>
             <button class="btn-ghost" style="font-size:12px" @click="appStore.stopSimulation()">
@@ -307,6 +363,8 @@
       </div>
     </div>
   </Modal>
+
+  <ChangePasswordModal v-model="showChangePwd" />
 </template>
 
 <style scoped>
@@ -515,6 +573,17 @@
   border-radius: var(--radius-sm);
   font-size: 13px;
   color: #E67E22;
+}
+
+/* Action btn (change pwd, export) */
+.stg-action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  padding: 5px 10px;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 /* Reset btn */

@@ -1,6 +1,6 @@
 const { getDb } = require('./connection');
 
-const CURRENT_VERSION = 15;
+const CURRENT_VERSION = 16;
 
 // ─── Schema initial ───────────────────────────────────────────────────────────
 // Crée toutes les tables avec leur schéma complet (colonnes UTC, toutes colonnes incluses).
@@ -368,6 +368,30 @@ function runMigrations(db) {
           PRIMARY KEY (teacher_id, channel_id)
         );
       `);
+    },
+
+    // v16 : sécurité — hashage bcrypt + must_change_password
+    (db) => {
+      const bcrypt = require('bcryptjs');
+      tryAlter(db, 'ALTER TABLE students ADD COLUMN must_change_password INTEGER NOT NULL DEFAULT 1');
+      tryAlter(db, 'ALTER TABLE teachers ADD COLUMN must_change_password INTEGER NOT NULL DEFAULT 1');
+
+      // Hasher les mots de passe en clair existants (migration transparente)
+      const students = db.prepare('SELECT id, password FROM students').all();
+      const updateStudent = db.prepare('UPDATE students SET password = ? WHERE id = ?');
+      for (const s of students) {
+        if (s.password && !s.password.startsWith('$2')) {
+          updateStudent.run(bcrypt.hashSync(s.password, 10), s.id);
+        }
+      }
+
+      const teachers = db.prepare('SELECT id, password FROM teachers').all();
+      const updateTeacher = db.prepare('UPDATE teachers SET password = ? WHERE id = ?');
+      for (const t of teachers) {
+        if (t.password && !t.password.startsWith('$2')) {
+          updateTeacher.run(bcrypt.hashSync(t.password, 10), t.id);
+        }
+      }
     },
   ];
 
