@@ -26,6 +26,7 @@ export const useAppStore = defineStore('app', () => {
   const unread            = ref<Record<number, number>>({})
   const mentionChannels   = ref<Record<number, number>>({})
   const unreadDms         = ref<Record<string, number>>({}) // clé = nom de l'expéditeur
+  const taChannelIds      = ref<number[]>([])               // canaux assignés à l'intervenant
 
   // ── Historique de notifications ────────────────────────────────────────────
   interface NotifEntry {
@@ -54,14 +55,25 @@ export const useAppStore = defineStore('app', () => {
   function restoreSession(): boolean {
     try {
       const raw = localStorage.getItem(SESSION_KEY)
-      if (raw) { currentUser.value = JSON.parse(raw); return true }
+      if (raw) {
+        currentUser.value = JSON.parse(raw)
+        if (currentUser.value?.type === 'ta') loadTaChannels()
+        return true
+      }
     } catch {}
     return false
+  }
+
+  async function loadTaChannels(): Promise<void> {
+    if (currentUser.value?.type !== 'ta') { taChannelIds.value = []; return }
+    const res = await window.api.getTeacherChannels(currentUser.value.id)
+    taChannelIds.value = res?.ok ? res.data : []
   }
 
   function login(user: User): void {
     currentUser.value = user
     try { localStorage.setItem(SESSION_KEY, JSON.stringify(user)) } catch {}
+    if (user.type === 'ta') loadTaChannels()
   }
 
   function logout(): void {
@@ -249,13 +261,13 @@ export const useAppStore = defineStore('app', () => {
     // état
     isOnline, currentUser, activeChannelId, activeDmStudentId, activePromoId,
     activeChannelType, activeChannelName, activeProject, pendingChannelCategory, rightPanel, currentTravailId,
-    pendingNoteDepotId, rubricDepotId, unread, mentionChannels, unreadDms, notificationHistory,
+    pendingNoteDepotId, rubricDepotId, unread, mentionChannels, unreadDms, notificationHistory, taChannelIds,
     // calculs
     isStudent, isTeacher, isStaff, isSimulating, isReadonly,
     // actions
     restoreSession, login, logout, impersonate,
     startSimulation, stopSimulation,
-    openChannel, openDm, markRead, markDmRead, markAllRead, initUnreadListener, initOnlineListener,
+    openChannel, openDm, markRead, markDmRead, markAllRead, loadTaChannels, initUnreadListener, initOnlineListener,
     api,
   }
 })

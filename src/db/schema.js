@@ -1,6 +1,6 @@
 const { getDb } = require('./connection');
 
-const CURRENT_VERSION = 14;
+const CURRENT_VERSION = 15;
 
 // ─── Schema initial ───────────────────────────────────────────────────────────
 // Crée toutes les tables avec leur schéma complet (colonnes UTC, toutes colonnes incluses).
@@ -357,6 +357,17 @@ function runMigrations(db) {
       tryAlter(db, 'ALTER TABLE messages ADD COLUMN reply_to_id      INTEGER DEFAULT NULL');
       tryAlter(db, 'ALTER TABLE messages ADD COLUMN reply_to_author  TEXT    DEFAULT NULL');
       tryAlter(db, 'ALTER TABLE messages ADD COLUMN reply_to_preview TEXT    DEFAULT NULL');
+    },
+
+    // v15 : table pivot teacher_channels (assignation canaux aux intervenants)
+    (db) => {
+      db.exec(`
+        CREATE TABLE IF NOT EXISTS teacher_channels (
+          teacher_id INTEGER NOT NULL REFERENCES teachers(id) ON DELETE CASCADE,
+          channel_id INTEGER NOT NULL REFERENCES channels(id) ON DELETE CASCADE,
+          PRIMARY KEY (teacher_id, channel_id)
+        );
+      `);
     },
   ];
 

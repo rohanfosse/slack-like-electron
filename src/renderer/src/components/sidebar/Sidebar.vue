@@ -83,9 +83,16 @@
     else await loadStudentSidebar()
   }
 
-  // Filtrer les canaux visibles pour un étudiant (privés → vérifier membership)
+  // Filtrer les canaux visibles
   const visibleChannels = computed(() => {
-    if (appStore.isStaff) return channels.value
+    if (appStore.isTeacher) return channels.value
+    if (appStore.currentUser?.type === 'ta') {
+      // Intervenants : uniquement leurs canaux assignés (si assignés)
+      const ids = appStore.taChannelIds
+      if (ids.length > 0) return channels.value.filter((ch) => ids.includes(ch.id))
+      return channels.value // aucune restriction définie → tout voir
+    }
+    // Étudiant : exclure les canaux privés dont il n'est pas membre
     return channels.value.filter((ch) => {
       if (!ch.is_private) return true
       try {

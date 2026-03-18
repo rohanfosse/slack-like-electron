@@ -121,6 +121,13 @@ contextBridge.exposeInMainWorld('api', {
   readFileBase64: (filePath: string) => invoke('fs:readFileBase64', filePath),
   downloadFile:   (filePath: string) => invoke('fs:downloadFile',   filePath),
 
+  // ── Intervenants ──────────────────────────────────────────────────────────
+  getIntervenants:    ()                 => invoke('db:getIntervenants'),
+  createIntervenant:  (payload: unknown) => invoke('db:createIntervenant',  payload),
+  deleteIntervenant:  (id: number)       => invoke('db:deleteIntervenant',  id),
+  getTeacherChannels: (id: number)       => invoke('db:getTeacherChannels', id),
+  setTeacherChannels: (payload: unknown) => invoke('db:setTeacherChannels', payload),
+
   // ── Contrôles de fenêtre ──────────────────────────────────────────────────
   windowMinimize:    () => invoke('window:minimize'),
   windowMaximize:    () => invoke('window:maximize'),

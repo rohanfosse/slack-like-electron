@@ -1,7 +1,7 @@
 <script setup lang="ts">
   import { computed, ref, onMounted } from 'vue'
   import { useRouter, useRoute } from 'vue-router'
-  import { MessageSquare, BookOpen, FileText, Calendar, UserCheck, LayoutDashboard, X, UserPlus, Bell } from 'lucide-vue-next'
+  import { MessageSquare, BookOpen, FileText, Calendar, UserCheck, LayoutDashboard, X, UserPlus, Bell, Users } from 'lucide-vue-next'
   import logoUrl from '@/assets/logo.png'
   import { useAppStore }    from '@/stores/app'
   import { useModalsStore } from '@/stores/modals'
@@ -168,6 +168,20 @@
 
     <!-- Espaceur -->
     <div style="flex:1" />
+
+    <!-- ── Outils Responsable Pédagogique uniquement ── -->
+    <template v-if="appStore.isTeacher">
+      <div class="nav-divider" />
+      <button
+        class="nav-btn"
+        title="Gérer les intervenants"
+        aria-label="Gérer les intervenants"
+        @click="modals.intervenants = true"
+      >
+        <Users :size="20" />
+        <span class="nav-label">Intervenants</span>
+      </button>
+    </template>
 
     <!-- ── Outils professeur / TA ── -->
     <template v-if="appStore.isStaff">

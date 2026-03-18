@@ -140,6 +140,13 @@ declare global {
       // Données de démo
       resetAndSeed(): Promise<IpcResponse<null>>
 
+      // Intervenants
+      getIntervenants(): Promise<IpcResponse<{ id: number; name: string; email: string; role: string }[]>>
+      createIntervenant(payload: object): Promise<IpcResponse<number>>
+      deleteIntervenant(id: number): Promise<IpcResponse<null>>
+      getTeacherChannels(id: number): Promise<IpcResponse<number[]>>
+      setTeacherChannels(payload: { teacherId: number; channelIds: number[] }): Promise<IpcResponse<null>>
+
       // Contrôles de fenêtre
       windowMinimize(): Promise<IpcResponse<null>>
       windowMaximize(): Promise<IpcResponse<null>>

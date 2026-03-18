@@ -25,6 +25,7 @@
   import StudentTimelineModal    from '@/components/modals/StudentTimelineModal.vue'
   import RubricModal             from '@/components/modals/RubricModal.vue'
   import ImportStudentsModal     from '@/components/modals/ImportStudentsModal.vue'
+  import IntervenantsModal       from '@/components/modals/IntervenantsModal.vue'
 
   const appStore = useAppStore()
   const modals   = useModalsStore()
@@ -112,6 +113,7 @@
     <StudentTimelineModal    v-model="modals.studentTimeline"    />
     <RubricModal             v-model="modals.rubric"             />
     <ImportStudentsModal     v-model="modals.importStudents"    />
+    <IntervenantsModal       v-model="modals.intervenants"      />
   </template>
 </template>
 

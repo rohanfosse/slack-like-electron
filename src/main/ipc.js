@@ -240,6 +240,13 @@ function register() {
   handle('db:deleteMessage', (id) => queries.deleteMessage(id))
   handle('db:editMessage',   (id, content) => queries.editMessage(id, content))
 
+  // ── Intervenants (TA) ─────────────────────────────────────────────────────
+  handle('db:getIntervenants',    ()        => queries.getIntervenants())
+  handle('db:createIntervenant',  (payload) => queries.createIntervenant(payload))
+  handle('db:deleteIntervenant',  (id)      => queries.deleteIntervenant(id))
+  handle('db:getTeacherChannels', (id)      => queries.getTeacherChannels(id))
+  handle('db:setTeacherChannels', (payload) => queries.setTeacherChannels(payload))
+
   // ── Action de masse ───────────────────────────────────────────────────────
   handle('db:markNonSubmittedAsD', (travailId) => queries.markNonSubmittedAsD(travailId))
 

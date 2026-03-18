@@ -9,6 +9,7 @@ const assignments = require('./models/assignments');
 const submissions = require('./models/submissions');
 const documents   = require('./models/documents');
 const rubrics     = require('./models/rubrics');
+const teachers    = require('./models/teachers');
 
 // Initialisation complète : schema + migrations + seed
 function init() {
@@ -27,4 +28,5 @@ module.exports = {
   ...submissions,
   ...documents,
   ...rubrics,
+  ...teachers,
 };
