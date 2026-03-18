@@ -171,6 +171,7 @@ declare global {
         submitted_count: number; total_count: number; graded_count: number; avg_grade: number | null
         last_message_at: string | null
       }[]>>
+      updateStudentPhoto(payload: { studentId: number; photoData: string | null }): Promise<IpcResponse<number>>
     }
   }
 }

@@ -1,16 +1,15 @@
 <script setup lang="ts">
   import { ref, computed, watch } from 'vue'
-  import { Users, Search, TrendingUp, Clock, CheckCircle2, Award, X } from 'lucide-vue-next'
+  import { Users, Search, TrendingUp, Clock, CheckCircle2, Award, X, ChevronLeft, BarChart2, AlertTriangle, MinusCircle } from 'lucide-vue-next'
   import { useAppStore }    from '@/stores/app'
-  import { useModalsStore } from '@/stores/modals'
   import { avatarColor }    from '@/utils/format'
   import { formatDate }     from '@/utils/date'
+  import GradeChart         from '@/components/ui/GradeChart.vue'
 
   const props = defineProps<{ modelValue: boolean }>()
   const emit  = defineEmits<{ (e: 'update:modelValue', v: boolean): void }>()
 
   const appStore = useAppStore()
-  const modals   = useModalsStore()
 
   interface StudentStat {
     id:               number
@@ -24,11 +23,45 @@
     last_message_at:  string | null
   }
 
+  interface TravailRow {
+    id:           number
+    title:        string
+    deadline:     string | null
+    type:         string
+    category:     string | null
+    channel_name: string
+    depot_id:     number | null
+    file_name:    string | null
+    note:         number | null
+    feedback:     string | null
+    submitted_at: string | null
+  }
+
+  interface StudentProfile {
+    student: {
+      id:              number
+      name:            string
+      avatar_initials: string
+      photo_data:      string | null
+      email:           string
+      promo_name:      string
+    }
+    travaux: TravailRow[]
+  }
+
   const stats      = ref<StudentStat[]>([])
   const loading    = ref(false)
   const filterQ    = ref('')
   const sortKey    = ref<'name' | 'progress' | 'grade' | 'activity'>('name')
   const sortAsc    = ref(true)
+
+  // Stats chart panel
+  const showChart  = ref(false)
+
+  // Profile panel
+  const selectedId      = ref<number | null>(null)
+  const profile         = ref<StudentProfile | null>(null)
+  const profileLoading  = ref(false)
 
   async function load() {
     const promoId = appStore.activePromoId
@@ -42,7 +75,27 @@
     }
   }
 
-  watch(() => props.modelValue, (open) => { if (open) load() })
+  watch(() => props.modelValue, (open) => {
+    if (open) { load(); selectedId.value = null; profile.value = null }
+  })
+
+  async function selectStudent(id: number) {
+    if (selectedId.value === id) return
+    selectedId.value = id
+    profile.value = null
+    profileLoading.value = true
+    try {
+      const res = await window.api.getStudentProfile(id)
+      if (res?.ok) profile.value = res.data as StudentProfile
+    } finally {
+      profileLoading.value = false
+    }
+  }
+
+  function closeProfile() {
+    selectedId.value = null
+    profile.value = null
+  }
 
   const filtered = computed(() => {
     const q = filterQ.value.toLowerCase().trim()
@@ -102,13 +155,36 @@
     if (!stats.value.length) return 0
     return Math.round(stats.value.reduce((a, s) => a + progressPct(s), 0) / stats.value.length)
   })
+
+  // Toutes les notes pour le graphique
+  const allGrades = computed(() =>
+    stats.value
+      .filter((s) => s.avg_grade !== null)
+      .map((s) => s.avg_grade as number),
+  )
+
+  // Statut d'un devoir pour le profil étudiant
+  function travailStatus(t: TravailRow): 'rendu' | 'retard' | 'absent' {
+    if (t.depot_id) {
+      if (t.deadline && t.submitted_at && t.submitted_at > t.deadline) return 'retard'
+      return 'rendu'
+    }
+    if (t.deadline && new Date(t.deadline) < new Date()) return 'absent'
+    return 'absent'
+  }
+
+  function statusLabel(s: ReturnType<typeof travailStatus>): string {
+    if (s === 'rendu')  return 'Rendu'
+    if (s === 'retard') return 'En retard'
+    return 'Non rendu'
+  }
 </script>
 
 <template>
   <Teleport to="body">
     <Transition name="modal-fade">
       <div v-if="modelValue" class="modal-overlay" @click.self="emit('update:modelValue', false)">
-        <div class="classe-modal">
+        <div class="classe-modal" :class="{ 'with-profile': selectedId !== null }">
 
           <!-- En-tête -->
           <div class="classe-header">
@@ -125,11 +201,27 @@
                 <Award :size="13" class="classe-global-icon" />
                 <span>Moy. classe : <strong>{{ avgGrade }}/20</strong></span>
               </div>
+              <!-- Bouton stats chart -->
+              <button
+                class="btn-icon"
+                :class="{ 'chart-btn-active': showChart }"
+                title="Distribution des notes"
+                @click="showChart = !showChart"
+              >
+                <BarChart2 :size="15" />
+              </button>
               <button class="btn-icon classe-close" @click="emit('update:modelValue', false)">
                 <X :size="16" />
               </button>
             </div>
           </div>
+
+          <!-- Graphique des notes (collapsible) -->
+          <Transition name="chart-slide">
+            <div v-if="showChart" class="classe-chart-panel">
+              <GradeChart :grades="allGrades" />
+            </div>
+          </Transition>
 
           <!-- Barre de filtre + tri -->
           <div class="classe-toolbar">
@@ -143,86 +235,141 @@
               />
             </div>
             <div class="classe-sort-btns">
-              <button
-                class="sort-btn"
-                :class="{ active: sortKey === 'name' }"
-                @click="setSort('name')"
-              >Nom{{ sortIndicator('name') }}</button>
-              <button
-                class="sort-btn"
-                :class="{ active: sortKey === 'progress' }"
-                @click="setSort('progress')"
-              >Rendus{{ sortIndicator('progress') }}</button>
-              <button
-                class="sort-btn"
-                :class="{ active: sortKey === 'grade' }"
-                @click="setSort('grade')"
-              >Note{{ sortIndicator('grade') }}</button>
-              <button
-                class="sort-btn"
-                :class="{ active: sortKey === 'activity' }"
-                @click="setSort('activity')"
-              >Activité{{ sortIndicator('activity') }}</button>
+              <button class="sort-btn" :class="{ active: sortKey === 'name' }"     @click="setSort('name')">Nom{{ sortIndicator('name') }}</button>
+              <button class="sort-btn" :class="{ active: sortKey === 'progress' }" @click="setSort('progress')">Rendus{{ sortIndicator('progress') }}</button>
+              <button class="sort-btn" :class="{ active: sortKey === 'grade' }"    @click="setSort('grade')">Note{{ sortIndicator('grade') }}</button>
+              <button class="sort-btn" :class="{ active: sortKey === 'activity' }" @click="setSort('activity')">Activité{{ sortIndicator('activity') }}</button>
             </div>
           </div>
 
-          <!-- Tableau -->
-          <div class="classe-body">
-            <div v-if="loading" class="classe-loading">
-              <div v-for="i in 6" :key="i" class="skel skel-line" :style="{ width: (55 + (i % 3) * 15) + '%', height: '44px', borderRadius: '8px' }" />
-            </div>
+          <!-- Zone principale : liste + profil côte à côte -->
+          <div class="classe-main">
 
-            <div v-else-if="!filtered.length" class="classe-empty">
-              Aucun étudiant trouvé.
-            </div>
+            <!-- ── Liste étudiants ── -->
+            <div class="classe-body">
+              <div v-if="loading" class="classe-loading">
+                <div v-for="i in 6" :key="i" class="skel skel-line" :style="{ width: (55 + (i % 3) * 15) + '%', height: '44px', borderRadius: '8px' }" />
+              </div>
 
-            <div v-else class="classe-list">
-              <div
-                v-for="s in filtered"
-                :key="s.id"
-                class="classe-row"
-              >
-                <!-- Avatar -->
+              <div v-else-if="!filtered.length" class="classe-empty">
+                Aucun étudiant trouvé.
+              </div>
+
+              <div v-else class="classe-list">
                 <div
-                  class="classe-avatar"
-                  :style="{ background: s.photo_data ? 'transparent' : avatarColor(s.name) }"
+                  v-for="s in filtered"
+                  :key="s.id"
+                  class="classe-row"
+                  :class="{ selected: selectedId === s.id }"
+                  @click="selectStudent(s.id)"
                 >
-                  <img v-if="s.photo_data" :src="s.photo_data" :alt="s.name" />
-                  <span v-else>{{ s.avatar_initials }}</span>
-                </div>
-
-                <!-- Nom -->
-                <div class="classe-name">{{ s.name }}</div>
-
-                <!-- Progression rendus -->
-                <div class="classe-progress-col">
-                  <div class="classe-bar-wrap">
-                    <div
-                      class="classe-bar-fill"
-                      :class="progressClass(progressPct(s))"
-                      :style="{ width: progressPct(s) + '%' }"
-                    />
+                  <!-- Avatar -->
+                  <div
+                    class="classe-avatar"
+                    :style="{ background: s.photo_data ? 'transparent' : avatarColor(s.name) }"
+                  >
+                    <img v-if="s.photo_data" :src="s.photo_data" :alt="s.name" />
+                    <span v-else>{{ s.avatar_initials }}</span>
                   </div>
-                  <span class="classe-bar-label">
-                    <CheckCircle2 :size="10" />
-                    {{ s.submitted_count }}/{{ s.total_count }}
-                  </span>
-                </div>
 
-                <!-- Note moyenne -->
-                <div class="classe-grade" :style="{ color: gradeColor(s.avg_grade) }">
-                  <TrendingUp :size="12" class="classe-grade-icon" />
-                  <span>{{ s.avg_grade !== null ? s.avg_grade.toFixed(1) + '/20' : '—' }}</span>
-                  <span v-if="s.graded_count" class="classe-graded-count">({{ s.graded_count }} noté{{ s.graded_count > 1 ? 's' : '' }})</span>
-                </div>
+                  <!-- Nom -->
+                  <div class="classe-name">{{ s.name }}</div>
 
-                <!-- Dernière activité -->
-                <div class="classe-activity">
-                  <Clock :size="10" class="classe-activity-icon" />
-                  <span>{{ s.last_message_at ? formatDate(s.last_message_at) : 'Inactif' }}</span>
+                  <!-- Progression rendus -->
+                  <div class="classe-progress-col">
+                    <div class="classe-bar-wrap">
+                      <div
+                        class="classe-bar-fill"
+                        :class="progressClass(progressPct(s))"
+                        :style="{ width: progressPct(s) + '%' }"
+                      />
+                    </div>
+                    <span class="classe-bar-label">
+                      <CheckCircle2 :size="10" />
+                      {{ s.submitted_count }}/{{ s.total_count }}
+                    </span>
+                  </div>
+
+                  <!-- Note moyenne -->
+                  <div class="classe-grade" :style="{ color: gradeColor(s.avg_grade) }">
+                    <TrendingUp :size="12" class="classe-grade-icon" />
+                    <span>{{ s.avg_grade !== null ? s.avg_grade.toFixed(1) + '/20' : '—' }}</span>
+                    <span v-if="s.graded_count" class="classe-graded-count">({{ s.graded_count }})</span>
+                  </div>
+
+                  <!-- Dernière activité -->
+                  <div class="classe-activity">
+                    <Clock :size="10" class="classe-activity-icon" />
+                    <span>{{ s.last_message_at ? formatDate(s.last_message_at) : 'Inactif' }}</span>
+                  </div>
                 </div>
               </div>
             </div>
+
+            <!-- ── Panneau profil étudiant ── -->
+            <Transition name="profile-slide">
+              <div v-if="selectedId !== null" class="classe-profile">
+
+                <!-- En-tête du panneau -->
+                <div class="profile-header">
+                  <button class="btn-icon" title="Fermer le profil" @click="closeProfile">
+                    <ChevronLeft :size="16" />
+                  </button>
+                  <template v-if="profile">
+                    <div
+                      class="profile-avatar"
+                      :style="{ background: profile.student.photo_data ? 'transparent' : avatarColor(profile.student.name) }"
+                    >
+                      <img v-if="profile.student.photo_data" :src="profile.student.photo_data" :alt="profile.student.name" />
+                      <span v-else>{{ profile.student.avatar_initials }}</span>
+                    </div>
+                    <div class="profile-name-block">
+                      <span class="profile-name">{{ profile.student.name }}</span>
+                      <span class="profile-promo">{{ profile.student.promo_name }}</span>
+                    </div>
+                  </template>
+                </div>
+
+                <!-- Chargement -->
+                <div v-if="profileLoading" class="profile-loading">
+                  <div v-for="i in 4" :key="i" class="skel skel-line" :style="{ height: '52px', borderRadius: '8px' }" />
+                </div>
+
+                <!-- Liste des travaux -->
+                <div v-else-if="profile" class="profile-travaux">
+                  <div v-if="!profile.travaux.length" class="profile-empty">
+                    Aucun devoir publié.
+                  </div>
+                  <div
+                    v-for="t in profile.travaux"
+                    :key="t.id"
+                    class="profile-travail"
+                  >
+                    <div class="pt-top">
+                      <span class="pt-title">{{ t.title }}</span>
+                      <span
+                        class="pt-status"
+                        :class="`status-${travailStatus(t)}`"
+                      >
+                        <CheckCircle2  v-if="travailStatus(t) === 'rendu'"  :size="10" />
+                        <AlertTriangle v-else-if="travailStatus(t) === 'retard'" :size="10" />
+                        <MinusCircle   v-else :size="10" />
+                        {{ statusLabel(travailStatus(t)) }}
+                      </span>
+                    </div>
+                    <div class="pt-meta">
+                      <span class="pt-channel"># {{ t.channel_name }}</span>
+                      <span v-if="t.deadline" class="pt-deadline">· {{ formatDate(t.deadline) }}</span>
+                    </div>
+                    <div v-if="t.note !== null" class="pt-note" :style="{ color: gradeColor(t.note) }">
+                      {{ t.note }}/20
+                      <span v-if="t.feedback" class="pt-feedback">— {{ t.feedback }}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </Transition>
+
           </div>
 
         </div>
@@ -237,8 +384,8 @@
 
 .classe-modal {
   width: 100%;
-  max-width: 760px;
-  max-height: 85vh;
+  max-width: 780px;
+  max-height: 88vh;
   background: var(--bg-modal);
   border: 1px solid var(--border-input);
   border-radius: var(--radius-lg);
@@ -246,7 +393,9 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  transition: max-width .25s cubic-bezier(.4,0,.2,1);
 }
+.classe-modal.with-profile { max-width: 1100px; }
 
 /* ── En-tête ── */
 .classe-header {
@@ -262,7 +411,7 @@
 .classe-title { font-size: 16px; font-weight: 800; color: var(--text-primary); }
 .classe-sub   { font-size: 11.5px; color: var(--text-muted); margin-top: 1px; }
 
-.classe-header-right { display: flex; align-items: center; gap: 10px; }
+.classe-header-right { display: flex; align-items: center; gap: 8px; }
 .classe-global-stat {
   display: flex;
   align-items: center;
@@ -275,8 +424,19 @@
   padding: 4px 10px;
 }
 .classe-global-icon { color: var(--accent); }
+.chart-btn-active { color: var(--accent) !important; }
 .classe-close { color: var(--text-muted); }
 .classe-close:hover { color: var(--text-primary); }
+
+/* ── Graphique notes ── */
+.classe-chart-panel {
+  padding: 10px 20px 12px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.chart-slide-enter-active { transition: opacity .2s ease, max-height .2s ease; max-height: 200px; }
+.chart-slide-leave-active { transition: opacity .15s ease, max-height .15s ease; }
+.chart-slide-enter-from, .chart-slide-leave-to { opacity: 0; max-height: 0; }
 
 /* ── Toolbar ── */
 .classe-toolbar {
@@ -331,7 +491,15 @@
   color: var(--accent-light, #7db8f0);
 }
 
-/* ── Corps ── */
+/* ── Zone principale ── */
+.classe-main {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* ── Corps liste ── */
 .classe-body {
   flex: 1;
   overflow-y: auto;
@@ -339,6 +507,7 @@
   display: flex;
   flex-direction: column;
   gap: 4px;
+  min-width: 0;
 }
 
 .classe-loading { display: flex; flex-direction: column; gap: 8px; padding: 12px 0; }
@@ -349,14 +518,20 @@
 
 .classe-row {
   display: grid;
-  grid-template-columns: 34px 1fr 180px 140px 110px;
+  grid-template-columns: 34px 1fr 160px 130px 100px;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   padding: 8px 10px;
   border-radius: 8px;
-  transition: background .1s;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: background .1s, border-color .1s;
 }
 .classe-row:hover { background: rgba(255,255,255,.04); }
+.classe-row.selected {
+  background: rgba(74,144,217,.08);
+  border-color: rgba(74,144,217,.25);
+}
 
 /* Avatar */
 .classe-avatar {
@@ -385,11 +560,7 @@
 }
 
 /* Barre progression */
-.classe-progress-col {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
+.classe-progress-col { display: flex; flex-direction: column; gap: 4px; }
 .classe-bar-wrap {
   height: 5px;
   background: rgba(255,255,255,.07);
@@ -435,4 +606,139 @@
   white-space: nowrap;
 }
 .classe-activity-icon { flex-shrink: 0; }
+
+/* ── Panneau profil ── */
+.profile-slide-enter-active { transition: opacity .2s ease, transform .2s ease; }
+.profile-slide-leave-active { transition: opacity .15s ease, transform .15s ease; }
+.profile-slide-enter-from, .profile-slide-leave-to { opacity: 0; transform: translateX(16px); }
+
+.classe-profile {
+  width: 320px;
+  flex-shrink: 0;
+  border-left: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.profile-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.profile-avatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+  color: #fff;
+  flex-shrink: 0;
+}
+.profile-avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+.profile-name-block {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.profile-name {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.profile-promo {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.profile-loading {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px;
+}
+
+.profile-travaux {
+  flex: 1;
+  overflow-y: auto;
+  padding: 10px 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.profile-empty {
+  padding: 30px 0;
+  text-align: center;
+  font-size: 12.5px;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.profile-travail {
+  background: rgba(255,255,255,.03);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 9px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.pt-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+.pt-title {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text-primary);
+  line-height: 1.3;
+  flex: 1;
+  min-width: 0;
+}
+.pt-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 10.5px;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 10px;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+.status-rendu  { background: rgba(39,174,96,.15);  color: var(--color-success); }
+.status-retard { background: rgba(230,126,34,.15); color: var(--color-warning); }
+.status-absent { background: rgba(231,76,60,.12);  color: var(--color-danger);  }
+
+.pt-meta {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+.pt-channel { font-weight: 500; }
+.pt-deadline { margin-left: 2px; }
+
+.pt-note {
+  font-size: 12px;
+  font-weight: 700;
+}
+.pt-feedback {
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--text-muted);
+}
 </style>

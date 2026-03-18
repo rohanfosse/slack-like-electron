@@ -124,6 +124,7 @@ contextBridge.exposeInMainWorld('api', {
 
   // ── Intervenants ──────────────────────────────────────────────────────────
   getClasseStats:     (promoId: number)  => invoke('db:getClasseStats', promoId),
+  updateStudentPhoto: (payload: { studentId: number; photoData: string | null }) => invoke('db:updateStudentPhoto', payload),
   getIntervenants:    ()                 => invoke('db:getIntervenants'),
   createIntervenant:  (payload: unknown) => invoke('db:createIntervenant',  payload),
   deleteIntervenant:  (id: number)       => invoke('db:deleteIntervenant',  id),

@@ -24,14 +24,14 @@ function getStudentProfile(studentId) {
   `).get(studentId);
 
   const travaux = db.prepare(`
-    SELECT t.id, t.title, t.deadline,
+    SELECT t.id, t.title, t.deadline, t.type, t.published, t.category,
       ch.name AS channel_name,
       d.id AS depot_id, d.file_name, d.note, d.feedback, d.submitted_at
     FROM channels ch
-    JOIN students s  ON s.promo_id = ch.promo_id
-    JOIN travaux t   ON t.channel_id = ch.id
+    JOIN students s ON s.promo_id = ch.promo_id
+    JOIN travaux t ON t.channel_id = ch.id
     LEFT JOIN depots d ON d.travail_id = t.id AND d.student_id = s.id
-    WHERE s.id = ?
+    WHERE s.id = ? AND t.published = 1
     ORDER BY t.deadline DESC
   `).all(studentId);
 
@@ -190,8 +190,13 @@ function getClasseStats(promoId) {
   `).all(promoId);
 }
 
+function updateStudentPhoto(studentId, photoData) {
+  return getDb().prepare('UPDATE students SET photo_data = ? WHERE id = ?')
+    .run(photoData, studentId).changes;
+}
+
 module.exports = {
   getStudents, getAllStudents, getStudentProfile,
   getStudentByEmail, loginWithCredentials, registerStudent, getIdentities,
-  bulkImportStudents, getClasseStats,
+  bulkImportStudents, getClasseStats, updateStudentPhoto,
 };

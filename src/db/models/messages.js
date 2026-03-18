@@ -4,7 +4,12 @@ const PAGE_SIZE = 50;
 
 function getChannelMessages(channelId) {
   return getDb().prepare(
-    'SELECT * FROM messages WHERE channel_id = ? ORDER BY created_at ASC'
+    `SELECT m.*,
+  COALESCE(s.avatar_initials, substr(upper(m.author_name), 1, 2)) AS author_initials,
+  s.photo_data AS author_photo
+FROM messages m
+LEFT JOIN students s ON s.name = m.author_name
+WHERE m.channel_id = ? ORDER BY m.created_at ASC`
   ).all(channelId);
 }
 
@@ -16,28 +21,38 @@ function getChannelMessages(channelId) {
 function getChannelMessagesPage(channelId, beforeId) {
   if (beforeId) {
     return getDb().prepare(
-      'SELECT * FROM messages WHERE channel_id = ? AND id < ? ORDER BY id DESC LIMIT ?'
+      `SELECT m.*, COALESCE(s.avatar_initials, substr(upper(m.author_name), 1, 2)) AS author_initials, s.photo_data AS author_photo
+FROM messages m LEFT JOIN students s ON s.name = m.author_name
+WHERE m.channel_id = ? AND m.id < ? ORDER BY m.id DESC LIMIT ?`
     ).all(channelId, beforeId, PAGE_SIZE);
   }
   return getDb().prepare(
-    'SELECT * FROM messages WHERE channel_id = ? ORDER BY id DESC LIMIT ?'
+    `SELECT m.*, COALESCE(s.avatar_initials, substr(upper(m.author_name), 1, 2)) AS author_initials, s.photo_data AS author_photo
+FROM messages m LEFT JOIN students s ON s.name = m.author_name
+WHERE m.channel_id = ? ORDER BY m.id DESC LIMIT ?`
   ).all(channelId, PAGE_SIZE);
 }
 
 function getDmMessages(studentId) {
   return getDb().prepare(
-    'SELECT * FROM messages WHERE dm_student_id = ? ORDER BY created_at ASC'
+    `SELECT m.*, COALESCE(s.avatar_initials, substr(upper(m.author_name), 1, 2)) AS author_initials, s.photo_data AS author_photo
+FROM messages m LEFT JOIN students s ON s.name = m.author_name
+WHERE m.dm_student_id = ? ORDER BY m.created_at ASC`
   ).all(studentId);
 }
 
 function getDmMessagesPage(studentId, beforeId) {
   if (beforeId) {
     return getDb().prepare(
-      'SELECT * FROM messages WHERE dm_student_id = ? AND id < ? ORDER BY id DESC LIMIT ?'
+      `SELECT m.*, COALESCE(s.avatar_initials, substr(upper(m.author_name), 1, 2)) AS author_initials, s.photo_data AS author_photo
+FROM messages m LEFT JOIN students s ON s.name = m.author_name
+WHERE m.dm_student_id = ? AND m.id < ? ORDER BY m.id DESC LIMIT ?`
     ).all(studentId, beforeId, PAGE_SIZE);
   }
   return getDb().prepare(
-    'SELECT * FROM messages WHERE dm_student_id = ? ORDER BY id DESC LIMIT ?'
+    `SELECT m.*, COALESCE(s.avatar_initials, substr(upper(m.author_name), 1, 2)) AS author_initials, s.photo_data AS author_photo
+FROM messages m LEFT JOIN students s ON s.name = m.author_name
+WHERE m.dm_student_id = ? ORDER BY m.id DESC LIMIT ?`
   ).all(studentId, PAGE_SIZE);
 }
 
@@ -101,9 +116,12 @@ function searchAllMessages(promoId, query, limit = 8) {
   if (promoId) {
     return getDb().prepare(`
       SELECT m.id, m.content, m.author_name, m.created_at,
-             c.id AS channel_id, c.name AS channel_name, c.promo_id
+             c.id AS channel_id, c.name AS channel_name, c.promo_id,
+             COALESCE(s.avatar_initials, substr(upper(m.author_name), 1, 2)) AS author_initials,
+             s.photo_data AS author_photo
       FROM messages m
       JOIN channels c ON m.channel_id = c.id
+      LEFT JOIN students s ON s.name = m.author_name
       WHERE c.promo_id = ?
         AND m.dm_student_id IS NULL
         AND m.content LIKE '%' || ? || '%'
@@ -113,9 +131,12 @@ function searchAllMessages(promoId, query, limit = 8) {
   }
   return getDb().prepare(`
     SELECT m.id, m.content, m.author_name, m.created_at,
-           c.id AS channel_id, c.name AS channel_name, c.promo_id
+           c.id AS channel_id, c.name AS channel_name, c.promo_id,
+           COALESCE(s.avatar_initials, substr(upper(m.author_name), 1, 2)) AS author_initials,
+           s.photo_data AS author_photo
     FROM messages m
     JOIN channels c ON m.channel_id = c.id
+    LEFT JOIN students s ON s.name = m.author_name
     WHERE m.dm_student_id IS NULL
       AND m.content LIKE '%' || ? || '%'
     ORDER BY m.created_at DESC

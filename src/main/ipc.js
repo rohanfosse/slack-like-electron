@@ -243,6 +243,7 @@ function register() {
 
   // ── Vue Classe ────────────────────────────────────────────────────────────
   handle('db:getClasseStats', (promoId) => queries.getClasseStats(promoId))
+  handle('db:updateStudentPhoto', (payload) => queries.updateStudentPhoto(payload.studentId, payload.photoData))
 
   // ── Intervenants (TA) ─────────────────────────────────────────────────────
   handle('db:getIntervenants',    ()        => queries.getIntervenants())

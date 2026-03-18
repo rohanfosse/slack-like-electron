@@ -56,6 +56,10 @@
   function savePhoto() {
     if (!appStore.currentUser) return
     appStore.login({ ...appStore.currentUser, photo_data: pendingPhoto.value })
+    // Persister en DB pour les étudiants
+    if (appStore.currentUser.type === 'student' && appStore.currentUser.id > 0) {
+      window.api.updateStudentPhoto({ studentId: appStore.currentUser.id, photoData: pendingPhoto.value })
+    }
     photoChanged.value = false
     showToast('Photo mise à jour.', 'success')
   }
