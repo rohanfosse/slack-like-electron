@@ -1,6 +1,5 @@
 <script setup lang="ts">
   import { ref, watch, computed } from 'vue'
-  import { Plus } from 'lucide-vue-next'
   import { useAppStore } from '@/stores/app'
   import { useToast }    from '@/composables/useToast'
   import { CATEGORY_ICONS, parseCategoryIcon } from '@/utils/categoryIcon'
@@ -29,46 +28,60 @@
   const isCreatingNew = computed(() => selectedCategory.value === '__new__')
 
   watch(() => props.modelValue, async (open) => {
-    if (!open || !appStore.activePromoId) return
+    if (!open) return
+    if (!appStore.activePromoId) {
+      // Retenter dans 200 ms si le store n'est pas encore initialisé
+      await new Promise(r => setTimeout(r, 200))
+      if (!appStore.activePromoId) return
+    }
 
-    const [stuRes, chRes] = await Promise.all([
-      window.api.getStudents(appStore.activePromoId),
-      window.api.getChannels(appStore.activePromoId),
-    ])
-    students.value = stuRes?.ok ? stuRes.data : []
-
-    // Extraire les catégories uniques
-    const chs: any[] = chRes?.ok ? chRes.data : []
-    const cats = [...new Set(chs.map((c: any) => c.category).filter(Boolean))] as string[]
-    existingCategories.value = cats
-
-    // Reset
-    channelName.value     = ''
-    channelType.value     = 'chat'
-    visibility.value      = 'public'
-    members.value         = []
+    // Reset immédiat pour éviter que l'ancien état reste visible
+    channelName.value        = ''
+    channelType.value        = 'chat'
+    visibility.value         = 'public'
+    members.value            = []
     newCategoryIconKey.value = ''
     newCategoryText.value    = ''
+    selectedCategory.value   = ''
+    existingCategories.value = []
+    students.value           = []
 
-    // Pré-remplir si demandé depuis le menu contextuel
-    const pending = appStore.pendingChannelCategory
-    if (pending) {
-      appStore.pendingChannelCategory = null
-      if (cats.includes(pending)) {
-        selectedCategory.value = pending
+    try {
+      const [stuRes, chRes] = await Promise.all([
+        window.api.getStudents(appStore.activePromoId!),
+        window.api.getChannels(appStore.activePromoId!),
+      ])
+      students.value = stuRes?.ok ? stuRes.data : []
+
+      const chs: any[] = chRes?.ok ? chRes.data : []
+      const cats = [...new Set(chs.map((c: any) => c.category).filter(Boolean))] as string[]
+      existingCategories.value = cats
+
+      const pending = appStore.pendingChannelCategory
+      if (pending) {
+        appStore.pendingChannelCategory = null
+        if (cats.includes(pending)) {
+          selectedCategory.value = pending
+        } else {
+          selectedCategory.value   = '__new__'
+          const { label }          = parseCategoryIcon(pending)
+          newCategoryIconKey.value = pending.includes(' ') ? pending.split(' ')[0] : ''
+          newCategoryText.value    = label || pending
+        }
       } else {
-        selectedCategory.value = '__new__'
-        const { label } = parseCategoryIcon(pending)
-        newCategoryIconKey.value = pending.includes(' ') ? pending.split(' ')[0] : ''
-        newCategoryText.value    = label || pending
+        selectedCategory.value = cats.length ? '' : '__new__'
       }
-    } else {
-      selectedCategory.value = cats.length ? '' : '__new__'
+    } catch (e) {
+      console.error('[CreateChannelModal] Erreur chargement :', e)
     }
   })
 
   async function create() {
-    if (!channelName.value.trim() || !appStore.activePromoId) return
+    if (!channelName.value.trim()) return
+    if (!appStore.activePromoId) {
+      showToast('Aucune promotion sélectionnée.', 'error')
+      return
+    }
 
     // Calculer la catégorie finale
     let category: string | null = null
@@ -89,9 +102,14 @@
         members:   visibility.value === 'private' ? members.value : [],
         category,
       })
-      if (!res?.ok) { showToast(res?.error ?? 'Erreur lors de la création.'); return }
+      if (!res?.ok) {
+        showToast(res?.error ?? 'Erreur lors de la création.')
+        return
+      }
       showToast('Canal créé.', 'success')
       emit('update:modelValue', false)
+    } catch (e: any) {
+      showToast(e?.message ?? 'Erreur inattendue lors de la création.')
     } finally {
       creating.value = false
     }
