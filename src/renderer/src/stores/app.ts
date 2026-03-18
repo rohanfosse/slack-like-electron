@@ -26,6 +26,20 @@ export const useAppStore = defineStore('app', () => {
   const unread            = ref<Record<number, number>>({})
   const mentionChannels   = ref<Record<number, number>>({})
 
+  // ── Historique de notifications ────────────────────────────────────────────
+  interface NotifEntry {
+    id:          string
+    channelId:   number | null
+    channelName: string
+    dmStudentId: number | null
+    promoId:     number | null
+    authorName:  string
+    isMention:   boolean
+    timestamp:   number
+    read:        boolean
+  }
+  const notificationHistory = ref<NotifEntry[]>([])
+
   // ── Calculs ───────────────────────────────────────────────────────────────
   const isStudent    = computed(() => currentUser.value?.type === 'student')
   const isTeacher    = computed(() => currentUser.value?.type === 'teacher')
@@ -107,6 +121,16 @@ export const useAppStore = defineStore('app', () => {
     const nextM = { ...mentionChannels.value }
     delete nextM[channelId]
     mentionChannels.value = nextM
+    // Marquer les notifs de ce canal comme lues
+    notificationHistory.value = notificationHistory.value.map((n) =>
+      n.channelId === channelId ? { ...n, read: true } : n,
+    )
+  }
+
+  function markAllRead() {
+    unread.value = {}
+    mentionChannels.value = {}
+    notificationHistory.value = notificationHistory.value.map((n) => ({ ...n, read: true }))
   }
 
   // ── Statut réseau ─────────────────────────────────────────────────────────
@@ -123,7 +147,7 @@ export const useAppStore = defineStore('app', () => {
 
   // Listener temps-réel — appelé une seule fois au démarrage (App.vue onMounted)
   function initUnreadListener(): () => void {
-    return window.api.onNewMessage(({ channelId, authorName, mentionEveryone, mentionNames }) => {
+    return window.api.onNewMessage(({ channelId, dmStudentId, authorName, channelName, promoId, mentionEveryone, mentionNames }) => {
       if (!channelId) return
       // Ne pas compter ses propres messages
       if (authorName && authorName === currentUser.value?.name) return
@@ -134,21 +158,37 @@ export const useAppStore = defineStore('app', () => {
       }
 
       // Badge mention @ — détecte si l'utilisateur courant est mentionné
+      let isMention = false
       if (currentUser.value) {
         const myName = currentUser.value.name.toLowerCase()
-        // Vérifie @everyone OU si l'un des noms mentionnés correspond (match partiel sur les mots du nom)
-        const isMentioned =
+        isMention =
           mentionEveryone ||
           mentionNames.some((n) => {
             const lowerN = n.toLowerCase()
             return myName.split(/\s+/).some((part) => part.startsWith(lowerN))
           })
-        if (isMentioned) {
+        if (isMention) {
           mentionChannels.value = {
             ...mentionChannels.value,
             [channelId]: (mentionChannels.value[channelId] ?? 0) + 1,
           }
         }
+      }
+
+      // Historique de notifications (uniquement si pas dans ce canal)
+      if (channelId !== activeChannelId.value) {
+        const entry: NotifEntry = {
+          id:          `${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+          channelId,
+          channelName: channelName ?? 'Inconnu',
+          dmStudentId: dmStudentId ?? null,
+          promoId:     promoId     ?? null,
+          authorName:  authorName  ?? '',
+          isMention,
+          timestamp:   Date.now(),
+          read:        false,
+        }
+        notificationHistory.value = [entry, ...notificationHistory.value].slice(0, 50)
       }
     })
   }
@@ -173,13 +213,13 @@ export const useAppStore = defineStore('app', () => {
     // état
     isOnline, currentUser, activeChannelId, activeDmStudentId, activePromoId,
     activeChannelType, activeChannelName, activeProject, pendingChannelCategory, rightPanel, currentTravailId,
-    pendingNoteDepotId, rubricDepotId, unread, mentionChannels,
+    pendingNoteDepotId, rubricDepotId, unread, mentionChannels, notificationHistory,
     // calculs
     isStudent, isTeacher, isStaff, isSimulating, isReadonly,
     // actions
     restoreSession, login, logout, impersonate,
     startSimulation, stopSimulation,
-    openChannel, openDm, markRead, initUnreadListener, initOnlineListener,
+    openChannel, openDm, markRead, markAllRead, initUnreadListener, initOnlineListener,
     api,
   }
 })

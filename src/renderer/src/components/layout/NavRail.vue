@@ -1,13 +1,14 @@
 <script setup lang="ts">
   import { computed, ref, onMounted } from 'vue'
   import { useRouter, useRoute } from 'vue-router'
-  import { MessageSquare, BookOpen, FileText, Calendar, UserCheck, LayoutDashboard, X, UserPlus } from 'lucide-vue-next'
+  import { MessageSquare, BookOpen, FileText, Calendar, UserCheck, LayoutDashboard, X, UserPlus, Bell } from 'lucide-vue-next'
   import logoUrl from '@/assets/logo.png'
   import { useAppStore }    from '@/stores/app'
   import { useModalsStore } from '@/stores/modals'
   import { useTravauxStore } from '@/stores/travaux'
   import { avatarColor }    from '@/utils/format'
   import type { User } from '@/types'
+  import NotificationPanel from './NotificationPanel.vue'
 
   const appStore    = useAppStore()
   const modals      = useModalsStore()
@@ -25,6 +26,15 @@
   })
 
   const pendingCount = computed(() => travauxStore.pendingDevoirs.length)
+
+  // ── Centre de notifications ─────────────────────────────────────────────────
+  const showNotifications = ref(false)
+  const mentionCount = computed(() =>
+    Object.values(appStore.mentionChannels).reduce((a, b) => a + b, 0),
+  )
+  const unreadCount = computed(() =>
+    Object.values(appStore.unread).reduce((a, b) => a + b, 0),
+  )
 
   // ── Bascule rapide vers un étudiant ─────────────────────────────────────────
   const quickStudent = ref<User | null>(null)
@@ -124,6 +134,38 @@
       <span class="nav-label">Documents</span>
     </button>
 
+    <!-- ── Cloche de notifications ── -->
+    <div class="nav-notif-wrapper">
+      <button
+        class="nav-btn"
+        :class="{ active: showNotifications }"
+        title="Notifications"
+        aria-label="Centre de notifications"
+        @click="showNotifications = !showNotifications"
+      >
+        <Bell :size="20" />
+        <span class="nav-label">Notifs</span>
+        <span
+          v-if="mentionCount > 0"
+          class="nav-badge nav-badge-mention"
+        >
+          {{ mentionCount > 9 ? '9+' : mentionCount }}
+        </span>
+        <span
+          v-else-if="unreadCount > 0"
+          class="nav-badge nav-badge-unread"
+        >
+          {{ unreadCount > 9 ? '9+' : unreadCount }}
+        </span>
+      </button>
+      <Transition name="notif-panel-fade">
+        <NotificationPanel
+          v-if="showNotifications"
+          @close="showNotifications = false"
+        />
+      </Transition>
+    </div>
+
     <!-- Espaceur -->
     <div style="flex:1" />
 
@@ -208,6 +250,29 @@
 </template>
 
 <style scoped>
+/* ── Wrapper notifications (positioning du panel) ── */
+.nav-notif-wrapper {
+  position: relative;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Variantes de badge */
+.nav-badge-mention {
+  background: var(--color-danger, #e74c3c);
+}
+.nav-badge-unread {
+  background: var(--accent, #4a90d9);
+}
+
+/* Transition panneau */
+.notif-panel-fade-enter-active { transition: opacity .12s ease, transform .12s ease; }
+.notif-panel-fade-leave-active { transition: opacity .09s ease, transform .09s ease; }
+.notif-panel-fade-enter-from,
+.notif-panel-fade-leave-to     { opacity: 0; transform: translateX(-6px); }
+
 /* ── Logo ── */
 .nav-logo-img {
   width: 36px;

@@ -153,6 +153,8 @@ declare global {
         channelId:       number | null
         dmStudentId:     number | null
         authorName:      string | null
+        channelName:     string | null
+        promoId:         number | null
         mentionEveryone: boolean
         mentionNames:    string[]
       }) => void): () => void

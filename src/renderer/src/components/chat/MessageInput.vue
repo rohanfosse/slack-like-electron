@@ -14,6 +14,26 @@ const content     = ref('')
 const showToolbar = ref(false)
 const sending     = ref(false)
 
+// ── Brouillons (auto-save localStorage) ──────────────────────────────────────
+let _draftTimer: ReturnType<typeof setTimeout> | null = null
+
+const draftKey = computed(() => {
+  if (appStore.activeChannelId)   return `draft_ch_${appStore.activeChannelId}`
+  if (appStore.activeDmStudentId) return `draft_dm_${appStore.activeDmStudentId}`
+  return null
+})
+
+function saveDraft() {
+  if (!draftKey.value) return
+  if (content.value.trim()) localStorage.setItem(draftKey.value, content.value)
+  else                      localStorage.removeItem(draftKey.value)
+}
+
+function clearDraft() {
+  if (_draftTimer) { clearTimeout(_draftTimer); _draftTimer = null }
+  if (draftKey.value) localStorage.removeItem(draftKey.value)
+}
+
 // ── Mention autocomplete (@) ──────────────────────────────────────────────
 interface MentionUser {
   name: string
@@ -126,6 +146,10 @@ function onInput() {
   } else {
     mentionActive.value = false
   }
+
+  // Brouillon — sauvegarde différée
+  if (_draftTimer) clearTimeout(_draftTimer)
+  _draftTimer = setTimeout(saveDraft, 500)
 }
 
 // Fermer la mention au clic ailleurs
@@ -158,6 +182,7 @@ async function send() {
   sending.value = true
   try {
     await messagesStore.sendMessage(content.value)
+    clearDraft()
     content.value = ''
     if (inputEl.value) inputEl.value.style.height = 'auto'
   } finally {
@@ -211,13 +236,18 @@ function onKeydown(e: KeyboardEvent) {
   }
 }
 
-// Réinitialiser quand le canal change
+// Restaurer le brouillon quand le canal change
 watch(
   () => [appStore.activeChannelId, appStore.activeDmStudentId],
   () => {
-    content.value = ''
     mentionActive.value = false
-    if (inputEl.value) inputEl.value.style.height = 'auto'
+    if (_draftTimer) { clearTimeout(_draftTimer); _draftTimer = null }
+    const key = draftKey.value
+    content.value = key ? (localStorage.getItem(key) ?? '') : ''
+    nextTick(() => {
+      autoResize()
+      inputEl.value?.focus()
+    })
   },
 )
 </script>

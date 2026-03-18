@@ -75,6 +75,8 @@ function register() {
         channelId:      payload.channelId   ?? null,
         dmStudentId:    payload.dmStudentId ?? null,
         authorName:     payload.authorName  ?? null,
+        channelName:    payload.channelName ?? null,
+        promoId:        payload.promoId     ?? null,
         mentionEveryone,
         mentionNames,
       }

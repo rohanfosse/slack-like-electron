@@ -154,6 +154,8 @@ export const useMessagesStore = defineStore('messages', () => {
       dmStudentId: appStore.activeDmStudentId ?? undefined,
       authorName:  appStore.currentUser.name,
       authorType:  appStore.currentUser.type,
+      channelName: appStore.activeChannelName || undefined,
+      promoId:     appStore.activePromoId     ?? undefined,
       content:     content.trim(),
       replyToId:      quote?.id       ?? undefined,
       replyToAuthor:  quote?.author_name ?? undefined,

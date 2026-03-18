@@ -143,6 +143,8 @@ contextBridge.exposeInMainWorld('api', {
     channelId:      number | null
     dmStudentId:    number | null
     authorName:     string | null
+    channelName:    string | null
+    promoId:        number | null
     mentionEveryone: boolean
     mentionNames:   string[]
   }) => void) => {
@@ -150,6 +152,8 @@ contextBridge.exposeInMainWorld('api', {
       channelId:      number | null
       dmStudentId:    number | null
       authorName:     string | null
+      channelName:    string | null
+      promoId:        number | null
       mentionEveryone: boolean
       mentionNames:   string[]
     }) => cb(data)
