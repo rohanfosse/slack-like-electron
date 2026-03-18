@@ -25,7 +25,11 @@ const hasUnread  = computed(() => appStore.notificationHistory.some((n) => !n.re
 async function goTo(entry: typeof appStore.notificationHistory[number]) {
   emit('close')
   const promoId = entry.promoId ?? appStore.activePromoId ?? 0
-  if (entry.channelId) {
+  if (entry.dmStudentId) {
+    // Pour les DMs : naviguer vers /messages, l'utilisateur clique sur le DM en sidebar
+    appStore.markDmRead(entry.authorName)
+    await router.push('/messages')
+  } else if (entry.channelId) {
     appStore.openChannel(entry.channelId, promoId, entry.channelName)
     await router.push('/messages')
     await messagesStore.fetchMessages()
@@ -85,7 +89,7 @@ function formatTime(ts: number): string {
           <div class="notif-item-dot" :class="{ visible: !n.read }" />
           <div class="notif-item-body">
             <span class="notif-item-author">{{ n.authorName }}</span>
-            <span class="notif-item-channel">#{{ n.channelName }}</span>
+            <span class="notif-item-channel">{{ n.dmStudentId ? 'Message direct' : `#${n.channelName}` }}</span>
           </div>
           <span class="notif-item-time">{{ formatTime(n.timestamp) }}</span>
         </button>
@@ -107,7 +111,7 @@ function formatTime(ts: number): string {
           <div class="notif-item-dot" :class="{ visible: !n.read }" />
           <div class="notif-item-body">
             <span class="notif-item-author">{{ n.authorName }}</span>
-            <span class="notif-item-channel">#{{ n.channelName }}</span>
+            <span class="notif-item-channel">{{ n.dmStudentId ? 'Message direct' : `#${n.channelName}` }}</span>
           </div>
           <span class="notif-item-time">{{ formatTime(n.timestamp) }}</span>
         </button>

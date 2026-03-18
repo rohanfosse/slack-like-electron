@@ -1575,12 +1575,38 @@ function requireMessages() {
   function togglePinMessage(messageId, pinned) {
     return getDb().prepare("UPDATE messages SET pinned = ? WHERE id = ?").run(pinned ? 1 : 0, messageId).changes;
   }
+  function searchAllMessages(promoId, query, limit = 8) {
+    if (promoId) {
+      return getDb().prepare(`
+      SELECT m.id, m.content, m.author_name, m.created_at,
+             c.id AS channel_id, c.name AS channel_name, c.promo_id
+      FROM messages m
+      JOIN channels c ON m.channel_id = c.id
+      WHERE c.promo_id = ?
+        AND m.dm_student_id IS NULL
+        AND m.content LIKE '%' || ? || '%'
+      ORDER BY m.created_at DESC
+      LIMIT ?
+    `).all(promoId, query, limit);
+    }
+    return getDb().prepare(`
+    SELECT m.id, m.content, m.author_name, m.created_at,
+           c.id AS channel_id, c.name AS channel_name, c.promo_id
+    FROM messages m
+    JOIN channels c ON m.channel_id = c.id
+    WHERE m.dm_student_id IS NULL
+      AND m.content LIKE '%' || ? || '%'
+    ORDER BY m.created_at DESC
+    LIMIT ?
+  `).all(query, limit);
+  }
   messages = {
     getChannelMessages,
     getChannelMessagesPage,
     getDmMessages,
     getDmMessagesPage,
     searchMessages,
+    searchAllMessages,
     sendMessage,
     getPinnedMessages,
     togglePinMessage,
@@ -2170,6 +2196,7 @@ function requireIpc() {
     handle("db:getChannelMessagesPage", (channelId, beforeId) => queries.getChannelMessagesPage(channelId, beforeId ?? null));
     handle("db:getDmMessagesPage", (studentId, beforeId) => queries.getDmMessagesPage(studentId, beforeId ?? null));
     handle("db:searchMessages", (channelId, query) => queries.searchMessages(channelId, query));
+    handle("db:searchAllMessages", ({ promoId, query, limit }) => queries.searchAllMessages(promoId ?? null, query, limit ?? 8));
     ipcMain.handle("db:sendMessage", async (_event, payload) => {
       try {
         const result = queries.sendMessage(payload);
@@ -2187,6 +2214,8 @@ function requireIpc() {
           channelId: payload.channelId ?? null,
           dmStudentId: payload.dmStudentId ?? null,
           authorName: payload.authorName ?? null,
+          channelName: payload.channelName ?? null,
+          promoId: payload.promoId ?? null,
           mentionEveryone,
           mentionNames
         };

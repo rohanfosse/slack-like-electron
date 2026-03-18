@@ -16,6 +16,7 @@ electron.contextBridge.exposeInMainWorld("api", {
   getChannelMessagesPage: (channelId, beforeId) => invoke("db:getChannelMessagesPage", channelId, beforeId ?? null),
   getDmMessagesPage: (studentId, beforeId) => invoke("db:getDmMessagesPage", studentId, beforeId ?? null),
   searchMessages: (channelId, q) => invoke("db:searchMessages", channelId, q),
+  searchAllMessages: (args) => invoke("db:searchAllMessages", args),
   sendMessage: (payload) => invoke("db:sendMessage", payload),
   // ── Travaux ────────────────────────────────────────────────────────────────
   getTravaux: (channelId) => invoke("db:getTravaux", channelId),

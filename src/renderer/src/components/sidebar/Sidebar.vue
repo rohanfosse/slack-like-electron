@@ -750,11 +750,20 @@
               v-for="s in dmStudents"
               :key="s.id"
               class="sidebar-item"
-              :class="{ active: appStore.activeDmStudentId === s.id }"
+              :class="{
+                active:    appStore.activeDmStudentId === s.id,
+                'dm-has-unread': !!appStore.unreadDms[s.name],
+              }"
               @click="selectDm(s)"
             >
               <span class="channel-prefix">@</span>
               <span class="channel-name">{{ s.name }}</span>
+              <span
+                v-if="appStore.unreadDms[s.name]"
+                class="dm-unread-badge"
+              >
+                {{ (appStore.unreadDms[s.name] as number) > 9 ? '9+' : appStore.unreadDms[s.name] }}
+              </span>
             </button>
           </nav>
         </template>
@@ -987,6 +996,27 @@
   min-width: 0;
 }
 .project-add-input:focus { border-color: #9B87F5; box-shadow: 0 0 0 2px rgba(155,135,245,.2); }
+
+/* ── Badge DM non lus ── */
+.dm-unread-badge {
+  margin-left: auto;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 9px;
+  background: var(--accent, #4a90d9);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.dm-has-unread .channel-name {
+  font-weight: 700;
+  color: var(--text-primary);
+}
 
 /* ── Badge rendus par projet ── */
 .project-rendus-badge {

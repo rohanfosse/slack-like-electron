@@ -25,6 +25,7 @@ export const useAppStore = defineStore('app', () => {
   const rubricDepotId     = ref<number | null>(null)   // null = édition rubric, number = scoring dépôt
   const unread            = ref<Record<number, number>>({})
   const mentionChannels   = ref<Record<number, number>>({})
+  const unreadDms         = ref<Record<string, number>>({}) // clé = nom de l'expéditeur
 
   // ── Historique de notifications ────────────────────────────────────────────
   interface NotifEntry {
@@ -110,6 +111,16 @@ export const useAppStore = defineStore('app', () => {
     activePromoId.value     = promoId
     activeChannelType.value = 'chat'
     activeChannelName.value = name
+    markDmRead(name)
+  }
+
+  function markDmRead(senderName: string) {
+    const next = { ...unreadDms.value }
+    delete next[senderName]
+    unreadDms.value = next
+    notificationHistory.value = notificationHistory.value.map((n) =>
+      n.dmStudentId !== null && n.authorName === senderName ? { ...n, read: true } : n,
+    )
   }
 
   // ── Non-lus ───────────────────────────────────────────────────────────────
@@ -130,6 +141,7 @@ export const useAppStore = defineStore('app', () => {
   function markAllRead() {
     unread.value = {}
     mentionChannels.value = {}
+    unreadDms.value = {}
     notificationHistory.value = notificationHistory.value.map((n) => ({ ...n, read: true }))
   }
 
@@ -148,10 +160,34 @@ export const useAppStore = defineStore('app', () => {
   // Listener temps-réel — appelé une seule fois au démarrage (App.vue onMounted)
   function initUnreadListener(): () => void {
     return window.api.onNewMessage(({ channelId, dmStudentId, authorName, channelName, promoId, mentionEveryone, mentionNames }) => {
-      if (!channelId) return
       // Ne pas compter ses propres messages
       if (authorName && authorName === currentUser.value?.name) return
 
+      // ── Message direct ────────────────────────────────────────────────────
+      if (!channelId && dmStudentId) {
+        const senderName = authorName ?? ''
+        // Badge unread DM — si on n'est pas déjà dans cette conversation
+        if (dmStudentId !== activeDmStudentId.value) {
+          unreadDms.value = { ...unreadDms.value, [senderName]: (unreadDms.value[senderName] ?? 0) + 1 }
+          const dmEntry: NotifEntry = {
+            id:          `${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+            channelId:   null,
+            channelName: senderName,
+            dmStudentId,
+            promoId:     promoId ?? null,
+            authorName:  senderName,
+            isMention:   true, // DM = toujours une mention directe
+            timestamp:   Date.now(),
+            read:        false,
+          }
+          notificationHistory.value = [dmEntry, ...notificationHistory.value].slice(0, 50)
+        }
+        return
+      }
+
+      if (!channelId) return
+
+      // ── Message de canal ──────────────────────────────────────────────────
       // Badge unread standard — uniquement si on n'est pas dans ce canal
       if (channelId !== activeChannelId.value) {
         unread.value = { ...unread.value, [channelId]: (unread.value[channelId] ?? 0) + 1 }
@@ -181,9 +217,9 @@ export const useAppStore = defineStore('app', () => {
           id:          `${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
           channelId,
           channelName: channelName ?? 'Inconnu',
-          dmStudentId: dmStudentId ?? null,
-          promoId:     promoId     ?? null,
-          authorName:  authorName  ?? '',
+          dmStudentId: null,
+          promoId:     promoId ?? null,
+          authorName:  authorName ?? '',
           isMention,
           timestamp:   Date.now(),
           read:        false,
@@ -213,13 +249,13 @@ export const useAppStore = defineStore('app', () => {
     // état
     isOnline, currentUser, activeChannelId, activeDmStudentId, activePromoId,
     activeChannelType, activeChannelName, activeProject, pendingChannelCategory, rightPanel, currentTravailId,
-    pendingNoteDepotId, rubricDepotId, unread, mentionChannels, notificationHistory,
+    pendingNoteDepotId, rubricDepotId, unread, mentionChannels, unreadDms, notificationHistory,
     // calculs
     isStudent, isTeacher, isStaff, isSimulating, isReadonly,
     // actions
     restoreSession, login, logout, impersonate,
     startSimulation, stopSimulation,
-    openChannel, openDm, markRead, markAllRead, initUnreadListener, initOnlineListener,
+    openChannel, openDm, markRead, markDmRead, markAllRead, initUnreadListener, initOnlineListener,
     api,
   }
 })
