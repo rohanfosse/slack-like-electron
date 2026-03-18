@@ -1,6 +1,7 @@
 node_modules/
 dist/
 out/
+# dist-web/ est tracké (build CI committé automatiquement)
 resources/icons/
 
 # Base de donnees locale

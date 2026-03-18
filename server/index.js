@@ -64,6 +64,9 @@ app.use('/api/files', require('./routes/files'))
 // ── Health check ─────────────────────────────────────────────────────────────
 app.get('/health', (_req, res) => res.json({ ok: true, version: '2.0.0' }))
 
+// ── Webhook de déploiement (pas d'auth JWT, validé par DEPLOY_SECRET) ─────────
+app.use('/webhook/deploy', require('./routes/deploy'))
+
 // SPA web — fallback en dernier pour ne pas écraser les routes API/health
 const WEB_DIST = path.join(__dirname, '../dist-web')
 if (fs.existsSync(WEB_DIST)) {

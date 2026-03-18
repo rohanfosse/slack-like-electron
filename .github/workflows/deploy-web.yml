@@ -3,9 +3,12 @@ name: Deploy Web
 on:
   push:
     branches: [main]
+    # Ignorer les commits automatiques du CI (dist-web)
+    paths-ignore:
+      - 'dist-web/**'
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   deploy:
@@ -14,6 +17,9 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -29,23 +35,21 @@ jobs:
           VITE_SERVER_URL: ${{ secrets.VITE_SERVER_URL }}
         run: npm run build:web
 
-      - name: Deploy via SSH
-        env:
-          SSH_KEY:         ${{ secrets.SSH_DEPLOY_KEY }}
-          SSH_KNOWN_HOSTS: ${{ secrets.SSH_KNOWN_HOSTS }}
+      - name: Commit dist-web to git
         run: |
-          # Configure SSH
-          mkdir -p ~/.ssh
-          echo "$SSH_KEY" > ~/.ssh/deploy_key
-          chmod 600 ~/.ssh/deploy_key
-          echo "$SSH_KNOWN_HOSTS" >> ~/.ssh/known_hosts
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -f dist-web/
+          git diff --cached --quiet && echo "No changes in dist-web" || \
+            git commit -m "chore: build dist-web [skip ci]"
+          git push
 
-          # Upload dist-web/ via rsync
-          rsync -az --delete \
-            -e "ssh -i ~/.ssh/deploy_key" \
-            dist-web/ \
-            root@148.230.115.73:/opt/ceslack/dist-web/
-
-          # Pull server code, install deps, restart PM2
-          ssh -i ~/.ssh/deploy_key root@148.230.115.73 \
-            "cd /opt/ceslack && git pull origin main && npm install --omit=dev --ignore-scripts 2>&1 | tail -3 && pm2 restart ceslack-server && echo Deploy OK"
+      - name: Trigger deploy webhook
+        env:
+          DEPLOY_SECRET: ${{ secrets.DEPLOY_SECRET }}
+          SERVER_URL:    ${{ secrets.VITE_SERVER_URL }}
+        run: |
+          curl -s -X POST \
+            -H "x-deploy-secret: $DEPLOY_SECRET" \
+            -H "Content-Type: application/json" \
+            "${SERVER_URL}/webhook/deploy" | cat
