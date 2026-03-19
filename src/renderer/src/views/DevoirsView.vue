@@ -454,6 +454,7 @@ function typeLabel(t: string): string {
             <div class="group-header group-header--danger" title="Deadline dépassée — dépôt verrouillé">
               <Lock :size="12" /> En retard
               <span class="group-count">{{ studentGroups.overdue.length }}</span>
+              <span class="group-subtitle">La deadline est dépassée — le dépôt n'est plus possible</span>
             </div>
             <div class="devoirs-list">
               <div v-for="t in studentGroups.overdue" :key="t.id" class="devoir-card devoir-card--overdue">
@@ -486,6 +487,7 @@ function typeLabel(t: string): string {
             <div class="group-header group-header--warning" title="Moins de 3 jours avant la deadline">
               <AlertTriangle :size="12" /> Urgent
               <span class="group-count">{{ studentGroups.urgent.length }}</span>
+              <span class="group-subtitle">Moins de 3 jours avant la deadline</span>
             </div>
             <div class="devoirs-list">
               <div v-for="t in studentGroups.urgent" :key="t.id" class="devoir-card devoir-card--urgent">
@@ -573,6 +575,7 @@ function typeLabel(t: string): string {
             <div class="group-header group-header--accent" title="Plus de 3 jours avant la deadline">
               <Clock :size="12" /> À rendre
               <span class="group-count">{{ studentGroups.pending.length }}</span>
+              <span class="group-subtitle">Vous avez encore du temps, mais pensez-y</span>
             </div>
             <div class="devoirs-list">
               <div v-for="t in studentGroups.pending" :key="t.id" class="devoir-card devoir-card--pending">
@@ -1182,7 +1185,8 @@ function typeLabel(t: string): string {
 }
 
 .group-header {
-  display: inline-flex;
+  display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 6px;
   font-size: 11px;
@@ -1190,6 +1194,15 @@ function typeLabel(t: string): string {
   text-transform: uppercase;
   letter-spacing: 0.6px;
   margin-bottom: 4px;
+}
+.group-subtitle {
+  width: 100%;
+  font-size: 11.5px;
+  font-weight: 500;
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--text-muted);
+  margin-top: -2px;
 }
 
 .group-count {
