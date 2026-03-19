@@ -4,7 +4,8 @@
   import { useAppStore }    from '@/stores/app'
   import { useModalsStore } from '@/stores/modals'
   import { usePrefs }       from '@/composables/usePrefs'
-  import Toast    from '@/components/ui/Toast.vue'
+  import Toast        from '@/components/ui/Toast.vue'
+  import ConfirmModal from '@/components/ui/ConfirmModal.vue'
   import NavRail  from '@/components/layout/NavRail.vue'
   import TitleBar from '@/components/layout/TitleBar.vue'
   import Sidebar  from '@/components/sidebar/Sidebar.vue'
@@ -60,6 +61,7 @@
 
   let unsubUnread:  (() => void) | null = null
   let unsubOnline:  (() => void) | null = null
+  let unsubSocket:  (() => void) | null = null
 
   onMounted(() => {
     // Appliquer le thème sauvegardé
@@ -81,14 +83,19 @@
 
     // Écouter les changements de connectivité réseau
     unsubOnline = appStore.initOnlineListener()
+
+    // Écouter l'état du socket temps-réel
+    unsubSocket = appStore.initSocketListener()
   })
 
-  onUnmounted(() => { unsubUnread?.(); unsubOnline?.() })
+  onUnmounted(() => { unsubUnread?.(); unsubOnline?.(); unsubSocket?.() })
 </script>
 
 <template>
   <!-- Toast global (accessible depuis n'importe quel composant) -->
   <Toast />
+  <!-- Modal de confirmation global -->
+  <ConfirmModal />
 
   <!-- Écran de connexion -->
   <LoginOverlay v-if="!appStore.currentUser" />
@@ -104,7 +111,13 @@
 
     <!-- Bandeau hors-ligne -->
     <div v-if="!appStore.isOnline" class="offline-banner">
-      <span>⚡ Mode hors-ligne — les données locales restent accessibles, les liens externes sont indisponibles.</span>
+      <span>Mode hors-ligne — les données locales restent accessibles, les liens externes sont indisponibles.</span>
+    </div>
+
+    <!-- Bandeau reconnexion socket -->
+    <div v-else-if="appStore.currentUser && !appStore.socketConnected" class="socket-banner">
+      <span class="socket-spinner" />
+      <span>Reconnexion au serveur en cours…</span>
     </div>
 
     <!-- Bandeau simulation étudiant -->
@@ -118,11 +131,11 @@
       </button>
     </div>
 
-    <aside class="sidebar-wrapper" :class="{ 'sidebar-with-banner': appStore.isSimulating || !appStore.isOnline }">
+    <aside class="sidebar-wrapper" :class="{ 'sidebar-with-banner': appStore.isSimulating || !appStore.isOnline || !appStore.socketConnected }">
       <Sidebar />
     </aside>
 
-    <main class="main-wrapper" :class="{ 'main-with-banner': appStore.isSimulating || !appStore.isOnline }">
+    <main class="main-wrapper" :class="{ 'main-with-banner': appStore.isSimulating || !appStore.isOnline || !appStore.socketConnected }">
       <!-- Vue active (messages / travaux / documents) -->
       <RouterView />
     </main>
@@ -240,6 +253,37 @@
   }
 
   .simulation-banner.banner-shift { top: calc(var(--titlebar-height, 32px) + 36px); }
+
+  /* Bandeau reconnexion socket */
+  .socket-banner {
+    position: fixed;
+    top: var(--titlebar-height, 32px);
+    left: 0;
+    right: 0;
+    z-index: 201;
+    height: 36px;
+    background: #7f5539;
+    color: #fde8cd;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 0 16px;
+    font-size: 12.5px;
+    font-weight: 500;
+    border-bottom: 1px solid rgba(255,255,255,.07);
+  }
+
+  .socket-spinner {
+    width: 12px;
+    height: 12px;
+    border: 2px solid rgba(255,255,255,.3);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: spin .8s linear infinite;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg) } }
 
   /* ── Bannière RGPD ── */
   .privacy-overlay {

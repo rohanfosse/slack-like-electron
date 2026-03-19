@@ -10,7 +10,8 @@
   import { useModalsStore } from '@/stores/modals'
   import { useMessagesStore } from '@/stores/messages'
   import { useTravauxStore } from '@/stores/travaux'
-  import { useToast } from '@/composables/useToast'
+  import { useToast }   from '@/composables/useToast'
+  import { useConfirm } from '@/composables/useConfirm'
   import PromoRail    from './PromoRail.vue'
   import ChannelItem  from './ChannelItem.vue'
   import { avatarColor }  from '@/utils/format'
@@ -25,6 +26,7 @@
   const route         = useRoute()
   const router        = useRouter()
   const { showToast } = useToast()
+  const { confirm }   = useConfirm()
 
   // ── État local ────────────────────────────────────────────────────────────
   const promotions  = ref<Promotion[]>([])
@@ -402,6 +404,7 @@
           separator: true,
           action: async () => {
             if (!appStore.activePromoId) return
+            if (!await confirm(`Dissoudre la catégorie « ${group.key} » ? Les canaux seront déplacés hors catégorie.`, 'warning', 'Dissoudre')) return
             const res = await window.api.deleteCategory(appStore.activePromoId, group.key)
             if ((res as any)?.ok === false) { showToast('Erreur.', 'error'); return }
             await loadTeacherChannels()
@@ -433,6 +436,7 @@
           danger: true,
           separator: true,
           action: async () => {
+            if (!await confirm(`Supprimer le canal « #${ch.name} » et tous ses messages ? Cette action est irréversible.`, 'danger', 'Supprimer')) return
             const res = await window.api.deleteChannel(ch.id)
             if ((res as any)?.ok === false) { showToast('Erreur.', 'error'); return }
             if (appStore.activeChannelId === ch.id) appStore.activeChannelId = null

@@ -9,8 +9,16 @@ const jwt        = require('jsonwebtoken')
 const queries    = require('../src/db/index')
 
 const PORT   = process.env.PORT       ?? 3001
+const ORIGIN = process.env.CORS_ORIGIN ?? 'http://localhost:5173'
+
+// ── Vérification JWT_SECRET en production ───────────────────────────────────
 const SECRET = process.env.JWT_SECRET ?? 'changeme-dev-secret'
-const ORIGIN = process.env.CORS_ORIGIN ?? '*'
+if (process.env.NODE_ENV === 'production') {
+  if (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < 32) {
+    console.error('[SECURITY] JWT_SECRET absent ou trop court (min 32 caractères). Arrêt du serveur.')
+    process.exit(1)
+  }
+}
 
 const app    = express()
 const server = http.createServer(app)

@@ -17,6 +17,7 @@ type MsgNewPayload = {
   mentionEveryone: boolean; mentionNames: string[]
 }
 const msgCallbacks: Array<(data: MsgNewPayload) => void> = []
+const socketStateCallbacks: Array<(connected: boolean) => void> = []
 
 // Cache pour les fichiers ouverts via <input type="file">
 // Clé : pseudo-path "__web__<timestamp>", valeur : données du fichier
@@ -31,7 +32,12 @@ function connectSocket(token: string): void {
     reconnectionAttempts: 10,
   })
   socket.on('msg:new', (data: MsgNewPayload) => msgCallbacks.forEach(cb => cb(data)))
-  socket.on('connect_error', (err) => console.warn('[Socket.io]', err.message))
+  socket.on('connect', () => socketStateCallbacks.forEach(cb => cb(true)))
+  socket.on('disconnect', () => socketStateCallbacks.forEach(cb => cb(false)))
+  socket.on('connect_error', (err) => {
+    console.warn('[Socket.io]', err.message)
+    socketStateCallbacks.forEach(cb => cb(false))
+  })
 }
 
 // ─── fetch helpers ────────────────────────────────────────────────────────────
@@ -413,5 +419,10 @@ async function importStudentsBrowser(promoId: number): Promise<unknown> {
   onNewMessage(cb: (data: MsgNewPayload) => void) {
     msgCallbacks.push(cb)
     return () => { const i = msgCallbacks.indexOf(cb); if (i !== -1) msgCallbacks.splice(i, 1) }
+  },
+
+  onSocketStateChange(cb: (connected: boolean) => void) {
+    socketStateCallbacks.push(cb)
+    return () => { const i = socketStateCallbacks.indexOf(cb); if (i !== -1) socketStateCallbacks.splice(i, 1) }
   },
 }

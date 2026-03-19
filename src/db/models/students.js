@@ -1,12 +1,27 @@
 const { getDb }  = require('../connection');
 const bcrypt     = require('bcryptjs');
 
+const crypto = require('crypto');
+
 const BCRYPT_ROUNDS = 10;
 
 // ── Utilitaires ───────────────────────────────────────────────────────────────
 
 function hashPassword(plain) {
   return bcrypt.hashSync(plain, BCRYPT_ROUNDS);
+}
+
+/** Valide la robustesse d'un mot de passe (>= 8 chars, 1 majuscule, 1 chiffre, 1 spécial). */
+function validatePasswordStrength(pwd) {
+  if (!pwd || pwd.length < 8)       throw new Error('Le mot de passe doit contenir au moins 8 caractères.');
+  if (!/[A-Z]/.test(pwd))           throw new Error('Le mot de passe doit contenir au moins une majuscule.');
+  if (!/[0-9]/.test(pwd))           throw new Error('Le mot de passe doit contenir au moins un chiffre.');
+  if (!/[^A-Za-z0-9]/.test(pwd))    throw new Error('Le mot de passe doit contenir au moins un caractère spécial.');
+}
+
+/** Génère un mot de passe aléatoire temporaire (pour imports CSV). */
+function generateTempPassword() {
+  return crypto.randomBytes(12).toString('base64url');
 }
 
 /** Compare un mot de passe avec un hash stocké.
@@ -138,7 +153,9 @@ function registerStudent({ name, email, promoId, photoData, password }) {
   if (existing) throw new Error('Cette adresse email est déjà utilisée.');
 
   const initials = name.trim().split(/\s+/).map(w => w[0]).join('').toUpperCase().slice(0, 2);
-  const plain    = (password ?? '').trim() || 'cesi1234';
+  const plain    = (password ?? '').trim();
+  if (!plain) throw new Error('Le mot de passe est obligatoire.');
+  validatePasswordStrength(plain);
   const hashed   = hashPassword(plain);
 
   return db.prepare(`
@@ -150,9 +167,7 @@ function registerStudent({ name, email, promoId, photoData, password }) {
 // ── Changement de mot de passe ────────────────────────────────────────────────
 
 function changePassword(userId, isTeacher, currentPassword, newPassword) {
-  if (!newPassword || newPassword.length < 8) {
-    throw new Error('Le nouveau mot de passe doit contenir au moins 8 caractères.');
-  }
+  validatePasswordStrength(newPassword);
 
   const db = getDb();
 
@@ -255,7 +270,7 @@ function bulkImportStudents(promoId, rows) {
       const email = (row.email || row.mail || '').trim().toLowerCase();
       if (!name || !email) continue;
       const initials = name.split(/\s+/).map(w => w[0]).join('').toUpperCase().slice(0, 2);
-      const plain    = (row.password || row.mdp || 'cesi1234').trim() || 'cesi1234';
+      const plain    = (row.password || row.mdp || '').trim() || generateTempPassword();
       try {
         const res = ins.run(promoId, name, email, initials, hashPassword(plain));
         if (res.changes) imported++;

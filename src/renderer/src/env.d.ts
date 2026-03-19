@@ -176,6 +176,7 @@ declare global {
         mentionEveryone: boolean
         mentionNames:    string[]
       }) => void): () => void
+      onSocketStateChange(cb: (connected: boolean) => void): () => void
       getClasseStats(promoId: number): Promise<IpcResponse<{
         id: number; name: string; avatar_initials: string; photo_data: string | null
         submitted_count: number; total_count: number; graded_count: number; avg_grade: number | null

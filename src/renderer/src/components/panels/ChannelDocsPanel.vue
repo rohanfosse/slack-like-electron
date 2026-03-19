@@ -6,11 +6,13 @@
   } from 'lucide-vue-next'
   import { useAppStore } from '@/stores/app'
   import { useToast }    from '@/composables/useToast'
+  import { useConfirm }  from '@/composables/useConfirm'
 
   const emit = defineEmits<{ (e: 'close'): void }>()
 
   const appStore      = useAppStore()
   const { showToast } = useToast()
+  const { confirm }   = useConfirm()
 
   interface ChannelDoc {
     id: number
@@ -62,6 +64,7 @@
   }
 
   async function deleteDoc(doc: ChannelDoc) {
+    if (!await confirm(`Supprimer « ${doc.name} » ?`, 'danger', 'Supprimer')) return
     await window.api.deleteChannelDocument(doc.id)
     docs.value = docs.value.filter(d => d.id !== doc.id)
     showToast(`"${doc.name}" supprimé.`, 'success')

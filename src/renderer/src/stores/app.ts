@@ -10,6 +10,7 @@ export const useAppStore = defineStore('app', () => {
 
   // ── État ──────────────────────────────────────────────────────────────────
   const isOnline          = ref<boolean>(navigator.onLine)
+  const socketConnected   = ref<boolean>(false)
   const currentUser       = ref<User | null>(null)
   const teacherUser       = ref<User | null>(null)   // sauvegarde pendant simulation
   const activeChannelId   = ref<number | null>(null)
@@ -166,6 +167,13 @@ export const useAppStore = defineStore('app', () => {
     notificationHistory.value = notificationHistory.value.map((n) => ({ ...n, read: true }))
   }
 
+  // ── Statut socket temps-réel ──────────────────────────────────────────────
+  function initSocketListener(): () => void {
+    return window.api.onSocketStateChange((connected: boolean) => {
+      socketConnected.value = connected
+    })
+  }
+
   // ── Statut réseau ─────────────────────────────────────────────────────────
   function initOnlineListener(): () => void {
     const onOnline  = () => { isOnline.value = true  }
@@ -287,7 +295,7 @@ export const useAppStore = defineStore('app', () => {
 
   return {
     // état
-    isOnline, currentUser, activeChannelId, activeDmStudentId, activePromoId,
+    isOnline, socketConnected, currentUser, activeChannelId, activeDmStudentId, activePromoId,
     activeChannelType, activeChannelName, activeProject, pendingChannelCategory, rightPanel, currentTravailId,
     pendingNoteDepotId, rubricDepotId, unread, mentionChannels, unreadDms, notificationHistory, taChannelIds,
     // calculs
@@ -295,7 +303,8 @@ export const useAppStore = defineStore('app', () => {
     // actions
     restoreSession, login, logout, impersonate, clearMustChangePassword,
     startSimulation, stopSimulation,
-    openChannel, openDm, markRead, markDmRead, markAllRead, loadTaChannels, initUnreadListener, initOnlineListener,
+    openChannel, openDm, markRead, markDmRead, markAllRead, loadTaChannels,
+    initUnreadListener, initOnlineListener, initSocketListener,
     api,
   }
 })

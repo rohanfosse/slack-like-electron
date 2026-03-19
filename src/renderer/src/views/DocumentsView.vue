@@ -8,6 +8,7 @@
   import { useDocumentsStore } from '@/stores/documents'
   import { useModalsStore }    from '@/stores/modals'
   import { useToast }          from '@/composables/useToast'
+  import { useConfirm }        from '@/composables/useConfirm'
   import { useOpenExternal }   from '@/composables/useOpenExternal'
   import Modal     from '@/components/ui/Modal.vue'
   import { formatDate } from '@/utils/date'
@@ -19,6 +20,7 @@
   const docStore = useDocumentsStore()
   const modals   = useModalsStore()
   const { showToast }    = useToast()
+  const { confirm: confirmAction } = useConfirm()
   const { openExternal } = useOpenExternal()
 
   // ── Add modal ────────────────────────────────────────────────────────────
@@ -107,7 +109,7 @@
   }
 
   async function deleteDoc(id: number) {
-    if (!confirm('Supprimer ce document ?')) return
+    if (!await confirmAction('Supprimer ce document ?', 'danger', 'Supprimer')) return
     await docStore.deleteDocument(id)
   }
 

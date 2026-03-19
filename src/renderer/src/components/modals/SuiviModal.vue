@@ -6,6 +6,7 @@
   import { useTravauxStore } from '@/stores/travaux'
   import { useAppStore }     from '@/stores/app'
   import { useToast }        from '@/composables/useToast'
+  import { useConfirm }      from '@/composables/useConfirm'
   import { avatarColor }     from '@/utils/format'
   import { formatDate }      from '@/utils/date'
   import Modal from '@/components/ui/Modal.vue'
@@ -16,6 +17,7 @@
   const travauxStore  = useTravauxStore()
   const appStore      = useAppStore()
   const { showToast } = useToast()
+  const { confirm }   = useConfirm()
 
   // ── Données suivi (tous les étudiants, rendu ou non) ──────────────────────
   interface SuiviRow {
@@ -102,7 +104,7 @@
 
   async function handleMarkD() {
     if (!appStore.currentTravailId) return
-    if (!confirm('Marquer tous les non-rendus avec la note D ?')) return
+    if (!await confirm('Marquer tous les non-rendus avec la note D ?', 'warning', 'Confirmer')) return
     await travauxStore.markNonSubmittedAsD(appStore.currentTravailId)
     // Recharger le suivi
     const res  = await window.api.getTravauxSuivi(appStore.currentTravailId)

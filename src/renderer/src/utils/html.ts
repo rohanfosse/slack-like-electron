@@ -1,5 +1,6 @@
 import { marked } from 'marked'
 import hljs from 'highlight.js'
+import DOMPurify from 'dompurify'
 
 // ─── Sécurité HTML ───────────────────────────────────────────────────────────
 
@@ -78,5 +79,8 @@ export function renderMessageContent(raw: string, searchTerm = '', currentUserNa
   let html = marked.parse(raw) as string
   html = applyMentions(html, currentUserName)
   if (searchTerm) html = highlightInHtml(html, searchTerm)
-  return html
+  return DOMPurify.sanitize(html, {
+    ALLOWED_TAGS: ['p', 'br', 'strong', 'em', 'code', 'pre', 'a', 'span', 'div', 'mark', 'ul', 'ol', 'li', 'blockquote', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'hr', 'img'],
+    ALLOWED_ATTR: ['class', 'data-url', 'href', 'tabindex', 'style', 'src', 'alt'],
+  })
 }
