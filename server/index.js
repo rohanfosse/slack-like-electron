@@ -104,6 +104,11 @@ io.on('connection', (socket) => {
   if (socket.user?.promo_id) socket.join(`promo:${socket.user.promo_id}`)
   socket.join('all')
 
+  // Indicateur de frappe — re-broadcast aux autres du même canal
+  socket.on('typing', ({ channelId }) => {
+    if (channelId) socket.to('all').emit('typing', { channelId, userName: socket.user?.name })
+  })
+
   socket.on('disconnect', () => console.log(`[WS] - ${name}`))
 })
 

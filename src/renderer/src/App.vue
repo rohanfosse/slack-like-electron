@@ -1,8 +1,9 @@
 <script setup lang="ts">
   import { onMounted, onUnmounted, ref, computed, watch } from 'vue'
   import { useRouter } from 'vue-router'
-  import { useAppStore }    from '@/stores/app'
-  import { useModalsStore } from '@/stores/modals'
+  import { useAppStore }      from '@/stores/app'
+  import { useModalsStore }   from '@/stores/modals'
+  import { useMessagesStore } from '@/stores/messages'
   import { usePrefs }       from '@/composables/usePrefs'
   import Toast        from '@/components/ui/Toast.vue'
   import ConfirmModal from '@/components/ui/ConfirmModal.vue'
@@ -77,6 +78,7 @@
   let unsubUnread:  (() => void) | null = null
   let unsubOnline:  (() => void) | null = null
   let unsubSocket:  (() => void) | null = null
+  let unsubTyping:  (() => void) | null = null
 
   onMounted(() => {
     // Appliquer le thème sauvegardé
@@ -101,9 +103,13 @@
 
     // Écouter l'état du socket temps-réel
     unsubSocket = appStore.initSocketListener()
+
+    // Écouter les indicateurs de frappe
+    const messagesStore = useMessagesStore()
+    unsubTyping = messagesStore.initTypingListener()
   })
 
-  onUnmounted(() => { unsubUnread?.(); unsubOnline?.(); unsubSocket?.() })
+  onUnmounted(() => { unsubUnread?.(); unsubOnline?.(); unsubSocket?.(); unsubTyping?.() })
 </script>
 
 <template>

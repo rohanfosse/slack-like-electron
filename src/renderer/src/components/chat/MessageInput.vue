@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, nextTick, watch } from 'vue'
-import { Send, Paperclip, Loader2, X as XIcon, Reply, Bold, Italic, Code, SquareCode } from 'lucide-vue-next'
+import { Send, Paperclip, Loader2, X as XIcon, Reply, Bold, Italic, Code, SquareCode, Strikethrough, Quote, List, ListOrdered, Smile, Eye, EyeOff } from 'lucide-vue-next'
 import { useAppStore }      from '@/stores/app'
 import { useMessagesStore } from '@/stores/messages'
 import { useToast }         from '@/composables/useToast'
@@ -13,6 +13,12 @@ const { showToast } = useToast()
 const inputEl = ref<HTMLTextAreaElement | null>(null)
 const content = ref('')
 const sending = ref(false)
+const showPreview = ref(false)
+const showEmojiPicker = ref(false)
+
+// ── Preview markdown ──────────────────────────────────────────────────────
+import { renderMessageContent } from '@/utils/html'
+const previewHtml = computed(() => showPreview.value ? renderMessageContent(content.value) : '')
 
 // ── Brouillons (auto-save localStorage) ──────────────────────────────────────
 let _draftTimer: ReturnType<typeof setTimeout> | null = null
@@ -122,8 +128,19 @@ function autoResize() {
 }
 
 // ── Détection mention ─────────────────────────────────────────────────────
+// ── Typing indicator emission ───────────────────────────────────────────
+let _lastTypingEmit = 0
+function emitTyping() {
+  const now = Date.now()
+  if (now - _lastTypingEmit < 2000) return  // max 1 event / 2s
+  _lastTypingEmit = now
+  const channelId = appStore.activeChannelId
+  if (channelId && window.api.emitTyping) window.api.emitTyping(channelId)
+}
+
 function onInput() {
   autoResize()
+  emitTyping()
 
   if (!inputEl.value) return
   const cursor = inputEl.value.selectionStart ?? 0
@@ -159,6 +176,33 @@ function fmtWrap(pre: string, post: string) {
   el.focus()
   el.selectionStart = start + pre.length
   el.selectionEnd   = start + pre.length + sel.length
+  autoResize()
+}
+
+/** Insère un préfixe en début de la ligne courante (ou de chaque ligne sélectionnée) */
+function fmtLinePrefix(prefix: string) {
+  const el = inputEl.value
+  if (!el) return
+  const start = el.selectionStart
+  const end   = el.selectionEnd
+  const lines = el.value.slice(start, end || start)
+
+  if (start === end) {
+    // Pas de sélection : trouver le début de la ligne courante
+    const lineStart = el.value.lastIndexOf('\n', start - 1) + 1
+    el.value = el.value.slice(0, lineStart) + prefix + el.value.slice(lineStart)
+    content.value = el.value
+    el.focus()
+    el.selectionStart = el.selectionEnd = start + prefix.length
+  } else {
+    // Sélection : préfixer chaque ligne
+    const prefixed = lines.split('\n').map(l => prefix + l).join('\n')
+    el.value = el.value.slice(0, start) + prefixed + el.value.slice(end)
+    content.value = el.value
+    el.focus()
+    el.selectionStart = start
+    el.selectionEnd = start + prefixed.length
+  }
   autoResize()
 }
 
@@ -274,6 +318,18 @@ function onKeydown(e: KeyboardEvent) {
     }
   }
 
+  // ── Raccourcis de formatage ───────────────────────────────────────────────
+  if ((e.ctrlKey || e.metaKey) && !e.shiftKey) {
+    if (e.key === 'b') { e.preventDefault(); fmtWrap('**', '**'); return }
+    if (e.key === 'i') { e.preventDefault(); fmtWrap('*', '*'); return }
+    if (e.key === 'e') { e.preventDefault(); fmtWrap('`', '`'); return }
+  }
+  if ((e.ctrlKey || e.metaKey) && e.shiftKey) {
+    if (e.key === 'X' || e.key === 'x') { e.preventDefault(); fmtWrap('~~', '~~'); return }
+    if (e.key === 'C' || e.key === 'c') { e.preventDefault(); fmtInsertBlock(); return }
+    if (e.key === '>' || e.key === '.') { e.preventDefault(); fmtLinePrefix('> '); return }
+  }
+
   if (e.key === 'Enter' && !e.shiftKey) {
     e.preventDefault()
     send()
@@ -366,8 +422,11 @@ watch(
           </div>
         </Transition>
 
-        <!-- Zone textarea -->
+        <!-- Zone textarea / preview -->
+        <!-- eslint-disable-next-line vue/no-v-html -->
+        <div v-if="showPreview && content.trim()" class="mi-preview msg-text" v-html="previewHtml" />
         <textarea
+          v-else
           id="message-input"
           ref="inputEl"
           v-model="content"
@@ -392,8 +451,23 @@ watch(
             <button class="mi-fmt-btn" title="Code inline" aria-label="Code inline" @mousedown.prevent="fmtWrap('`', '`')">
               <Code :size="13" />
             </button>
-            <button class="mi-fmt-btn" title="Bloc de code" aria-label="Bloc de code" @mousedown.prevent="fmtInsertBlock">
+            <button class="mi-fmt-btn" title="Bloc de code (Ctrl+Shift+C)" aria-label="Bloc de code" @mousedown.prevent="fmtInsertBlock">
               <SquareCode :size="13" />
+            </button>
+            <button class="mi-fmt-btn" title="Barré (Ctrl+Shift+X)" aria-label="Barré" @mousedown.prevent="fmtWrap('~~', '~~')">
+              <Strikethrough :size="13" />
+            </button>
+
+            <div class="mi-fmt-divider" />
+
+            <button class="mi-fmt-btn" title="Citation (Ctrl+Shift+.)" aria-label="Citation" @mousedown.prevent="fmtLinePrefix('> ')">
+              <Quote :size="13" />
+            </button>
+            <button class="mi-fmt-btn" title="Liste à puces" aria-label="Liste à puces" @mousedown.prevent="fmtLinePrefix('- ')">
+              <List :size="13" />
+            </button>
+            <button class="mi-fmt-btn" title="Liste numérotée" aria-label="Liste numérotée" @mousedown.prevent="fmtLinePrefix('1. ')">
+              <ListOrdered :size="13" />
             </button>
 
             <div class="mi-fmt-divider" />
@@ -409,6 +483,38 @@ watch(
 
           <!-- Actions droite -->
           <div class="mi-actions-right">
+            <!-- Emoji picker inline -->
+            <div class="mi-emoji-wrapper">
+              <button
+                class="mi-icon-btn"
+                title="Insérer un emoji"
+                aria-label="Emoji"
+                @click="showEmojiPicker = !showEmojiPicker"
+              >
+                <Smile :size="14" />
+              </button>
+              <div v-if="showEmojiPicker" class="mi-emoji-panel">
+                <button
+                  v-for="e in ['😊','😂','🤣','😍','🤔','😮','😢','👍','👏','🔥','❤️','✅','🎉','💯','🙏','👋','⭐','💡','🎯','⚡']"
+                  :key="e"
+                  class="mi-emoji-btn"
+                  @mousedown.prevent="content += e; showEmojiPicker = false; inputEl?.focus()"
+                >{{ e }}</button>
+              </div>
+            </div>
+
+            <!-- Aperçu markdown -->
+            <button
+              class="mi-icon-btn"
+              :class="{ active: showPreview }"
+              :title="showPreview ? 'Modifier' : 'Aperçu du message'"
+              aria-label="Aperçu"
+              @click="showPreview = !showPreview"
+            >
+              <EyeOff v-if="showPreview" :size="14" />
+              <Eye v-else :size="14" />
+            </button>
+
             <button
               class="mi-icon-btn"
               :class="{ attaching }"
@@ -669,6 +775,56 @@ watch(
   background: var(--border);
   margin: 0 3px;
   flex-shrink: 0;
+}
+
+/* ── Preview markdown ── */
+.mi-preview {
+  padding: 10px 14px;
+  min-height: 42px;
+  max-height: 200px;
+  overflow-y: auto;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--text-primary);
+  background: rgba(74,144,217,.04);
+  border-top: 1px dashed rgba(74,144,217,.2);
+}
+
+/* ── Emoji picker ── */
+.mi-emoji-wrapper {
+  position: relative;
+}
+.mi-emoji-panel {
+  position: absolute;
+  bottom: 32px;
+  right: 0;
+  background: var(--bg-modal);
+  border: 1px solid var(--border-input);
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(0,0,0,.5);
+  padding: 8px;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 2px;
+  z-index: 500;
+  width: 210px;
+}
+.mi-emoji-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  font-size: 18px;
+  cursor: pointer;
+  transition: background .1s, transform .1s;
+}
+.mi-emoji-btn:hover {
+  background: var(--bg-hover);
+  transform: scale(1.15);
 }
 
 /* Actions droite */

@@ -18,6 +18,7 @@ type MsgNewPayload = {
 }
 const msgCallbacks: Array<(data: MsgNewPayload) => void> = []
 const socketStateCallbacks: Array<(connected: boolean) => void> = []
+const typingCallbacks: Array<(data: { channelId: number; userName: string }) => void> = []
 
 // Cache pour les fichiers ouverts via <input type="file">
 // Clé : pseudo-path "__web__<timestamp>", valeur : données du fichier
@@ -32,6 +33,7 @@ function connectSocket(token: string): void {
     reconnectionAttempts: 10,
   })
   socket.on('msg:new', (data: MsgNewPayload) => msgCallbacks.forEach(cb => cb(data)))
+  socket.on('typing', (data: { channelId: number; userName: string }) => typingCallbacks.forEach(cb => cb(data)))
   socket.on('connect', () => socketStateCallbacks.forEach(cb => cb(true)))
   socket.on('disconnect', () => socketStateCallbacks.forEach(cb => cb(false)))
   socket.on('connect_error', (err) => {
@@ -424,6 +426,11 @@ async function importStudentsBrowser(promoId: number): Promise<unknown> {
 
   platform: 'web',
 
+  // ── Typing indicator ───────────────────────────────────────────────────────
+  emitTyping(channelId: number) {
+    socket?.emit('typing', { channelId })
+  },
+
   // ── Temps réel (Socket.io) ───────────────────────────────────────────────────
   onNewMessage(cb: (data: MsgNewPayload) => void) {
     msgCallbacks.push(cb)
@@ -433,5 +440,10 @@ async function importStudentsBrowser(promoId: number): Promise<unknown> {
   onSocketStateChange(cb: (connected: boolean) => void) {
     socketStateCallbacks.push(cb)
     return () => { const i = socketStateCallbacks.indexOf(cb); if (i !== -1) socketStateCallbacks.splice(i, 1) }
+  },
+
+  onTyping(cb: (data: { channelId: number; userName: string }) => void) {
+    typingCallbacks.push(cb)
+    return () => { const i = typingCallbacks.indexOf(cb); if (i !== -1) typingCallbacks.splice(i, 1) }
   },
 }

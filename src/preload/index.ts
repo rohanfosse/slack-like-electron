@@ -332,4 +332,8 @@ contextBridge.exposeInMainWorld('api', {
       if (idx !== -1) socketStateCallbacks.splice(idx, 1)
     }
   },
+
+  // Typing indicator (stub — Electron desktop doesn't use Socket.io directly)
+  emitTyping: (_channelId: number) => {},
+  onTyping: (_cb: (data: { channelId: number; userName: string }) => void) => () => {},
 })
