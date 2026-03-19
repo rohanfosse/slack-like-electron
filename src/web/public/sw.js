@@ -1,7 +1,7 @@
 // ─── Service Worker — Cursus PWA ─────────────────────────────────────────────
 // Stratégie : Cache-First pour les assets statiques, Network-First pour les API
 
-const CACHE_NAME = 'cursus-v1'
+const CACHE_NAME = 'cursus-v2'
 
 // Assets à précacher lors de l'installation
 const PRECACHE_URLS = [
