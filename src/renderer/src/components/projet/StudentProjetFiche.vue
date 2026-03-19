@@ -547,8 +547,8 @@ function gradeColor(note: string | null | undefined): string {
               class="spf-member-item"
               :class="{ 'spf-member-me': m.student_id === appStore.currentUser?.id }"
             >
-              <div class="spf-member-avatar" :style="{ background: avatarColor(m.avatar_initials) }">
-                {{ m.avatar_initials }}
+              <div class="spf-member-avatar" :style="{ background: avatarColor(m.avatar_initials ?? m.student_name ?? '?') }">
+                {{ m.avatar_initials ?? '?' }}
               </div>
               <span class="spf-member-name">{{ m.student_name }}</span>
               <span v-if="m.student_id === appStore.currentUser?.id" class="spf-member-you">moi</span>

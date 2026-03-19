@@ -64,6 +64,16 @@
     }
   })
 
+  // ── Guard router : bloquer la navigation si must_change_password ──────────
+  router.beforeEach((_to, _from, next) => {
+    if (showForcedPasswordChange.value) {
+      // Empêcher la navigation tant que le mot de passe n'a pas été changé
+      next(false)
+      return
+    }
+    next()
+  })
+
   let unsubUnread:  (() => void) | null = null
   let unsubOnline:  (() => void) | null = null
   let unsubSocket:  (() => void) | null = null

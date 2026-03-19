@@ -29,7 +29,8 @@ const now = ref(Date.now())
 let clockInterval: ReturnType<typeof setInterval> | null = null
 
 /** Renvoie true si la deadline est passée (verrouille le bouton Déposer) */
-function isExpired(deadline: string): boolean {
+function isExpired(deadline: string | null | undefined): boolean {
+  if (!deadline) return false
   return now.value >= new Date(deadline).getTime()
 }
 

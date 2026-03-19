@@ -119,9 +119,9 @@ function loginWithCredentials(email, password) {
     };
   }
 
-  // 2. Chercher dans students
+  // 2. Chercher dans students (alias explicite pour éviter que p.name écrase s.name)
   const student = db.prepare(
-    'SELECT * FROM students s JOIN promotions p ON s.promo_id = p.id WHERE LOWER(s.email) = LOWER(?)'
+    'SELECT s.*, p.name AS promo_name FROM students s JOIN promotions p ON s.promo_id = p.id WHERE LOWER(s.email) = LOWER(?)'
   ).get(email.trim());
 
   if (!student) return null;
@@ -139,7 +139,7 @@ function loginWithCredentials(email, password) {
     avatar_initials:     student.avatar_initials,
     photo_data:          student.photo_data,
     type:                'student',
-    promo_name:          student.name_1 ?? student.promo_name ?? null,
+    promo_name:          student.promo_name ?? null,
     promo_id:            student.promo_id,
     must_change_password: student.must_change_password ?? 1,
   };
@@ -149,6 +149,10 @@ function loginWithCredentials(email, password) {
 
 function registerStudent({ name, email, promoId, photoData, password }) {
   const db       = getDb();
+  // Validation du domaine email
+  if (!email || !email.trim().toLowerCase().endsWith('@viacesi.fr')) {
+    throw new Error("L'adresse email doit se terminer par @viacesi.fr.");
+  }
   const existing = db.prepare('SELECT id FROM students WHERE email = ?').get(email);
   if (existing) throw new Error('Cette adresse email est déjà utilisée.');
 
