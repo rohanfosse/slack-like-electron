@@ -1,7 +1,7 @@
 <script setup lang="ts">
   import { computed, ref } from 'vue'
   import { useRouter, useRoute } from 'vue-router'
-  import { MessageSquare, BookOpen, FileText, LayoutDashboard, UserPlus, Bell, Users, GraduationCap, Flame, Search } from 'lucide-vue-next'
+  import { MessageSquare, BookOpen, FileText, LayoutDashboard, UserPlus, Bell, Flame, Search } from 'lucide-vue-next'
   import logoUrl from '@/assets/logo.svg'
   import { useAppStore }    from '@/stores/app'
   import { useModalsStore } from '@/stores/modals'
@@ -151,29 +151,6 @@
 
     <!-- Espaceur -->
     <div style="flex:1" />
-
-    <!-- ── Outils Responsable Pédagogique uniquement ── -->
-    <template v-if="appStore.isTeacher">
-      <div class="nav-divider" />
-      <button
-        class="nav-btn"
-        title="Vue Classe — suivi des étudiants"
-        aria-label="Vue Classe"
-        @click="modals.classe = true"
-      >
-        <GraduationCap :size="20" />
-        <span class="nav-label">Classe</span>
-      </button>
-      <button
-        class="nav-btn"
-        title="Gérer les intervenants"
-        aria-label="Gérer les intervenants"
-        @click="modals.intervenants = true"
-      >
-        <Users :size="20" />
-        <span class="nav-label">Intervenants</span>
-      </button>
-    </template>
 
     <!-- ── Outils professeur / TA ── -->
     <template v-if="appStore.isStaff">
