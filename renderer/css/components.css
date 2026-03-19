@@ -332,6 +332,38 @@ button { font-family: var(--font); }
   cursor: default;
 }
 
+/* Référence #canal dans les messages */
+.channel-ref {
+  background: rgba(74,144,217,.12);
+  color: var(--accent);
+  border-radius: 3px;
+  padding: 1px 4px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.channel-ref:hover {
+  background: rgba(74,144,217,.25);
+  text-decoration: underline;
+}
+
+/* Référence 📋 devoir dans les messages */
+.devoir-ref {
+  background: rgba(243,156,18,.12);
+  color: var(--color-warning);
+  border-radius: 3px;
+  padding: 1px 5px;
+  font-weight: 600;
+}
+
+/* Référence 📄 document dans les messages */
+.doc-ref {
+  background: rgba(46,204,113,.12);
+  color: var(--color-success);
+  border-radius: 3px;
+  padding: 1px 5px;
+  font-weight: 600;
+}
+
 /* Mention de l'utilisateur courant ou @everyone */
 .mention-me {
   background: rgba(243,156,18,.2);

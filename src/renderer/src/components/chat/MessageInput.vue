@@ -40,10 +40,78 @@ function clearDraft() {
   if (draftKey.value) localStorage.removeItem(draftKey.value)
 }
 
-// ── Mention autocomplete (@) ──────────────────────────────────────────────
+// ── Autocomplete unifié (@mention, #canal, /devoir, /doc) ─────────────────
+type RefType = 'mention' | 'channel' | 'devoir' | 'doc'
+
 interface MentionUser {
   name: string
   type: 'student' | 'teacher' | 'ta' | 'everyone'
+}
+
+interface RefChannel { name: string; type: string }
+interface RefDevoir { title: string; type: string; deadline: string }
+interface RefDoc    { name: string; type: string; category: string | null }
+
+const channelList = ref<RefChannel[]>([])
+const devoirList  = ref<RefDevoir[]>([])
+const docList     = ref<RefDoc[]>([])
+const activeRef   = ref<RefType | null>(null)
+const refSearch   = ref('')
+const refStart    = ref(-1)
+const refIndex    = ref(0)
+
+const refResults = computed(() => {
+  if (!activeRef.value || activeRef.value === 'mention') return []
+  const q = normalize(refSearch.value)
+  if (activeRef.value === 'channel') {
+    return channelList.value.filter(c => normalize(c.name).includes(q)).slice(0, 8)
+  }
+  if (activeRef.value === 'devoir') {
+    return devoirList.value.filter(d => normalize(d.title).includes(q)).slice(0, 8)
+  }
+  if (activeRef.value === 'doc') {
+    return docList.value.filter(d => normalize(d.name).includes(q)).slice(0, 8)
+  }
+  return []
+})
+
+watch(refSearch, () => { refIndex.value = 0 })
+
+async function loadChannels() {
+  if (channelList.value.length) return
+  const promoId = appStore.activePromoId ?? appStore.currentUser?.promo_id
+  if (!promoId) return
+  const res = await window.api.getChannels(promoId)
+  channelList.value = res?.ok ? (res.data as RefChannel[]) : []
+}
+
+async function loadDevoirs() {
+  const channelId = appStore.activeChannelId
+  if (!channelId) return
+  const res = await window.api.getTravaux(channelId)
+  devoirList.value = res?.ok ? (res.data as RefDevoir[]) : []
+}
+
+async function loadDocs() {
+  const promoId = appStore.activePromoId ?? appStore.currentUser?.promo_id
+  if (!promoId) return
+  const res = await window.api.getProjectDocuments(promoId)
+  docList.value = res?.ok ? (res.data as RefDoc[]) : []
+}
+
+function insertRef(text: string) {
+  const el = inputEl.value
+  if (!el) return
+  const end  = el.selectionStart
+  const pre  = content.value.slice(0, refStart.value)
+  const post = content.value.slice(end)
+  content.value = pre + text + ' ' + post
+  activeRef.value = null
+  nextTick(() => {
+    el.focus()
+    el.selectionStart = el.selectionEnd = refStart.value + text.length + 1
+    autoResize()
+  })
 }
 
 const allUsers        = ref<MentionUser[]>([])
@@ -146,14 +214,39 @@ function onInput() {
   const cursor = inputEl.value.selectionStart ?? 0
   const before = content.value.slice(0, cursor)
 
-  const match = before.match(/@([^\s@]*)$/)
-  if (match) {
-    mentionSearch.value = match[1]
-    mentionStart.value  = cursor - match[0].length
+  // ── Détection des différents triggers ──────────────────────────────────
+  const matchMention = before.match(/@([^\s@]*)$/)
+  const matchChannel = before.match(/#([^\s#]*)$/)
+  const matchDevoir  = before.match(/\/devoir\s?(.*)$/i)
+  const matchDoc     = before.match(/\/doc\s?(.*)$/i)
+
+  if (matchMention) {
+    mentionSearch.value = matchMention[1]
+    mentionStart.value  = cursor - matchMention[0].length
     mentionActive.value = true
+    activeRef.value = null
     loadUsers()
+  } else if (matchChannel) {
+    activeRef.value = 'channel'
+    refSearch.value = matchChannel[1]
+    refStart.value  = cursor - matchChannel[0].length
+    mentionActive.value = false
+    loadChannels()
+  } else if (matchDevoir) {
+    activeRef.value = 'devoir'
+    refSearch.value = matchDevoir[1]
+    refStart.value  = cursor - matchDevoir[0].length
+    mentionActive.value = false
+    loadDevoirs()
+  } else if (matchDoc) {
+    activeRef.value = 'doc'
+    refSearch.value = matchDoc[1]
+    refStart.value  = cursor - matchDoc[0].length
+    mentionActive.value = false
+    loadDocs()
   } else {
     mentionActive.value = false
+    activeRef.value = null
   }
 
   if (_draftTimer) clearTimeout(_draftTimer)
@@ -318,6 +411,21 @@ function onKeydown(e: KeyboardEvent) {
     }
   }
 
+  // ── Navigation ref popup (#canal, /devoir, /doc) ──────────────────────────
+  if (activeRef.value && refResults.value.length) {
+    if (e.key === 'ArrowDown') { e.preventDefault(); refIndex.value = (refIndex.value + 1) % refResults.value.length; return }
+    if (e.key === 'ArrowUp')   { e.preventDefault(); refIndex.value = (refIndex.value - 1 + refResults.value.length) % refResults.value.length; return }
+    if (e.key === 'Enter') {
+      e.preventDefault()
+      const item = refResults.value[refIndex.value] as any
+      if (activeRef.value === 'channel') insertRef('#' + item.name)
+      else if (activeRef.value === 'devoir') insertRef('📋 [' + item.title + ']')
+      else if (activeRef.value === 'doc') insertRef('📄 [' + item.name + ']')
+      return
+    }
+    if (e.key === 'Escape') { e.preventDefault(); activeRef.value = null; return }
+  }
+
   // ── Raccourcis de formatage ───────────────────────────────────────────────
   if ((e.ctrlKey || e.metaKey) && !e.shiftKey) {
     if (e.key === 'b') { e.preventDefault(); fmtWrap('**', '**'); return }
@@ -419,6 +527,61 @@ watch(
               <span v-else-if="user.type === 'teacher'" class="mi-mention-badge mi-badge-teacher">Resp. Péda.</span>
               <span v-else-if="user.type === 'ta'" class="mi-mention-badge mi-badge-ta">Intervenant</span>
             </button>
+          </div>
+        </Transition>
+
+        <!-- Popup autocomplete #canal, /devoir, /doc -->
+        <Transition name="mention-pop">
+          <div
+            v-if="activeRef && refResults.length"
+            class="mi-mention-popup"
+            role="listbox"
+            :aria-label="activeRef === 'channel' ? 'Canaux' : activeRef === 'devoir' ? 'Devoirs' : 'Documents'"
+          >
+            <div class="mi-mention-header">
+              {{ activeRef === 'channel' ? 'Canaux' : activeRef === 'devoir' ? 'Devoirs' : 'Documents' }}
+            </div>
+            <template v-if="activeRef === 'channel'">
+              <button
+                v-for="(ch, i) in refResults"
+                :key="(ch as RefChannel).name"
+                class="mi-mention-item"
+                :class="{ 'mi-mention-selected': i === refIndex }"
+                @mousedown.prevent="insertRef('#' + (ch as RefChannel).name)"
+                @mouseenter="refIndex = i"
+              >
+                <span class="mi-ref-icon">#</span>
+                <span class="mi-mention-name">{{ (ch as RefChannel).name }}</span>
+                <span v-if="(ch as RefChannel).type === 'annonce'" class="mi-mention-badge" style="background:rgba(243,156,18,.2);color:#e67e22">Annonce</span>
+              </button>
+            </template>
+            <template v-else-if="activeRef === 'devoir'">
+              <button
+                v-for="(d, i) in refResults"
+                :key="(d as RefDevoir).title"
+                class="mi-mention-item"
+                :class="{ 'mi-mention-selected': i === refIndex }"
+                @mousedown.prevent="insertRef('📋 [' + (d as RefDevoir).title + ']')"
+                @mouseenter="refIndex = i"
+              >
+                <span class="mi-ref-icon">📋</span>
+                <span class="mi-mention-name">{{ (d as RefDevoir).title }}</span>
+              </button>
+            </template>
+            <template v-else-if="activeRef === 'doc'">
+              <button
+                v-for="(d, i) in refResults"
+                :key="(d as RefDoc).name"
+                class="mi-mention-item"
+                :class="{ 'mi-mention-selected': i === refIndex }"
+                @mousedown.prevent="insertRef('📄 [' + (d as RefDoc).name + ']')"
+                @mouseenter="refIndex = i"
+              >
+                <span class="mi-ref-icon">📄</span>
+                <span class="mi-mention-name">{{ (d as RefDoc).name }}</span>
+                <span v-if="(d as RefDoc).category" class="mi-mention-hint">{{ (d as RefDoc).category }}</span>
+              </button>
+            </template>
           </div>
         </Transition>
 
