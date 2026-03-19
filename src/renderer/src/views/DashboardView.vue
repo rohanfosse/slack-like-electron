@@ -4,7 +4,7 @@ import {
   Clock, Edit3, Users, BookOpen, AlertTriangle,
   ChevronRight, CheckCircle2, FileText, LayoutDashboard,
   Award, TrendingUp, FolderOpen, CalendarDays, BarChart2,
-  PlusCircle,
+  PlusCircle, Menu,
 } from 'lucide-vue-next'
 import { useAppStore }    from '@/stores/app'
 import { useModalsStore } from '@/stores/modals'
@@ -14,6 +14,8 @@ import { deadlineClass, deadlineLabel, formatDate } from '@/utils/date'
 import { parseCategoryIcon } from '@/utils/categoryIcon'
 import type { Component } from 'vue'
 import type { Devoir }    from '@/types'
+
+const props = defineProps<{ toggleSidebar?: () => void }>()
 
 const appStore     = useAppStore()
 const modals       = useModalsStore()
@@ -354,6 +356,9 @@ function onMilestoneClick(ms: FriseMilestone) {
         <!-- En-tête -->
         <div class="db-header">
           <div class="db-header-left">
+            <button v-if="props.toggleSidebar" class="mobile-hamburger" aria-label="Ouvrir le menu" @click="props.toggleSidebar">
+              <Menu :size="22" />
+            </button>
             <LayoutDashboard :size="20" class="db-header-icon" />
             <div>
               <h1 class="db-title">Bonjour, {{ greetingName }}</h1>
@@ -531,6 +536,9 @@ function onMilestoneClick(ms: FriseMilestone) {
         <!-- En-tête étudiant -->
         <div class="db-header">
           <div class="db-header-left">
+            <button v-if="props.toggleSidebar" class="mobile-hamburger" aria-label="Ouvrir le menu" @click="props.toggleSidebar">
+              <Menu :size="22" />
+            </button>
             <LayoutDashboard :size="20" class="db-header-icon" />
             <div>
               <h1 class="db-title">Bonjour, {{ greetingName }}</h1>

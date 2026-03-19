@@ -1,6 +1,6 @@
 <script setup lang="ts">
   import { computed, watch, ref, nextTick } from 'vue'
-  import { Search, X as XIcon, ClipboardList, BookCheck, FileText, FolderPlus, X as Close, CalendarRange, Users, FolderOpen } from 'lucide-vue-next'
+  import { Search, X as XIcon, ClipboardList, BookCheck, FileText, FolderPlus, X as Close, CalendarRange, Users, FolderOpen, Menu } from 'lucide-vue-next'
   import { useAppStore }      from '@/stores/app'
   import { useMessagesStore } from '@/stores/messages'
   import { useTravauxStore }  from '@/stores/travaux'
@@ -12,6 +12,8 @@
   import ChannelMembersPanel from '@/components/panels/ChannelMembersPanel.vue'
   import ChannelDocsPanel    from '@/components/panels/ChannelDocsPanel.vue'
   import { deadlineClass } from '@/utils/date'
+
+  const props = defineProps<{ toggleSidebar?: () => void }>()
 
   const appStore      = useAppStore()
   const messagesStore = useMessagesStore()
@@ -177,6 +179,9 @@
     <!-- En-tête du canal -->
     <header v-if="appStore.activeChannelId || appStore.activeDmStudentId" id="channel-header" class="channel-header">
       <div class="channel-header-left">
+        <button v-if="props.toggleSidebar" class="mobile-hamburger" aria-label="Ouvrir le menu" @click="props.toggleSidebar">
+          <Menu :size="22" />
+        </button>
         <span id="channel-icon">{{ appStore.activeDmStudentId ? '@' : '#' }}</span>
         <span id="channel-name" class="channel-name">{{ appStore.activeChannelName }}</span>
         <span

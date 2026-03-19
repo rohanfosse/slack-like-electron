@@ -17,6 +17,8 @@
   import { avatarColor }  from '@/utils/format'
   import type { Channel, Student, Promotion } from '@/types'
 
+  const emit = defineEmits<{ navigate: [] }>()
+
   const CUSTOM_PROJECTS_KEY = 'cc_custom_projects'
 
   const appStore      = useAppStore()
@@ -291,11 +293,13 @@
       router.push(`/${route.name as string}`)
     }
     // MessagesView, TravauxView, DocumentsView ont chacun leur watcher sur activeChannelId
+    emit('navigate')
   }
 
   function selectDm(s: Student) {
     appStore.openDm(s.id, s.promo_id, s.name)
     if (route.name !== 'messages') router.push('/messages')
+    emit('navigate')
   }
 
   async function selectPromo(promoId: number) {
@@ -553,7 +557,7 @@
       v-if="sectionShortcut"
       class="sidebar-all-docs-btn"
       :class="{ active: sectionShortcut.active, [`section-${route.name as string}`]: true }"
-      @click="sectionShortcut.action()"
+      @click="sectionShortcut.action(); emit('navigate')"
     >
       <component :is="sectionShortcut.icon" :size="13" class="sidebar-all-docs-icon" />
       {{ sectionShortcut.label }}

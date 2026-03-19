@@ -39,6 +39,11 @@
   const promoCreatedKey = ref(0)
   function onPromoCreated() { promoCreatedKey.value++ }
 
+  // ── Mobile sidebar drawer ──────────────────────────────────────────────────
+  const sidebarOpen = ref(false)
+  function toggleSidebar() { sidebarOpen.value = !sidebarOpen.value }
+  function closeSidebar()  { sidebarOpen.value = false }
+
   // ── Changement de mot de passe forcé (première connexion) ─────────────────
   const showForcedPasswordChange = computed(() =>
     !!appStore.currentUser && appStore.currentUser.must_change_password === 1,
@@ -131,13 +136,18 @@
       </button>
     </div>
 
-    <aside class="sidebar-wrapper" :class="{ 'sidebar-with-banner': appStore.isSimulating || !appStore.isOnline || !appStore.socketConnected }">
-      <Sidebar />
+    <!-- Backdrop mobile pour fermer le drawer sidebar -->
+    <div class="sidebar-backdrop" :class="{ visible: sidebarOpen }" @click="closeSidebar" />
+
+    <aside class="sidebar-wrapper" :class="{ 'sidebar-with-banner': appStore.isSimulating || !appStore.isOnline || !appStore.socketConnected, 'mobile-open': sidebarOpen }">
+      <Sidebar @navigate="closeSidebar" />
     </aside>
 
     <main class="main-wrapper" :class="{ 'main-with-banner': appStore.isSimulating || !appStore.isOnline || !appStore.socketConnected }">
       <!-- Vue active (messages / travaux / documents) -->
-      <RouterView />
+      <RouterView v-slot="{ Component }">
+        <component :is="Component" :toggle-sidebar="toggleSidebar" />
+      </RouterView>
     </main>
     </div><!-- /.app-columns -->
   </div>

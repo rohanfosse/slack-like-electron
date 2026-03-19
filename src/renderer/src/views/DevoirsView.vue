@@ -3,7 +3,7 @@ import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue'
 import {
   BookOpen, BarChart2, List, Grid, Plus, Upload, Link2, X,
   FileText, CheckCircle2, Clock, Lock, AlertTriangle, ChevronRight,
-  Users, Award, Calendar, LayoutList,
+  Users, Award, Calendar, LayoutList, Menu,
 } from 'lucide-vue-next'
 import { useAppStore }     from '@/stores/app'
 import { useTravauxStore } from '@/stores/travaux'
@@ -14,6 +14,8 @@ import { parseCategoryIcon } from '@/utils/categoryIcon'
 import type { Devoir, Rubric } from '@/types'
 import ProjetFiche        from '@/components/projet/ProjetFiche.vue'
 import StudentProjetFiche from '@/components/projet/StudentProjetFiche.vue'
+
+const props = defineProps<{ toggleSidebar?: () => void }>()
 
 const appStore     = useAppStore()
 const travauxStore = useTravauxStore()
@@ -308,6 +310,9 @@ function typeLabel(t: string): string {
     <!-- ── En-tête ─────────────────────────────────────────────────────────── -->
     <header class="devoirs-header">
       <div class="devoirs-header-title">
+        <button v-if="props.toggleSidebar" class="mobile-hamburger" aria-label="Ouvrir le menu" @click="props.toggleSidebar">
+          <Menu :size="22" />
+        </button>
         <BookOpen :size="18" />
         <span>Devoirs</span>
         <template v-if="appStore.activeProject">

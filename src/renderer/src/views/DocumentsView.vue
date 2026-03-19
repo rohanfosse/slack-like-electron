@@ -2,7 +2,7 @@
   import { ref, computed, onMounted, watch } from 'vue'
   import {
     FileText, Image, Link2, Video, File, Plus, Trash2,
-    ExternalLink, Download, Search, X, Upload, FolderOpen, Eye, CheckCircle2,
+    ExternalLink, Download, Search, X, Upload, FolderOpen, Eye, CheckCircle2, Menu,
   } from 'lucide-vue-next'
   import { useAppStore }       from '@/stores/app'
   import { useDocumentsStore } from '@/stores/documents'
@@ -14,6 +14,8 @@
   import { formatDate } from '@/utils/date'
   import { parseCategoryIcon } from '@/utils/categoryIcon'
   import type { AppDocument } from '@/types'
+
+  const props = defineProps<{ toggleSidebar?: () => void }>()
 
   const api      = window.api
   const appStore = useAppStore()
@@ -179,6 +181,9 @@
     <!-- ── Header ─────────────────────────────────────────────────────── -->
     <header class="docs-header">
       <div class="docs-header-left">
+        <button v-if="props.toggleSidebar" class="mobile-hamburger" aria-label="Ouvrir le menu" @click="props.toggleSidebar">
+          <Menu :size="22" />
+        </button>
         <FolderOpen :size="18" class="docs-header-icon" />
         <div class="docs-header-title-block">
           <h1 class="docs-header-title">Documents</h1>
