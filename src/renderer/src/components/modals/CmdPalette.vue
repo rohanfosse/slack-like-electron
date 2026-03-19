@@ -335,6 +335,7 @@
   font-family: var(--font);
   font-size: 14px;
 }
+.cmd-search-input:focus-visible { outline: 2px solid var(--accent); outline-offset: -1px; }
 .cmd-search-input::placeholder { color: var(--text-muted); }
 
 /* Point de chargement ── */

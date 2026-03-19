@@ -1040,6 +1040,7 @@
   outline: none;
   box-shadow: 0 0 0 2px rgba(74,144,217,.2);
 }
+.sidebar-rename-input:focus-visible { outline: 2px solid var(--accent); outline-offset: -1px; }
 
 /* ── Catégories de canaux ── */
 .sidebar-category {
@@ -1130,6 +1131,7 @@
   outline: none;
   min-width: 0;
 }
+.project-add-input:focus-visible { outline: 2px solid var(--accent); outline-offset: -1px; }
 .project-add-input:focus { border-color: #9B87F5; box-shadow: 0 0 0 2px rgba(155,135,245,.2); }
 
 /* ── Badge DM non lus ── */

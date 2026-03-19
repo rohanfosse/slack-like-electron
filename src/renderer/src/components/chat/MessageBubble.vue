@@ -770,6 +770,7 @@ function closeAll() { showMenu.value = false; showPicker.value = false; confirmi
   box-shadow: 0 0 0 3px rgba(74,144,217,.15);
   line-height: 1.5;
 }
+.msg-edit-input:focus-visible { outline: 2px solid var(--accent); outline-offset: -1px; }
 .msg-edit-footer {
   display: flex;
   align-items: center;
