@@ -5,6 +5,7 @@
   import { useModalsStore }   from '@/stores/modals'
   import { useMessagesStore } from '@/stores/messages'
   import { usePrefs }       from '@/composables/usePrefs'
+  import { useToast }       from '@/composables/useToast'
   import Toast        from '@/components/ui/Toast.vue'
   import ConfirmModal from '@/components/ui/ConfirmModal.vue'
   import NavRail  from '@/components/layout/NavRail.vue'
@@ -36,6 +37,7 @@
   const modals   = useModalsStore()
   const router   = useRouter()
   const { getPref } = usePrefs()
+  const { showToast } = useToast()
 
   const promoCreatedKey = ref(0)
   function onPromoCreated() { promoCreatedKey.value++ }
@@ -100,8 +102,13 @@
 
     // Demander la permission pour les notifications natives
     if ('Notification' in window && Notification.permission === 'default') {
-      Notification.requestPermission()
+      Notification.requestPermission().catch(() => {})
     }
+
+    // Toast in-app pour les notifications quand la fenêtre est au premier plan
+    window.addEventListener('cursus:notif-toast', ((e: CustomEvent) => {
+      showToast(`${e.detail.title} — ${e.detail.body}`, 'info')
+    }) as EventListener)
 
     // Restaurer la session depuis localStorage
     const restored = appStore.restoreSession()

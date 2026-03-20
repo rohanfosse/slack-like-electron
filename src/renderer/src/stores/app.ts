@@ -221,6 +221,69 @@ export const useAppStore = defineStore('app', () => {
     }
   }
 
+  // ── Helpers notification ──────────────────────────────────────────────────
+  const MUTED_DM_KEY = 'cc_muted_dms'
+  function _prefNotifDesktop(): boolean {
+    try { return JSON.parse(localStorage.getItem('cc_prefs') || '{}').notifDesktop !== false }
+    catch { return true }
+  }
+  function _prefNotifSound(): boolean {
+    try { return JSON.parse(localStorage.getItem('cc_prefs') || '{}').notifSound !== false }
+    catch { return true }
+  }
+  function _getMutedDms(): Set<string> {
+    try { return new Set(JSON.parse(localStorage.getItem(MUTED_DM_KEY) || '[]') as string[]) }
+    catch { return new Set() }
+  }
+  function muteDm(name: string) {
+    const s = _getMutedDms(); s.add(name)
+    localStorage.setItem(MUTED_DM_KEY, JSON.stringify([...s]))
+  }
+  function unmuteDm(name: string) {
+    const s = _getMutedDms(); s.delete(name)
+    localStorage.setItem(MUTED_DM_KEY, JSON.stringify([...s]))
+  }
+  function isDmMuted(name: string): boolean { return _getMutedDms().has(name) }
+
+  let _audioCtx: AudioContext | null = null
+  function _playNotifSound(freq = 800, dur = 0.25) {
+    if (!_prefNotifSound()) return
+    try {
+      if (!_audioCtx) _audioCtx = new AudioContext()
+      const osc = _audioCtx.createOscillator()
+      const gain = _audioCtx.createGain()
+      osc.connect(gain).connect(_audioCtx.destination)
+      osc.frequency.value = freq
+      osc.type = 'sine'
+      gain.gain.value = 0.12
+      osc.start()
+      gain.gain.exponentialRampToValueAtTime(0.001, _audioCtx.currentTime + dur)
+      osc.stop(_audioCtx.currentTime + dur)
+    } catch {}
+  }
+
+  function _fireNotification(title: string, body: string, isDm: boolean, senderName: string, preview: string) {
+    // Son
+    if (isDm) {
+      _playNotifSound(900, 0.3) // DM : son plus aigu
+    } else {
+      _playNotifSound(700, 0.2) // Mention canal : son plus grave
+    }
+
+    // Toast in-app si fenêtre au premier plan
+    if (!document.hidden) {
+      window.dispatchEvent(new CustomEvent('cursus:notif-toast', {
+        detail: { title, body: `${senderName}: ${preview}` },
+      }))
+      return
+    }
+
+    // Notification OS si fenêtre en arrière-plan
+    if (_prefNotifDesktop() && Notification.permission === 'granted') {
+      new Notification(title, { body, silent: false })
+    }
+  }
+
   // Listener temps-réel — appelé une seule fois au démarrage (App.vue onMounted)
   function initUnreadListener(): () => void {
     return window.api.onNewMessage(({ channelId, dmStudentId, authorName, channelName, promoId, preview, mentionEveryone, mentionNames }) => {
@@ -237,10 +300,9 @@ export const useAppStore = defineStore('app', () => {
           activeDmPeerId.value === dmStudentId
 
         if (inThisConversation) {
-          // On est dans la conversation → rafraîchir les messages en temps réel
           _dmRefreshCallbacks.forEach(cb => cb())
         } else {
-          // Pas dans la conversation → badge unread
+          // Badge unread
           unreadDms.value = { ...unreadDms.value, [senderName]: (unreadDms.value[senderName] ?? 0) + 1 }
           const dmEntry: NotifEntry = {
             id:          `${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
@@ -255,12 +317,13 @@ export const useAppStore = defineStore('app', () => {
           }
           notificationHistory.value = [dmEntry, ...notificationHistory.value].slice(0, 50)
 
-          // Notification native OS pour DM
-          if (document.hidden && Notification.permission === 'granted') {
-            new Notification(`\u2709\uFE0F Message de ${senderName}`, {
-              body:   preview ?? '',
-              silent: false,
-            })
+          // Notification (sauf si DM muté)
+          if (!isDmMuted(senderName)) {
+            _fireNotification(
+              `\u2709\uFE0F Message de ${senderName}`,
+              preview ?? '',
+              true, senderName, preview ?? '',
+            )
           }
         }
         return
@@ -270,14 +333,12 @@ export const useAppStore = defineStore('app', () => {
 
       // ── Message de canal ──────────────────────────────────────────────────
       if (channelId === activeChannelId.value) {
-        // On est dans ce canal → rafraîchir les messages
         _dmRefreshCallbacks.forEach(cb => cb())
       } else {
-        // Badge unread standard
         unread.value = { ...unread.value, [channelId]: (unread.value[channelId] ?? 0) + 1 }
       }
 
-      // Badge mention @ — détecte si l'utilisateur courant est mentionné
+      // Badge mention @
       let isMention = false
       if (currentUser.value) {
         const myName = currentUser.value.name.toLowerCase()
@@ -295,7 +356,7 @@ export const useAppStore = defineStore('app', () => {
         }
       }
 
-      // Historique de notifications (uniquement si pas dans ce canal)
+      // Historique + notification (si pas dans le canal)
       if (channelId !== activeChannelId.value) {
         const entry: NotifEntry = {
           id:          `${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
@@ -310,15 +371,13 @@ export const useAppStore = defineStore('app', () => {
         }
         notificationHistory.value = [entry, ...notificationHistory.value].slice(0, 50)
 
-        // ── Notification native OS (si fenêtre non visible) ─────────────────
-        if (document.hidden && Notification.permission === 'granted') {
-          const title = isMention
-            ? `📣 Mention dans #${channelName ?? 'canal'}`
-            : `💬 #${channelName ?? 'Nouveau message'}`
-          new Notification(title, {
-            body:   preview ? `${authorName ?? ''}: ${preview}` : authorName ?? '',
-            silent: !isMention,
-          })
+        // Notification uniquement pour les mentions (pas les messages normaux de canal)
+        if (isMention) {
+          _fireNotification(
+            `\uD83D\uDCE3 Mention dans #${channelName ?? 'canal'}`,
+            preview ? `${authorName ?? ''}: ${preview}` : authorName ?? '',
+            false, authorName ?? '', preview ?? '',
+          )
         }
       }
     })
@@ -351,6 +410,7 @@ export const useAppStore = defineStore('app', () => {
     restoreSession, login, logout, impersonate, clearMustChangePassword,
     startSimulation, stopSimulation,
     openChannel, openDm, markRead, markDmRead, markAllRead, loadTaChannels,
+    muteDm, unmuteDm, isDmMuted,
     initUnreadListener, initOnlineListener, initSocketListener,
     onDmRefresh, offDmRefresh,
     api,

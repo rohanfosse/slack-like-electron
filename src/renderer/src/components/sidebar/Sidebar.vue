@@ -368,8 +368,21 @@
     appStore.openDm(s.id, s.promo_id, s.name)
     if (route.name !== 'messages') router.push('/messages')
     emit('navigate')
-    // Rafraîchir les contacts récents après un petit délai
     setTimeout(() => loadRecentDmContacts(), 500)
+  }
+
+  function openDmContextMenu(e: MouseEvent, s: Student) {
+    const muted = appStore.isDmMuted(s.name)
+    ctx.value = {
+      x: e.clientX,
+      y: e.clientY,
+      items: [
+        {
+          label: muted ? 'Réactiver les notifications' : 'Couper les notifications',
+          action: () => { muted ? appStore.unmuteDm(s.name) : appStore.muteDm(s.name) },
+        },
+      ],
+    }
   }
 
   async function selectPromo(promoId: number) {
@@ -978,10 +991,11 @@
                   'dm-has-unread': !!appStore.unreadDms[s.name],
                 }"
                 @click="selectDm(s)"
+                @contextmenu.prevent="openDmContextMenu($event, s)"
               >
                 <span class="dm-avatar" :class="{ 'dm-avatar-teacher': s.id < 0 }" :style="{ background: s.id < 0 ? 'var(--accent)' : avatarColor(s.name) }">{{ s.avatar_initials }}</span>
                 <span class="dm-info">
-                  <span class="channel-name">{{ s.name }} <span v-if="s.id < 0" class="dm-teacher-tag">Prof</span></span>
+                  <span class="channel-name">{{ s.name }} <span v-if="s.id < 0" class="dm-teacher-tag">Prof</span> <span v-if="appStore.isDmMuted(s.name)" class="dm-muted-icon" title="Notifications d\u00e9sactiv\u00e9es">\uD83D\uDD07</span></span>
                   <span v-if="getDmPreview(s.name)" class="dm-preview">{{ getDmPreview(s.name) }}</span>
                 </span>
                 <span
@@ -1340,6 +1354,11 @@
   border-radius: 3px;
   margin-left: 4px;
   vertical-align: middle;
+}
+.dm-muted-icon {
+  font-size: 10px;
+  opacity: .5;
+  margin-left: 2px;
 }
 .dm-empty {
   font-size: 11px; color: var(--text-muted); padding: 6px 16px; font-style: italic;
