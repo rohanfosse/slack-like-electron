@@ -4,6 +4,7 @@ import {
   Pin, PinOff, MoreHorizontal, Copy, Trash2, Check, Pencil,
   SmilePlus, Bookmark, BookmarkCheck, Reply, AlertTriangle, Flame,
 } from 'lucide-vue-next'
+import { useRouter }        from 'vue-router'
 import { useAppStore }      from '@/stores/app'
 import { useMessagesStore } from '@/stores/messages'
 import Avatar       from '@/components/ui/Avatar.vue'
@@ -23,9 +24,32 @@ interface Props {
 
 const props = withDefaults(defineProps<Props>(), { grouped: false, searchTerm: '' })
 
+const router        = useRouter()
 const appStore      = useAppStore()
 const messagesStore = useMessagesStore()
 const { openExternal } = useOpenExternal()
+
+// ── Clic sur le nom de l'auteur → ouvrir un DM
+const isOwnMessage = computed(() => props.msg.author_name === appStore.currentUser?.name)
+
+async function openDmWithAuthor() {
+  if (isOwnMessage.value) return // pas de DM avec soi-même
+  const name = props.msg.author_name
+  // Chercher l'identité dans les étudiants ou enseignants via l'API
+  try {
+    const res = await window.api.getStudentByEmail?.('')  // on n'a pas l'email, on cherche par nom
+    // Fallback : chercher dans les identités connues
+    const idRes = await window.api.getIdentities()
+    if (idRes?.ok) {
+      const person = idRes.data.find((p: any) => p.name === name)
+      if (person) {
+        appStore.openDm(person.id, person.promo_id ?? appStore.activePromoId ?? 0, person.name)
+        if (router.currentRoute.value.name !== 'messages') router.push('/messages')
+        return
+      }
+    }
+  } catch {}
+}
 
 // ── State
 const showMenu         = ref(false)
@@ -232,7 +256,14 @@ function closeAll() { showMenu.value = false; showPicker.value = false; confirmi
       <!-- En-tête auteur + heure -->
       <template v-if="!grouped">
         <div class="msg-meta">
-          <span class="msg-author">{{ msg.author_name }}</span>
+          <span
+            class="msg-author"
+            :class="{ clickable: !isOwnMessage }"
+            :role="isOwnMessage ? undefined : 'button'"
+            :tabindex="isOwnMessage ? undefined : 0"
+            @click="openDmWithAuthor"
+            @keydown.enter="openDmWithAuthor"
+          >{{ msg.author_name }}</span>
           <span class="msg-time">{{ formatTime(msg.created_at) }}</span>
           <span v-if="isEdited" class="msg-edited-tag">(modifié)</span>
           <span v-if="isPinned" class="pin-badge" title="Message épinglé">📌</span>
@@ -446,6 +477,8 @@ function closeAll() { showMenu.value = false; showPicker.value = false; confirmi
 }
 /* Légère teinte accent sur hover de la row */
 .msg-row:hover .msg-author { color: var(--accent-light, #7db8f0); }
+.msg-author.clickable { cursor: pointer; }
+.msg-author.clickable:hover { text-decoration: underline; color: var(--accent); }
 
 /* Heure — plus discrète */
 .msg-time {

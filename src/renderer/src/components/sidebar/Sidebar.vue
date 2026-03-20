@@ -75,12 +75,20 @@
     if (!user.value?.promo_id) return
     loading.value = true
     try {
-      const [chRes, stuRes] = await Promise.all([
+      const [chRes, stuRes, idRes] = await Promise.all([
         window.api.getChannels(user.value.promo_id),
         window.api.getStudents(user.value.promo_id),
+        window.api.getIdentities(),
       ])
       channels.value = chRes?.ok ? chRes.data : []
-      students.value  = stuRes?.ok ? stuRes.data : []
+      // Fusionner étudiants de la promo + enseignants (pour DM)
+      const stuList = stuRes?.ok ? stuRes.data : []
+      if (idRes?.ok) {
+        const teachers = idRes.data.filter((p: any) => p.type === 'teacher' || p.type === 'ta')
+        students.value = [...teachers as Student[], ...stuList]
+      } else {
+        students.value = stuList
+      }
       await loadRecentDmContacts()
     } finally {
       loading.value = false
@@ -157,9 +165,13 @@
 
   const dmStudents = computed(() => {
     const promoId = appStore.isStaff ? appStore.activePromoId : user.value?.promo_id
-    return students.value.filter((s) =>
-      s.id !== user.value?.id && (!promoId || s.promo_id === promoId),
-    )
+    return students.value.filter((s) => {
+      if (s.id === user.value?.id) return false
+      // Les enseignants (id négatif) sont toujours visibles dans les DMs
+      if (s.id < 0) return true
+      // Les étudiants sont filtrés par promo
+      return !promoId || s.promo_id === promoId
+    })
   })
 
   // ── Conversations DM récentes ──────────────────────────────────────────────
