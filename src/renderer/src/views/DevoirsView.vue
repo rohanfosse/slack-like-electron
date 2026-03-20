@@ -104,6 +104,31 @@ function projectTypeCounts(cat: string): { type: string; count: number }[] {
   return Object.entries(counts).map(([type, count]) => ({ type, count })).sort((a, b) => b.count - a.count)
 }
 
+// Stats enrichies par projet (pour cartes et résumé)
+function projectStats(cat: string) {
+  const devoirs = (travauxStore.ganttData as (Devoir & { depots_count?: number; students_total?: number })[])
+    .filter(d => d.category?.trim() === cat)
+  const totalDepots = devoirs.reduce((s, d) => s + (d.depots_count ?? 0), 0)
+  const totalExpected = devoirs.reduce((s, d) => s + (d.students_total ?? 0), 0)
+  const pct = totalExpected > 0 ? Math.round((totalDepots / totalExpected) * 100) : 0
+  const drafts = devoirs.filter(d => !d.is_published).length
+  const noted = travauxStore.allRendus.filter(r => devoirs.some(d => d.id === r.travail_id) && r.note != null).length
+  const toGrade = totalDepots - noted
+  return { totalDepots, totalExpected, pct, drafts, noted, toGrade }
+}
+
+// Extraire la durée depuis la description (ex: "Durée : 20 min")
+function extractDuration(desc: string | null): string | null {
+  if (!desc) return null
+  const m = desc.match(/Durée\s*:\s*(\d+)\s*min/i)
+  return m ? m[1] + ' min' : null
+}
+
+// Déterminer si c'est un rattrapage
+function isRattrapage(t: Devoir): boolean {
+  return !!(t.title?.includes('Rattrapage') || t.description?.includes('Rattrapage'))
+}
+
 // ── Devoirs par type (pour la vue projet sélectionné) ───────────────────────
 const TYPE_ORDER = ['cctl', 'soutenance', 'etude_de_cas', 'livrable', 'memoire', 'autre']
 const devoirsByType = computed(() => {
@@ -114,7 +139,12 @@ const devoirsByType = computed(() => {
   }
   return TYPE_ORDER
     .filter(type => groups[type]?.length)
-    .map(type => ({ type, items: groups[type] }))
+    .map(type => {
+      const items = groups[type]
+      const initiales = items.filter(t => !isRattrapage(t)).sort((a, b) => new Date(a.deadline).getTime() - new Date(b.deadline).getTime())
+      const rattrapages = items.filter(t => isRattrapage(t)).sort((a, b) => new Date(a.deadline).getTime() - new Date(b.deadline).getTime())
+      return { type, initiales, rattrapages, total: items.length }
+    })
 })
 
 // Liste plate pour le tableau (quand on filtre par catégorie via onglets)
@@ -900,10 +930,20 @@ function typeLabel(t: string): string {
               <span class="proj-card-name">{{ cat }}</span>
               <ChevronRight :size="14" class="proj-card-chevron" />
             </div>
-            <div class="proj-card-stats">
+            <div class="proj-card-types">
               <span v-for="tl in projectTypeCounts(cat)" :key="tl.type" class="proj-type-pill" :class="`type-${tl.type}`">
                 {{ tl.count }} {{ typeLabel(tl.type) }}
               </span>
+            </div>
+            <!-- Stats enrichies -->
+            <div class="proj-card-stats-row">
+              <span>{{ projectStats(cat).totalDepots }}/{{ projectStats(cat).totalExpected }} soumis</span>
+              <span v-if="projectStats(cat).toGrade > 0" class="proj-stat-warn">{{ projectStats(cat).toGrade }} à noter</span>
+              <span v-if="projectStats(cat).drafts > 0" class="proj-stat-draft">{{ projectStats(cat).drafts }} brouillon{{ projectStats(cat).drafts > 1 ? 's' : '' }}</span>
+            </div>
+            <!-- Barre de progression -->
+            <div class="proj-card-progress">
+              <div class="proj-card-progress-fill" :style="{ width: projectStats(cat).pct + '%' }" />
             </div>
             <div class="proj-card-footer">
               <span class="proj-card-total">{{ projectDevoirCount(cat) }} devoir{{ projectDevoirCount(cat) > 1 ? 's' : '' }}</span>
@@ -927,40 +967,78 @@ function typeLabel(t: string): string {
           <p>Créez un devoir avec le bouton "Nouveau".</p>
         </div>
 
-        <!-- Devoirs groupés par type -->
-        <div v-else class="ut-by-type">
-          <template v-for="group in devoirsByType" :key="group.type">
-            <div class="ut-type-section">
-              <div class="ut-type-header">
-                <span class="devoir-type-badge" :class="`type-${group.type}`">{{ typeLabel(group.type) }}</span>
-                <span class="ut-type-count">{{ group.items.length }}</span>
+        <template v-else>
+          <!-- Bloc résumé projet -->
+          <div class="proj-summary">
+            <h2 class="proj-summary-name">{{ appStore.activeProject }}</h2>
+            <div class="proj-summary-pills">
+              <span v-for="tl in projectTypeCounts(appStore.activeProject)" :key="tl.type" class="proj-type-pill" :class="`type-${tl.type}`">
+                {{ tl.count }} {{ typeLabel(tl.type) }}
+              </span>
+            </div>
+            <div class="proj-summary-stats">
+              <div class="proj-summary-progress">
+                <div class="proj-summary-progress-bar">
+                  <div class="proj-summary-progress-fill" :style="{ width: projectStats(appStore.activeProject).pct + '%' }" />
+                </div>
+                <span class="proj-summary-pct">{{ projectStats(appStore.activeProject).pct }}% soumis</span>
               </div>
-              <div class="ut-type-rows">
-                <div
-                  v-for="t in group.items"
-                  :key="t.id"
-                  class="ut-row"
-                  :class="{ 'ut-row--draft': !t.is_published }"
-                  @click="openDevoir(t.id)"
-                >
-                  <span class="ut-title">{{ t.title }}</span>
-                  <span class="ut-deadline deadline-badge" :class="deadlineClass(t.deadline)">{{ deadlineLabel(t.deadline) }}</span>
-                  <span class="ut-progress">
-                    <template v-if="t.hasSubmission && t.students_total > 0">
-                      <span class="ut-progress-bar">
-                        <span class="ut-progress-fill" :style="{ width: Math.round((t.depots_count / t.students_total) * 100) + '%' }" />
-                      </span>
-                      <span class="ut-progress-text">{{ t.depots_count }}/{{ t.students_total }}</span>
-                    </template>
-                    <span v-else class="ut-progress-text ut-no-submit">—</span>
-                  </span>
-                  <span class="ut-status" :class="t.statusCls">{{ t.statusLabel }}</span>
-                  <ChevronRight :size="13" class="ut-chevron" />
+              <span class="proj-summary-stat">{{ projectStats(appStore.activeProject).noted }} notés</span>
+              <span v-if="projectStats(appStore.activeProject).toGrade > 0" class="proj-summary-stat proj-stat-warn">{{ projectStats(appStore.activeProject).toGrade }} à noter</span>
+              <span v-if="projectNextDeadline(appStore.activeProject)" class="proj-summary-stat">
+                <Clock :size="11" /> {{ deadlineLabel(projectNextDeadline(appStore.activeProject)!) }}
+              </span>
+            </div>
+          </div>
+
+          <!-- Devoirs groupés par type avec séparation initiales/rattrapages -->
+          <div class="ut-by-type">
+            <template v-for="group in devoirsByType" :key="group.type">
+              <div class="ut-type-section">
+                <div class="ut-type-header">
+                  <span class="devoir-type-badge" :class="`type-${group.type}`">{{ typeLabel(group.type) }}</span>
+                  <span class="ut-type-count">{{ group.total }}</span>
+                </div>
+
+                <!-- Sessions initiales -->
+                <div v-if="group.initiales.length" class="ut-type-rows">
+                  <div v-if="group.rattrapages.length" class="ut-session-label">Session initiale</div>
+                  <div
+                    v-for="t in group.initiales"
+                    :key="t.id"
+                    class="ut-row"
+                    :class="{ 'ut-row--draft': !t.is_published }"
+                    @click="openDevoir(t.id)"
+                  >
+                    <span class="ut-title">{{ t.title }}</span>
+                    <span v-if="extractDuration(t.description)" class="ut-duration">{{ extractDuration(t.description) }}</span>
+                    <span class="ut-deadline deadline-badge" :class="deadlineClass(t.deadline)">{{ deadlineLabel(t.deadline) }}</span>
+                    <span class="ut-status" :class="t.statusCls">{{ t.statusLabel }}</span>
+                    <ChevronRight :size="13" class="ut-chevron" />
+                  </div>
+                </div>
+
+                <!-- Rattrapages -->
+                <div v-if="group.rattrapages.length" class="ut-type-rows ut-rattrapages">
+                  <div class="ut-session-label ut-session-ratt">Rattrapage</div>
+                  <div
+                    v-for="t in group.rattrapages"
+                    :key="t.id"
+                    class="ut-row ut-row--ratt"
+                    :class="{ 'ut-row--draft': !t.is_published }"
+                    @click="openDevoir(t.id)"
+                  >
+                    <span class="ut-title">{{ t.title }}</span>
+                    <span v-if="extractDuration(t.description)" class="ut-duration">{{ extractDuration(t.description) }}</span>
+                    <span class="ut-deadline deadline-badge" :class="deadlineClass(t.deadline)">{{ deadlineLabel(t.deadline) }}</span>
+                    <span class="ut-status" :class="t.statusCls">{{ t.statusLabel }}</span>
+                    <ChevronRight :size="13" class="ut-chevron" />
+                  </div>
                 </div>
               </div>
-            </div>
-          </template>
-        </div>
+            </template>
+          </div>
+        </template>
       </template>
 
       <!-- Anciennes vues Liste/Rendus supprimées — remplacées par le tableau unifié ci-dessus -->
@@ -1237,10 +1315,23 @@ function typeLabel(t: string): string {
 .proj-card-name { font-size: 15px; font-weight: 700; color: var(--text-primary); }
 .proj-card-chevron { color: var(--text-muted); opacity: .4; transition: opacity var(--t-fast); }
 .proj-card:hover .proj-card-chevron { opacity: 1; color: var(--accent); }
-.proj-card-stats { display: flex; gap: 5px; flex-wrap: wrap; margin-bottom: 10px; }
+.proj-card-types { display: flex; gap: 5px; flex-wrap: wrap; margin-bottom: 10px; }
 .proj-type-pill {
   font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 10px;
 }
+.proj-card-stats-row {
+  display: flex; gap: 8px; font-size: 11px; color: var(--text-muted); margin-bottom: 8px; flex-wrap: wrap;
+}
+.proj-stat-warn { color: var(--color-warning); font-weight: 600; }
+.proj-stat-draft { color: var(--text-muted); font-style: italic; }
+
+.proj-card-progress {
+  height: 3px; border-radius: 2px; background: rgba(255,255,255,.06); overflow: hidden; margin-bottom: 10px;
+}
+.proj-card-progress-fill {
+  height: 100%; background: var(--color-success); border-radius: 2px; transition: width .4s;
+}
+
 .proj-card-footer {
   display: flex; align-items: center; justify-content: space-between;
   font-size: 12px; color: var(--text-muted);
@@ -1251,6 +1342,37 @@ function typeLabel(t: string): string {
 /* ══════════════════════════════════════════════════════════════════════════════
    VUE PROJET PAR TYPE
 ═══════════════════════════════════════════════════════════════════════════════ */
+/* ── Résumé projet ── */
+.proj-summary {
+  padding: 16px 20px; border-bottom: 1px solid var(--border); margin-bottom: 8px;
+}
+.proj-summary-name { font-size: 18px; font-weight: 700; color: var(--text-primary); margin-bottom: 8px; }
+.proj-summary-pills { display: flex; gap: 5px; flex-wrap: wrap; margin-bottom: 10px; }
+.proj-summary-stats {
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  font-size: 12px; color: var(--text-secondary);
+}
+.proj-summary-progress { display: flex; align-items: center; gap: 6px; }
+.proj-summary-progress-bar { width: 80px; height: 5px; border-radius: 3px; background: rgba(255,255,255,.08); overflow: hidden; }
+.proj-summary-progress-fill { height: 100%; background: var(--color-success); border-radius: 3px; }
+.proj-summary-pct { font-weight: 600; }
+.proj-summary-stat { display: flex; align-items: center; gap: 3px; }
+
+/* ── Sessions ── */
+.ut-session-label {
+  font-size: 10px; font-weight: 700; color: var(--text-muted);
+  text-transform: uppercase; letter-spacing: .4px;
+  padding: 6px 0 2px;
+}
+.ut-session-ratt { color: var(--color-warning); }
+.ut-row--ratt { opacity: .7; }
+.ut-duration {
+  font-size: 10px; font-weight: 600; color: var(--text-muted);
+  background: rgba(255,255,255,.05); padding: 1px 6px; border-radius: 8px;
+  flex-shrink: 0;
+}
+.ut-rattrapages { border-top: 1px dashed var(--border); margin-top: 4px; padding-top: 2px; }
+
 .ut-by-type { padding: 12px 20px; }
 .ut-type-section { margin-bottom: 16px; }
 .ut-type-header {
