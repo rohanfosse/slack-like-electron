@@ -1,14 +1,16 @@
 <script setup lang="ts">
-import { ref, computed, nextTick, watch, onMounted } from 'vue'
+import { ref, computed, nextTick, watch, onMounted, Teleport } from 'vue'
 import { Send, Paperclip, Loader2, X as XIcon, Reply, Bold, Italic, Code, SquareCode, Strikethrough, Quote, List, ListOrdered, Smile, Eye, EyeOff } from 'lucide-vue-next'
 import { useAppStore }      from '@/stores/app'
 import { useMessagesStore } from '@/stores/messages'
 import { useToast }         from '@/composables/useToast'
+import { usePrefs }         from '@/composables/usePrefs'
 import { avatarColor, initials } from '@/utils/format'
 
 const appStore      = useAppStore()
 const messagesStore = useMessagesStore()
 const { showToast } = useToast()
+const { getPref }   = usePrefs()
 
 const inputEl = ref<HTMLTextAreaElement | null>(null)
 const content = ref('')
@@ -77,12 +79,14 @@ const refResults = computed(() => {
 
 watch(refSearch, () => { refIndex.value = 0 })
 
+let _channelsLoadedForPromo: number | null = null
 async function loadChannels() {
-  if (channelList.value.length) return
   const promoId = appStore.activePromoId ?? appStore.currentUser?.promo_id
   if (!promoId) return
+  if (channelList.value.length && _channelsLoadedForPromo === promoId) return
   const res = await window.api.getChannels(promoId)
   channelList.value = res?.ok ? (res.data as RefChannel[]) : []
+  _channelsLoadedForPromo = promoId
 }
 
 async function loadDevoirs() {
@@ -99,9 +103,14 @@ async function loadDocs() {
   docList.value = res?.ok ? (res.data as RefDoc[]) : []
 }
 
-// Précharger les données d'autocomplete au montage
+// Précharger les données d'autocomplete au montage et quand la promo change
 onMounted(() => {
   loadUsers()
+  loadChannels()
+})
+watch(() => appStore.activePromoId, () => {
+  _channelsLoadedForPromo = null
+  channelList.value = []
   loadChannels()
 })
 
@@ -187,6 +196,20 @@ function closeMention() {
   mentionIndex.value  = 0
 }
 
+// ── Position fixe des popups (échapper overflow:hidden des parents) ─────
+const wrapperEl = ref<HTMLElement | null>(null)
+const popupStyle = computed(() => {
+  if (!wrapperEl.value) return {}
+  const rect = wrapperEl.value.getBoundingClientRect()
+  return {
+    position: 'fixed' as const,
+    bottom: `${window.innerHeight - rect.top + 6}px`,
+    left:   `${rect.left}px`,
+    width:  `${rect.width}px`,
+    zIndex: '9999',
+  }
+})
+
 // ── Placeholder ───────────────────────────────────────────────────────────
 const placeholder = computed(() => {
   if (appStore.isReadonly) return 'Canal d\'annonces — lecture seule'
@@ -265,7 +288,10 @@ function onInput() {
 }
 
 function onBlur() {
-  setTimeout(closeMention, 150)
+  setTimeout(() => {
+    closeMention()
+    activeRef.value = null
+  }, 200)
 }
 
 // ── Formatage inline ──────────────────────────────────────────────────────
@@ -482,7 +508,13 @@ function onKeydown(e: KeyboardEvent) {
     if (e.key === '>' || e.key === '.') { e.preventDefault(); fmtLinePrefix('> '); return }
   }
 
-  if (e.key === 'Enter' && !e.shiftKey) {
+  // Entrée pour envoyer : Enter seul (pref activée) ou Ctrl+Enter (pref désactivée)
+  const enterSendPref = getPref('enterToSend') ?? true
+  const shouldSend = enterSendPref
+    ? (e.key === 'Enter' && !e.shiftKey && !e.ctrlKey && !e.metaKey)
+    : (e.key === 'Enter' && (e.ctrlKey || e.metaKey))
+
+  if (shouldSend) {
     e.preventDefault()
     send()
   }
@@ -545,14 +577,16 @@ watch(
       </Transition>
 
       <!-- Carte principale de saisie -->
-      <div id="message-input-wrapper" class="message-input-wrapper">
+      <div id="message-input-wrapper" ref="wrapperEl" class="message-input-wrapper">
 
-        <!-- Popup autocomplete mentions -->
+        <!-- Popup autocomplete mentions (teleporté pour échapper overflow:hidden) -->
+        <Teleport to="body">
         <Transition name="mention-pop">
           <div
             v-if="mentionActive && mentionResults.length"
             ref="mentionPopupEl"
             class="mi-mention-popup"
+            :style="popupStyle"
             role="listbox"
             aria-label="Mentions"
           >
@@ -584,12 +618,15 @@ watch(
             </button>
           </div>
         </Transition>
+        </Teleport>
 
         <!-- Popup autocomplete #canal, /devoir, /doc -->
+        <Teleport to="body">
         <Transition name="mention-pop">
           <div
             v-if="activeRef && refResults.length"
             class="mi-mention-popup"
+            :style="popupStyle"
             role="listbox"
             :aria-label="activeRef === 'channel' ? 'Canaux' : activeRef === 'devoir' ? 'Devoirs' : 'Documents'"
           >
@@ -639,6 +676,7 @@ watch(
             </template>
           </div>
         </Transition>
+        </Teleport>
 
         <!-- Zone textarea / preview -->
         <!-- eslint-disable-next-line vue/no-v-html -->
@@ -767,7 +805,13 @@ watch(
       </div>
 
       <p class="mi-hint">
-        <kbd>Entrée</kbd> pour envoyer · <kbd>Shift+Entrée</kbd> pour un saut de ligne
+        <template v-if="getPref('enterToSend') ?? true">
+          <kbd>Entrée</kbd> envoyer · <kbd>Shift+Entrée</kbd> saut de ligne
+        </template>
+        <template v-else>
+          <kbd>Ctrl+Entrée</kbd> envoyer · <kbd>Entrée</kbd> saut de ligne
+        </template>
+        · <kbd>@</kbd> mention · <kbd>#</kbd> canal · <kbd>Ctrl+B</kbd> gras
       </p>
 
     </template>
@@ -860,11 +904,6 @@ watch(
 .message-input-wrapper { position: relative; }
 
 .mi-mention-popup {
-  position: absolute;
-  bottom: calc(100% + 6px);
-  left: 0;
-  right: 0;
-  z-index: 50;
   background: var(--bg-modal);
   border: 1px solid var(--border);
   border-radius: 10px;
