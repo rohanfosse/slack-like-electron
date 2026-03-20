@@ -84,9 +84,14 @@
     },
     "files": [
       "out/**/*",
-      "node_modules/**/*",
-      "!node_modules/.cache",
-      "resources/**/*"
+      "resources/**/*",
+      "node_modules/better-sqlite3/**/*",
+      "node_modules/bindings/**/*",
+      "node_modules/file-uri-to-path/**/*",
+      "node_modules/bcryptjs/**/*",
+      "!**/*.pdb",
+      "!**/*.map",
+      "!**/*.ts"
     ],
     "win": {
       "target": "nsis",
@@ -102,7 +107,8 @@
     },
     "nsis": {
       "oneClick": false,
-      "allowToChangeInstallationDirectory": true
+      "allowToChangeInstallationDirectory": true,
+      "compression": "maximum"
     }
   }
 }
