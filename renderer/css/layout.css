@@ -223,6 +223,18 @@
   flex-shrink: 0;
 }
 
+.sidebar-header-compact {
+  padding: 10px 14px 6px;
+  flex-shrink: 0;
+}
+
+.sidebar-promo-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -.2px;
+}
+
 .teacher-badge {
   display: flex;
   align-items: center;
@@ -530,17 +542,14 @@ nav[aria-label="Messages directs"] {
   flex-shrink: 0;
 }
 
-.channel-desc-separator {
-  color: var(--text-muted);
-  font-size: 12px;
-  margin: 0 2px;
-}
 .channel-description {
   font-size: 12px;
   color: var(--text-muted);
   font-weight: 400;
   overflow: hidden;
   text-overflow: ellipsis;
+  margin-left: 6px;
+  opacity: .7;
   white-space: nowrap;
   max-width: 300px;
 }

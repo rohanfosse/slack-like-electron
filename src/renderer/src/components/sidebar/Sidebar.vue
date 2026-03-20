@@ -35,6 +35,11 @@
   const channels    = ref<Channel[]>([])
   const students    = ref<Student[]>([])
   const loading     = ref(false)
+
+  const activePromoName = computed(() => {
+    const p = promotions.value.find(p => p.id === appStore.activePromoId)
+    return p?.name ?? null
+  })
   // Set des catégories repliées
   const collapsed          = ref<Set<string>>(new Set())
   const collapsedDashboard = ref<Set<string>>(new Set())
@@ -596,25 +601,11 @@
 
 <template>
   <div id="sidebar" class="sidebar">
-    <!-- En-tête utilisateur -->
-    <div id="sidebar-header" class="sidebar-header">
-      <div v-if="user" id="teacher-badge" class="teacher-badge">
-        <div
-          class="avatar teacher-avatar"
-          :style="{
-            background: user.type === 'teacher' ? 'var(--accent)' : user.type === 'ta' ? '#7B5EA7' : avatarColor(user.name),
-            color: '#fff',
-          }"
-        >
-          {{ user.avatar_initials }}
-        </div>
-        <div class="sidebar-user-info">
-          <span class="sidebar-user-name">{{ user.name }}</span>
-          <span class="sidebar-user-role">
-            {{ user.type === 'teacher' ? 'Responsable Pédagogique' : user.type === 'ta' ? 'Intervenant' : user.promo_name ?? '' }}
-          </span>
-        </div>
-      </div>
+    <!-- En-tête sidebar : nom de la promo -->
+    <div id="sidebar-header" class="sidebar-header-compact">
+      <span v-if="appStore.isStaff && activePromoName" class="sidebar-promo-title">{{ activePromoName }}</span>
+      <span v-else-if="user?.promo_name" class="sidebar-promo-title">{{ user.promo_name }}</span>
+      <span v-else class="sidebar-promo-title">Cursus</span>
     </div>
 
     <!-- Section Messages -->

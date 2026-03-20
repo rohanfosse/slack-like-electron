@@ -187,7 +187,7 @@
         <button v-if="props.toggleSidebar" class="mobile-hamburger" aria-label="Ouvrir le menu" @click="props.toggleSidebar">
           <Menu :size="22" />
         </button>
-        <span id="channel-icon">{{ appStore.activeDmStudentId ? '@' : '#' }}</span>
+        <span id="channel-icon" class="channel-icon">{{ appStore.activeDmStudentId ? '@' : '#' }}</span>
         <span id="channel-name" class="channel-name">{{ appStore.activeChannelName }}</span>
         <span
           v-if="channelHeader?.type === 'annonce'"
@@ -196,8 +196,7 @@
         >
           Annonce
         </span>
-        <span v-if="appStore.activeChannelDescription" class="channel-desc-separator">&mdash;</span>
-        <span v-if="appStore.activeChannelDescription" class="channel-description">{{ appStore.activeChannelDescription }}</span>
+        <span v-if="appStore.activeChannelDescription" class="channel-description" :title="appStore.activeChannelDescription">{{ appStore.activeChannelDescription }}</span>
       </div>
 
       <!-- Barre de recherche -->
