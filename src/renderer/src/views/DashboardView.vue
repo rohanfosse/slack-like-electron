@@ -4,7 +4,7 @@ import {
   Clock, Edit3, Users, BookOpen, AlertTriangle,
   ChevronRight, CheckCircle2, FileText, LayoutDashboard,
   Award, TrendingUp, FolderOpen, CalendarDays, BarChart2,
-  PlusCircle, Menu, GraduationCap,
+  PlusCircle, Menu, GraduationCap, Settings,
 } from 'lucide-vue-next'
 import { useAppStore }    from '@/stores/app'
 import { useModalsStore } from '@/stores/modals'
@@ -357,7 +357,7 @@ const studentProjectCards = computed((): StudentProjectCard[] => {
 })
 
 // ── Frise chronologique ────────────────────────────────────────────────────────
-const dashTab = ref<'projets' | 'frise' | 'analytique' | 'gestion'>(
+const dashTab = ref<'projets' | 'frise' | 'analytique' | 'parametres'>(
   route.query.tab === 'frise' ? 'frise' : route.query.tab === 'analytique' ? 'analytique' : 'projets',
 )
 watch(() => route.query.tab, (tab) => {
@@ -700,8 +700,8 @@ function onMilestoneClick(ms: FriseMilestone) {
           <button class="db-tab" :class="{ active: dashTab === 'analytique' }" @click="dashTab = 'analytique'">
             <TrendingUp :size="13" /> Analytique
           </button>
-          <button class="db-tab" :class="{ active: dashTab === 'gestion' }" @click="dashTab = 'gestion'">
-            <Users :size="13" /> Gestion
+          <button class="db-tab" :class="{ active: dashTab === 'parametres' }" @click="dashTab = 'parametres'">
+            <Settings :size="13" /> Paramètres
           </button>
         </div>
 
@@ -807,7 +807,7 @@ function onMilestoneClick(ms: FriseMilestone) {
         </div>
 
         <!-- Tab Gestion -->
-        <div v-else-if="dashTab === 'gestion'" class="db-tab-content">
+        <div v-else-if="dashTab === 'parametres'" class="db-tab-content">
           <div class="gestion-grid">
             <!-- Carte Promotion active -->
             <div class="gestion-card">
