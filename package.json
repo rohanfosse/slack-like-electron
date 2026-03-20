@@ -109,7 +109,18 @@
     "compression": "maximum",
     "nsis": {
       "oneClick": false,
-      "allowToChangeInstallationDirectory": true
+      "allowToChangeInstallationDirectory": true,
+      "installerSidebar": "resources/installer-sidebar.bmp",
+      "installerHeader": "resources/installer-header.bmp",
+      "installerHeaderIcon": "resources/icon.ico",
+      "language": "1036",
+      "runAfterFinish": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Cursus",
+      "menuCategory": "Cursus",
+      "deleteAppDataOnUninstall": false,
+      "perMachine": false
     }
   }
 }
