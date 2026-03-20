@@ -119,7 +119,7 @@ const color    = computed(() => {
   if (isMine.value && appStore.currentUser) {
     const t = appStore.currentUser.type
     if (t === 'teacher') return 'var(--accent)'
-    if (t === 'ta')      return '#7B5EA7'
+    if (t === 'ta')      return 'var(--color-ta)'
   }
   return avatarColor(props.msg.author_name)
 })

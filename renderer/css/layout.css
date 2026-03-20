@@ -313,7 +313,8 @@ nav[aria-label="Messages directs"] {
   align-items: center;
   gap: 8px;
   width: 100%;
-  padding: 5px 12px 5px 16px;
+  padding: 7px 12px 7px 16px;
+  min-height: 36px; /* touch target */
   border: none;
   background: transparent;
   color: var(--text-secondary);
@@ -323,6 +324,7 @@ nav[aria-label="Messages directs"] {
   cursor: pointer;
   border-radius: 6px;
   margin: 1px 4px;
+  transition: background var(--t-fast), color var(--t-fast);
   width: calc(100% - 8px);
   text-align: left;
   white-space: nowrap;

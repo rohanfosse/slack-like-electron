@@ -63,6 +63,19 @@ export const useAppStore = defineStore('app', () => {
   )
 
   // ── Session ───────────────────────────────────────────────────────────────
+  const NAV_STATE_KEY = 'cc_nav_state'
+
+  function _saveNavState() {
+    try {
+      localStorage.setItem(NAV_STATE_KEY, JSON.stringify({
+        channelId: activeChannelId.value,
+        promoId: activePromoId.value,
+        channelName: activeChannelName.value,
+        dmStudentId: activeDmStudentId.value,
+      }))
+    } catch {}
+  }
+
   function restoreSession(): boolean {
     try {
       const raw = localStorage.getItem(SESSION_KEY)
@@ -72,6 +85,13 @@ export const useAppStore = defineStore('app', () => {
         // Reconnecter le socket avec le token JWT stocké
         if (parsed?.token) window.api.setToken(parsed.token)
         if (currentUser.value?.type === 'ta') loadTaChannels()
+        // Restaurer le canal actif
+        try {
+          const nav = JSON.parse(localStorage.getItem(NAV_STATE_KEY) || '{}')
+          if (nav.channelId) { activeChannelId.value = nav.channelId; activeChannelName.value = nav.channelName ?? '' }
+          if (nav.promoId) activePromoId.value = nav.promoId
+          if (nav.dmStudentId) activeDmStudentId.value = nav.dmStudentId
+        } catch {}
         return true
       }
     } catch {
@@ -160,6 +180,7 @@ export const useAppStore = defineStore('app', () => {
     activeChannelName.value = name
     activeChannelDescription.value = description || ''
     markRead(id)
+    _saveNavState()
   }
 
   function openDm(studentId: number, promoId: number, name: string) {
@@ -181,6 +202,7 @@ export const useAppStore = defineStore('app', () => {
     activeChannelType.value = 'chat'
     activeChannelName.value = name
     markDmRead(name)
+    _saveNavState()
   }
 
   function markDmRead(senderName: string) {

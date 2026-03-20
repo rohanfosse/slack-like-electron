@@ -339,7 +339,7 @@
     top: var(--titlebar-height, 32px);
     left: 0;
     right: 0;
-    z-index: 200;
+    z-index: var(--z-sticky);
     height: 36px;
     background: #E67E22;
     color: #fff;
@@ -367,7 +367,7 @@
     top: var(--titlebar-height, 32px);
     left: 0;
     right: 0;
-    z-index: 201;
+    z-index: var(--z-banner);
     height: 36px;
     background: #2c2c2e;
     color: #a0a0a8;
@@ -388,7 +388,7 @@
   .notif-request-banner {
     position: fixed;
     bottom: 16px; left: 50%; transform: translateX(-50%);
-    z-index: 500;
+    z-index: var(--z-modal-bg);
     display: flex; align-items: center; gap: 12px;
     padding: 10px 16px; border-radius: 10px;
     background: var(--bg-elevated, #272829);
@@ -411,7 +411,7 @@
     top: var(--titlebar-height, 32px);
     left: 0;
     right: 0;
-    z-index: 201;
+    z-index: var(--z-banner);
     height: 36px;
     background: #7f5539;
     color: #fde8cd;
@@ -440,7 +440,7 @@
   .privacy-overlay {
     position: fixed;
     inset: 0;
-    z-index: 2000;
+    z-index: var(--z-overlay);
     background: rgba(0, 0, 0, .7);
     backdrop-filter: blur(8px);
     display: flex;
