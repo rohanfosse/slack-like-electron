@@ -44,6 +44,14 @@ export const useAppStore = defineStore('app', () => {
   }
   const notificationHistory = ref<NotifEntry[]>([])
 
+  // ── Callback pour rafraîchir les DMs en temps réel ──────────────────────
+  const _dmRefreshCallbacks: (() => void)[] = []
+  function onDmRefresh(cb: () => void)  { _dmRefreshCallbacks.push(cb) }
+  function offDmRefresh(cb: () => void) {
+    const idx = _dmRefreshCallbacks.indexOf(cb)
+    if (idx >= 0) _dmRefreshCallbacks.splice(idx, 1)
+  }
+
   // ── Calculs ───────────────────────────────────────────────────────────────
   const isStudent    = computed(() => currentUser.value?.type === 'student')
   const isTeacher    = computed(() => currentUser.value?.type === 'teacher')
@@ -218,8 +226,18 @@ export const useAppStore = defineStore('app', () => {
       // ── Message direct ────────────────────────────────────────────────────
       if (!channelId && dmStudentId) {
         const senderName = authorName ?? ''
-        // Badge unread DM — si on n'est pas déjà dans cette conversation
-        if (dmStudentId !== activeDmStudentId.value) {
+
+        // Déterminer si on est dans cette conversation
+        const inThisConversation =
+          activeDmStudentId.value === dmStudentId ||
+          activeDmPeerId.value === dmStudentId ||
+          (activeDmStudentId.value != null && dmStudentId === activeDmStudentId.value)
+
+        if (inThisConversation) {
+          // On est dans la conversation → rafraîchir les messages en temps réel
+          _dmRefreshCallbacks.forEach(cb => cb())
+        } else {
+          // Pas dans la conversation → badge unread
           unreadDms.value = { ...unreadDms.value, [senderName]: (unreadDms.value[senderName] ?? 0) + 1 }
           const dmEntry: NotifEntry = {
             id:          `${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
@@ -236,7 +254,7 @@ export const useAppStore = defineStore('app', () => {
 
           // Notification native OS pour DM
           if (document.hidden && Notification.permission === 'granted') {
-            new Notification(`✉️ Message de ${senderName}`, {
+            new Notification(`\u2709\uFE0F Message de ${senderName}`, {
               body:   preview ?? '',
               silent: false,
             })
@@ -248,8 +266,11 @@ export const useAppStore = defineStore('app', () => {
       if (!channelId) return
 
       // ── Message de canal ──────────────────────────────────────────────────
-      // Badge unread standard — uniquement si on n'est pas dans ce canal
-      if (channelId !== activeChannelId.value) {
+      if (channelId === activeChannelId.value) {
+        // On est dans ce canal → rafraîchir les messages
+        _dmRefreshCallbacks.forEach(cb => cb())
+      } else {
+        // Badge unread standard
         unread.value = { ...unread.value, [channelId]: (unread.value[channelId] ?? 0) + 1 }
       }
 
@@ -328,6 +349,7 @@ export const useAppStore = defineStore('app', () => {
     startSimulation, stopSimulation,
     openChannel, openDm, markRead, markDmRead, markAllRead, loadTaChannels,
     initUnreadListener, initOnlineListener, initSocketListener,
+    onDmRefresh, offDmRefresh,
     api,
   }
 })

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-  import { computed, watch, ref, nextTick } from 'vue'
+  import { computed, watch, ref, nextTick, onMounted, onUnmounted } from 'vue'
   import { Search, X as XIcon, ClipboardList, BookCheck, FileText, FolderPlus, X as Close, CalendarRange, Users, FolderOpen, Menu, MessageSquare } from 'lucide-vue-next'
   import { useAppStore }      from '@/stores/app'
   import { useMessagesStore } from '@/stores/messages'
@@ -24,6 +24,11 @@
   const searchInput      = ref('')
   const bannerDismissed  = ref(false)
   const rightPanel       = ref<'members' | 'docs' | null>(null)
+
+  // ── Rafraîchir les DMs en temps réel ────────────────────────────────────
+  function onDmLive() { messagesStore.fetchMessages() }
+  onMounted(() => appStore.onDmRefresh(onDmLive))
+  onUnmounted(() => appStore.offDmRefresh(onDmLive))
 
   function togglePanel(panel: 'members' | 'docs') {
     rightPanel.value = rightPanel.value === panel ? null : panel
