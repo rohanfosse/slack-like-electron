@@ -1263,18 +1263,10 @@
   color: var(--text-primary);
 }
 
-/* ── Liste déroulante (scroll) ── */
+/* ── Sous-listes (pas de max-height propre, le parent scroll) ── */
 .sidebar-scroll-list {
-  max-height: 40vh;
-  overflow-y: auto;
-  overflow-x: hidden;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(255,255,255,.1) transparent;
+  /* Pas de contrainte ici — le scroll est géré par le parent */
 }
-.sidebar-scroll-list::-webkit-scrollbar { width: 4px; }
-.sidebar-scroll-list::-webkit-scrollbar-track { background: transparent; }
-.sidebar-scroll-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,.12); border-radius: 2px; }
-.sidebar-scroll-list::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,.2); }
 
 /* ── Section repliable ── */
 .sidebar-collapsible-header {

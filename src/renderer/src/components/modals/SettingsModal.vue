@@ -2,7 +2,7 @@
   import { ref, watch, computed } from 'vue'
   import {
     LogOut, Settings, User, Info, Camera, X, RotateCcw, KeyRound,
-    Download, Palette, Monitor, Moon, Sunset, Waves, Globe, Lock,
+    Download, Palette, Monitor, Moon, Sunset, Waves, Sparkles, Globe, Lock,
     FileText, ChevronRight, Github, Heart, Shield, Mail, BookOpen,
     ExternalLink,
   } from 'lucide-vue-next'
@@ -33,15 +33,17 @@
   const pendingPhoto   = ref<string | null>(null)
   const photoChanged   = ref(false)
 
-  const THEMES: { id: 'dark' | 'light' | 'night' | 'marine'; label: string; icon: typeof Moon; colors: string[]; accent: string }[] = [
-    { id: 'dark',   label: 'Sombre',  icon: Monitor, colors: ['#1a1d21', '#1d2128', '#222529'], accent: '#4A90D9' },
-    { id: 'light',  label: 'Clair',   icon: Sunset,  colors: ['#E8EAED', '#F0F2F5', '#FFFFFF'], accent: '#4A90D9' },
-    { id: 'night',  label: 'Nuit',    icon: Moon,    colors: ['#08090c', '#0b0d11', '#0f1115'], accent: '#7B8CDE' },
-    { id: 'marine', label: 'Marine',  icon: Waves,   colors: ['#0e1829', '#132036', '#192840'], accent: '#5B9BD5' },
+  type ThemeId = 'dark' | 'light' | 'night' | 'marine' | 'cursus'
+  const THEMES: { id: ThemeId; label: string; icon: typeof Moon; colors: string[]; accent: string }[] = [
+    { id: 'dark',   label: 'Sombre',  icon: Monitor,  colors: ['#1a1d21', '#1d2128', '#222529'], accent: '#4A90D9' },
+    { id: 'light',  label: 'Clair',   icon: Sunset,   colors: ['#E8EAED', '#F0F2F5', '#FFFFFF'], accent: '#4A90D9' },
+    { id: 'night',  label: 'Nuit',    icon: Moon,     colors: ['#08090c', '#0b0d11', '#0f1115'], accent: '#7B8CDE' },
+    { id: 'marine', label: 'Marine',  icon: Waves,    colors: ['#0e1829', '#132036', '#192840'], accent: '#5B9BD5' },
+    { id: 'cursus', label: 'Cursus',  icon: Sparkles, colors: ['#eef2f7', '#f4f6f9', '#f9fafb'], accent: '#3b82f6' },
   ]
 
   function applyTheme(theme: string) {
-    document.body.classList.remove('light', 'night', 'marine')
+    document.body.classList.remove('light', 'night', 'marine', 'cursus')
     if (theme !== 'dark') document.body.classList.add(theme)
   }
 
@@ -56,7 +58,7 @@
 
   watch(docsDefault, (v) => setPref('docsOpenByDefault', v))
 
-  function setTheme(theme: 'dark' | 'light' | 'night' | 'marine') {
+  function setTheme(theme: ThemeId) {
     currentTheme.value = theme
     setPref('theme', theme)
     applyTheme(theme)
