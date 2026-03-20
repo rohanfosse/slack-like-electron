@@ -33,7 +33,7 @@
   // ── Formulaire ────────────────────────────────────────────────────────────
   const title       = ref('')
   const description = ref('')
-  const type        = ref<DevoirType>('livrable')
+  const type        = ref<DevoirType>('cctl')
   const category    = ref('')
   const deadline    = ref(isoForDatetimeLocal())
   const startDate   = ref(isoForDatetimeLocal())
@@ -46,6 +46,12 @@
   const channelId   = ref<number | null>(null)
   const channels    = ref<{ id: number; name: string }[]>([])
   const creating    = ref(false)
+
+  // ── Champs structurés (auto-générés en description) ─────────────────────
+  const duration      = ref<number | null>(20)
+  const calculatrice  = ref(true)
+  const ressources    = ref('Aucune')
+  const session       = ref<'Initiale' | 'Rattrapage'>('Initiale')
 
   // ── Projets disponibles (depuis localStorage) ─────────────────────────────
   const projects = computed((): ProjectMeta[] => {
@@ -112,7 +118,9 @@
       }
 
       title.value = description.value = ''
-      type.value = 'livrable'
+      // Pré-sélectionner le type depuis le bouton "Ajouter un CCTL" etc.
+      type.value = (appStore.pendingDevoirType as DevoirType) || 'cctl'
+      appStore.pendingDevoirType = null
       assignTo.value = 'all'
       isDraft.value  = false
       isGraded.value = false
@@ -163,18 +171,33 @@
     else newGroupMembers.value.push(studentId)
   }
 
+  // Auto-générer la description pour les types structurés
+  function buildDescription(): string {
+    if (type.value === 'livrable' || type.value === 'autre' || type.value === 'memoire') {
+      return description.value.trim()
+    }
+    const parts: string[] = []
+    parts.push(`**Session ${session.value}**`)
+    if (duration.value) parts.push(`Durée : ${duration.value} min`)
+    parts.push(`Format : ${type.value === 'cctl' ? 'Test' : type.value === 'etude_de_cas' ? 'Étude de cas' : 'Soutenance'}`)
+    if (calculatrice.value) parts.push('Calculatrice autorisée')
+    else parts.push('Calculatrice non autorisée')
+    parts.push(ressources.value === 'Aucune' ? 'Aucune ressource autorisée' : `Ressources : ${ressources.value}`)
+    if (room.value.trim()) parts.push(`Salle : ${room.value.trim()}`)
+    return parts.join('\n')
+  }
+
   async function submit() {
     if (!title.value.trim() || !channelId.value) return
     creating.value = true
     try {
-      // Validation : startDate doit être avant deadline
       if (!isEventType.value && startDate.value && startDate.value > deadline.value) {
         showToast('La date de début doit être avant la deadline.', 'error')
         return
       }
       const res = await travauxStore.createTravail({
         title:        title.value.trim(),
-        description:  description.value.trim() || null,
+        description:  buildDescription() || null,
         type:         type.value,
         category:     category.value.trim() || null,
         deadline:     deadline.value,
@@ -199,92 +222,111 @@
 
 <template>
   <Modal :model-value="modelValue" title="Nouveau devoir" max-width="620px" @update:model-value="emit('update:modelValue', $event)">
-    <form style="padding:16px;display:flex;flex-direction:column;gap:12px" @submit.prevent="submit">
+    <form class="nd-form" @submit.prevent="submit">
 
-      <!-- Canal -->
-      <div class="form-group">
-        <label class="form-label">Canal</label>
-        <select v-model="channelId" class="form-select" required>
-          <option :value="null">Choisir un canal…</option>
-          <option v-for="c in channels" :key="c.id" :value="c.id">{{ c.name }}</option>
-        </select>
+      <!-- Onglets par type -->
+      <div class="nd-tabs">
+        <button
+          v-for="opt in TYPE_OPTIONS" :key="opt.value" type="button"
+          class="nd-tab" :class="{ active: type === opt.value, [`nd-tab--${opt.value}`]: true }"
+          @click="type = opt.value"
+        >{{ opt.label }}</button>
       </div>
 
-      <!-- Titre + Type -->
-      <div style="display:flex;gap:10px">
+      <!-- Titre + Canal -->
+      <div class="nd-row">
         <div class="form-group" style="flex:2">
           <label class="form-label">Titre</label>
           <input v-model="title" type="text" class="form-input" placeholder="Titre du devoir" required />
         </div>
         <div class="form-group" style="flex:1">
-          <label class="form-label">Type</label>
-          <select v-model="type" class="form-select">
-            <option v-for="opt in TYPE_OPTIONS" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
+          <label class="form-label">Canal</label>
+          <select v-model="channelId" class="form-select" required>
+            <option :value="null">Choisir…</option>
+            <option v-for="c in channels" :key="c.id" :value="c.id">{{ c.name }}</option>
           </select>
         </div>
       </div>
 
-      <!-- Description -->
-      <div class="form-group">
-        <label class="form-label">Description <span style="opacity:.6">(optionnel)</span></label>
-        <textarea v-model="description" class="form-input" rows="3" style="resize:vertical" placeholder="Instructions, objectifs…" />
-      </div>
-
-      <!-- Dates -->
-      <div style="display:flex;gap:10px">
-        <div v-if="!isEventType" class="form-group" style="flex:1">
-          <label class="form-label">Date de début</label>
-          <input v-model="startDate" type="datetime-local" class="form-input" />
-        </div>
-        <div class="form-group" style="flex:1">
-          <label class="form-label">{{ isEventType ? 'Date de l\'épreuve' : 'Date limite' }}</label>
-          <input v-model="deadline" type="datetime-local" class="form-input" required />
-        </div>
-      </div>
-
-      <!-- Projet + Assignation -->
-      <div style="display:flex;gap:10px">
-        <div class="form-group" style="flex:1">
-          <label class="form-label">Projet <span style="opacity:.6">(optionnel)</span></label>
-          <select v-if="projects.length" v-model="category" class="form-select">
-            <option value="">Aucun projet</option>
-            <option v-for="p in projects" :key="p.name" :value="p.name">
-              {{ parseCategoryIcon(p.name).label || p.name }}
-            </option>
-          </select>
-          <input v-else v-model="category" type="text" class="form-input" placeholder="ex : Bloc 1, Module 3…" />
-        </div>
-        <div v-if="!isEventType" class="form-group" style="flex:1">
-          <label class="form-label">Assigné à</label>
-          <div style="display:flex;gap:16px;padding-top:8px">
-            <label class="radio-label"><input v-model="assignTo" type="radio" value="all" /> Toute la promo</label>
-            <label class="radio-label"><input v-model="assignTo" type="radio" value="group" /> Par groupe</label>
+      <!-- ═══ Champs CCTL / Soutenance / Étude de cas ═══ -->
+      <template v-if="isEventType">
+        <div class="nd-row">
+          <div class="form-group" style="flex:1">
+            <label class="form-label">Date de l'épreuve</label>
+            <input v-model="deadline" type="datetime-local" class="form-input" required />
+          </div>
+          <div class="form-group" style="flex:1">
+            <label class="form-label">Session</label>
+            <select v-model="session" class="form-select">
+              <option value="Initiale">Initiale</option>
+              <option value="Rattrapage">Rattrapage</option>
+            </select>
           </div>
         </div>
-      </div>
 
-      <!-- Noté toggle (livrable + autre uniquement) -->
-      <label v-if="needsGradedToggle" class="checkbox-label" style="display:flex;align-items:center;gap:8px">
-        <input v-model="isGraded" type="checkbox" />
-        Ce devoir est noté
-      </label>
+        <div class="nd-row">
+          <div class="form-group" style="flex:1">
+            <label class="form-label">Durée (min)</label>
+            <input v-model.number="duration" type="number" class="form-input" min="5" max="240" step="5" placeholder="20" />
+          </div>
+          <div class="form-group" style="flex:1">
+            <label class="form-label">Salle</label>
+            <input v-model="room" type="text" class="form-input" placeholder="ex : B204" />
+          </div>
+        </div>
 
-      <!-- Rendu attendu toggle (étude de cas uniquement) -->
-      <label v-if="showSubmissionToggle" class="checkbox-label" style="display:flex;align-items:center;gap:8px">
-        <input v-model="requiresSubmission" type="checkbox" />
-        Rendu attendu (fichier ou lien à déposer)
-      </label>
+        <div v-if="type !== 'soutenance'" class="nd-row nd-toggles">
+          <label class="nd-toggle-label">
+            <input v-model="calculatrice" type="checkbox" /> Calculatrice autorisée
+          </label>
+          <label v-if="type === 'etude_de_cas'" class="nd-toggle-label">
+            <input v-model="requiresSubmission" type="checkbox" /> Rendu attendu
+          </label>
+        </div>
 
-      <!-- Salle (événements : soutenance, CCTL, étude de cas) -->
-      <div v-if="showRoomField" class="form-group">
-        <label class="form-label">Salle (optionnel)</label>
-        <input v-model="room" type="text" class="form-input" placeholder="ex : B204, Amphi A…" />
-      </div>
+        <div v-if="type !== 'soutenance'" class="form-group">
+          <label class="form-label">Ressources autorisées</label>
+          <select v-model="ressources" class="form-select">
+            <option value="Aucune">Aucune</option>
+            <option value="Documents personnels">Documents personnels</option>
+            <option value="Tous documents">Tous documents</option>
+          </select>
+        </div>
+      </template>
 
-      <!-- AAVs (tous les types) -->
+      <!-- ═══ Champs Livrable / Mémoire / Autre ═══ -->
+      <template v-else>
+        <div class="form-group">
+          <label class="form-label">Description <span style="opacity:.6">(optionnel)</span></label>
+          <textarea v-model="description" class="form-input" rows="3" style="resize:vertical" placeholder="Instructions, objectifs…" />
+        </div>
+        <div class="nd-row">
+          <div class="form-group" style="flex:1">
+            <label class="form-label">Date de début</label>
+            <input v-model="startDate" type="datetime-local" class="form-input" />
+          </div>
+          <div class="form-group" style="flex:1">
+            <label class="form-label">Date limite</label>
+            <input v-model="deadline" type="datetime-local" class="form-input" required />
+          </div>
+        </div>
+        <div class="nd-row nd-toggles">
+          <label v-if="needsGradedToggle" class="nd-toggle-label">
+            <input v-model="isGraded" type="checkbox" /> Ce devoir est noté
+          </label>
+        </div>
+      </template>
+
+      <!-- Projet (tous types) -->
       <div class="form-group">
-        <label class="form-label">AAVs — Acquis d'Apprentissage Visés (optionnel)</label>
-        <textarea v-model="aavs" class="form-textarea" rows="2" placeholder="ex : AAV1 — Concevoir une architecture&#10;AAV2 — Développer un prototype" />
+        <label class="form-label">Projet</label>
+        <select v-if="projects.length" v-model="category" class="form-select">
+          <option value="">Aucun projet</option>
+          <option v-for="p in projects" :key="p.name" :value="p.name">
+            {{ parseCategoryIcon(p.name).label || p.name }}
+          </option>
+        </select>
+        <input v-else v-model="category" type="text" class="form-input" placeholder="ex : Systèmes embarqués" />
       </div>
 
       <!-- ── Constructeur de groupes ──────────────────────────────────── -->
@@ -379,6 +421,47 @@
 </template>
 
 <style scoped>
+.nd-form { padding: 0; display: flex; flex-direction: column; gap: 0; }
+.nd-tabs {
+  display: flex; gap: 0; border-bottom: 1px solid var(--border);
+  padding: 0; overflow-x: auto;
+}
+.nd-tab {
+  flex: 1; padding: 10px 8px; font-size: 12px; font-weight: 600;
+  color: var(--text-muted); background: none; border: none; cursor: pointer;
+  border-bottom: 2px solid transparent; white-space: nowrap;
+  font-family: var(--font); transition: all .15s; text-align: center;
+}
+.nd-tab:hover { color: var(--text-secondary); }
+.nd-tab.active { border-bottom-color: var(--accent); color: var(--accent); }
+.nd-tab--cctl.active        { color: #a569bd; border-bottom-color: #a569bd; }
+.nd-tab--soutenance.active  { color: var(--color-warning); border-bottom-color: var(--color-warning); }
+.nd-tab--etude_de_cas.active { color: var(--color-success); border-bottom-color: var(--color-success); }
+.nd-tab--livrable.active    { color: var(--accent); border-bottom-color: var(--accent); }
+.nd-tab--memoire.active     { color: #e74c3c; border-bottom-color: #e74c3c; }
+
+.nd-form > .form-group,
+.nd-form > .nd-row,
+.nd-form > .nd-toggles,
+.nd-form > template > .form-group,
+.nd-form > template > .nd-row,
+.nd-form > template > .nd-toggles { padding: 0 16px; }
+.nd-form > :first-child { margin-top: 0; }
+
+.nd-row { display: flex; gap: 10px; padding: 0 16px; }
+.nd-toggles { display: flex; gap: 16px; padding: 4px 16px; }
+.nd-toggle-label {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 13px; color: var(--text-secondary); cursor: pointer;
+}
+
+/* Override form padding */
+.nd-form .form-group { padding: 0 16px; margin-bottom: 10px; }
+.nd-form .nd-row { margin-bottom: 10px; }
+.nd-form .nd-row .form-group { padding: 0; margin-bottom: 0; }
+.nd-form .nd-toggles { margin-bottom: 10px; }
+.nd-form .nd-tabs + .nd-row { margin-top: 14px; }
+
 .group-builder {
   background: rgba(255,255,255,.04);
   border: 1px solid var(--border);
