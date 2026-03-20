@@ -667,14 +667,23 @@ router.post('/git-pull', (req, res) => {
 router.post('/pm2-restart', (req, res) => {
   try {
     const name = req.body?.name || 'all'
-    // Sanitize : autoriser uniquement alphanum, tirets, "all"
     if (!/^[a-zA-Z0-9_-]+$/.test(name) && name !== 'all') {
       return res.status(400).json({ ok: false, error: 'Nom de processus invalide.' })
     }
-    const output = execSync(`pm2 restart ${name} 2>&1`, { encoding: 'utf8', timeout: 15000 }).trim()
-    res.json({ ok: true, data: { output } })
+    // --no-color pour éviter les codes ANSI, --silent pour réduire le bruit
+    let output = ''
+    try {
+      output = execSync(`pm2 restart ${name} --no-color 2>&1`, { encoding: 'utf8', timeout: 15000 }).trim()
+    } catch (e) {
+      // PM2 peut retourner un exit code non-0 même en cas de succès (messages d'info)
+      output = (e.stdout || e.stderr || e.message || '').replace(/\x1B\[[0-9;]*m/g, '').trim()
+    }
+    // Si le output contient "Applying action" ou "restarted", c'est un succès
+    const success = output.includes('restart') || output.includes('Applying') || output.includes('online')
+    res.json({ ok: true, data: { output: output.replace(/\x1B\[[0-9;]*m/g, ''), success } })
   } catch (err) {
-    res.status(500).json({ ok: false, error: err.stderr || err.stdout || err.message })
+    const msg = (err.stderr || err.stdout || err.message || '').replace(/\x1B\[[0-9;]*m/g, '')
+    res.status(500).json({ ok: false, error: msg })
   }
 })
 
