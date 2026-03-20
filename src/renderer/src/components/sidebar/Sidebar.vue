@@ -56,6 +56,7 @@
         appStore.activePromoId = promotions.value[0].id
       }
       await loadTeacherChannels()
+      await loadRecentDmContacts()
     } finally {
       loading.value = false
     }
@@ -151,9 +152,12 @@
     collapsed.value = next
   }
 
-  const dmStudents = computed(() =>
-    students.value.filter((s) => s.id !== user.value?.id),
-  )
+  const dmStudents = computed(() => {
+    const promoId = appStore.isStaff ? appStore.activePromoId : user.value?.promo_id
+    return students.value.filter((s) =>
+      s.id !== user.value?.id && (!promoId || s.promo_id === promoId),
+    )
+  })
 
   // ── Conversations DM récentes ──────────────────────────────────────────────
   interface DmContact { name: string; last_message_at: string; last_message_preview: string }
@@ -162,7 +166,9 @@
   const DM_RECENT_LIMIT = 10
 
   async function loadRecentDmContacts() {
-    if (!user.value?.id || appStore.isStaff) return
+    if (!user.value?.id) return
+    // Pour le prof : pas de contacts récents (pas de student_id), on montre la liste directement
+    if (appStore.isStaff) { recentDmContacts.value = []; return }
     try {
       const res = await window.api.getRecentDmContacts(user.value.id, DM_RECENT_LIMIT)
       recentDmContacts.value = res?.ok ? res.data : []
@@ -171,6 +177,11 @@
 
   // Les contacts récents + ceux avec unread, avec infos student pour pouvoir cliquer
   const dmContactsToShow = computed(() => {
+    // Prof/TA : montrer les étudiants de la promo active (limité à DM_RECENT_LIMIT)
+    if (appStore.isStaff) {
+      return dmStudents.value.slice(0, DM_RECENT_LIMIT)
+    }
+
     const recentNames = new Set(recentDmContacts.value.map(c => c.name))
     // Ajouter les noms avec unread
     for (const name of Object.keys(appStore.unreadDms)) {
@@ -909,8 +920,8 @@
           </nav>
         </div>
 
-        <!-- Messages directs (étudiant) -->
-        <template v-if="appStore.isStudent && dmStudents.length">
+        <!-- Messages directs -->
+        <template v-if="dmStudents.length">
           <div class="sidebar-section-header" style="margin-top:12px;display:flex;align-items:center;justify-content:space-between">
             <span>Messages directs</span>
             <button
