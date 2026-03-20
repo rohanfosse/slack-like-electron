@@ -52,11 +52,18 @@
     showNotifBanner.value = false
   }
 
-  // Toast discret à la reconnexion
+  // Toast discret pour la connexion socket
   let _wasDisconnected = false
+  let _disconnectTimer: ReturnType<typeof setTimeout> | null = null
   watch(() => appStore.socketConnected, (connected) => {
     if (connected && _wasDisconnected) {
+      if (_disconnectTimer) { clearTimeout(_disconnectTimer); _disconnectTimer = null }
       showToast('Reconnecté', 'success')
+    } else if (!connected && appStore.currentUser) {
+      // Afficher le toast seulement après 3s de déconnexion (éviter les micro-coupures)
+      _disconnectTimer = setTimeout(() => {
+        showToast('Reconnexion en cours…', 'info')
+      }, 3000)
     }
     _wasDisconnected = !connected
   })
@@ -186,12 +193,7 @@
     </div>
 
     <!-- Bandeau reconnexion socket -->
-    <div v-else-if="appStore.currentUser && !appStore.socketConnected" class="socket-banner">
-      <span class="socket-spinner" />
-      <span>Reconnexion au serveur en cours…</span>
-    </div>
-
-    <!-- Reconnecté : simple toast (pas de bandeau) -->
+    <!-- Reconnexion : toast discret au lieu de bandeau -->
 
     <!-- Bandeau session expirée -->
     <div v-if="appStore.sessionExpiredMessage" class="offline-banner offline-banner-red">
@@ -223,11 +225,11 @@
     <!-- Backdrop mobile pour fermer le drawer sidebar -->
     <div class="sidebar-backdrop" :class="{ visible: sidebarOpen }" @click="closeSidebar" />
 
-    <aside class="sidebar-wrapper" :class="{ 'sidebar-with-banner': appStore.isSimulating || !appStore.isOnline || !appStore.socketConnected, 'mobile-open': sidebarOpen }">
+    <aside class="sidebar-wrapper" :class="{ 'sidebar-with-banner': appStore.isSimulating || !appStore.isOnline, 'mobile-open': sidebarOpen }">
       <Sidebar @navigate="closeSidebar" />
     </aside>
 
-    <main class="main-wrapper" :class="{ 'main-with-banner': appStore.isSimulating || !appStore.isOnline || !appStore.socketConnected }">
+    <main class="main-wrapper" :class="{ 'main-with-banner': appStore.isSimulating || !appStore.isOnline }">
       <!-- Vue active (messages / travaux / documents) -->
       <RouterView v-slot="{ Component }">
         <component :is="Component" :toggle-sidebar="toggleSidebar" />
