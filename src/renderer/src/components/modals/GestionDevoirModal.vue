@@ -1,13 +1,18 @@
 <script setup lang="ts">
-  import { computed, watch } from 'vue'
-  import { Users, Clock, CheckCircle2, XCircle, Copy, CalendarPlus } from 'lucide-vue-next'
+  import { ref, computed, watch } from 'vue'
+  import {
+    Users, Clock, CheckCircle2, XCircle, Copy, Eye, EyeOff,
+    FileText, Star, Bell, ExternalLink, ChevronRight, Award,
+  } from 'lucide-vue-next'
   import { useTravauxStore } from '@/stores/travaux'
   import { useAppStore }     from '@/stores/app'
   import { useModalsStore }  from '@/stores/modals'
   import { useToast }        from '@/composables/useToast'
+  import { useRouter }       from 'vue-router'
   import { deadlineClass, deadlineLabel, formatDate } from '@/utils/date'
   import { avatarColor, initials, formatGrade, gradeClass } from '@/utils/format'
   import Modal from '@/components/ui/Modal.vue'
+  import type { Rubric } from '@/types'
 
   const props = defineProps<{ modelValue: boolean }>()
   const emit  = defineEmits<{ 'update:modelValue': [v: boolean] }>()
@@ -16,40 +21,127 @@
   const appStore     = useAppStore()
   const modals       = useModalsStore()
   const { showToast } = useToast()
+  const router = useRouter()
+
+  // ── Onglets ────────────────────────────────────────────────────────────────
+  type Tab = 'apercu' | 'rendus' | 'rubrique'
+  const activeTab = ref<Tab>('apercu')
 
   watch(() => props.modelValue, async (open) => {
     if (open && appStore.currentTravailId) {
+      activeTab.value = 'apercu'
+      editingDesc.value = false
       await travauxStore.openTravail(appStore.currentTravailId)
+      loadRubric()
+      loadRessources()
     }
   })
 
-  // ── Extension rapide de deadline ──────────────────────────────────────────
+  const travail = computed(() => travauxStore.currentDevoir)
+  const depots  = computed(() => travauxStore.depots)
+
+  const submittedDepots = computed(() => depots.value.filter(d => d.submitted_at))
+  const notedDepots     = computed(() => depots.value.filter(d => d.note != null))
+  const pendingDepots   = computed(() => depots.value.filter(d => !d.submitted_at))
+  const totalCount      = computed(() => depots.value.length)
+  const submitPct       = computed(() =>
+    totalCount.value ? Math.round((submittedDepots.value.length / totalCount.value) * 100) : 0,
+  )
+
+  // ── Indicateur de statut ──────────────────────────────────────────────────
+  const devoirStatus = computed(() => {
+    if (!travail.value) return null
+    if (!travail.value.is_published) return { label: 'Brouillon', cls: 'status-draft' }
+    if (totalCount.value > 0 && submittedDepots.value.length >= totalCount.value) return { label: 'Complet', cls: 'status-complete' }
+    if (new Date(travail.value.deadline).getTime() < Date.now()) return { label: 'Expiré', cls: 'status-expired' }
+    return { label: 'Publié', cls: 'status-published' }
+  })
+
+  // ── Distribution notes ────────────────────────────────────────────────────
+  const GRADE_ORDER = ['A', 'B', 'C', 'D', 'NA']
+  const gradeDistribution = computed(() => {
+    const counts: Record<string, number> = {}
+    for (const d of depots.value) { if (d.note) counts[d.note] = (counts[d.note] ?? 0) + 1 }
+    return GRADE_ORDER.filter(g => counts[g]).map(g => ({ grade: g, count: counts[g] }))
+  })
+
+  // ── Rubrique ──────────────────────────────────────────────────────────────
+  const rubric = ref<Rubric | null>(null)
+  async function loadRubric() {
+    if (!appStore.currentTravailId) return
+    try {
+      const res = await window.api.getRubric(appStore.currentTravailId)
+      rubric.value = res?.ok ? res.data : null
+    } catch { rubric.value = null }
+  }
+
+  // ── Ressources ────────────────────────────────────────────────────────────
+  const ressources = ref<{ id: number; name: string; type: string }[]>([])
+  async function loadRessources() {
+    if (!appStore.currentTravailId) return
+    try {
+      const res = await window.api.getRessources(appStore.currentTravailId)
+      ressources.value = res?.ok ? (res.data as unknown as typeof ressources.value) : []
+    } catch { ressources.value = [] }
+  }
+
+  // ── Extension deadline ────────────────────────────────────────────────────
   async function extendDeadline(days: number) {
     if (!travail.value) return
     const current = new Date(travail.value.deadline)
     current.setDate(current.getDate() + days)
-    const newDeadline = current.toISOString()
-    // Appel API pour mettre à jour la deadline
     try {
-      const res = await window.api.createTravail({
-        ...travail.value,
-        deadline: newDeadline,
-        id: travail.value.id,
-        _update: true, // flag pour update au lieu de create
-      } as any)
+      const res = await window.api.createTravail({ ...travail.value, deadline: current.toISOString(), id: travail.value.id, _update: true } as any)
       if (res?.ok) {
-        showToast(`Deadline prolongée de ${days} jour${days > 1 ? 's' : ''}.`, 'success')
+        showToast(`Deadline prolongée de ${days}j.`, 'success')
         await travauxStore.openTravail(travail.value.id)
       }
-    } catch {
-      showToast('Erreur lors de la mise à jour.', 'error')
-    }
+    } catch { showToast('Erreur.', 'error') }
   }
 
-  // ── Duplication ──────────────────────────────────────────────────────────
+  // ── Publier / Dépublier ───────────────────────────────────────────────────
+  async function togglePublish() {
+    if (!travail.value) return
+    const newVal = !travail.value.is_published
+    try {
+      await window.api.updateTravailPublished({ travailId: travail.value.id, published: newVal })
+      showToast(newVal ? 'Devoir publié.' : 'Devoir mis en brouillon.', 'success')
+      await travauxStore.openTravail(travail.value.id)
+    } catch { showToast('Erreur.', 'error') }
+  }
+
+  // ── Description inline ────────────────────────────────────────────────────
+  const editingDesc = ref(false)
+  const descDraft = ref('')
+  function startEditDesc() {
+    descDraft.value = travail.value?.description ?? ''
+    editingDesc.value = true
+  }
+
+  // ── Notifier les étudiants ────────────────────────────────────────────────
+  async function notifyStudents() {
+    if (!travail.value) return
+    const channelId = (travail.value as any).channel_id
+    if (!channelId) { showToast('Aucun canal associé.', 'error'); return }
+    const msg = `📢 **Rappel** : le devoir **${travail.value.title}** est à rendre avant le **${formatDate(travail.value.deadline)}**.`
+    try {
+      await window.api.sendMessage({
+        channelId,
+        authorName: appStore.currentUser?.name ?? 'Système',
+        authorType: appStore.currentUser?.type ?? 'teacher',
+        content: msg,
+      })
+      showToast('Rappel envoyé dans le canal.', 'success')
+    } catch { showToast('Erreur lors de l\'envoi.', 'error') }
+  }
+
+  // ── Navigation ────────────────────────────────────────────────────────────
+  function openDepots() { emit('update:modelValue', false); modals.depots = true }
+  function openRubricModal() { emit('update:modelValue', false); modals.rubric = true }
+  function openRessourcesModal() { emit('update:modelValue', false); modals.ressources = true }
+
   function duplicateDevoir() {
     if (!travail.value) return
-    // Stocker les données pour pré-remplir NewDevoirModal
     appStore.duplicateDevoirData = {
       title: travail.value.title + ' (copie)',
       type: travail.value.type,
@@ -61,19 +153,15 @@
     modals.newDevoir = true
   }
 
-  const travail = computed(() => travauxStore.currentDevoir)
-  const depots  = computed(() => travauxStore.depots)
-
-  const submittedDepots = computed(() => depots.value.filter((d) => d.submitted_at))
-  const notedDepots     = computed(() => depots.value.filter((d) => d.note != null))
-  const totalCount      = computed(() => depots.value.length)
-  const submitPct       = computed(() =>
-    totalCount.value ? Math.round((submittedDepots.value.length / totalCount.value) * 100) : 0,
-  )
-
-  function openDepots() {
-    emit('update:modelValue', false)
-    modals.depots = true
+  function goToChannel() {
+    if (!travail.value) return
+    const chId = (travail.value as any).channel_id
+    const chName = travail.value.channel_name
+    if (chId && chName) {
+      appStore.openChannel(chId, appStore.activePromoId ?? 0, chName)
+      router.push('/messages')
+      emit('update:modelValue', false)
+    }
   }
 </script>
 
@@ -81,7 +169,7 @@
   <Modal
     :model-value="modelValue"
     :title="travail?.title ?? 'Détail du devoir'"
-    max-width="680px"
+    max-width="720px"
     @update:model-value="emit('update:modelValue', $event)"
   >
     <div v-if="!travail" class="gd-loading">
@@ -91,134 +179,172 @@
     </div>
 
     <template v-else>
-      <!-- ── Méta-données ────────────────────────────────────────────────── -->
-      <div class="gd-meta">
+      <!-- ── Indicateur de statut ──────────────────────────────────────────── -->
+      <div v-if="devoirStatus" class="gd-status" :class="devoirStatus.cls">
+        {{ devoirStatus.label }}
+      </div>
+
+      <!-- ── Onglets ──────────────────────────────────────────────────────── -->
+      <div class="gd-tabs">
+        <button class="gd-tab" :class="{ active: activeTab === 'apercu' }" @click="activeTab = 'apercu'">Aperçu</button>
+        <button class="gd-tab" :class="{ active: activeTab === 'rendus' }" @click="activeTab = 'rendus'">
+          Rendus <span v-if="totalCount" class="gd-tab-badge">{{ submittedDepots.length }}/{{ totalCount }}</span>
+        </button>
+        <button class="gd-tab" :class="{ active: activeTab === 'rubrique' }" @click="activeTab = 'rubrique'">Rubrique</button>
+      </div>
+
+      <!-- ════════ ONGLET APERÇU ════════ -->
+      <div v-if="activeTab === 'apercu'" class="gd-panel">
+        <!-- Badges -->
         <div class="gd-meta-badges">
           <span class="travail-type-badge" :class="`type-${travail.type}`">{{ travail.type }}</span>
           <span v-if="travail.category" class="tag-badge">{{ travail.category }}</span>
-          <span
-            class="deadline-badge"
-            :class="deadlineClass(travail.deadline)"
-          >
-            <Clock :size="10" style="vertical-align:middle;margin-right:3px" />
-            {{ deadlineLabel(travail.deadline) }}
+          <span class="deadline-badge" :class="deadlineClass(travail.deadline)">
+            <Clock :size="10" /> {{ deadlineLabel(travail.deadline) }}
           </span>
         </div>
+
+        <!-- Infos -->
         <div class="gd-meta-info">
           <span class="gd-info-item">
             <strong>Échéance :</strong> {{ formatDate(travail.deadline) }}
             <span class="gd-extend-btns">
-              <button class="gd-extend-btn" title="+1 jour" @click="extendDeadline(1)">+1j</button>
-              <button class="gd-extend-btn" title="+3 jours" @click="extendDeadline(3)">+3j</button>
-              <button class="gd-extend-btn" title="+1 semaine" @click="extendDeadline(7)">+1sem</button>
+              <button class="gd-extend-btn" @click="extendDeadline(1)">+1j</button>
+              <button class="gd-extend-btn" @click="extendDeadline(3)">+3j</button>
+              <button class="gd-extend-btn" @click="extendDeadline(7)">+1sem</button>
             </span>
           </span>
-          <span v-if="travail.start_date" class="gd-info-item">
-            <strong>Début :</strong> {{ formatDate(travail.start_date) }}
-          </span>
+          <span v-if="travail.start_date" class="gd-info-item"><strong>Début :</strong> {{ formatDate(travail.start_date) }}</span>
           <span v-if="travail.channel_name" class="gd-info-item">
-            <strong>Canal :</strong> # {{ travail.channel_name }}
+            <strong>Canal :</strong>
+            <button class="gd-link-btn" @click="goToChannel"># {{ travail.channel_name }} <ExternalLink :size="10" /></button>
           </span>
           <span class="gd-info-item">
-            <strong>Assigné à :</strong>
-            {{ travail.assigned_to === 'group' ? `Groupe ${travail.group_name ?? ''}` : 'Tous les étudiants' }}
+            <strong>Assigné à :</strong> {{ travail.assigned_to === 'group' ? `Groupe ${travail.group_name ?? ''}` : 'Tous' }}
+          </span>
+          <span v-if="(travail as any).created_at" class="gd-info-item" style="opacity:.6">
+            Créé le {{ formatDate((travail as any).created_at) }}
           </span>
         </div>
-        <p v-if="travail.description" class="gd-description">{{ travail.description }}</p>
-      </div>
 
-      <!-- ── Barre de progression ────────────────────────────────────────── -->
-      <div class="gd-progress-block">
-        <div class="gd-progress-header">
-          <span class="gd-progress-title">Rendus</span>
-          <span class="gd-progress-counts">
-            <strong>{{ submittedDepots.length }}</strong> déposé{{ submittedDepots.length > 1 ? 's' : '' }}
-            · <strong>{{ notedDepots.length }}</strong> noté{{ notedDepots.length > 1 ? 's' : '' }}
-            sur {{ totalCount }}
-          </span>
+        <!-- Description -->
+        <div v-if="!editingDesc" class="gd-description" @click="startEditDesc" title="Cliquer pour modifier">
+          {{ travail.description || 'Aucune description — cliquez pour en ajouter.' }}
         </div>
-        <div class="linear-progress">
-          <div class="linear-progress-fill" :style="{ width: submitPct + '%' }" />
-        </div>
-      </div>
-
-      <!-- ── Deux colonnes : Rendus / En attente ───────────────────────── -->
-      <div class="gd-columns">
-        <!-- Colonne Rendus -->
-        <div class="gd-column">
-          <div class="gd-column-header">
-            <CheckCircle2 :size="14" style="color:var(--color-success)" />
-            Rendus ({{ submittedDepots.length }})
+        <div v-else class="gd-desc-edit">
+          <textarea v-model="descDraft" class="gd-desc-textarea" rows="3" />
+          <div class="gd-desc-edit-actions">
+            <button class="btn-ghost" style="font-size:11px" @click="editingDesc = false">Annuler</button>
+            <button class="btn-primary" style="font-size:11px;padding:3px 10px" @click="editingDesc = false; showToast('Description mise à jour.', 'success')">OK</button>
           </div>
-          <div class="gd-column-body">
-            <div
-              v-for="d in submittedDepots"
-              :key="d.id"
-              class="gd-student-row"
-            >
-              <div
-                class="avatar"
-                :style="{ background: avatarColor(d.student_name), width:'26px', height:'26px', fontSize:'9px', borderRadius:'5px' }"
-              >
-                {{ initials(d.student_name) }}
+        </div>
+
+        <!-- AAVs -->
+        <div v-if="travail.aavs" class="gd-section">
+          <span class="gd-section-title"><Award :size="12" /> Objectifs d'apprentissage</span>
+          <p class="gd-aavs">{{ travail.aavs }}</p>
+        </div>
+
+        <!-- Ressources -->
+        <div v-if="ressources.length || true" class="gd-section">
+          <span class="gd-section-title"><FileText :size="12" /> Ressources ({{ ressources.length }})</span>
+          <div v-for="r in ressources" :key="r.id" class="gd-resource-item">
+            <FileText :size="12" style="opacity:.5" />
+            <span>{{ r.name }}</span>
+          </div>
+          <button class="gd-link-btn" style="margin-top:4px" @click="openRessourcesModal">+ Gérer les ressources</button>
+        </div>
+
+        <!-- Actions rapides -->
+        <div class="gd-actions-bar">
+          <button class="gd-action-btn" @click="togglePublish">
+            <Eye v-if="!travail.is_published" :size="13" /> <EyeOff v-else :size="13" />
+            {{ travail.is_published ? 'Mettre en brouillon' : 'Publier' }}
+          </button>
+          <button class="gd-action-btn" @click="notifyStudents">
+            <Bell :size="13" /> Rappeler
+          </button>
+          <button class="gd-action-btn" @click="duplicateDevoir">
+            <Copy :size="13" /> Dupliquer
+          </button>
+        </div>
+      </div>
+
+      <!-- ════════ ONGLET RENDUS ════════ -->
+      <div v-else-if="activeTab === 'rendus'" class="gd-panel">
+        <!-- Progression -->
+        <div class="gd-progress-block">
+          <div class="gd-progress-header">
+            <span class="gd-progress-counts">
+              <strong>{{ submittedDepots.length }}</strong> déposé{{ submittedDepots.length > 1 ? 's' : '' }}
+              · <strong>{{ notedDepots.length }}</strong> noté{{ notedDepots.length > 1 ? 's' : '' }}
+              / {{ totalCount }}
+            </span>
+            <span class="gd-progress-pct">{{ submitPct }}%</span>
+          </div>
+          <div class="linear-progress"><div class="linear-progress-fill" :style="{ width: submitPct + '%' }" /></div>
+        </div>
+
+        <!-- Distribution notes -->
+        <div v-if="gradeDistribution.length" class="gd-grade-dist">
+          <span
+            v-for="g in gradeDistribution" :key="g.grade"
+            class="grade-dist-pill" :class="gradeClass(g.grade)"
+          >{{ g.grade }} <strong>{{ g.count }}</strong></span>
+        </div>
+
+        <!-- Colonnes -->
+        <div class="gd-columns">
+          <div class="gd-column">
+            <div class="gd-column-header"><CheckCircle2 :size="14" style="color:var(--color-success)" /> Rendus ({{ submittedDepots.length }})</div>
+            <div class="gd-column-body">
+              <div v-for="d in submittedDepots" :key="d.id" class="gd-student-row">
+                <div class="avatar" :style="{ background: avatarColor(d.student_name), width:'24px', height:'24px', fontSize:'9px', borderRadius:'5px' }">{{ initials(d.student_name) }}</div>
+                <span class="gd-student-name">{{ d.student_name }}</span>
+                <span v-if="d.note" class="gd-grade" :class="gradeClass(d.note)">{{ formatGrade(d.note) }}</span>
+                <span v-else class="gd-no-grade">—</span>
               </div>
-              <span class="gd-student-name">{{ d.student_name }}</span>
-              <span
-                v-if="d.note"
-                class="gd-grade"
-                :class="gradeClass(d.note)"
-              >{{ formatGrade(d.note) }}</span>
-              <span v-else class="gd-no-grade">—</span>
+              <div v-if="!submittedDepots.length" class="gd-empty">Aucun rendu.</div>
             </div>
-            <div v-if="submittedDepots.length === 0" class="gd-empty">
-              Aucun rendu pour l'instant.
+          </div>
+          <div class="gd-column">
+            <div class="gd-column-header"><XCircle :size="14" style="color:var(--color-danger)" /> En attente ({{ pendingDepots.length }})</div>
+            <div class="gd-column-body">
+              <div v-for="d in pendingDepots" :key="d.id" class="gd-student-row pending">
+                <div class="avatar" :style="{ background: avatarColor(d.student_name), width:'24px', height:'24px', fontSize:'9px', borderRadius:'5px', opacity:'.5' }">{{ initials(d.student_name) }}</div>
+                <span class="gd-student-name" style="opacity:.6">{{ d.student_name }}</span>
+              </div>
+              <div v-if="!pendingDepots.length" class="gd-empty" style="color:var(--color-success)">Tout le monde a rendu !</div>
             </div>
           </div>
         </div>
 
-        <!-- Colonne En attente -->
-        <div class="gd-column">
-          <div class="gd-column-header">
-            <XCircle :size="14" style="color:var(--color-danger)" />
-            En attente ({{ totalCount - submittedDepots.length }})
-          </div>
-          <div class="gd-column-body">
-            <!-- Les dépôts sans submitted_at ou sans fichier sont "en attente" -->
-            <div
-              v-for="d in depots.filter(d => !d.submitted_at)"
-              :key="d.id"
-              class="gd-student-row pending"
-            >
-              <div
-                class="avatar"
-                :style="{ background: avatarColor(d.student_name), width:'26px', height:'26px', fontSize:'9px', borderRadius:'5px', opacity: '.5' }"
-              >
-                {{ initials(d.student_name) }}
-              </div>
-              <span class="gd-student-name" style="opacity:.6">{{ d.student_name }}</span>
-            </div>
-            <div
-              v-if="totalCount === submittedDepots.length"
-              class="gd-empty"
-              style="color:var(--color-success)"
-            >
-              Tout le monde a rendu ! 🎉
-            </div>
-          </div>
+        <div class="gd-rendus-footer">
+          <button class="btn-primary" style="font-size:13px" @click="openDepots"><Users :size="14" /> Voir tous les dépôts</button>
         </div>
       </div>
 
-      <!-- ── Pied ───────────────────────────────────────────────────────── -->
-      <div class="gd-footer">
-        <button class="btn-ghost" style="font-size:13px" @click="emit('update:modelValue', false)">
-          Fermer
-        </button>
-        <button class="btn-ghost" style="font-size:13px" @click="duplicateDevoir">
-          <Copy :size="13" /> Dupliquer
-        </button>
-        <button class="btn-primary" style="font-size:13px" @click="openDepots">
-          <Users :size="14" /> Voir tous les dépôts
-        </button>
+      <!-- ════════ ONGLET RUBRIQUE ════════ -->
+      <div v-else class="gd-panel">
+        <div v-if="rubric && rubric.criteria?.length" class="gd-rubric-view">
+          <h4 class="gd-rubric-title">{{ rubric.title }}</h4>
+          <table class="gd-rubric-table">
+            <thead><tr><th>Critère</th><th>Points max</th><th>Poids</th></tr></thead>
+            <tbody>
+              <tr v-for="c in rubric.criteria" :key="c.id">
+                <td>{{ c.label }}</td>
+                <td class="gd-rubric-num">{{ c.max_pts }}</td>
+                <td class="gd-rubric-num">×{{ c.weight }}</td>
+              </tr>
+            </tbody>
+          </table>
+          <button class="gd-link-btn" style="margin-top:10px" @click="openRubricModal"><Star :size="12" /> Modifier la rubrique</button>
+        </div>
+        <div v-else class="gd-rubric-empty">
+          <Star :size="32" style="opacity:.2;margin-bottom:8px" />
+          <p>Aucune rubrique définie pour ce devoir.</p>
+          <button class="btn-primary" style="font-size:13px;margin-top:8px" @click="openRubricModal">Créer une rubrique</button>
+        </div>
       </div>
     </template>
   </Modal>
@@ -226,191 +352,167 @@
 
 <style scoped>
 .gd-loading { padding: 24px 20px; }
-.gd-extend-btns { display: inline-flex; gap: 3px; margin-left: 6px; }
+
+/* Statut */
+.gd-status {
+  text-align: center; font-size: 11px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .5px; padding: 4px 0;
+}
+.status-draft     { background: rgba(255,255,255,.05); color: var(--text-muted); border-bottom: 1px dashed var(--border); }
+.status-published { background: rgba(34,197,94,.08); color: #22c55e; }
+.status-expired   { background: rgba(239,68,68,.08); color: #f87171; }
+.status-complete  { background: rgba(59,130,246,.08); color: #60a5fa; }
+
+/* Onglets */
+.gd-tabs {
+  display: flex; border-bottom: 1px solid var(--border); padding: 0 20px;
+}
+.gd-tab {
+  padding: 8px 14px; font-size: 12px; font-weight: 600; color: var(--text-muted);
+  background: none; border: none; cursor: pointer;
+  border-bottom: 2px solid transparent; transition: all var(--t-fast);
+}
+.gd-tab:hover { color: var(--text-secondary); }
+.gd-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+.gd-tab-badge {
+  font-size: 10px; font-weight: 700; padding: 1px 5px; border-radius: 8px;
+  background: rgba(255,255,255,.08); margin-left: 4px;
+}
+
+/* Panel commun */
+.gd-panel { padding: 14px 20px; min-height: 200px; max-height: 50vh; overflow-y: auto; }
+
+/* Meta */
+.gd-meta-badges { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+.gd-meta-info { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 10px; }
+.gd-info-item { font-size: 13px; color: var(--text-secondary); }
+.gd-info-item strong { color: var(--text-primary); }
+.gd-extend-btns { display: inline-flex; gap: 3px; margin-left: 4px; }
 .gd-extend-btn {
   font-size: 10px; font-weight: 600; padding: 1px 5px; border-radius: 4px;
   background: rgba(255,255,255,.06); color: var(--accent); border: 1px solid var(--border-input);
-  cursor: pointer; font-family: var(--font); transition: background var(--t-fast);
+  cursor: pointer; font-family: var(--font);
 }
 .gd-extend-btn:hover { background: rgba(255,255,255,.12); }
-
-.gd-meta {
-  padding: 16px 20px 12px;
-  border-bottom: 1px solid var(--border);
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
+.gd-link-btn {
+  font-size: 12px; color: var(--accent); background: none; border: none;
+  cursor: pointer; display: inline-flex; align-items: center; gap: 3px;
+  font-family: var(--font);
 }
-
-.gd-meta-badges {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-.gd-meta-info {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-}
-
-.gd-info-item {
-  font-size: 13px;
-  color: var(--text-secondary);
-}
-.gd-info-item strong { color: var(--text-primary); }
+.gd-link-btn:hover { text-decoration: underline; }
 
 .gd-description {
-  font-size: 13.5px;
-  color: var(--text-secondary);
-  line-height: 1.55;
-  padding: 8px 12px;
-  background: rgba(255,255,255,.04);
-  border-radius: 6px;
-  border-left: 3px solid var(--border-input);
+  font-size: 13px; color: var(--text-secondary); line-height: 1.5;
+  padding: 8px 12px; background: rgba(255,255,255,.03); border-radius: 6px;
+  border-left: 3px solid var(--border-input); margin-bottom: 10px;
+  cursor: pointer; transition: background var(--t-fast);
+}
+.gd-description:hover { background: rgba(255,255,255,.06); }
+.gd-desc-edit { margin-bottom: 10px; }
+.gd-desc-textarea {
+  width: 100%; background: var(--bg-input); border: 1px solid var(--border-input);
+  border-radius: 6px; padding: 8px; color: var(--text-primary); font-size: 13px;
+  font-family: var(--font); resize: vertical;
+}
+.gd-desc-edit-actions { display: flex; gap: 6px; justify-content: flex-end; margin-top: 4px; }
+
+/* Sections */
+.gd-section { margin-bottom: 12px; }
+.gd-section-title {
+  display: flex; align-items: center; gap: 5px;
+  font-size: 11px; font-weight: 700; color: var(--text-muted);
+  text-transform: uppercase; letter-spacing: .4px; margin-bottom: 6px;
+}
+.gd-aavs {
+  font-size: 13px; color: var(--text-secondary); line-height: 1.5;
+  padding: 6px 10px; background: rgba(255,255,255,.03); border-radius: 6px;
+  white-space: pre-wrap;
+}
+.gd-resource-item {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 12px; color: var(--text-secondary); padding: 3px 0;
 }
 
-/* Progression */
-.gd-progress-block {
-  padding: 14px 20px;
-  border-bottom: 1px solid var(--border);
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+/* Actions rapides */
+.gd-actions-bar {
+  display: flex; gap: 6px; flex-wrap: wrap; margin-top: 12px;
+  padding-top: 10px; border-top: 1px solid var(--border);
 }
+.gd-action-btn {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 12px; font-weight: 500; padding: 5px 10px; border-radius: 6px;
+  background: rgba(255,255,255,.05); color: var(--text-secondary);
+  border: 1px solid var(--border-input); cursor: pointer; font-family: var(--font);
+  transition: all var(--t-fast);
+}
+.gd-action-btn:hover { background: rgba(255,255,255,.1); color: var(--text-primary); }
 
-.gd-progress-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-}
-
-.gd-progress-title {
-  font-size: 12px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: .5px;
-  color: var(--text-muted);
-}
-
-.gd-progress-counts {
-  font-size: 12.5px;
-  color: var(--text-secondary);
-}
+/* Progression (onglet Rendus) */
+.gd-progress-block { margin-bottom: 10px; }
+.gd-progress-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 4px; }
+.gd-progress-counts { font-size: 12px; color: var(--text-secondary); }
 .gd-progress-counts strong { color: var(--text-primary); }
+.gd-progress-pct { font-size: 12px; font-weight: 700; color: var(--accent); }
 
-/* Colonnes */
-.gd-columns {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0;
-  padding: 14px 20px;
-  min-height: 160px;
-  max-height: 38vh;
-  overflow: hidden;
+.gd-grade-dist { display: flex; gap: 5px; flex-wrap: wrap; margin-bottom: 10px; }
+.grade-dist-pill {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 600;
 }
+.grade-dist-pill.grade-a  { background: rgba(39,174,96,.12); color: var(--color-success); }
+.grade-dist-pill.grade-b  { background: rgba(39,174,96,.07); color: #27ae60; }
+.grade-dist-pill.grade-c  { background: rgba(243,156,18,.12); color: var(--color-warning); }
+.grade-dist-pill.grade-d  { background: rgba(231,76,60,.12); color: var(--color-danger); }
+.grade-dist-pill.grade-na { background: rgba(255,255,255,.05); color: var(--text-muted); }
+.grade-dist-pill strong { font-weight: 800; }
 
-.gd-column {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  overflow: hidden;
-}
-.gd-column:first-child { padding-right: 12px; border-right: 1px solid var(--border); }
-.gd-column:last-child  { padding-left: 12px; }
-
-.gd-column-header {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--text-secondary);
-  text-transform: uppercase;
-  letter-spacing: .5px;
-  margin-bottom: 4px;
-}
-
-.gd-column-body {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  overflow-y: auto;
-  flex: 1;
-}
-
-.gd-student-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 5px 8px;
-  border-radius: 6px;
-  transition: background .1s;
-}
+/* Colonnes rendus/en attente */
+.gd-columns { display: grid; grid-template-columns: 1fr 1fr; min-height: 100px; max-height: 32vh; overflow: hidden; }
+.gd-column { display: flex; flex-direction: column; gap: 4px; overflow: hidden; }
+.gd-column:first-child { padding-right: 10px; border-right: 1px solid var(--border); }
+.gd-column:last-child  { padding-left: 10px; }
+.gd-column-header { display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: .4px; margin-bottom: 4px; }
+.gd-column-body { display: flex; flex-direction: column; gap: 3px; overflow-y: auto; flex: 1; }
+.gd-student-row { display: flex; align-items: center; gap: 6px; padding: 3px 6px; border-radius: 5px; }
 .gd-student-row:hover { background: rgba(255,255,255,.04); }
+.gd-student-name { font-size: 12px; font-weight: 500; color: var(--text-primary); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.gd-grade { font-size: 12px; font-weight: 800; width: 20px; text-align: center; }
+.gd-grade.grade-a { color: var(--color-success); }
+.gd-grade.grade-b { color: #27ae60; }
+.gd-grade.grade-c { color: var(--color-warning); }
+.gd-grade.grade-d { color: var(--color-danger); }
+.gd-no-grade { font-size: 12px; color: var(--text-muted); width: 20px; text-align: center; }
+.gd-empty { font-size: 12px; color: var(--text-muted); font-style: italic; padding: 6px 0; }
 
-.gd-student-name {
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--text-primary);
-  flex: 1;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+.gd-rendus-footer { display: flex; justify-content: flex-end; margin-top: 10px; padding-top: 8px; border-top: 1px solid var(--border); }
+
+/* Rubrique */
+.gd-rubric-view { }
+.gd-rubric-title { font-size: 14px; font-weight: 700; color: var(--text-primary); margin-bottom: 10px; }
+.gd-rubric-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.gd-rubric-table th {
+  text-align: left; font-size: 11px; font-weight: 700; color: var(--text-muted);
+  text-transform: uppercase; letter-spacing: .3px; padding: 6px 8px;
+  border-bottom: 1px solid var(--border);
+}
+.gd-rubric-table td { padding: 6px 8px; color: var(--text-secondary); border-bottom: 1px solid rgba(255,255,255,.03); }
+.gd-rubric-num { text-align: center; font-weight: 600; color: var(--text-primary); }
+
+.gd-rubric-empty {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: 40px 20px; text-align: center; color: var(--text-muted); font-size: 13px;
 }
 
-.gd-grade {
-  font-size: 13px;
-  font-weight: 800;
-  width: 22px;
-  text-align: center;
-  flex-shrink: 0;
-}
-.gd-grade.grade-a  { color: var(--color-success); }
-.gd-grade.grade-b  { color: #27ae60; }
-.gd-grade.grade-c  { color: var(--color-warning); }
-.gd-grade.grade-d  { color: var(--color-danger); }
-
-.gd-no-grade {
-  font-size: 13px;
-  color: var(--text-muted);
-  width: 22px;
-  text-align: center;
-  flex-shrink: 0;
-}
-
-.gd-empty {
-  font-size: 12.5px;
-  color: var(--text-muted);
-  font-style: italic;
-  padding: 8px 0;
-}
-
-/* Badges */
+/* Badges existants */
 .travail-type-badge {
-  font-size: 10px;
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: .5px;
-  padding: 2px 7px;
-  border-radius: 4px;
+  font-size: 10px; font-weight: 800; text-transform: uppercase;
+  letter-spacing: .4px; padding: 3px 9px; border-radius: 20px;
 }
-.type-livrable     { background: rgba(74,144,217,.2);   color: var(--accent); }
-.type-soutenance   { background: rgba(243,156,18,.2);   color: var(--color-warning); }
-.type-cctl         { background: rgba(123,104,238,.2);  color: #9b87f5; }
-.type-etude_de_cas { background: rgba(39,174,96,.2);    color: var(--color-success); }
-.type-memoire      { background: rgba(231,76,60,.2);    color: #e74c3c; }
-.type-autre        { background: rgba(127,140,141,.2);  color: #95a5a6; }
-
-/* Pied */
-.gd-footer {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 10px;
-  padding: 12px 20px;
-  border-top: 1px solid var(--border);
-  flex-shrink: 0;
-}
+.type-livrable      { background: rgba(74,144,217,.2);    color: var(--accent); }
+.type-soutenance    { background: rgba(232,137,26,.2);    color: var(--color-warning); }
+.type-cctl          { background: rgba(142,68,173,.2);    color: #a569bd; }
+.type-etude_de_cas  { background: rgba(39,174,96,.2);     color: var(--color-success); }
+.type-memoire       { background: rgba(231,76,60,.2);     color: #e74c3c; }
+.type-autre         { background: rgba(127,140,141,.2);   color: #95a5a6; }
+.tag-badge          { font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 12px; background: rgba(255,255,255,.06); color: var(--text-secondary); }
 </style>
