@@ -85,6 +85,38 @@ const unifiedGrouped = computed(() => {
   return [...groups.entries()].sort(([a], [b]) => a.localeCompare(b))
 })
 
+// ── Helpers pour la page d'accueil projets ──────────────────────────────────
+function projectDevoirCount(cat: string): number {
+  return (travauxStore.ganttData as Devoir[]).filter(t => t.category?.trim() === cat).length
+}
+function projectNextDeadline(cat: string): string | null {
+  const now = Date.now()
+  const upcoming = (travauxStore.ganttData as Devoir[])
+    .filter(t => t.category?.trim() === cat && t.is_published && new Date(t.deadline).getTime() > now)
+    .sort((a, b) => new Date(a.deadline).getTime() - new Date(b.deadline).getTime())
+  return upcoming[0]?.deadline ?? null
+}
+function projectTypeCounts(cat: string): { type: string; count: number }[] {
+  const counts: Record<string, number> = {}
+  for (const t of (travauxStore.ganttData as Devoir[]).filter(d => d.category?.trim() === cat)) {
+    counts[t.type] = (counts[t.type] ?? 0) + 1
+  }
+  return Object.entries(counts).map(([type, count]) => ({ type, count })).sort((a, b) => b.count - a.count)
+}
+
+// ── Devoirs par type (pour la vue projet sélectionné) ───────────────────────
+const TYPE_ORDER = ['cctl', 'soutenance', 'etude_de_cas', 'livrable', 'memoire', 'autre']
+const devoirsByType = computed(() => {
+  const groups: Record<string, typeof unifiedFlat.value> = {}
+  for (const t of unifiedFlat.value) {
+    if (!groups[t.type]) groups[t.type] = []
+    groups[t.type].push(t)
+  }
+  return TYPE_ORDER
+    .filter(type => groups[type]?.length)
+    .map(type => ({ type, items: groups[type] }))
+})
+
 // Liste plate pour le tableau (quand on filtre par catégorie via onglets)
 type UnifiedFlatRow = UnifiedRow & { hasSubmission: boolean }
 const unifiedFlat = computed((): UnifiedFlatRow[] => {
@@ -93,7 +125,9 @@ const unifiedFlat = computed((): UnifiedFlatRow[] => {
 
   return raw
     .filter(t => {
-      if (filterCategory.value && t.category?.trim() !== filterCategory.value) return false
+      // Filtre par projet actif (prioritaire) ou par onglet catégorie
+      const catFilter = appStore.activeProject || filterCategory.value
+      if (catFilter && t.category?.trim() !== catFilter) return false
       if (teacherSearch.value) {
         const q = teacherSearch.value.toLowerCase().trim()
         if (!t.title.toLowerCase().includes(q)) return false
@@ -468,21 +502,12 @@ function typeLabel(t: string): string {
         </template>
       </div>
 
-      <!-- Onglets catégories prof -->
-      <div v-if="appStore.isTeacher && !appStore.activeProject" class="teacher-cat-tabs">
-        <button
-          class="teacher-cat-tab"
-          :class="{ active: !filterCategory }"
-          @click="filterCategory = ''"
-        >Tout</button>
-        <button
-          v-for="cat in teacherCategories"
-          :key="cat"
-          class="teacher-cat-tab"
-          :class="{ active: filterCategory === cat }"
-          @click="filterCategory = filterCategory === cat ? '' : cat"
-        >{{ cat }}</button>
-      </div>
+      <!-- Bouton Nouveau (quand dans un projet) -->
+      <template v-if="appStore.isTeacher && appStore.activeProject">
+        <button class="btn-primary btn-nouveau" @click="modals.newDevoir = true">
+          <Plus :size="14" /> Nouveau
+        </button>
+      </template>
     </header>
 
     <!-- ── Barre de stats étudiant ──────────────────────────────────────────── -->
@@ -852,54 +877,89 @@ function typeLabel(t: string): string {
         <ProjetFiche :project-key="appStore.activeProject" :promo-id="appStore.activePromoId" />
       </template>
 
-      <!-- ════════════════════════ Tableau devoirs (prof) ════════════════════════ -->
-      <template v-else-if="appStore.isTeacher">
-
+      <!-- ════════════════════════ ACCUEIL PROJETS (prof, pas de projet sélectionné) ════════════════════════ -->
+      <template v-else-if="appStore.isTeacher && !appStore.activeProject">
         <div v-if="travauxStore.loading" class="ut-loading">
-          <div v-for="i in 6" :key="i" class="skel skel-line" style="height:40px;margin-bottom:6px;border-radius:8px" />
+          <div v-for="i in 4" :key="i" class="skel skel-line" style="height:100px;margin-bottom:10px;border-radius:10px" />
+        </div>
+
+        <div v-else-if="!teacherCategories.length" class="empty-state-custom">
+          <BookOpen :size="48" class="empty-icon" />
+          <h3>Aucun projet</h3>
+          <p>Créez un devoir avec une catégorie pour voir vos projets ici.</p>
+        </div>
+
+        <div v-else class="proj-grid">
+          <div
+            v-for="cat in teacherCategories"
+            :key="cat"
+            class="proj-card"
+            @click="appStore.activeProject = cat"
+          >
+            <div class="proj-card-header">
+              <span class="proj-card-name">{{ cat }}</span>
+              <ChevronRight :size="14" class="proj-card-chevron" />
+            </div>
+            <div class="proj-card-stats">
+              <span v-for="tl in projectTypeCounts(cat)" :key="tl.type" class="proj-type-pill" :class="`type-${tl.type}`">
+                {{ tl.count }} {{ typeLabel(tl.type) }}
+              </span>
+            </div>
+            <div class="proj-card-footer">
+              <span class="proj-card-total">{{ projectDevoirCount(cat) }} devoir{{ projectDevoirCount(cat) > 1 ? 's' : '' }}</span>
+              <span v-if="projectNextDeadline(cat)" class="proj-card-next deadline-badge" :class="deadlineClass(projectNextDeadline(cat)!)">
+                <Clock :size="10" /> {{ deadlineLabel(projectNextDeadline(cat)!) }}
+              </span>
+            </div>
+          </div>
+        </div>
+      </template>
+
+      <!-- ════════════════════════ VUE PROJET (prof, projet sélectionné) ════════════════════════ -->
+      <template v-else-if="appStore.isTeacher && appStore.activeProject">
+        <div v-if="travauxStore.loading" class="ut-loading">
+          <div v-for="i in 5" :key="i" class="skel skel-line" style="height:36px;margin-bottom:4px;border-radius:6px" />
         </div>
 
         <div v-else-if="!unifiedFlat.length" class="empty-state-custom">
           <BookOpen :size="48" class="empty-icon" />
-          <h3>{{ filterCategory ? 'Aucun devoir dans ce projet' : 'Aucun devoir créé' }}</h3>
-          <p v-if="filterCategory">Sélectionnez un autre projet ou créez un devoir.</p>
-          <p v-else>Créez un premier devoir avec le bouton "Nouveau".</p>
+          <h3>Aucun devoir dans ce projet</h3>
+          <p>Créez un devoir avec le bouton "Nouveau".</p>
         </div>
 
-        <div v-else class="ut-table">
-          <!-- En-tête du tableau -->
-          <div class="ut-thead">
-            <span class="ut-th ut-th-type">Type</span>
-            <span class="ut-th ut-th-title">Titre</span>
-            <span class="ut-th ut-th-deadline">Échéance</span>
-            <span class="ut-th ut-th-progress">Soumissions</span>
-            <span class="ut-th ut-th-status">Statut</span>
-            <span class="ut-th ut-th-action"></span>
-          </div>
-
-          <!-- Lignes -->
-          <div
-            v-for="t in unifiedFlat"
-            :key="t.id"
-            class="ut-row"
-            :class="{ 'ut-row--draft': !t.is_published }"
-            @click="openDevoir(t.id)"
-          >
-            <span class="ut-type devoir-type-badge" :class="`type-${t.type}`">{{ typeLabel(t.type) }}</span>
-            <span class="ut-title">{{ t.title }}</span>
-            <span class="ut-deadline deadline-badge" :class="deadlineClass(t.deadline)">{{ deadlineLabel(t.deadline) }}</span>
-            <span class="ut-progress">
-              <template v-if="t.hasSubmission && t.students_total > 0">
-                <span class="ut-progress-bar">
-                  <span class="ut-progress-fill" :style="{ width: Math.round((t.depots_count / t.students_total) * 100) + '%' }" />
-                </span>
-                <span class="ut-progress-text">{{ t.depots_count }}/{{ t.students_total }}</span>
-              </template>
-              <span v-else class="ut-progress-text ut-no-submit">Pas de rendu</span>
-            </span>
-            <span class="ut-status" :class="t.statusCls">{{ t.statusLabel }}</span>
-            <ChevronRight :size="13" class="ut-chevron" />
-          </div>
+        <!-- Devoirs groupés par type -->
+        <div v-else class="ut-by-type">
+          <template v-for="group in devoirsByType" :key="group.type">
+            <div class="ut-type-section">
+              <div class="ut-type-header">
+                <span class="devoir-type-badge" :class="`type-${group.type}`">{{ typeLabel(group.type) }}</span>
+                <span class="ut-type-count">{{ group.items.length }}</span>
+              </div>
+              <div class="ut-type-rows">
+                <div
+                  v-for="t in group.items"
+                  :key="t.id"
+                  class="ut-row"
+                  :class="{ 'ut-row--draft': !t.is_published }"
+                  @click="openDevoir(t.id)"
+                >
+                  <span class="ut-title">{{ t.title }}</span>
+                  <span class="ut-deadline deadline-badge" :class="deadlineClass(t.deadline)">{{ deadlineLabel(t.deadline) }}</span>
+                  <span class="ut-progress">
+                    <template v-if="t.hasSubmission && t.students_total > 0">
+                      <span class="ut-progress-bar">
+                        <span class="ut-progress-fill" :style="{ width: Math.round((t.depots_count / t.students_total) * 100) + '%' }" />
+                      </span>
+                      <span class="ut-progress-text">{{ t.depots_count }}/{{ t.students_total }}</span>
+                    </template>
+                    <span v-else class="ut-progress-text ut-no-submit">—</span>
+                  </span>
+                  <span class="ut-status" :class="t.statusCls">{{ t.statusLabel }}</span>
+                  <ChevronRight :size="13" class="ut-chevron" />
+                </div>
+              </div>
+            </div>
+          </template>
         </div>
       </template>
 
@@ -1153,7 +1213,58 @@ function typeLabel(t: string): string {
 /* ══════════════════════════════════════════════════════════════════════════════
    TABLEAU UNIFIÉ PROF
 ═══════════════════════════════════════════════════════════════════════════════ */
-/* ── Onglets catégories prof ── */
+/* ══════════════════════════════════════════════════════════════════════════════
+   PAGE D'ACCUEIL PROJETS
+═══════════════════════════════════════════════════════════════════════════════ */
+.proj-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 12px; padding: 16px 20px;
+}
+.proj-card {
+  background: var(--bg-elevated, rgba(255,255,255,.03));
+  border: 1px solid var(--border);
+  border-radius: 10px; padding: 16px; cursor: pointer;
+  transition: border-color var(--t-fast), background var(--t-fast), transform .1s;
+}
+.proj-card:hover {
+  border-color: var(--accent); background: rgba(74,144,217,.04);
+  transform: translateY(-1px);
+}
+.proj-card-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 10px;
+}
+.proj-card-name { font-size: 15px; font-weight: 700; color: var(--text-primary); }
+.proj-card-chevron { color: var(--text-muted); opacity: .4; transition: opacity var(--t-fast); }
+.proj-card:hover .proj-card-chevron { opacity: 1; color: var(--accent); }
+.proj-card-stats { display: flex; gap: 5px; flex-wrap: wrap; margin-bottom: 10px; }
+.proj-type-pill {
+  font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 10px;
+}
+.proj-card-footer {
+  display: flex; align-items: center; justify-content: space-between;
+  font-size: 12px; color: var(--text-muted);
+}
+.proj-card-total { font-weight: 500; }
+.proj-card-next { font-size: 10px; }
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   VUE PROJET PAR TYPE
+═══════════════════════════════════════════════════════════════════════════════ */
+.ut-by-type { padding: 12px 20px; }
+.ut-type-section { margin-bottom: 16px; }
+.ut-type-header {
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 0; margin-bottom: 4px;
+  border-bottom: 1px solid var(--border);
+}
+.ut-type-count {
+  font-size: 11px; font-weight: 600; color: var(--text-muted);
+  background: rgba(255,255,255,.06); padding: 1px 6px; border-radius: 8px;
+}
+.ut-type-rows { display: flex; flex-direction: column; gap: 2px; }
+
+/* ── Onglets catégories prof (legacy) ── */
 .teacher-cat-tabs {
   display: flex; gap: 2px; padding: 0 20px; overflow-x: auto;
   border-bottom: 1px solid var(--border);

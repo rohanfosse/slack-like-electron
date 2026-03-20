@@ -718,50 +718,36 @@
       <template v-else-if="route.name === 'devoirs'">
         <div class="sidebar-section-header">
           <span>Projets</span>
-          <button
-            class="btn-icon"
-            title="Nouveau projet"
-            aria-label="Nouveau projet"
-            style="padding:2px"
-            @click="modals.newProject = true"
-          >
-            <Plus :size="14" />
-          </button>
         </div>
 
-        <nav aria-label="Projets">
-          <!-- Tous les devoirs -->
+        <nav aria-label="Projets" class="sidebar-projects-nav">
+          <!-- Accueil (tous les projets) -->
           <button
             class="sidebar-item"
             :class="{ active: appStore.activeProject === null }"
             @click="selectProject(null)"
           >
             <Layers :size="13" class="project-icon" />
-            <span class="channel-name">Tous les devoirs</span>
+            <span class="channel-name">Accueil</span>
           </button>
 
-          <!-- Projets -->
-          <button
-            v-for="proj in allProjects"
-            :key="proj"
-            class="sidebar-item"
-            :class="{ active: appStore.activeProject === proj }"
-            @click="selectProject(proj)"
-          >
-            <component
-              v-if="parseCategoryIcon(proj).icon"
-              :is="parseCategoryIcon(proj).icon!"
-              :size="13"
-              class="project-icon"
-            />
-            <span v-else class="project-bullet" />
-            <span class="channel-name">{{ parseCategoryIcon(proj).label }}</span>
-            <span
-              v-if="appStore.isStaff && projectStats[proj]"
-              class="project-rendus-badge"
-              :class="{ 'badge-complete': projectStats[proj].depots >= projectStats[proj].expected && projectStats[proj].expected > 0 }"
-            >{{ projectStats[proj].depots }}/{{ projectStats[proj].expected }}</span>
-          </button>
+          <!-- Projets avec déroulant -->
+          <div v-for="proj in allProjects" :key="proj" class="sidebar-project-group">
+            <button
+              class="sidebar-item sidebar-project-item"
+              :class="{ active: appStore.activeProject === proj }"
+              @click="selectProject(proj)"
+            >
+              <component
+                v-if="parseCategoryIcon(proj).icon"
+                :is="parseCategoryIcon(proj).icon!"
+                :size="13"
+                class="project-icon"
+              />
+              <span v-else class="project-bullet" />
+              <span class="channel-name">{{ parseCategoryIcon(proj).label }}</span>
+            </button>
+          </div>
         </nav>
 
         <NewProjectModal v-model="modals.newProject" @created="onProjectCreated" />
