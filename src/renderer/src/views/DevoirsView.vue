@@ -101,6 +101,15 @@ function addDevoirOfType(type: string) {
   modals.newDevoir = true
 }
 
+// ── Stats globales promo ────────────────────────────────────────────────────
+const globalDrafts = computed(() =>
+  (travauxStore.ganttData as Devoir[]).filter(t => !t.is_published).length,
+)
+const globalToGrade = computed(() => {
+  const all = travauxStore.allRendus
+  return all.filter(r => !r.note && r.submitted_at).length
+})
+
 // ── Prochains événements (tous types, triés par deadline) ───────────────────
 const upcomingDevoirs = computed(() => {
   const now = Date.now()
@@ -939,27 +948,35 @@ function typeLabel(t: string): string {
           <p>Créez un devoir avec une catégorie pour voir vos projets ici.</p>
         </div>
 
-        <!-- Prochains événements -->
-        <div v-if="upcomingDevoirs.length" class="upcoming-section">
-          <h4 class="upcoming-title"><Clock :size="14" /> Prochains événements</h4>
-          <div class="upcoming-list">
-            <div
-              v-for="d in upcomingDevoirs"
-              :key="d.id"
-              class="upcoming-item"
-              @click="openDevoir(d.id)"
-            >
-              <span class="devoir-type-badge" :class="`type-${d.type}`" style="font-size:9px">{{ typeLabel(d.type) }}</span>
-              <span class="upcoming-item-title">{{ d.title }}</span>
-              <span v-if="extractDuration(d.description)" class="upcoming-item-dur">{{ extractDuration(d.description) }}</span>
-              <span class="upcoming-item-deadline deadline-badge" :class="deadlineClass(d.deadline)">{{ deadlineLabel(d.deadline) }}</span>
+        <template v-else>
+          <!-- Stats globales promo -->
+          <div class="home-stats-bar">
+            <span class="home-stat"><strong>{{ (travauxStore.ganttData as any[]).length }}</strong> devoirs</span>
+            <span v-if="globalToGrade > 0" class="home-stat home-stat--warn"><strong>{{ globalToGrade }}</strong> à noter</span>
+            <span v-if="globalDrafts > 0" class="home-stat home-stat--muted"><strong>{{ globalDrafts }}</strong> brouillon{{ globalDrafts > 1 ? 's' : '' }}</span>
+          </div>
+
+          <!-- Prochains événements -->
+          <div v-if="upcomingDevoirs.length" class="upcoming-section">
+            <h4 class="upcoming-title"><Clock :size="14" /> Prochains événements</h4>
+            <div class="upcoming-list">
+              <div
+                v-for="d in upcomingDevoirs"
+                :key="d.id"
+                class="upcoming-item"
+                @click="openDevoir(d.id)"
+              >
+                <span class="devoir-type-badge" :class="`type-${d.type}`" style="font-size:9px">{{ typeLabel(d.type) }}</span>
+                <span class="upcoming-item-title">{{ d.title }}</span>
+                <span v-if="d.category" class="upcoming-item-cat">{{ d.category }}</span>
+                <span v-if="extractDuration(d.description)" class="upcoming-item-dur">{{ extractDuration(d.description) }}</span>
+                <span class="upcoming-item-deadline deadline-badge" :class="deadlineClass(d.deadline)">{{ deadlineLabel(d.deadline) }}</span>
+              </div>
             </div>
           </div>
-        </div>
 
-        <div v-else-if="!teacherCategories.length" />
-
-        <div v-if="teacherCategories.length" class="proj-grid">
+          <!-- Cartes projets -->
+          <div class="proj-grid">
           <div
             v-for="cat in teacherCategories"
             :key="cat"
@@ -993,6 +1010,7 @@ function typeLabel(t: string): string {
             </div>
           </div>
         </div>
+        </template>
       </template>
 
       <!-- ════════════════════════ VUE PROJET (prof, projet sélectionné) ════════════════════════ -->
@@ -1101,9 +1119,8 @@ function typeLabel(t: string): string {
         </template>
       </template>
 
-      <!-- Anciennes vues Liste/Rendus supprimées — remplacées par le tableau unifié ci-dessus -->
-      <!-- ════════════════════════ (OBSOLÈTE) ════════════════════════ -->
-      <template v-else-if="teacherView === 'liste'">
+      <!-- (Anciennes vues supprimées) -->
+      <template v-if="false">
 
         <div v-if="travauxStore.loading" class="liste-grid">
           <div v-for="i in 6" :key="i" class="skel-card">
@@ -1405,6 +1422,22 @@ function typeLabel(t: string): string {
 /* ══════════════════════════════════════════════════════════════════════════════
    PROCHAINS ÉVÉNEMENTS (accueil devoirs)
 ═══════════════════════════════════════════════════════════════════════════════ */
+/* ── Stats globales accueil ── */
+.home-stats-bar {
+  display: flex; gap: 14px; padding: 10px 20px;
+  font-size: 13px; color: var(--text-secondary);
+}
+.home-stat strong { color: var(--text-primary); font-weight: 700; }
+.home-stat--warn { color: var(--color-warning); }
+.home-stat--warn strong { color: var(--color-warning); }
+.home-stat--muted { color: var(--text-muted); font-style: italic; }
+
+.upcoming-item-cat {
+  font-size: 10px; color: var(--text-muted);
+  background: rgba(255,255,255,.05); padding: 1px 6px; border-radius: 4px;
+  flex-shrink: 0;
+}
+
 .upcoming-section { padding: 12px 20px 0; }
 .upcoming-title {
   display: flex; align-items: center; gap: 6px;

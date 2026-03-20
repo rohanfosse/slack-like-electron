@@ -195,47 +195,55 @@
 
       <!-- ════════ ONGLET APERÇU ════════ -->
       <div v-if="activeTab === 'apercu'" class="gd-panel">
-        <!-- Badges -->
-        <div class="gd-meta-badges">
-          <span class="travail-type-badge" :class="`type-${travail.type}`">{{ travail.type }}</span>
-          <span v-if="travail.category" class="tag-badge">{{ travail.category }}</span>
-          <span class="deadline-badge" :class="deadlineClass(travail.deadline)">
-            <Clock :size="10" /> {{ deadlineLabel(travail.deadline) }}
-          </span>
-        </div>
 
-        <!-- Infos -->
-        <div class="gd-meta-info">
-          <span class="gd-info-item">
-            <strong>Échéance :</strong> {{ formatDate(travail.deadline) }}
-            <span class="gd-extend-btns">
-              <button class="gd-extend-btn" @click="extendDeadline(1)">+1j</button>
-              <button class="gd-extend-btn" @click="extendDeadline(3)">+3j</button>
-              <button class="gd-extend-btn" @click="extendDeadline(7)">+1sem</button>
+        <!-- Carte Informations -->
+        <div class="gd-card">
+          <div class="gd-card-row">
+            <span class="travail-type-badge" :class="`type-${travail.type}`">{{ travail.type }}</span>
+            <span v-if="travail.category" class="tag-badge">{{ travail.category }}</span>
+            <span class="deadline-badge" :class="deadlineClass(travail.deadline)">
+              <Clock :size="10" /> {{ deadlineLabel(travail.deadline) }}
             </span>
-          </span>
-          <span v-if="travail.start_date" class="gd-info-item"><strong>Début :</strong> {{ formatDate(travail.start_date) }}</span>
-          <span v-if="travail.channel_name" class="gd-info-item">
-            <strong>Canal :</strong>
-            <button class="gd-link-btn" @click="goToChannel"># {{ travail.channel_name }} <ExternalLink :size="10" /></button>
-          </span>
-          <span class="gd-info-item">
-            <strong>Assigné à :</strong> {{ travail.assigned_to === 'group' ? `Groupe ${travail.group_name ?? ''}` : 'Tous' }}
-          </span>
-          <span v-if="(travail as any).created_at" class="gd-info-item" style="opacity:.6">
-            Créé le {{ formatDate((travail as any).created_at) }}
-          </span>
+          </div>
+          <div class="gd-card-grid">
+            <div class="gd-card-field">
+              <span class="gd-field-label">Échéance</span>
+              <span class="gd-field-value">
+                {{ formatDate(travail.deadline) }}
+                <span class="gd-extend-btns">
+                  <button class="gd-extend-btn" @click="extendDeadline(1)">+1j</button>
+                  <button class="gd-extend-btn" @click="extendDeadline(3)">+3j</button>
+                  <button class="gd-extend-btn" @click="extendDeadline(7)">+1sem</button>
+                </span>
+              </span>
+            </div>
+            <div v-if="travail.start_date" class="gd-card-field">
+              <span class="gd-field-label">Début</span>
+              <span class="gd-field-value">{{ formatDate(travail.start_date) }}</span>
+            </div>
+            <div v-if="travail.channel_name" class="gd-card-field">
+              <span class="gd-field-label">Canal</span>
+              <button class="gd-link-btn" @click="goToChannel"># {{ travail.channel_name }} <ExternalLink :size="10" /></button>
+            </div>
+            <div class="gd-card-field">
+              <span class="gd-field-label">Assigné à</span>
+              <span class="gd-field-value">{{ travail.assigned_to === 'group' ? `Groupe ${travail.group_name ?? ''}` : 'Toute la promo' }}</span>
+            </div>
+          </div>
         </div>
 
-        <!-- Description -->
-        <div v-if="!editingDesc" class="gd-description" @click="startEditDesc" title="Cliquer pour modifier">
-          {{ travail.description || 'Aucune description — cliquez pour en ajouter.' }}
-        </div>
-        <div v-else class="gd-desc-edit">
-          <textarea v-model="descDraft" class="gd-desc-textarea" rows="3" />
-          <div class="gd-desc-edit-actions">
-            <button class="btn-ghost" style="font-size:11px" @click="editingDesc = false">Annuler</button>
-            <button class="btn-primary" style="font-size:11px;padding:3px 10px" @click="editingDesc = false; showToast('Description mise à jour.', 'success')">OK</button>
+        <!-- Carte Consignes / Description -->
+        <div class="gd-card">
+          <span class="gd-card-label">Consignes</span>
+          <div v-if="!editingDesc" class="gd-description" @click="startEditDesc" title="Cliquer pour modifier">
+            <pre class="gd-desc-pre">{{ travail.description || 'Aucune description — cliquez pour en ajouter.' }}</pre>
+          </div>
+          <div v-else class="gd-desc-edit">
+            <textarea v-model="descDraft" class="gd-desc-textarea" rows="3" />
+            <div class="gd-desc-edit-actions">
+              <button class="btn-ghost" style="font-size:11px" @click="editingDesc = false">Annuler</button>
+              <button class="btn-primary" style="font-size:11px;padding:3px 10px" @click="editingDesc = false; showToast('Description mise à jour.', 'success')">OK</button>
+            </div>
           </div>
         </div>
 
@@ -383,10 +391,23 @@
 .gd-panel { padding: 14px 20px; min-height: 200px; max-height: 50vh; overflow-y: auto; }
 
 /* Meta */
-.gd-meta-badges { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
-.gd-meta-info { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 10px; }
-.gd-info-item { font-size: 13px; color: var(--text-secondary); }
-.gd-info-item strong { color: var(--text-primary); }
+/* Cartes dans l'aperçu */
+.gd-card {
+  background: rgba(255,255,255,.02); border: 1px solid var(--border);
+  border-radius: 8px; padding: 12px; margin-bottom: 10px;
+}
+.gd-card-label {
+  font-size: 10px; font-weight: 700; color: var(--text-muted);
+  text-transform: uppercase; letter-spacing: .4px; margin-bottom: 8px; display: block;
+}
+.gd-card-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+.gd-card-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.gd-card-field { }
+.gd-field-label { font-size: 10px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: .3px; display: block; margin-bottom: 2px; }
+.gd-field-value { font-size: 13px; color: var(--text-primary); }
+.gd-desc-pre { font-family: var(--font); font-size: 13px; white-space: pre-wrap; line-height: 1.5; margin: 0; color: var(--text-secondary); }
+
+@media (max-width: 500px) { .gd-card-grid { grid-template-columns: 1fr; } }
 .gd-extend-btns { display: inline-flex; gap: 3px; margin-left: 4px; }
 .gd-extend-btn {
   font-size: 10px; font-weight: 600; padding: 1px 5px; border-radius: 4px;
