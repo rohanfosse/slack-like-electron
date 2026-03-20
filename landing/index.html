@@ -313,19 +313,31 @@
     .doc-dl:hover { background: rgba(0,0,0,.09); }
     .doc-dl svg { width: 12px; height: 12px; color: var(--text-2); }
 
-    /* STATS */
-    .stats { padding: 80px 0; }
-    .stats-grid {
-      display: grid; grid-template-columns: repeat(4, 1fr);
-      gap: 1px; background: var(--border);
-      border: 1px solid var(--border); border-radius: var(--r); overflow: hidden;
-      box-shadow: 0 1px 4px rgba(0,0,0,.06);
+    /* VERSION BANNER */
+    .version-banner { padding: 32px 0; }
+    .version-pill {
+      display: inline-flex; align-items: center; gap: 10px;
+      padding: 10px 20px 10px 14px;
+      background: var(--bg-card); border: 1px solid var(--border-2);
+      border-radius: 100px; box-shadow: 0 2px 8px rgba(0,0,0,.07);
+      font-size: 13px; color: var(--text-2);
+      text-decoration: none; transition: box-shadow .18s, border-color .18s;
+      cursor: pointer;
     }
-    .stat { padding: 32px 28px; background: var(--bg-card); display: flex; flex-direction: column; gap: 6px; }
-    .stat-icon { width: 36px; height: 36px; border-radius: 9px; background: var(--accent-dim); display: flex; align-items: center; justify-content: center; margin-bottom: 8px; color: var(--accent); }
-    .stat-icon svg { width: 18px; height: 18px; }
-    .stat-val { font-size: 26px; font-weight: 900; letter-spacing: -1px; color: var(--text); }
-    .stat-lbl { font-size: 13px; color: var(--text-2); }
+    .version-pill:hover { border-color: rgba(59,130,246,.35); box-shadow: 0 4px 16px rgba(59,130,246,.12); color: var(--text); }
+    .version-pill-tag {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 3px 10px; border-radius: 100px;
+      background: var(--accent); color: #fff;
+      font-size: 11px; font-weight: 800; letter-spacing: .2px;
+    }
+    .version-pill-dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: rgba(255,255,255,.7);
+    }
+    .version-pill-sep { width: 1px; height: 14px; background: var(--border-2); }
+    .version-pill-arrow { color: var(--text-3); font-size: 14px; transition: transform .18s; }
+    .version-pill:hover .version-pill-arrow { transform: translateX(3px); }
 
     /* POUR QUI */
     .who { padding: 40px 0 80px; }
@@ -474,7 +486,6 @@
     }
     @media (max-width: 900px) {
       .demo-sidebar { display: none; }
-      .stats-grid { grid-template-columns: 1fr 1fr; }
       .feat-grid { grid-template-columns: 1fr; }
       .feat-big { grid-column: span 1; grid-template-columns: 1fr; }
       .feat-big-preview { display: none; }
@@ -490,7 +501,6 @@
     @media (max-width: 520px) {
       .hero-actions { flex-direction: column; align-items: stretch; }
       .hero-actions .btn { justify-content: center; }
-      .stats-grid { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -698,31 +708,18 @@
     </div><!-- /container -->
   </section>
 
-  <!-- STATS -->
-  <section class="stats">
-    <div class="container">
-      <div class="stats-grid fade-up">
-        <div class="stat">
-          <div class="stat-icon"><i data-lucide="inbox"></i></div>
-          <div class="stat-val">100%</div>
-          <div class="stat-lbl">Rendus et livrables en un seul endroit</div>
-        </div>
-        <div class="stat">
-          <div class="stat-icon"><i data-lucide="zap"></i></div>
-          <div class="stat-val">&lt; 1s</div>
-          <div class="stat-lbl">Messagerie temps réel</div>
-        </div>
-        <div class="stat">
-          <div class="stat-icon"><i data-lucide="monitor-smartphone"></i></div>
-          <div class="stat-val">3</div>
-          <div class="stat-lbl">Plateformes disponibles</div>
-        </div>
-        <div class="stat">
-          <div class="stat-icon"><i data-lucide="wifi-off"></i></div>
-          <div class="stat-val">PWA</div>
-          <div class="stat-lbl">Installable et hors-ligne</div>
-        </div>
-      </div>
+  <!-- VERSION BANNER -->
+  <section class="version-banner">
+    <div class="container" style="display:flex;justify-content:center">
+      <a href="#download" class="version-pill fade-up" id="version-pill">
+        <span class="version-pill-tag">
+          <span class="version-pill-dot"></span>
+          <span id="pill-version">v2.0.0</span>
+        </span>
+        <span class="version-pill-sep"></span>
+        <span id="pill-label">Nouvelle version disponible</span>
+        <span class="version-pill-arrow">→</span>
+      </a>
     </div>
   </section>
 
@@ -954,9 +951,15 @@
         const v = data.version
         const badge = document.getElementById('version-badge')
         if (badge) badge.innerHTML = `<span class="hero-eyebrow-dot"></span>${v} · Disponible maintenant`
-        ;['cl-version','footer-version'].forEach(id => {
+        ;['cl-version','footer-version','pill-version'].forEach(id => {
           const el = document.getElementById(id); if (el) el.textContent = v
         })
+        const pillLabel = document.getElementById('pill-label')
+        if (pillLabel && data.published_at) {
+          const d = new Date(data.published_at)
+          const rel = Math.floor((Date.now() - d) / 86400000)
+          pillLabel.textContent = rel === 0 ? 'Publiée aujourd\'hui' : rel === 1 ? 'Publiée hier' : `Publiée il y a ${rel} jours`
+        }
         if (data.published_at) {
           const label = new Date(data.published_at).toLocaleDateString('fr-FR', { month:'long', year:'numeric' })
           const cl = document.getElementById('cl-date')
