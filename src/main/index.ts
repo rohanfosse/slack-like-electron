@@ -12,7 +12,7 @@ import notificationsRaw from './notifications'
 
 const db            = dbRaw            as unknown as { init: () => void; close: () => void }
 const ipc           = ipcRaw           as unknown as { register: () => void }
-const notifications = notificationsRaw as unknown as { start: () => void }
+const notifications = notificationsRaw as unknown as { start: () => void; stop: () => void }
 
 // ── Gestionnaires d'erreurs globaux ──────────────────────────────────────────
 process.on('uncaughtException', (err) => {
@@ -135,7 +135,8 @@ app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit()
 })
 
-// ── Fermeture propre de la base de données ────────────────────────────────────
+// ── Fermeture propre ──────────────────────────────────────────────────────────
 app.on('before-quit', () => {
+  notifications.stop()
   db.close()
 })

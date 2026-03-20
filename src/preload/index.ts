@@ -4,6 +4,16 @@ import { io, Socket } from 'socket.io-client'
 // ─── Configuration serveur ────────────────────────────────────────────────────
 const SERVER_URL: string = (import.meta.env.VITE_SERVER_URL as string) ?? 'http://localhost:3001'
 
+if (!import.meta.env.VITE_SERVER_URL && import.meta.env.PROD) {
+  console.warn('[Preload] VITE_SERVER_URL non définie en production — fallback vers localhost:3001')
+}
+
+/** Décodage base64 protégé contre les données corrompues */
+function safeAtob(b64: string): string {
+  try { return atob(b64) }
+  catch { console.warn('[Preload] Décodage base64 échoué'); return '' }
+}
+
 // ─── État module-level ────────────────────────────────────────────────────────
 let jwtToken: string | null = null
 let socket:   Socket | null  = null
@@ -75,7 +85,11 @@ async function apiFetch(path: string, options: RequestInit = {}, retries = MAX_R
         try { ipcRenderer.send('auth:expired') } catch {}
         return { ok: false, error: 'Session expirée. Veuillez vous reconnecter.' }
       }
-      return await res.json()
+      try {
+        return await res.json()
+      } catch {
+        return { ok: false, error: 'Réponse serveur invalide (JSON attendu)' }
+      }
     } catch (e: unknown) {
       const isAbort = e instanceof Error && e.name === 'AbortError'
       if (attempt === retries) {
@@ -137,7 +151,8 @@ contextBridge.exposeInMainWorld('api', {
     if (!fileRes?.ok || !fileRes.data) return { ok: false, error: 'Annulé' }
     const b64Res = await invoke('fs:readFileBase64', fileRes.data) as { ok: boolean; data?: { b64: string } }
     if (!b64Res?.ok || !b64Res.data?.b64) return { ok: false, error: 'Lecture échouée' }
-    const text = atob(b64Res.data.b64)
+    const text = safeAtob(b64Res.data.b64)
+    if (!text) return { ok: false, error: 'Fichier CSV invalide (décodage échoué)' }
     const lines = text.split('\n').filter((l: string) => l.trim())
     if (lines.length < 2) return { ok: false, error: 'Fichier vide' }
     const students = lines.slice(1).map((line: string) => {
@@ -293,7 +308,8 @@ contextBridge.exposeInMainWorld('api', {
     if (!b64Res?.ok || !b64Res.data) return b64Res
     const { b64, mime, ext } = b64Res.data
     const fileName = localPath.split(/[/\\]/).pop() ?? `file.${ext}`
-    const byteChars = atob(b64)
+    const byteChars = safeAtob(b64)
+    if (!byteChars) return { ok: false, error: 'Fichier corrompu (décodage échoué)' }
     const bytes = new Uint8Array(byteChars.length)
     for (let i = 0; i < byteChars.length; i++) bytes[i] = byteChars.charCodeAt(i)
     const blob = new Blob([bytes], { type: mime })

@@ -69,7 +69,11 @@ async function apiFetch(path: string, options: RequestInit = {}, retries = MAX_R
         window.dispatchEvent(new CustomEvent('cursus:auth-expired'))
         return { ok: false, error: 'Session expirée. Veuillez vous reconnecter.' }
       }
-      return await res.json()
+      try {
+        return await res.json()
+      } catch {
+        return { ok: false, error: 'Réponse serveur invalide (JSON attendu)' }
+      }
     } catch (e: unknown) {
       const isAbort = e instanceof Error && e.name === 'AbortError'
       if (attempt === retries) {

@@ -7,6 +7,8 @@ const { Notification } = require('electron')
 const queries = require('../db/index')
 
 const notifiedIds = new Set()
+let _checkInterval = null
+let _cleanupInterval = null
 
 function formatHoursLeft(deadlineStr) {
   const ms = new Date(deadlineStr).getTime() - Date.now()
@@ -23,14 +25,16 @@ function checkAndNotify() {
       if (notifiedIds.has(t.id)) continue
       notifiedIds.add(t.id)
 
-      new Notification({
+      const notif = new Notification({
         title: `⏰ Rendu demain — ${t.title}`,
         body:  `${t.promo_name} · encore ${formatHoursLeft(t.deadline)}`,
         urgency: 'normal',
-      }).show()
+      })
+      notif.show()
+      console.log(`[Notifications] Notification envoyée : ${t.title} (ID ${t.id})`)
     }
   } catch (err) {
-    console.error('[Notifications]', err.message)
+    console.error('[Notifications]', err.stack || err.message)
   }
 }
 
@@ -38,7 +42,18 @@ function start() {
   // Première vérification au démarrage (légère pause pour laisser la DB s'init)
   setTimeout(checkAndNotify, 5_000)
   // Puis toutes les 30 minutes
-  setInterval(checkAndNotify, 30 * 60 * 1_000)
+  _checkInterval = setInterval(checkAndNotify, 30 * 60 * 1_000)
+  // Cleanup du Set notifiedIds toutes les 24h pour éviter la croissance infinie
+  _cleanupInterval = setInterval(() => {
+    const before = notifiedIds.size
+    notifiedIds.clear()
+    if (before > 0) console.log(`[Notifications] Cleanup : ${before} IDs purgés`)
+  }, 24 * 60 * 60 * 1_000)
 }
 
-module.exports = { start }
+function stop() {
+  if (_checkInterval) { clearInterval(_checkInterval); _checkInterval = null }
+  if (_cleanupInterval) { clearInterval(_cleanupInterval); _cleanupInterval = null }
+}
+
+module.exports = { start, stop }
