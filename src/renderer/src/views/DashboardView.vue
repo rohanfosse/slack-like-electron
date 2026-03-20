@@ -111,19 +111,43 @@ type Reminder = { id: number; promo_tag: string; date: string; title: string; de
 const allReminders = ref<Reminder[]>([])
 const showAllReminders = ref(false)
 
-const upcomingReminders = computed(() => {
+// Semaine courante : lundi → dimanche
+function getWeekBounds() {
+  const now = new Date()
+  const day = now.getDay() // 0=dim, 1=lun...
+  const diffToMon = day === 0 ? -6 : 1 - day
+  const monday = new Date(now)
+  monday.setDate(now.getDate() + diffToMon)
+  monday.setHours(0, 0, 0, 0)
+  const sunday = new Date(monday)
+  sunday.setDate(monday.getDate() + 6)
+  sunday.setHours(23, 59, 59, 999)
+  return { monday, sunday }
+}
+
+const thisWeekReminders = computed(() => {
+  const { monday, sunday } = getWeekBounds()
   const now = Date.now()
-  const enriched = allReminders.value.map(r => ({
-    ...r,
-    isOverdue: !r.done && new Date(r.date).getTime() < now,
-  }))
-  // Trier : non faits d'abord (overdue en premier), puis faits
-  const sorted = enriched.sort((a, b) => {
-    if (a.done !== b.done) return a.done - b.done
-    return new Date(a.date).getTime() - new Date(b.date).getTime()
-  })
-  return showAllReminders.value ? sorted : sorted.slice(0, 5)
+  return allReminders.value
+    .filter(r => {
+      const d = new Date(r.date).getTime()
+      // Cette semaine OU en retard (passé mais pas fait)
+      return (d >= monday.getTime() && d <= sunday.getTime()) || (!r.done && d < now)
+    })
+    .map(r => ({
+      ...r,
+      isOverdue: !r.done && new Date(r.date).getTime() < now,
+      isToday: new Date(r.date).toDateString() === new Date().toDateString(),
+    }))
+    .sort((a, b) => {
+      if (a.done !== b.done) return a.done - b.done
+      if (a.isOverdue !== b.isOverdue) return a.isOverdue ? -1 : 1
+      return new Date(a.date).getTime() - new Date(b.date).getTime()
+    })
 })
+
+const doneThisWeek = computed(() => thisWeekReminders.value.filter(r => r.done).length)
+const totalThisWeek = computed(() => thisWeekReminders.value.length)
 
 async function loadReminders() {
   try {
@@ -592,32 +616,35 @@ function onMilestoneClick(ms: FriseMilestone) {
         </div>
 
         <!-- Rappels prof (échéancier) -->
-        <div v-if="upcomingReminders.length" class="db-reminders">
-          <h4 class="db-reminders-title"><Clock :size="14" /> Échéancier</h4>
-          <div class="db-reminders-list">
+        <!-- À faire cette semaine -->
+        <div v-if="thisWeekReminders.length" class="db-week">
+          <div class="db-week-header">
+            <h4 class="db-week-title"><CheckCircle2 :size="14" /> À faire cette semaine</h4>
+            <span class="db-week-progress">{{ doneThisWeek }}/{{ totalThisWeek }}</span>
+          </div>
+          <div class="db-week-list">
             <div
-              v-for="r in upcomingReminders"
+              v-for="r in thisWeekReminders"
               :key="r.id"
-              class="db-reminder-item"
-              :class="{ done: r.done, overdue: r.isOverdue }"
+              class="db-week-item"
+              :class="{ done: r.done, overdue: r.isOverdue, today: r.isToday }"
+              @click="toggleReminder(r.id, !r.done)"
             >
-              <button class="db-reminder-check" @click="toggleReminder(r.id, !r.done)">
-                <CheckCircle2 v-if="r.done" :size="14" style="color:var(--color-success)" />
-                <div v-else class="db-reminder-circle" />
-              </button>
-              <div class="db-reminder-content">
-                <div class="db-reminder-header">
-                  <span class="db-reminder-promo">{{ r.promo_tag === 'CPIA2' ? 'CPI A2' : 'FISA A4' }}</span>
-                  <span class="db-reminder-date" :class="{ 'text-danger': r.isOverdue }">{{ formatDate(r.date) }}</span>
-                  <span v-if="r.bloc" class="db-reminder-bloc">{{ r.bloc }}</span>
-                </div>
-                <span class="db-reminder-title" :class="{ 'line-through': r.done }">{{ r.title }}</span>
+              <div class="db-week-check">
+                <CheckCircle2 v-if="r.done" :size="15" style="color:var(--color-success)" />
+                <div v-else class="db-week-circle" :class="{ 'db-week-circle--overdue': r.isOverdue }" />
+              </div>
+              <div class="db-week-body">
+                <span class="db-week-item-title" :class="{ 'line-through': r.done }">{{ r.title }}</span>
+                <span class="db-week-meta">
+                  <span class="db-week-promo">{{ r.promo_tag === 'CPIA2' ? 'CPI A2' : 'FISA A4' }}</span>
+                  <span v-if="r.isOverdue" class="db-week-late">En retard</span>
+                  <span v-else-if="r.isToday" class="db-week-today-tag">Aujourd'hui</span>
+                  <span v-else class="db-week-date">{{ new Date(r.date).toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric' }) }}</span>
+                </span>
               </div>
             </div>
           </div>
-          <button v-if="allReminders.length > 5" class="btn-ghost db-reminders-toggle" @click="showAllReminders = !showAllReminders">
-            {{ showAllReminders ? 'Voir moins' : `Voir tout (${allReminders.length})` }}
-          </button>
         </div>
 
         <!-- Tabs -->
@@ -1030,44 +1057,52 @@ function onMilestoneClick(ms: FriseMilestone) {
 .db-echeancier-btn { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; padding: 6px 12px; flex-shrink: 0; }
 .db-header-actions { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
 
-/* ── Rappels prof ── */
-.db-reminders { margin-bottom: 16px; }
-.db-reminders-title {
+/* ── À faire cette semaine ── */
+.db-week { margin-bottom: 16px; }
+.db-week-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 8px;
+}
+.db-week-title {
   display: flex; align-items: center; gap: 6px;
-  font-size: 12px; font-weight: 700; color: var(--text-muted);
-  text-transform: uppercase; letter-spacing: .5px; margin-bottom: 8px;
+  font-size: 13px; font-weight: 700; color: var(--text-primary);
 }
-.db-reminders-list { display: flex; flex-direction: column; gap: 4px; }
-.db-reminder-item {
-  display: flex; align-items: flex-start; gap: 8px;
-  padding: 8px 12px; border-radius: 8px;
-  background: rgba(255,255,255,.02); transition: background var(--t-fast);
+.db-week-progress {
+  font-size: 12px; font-weight: 600; color: var(--text-muted);
+  background: rgba(255,255,255,.05); padding: 2px 8px; border-radius: 10px;
 }
-.db-reminder-item:hover { background: rgba(255,255,255,.05); }
-.db-reminder-item.done { opacity: .5; }
-.db-reminder-item.overdue { background: rgba(239,68,68,.06); }
-.db-reminder-check {
-  margin-top: 2px; background: none; border: none; cursor: pointer; flex-shrink: 0; padding: 0;
+.db-week-list { display: flex; flex-direction: column; gap: 2px; }
+.db-week-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 12px; border-radius: 8px; cursor: pointer;
+  transition: background var(--t-fast);
 }
-.db-reminder-circle {
-  width: 16px; height: 16px; border-radius: 50%;
+.db-week-item:hover { background: rgba(255,255,255,.04); }
+.db-week-item.done { opacity: .45; }
+.db-week-item.overdue:not(.done) { background: rgba(239,68,68,.06); }
+.db-week-item.today:not(.done) { background: rgba(74,144,217,.06); }
+.db-week-check { flex-shrink: 0; }
+.db-week-circle {
+  width: 18px; height: 18px; border-radius: 50%;
   border: 2px solid var(--border-input); transition: border-color var(--t-fast);
 }
-.db-reminder-check:hover .db-reminder-circle { border-color: var(--accent); }
-.db-reminder-content { flex: 1; min-width: 0; }
-.db-reminder-header { display: flex; align-items: center; gap: 6px; margin-bottom: 2px; flex-wrap: wrap; }
-.db-reminder-promo {
-  font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 4px;
-  background: rgba(74,144,217,.12); color: var(--accent); text-transform: uppercase;
-}
-.db-reminder-date { font-size: 11px; color: var(--text-muted); }
-.db-reminder-bloc {
-  font-size: 10px; padding: 1px 5px; border-radius: 3px;
-  background: rgba(255,255,255,.06); color: var(--text-secondary);
-}
-.db-reminder-title { font-size: 13px; color: var(--text-primary); line-height: 1.4; }
+.db-week-item:hover .db-week-circle { border-color: var(--accent); }
+.db-week-circle--overdue { border-color: var(--color-danger); }
+.db-week-body { flex: 1; min-width: 0; display: flex; align-items: center; gap: 8px; }
+.db-week-item-title { font-size: 13px; color: var(--text-primary); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .line-through { text-decoration: line-through; opacity: .6; }
-.db-reminders-toggle { margin-top: 6px; font-size: 12px; }
+.db-week-meta { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+.db-week-promo {
+  font-size: 9px; font-weight: 700; padding: 1px 5px; border-radius: 3px;
+  background: rgba(74,144,217,.1); color: var(--accent); text-transform: uppercase;
+}
+.db-week-late {
+  font-size: 10px; font-weight: 700; color: var(--color-danger);
+}
+.db-week-today-tag {
+  font-size: 10px; font-weight: 600; color: var(--accent);
+}
+.db-week-date { font-size: 11px; color: var(--text-muted); }
 
 /* ── Stats ── */
 .db-stats {
