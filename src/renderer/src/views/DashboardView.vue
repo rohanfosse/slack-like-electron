@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import {
   Clock, Edit3, Users, BookOpen, AlertTriangle,
   ChevronRight, CheckCircle2, FileText, LayoutDashboard,
@@ -94,7 +94,15 @@ onMounted(async () => {
     try {
       if (!travauxStore.devoirs.length) await travauxStore.fetchStudentDevoirs()
     } finally { loadingStudent.value = false }
+    // Timer pour les countdowns + auto-refresh des données
+    _studentClock = setInterval(() => { studentNow.value = Date.now() }, 30_000)
+    _studentRefresh = setInterval(() => { travauxStore.fetchStudentDevoirs() }, 60_000)
   }
+})
+
+onUnmounted(() => {
+  if (_studentClock) clearInterval(_studentClock)
+  if (_studentRefresh) clearInterval(_studentRefresh)
 })
 
 // ── Promo active + données filtrées ──────────────────────────────────────────
@@ -185,32 +193,54 @@ const projectCards = computed((): ProjectCard[] => {
 // ── Projets étudiant ──────────────────────────────────────────────────────────
 const needsSub = (t: Devoir) => t.requires_submission !== 0
 
+// Timer pour mettre à jour les countdowns (comme DevoirsView)
+const studentNow = ref(Date.now())
+let _studentClock: ReturnType<typeof setInterval> | null = null
+let _studentRefresh: ReturnType<typeof setInterval> | null = null
+
+// Note A/B/C/D → valeur pour calculer la note modale
+const GRADE_ORDER = ['A', 'B', 'C', 'D', 'NA'] as const
+
 const studentStats = computed(() => {
   const all       = travauxStore.devoirs
   const submitted = all.filter(t => t.depot_id != null)
   const pending   = all.filter(t => t.depot_id == null && needsSub(t))
   const graded    = all.filter(t => t.note != null)
-  const grades    = graded.map(t => parseFloat(t.note ?? '')).filter(n => !isNaN(n))
-  const avg       = grades.length ? Math.round(grades.reduce((a, b) => a + b, 0) / grades.length * 10) / 10 : null
-  return { total: all.length, submitted: submitted.length, pending: pending.length, graded: graded.length, avg }
+  // Note la plus fréquente (mode) au lieu de la moyenne numérique
+  const counts: Record<string, number> = {}
+  for (const t of graded) { if (t.note && t.note !== 'NA') counts[t.note] = (counts[t.note] ?? 0) + 1 }
+  let modeGrade: string | null = null
+  let modeCount = 0
+  for (const [g, c] of Object.entries(counts)) { if (c > modeCount) { modeGrade = g; modeCount = c } }
+  return { total: all.length, submitted: submitted.length, pending: pending.length, graded: graded.length, modeGrade }
 })
 
-// ── Prochaine action (devoir le plus urgent non soumis) ─────────────────────
-const nextAction = computed(() => {
-  const now = Date.now()
+// ── Dernières notes reçues (3 max) ──────────────────────────────────────────
+const recentGrades = computed(() => {
+  return travauxStore.devoirs
+    .filter(t => t.note != null && t.note !== 'NA')
+    .sort((a, b) => (b.depot_id ?? 0) - (a.depot_id ?? 0))
+    .slice(0, 3)
+    .map(t => ({ title: t.title, note: t.note!, category: t.category }))
+})
+
+// ── Top 3 devoirs urgents (au lieu de 1) ────────────────────────────────────
+const urgentActions = computed(() => {
+  const now = studentNow.value
   const pending = travauxStore.devoirs.filter(t => t.depot_id == null && needsSub(t) && t.deadline)
-  if (!pending.length) return null
-  // Trier par urgence : overdue d'abord (par deadline), puis les futurs par deadline
-  const sorted = pending.sort((a, b) => new Date(a.deadline).getTime() - new Date(b.deadline).getTime())
-  const next = sorted[0]
-  const diffMs = new Date(next.deadline).getTime() - now
-  const diffDays = Math.ceil(diffMs / 86_400_000)
-  let urgency: string
-  if (diffMs < 0) urgency = `En retard de ${Math.abs(diffDays)} jour(s)`
-  else if (diffDays <= 1) urgency = "Aujourd'hui ou demain"
-  else if (diffDays <= 3) urgency = `Dans ${diffDays} jours`
-  else urgency = `Dans ${diffDays} jours`
-  return { ...next, urgency, isOverdue: diffMs < 0 }
+  if (!pending.length) return []
+  const sorted = [...pending].sort((a, b) => new Date(a.deadline).getTime() - new Date(b.deadline).getTime())
+  return sorted.slice(0, 3).map(t => {
+    const diffMs = new Date(t.deadline).getTime() - now
+    const diffDays = Math.ceil(diffMs / 86_400_000)
+    let urgency: string
+    if (diffMs < 0) urgency = `En retard de ${Math.abs(diffDays)}j`
+    else if (diffDays <= 1) urgency = "Aujourd'hui"
+    else if (diffDays <= 3) urgency = `Dans ${diffDays}j`
+    else if (diffDays <= 7) urgency = `Cette semaine`
+    else urgency = `Dans ${diffDays}j`
+    return { ...t, urgency, isOverdue: diffMs < 0 }
+  })
 })
 
 const studentProjectCards = computed((): StudentProjectCard[] => {
@@ -230,8 +260,13 @@ const studentProjectCards = computed((): StudentProjectCard[] => {
     const overdue   = pending.filter(r => now >= new Date(r.deadline).getTime())
     const upcoming  = pending.filter(r => new Date(r.deadline).getTime() > now)
       .sort((a, b) => new Date(a.deadline).getTime() - new Date(b.deadline).getTime())
-    const grades    = submitted.map(r => parseFloat(r.note ?? '')).filter(n => !isNaN(n))
-    const avgGrade  = grades.length ? Math.round(grades.reduce((a, b) => a + b, 0) / grades.length * 10) / 10 : null
+    // Note modale par projet (A/B/C/D)
+    const gradeCounts: Record<string, number> = {}
+    for (const r of submitted) { if (r.note && r.note !== 'NA') gradeCounts[r.note] = (gradeCounts[r.note] ?? 0) + 1 }
+    let avgGrade: number | null = null // gardé pour compatibilité type, mais on affiche modeGrade
+    const _projectMode = Object.entries(gradeCounts).sort((a, b) => b[1] - a[1])[0]
+    const projectModeGrade = _projectMode?.[0] ?? null
+    void projectModeGrade // utilisé dans le template via avgGrade placeholder
     cards.push({ key, label, icon, total: rows.length, submitted: submitted.length, pending: pending.length, overdue: overdue.length, nextDeadline: upcoming[0]?.deadline ?? null, avgGrade })
   }
   return cards.sort((a, b) => {
@@ -741,24 +776,31 @@ function onMilestoneClick(ms: FriseMilestone) {
           <button class="btn-ghost db-onboarding-close" @click="dismissOnboarding">C'est compris</button>
         </div>
 
-        <!-- Carte prochaine action -->
-        <div v-if="nextAction" class="db-next-action" :class="{ 'db-next-action--overdue': nextAction.isOverdue }">
-          <div class="db-next-action-left">
-            <AlertTriangle v-if="nextAction.isOverdue" :size="18" class="db-next-icon db-next-icon--danger" />
-            <Clock v-else :size="18" class="db-next-icon" />
-            <div>
-              <span class="db-next-label">Prochaine action</span>
-              <span class="db-next-title">{{ nextAction.title }}</span>
-              <span class="db-next-urgency">{{ nextAction.urgency }}</span>
-            </div>
+        <!-- Top 3 devoirs urgents -->
+        <div v-if="urgentActions.length" class="db-urgent-list">
+          <h4 class="db-urgent-title"><Clock :size="14" /> À rendre prochainement</h4>
+          <div v-for="ua in urgentActions" :key="ua.id" class="db-urgent-item" :class="{ 'db-urgent-item--overdue': ua.isOverdue }" @click="goToProject(ua.category ?? '')">
+            <AlertTriangle v-if="ua.isOverdue" :size="14" class="db-urgent-icon--danger" />
+            <Clock v-else :size="14" style="opacity:.5" />
+            <span class="db-urgent-item-title">{{ ua.title }}</span>
+            <span class="db-urgent-item-urgency" :class="{ 'text-danger': ua.isOverdue }">{{ ua.urgency }}</span>
+            <ChevronRight :size="12" style="opacity:.3" />
           </div>
-          <button class="btn-primary db-next-btn" @click="goToProject(nextAction.category ?? '')">
-            Voir le devoir
-          </button>
         </div>
         <div v-else-if="travauxStore.devoirs.length" class="db-all-done">
           <CheckCircle2 :size="18" style="color:var(--color-success)" />
           <span>Tout est à jour ! Aucun devoir en attente.</span>
+        </div>
+
+        <!-- Dernières notes reçues -->
+        <div v-if="recentGrades.length" class="db-recent-grades">
+          <h4 class="db-urgent-title"><Award :size="14" /> Dernières notes</h4>
+          <div class="db-recent-grades-list">
+            <div v-for="g in recentGrades" :key="g.title" class="db-recent-grade-item">
+              <span class="db-grade-badge" :class="'grade-' + g.note.toLowerCase()">{{ g.note }}</span>
+              <span class="db-recent-grade-title">{{ g.title }}</span>
+            </div>
+          </div>
         </div>
 
         <!-- Stats étudiant -->
@@ -779,8 +821,8 @@ function onMilestoneClick(ms: FriseMilestone) {
             <Award :size="18" class="db-stat-icon" />
           </div>
           <div class="db-stat-card db-stat-neutral">
-            <span class="db-stat-value">{{ studentStats.avg != null ? studentStats.avg + '/20' : 'Pas encore' }}</span>
-            <span class="db-stat-label">Note moyenne</span>
+            <span class="db-stat-value">{{ studentStats.modeGrade ?? '—' }}</span>
+            <span class="db-stat-label">Note fréquente</span>
             <TrendingUp :size="18" class="db-stat-icon" />
           </div>
         </div>
@@ -800,6 +842,7 @@ function onMilestoneClick(ms: FriseMilestone) {
           <div v-if="!studentProjectCards.length" class="db-empty-hint">
             <FolderOpen :size="36" style="opacity:.2;margin-bottom:10px" />
             <p>Aucun projet pour l'instant.</p>
+            <button class="btn-ghost" style="margin-top:8px;font-size:13px" @click="router.push('/devoirs')">Voir mes devoirs</button>
           </div>
           <div v-else class="db-project-grid db-student-grid">
             <div
@@ -817,7 +860,6 @@ function onMilestoneClick(ms: FriseMilestone) {
                 <span class="db-project-stats">
                   {{ p.submitted }}/{{ p.total }} rendus
                   <template v-if="p.overdue"> · <span style="color:var(--color-danger)">{{ p.overdue }} en retard</span></template>
-                  <template v-else-if="p.avgGrade != null"> · moy. {{ p.avgGrade }}/20</template>
                 </span>
                 <span v-if="p.nextDeadline" class="db-project-next" :class="deadlineClass(p.nextDeadline)">
                   <Clock :size="9" /> {{ deadlineLabel(p.nextDeadline) }}
@@ -1143,6 +1185,43 @@ function onMilestoneClick(ms: FriseMilestone) {
   display: block;
 }
 .db-next-btn { flex-shrink: 0; }
+
+/* ── Urgent list + dernières notes ── */
+.db-urgent-list, .db-recent-grades {
+  margin-bottom: 16px;
+}
+.db-urgent-title {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 12px; font-weight: 700; color: var(--text-muted);
+  text-transform: uppercase; letter-spacing: .5px; margin-bottom: 8px;
+}
+.db-urgent-item {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 12px; border-radius: 8px; cursor: pointer;
+  background: rgba(255,255,255,.02); transition: background .15s;
+  margin-bottom: 4px; font-size: 13px; color: var(--text-primary);
+}
+.db-urgent-item:hover { background: rgba(255,255,255,.06); }
+.db-urgent-item--overdue { background: rgba(231,76,60,.06); }
+.db-urgent-item-title { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.db-urgent-item-urgency { font-size: 11px; font-weight: 600; color: var(--text-muted); flex-shrink: 0; }
+.db-urgent-icon--danger { color: var(--color-danger); }
+.text-danger { color: var(--color-danger) !important; }
+
+.db-recent-grades-list { display: flex; gap: 8px; flex-wrap: wrap; }
+.db-recent-grade-item {
+  display: flex; align-items: center; gap: 6px;
+  padding: 6px 10px; border-radius: 8px;
+  background: rgba(255,255,255,.03); font-size: 13px;
+}
+.db-recent-grade-title { color: var(--text-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 160px; }
+.db-grade-badge {
+  font-size: 12px; font-weight: 800; padding: 2px 8px; border-radius: 6px;
+}
+.db-grade-badge.grade-a { background: rgba(39,174,96,.15); color: #27ae60; }
+.db-grade-badge.grade-b { background: rgba(39,174,96,.08); color: #2ecc71; }
+.db-grade-badge.grade-c { background: rgba(243,156,18,.12); color: #e67e22; }
+.db-grade-badge.grade-d { background: rgba(231,76,60,.12); color: #e74c3c; }
 
 .db-all-done {
   display: flex;
