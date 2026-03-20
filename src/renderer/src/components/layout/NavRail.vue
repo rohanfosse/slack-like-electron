@@ -1,7 +1,7 @@
 <script setup lang="ts">
   import { computed, ref } from 'vue'
   import { useRouter, useRoute } from 'vue-router'
-  import { MessageSquare, BookOpen, FileText, LayoutDashboard, Bell, Flame, Search } from 'lucide-vue-next'
+  import { MessageSquare, BookOpen, FileText, LayoutDashboard, Bell, Flame, Search, Shield } from 'lucide-vue-next'
   import logoUrl from '@/assets/logo.svg'
   import { useAppStore }    from '@/stores/app'
   import { useModalsStore } from '@/stores/modals'
@@ -25,6 +25,11 @@
   })
 
   const pendingCount = computed(() => travauxStore.pendingDevoirs.length)
+
+  function openAdmin() {
+    const base = (import.meta.env.VITE_SERVER_URL as string) || window.location.origin
+    window.open(`${base}/admin-monitor`, '_blank')
+  }
 
   // ── Centre de notifications ─────────────────────────────────────────────────
   const showNotifications = ref(false)
@@ -151,6 +156,18 @@
 
     <!-- Espaceur -->
     <div style="flex:1" />
+
+    <!-- ── Admin (prof uniquement) ── -->
+    <button
+      v-if="appStore.isTeacher"
+      class="nav-btn nav-admin-btn"
+      title="Console d'administration"
+      aria-label="Console d'administration"
+      @click="openAdmin"
+    >
+      <Shield :size="20" />
+      <span class="nav-label">Admin</span>
+    </button>
 
     <!-- ── Avatar / Paramètres ── -->
     <div class="nav-divider" />
@@ -287,5 +304,10 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
+}
+
+/* ── Bouton Admin ── */
+.nav-admin-btn :deep(svg) {
+  color: var(--accent, #4a90d9);
 }
 </style>

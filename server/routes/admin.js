@@ -627,4 +627,55 @@ router.post('/promos/:id/archive', (req, res) => {
   }
 })
 
+// ═══════════════════════════════════════════════════════════════════════════════
+// DÉPLOIEMENT — Git & PM2
+// ═══════════════════════════════════════════════════════════════════════════════
+
+router.get('/git-status', (req, res) => {
+  try {
+    const commit  = run(`git -C "${ROOT}" rev-parse --short HEAD`)
+    const branch  = run(`git -C "${ROOT}" rev-parse --abbrev-ref HEAD`)
+    const message = run(`git -C "${ROOT}" log -1 --pretty=%s`)
+    const date    = run(`git -C "${ROOT}" log -1 --pretty=%ci`)
+
+    // Vérifier si des mises à jour sont disponibles
+    run(`git -C "${ROOT}" fetch --quiet 2>/dev/null`)
+    const behind = run(`git -C "${ROOT}" rev-list --count HEAD..@{u}`) || '0'
+    const ahead  = run(`git -C "${ROOT}" rev-list --count @{u}..HEAD`) || '0'
+    const status  = run(`git -C "${ROOT}" status --porcelain`)
+
+    res.json({ ok: true, data: {
+      commit, branch, message, date,
+      behind: Number(behind), ahead: Number(ahead),
+      dirty: !!status,
+      statusText: status || '',
+    }})
+  } catch (err) {
+    res.status(500).json({ ok: false, error: err.message })
+  }
+})
+
+router.post('/git-pull', (req, res) => {
+  try {
+    const output = execSync(`git -C "${ROOT}" pull --ff-only 2>&1`, { encoding: 'utf8', timeout: 30000 }).trim()
+    res.json({ ok: true, data: { output } })
+  } catch (err) {
+    res.status(500).json({ ok: false, error: err.stderr || err.stdout || err.message })
+  }
+})
+
+router.post('/pm2-restart', (req, res) => {
+  try {
+    const name = req.body?.name || 'all'
+    // Sanitize : autoriser uniquement alphanum, tirets, "all"
+    if (!/^[a-zA-Z0-9_-]+$/.test(name) && name !== 'all') {
+      return res.status(400).json({ ok: false, error: 'Nom de processus invalide.' })
+    }
+    const output = execSync(`pm2 restart ${name} 2>&1`, { encoding: 'utf8', timeout: 15000 }).trim()
+    res.json({ ok: true, data: { output } })
+  } catch (err) {
+    res.status(500).json({ ok: false, error: err.stderr || err.stdout || err.message })
+  }
+})
+
 module.exports = router
