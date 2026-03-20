@@ -3,14 +3,13 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="Cursus — Suivez votre parcours de formation. Messagerie, devoirs, documents et suivi en un seul endroit." />
+  <meta name="description" content="Cursus — La plateforme pédagogique pour les formations CESI. Messagerie, devoirs, documents et suivi en un seul endroit." />
   <meta name="theme-color" content="#4A90D9" />
-  <title>Cursus — Suivez votre parcours</title>
+  <title>Cursus — Plateforme pédagogique CESI</title>
   <link rel="icon" type="image/png" href="/assets/icon-192.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
-  <!-- Lucide Icons CDN -->
   <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js" defer></script>
   <style>
     /* ═══ Reset ═══ */
@@ -186,12 +185,8 @@
     .mockup-channel.active { background: var(--accent-glow); color: var(--accent); font-weight: 600; }
     .mockup-channel-hash { opacity: .5; }
     .mockup-main { padding: 20px; }
-    .mockup-msg {
-      display: flex; gap: 10px; margin-bottom: 14px;
-    }
-    .mockup-avatar {
-      width: 28px; height: 28px; border-radius: 6px; flex-shrink: 0;
-    }
+    .mockup-msg { display: flex; gap: 10px; margin-bottom: 14px; }
+    .mockup-avatar { width: 28px; height: 28px; border-radius: 6px; flex-shrink: 0; }
     .mockup-msg-body { flex: 1; }
     .mockup-msg-name { font-size: 11px; font-weight: 700; margin-bottom: 2px; }
     .mockup-msg-text { font-size: 11.5px; color: var(--text-secondary); line-height: 1.5; }
@@ -200,15 +195,42 @@
     }
 
     /* ═══ Stats bar ═══ */
-    .stats {
-      padding: 40px 0 0;
-    }
-    .stats-grid {
-      display: flex; justify-content: center; gap: 48px; flex-wrap: wrap;
-    }
+    .stats { padding: 40px 0 0; }
+    .stats-grid { display: flex; justify-content: center; gap: 48px; flex-wrap: wrap; }
     .stat { text-align: center; }
     .stat-value { font-size: 32px; font-weight: 800; letter-spacing: -1px; color: var(--accent); }
     .stat-label { font-size: 13px; color: var(--text-muted); font-weight: 500; margin-top: 2px; }
+
+    /* ═══ Pour qui ═══ */
+    .who { padding: 100px 0 0; }
+    .who-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-top: 56px; }
+    .who-card {
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 36px 32px;
+    }
+    .who-card-head {
+      display: flex; align-items: center; gap: 14px; margin-bottom: 24px;
+    }
+    .who-icon {
+      width: 48px; height: 48px; border-radius: 14px;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .who-icon svg { width: 22px; height: 22px; }
+    .wi-student { background: rgba(74,144,217,.1); color: var(--accent); }
+    .wi-teacher { background: rgba(155,135,245,.1); color: var(--purple); }
+    .who-card h3 { font-size: 19px; font-weight: 700; }
+    .who-card p { font-size: 13.5px; color: var(--text-secondary); margin-bottom: 20px; }
+    .who-list { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+    .who-list li {
+      display: flex; align-items: flex-start; gap: 10px;
+      font-size: 14px; color: var(--text-secondary);
+    }
+    .who-list li::before {
+      content: ''; width: 6px; height: 6px; border-radius: 50%;
+      background: var(--accent); flex-shrink: 0; margin-top: 7px;
+    }
+    .wi-teacher ~ .who-list li::before { background: var(--purple); }
+    .who-card.teacher .who-list li::before { background: var(--purple); }
 
     /* ═══ Features ═══ */
     .features { padding: 100px 0 80px; }
@@ -220,11 +242,10 @@
       text-align: center; font-size: 34px; font-weight: 800; letter-spacing: -.8px; margin-bottom: 14px;
     }
     .section-sub {
-      text-align: center; color: var(--text-secondary); font-size: 16px; margin-bottom: 56px; max-width: 500px; margin-left: auto; margin-right: auto;
+      text-align: center; color: var(--text-secondary); font-size: 16px; margin-bottom: 56px;
+      max-width: 500px; margin-left: auto; margin-right: auto;
     }
-    .features-grid {
-      display: grid; grid-template-columns: repeat(2, 1fr); gap: 18px;
-    }
+    .features-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 18px; }
     .feature-card {
       background: var(--bg-card); border: 1px solid var(--border);
       border-radius: var(--radius); padding: 34px 30px;
@@ -238,15 +259,13 @@
     }
     .feature-card:hover {
       background: var(--bg-card-hover); border-color: var(--border-accent);
-      transform: translateY(-4px);
-      box-shadow: 0 16px 48px rgba(0,0,0,.3);
+      transform: translateY(-4px); box-shadow: 0 16px 48px rgba(0,0,0,.3);
     }
     .feature-card:hover::before { opacity: 1; }
-
     .feature-icon-wrap {
       width: 52px; height: 52px; border-radius: 14px;
       display: flex; align-items: center; justify-content: center;
-      margin-bottom: 20px; position: relative;
+      margin-bottom: 20px;
     }
     .feature-icon-wrap svg { width: 24px; height: 24px; }
     .fi-blue   { background: rgba(74,144,217,.1); color: var(--accent); }
@@ -263,7 +282,7 @@
     }
 
     /* ═══ Download ═══ */
-    .download { padding: 80px 0 100px; }
+    .download { padding: 80px 0 0; }
     .download-grid {
       display: grid; grid-template-columns: repeat(3, 1fr);
       gap: 18px; max-width: 860px; margin: 0 auto;
@@ -271,8 +290,7 @@
     .dl-card {
       background: var(--bg-card); border: 1px solid var(--border);
       border-radius: var(--radius); padding: 40px 28px 32px;
-      text-align: center; transition: all .25s;
-      position: relative;
+      text-align: center; transition: all .25s; position: relative;
     }
     .dl-card:hover { border-color: var(--border-accent); transform: translateY(-3px); box-shadow: 0 12px 40px rgba(0,0,0,.3); }
     .dl-card.recommended {
@@ -280,7 +298,7 @@
       box-shadow: 0 0 60px var(--accent-glow), 0 0 0 1px rgba(74,144,217,.1) inset;
     }
     .dl-card.recommended::after {
-      content: 'Recommande'; position: absolute; top: 12px; right: 12px;
+      content: 'Recommandé'; position: absolute; top: 12px; right: 12px;
       font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px;
       padding: 3px 10px; border-radius: 100px;
       background: var(--accent); color: #fff;
@@ -307,6 +325,33 @@
     .dl-btn-ghost { background: rgba(255,255,255,.04); color: var(--text); border: 1.5px solid rgba(255,255,255,.1); }
     .dl-btn-ghost:hover { background: rgba(255,255,255,.08); border-color: rgba(255,255,255,.2); color: #fff; }
 
+    /* ═══ Changelog ═══ */
+    .changelog { padding: 56px 0 100px; }
+    .changelog-inner {
+      max-width: 680px; margin: 0 auto;
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 32px 36px;
+    }
+    .changelog-head {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 20px; flex-wrap: wrap; gap: 8px;
+    }
+    .changelog-title { font-size: 16px; font-weight: 700; }
+    .changelog-version {
+      font-size: 12px; font-weight: 700; padding: 4px 12px;
+      background: rgba(74,144,217,.1); color: var(--accent);
+      border-radius: 100px; border: 1px solid rgba(74,144,217,.2);
+    }
+    .changelog-date { font-size: 12px; color: var(--text-muted); margin-bottom: 16px; }
+    .changelog-list { list-style: none; display: flex; flex-direction: column; gap: 9px; }
+    .changelog-list li {
+      display: flex; align-items: flex-start; gap: 10px;
+      font-size: 13.5px; color: var(--text-secondary);
+    }
+    .changelog-list li::before {
+      content: '✦'; font-size: 9px; color: var(--accent); flex-shrink: 0; margin-top: 4px;
+    }
+
     /* ═══ Footer ═══ */
     .footer {
       padding: 48px 0 40px; border-top: 1px solid var(--border);
@@ -314,7 +359,7 @@
     }
     .footer-logo { display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 14px; font-size: 15px; font-weight: 700; color: var(--text-secondary); }
     .footer-logo img { width: 22px; height: 22px; opacity: .6; border-radius: 5px; }
-    .footer-links { display: flex; justify-content: center; gap: 24px; margin-bottom: 12px; }
+    .footer-links { display: flex; justify-content: center; gap: 24px; margin-bottom: 12px; flex-wrap: wrap; }
     .footer-links a { color: var(--text-muted); font-size: 13px; font-weight: 500; }
     .footer-links a:hover { color: var(--accent); }
 
@@ -329,6 +374,7 @@
     @media (max-width: 900px) {
       .features-grid { grid-template-columns: 1fr; }
       .download-grid { grid-template-columns: 1fr; max-width: 360px; }
+      .who-grid { grid-template-columns: 1fr; }
       .mockup-body { grid-template-columns: 1fr; }
       .mockup-rail, .mockup-sidebar { display: none; }
     }
@@ -338,6 +384,7 @@
       .nav-links { display: none; }
       .stats-grid { gap: 28px; }
       .stat-value { font-size: 26px; }
+      .changelog-inner { padding: 24px 20px; }
     }
     @media (max-width: 480px) {
       .hero { padding: 110px 0 50px; }
@@ -357,8 +404,9 @@
         Cursus
       </a>
       <div class="nav-links">
-        <a href="#features">Fonctionnalites</a>
-        <a href="#download">Telecharger</a>
+        <a href="#who">Pour qui ?</a>
+        <a href="#features">Fonctionnalités</a>
+        <a href="#download">Télécharger</a>
       </div>
       <a href="/app" class="nav-cta">Ouvrir l'app</a>
     </div>
@@ -367,18 +415,18 @@
   <!-- ═══ Hero ═══ -->
   <section class="hero">
     <div class="container">
-      <div class="hero-badge">
+      <div class="hero-badge" id="version-badge">
         <span class="hero-badge-dot"></span>
-        v2.0 — Disponible maintenant
+        Disponible maintenant
       </div>
-      <h1>Votre parcours de formation, <em>simplifie</em></h1>
+      <h1>La plateforme pensée pour <em>votre formation</em></h1>
       <p class="hero-sub">
-        Messagerie, devoirs, documents et collaboration en temps reel — tout centralise en un seul endroit.
+        Messagerie, devoirs, documents et collaboration en temps réel — tout centralisé en un seul endroit, pour étudiants et enseignants CESI.
       </p>
       <div class="hero-ctas">
         <a href="#download" class="btn-primary">
           <i data-lucide="download" style="width:16px;height:16px"></i>
-          Telecharger
+          Télécharger
         </a>
         <a href="/app" class="btn-ghost">
           <i data-lucide="globe" style="width:16px;height:16px"></i>
@@ -402,7 +450,7 @@
           </div>
           <div class="mockup-sidebar">
             <div class="mockup-sidebar-title">Canaux</div>
-            <div class="mockup-channel active"><span class="mockup-channel-hash">#</span> general</div>
+            <div class="mockup-channel active"><span class="mockup-channel-hash">#</span> général</div>
             <div class="mockup-channel"><span class="mockup-channel-hash">#</span> annonces</div>
             <div class="mockup-channel"><span class="mockup-channel-hash">#</span> projet-web</div>
             <div class="mockup-channel"><span class="mockup-channel-hash">#</span> algo-tp</div>
@@ -417,7 +465,7 @@
               <div class="mockup-avatar" style="background:var(--accent)"></div>
               <div class="mockup-msg-body">
                 <div class="mockup-msg-name" style="color:var(--accent)">Prof. Fosse</div>
-                <div class="mockup-msg-text">Le rendu du projet est pour vendredi. Pensez a consulter la grille d'evaluation dans <code>#projet-web</code></div>
+                <div class="mockup-msg-text">Le rendu du projet est pour vendredi. Pensez à consulter la grille d'évaluation dans <code>#projet-web</code></div>
               </div>
             </div>
             <div class="mockup-msg">
@@ -445,20 +493,63 @@
     <div class="container">
       <div class="stats-grid">
         <div class="stat">
-          <div class="stat-value">4</div>
-          <div class="stat-label">Themes visuels</div>
+          <div class="stat-value">100%</div>
+          <div class="stat-label">Des rendus centralisés</div>
         </div>
         <div class="stat">
-          <div class="stat-value">3</div>
-          <div class="stat-label">Plateformes</div>
-        </div>
-        <div class="stat">
-          <div class="stat-value">PWA</div>
-          <div class="stat-label">Installable sur mobile</div>
+          <div class="stat-value">Web</div>
+          <div class="stat-label">+ Desktop Windows & macOS</div>
         </div>
         <div class="stat">
           <div class="stat-value">&lt;1s</div>
-          <div class="stat-label">Messages en temps reel</div>
+          <div class="stat-label">Messagerie temps réel</div>
+        </div>
+        <div class="stat">
+          <div class="stat-value">PWA</div>
+          <div class="stat-label">Installable & hors-ligne</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ Pour qui ? ═══ -->
+  <section id="who" class="who">
+    <div class="container">
+      <div class="section-label fade-in">Pour qui ?</div>
+      <h2 class="section-title fade-in">Un outil pour toute la promo</h2>
+      <p class="section-sub fade-in">Conçu pour les étudiants comme pour les enseignants, avec des vues adaptées à chaque rôle.</p>
+      <div class="who-grid">
+        <div class="who-card fade-in">
+          <div class="who-card-head">
+            <div class="who-icon wi-student"><i data-lucide="graduation-cap"></i></div>
+            <div>
+              <h3>Étudiants</h3>
+            </div>
+          </div>
+          <p>Suivez votre parcours, restez connecté à vos groupes et ne ratez plus aucune deadline.</p>
+          <ul class="who-list">
+            <li>Retrouver tous vos devoirs et leurs deadlines en un coup d'œil</li>
+            <li>Déposer vos rendus directement depuis l'app ou le navigateur</li>
+            <li>Consulter vos notes et les retours détaillés de vos profs</li>
+            <li>Messagerie instantanée avec votre groupe et vos intervenants</li>
+            <li>Accéder aux ressources et documents de cours par canal</li>
+          </ul>
+        </div>
+        <div class="who-card teacher fade-in">
+          <div class="who-card-head">
+            <div class="who-icon wi-teacher"><i data-lucide="book-marked"></i></div>
+            <div>
+              <h3>Enseignants</h3>
+            </div>
+          </div>
+          <p>Gérez vos promotions, organisez les travaux et suivez la progression de chaque étudiant.</p>
+          <ul class="who-list">
+            <li>Créer des travaux avec grilles d'évaluation multi-critères</li>
+            <li>Gérer les promotions, groupes et intervenants</li>
+            <li>Annoter les rendus et attribuer les notes avec feedback</li>
+            <li>Exporter les résultats en CSV ou Excel</li>
+            <li>Vue Gantt pour visualiser le calendrier des livrables</li>
+          </ul>
         </div>
       </div>
     </div>
@@ -467,14 +558,14 @@
   <!-- ═══ Features ═══ -->
   <section id="features" class="features">
     <div class="container">
-      <div class="section-label fade-in">Fonctionnalites</div>
+      <div class="section-label fade-in">Fonctionnalités</div>
       <h2 class="section-title fade-in">Tout ce dont vous avez besoin</h2>
-      <p class="section-sub fade-in">Concu pour etudiants et enseignants, avec une attention particuliere a la simplicite.</p>
+      <p class="section-sub fade-in">Conçu pour étudiants et enseignants, avec une attention particulière à la simplicité.</p>
       <div class="features-grid">
         <div class="feature-card fade-in">
           <div class="feature-icon-wrap fi-blue"><i data-lucide="messages-square"></i></div>
-          <h3>Messagerie temps reel</h3>
-          <p>Canaux par promotion, messages directs, mentions @utilisateur et @everyone, formatage Markdown complet avec apercu.</p>
+          <h3>Messagerie temps réel</h3>
+          <p>Canaux par promotion, messages directs, mentions @utilisateur et @everyone, formatage Markdown complet avec aperçu et coloration syntaxique.</p>
           <div class="feature-tags">
             <span class="feature-tag">Ctrl+B Gras</span>
             <span class="feature-tag">Emojis</span>
@@ -485,7 +576,7 @@
         <div class="feature-card fade-in">
           <div class="feature-icon-wrap fi-orange"><i data-lucide="clipboard-check"></i></div>
           <h3>Suivi des devoirs</h3>
-          <p>Soumission de rendus avant deadline, grilles d'evaluation multicriteres, notes, feedback, et frise chronologique.</p>
+          <p>Soumission de rendus avant deadline, grilles d'évaluation multicritères, notes, feedback personnalisé et frise chronologique.</p>
           <div class="feature-tags">
             <span class="feature-tag">Deadlines</span>
             <span class="feature-tag">Rubriques</span>
@@ -495,24 +586,24 @@
         </div>
         <div class="feature-card fade-in">
           <div class="feature-icon-wrap fi-green"><i data-lucide="file-text"></i></div>
-          <h3>Documents centralises</h3>
-          <p>Ressources par projet avec apercu integre PDF, Word et Excel. Telechargement en un clic, organisation par categorie.</p>
+          <h3>Documents centralisés</h3>
+          <p>Ressources par projet avec aperçu intégré PDF, Word et Excel. Téléchargement en un clic, organisation par catégorie.</p>
           <div class="feature-tags">
             <span class="feature-tag">PDF</span>
             <span class="feature-tag">Word</span>
             <span class="feature-tag">Excel</span>
-            <span class="feature-tag">Apercu</span>
+            <span class="feature-tag">Aperçu</span>
           </div>
         </div>
         <div class="feature-card fade-in">
           <div class="feature-icon-wrap fi-purple"><i data-lucide="users"></i></div>
           <h3>Collaboration & suivi</h3>
-          <p>Groupes de travail, tableau de bord avec prochaine action, frise Gantt, timeline etudiante, et 4 themes visuels.</p>
+          <p>Groupes de travail, tableau de bord avec prochaine action, frise Gantt, timeline étudiante, et export CSV des notes.</p>
           <div class="feature-tags">
             <span class="feature-tag">Dashboard</span>
             <span class="feature-tag">Gantt</span>
             <span class="feature-tag">Groupes</span>
-            <span class="feature-tag">Themes</span>
+            <span class="feature-tag">Export CSV</span>
           </div>
         </div>
       </div>
@@ -522,34 +613,54 @@
   <!-- ═══ Download ═══ -->
   <section id="download" class="download">
     <div class="container">
-      <div class="section-label fade-in">Telecharger</div>
+      <div class="section-label fade-in">Télécharger</div>
       <h2 class="section-title fade-in">Disponible partout</h2>
       <p class="section-sub fade-in">Application native ou version web — choisissez votre plateforme</p>
       <div class="download-grid">
         <div class="dl-card fade-in" id="dl-win">
           <div class="dl-icon-wrap dli-win"><i data-lucide="monitor"></i></div>
           <h3>Windows</h3>
-          <p>Windows 10 ou superieur</p>
-          <a href="https://github.com/rohanfosse/slack-like-electron/releases/latest" class="dl-btn dl-btn-ghost" target="_blank" rel="noopener">
-            <i data-lucide="download" style="width:14px;height:14px"></i> Telecharger .exe
+          <p>Windows 10 ou supérieur</p>
+          <a href="/download/windows" class="dl-btn dl-btn-ghost">
+            <i data-lucide="download" style="width:14px;height:14px"></i> Télécharger .exe
           </a>
         </div>
         <div class="dl-card fade-in" id="dl-mac">
           <div class="dl-icon-wrap dli-mac"><i data-lucide="laptop"></i></div>
           <h3>macOS</h3>
           <p>macOS 11 Big Sur+</p>
-          <a href="https://github.com/rohanfosse/slack-like-electron/releases/latest" class="dl-btn dl-btn-ghost" target="_blank" rel="noopener">
-            <i data-lucide="download" style="width:14px;height:14px"></i> Telecharger .dmg
+          <a href="/download/mac" class="dl-btn dl-btn-ghost">
+            <i data-lucide="download" style="width:14px;height:14px"></i> Télécharger .dmg
           </a>
         </div>
         <div class="dl-card fade-in" id="dl-web">
           <div class="dl-icon-wrap dli-web"><i data-lucide="globe"></i></div>
           <h3>Version Web</h3>
-          <p>Aucune installation</p>
+          <p>Aucune installation requise</p>
           <a href="/app" class="dl-btn dl-btn-primary">
             <i data-lucide="external-link" style="width:14px;height:14px"></i> Ouvrir
           </a>
         </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ Changelog ═══ -->
+  <section class="changelog">
+    <div class="container">
+      <div class="changelog-inner fade-in">
+        <div class="changelog-head">
+          <span class="changelog-title">Dernière version</span>
+          <span class="changelog-version" id="cl-version">v2.0.0</span>
+        </div>
+        <div class="changelog-date" id="cl-date">Mars 2026</div>
+        <ul class="changelog-list">
+          <li>Refonte design — identité visuelle modernisée (style Apple/Linear)</li>
+          <li>Améliorations RGPD — export des données personnelles et politique de confidentialité</li>
+          <li>Rubriques multi-critères pour une évaluation fine des rendus</li>
+          <li>Markdown et coloration syntaxique dans la messagerie</li>
+          <li>Export CSV/Excel des notes avec encodage UTF-8 pour Excel</li>
+        </ul>
       </div>
     </div>
   </section>
@@ -562,11 +673,13 @@
         Cursus
       </div>
       <div class="footer-links">
-        <a href="https://github.com/rohanfosse/slack-like-electron" target="_blank" rel="noopener">GitHub</a>
-        <a href="#features">Fonctionnalites</a>
+        <a href="#who">Pour qui ?</a>
+        <a href="#features">Fonctionnalités</a>
+        <a href="#download">Télécharger</a>
         <a href="/app">Se connecter</a>
+        <a href="/app#privacy">Confidentialité</a>
       </div>
-      <p>Concu par <a href="https://github.com/rohanfosse" target="_blank" rel="noopener">Rohan Fosse</a> — v2.0.0</p>
+      <p>Conçu par <a href="https://github.com/rohanfosse" target="_blank" rel="noopener">Rohan Fosse</a> — <span id="footer-version">v2.0.0</span></p>
     </div>
   </footer>
 
@@ -574,9 +687,30 @@
     // Init Lucide icons
     document.addEventListener('DOMContentLoaded', () => {
       if (window.lucide) lucide.createIcons()
+
+      // Version dynamique depuis /download
+      fetch('/download')
+        .then(r => r.ok ? r.json() : null)
+        .then(data => {
+          if (!data?.version) return
+          const v = data.version
+          const badge = document.getElementById('version-badge')
+          if (badge) badge.innerHTML = `<span class="hero-badge-dot"></span>${v} — Disponible maintenant`
+          const clv = document.getElementById('cl-version')
+          if (clv) clv.textContent = v
+          const fv = document.getElementById('footer-version')
+          if (fv) fv.textContent = v
+          if (data.published_at) {
+            const d = new Date(data.published_at)
+            const label = d.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })
+            const cl = document.getElementById('cl-date')
+            if (cl) cl.textContent = label.charAt(0).toUpperCase() + label.slice(1)
+          }
+        })
+        .catch(() => {}) // fallback silencieux sur les valeurs hardcodées
     })
 
-    // OS detection
+    // Détection OS pour recommander la bonne plateforme
     ;(function() {
       const ua = navigator.userAgent.toLowerCase()
       let os = 'web'
@@ -586,7 +720,7 @@
       if (el) el.classList.add('recommended')
     })()
 
-    // Scroll animations
+    // Animations au scroll
     const observer = new IntersectionObserver((entries) => {
       entries.forEach(e => {
         if (e.isIntersecting) { e.target.classList.add('visible'); observer.unobserve(e.target) }

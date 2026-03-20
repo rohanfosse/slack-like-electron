@@ -72,6 +72,9 @@ app.use('/api/files', require('./routes/files'))
 // ── Health check ─────────────────────────────────────────────────────────────
 app.get('/health', (_req, res) => res.json({ ok: true, version: '2.0.0' }))
 
+// ── Téléchargements (proxy GitHub Releases, sans exposer l'URL GitHub) ────────
+app.use('/download', require('./routes/download'))
+
 // ── Webhook de déploiement (pas d'auth JWT, validé par DEPLOY_SECRET) ─────────
 app.use('/webhook/deploy', require('./routes/deploy'))
 

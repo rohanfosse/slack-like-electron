@@ -12,7 +12,8 @@
       "Bash(ssh -V)",
       "Bash(expect -v)",
       "Bash(python3 -c \"import paramiko; print\\(''paramiko ok''\\)\")",
-      "Bash(pip install:*)"
+      "Bash(pip install:*)",
+      "Bash(done)"
     ]
   }
 }
