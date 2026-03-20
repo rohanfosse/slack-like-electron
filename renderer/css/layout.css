@@ -412,56 +412,57 @@ nav[aria-label="Messages directs"] {
   padding: 6px 16px;
 }
 
-/* Rail des promos (prof) — empilés verticalement pleine largeur */
+/* Rail des promos (prof) — pills côte à côte avec wrap */
 .nav-promo-section { flex-shrink: 0; }
 .nav-promo-label {
-  display: block; padding: 8px 14px 2px;
+  display: block; padding: 8px 12px 4px;
   font-size: 10px; font-weight: 700; color: var(--text-muted);
   text-transform: uppercase; letter-spacing: .5px;
 }
 .nav-promo-dot {
-  width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+  width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0;
 }
 .nav-promo-list {
   display: flex;
-  flex-direction: column;
-  gap: 3px;
-  padding: 8px 8px 6px;
+  flex-wrap: wrap;
+  gap: 5px;
+  padding: 4px 10px 8px;
   border-bottom: 1px solid var(--border);
   flex-shrink: 0;
   list-style: none;
 }
 
 .nav-promo-btn {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  width: 100%;
-  padding: 6px 12px;
-  height: auto;
-  border-radius: 6px;
-  border: 1.5px solid transparent;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 14px;
+  border: 1.5px solid rgba(255,255,255,.08);
   background: rgba(255,255,255,.04);
   color: var(--text-secondary);
   font-family: var(--font);
   font-size: 11px;
-  font-weight: 700;
-  letter-spacing: .2px;
+  font-weight: 600;
   cursor: pointer;
-  transition: background .15s, color .15s, border-color .15s;
-  text-align: left;
+  transition: all .15s;
+  white-space: nowrap;
 }
 
 .nav-promo-btn:hover {
   background: rgba(255,255,255,.08);
   color: var(--text-primary);
-  border-color: rgba(255,255,255,.12);
+  border-color: rgba(255,255,255,.15);
 }
 
 .nav-promo-btn.active {
-  background: var(--promo-color, var(--accent));
-  color: #fff;
-  border-color: transparent;
-  box-shadow: 0 2px 8px rgba(0,0,0,.3);
+  background: color-mix(in srgb, var(--promo-color, var(--accent)) 20%, transparent);
+  color: var(--promo-color, var(--accent));
+  border-color: var(--promo-color, var(--accent));
+  font-weight: 700;
+}
+.nav-promo-btn.active .nav-promo-dot {
+  box-shadow: 0 0 4px var(--promo-color, var(--accent));
 }
 
 /* ── Zone principale ─────────────────────────────────────────────────────── */
@@ -979,8 +980,9 @@ body.light .sidebar-wrapper       { border-right-color: rgba(0,0,0,.09); box-sha
 body.light .channel-header        { box-shadow: 0 2px 8px rgba(0,0,0,.07); }
 body.light .message-input-wrapper { background: rgba(0,0,0,.035); border-color: rgba(0,0,0,.12); }
 body.light .message-input-wrapper:focus-within { background: rgba(0,0,0,.05); box-shadow: 0 0 0 3px rgba(74,144,217,.14); }
-body.light .nav-promo-btn         { background: rgba(0,0,0,.04); border-color: rgba(0,0,0,.1); }
-body.light .nav-promo-btn:hover   { background: rgba(0,0,0,.08); border-color: rgba(0,0,0,.18); }
+body.light .nav-promo-btn         { background: rgba(0,0,0,.03); border-color: rgba(0,0,0,.08); }
+body.light .nav-promo-btn:hover   { background: rgba(0,0,0,.06); border-color: rgba(0,0,0,.15); }
+body.light .nav-promo-btn.active  { background: color-mix(in srgb, var(--promo-color, var(--accent)) 12%, transparent); border-color: var(--promo-color, var(--accent)); }
 body.light .skel                  { background: rgba(0,0,0,.08); }
 body.light .sidebar-search-input  { background: rgba(0,0,0,.04); }
 body.light .msg-input-inner       { background: rgba(0,0,0,.04); }
