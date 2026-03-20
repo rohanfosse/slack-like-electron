@@ -243,8 +243,12 @@ const studentProjectCards = computed((): StudentProjectCard[] => {
 })
 
 // ── Frise chronologique ────────────────────────────────────────────────────────
-const dashTab = ref<'projets' | 'frise'>(route.query.tab === 'frise' ? 'frise' : 'projets')
-watch(() => route.query.tab, (tab) => { dashTab.value = tab === 'frise' ? 'frise' : 'projets' })
+const dashTab = ref<'projets' | 'frise' | 'analytique'>(
+  route.query.tab === 'frise' ? 'frise' : route.query.tab === 'analytique' ? 'analytique' : 'projets',
+)
+watch(() => route.query.tab, (tab) => {
+  dashTab.value = tab === 'frise' ? 'frise' : tab === 'analytique' ? 'analytique' : 'projets'
+})
 
 interface FriseMilestone { id: number; title: string; type: string; deadline: string; published: boolean; done: boolean }
 interface FriseProject   { key: string; label: string; icon: Component | null; milestones: FriseMilestone[] }
@@ -340,6 +344,75 @@ const studentFrise = computed((): FrisePromo[] => {
 })
 
 const frise = computed((): FrisePromo[] => appStore.isTeacher ? teacherFrise.value : studentFrise.value)
+
+// ── Analytique enseignant ─────────────────────────────────────────────────────
+const allRendus = ref<{ note: string | null }[]>([])
+const analyticsLoaded = ref(false)
+
+async function loadAnalytics() {
+  if (analyticsLoaded.value) return
+  const promoId = appStore.activePromoId ?? 0
+  const res = await window.api.getAllRendus(promoId)
+  if (res?.ok) allRendus.value = (res.data as unknown as typeof allRendus.value)
+  analyticsLoaded.value = true
+}
+
+watch(dashTab, (tab) => { if (tab === 'analytique') loadAnalytics() })
+watch(() => appStore.activePromoId, () => { analyticsLoaded.value = false; if (dashTab.value === 'analytique') loadAnalytics() })
+
+// Distribution des notes (barres) : 0-4, 4-8, 8-10, 10-12, 12-14, 14-16, 16-20
+const gradeDistribution = computed(() => {
+  const buckets = [
+    { label: '0–4', min: 0, max: 4, count: 0 },
+    { label: '4–8', min: 4, max: 8, count: 0 },
+    { label: '8–10', min: 8, max: 10, count: 0 },
+    { label: '10–12', min: 10, max: 12, count: 0 },
+    { label: '12–14', min: 12, max: 14, count: 0 },
+    { label: '14–16', min: 14, max: 16, count: 0 },
+    { label: '16–20', min: 16, max: 20.01, count: 0 },
+  ]
+  for (const r of allRendus.value) {
+    if (r.note == null) continue
+    const n = parseFloat(r.note)
+    if (isNaN(n)) continue
+    for (const b of buckets) {
+      if (n >= b.min && n < b.max) { b.count++; break }
+    }
+  }
+  const max = Math.max(1, ...buckets.map(b => b.count))
+  return buckets.map(b => ({ ...b, pct: Math.round(b.count / max * 100) }))
+})
+
+// Taux de soumission par devoir
+const submissionRates = computed(() => {
+  return ganttFiltered.value
+    .filter(t => t.published && t.students_total > 0)
+    .map(t => ({
+      title: t.title,
+      rate: Math.round((t.depots_count / t.students_total) * 100),
+      depots: t.depots_count,
+      total: t.students_total,
+    }))
+    .sort((a, b) => a.rate - b.rate)
+    .slice(0, 15)
+})
+
+// Moyenne générale
+const globalAvg = computed(() => {
+  const grades = allRendus.value
+    .map(r => parseFloat(r.note ?? ''))
+    .filter(n => !isNaN(n))
+  if (!grades.length) return null
+  return Math.round(grades.reduce((a, b) => a + b, 0) / grades.length * 10) / 10
+})
+
+// Statistiques rapides analytique
+const analyticsStats = computed(() => {
+  const total = allRendus.value.length
+  const graded = allRendus.value.filter(r => r.note != null).length
+  const notGraded = total - graded
+  return { total, graded, notGraded }
+})
 
 function milestoneLeft(deadline: string): string {
   const r = ganttDateRange.value
@@ -456,10 +529,82 @@ function onMilestoneClick(ms: FriseMilestone) {
           <button class="db-tab" :class="{ active: dashTab === 'frise' }" @click="dashTab = 'frise'">
             <BarChart2 :size="13" /> Frise
           </button>
+          <button class="db-tab" :class="{ active: dashTab === 'analytique' }" @click="dashTab = 'analytique'">
+            <TrendingUp :size="13" /> Analytique
+          </button>
+        </div>
+
+        <!-- Tab Analytique -->
+        <div v-if="dashTab === 'analytique'" class="db-tab-content">
+          <div class="analytics-grid">
+
+            <!-- Stats rapides -->
+            <div class="analytics-row analytics-quick-stats">
+              <div class="analytics-stat">
+                <span class="analytics-stat-value">{{ analyticsStats.total }}</span>
+                <span class="analytics-stat-label">Rendus total</span>
+              </div>
+              <div class="analytics-stat">
+                <span class="analytics-stat-value">{{ analyticsStats.graded }}</span>
+                <span class="analytics-stat-label">Notés</span>
+              </div>
+              <div class="analytics-stat">
+                <span class="analytics-stat-value">{{ analyticsStats.notGraded }}</span>
+                <span class="analytics-stat-label">En attente</span>
+              </div>
+              <div class="analytics-stat">
+                <span class="analytics-stat-value" :style="{ color: globalAvg != null && globalAvg >= 10 ? '#22c55e' : '#f87171' }">
+                  {{ globalAvg != null ? globalAvg + '/20' : '—' }}
+                </span>
+                <span class="analytics-stat-label">Moyenne générale</span>
+              </div>
+              <div class="analytics-stat">
+                <span class="analytics-stat-value" style="color:#22c55e">{{ appStore.onlineUsers.length }}</span>
+                <span class="analytics-stat-label">En ligne</span>
+              </div>
+            </div>
+
+            <!-- Distribution des notes -->
+            <div class="analytics-card">
+              <h3 class="analytics-card-title"><Award :size="14" /> Distribution des notes</h3>
+              <div class="analytics-bars">
+                <div v-for="b in gradeDistribution" :key="b.label" class="analytics-bar-row">
+                  <span class="analytics-bar-label">{{ b.label }}</span>
+                  <div class="analytics-bar-track">
+                    <div
+                      class="analytics-bar-fill"
+                      :style="{ width: b.pct + '%', background: b.min >= 10 ? '#22c55e' : b.min >= 8 ? '#f59e0b' : '#f87171' }"
+                    />
+                  </div>
+                  <span class="analytics-bar-count">{{ b.count }}</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Taux de soumission par devoir -->
+            <div class="analytics-card">
+              <h3 class="analytics-card-title"><CheckCircle2 :size="14" /> Taux de soumission</h3>
+              <div v-if="!submissionRates.length" class="db-empty-hint" style="padding:20px">
+                <p>Aucun devoir publié avec des soumissions attendues.</p>
+              </div>
+              <div v-else class="analytics-bars">
+                <div v-for="s in submissionRates" :key="s.title" class="analytics-bar-row">
+                  <span class="analytics-bar-label analytics-bar-label-wide" :title="s.title">{{ s.title }}</span>
+                  <div class="analytics-bar-track">
+                    <div
+                      class="analytics-bar-fill"
+                      :style="{ width: s.rate + '%', background: s.rate >= 80 ? '#22c55e' : s.rate >= 50 ? '#f59e0b' : '#f87171' }"
+                    />
+                  </div>
+                  <span class="analytics-bar-count">{{ s.rate }}%</span>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
         <!-- Tab Projets -->
-        <div v-if="dashTab === 'projets'" class="db-tab-content">
+        <div v-else-if="dashTab === 'projets'" class="db-tab-content">
           <div v-if="!projectCards.length" class="db-empty-hint">
             <FolderOpen :size="36" style="opacity:.2;margin-bottom:10px" />
             <p>Aucun projet configuré. Créez des travaux avec une catégorie pour les voir ici.</p>
@@ -1014,6 +1159,48 @@ function onMilestoneClick(ms: FriseMilestone) {
 }
 
 /* ── Empty hint ── */
+/* ═══════ ANALYTIQUE ═══════ */
+.analytics-grid { display: flex; flex-direction: column; gap: 16px; }
+.analytics-quick-stats {
+  display: flex; gap: 12px; flex-wrap: wrap;
+}
+.analytics-stat {
+  flex: 1; min-width: 100px;
+  background: var(--bg-secondary); border-radius: 8px; padding: 14px;
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+}
+.analytics-stat-value { font-size: 22px; font-weight: 700; color: var(--text-primary); }
+.analytics-stat-label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .5px; }
+.analytics-card {
+  background: var(--bg-secondary); border-radius: 8px; padding: 16px;
+}
+.analytics-card-title {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 13px; font-weight: 600; color: var(--text-primary);
+  margin-bottom: 14px;
+}
+.analytics-bars { display: flex; flex-direction: column; gap: 6px; }
+.analytics-bar-row {
+  display: flex; align-items: center; gap: 8px;
+}
+.analytics-bar-label {
+  width: 40px; flex-shrink: 0;
+  font-size: 11px; color: var(--text-muted); text-align: right;
+}
+.analytics-bar-label-wide {
+  width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.analytics-bar-track {
+  flex: 1; height: 18px; background: rgba(255,255,255,.05); border-radius: 4px; overflow: hidden;
+}
+.analytics-bar-fill {
+  height: 100%; border-radius: 4px; transition: width .4s ease;
+}
+.analytics-bar-count {
+  width: 32px; flex-shrink: 0;
+  font-size: 11px; color: var(--text-secondary); text-align: right; font-variant-numeric: tabular-nums;
+}
+
 .db-empty-hint {
   display: flex;
   flex-direction: column;

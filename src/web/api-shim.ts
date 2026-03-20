@@ -19,6 +19,8 @@ type MsgNewPayload = {
 const msgCallbacks: Array<(data: MsgNewPayload) => void> = []
 const socketStateCallbacks: Array<(connected: boolean) => void> = []
 const typingCallbacks: Array<(data: { channelId: number; userName: string }) => void> = []
+type PresenceEntry = { id: number; name: string; role: string }
+const presenceCallbacks: Array<(data: PresenceEntry[]) => void> = []
 
 // Cache pour les fichiers ouverts via <input type="file">
 // Clé : pseudo-path "__web__<timestamp>", valeur : données du fichier
@@ -34,6 +36,7 @@ function connectSocket(token: string): void {
   })
   socket.on('msg:new', (data: MsgNewPayload) => msgCallbacks.forEach(cb => cb(data)))
   socket.on('typing', (data: { channelId: number; userName: string }) => typingCallbacks.forEach(cb => cb(data)))
+  socket.on('presence:update', (data: PresenceEntry[]) => presenceCallbacks.forEach(cb => cb(data)))
   socket.on('connect', () => socketStateCallbacks.forEach(cb => cb(true)))
   socket.on('disconnect', () => socketStateCallbacks.forEach(cb => cb(false)))
   socket.on('connect_error', (err) => {
@@ -236,8 +239,9 @@ async function importStudentsBrowser(promoId: number): Promise<unknown> {
   togglePinMessage:  (payload: unknown) => post('/api/messages/pin', payload),
   updateReactions:   (msgId: number, reactionsJson: string) =>
     post('/api/messages/reactions', { msgId, reactionsJson }),
-  deleteMessage: (id: number)                  => del(`/api/messages/${id}`),
-  editMessage:   (id: number, content: string) => patch(`/api/messages/${id}`, { content }),
+  deleteMessage:  (id: number)                  => del(`/api/messages/${id}`),
+  editMessage:    (id: number, content: string) => patch(`/api/messages/${id}`, { content }),
+  reportMessage:  (messageId: number, reason: string) => post(`/api/messages/${messageId}/report`, { reason }),
 
   // ── Travaux ─────────────────────────────────────────────────────────────────
   getTravaux:             (channelId: number) => get(`/api/assignments?channelId=${channelId}`),
@@ -455,6 +459,11 @@ async function importStudentsBrowser(promoId: number): Promise<unknown> {
   onSocketStateChange(cb: (connected: boolean) => void) {
     socketStateCallbacks.push(cb)
     return () => { const i = socketStateCallbacks.indexOf(cb); if (i !== -1) socketStateCallbacks.splice(i, 1) }
+  },
+
+  onPresenceUpdate(cb: (data: PresenceEntry[]) => void) {
+    presenceCallbacks.push(cb)
+    return () => { const i = presenceCallbacks.indexOf(cb); if (i !== -1) presenceCallbacks.splice(i, 1) }
   },
 
   onTyping(cb: (data: { channelId: number; userName: string }) => void) {

@@ -21,6 +21,8 @@ type MsgNewPayload = {
 }
 const msgCallbacks: Array<(data: MsgNewPayload) => void> = []
 const socketStateCallbacks: Array<(connected: boolean) => void> = []
+type PresenceEntry = { id: number; name: string; role: string }
+const presenceCallbacks: Array<(data: PresenceEntry[]) => void> = []
 
 // ─── Socket.io ────────────────────────────────────────────────────────────────
 function connectSocket(token: string): void {
@@ -32,6 +34,9 @@ function connectSocket(token: string): void {
   })
   socket.on('msg:new', (data: MsgNewPayload) => {
     msgCallbacks.forEach((cb) => cb(data))
+  })
+  socket.on('presence:update', (data: PresenceEntry[]) => {
+    presenceCallbacks.forEach((cb) => cb(data))
   })
   socket.on('connect', () => {
     socketStateCallbacks.forEach((cb) => cb(true))
@@ -176,8 +181,9 @@ contextBridge.exposeInMainWorld('api', {
   togglePinMessage:  (payload: unknown) => post('/api/messages/pin', payload),
   updateReactions:   (msgId: number, reactionsJson: string) =>
     post('/api/messages/reactions', { msgId, reactionsJson }),
-  deleteMessage: (id: number)                  => del(`/api/messages/${id}`),
-  editMessage:   (id: number, content: string) => patch(`/api/messages/${id}`, { content }),
+  deleteMessage:  (id: number)                  => del(`/api/messages/${id}`),
+  editMessage:    (id: number, content: string) => patch(`/api/messages/${id}`, { content }),
+  reportMessage:  (messageId: number, reason: string) => post(`/api/messages/${messageId}/report`, { reason }),
 
   // ── Travaux ─────────────────────────────────────────────────────────────────
   getTravaux:             (channelId: number)  => get(`/api/assignments?channelId=${channelId}`),
@@ -344,6 +350,15 @@ contextBridge.exposeInMainWorld('api', {
     return () => {
       const idx = socketStateCallbacks.indexOf(cb)
       if (idx !== -1) socketStateCallbacks.splice(idx, 1)
+    }
+  },
+
+  // Présence en ligne
+  onPresenceUpdate: (cb: (data: PresenceEntry[]) => void) => {
+    presenceCallbacks.push(cb)
+    return () => {
+      const idx = presenceCallbacks.indexOf(cb)
+      if (idx !== -1) presenceCallbacks.splice(idx, 1)
     }
   },
 

@@ -29,6 +29,7 @@ export const useAppStore = defineStore('app', () => {
   const mentionChannels   = ref<Record<number, number>>({})
   const unreadDms         = ref<Record<string, number>>({}) // clé = nom de l'expéditeur
   const taChannelIds      = ref<number[]>([])               // canaux assignés à l'intervenant
+  const onlineUsers       = ref<{ id: number; name: string; role: string }[]>([]) // présence en ligne
 
   // ── Historique de notifications ────────────────────────────────────────────
   interface NotifEntry {
@@ -207,6 +208,17 @@ export const useAppStore = defineStore('app', () => {
     return window.api.onSocketStateChange((connected: boolean) => {
       socketConnected.value = connected
     })
+  }
+
+  // ── Présence en ligne ────────────────────────────────────────────────────
+  function initPresenceListener(): () => void {
+    if (window.api.onPresenceUpdate) {
+      return window.api.onPresenceUpdate((data) => { onlineUsers.value = data })
+    }
+    return () => {}
+  }
+  function isUserOnline(name: string): boolean {
+    return onlineUsers.value.some(u => u.name === name)
   }
 
   // ── Statut réseau ─────────────────────────────────────────────────────────
@@ -411,7 +423,8 @@ export const useAppStore = defineStore('app', () => {
     startSimulation, stopSimulation,
     openChannel, openDm, markRead, markDmRead, markAllRead, loadTaChannels,
     muteDm, unmuteDm, isDmMuted,
-    initUnreadListener, initOnlineListener, initSocketListener,
+    onlineUsers, isUserOnline,
+    initUnreadListener, initOnlineListener, initSocketListener, initPresenceListener,
     onDmRefresh, offDmRefresh,
     api,
   }

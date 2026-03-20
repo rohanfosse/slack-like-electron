@@ -86,6 +86,20 @@ function onContextMenu(e: MouseEvent) {
   ctxVisible.value = true
 }
 
+const reportingMsg = ref(false)
+const reportReason = ref('')
+
+async function reportMessage() {
+  if (!reportReason.value.trim()) { showToast('Veuillez indiquer une raison.', 'error'); return }
+  reportingMsg.value = false
+  try {
+    const res = await window.api.reportMessage(props.msg.id, reportReason.value.trim())
+    if (res?.ok) { showToast('Message signalé. Un modérateur examinera votre signalement.', 'info') }
+    else { showToast(res?.error ?? 'Erreur lors du signalement', 'error') }
+  } catch { showToast('Erreur lors du signalement', 'error') }
+  reportReason.value = ''
+}
+
 const ctxItems = computed<ContextMenuItem[]>(() => [
   { label: 'Répondre',  icon: Reply,  action: onReply },
   { label: 'Copier',    icon: Copy,   action: copyMessage },
@@ -93,7 +107,8 @@ const ctxItems = computed<ContextMenuItem[]>(() => [
   ...(appStore.isTeacher
     ? [{ label: isPinned.value ? 'Désépingler' : 'Épingler', icon: isPinned.value ? PinOff : Pin, action: togglePin }]
     : []),
-  ...(canDelete.value  ? [{ label: 'Supprimer',  icon: Trash2, danger: true, separator: true, action: deleteMessage }] : []),
+  ...(!isMine.value ? [{ label: 'Signaler', icon: AlertTriangle, separator: true, action: () => { reportingMsg.value = true } }] : []),
+  ...(canDelete.value  ? [{ label: 'Supprimer',  icon: Trash2, danger: true, separator: !isMine.value ? false : true, action: deleteMessage }] : []),
 ])
 
 // ── Computed
@@ -244,14 +259,17 @@ function closeAll() { showMenu.value = false; showPicker.value = false; confirmi
     @click.self="closeAll"
     @contextmenu.prevent="onContextMenu"
   >
-    <!-- Avatar -->
+    <!-- Avatar + pastille présence -->
     <template v-if="!grouped">
-      <Avatar
-        :initials="msg.author_initials || msg.author_name.slice(0, 2).toUpperCase()"
-        :color="color"
-        :photo-data="msg.author_photo"
-        :icon="isMine && appStore.currentUser?.type === 'teacher' && !msg.author_photo ? Flame : null"
-      />
+      <div class="msg-avatar-wrap">
+        <Avatar
+          :initials="msg.author_initials || msg.author_name.slice(0, 2).toUpperCase()"
+          :color="color"
+          :photo-data="msg.author_photo"
+          :icon="isMine && appStore.currentUser?.type === 'teacher' && !msg.author_photo ? Flame : null"
+        />
+        <span v-if="appStore.isUserOnline(msg.author_name)" class="presence-dot presence-online"></span>
+      </div>
     </template>
     <div v-else class="msg-avatar-placeholder" />
 
@@ -461,6 +479,27 @@ function closeAll() { showMenu.value = false; showPicker.value = false; confirmi
         <img :src="lightboxUrl" class="lightbox-img" alt="Image agrandie" />
       </div>
     </Transition>
+
+    <!-- Dialog de signalement -->
+    <Transition name="lightbox-fade">
+      <div v-if="reportingMsg" class="lightbox-overlay report-overlay" @click.self="reportingMsg = false">
+        <div class="report-dialog">
+          <h3 class="report-title"><AlertTriangle :size="16" /> Signaler ce message</h3>
+          <p class="report-preview">"{{ msg.content.slice(0, 100) }}{{ msg.content.length > 100 ? '…' : '' }}"</p>
+          <p class="report-hint">Indiquez la raison du signalement :</p>
+          <div class="report-quick-reasons">
+            <button v-for="r in ['Harcèlement', 'Spam', 'Contenu inapproprié', 'Hors-sujet']" :key="r"
+              class="report-reason-btn" :class="{ active: reportReason === r }" @click="reportReason = r"
+            >{{ r }}</button>
+          </div>
+          <textarea v-model="reportReason" class="report-textarea" rows="2" placeholder="Ou décrivez la raison…" />
+          <div class="report-actions">
+            <button class="btn-ghost" @click="reportingMsg = false">Annuler</button>
+            <button class="btn-primary" :disabled="!reportReason.trim()" @click="reportMessage">Envoyer</button>
+          </div>
+        </div>
+      </div>
+    </Transition>
   </Teleport>
 </template>
 
@@ -468,6 +507,22 @@ function closeAll() { showMenu.value = false; showPicker.value = false; confirmi
 /* ════════════════════════════════════════════
    LIGNE DE MESSAGE — hover + états
 ════════════════════════════════════════════ */
+
+/* Pastille de présence sur l'avatar */
+.msg-avatar-wrap {
+  position: relative;
+  flex-shrink: 0;
+}
+.msg-avatar-wrap .presence-dot {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 2px solid var(--bg-primary, #1a1a2e);
+}
+.presence-online  { background: #22c55e; }
 
 /* Fond subtil au survol — effet Discord */
 .msg-row:hover {
@@ -915,4 +970,45 @@ function closeAll() { showMenu.value = false; showPicker.value = false; confirmi
 .lightbox-fade-enter-active { transition: opacity .2s; }
 .lightbox-fade-leave-active { transition: opacity .15s; }
 .lightbox-fade-enter-from, .lightbox-fade-leave-to { opacity: 0; }
+
+/* Report dialog */
+.report-overlay { align-items: center; justify-content: center; }
+.report-dialog {
+  background: var(--bg-primary, #1a1a2e); border-radius: 12px; padding: 24px;
+  max-width: 420px; width: 90%; box-shadow: 0 20px 60px rgba(0,0,0,.5);
+}
+.report-title {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 15px; font-weight: 600; color: #f87171; margin-bottom: 10px;
+}
+.report-preview {
+  font-size: 12px; color: var(--text-muted); font-style: italic;
+  padding: 8px; background: rgba(255,255,255,.04); border-radius: 6px; margin-bottom: 12px;
+  word-break: break-word;
+}
+.report-hint { font-size: 12px; color: var(--text-secondary); margin-bottom: 8px; }
+.report-quick-reasons { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
+.report-reason-btn {
+  padding: 4px 10px; border-radius: 14px; font-size: 11px;
+  background: rgba(255,255,255,.06); color: var(--text-secondary);
+  border: 1px solid rgba(255,255,255,.1); cursor: pointer; transition: all .15s;
+}
+.report-reason-btn.active, .report-reason-btn:hover {
+  background: rgba(248,113,113,.15); color: #f87171; border-color: rgba(248,113,113,.3);
+}
+.report-textarea {
+  width: 100%; background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.1);
+  border-radius: 6px; padding: 8px; color: var(--text-primary); font-size: 12px;
+  resize: vertical; margin-bottom: 12px;
+}
+.report-actions { display: flex; justify-content: flex-end; gap: 8px; }
+.report-actions .btn-primary {
+  background: #f87171; color: #fff; padding: 6px 16px; border-radius: 6px; font-size: 12px;
+  border: none; cursor: pointer;
+}
+.report-actions .btn-primary:disabled { opacity: .4; cursor: not-allowed; }
+.report-actions .btn-ghost {
+  padding: 6px 12px; font-size: 12px; color: var(--text-muted); cursor: pointer;
+  background: none; border: none;
+}
 </style>

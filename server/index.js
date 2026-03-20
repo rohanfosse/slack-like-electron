@@ -166,9 +166,21 @@ const userSockets = new Map()  // userId (number) → Set<string>
 
 function userRoom(userId) { return `user:${userId}` }
 
+// ── Présence en ligne ─────────────────────────────────────────────────────────
+// userId → { name, role, connectedAt }
+const onlineUsers = new Map()
+
+function broadcastPresence() {
+  const list = [...onlineUsers.entries()].map(([id, info]) => ({
+    id, name: info.name, role: info.role,
+  }))
+  io.to('all').emit('presence:update', list)
+}
+
 io.on('connection', (socket) => {
   const name = socket.user?.name ?? socket.id
   const userId = socket.user?.id
+  const role = socket.user?.role ?? 'student'
   console.log(`[WS] + ${name}`)
 
   // Rejoindre la salle de la promo pour les broadcasts ciblés
@@ -180,7 +192,18 @@ io.on('connection', (socket) => {
     socket.join(userRoom(userId))
     if (!userSockets.has(userId)) userSockets.set(userId, new Set())
     userSockets.get(userId).add(socket.id)
+
+    // Tracker la présence
+    if (!onlineUsers.has(userId)) {
+      onlineUsers.set(userId, { name, role, connectedAt: Date.now() })
+    }
+    broadcastPresence()
   }
+
+  // Envoyer la liste actuelle au nouveau connecté
+  socket.emit('presence:update', [...onlineUsers.entries()].map(([id, info]) => ({
+    id, name: info.name, role: info.role,
+  })))
 
   // Indicateur de frappe
   socket.on('typing', ({ channelId, dmStudentId }) => {
@@ -197,7 +220,11 @@ io.on('connection', (socket) => {
     console.log(`[WS] - ${name}`)
     if (userId != null && userSockets.has(userId)) {
       userSockets.get(userId).delete(socket.id)
-      if (userSockets.get(userId).size === 0) userSockets.delete(userId)
+      if (userSockets.get(userId).size === 0) {
+        userSockets.delete(userId)
+        onlineUsers.delete(userId)
+        broadcastPresence()
+      }
     }
   })
 })

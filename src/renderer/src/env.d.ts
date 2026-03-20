@@ -135,6 +135,7 @@ declare global {
       getPinnedMessages(channelId: number): Promise<IpcResponse<Message[]>>
       togglePinMessage(payload: { messageId: number; pinned: boolean }): Promise<IpcResponse<null>>
       deleteMessage(id: number): Promise<IpcResponse<number>>
+      reportMessage(messageId: number, reason: string): Promise<IpcResponse<null>>
       editMessage(id: number, content: string): Promise<IpcResponse<number>>
 
       // Rubrics
@@ -181,6 +182,7 @@ declare global {
         mentionNames:    string[]
       }) => void): () => void
       onSocketStateChange(cb: (connected: boolean) => void): () => void
+      onPresenceUpdate?(cb: (data: { id: number; name: string; role: string }[]) => void): () => void
       emitTyping?(channelId: number): void
       emitDmTyping?(dmStudentId: number): void
       onTyping?(cb: (data: { channelId: number; userName: string }) => void): () => void

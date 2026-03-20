@@ -79,10 +79,11 @@
     next()
   })
 
-  let unsubUnread:  (() => void) | null = null
-  let unsubOnline:  (() => void) | null = null
-  let unsubSocket:  (() => void) | null = null
-  let unsubTyping:  (() => void) | null = null
+  let unsubUnread:   (() => void) | null = null
+  let unsubOnline:   (() => void) | null = null
+  let unsubSocket:   (() => void) | null = null
+  let unsubTyping:   (() => void) | null = null
+  let unsubPresence: (() => void) | null = null
 
   onMounted(() => {
     // Appliquer le thème sauvegardé
@@ -122,13 +123,14 @@
 
     // Écouter l'état du socket temps-réel
     unsubSocket = appStore.initSocketListener()
+    unsubPresence = appStore.initPresenceListener()
 
     // Écouter les indicateurs de frappe
     const messagesStore = useMessagesStore()
     unsubTyping = messagesStore.initTypingListener()
   })
 
-  onUnmounted(() => { unsubUnread?.(); unsubOnline?.(); unsubSocket?.(); unsubTyping?.() })
+  onUnmounted(() => { unsubUnread?.(); unsubOnline?.(); unsubSocket?.(); unsubTyping?.(); unsubPresence?.() })
 </script>
 
 <template>
