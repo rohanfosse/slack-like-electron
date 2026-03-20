@@ -168,22 +168,58 @@
       height: 100%; background: linear-gradient(90deg, var(--accent), var(--purple));
       width: 0%; transition: width 0.1s linear;
     }
-    .demo-body { display: flex; min-height: 320px; }
+    .demo-body { display: flex; height: 360px; }
     .demo-sidebar {
       width: 180px; flex-shrink: 0;
       background: #f9fafb; border-right: 1px solid rgba(0,0,0,.07);
-      padding: 14px 10px;
+      padding: 14px 10px; overflow-y: auto;
     }
     .demo-sidebar-title { font-size: 9.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .9px; color: var(--text-3); margin-bottom: 6px; padding: 0 6px; }
     .demo-channel {
       display: flex; align-items: center; gap: 5px;
       padding: 5px 8px; border-radius: 6px; font-size: 12px;
       color: var(--text-2); cursor: pointer; transition: background .15s;
+      position: relative;
     }
     .demo-channel.active { background: rgba(59,130,246,.1); color: var(--accent); font-weight: 600; }
     .demo-channel:hover:not(.active) { background: rgba(0,0,0,.05); }
     .demo-channel-hash { opacity: .5; font-size: 11px; }
-    .demo-main { flex: 1; padding: 18px 20px; display: flex; flex-direction: column; background: #ffffff; }
+    .demo-channel-badge {
+      margin-left: auto; min-width: 16px; height: 16px; padding: 0 4px;
+      border-radius: 8px; background: var(--accent); color: #fff;
+      font-size: 9px; font-weight: 800; display: flex; align-items: center; justify-content: center;
+    }
+    .demo-main { flex: 1; padding: 18px 20px; display: flex; flex-direction: column; background: #ffffff; overflow: hidden; }
+
+    /* Reactions */
+    .msg-reactions { display: flex; gap: 4px; margin-top: 6px; flex-wrap: wrap; }
+    .reaction {
+      display: inline-flex; align-items: center; gap: 3px;
+      font-size: 11px; padding: 2px 8px; border-radius: 100px;
+      background: rgba(0,0,0,.05); border: 1px solid rgba(0,0,0,.1);
+      cursor: pointer; transition: all .15s; user-select: none;
+    }
+    .reaction:hover { background: rgba(59,130,246,.08); border-color: rgba(59,130,246,.25); }
+    .reaction.active { background: rgba(59,130,246,.1); border-color: rgba(59,130,246,.4); color: var(--accent); }
+    .reaction-count { font-weight: 700; font-size: 10px; }
+    .reaction-add {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 22px; height: 22px; border-radius: 100px;
+      background: transparent; border: 1px dashed rgba(0,0,0,.15);
+      cursor: pointer; font-size: 12px; transition: all .15s; color: var(--text-3);
+      opacity: 0;
+    }
+    .chat-msg:hover .reaction-add { opacity: 1; }
+    .reaction-add:hover { background: rgba(0,0,0,.05); border-color: rgba(0,0,0,.25); }
+
+    /* Devoir check interactive */
+    .devoir-check { cursor: pointer; transition: background .2s, border-color .2s; }
+    .devoir-check:hover:not(.done) { border-color: var(--green); }
+    .devoir-row.strikethrough .devoir-name { text-decoration: line-through; color: var(--text-3); }
+
+    /* Doc download feedback */
+    .doc-dl-done { background: rgba(5,150,105,.12) !important; border-color: rgba(5,150,105,.3) !important; }
+    .doc-dl-done svg { color: var(--green) !important; }
 
     /* Chat */
     .chat-messages { display: flex; flex-direction: column; gap: 12px; flex: 1; overflow: hidden; }
@@ -535,16 +571,16 @@
 
           <div class="demo-body">
 
-            <div class="demo-sidebar">
+            <div class="demo-sidebar" id="demo-sidebar">
               <div class="demo-sidebar-title">Canaux</div>
-              <div class="demo-channel active"><span class="demo-channel-hash">#</span> général</div>
-              <div class="demo-channel"><span class="demo-channel-hash">#</span> annonces</div>
-              <div class="demo-channel"><span class="demo-channel-hash">#</span> projet-web</div>
-              <div class="demo-channel"><span class="demo-channel-hash">#</span> algo-tp</div>
+              <div class="demo-channel active" onclick="switchChannel(this, 'général')"><span class="demo-channel-hash">#</span> général</div>
+              <div class="demo-channel" onclick="switchChannel(this, 'annonces')"><span class="demo-channel-hash">#</span> annonces<span class="demo-channel-badge">2</span></div>
+              <div class="demo-channel" onclick="switchChannel(this, 'projet-web')"><span class="demo-channel-hash">#</span> projet-web<span class="demo-channel-badge">5</span></div>
+              <div class="demo-channel" onclick="switchChannel(this, 'algo-tp')"><span class="demo-channel-hash">#</span> algo-tp</div>
               <div style="margin-top:14px">
                 <div class="demo-sidebar-title">Directs</div>
-                <div class="demo-channel"><span class="demo-channel-hash">@</span> Prof. Fosse</div>
-                <div class="demo-channel"><span class="demo-channel-hash">@</span> Marie Martin</div>
+                <div class="demo-channel" onclick="switchChannel(this, 'prof')"><span class="demo-channel-hash">@</span> Prof. Martin</div>
+                <div class="demo-channel" onclick="switchChannel(this, 'emma')"><span class="demo-channel-hash">@</span> Emma Lefèvre<span class="demo-channel-badge">1</span></div>
               </div>
             </div>
 
@@ -562,10 +598,10 @@
             <div class="demo-main devoirs-panel" id="panel-devoirs">
               <div class="devoirs-header">
                 <span class="devoirs-title">Mes devoirs</span>
-                <span class="devoirs-count">4 travaux · 1 urgent</span>
+                <span class="devoirs-count" id="devoirs-count">4 travaux · 1 urgent</span>
               </div>
               <div class="devoir-row" data-delay="0">
-                <div class="devoir-check"></div>
+                <div class="devoir-check" onclick="toggleDevoir(this)"></div>
                 <div class="devoir-info">
                   <div class="devoir-name">Projet Web E4</div>
                   <div class="devoir-sub">Équipe B · Livrable complet</div>
@@ -573,7 +609,7 @@
                 <span class="devoir-badge badge-urgent">Dans 3j</span>
               </div>
               <div class="devoir-row" data-delay="80">
-                <div class="devoir-check"></div>
+                <div class="devoir-check" onclick="toggleDevoir(this)"></div>
                 <div class="devoir-info">
                   <div class="devoir-name">Rapport de stage</div>
                   <div class="devoir-sub">Individuel · 20 pages min</div>
@@ -581,15 +617,23 @@
                 <span class="devoir-badge badge-ok">Dans 21j</span>
               </div>
               <div class="devoir-row" data-delay="160">
-                <div class="devoir-check done"></div>
+                <div class="devoir-check done" onclick="toggleDevoir(this)"></div>
                 <div class="devoir-info">
-                  <div class="devoir-name" style="text-decoration:line-through;color:var(--text-3)">TP Algo noté</div>
+                  <div class="devoir-name">TP Algo noté</div>
                   <div class="devoir-sub">Note : 13.5/20</div>
                 </div>
                 <span class="devoir-badge badge-done">Rendu</span>
               </div>
+              <div class="devoir-row strikethrough" data-delay="160">
+                <div class="devoir-check done" onclick="toggleDevoir(this)"></div>
+                <div class="devoir-info">
+                  <div class="devoir-name">Maquette UX</div>
+                  <div class="devoir-sub">Figma · Équipe B</div>
+                </div>
+                <span class="devoir-badge badge-done">Rendu</span>
+              </div>
               <div class="devoir-row" data-delay="240">
-                <div class="devoir-check"></div>
+                <div class="devoir-check" onclick="toggleDevoir(this)"></div>
                 <div class="devoir-info">
                   <div class="devoir-name">Soutenance E5</div>
                   <div class="devoir-sub">Oral 20 min + questions</div>
@@ -608,25 +652,25 @@
                 <div class="doc-icon doc-pdf">PDF</div>
                 <div class="doc-info">
                   <div class="doc-name">Cahier des charges v2.pdf</div>
-                  <div class="doc-meta">Ajouté par Prof. Fosse · 1.2 Mo</div>
+                  <div class="doc-meta">Ajouté par Prof. Martin · 1.2 Mo</div>
                 </div>
-                <div class="doc-dl"><i data-lucide="download" style="width:12px;height:12px;color:var(--text-2)"></i></div>
+                <div class="doc-dl" onclick="downloadDoc(this)" title="Télécharger"><i data-lucide="download" style="width:12px;height:12px;color:var(--text-2)"></i></div>
               </div>
               <div class="doc-row" data-delay="80">
                 <div class="doc-icon doc-word">DOC</div>
                 <div class="doc-info">
                   <div class="doc-name">Guide de rédaction rapport.docx</div>
-                  <div class="doc-meta">Ajouté par Prof. Fosse · 340 Ko</div>
+                  <div class="doc-meta">Ajouté par Prof. Martin · 340 Ko</div>
                 </div>
-                <div class="doc-dl"><i data-lucide="download" style="width:12px;height:12px;color:var(--text-2)"></i></div>
+                <div class="doc-dl" onclick="downloadDoc(this)" title="Télécharger"><i data-lucide="download" style="width:12px;height:12px;color:var(--text-2)"></i></div>
               </div>
               <div class="doc-row" data-delay="160">
                 <div class="doc-icon doc-xlsx">XLS</div>
                 <div class="doc-info">
                   <div class="doc-name">Grille d'évaluation E4.xlsx</div>
-                  <div class="doc-meta">Ajouté par Prof. Fosse · 78 Ko</div>
+                  <div class="doc-meta">Ajouté par Prof. Martin · 78 Ko</div>
                 </div>
-                <div class="doc-dl"><i data-lucide="download" style="width:12px;height:12px;color:var(--text-2)"></i></div>
+                <div class="doc-dl" onclick="downloadDoc(this)" title="Télécharger"><i data-lucide="download" style="width:12px;height:12px;color:var(--text-2)"></i></div>
               </div>
               <div class="doc-row" data-delay="240">
                 <div class="doc-icon doc-pdf">PDF</div>
@@ -634,7 +678,7 @@
                   <div class="doc-name">Architecture système.pdf</div>
                   <div class="doc-meta">Ajouté par Équipe B · 560 Ko</div>
                 </div>
-                <div class="doc-dl"><i data-lucide="download" style="width:12px;height:12px;color:var(--text-2)"></i></div>
+                <div class="doc-dl" onclick="downloadDoc(this)" title="Télécharger"><i data-lucide="download" style="width:12px;height:12px;color:var(--text-2)"></i></div>
               </div>
               <div class="doc-row" data-delay="320">
                 <div class="doc-icon doc-ppt">PPT</div>
@@ -642,7 +686,7 @@
                   <div class="doc-name">Présentation soutenance.pptx</div>
                   <div class="doc-meta">Ajouté par Équipe B · 2.8 Mo</div>
                 </div>
-                <div class="doc-dl"><i data-lucide="download" style="width:12px;height:12px;color:var(--text-2)"></i></div>
+                <div class="doc-dl" onclick="downloadDoc(this)" title="Télécharger"><i data-lucide="download" style="width:12px;height:12px;color:var(--text-2)"></i></div>
               </div>
             </div>
 
@@ -929,25 +973,79 @@
     }, { threshold: 0.06 })
     document.querySelectorAll('.fade-up').forEach(el => obs.observe(el))
 
-    // DÉMO INTERACTIVE
+    // ── DÉMO INTERACTIVE ──────────────────────────────────────────────────────
     const TABS         = ['chat', 'devoirs', 'docs']
-    const TAB_DURATION = 7000
+    const TAB_DURATION = 8000
     let currentTab     = 0
     let cycleTimer     = null
 
-    const MESSAGES = [
-      { av:'RF', color:'#3b82f6', name:'Prof. Fosse', nameColor:'#3b82f6',
-        text: 'Le rendu du <strong>Projet Web E4</strong> est pour vendredi soir. Pensez à consulter la grille dans <code>#projet-web</code>.', delay:400 },
-      { av:'JD', color:'#6366f1', name:'Jean Dupont', nameColor:'',
-        text: 'Merci ! Les maquettes sont obligatoires pour ce livrable ?', delay:1800 },
-      { av:'MM', color:'#ec4899', name:'Marie Martin', nameColor:'',
-        text: 'On avait la même question. Notre groupe a déjà commencé le code.', delay:3200 },
-      { av:'RF', color:'#3b82f6', name:'Prof. Fosse', nameColor:'#3b82f6',
-        text: 'Les maquettes sont <strong>optionnelles</strong> pour ce livrable. Concentrez-vous sur l\'architecture et la qualité du code.', delay:4800 },
-    ]
+    // Messages par canal
+    const CHANNELS = {
+      'général': [
+        { av:'PM', color:'#3b82f6', name:'Prof. Martin', nameColor:'#3b82f6',
+          text: 'Le rendu du <strong>Projet Web E4</strong> est pour vendredi soir. Consultez la grille dans <code>#projet-web</code>.',
+          reactions: [{ emoji:'👍', count:4, active:false }, { emoji:'✅', count:2, active:false }], delay:300 },
+        { av:'JD', color:'#6366f1', name:'Jean Dupont', nameColor:'',
+          text: 'Les maquettes sont obligatoires pour ce livrable ?',
+          reactions: [], delay:1600 },
+        { av:'EL', color:'#ec4899', name:'Emma Lefèvre', nameColor:'',
+          text: 'On avait la même question — notre groupe commence le code demain.',
+          reactions: [{ emoji:'😄', count:1, active:false }], delay:3000 },
+        { av:'PM', color:'#3b82f6', name:'Prof. Martin', nameColor:'#3b82f6',
+          text: 'Maquettes <strong>optionnelles</strong>. Concentrez-vous sur l\'architecture et la qualité du code.',
+          reactions: [{ emoji:'🎉', count:6, active:false }, { emoji:'👍', count:3, active:false }], delay:4600 },
+      ],
+      'annonces': [
+        { av:'PM', color:'#3b82f6', name:'Prof. Martin', nameColor:'#3b82f6',
+          text: '📢 <strong>Planning semaine 12 :</strong> pas de cours jeudi. Rattrapé le vendredi 14h–17h en salle B203.',
+          reactions: [{ emoji:'👍', count:8, active:false }], delay:300 },
+        { av:'PM', color:'#3b82f6', name:'Prof. Martin', nameColor:'#3b82f6',
+          text: 'Les résultats du TP Algo sont disponibles dans l\'application. Consultez vos notes et les commentaires.',
+          reactions: [{ emoji:'😅', count:5, active:false }, { emoji:'✅', count:2, active:false }], delay:1800 },
+      ],
+      'projet-web': [
+        { av:'EL', color:'#ec4899', name:'Emma Lefèvre', nameColor:'',
+          text: 'Architecture mise à jour sur le repo. J\'ai séparé le frontend et le backend en deux dossiers distincts.',
+          reactions: [{ emoji:'🔥', count:3, active:false }], delay:300 },
+        { av:'JD', color:'#6366f1', name:'Jean Dupont', nameColor:'',
+          text: 'PR ouverte pour la partie auth. Quelqu\'un peut relire avant ce soir ?',
+          reactions: [], delay:1500 },
+        { av:'PM', color:'#3b82f6', name:'Prof. Martin', nameColor:'#3b82f6',
+          text: 'Bon avancement ! Pensez à documenter vos endpoints dans le <code>README</code>.',
+          reactions: [{ emoji:'👍', count:2, active:false }], delay:2900 },
+      ],
+      'algo-tp': [
+        { av:'TK', color:'#059669', name:'Thomas Klein', nameColor:'',
+          text: 'Quelqu\'un a réussi l\'exercice 3 sur les arbres AVL ? Je bloque sur la rotation double.',
+          reactions: [], delay:300 },
+        { av:'JD', color:'#6366f1', name:'Jean Dupont', nameColor:'',
+          text: 'Oui ! La clé c\'est de vérifier le <code>balanceFactor</code> avant et après chaque insertion.',
+          reactions: [{ emoji:'🙏', count:2, active:false }], delay:1700 },
+      ],
+      'prof': [
+        { av:'PM', color:'#3b82f6', name:'Prof. Martin', nameColor:'#3b82f6',
+          text: 'Bonjour ! Votre rendu est bien reçu. Je le corrige ce week-end.',
+          reactions: [], delay:300 },
+      ],
+      'emma': [
+        { av:'EL', color:'#ec4899', name:'Emma Lefèvre', nameColor:'',
+          text: 'Tu peux relire ma partie sur la gestion des erreurs ? Je ne suis pas sûre du pattern.',
+          reactions: [], delay:300 },
+      ],
+    }
+
+    let activeChannel = 'général'
 
     function formatTime() {
       const n = new Date(); return `${n.getHours()}:${String(n.getMinutes()).padStart(2,'0')}`
+    }
+
+    function buildReactions(reactions, msgEl) {
+      if (!reactions || reactions.length === 0) return ''
+      return reactions.map((r, i) => `
+        <span class="reaction${r.active ? ' active' : ''}" onclick="toggleReaction(this, ${i})" data-idx="${i}">
+          ${r.emoji} <span class="reaction-count">${r.count}</span>
+        </span>`).join('') + '<span class="reaction-add" onclick="addReaction(this)" title="Ajouter une réaction">＋</span>'
     }
 
     function renderChat() {
@@ -956,32 +1054,87 @@
       const typingEl  = document.getElementById('typing-indicator')
       container.innerHTML = ''; inputEl.textContent = ''; typingEl.innerHTML = ''
 
-      MESSAGES.forEach(msg => {
+      const msgs = CHANNELS[activeChannel] || CHANNELS['général']
+      msgs.forEach((msg, mi) => {
         const el = document.createElement('div')
         el.className = 'chat-msg'
+        el.dataset.msgIdx = mi
         el.innerHTML = `
           <div class="chat-av" style="background:${msg.color}">${msg.av}</div>
-          <div>
+          <div style="flex:1;min-width:0">
             <div class="chat-name" style="${msg.nameColor ? 'color:'+msg.nameColor : ''}">${msg.name} <span class="chat-time">${formatTime()}</span></div>
             <div class="chat-text">${msg.text}</div>
+            <div class="msg-reactions">${buildReactions(msg.reactions, el)}</div>
           </div>`
         container.appendChild(el)
         setTimeout(() => el.classList.add('visible'), msg.delay)
       })
 
-      setTimeout(() => {
-        typingEl.innerHTML = '<div class="typing-dots"><span></span><span></span><span></span></div>&nbsp;Marie Martin écrit...'
-      }, 2800)
-      setTimeout(() => { typingEl.innerHTML = '' }, 3200)
+      // Indicateur de frappe sur le dernier message du canal
+      const lastMsg = msgs[msgs.length - 1]
+      if (lastMsg) {
+        setTimeout(() => {
+          typingEl.innerHTML = '<div class="typing-dots"><span></span><span></span><span></span></div>&nbsp;Jean Dupont écrit...'
+        }, lastMsg.delay + 800)
+        setTimeout(() => { typingEl.innerHTML = '' }, lastMsg.delay + 2000)
+      }
 
-      const draft = 'Parfait, merci !'
+      // Auto-typing dans la barre de saisie
+      const draft = activeChannel === 'général' ? 'Merci pour la précision !' : 'Je regarde ça maintenant 👀'
       let i = 0
+      const typingStart = (lastMsg?.delay ?? 0) + 2200
       setTimeout(() => {
         const iv = setInterval(() => {
           if (i < draft.length) inputEl.textContent = draft.slice(0, ++i)
           else clearInterval(iv)
-        }, 60)
-      }, 5800)
+        }, 55)
+      }, typingStart)
+    }
+
+    // Réactions — togglables
+    window.toggleReaction = function(el, idx) {
+      const msgs = CHANNELS[activeChannel]
+      const msgEl = el.closest('.chat-msg')
+      if (!msgEl) return
+      const mi = parseInt(msgEl.dataset.msgIdx)
+      const msg = msgs[mi]
+      if (!msg?.reactions?.[idx]) return
+      const r = msg.reactions[idx]
+      r.active = !r.active
+      r.count += r.active ? 1 : -1
+      el.classList.toggle('active', r.active)
+      el.querySelector('.reaction-count').textContent = r.count
+    }
+
+    // Ajouter une réaction (cycle d'emojis)
+    const EMOJI_CYCLE = ['👍','❤️','😄','🎉','🔥','🙏']
+    let emojiIdx = 0
+    window.addReaction = function(el) {
+      const reactionsDiv = el.parentElement
+      const emoji = EMOJI_CYCLE[emojiIdx % EMOJI_CYCLE.length]
+      emojiIdx++
+      const span = document.createElement('span')
+      span.className = 'reaction active'
+      span.innerHTML = `${emoji} <span class="reaction-count">1</span>`
+      span.onclick = function() {
+        const count = parseInt(span.querySelector('.reaction-count').textContent)
+        if (count <= 1) { span.remove(); return }
+        span.querySelector('.reaction-count').textContent = count - 1
+        span.classList.remove('active')
+      }
+      reactionsDiv.insertBefore(span, el)
+    }
+
+    // Changer de canal
+    window.switchChannel = function(el, channel) {
+      if (!document.getElementById('panel-chat') || document.getElementById('panel-chat').style.display === 'none') return
+      document.querySelectorAll('#demo-sidebar .demo-channel').forEach(c => c.classList.remove('active'))
+      el.classList.add('active')
+      // Supprimer le badge de notif du canal cliqué
+      const badge = el.querySelector('.demo-channel-badge')
+      if (badge) badge.remove()
+      activeChannel = channel
+      renderChat()
     }
 
     function renderDevoirs() {
@@ -989,6 +1142,24 @@
         row.classList.remove('visible')
         setTimeout(() => row.classList.add('visible'), parseInt(row.dataset.delay || 0) + 50)
       })
+      updateDevoirsCount()
+    }
+
+    function updateDevoirsCount() {
+      const total = document.querySelectorAll('.devoir-row').length
+      const done  = document.querySelectorAll('.devoir-check.done').length
+      const todo  = total - done
+      const count = document.getElementById('devoirs-count')
+      if (count) count.textContent = `${total} travaux · ${todo} à rendre`
+    }
+
+    window.toggleDevoir = function(checkEl) {
+      const row = checkEl.closest('.devoir-row')
+      const nameEl = row.querySelector('.devoir-name')
+      const isDone = checkEl.classList.contains('done')
+      checkEl.classList.toggle('done', !isDone)
+      row.classList.toggle('strikethrough', !isDone)
+      updateDevoirsCount()
     }
 
     function renderDocs() {
@@ -997,6 +1168,17 @@
         setTimeout(() => row.classList.add('visible'), parseInt(row.dataset.delay || 0) + 50)
       })
       if (window.lucide) lucide.createIcons()
+    }
+
+    window.downloadDoc = function(btn) {
+      btn.classList.add('doc-dl-done')
+      const orig = btn.innerHTML
+      btn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>'
+      setTimeout(() => {
+        btn.classList.remove('doc-dl-done')
+        btn.innerHTML = orig
+        if (window.lucide) lucide.createIcons()
+      }, 1800)
     }
 
     function startProgress() {
