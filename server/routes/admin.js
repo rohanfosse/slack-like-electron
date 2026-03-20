@@ -678,4 +678,50 @@ router.post('/pm2-restart', (req, res) => {
   }
 })
 
+// ═══════════════════════════════════════════════════════════════════════════════
+// NGINX — Appliquer la config et recharger
+// ═══════════════════════════════════════════════════════════════════════════════
+
+router.get('/server-info', (req, res) => {
+  res.json({ ok: true, data: {
+    rootDir: ROOT,
+    cwd: process.cwd(),
+    nodeVersion: process.version,
+    platform: os.platform(),
+    hostname: os.hostname(),
+    nginxConf: fs.existsSync(path.join(ROOT, 'nginx.conf')),
+  }})
+})
+
+router.post('/nginx-apply', (req, res) => {
+  try {
+    const confSrc = path.join(ROOT, 'nginx.conf')
+    if (!fs.existsSync(confSrc)) {
+      return res.status(404).json({ ok: false, error: `nginx.conf introuvable dans ${ROOT}` })
+    }
+
+    const steps = []
+
+    // 1. Copier la config
+    const cpOut = execSync(`sudo cp "${confSrc}" /etc/nginx/sites-available/cursus 2>&1`, { encoding: 'utf8', timeout: 5000 }).trim()
+    steps.push('cp: ' + (cpOut || 'OK'))
+
+    // 2. Activer le site
+    const lnOut = execSync('sudo ln -sf /etc/nginx/sites-available/cursus /etc/nginx/sites-enabled/cursus 2>&1', { encoding: 'utf8', timeout: 5000 }).trim()
+    steps.push('ln: ' + (lnOut || 'OK'))
+
+    // 3. Tester la config
+    const testOut = execSync('sudo nginx -t 2>&1', { encoding: 'utf8', timeout: 5000 }).trim()
+    steps.push('test: ' + testOut)
+
+    // 4. Recharger
+    const reloadOut = execSync('sudo systemctl reload nginx 2>&1', { encoding: 'utf8', timeout: 5000 }).trim()
+    steps.push('reload: ' + (reloadOut || 'OK'))
+
+    res.json({ ok: true, data: { steps } })
+  } catch (err) {
+    res.status(500).json({ ok: false, error: err.stderr || err.stdout || err.message })
+  }
+})
+
 module.exports = router

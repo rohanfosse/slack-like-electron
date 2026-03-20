@@ -1268,7 +1268,7 @@ async function purgeOldData() {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// DÉPLOIEMENT — Git & PM2
+// DÉPLOIEMENT — Git, PM2 & Nginx
 // ═══════════════════════════════════════════════════════════════════════════════
 
 async function loadDeploy() {
@@ -1324,6 +1324,13 @@ async function loadDeploy() {
         </div>
 
         <div id="pm2-output" style="margin-top:1rem;display:none"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Nginx — Configuration</div>
+        <div class="card-sub" style="margin-bottom:1rem">Appliquer le fichier <code>nginx.conf</code> du repo et recharger Nginx.</div>
+        <button class="btn btn-primary" onclick="nginxApply()">Appliquer & Recharger Nginx</button>
+        <div id="nginx-output" style="margin-top:1rem;display:none"></div>
       </div>
     </div>
 
@@ -1390,6 +1397,26 @@ async function pm2Restart(name) {
       <pre style="margin-top:.5rem;font-size:.7rem;color:var(--text-secondary);white-space:pre-wrap;max-height:150px;overflow:auto">${escHtml(json.data.output)}</pre>
     </div>`
     setTimeout(loadDeploy, 2000)
+  } else {
+    out.innerHTML = `<div class="alert alert-danger">
+      <strong>Erreur</strong>
+      <pre style="margin-top:.5rem;font-size:.7rem;white-space:pre-wrap">${escHtml(json?.error || 'Erreur inconnue')}</pre>
+    </div>`
+  }
+}
+
+async function nginxApply() {
+  if (!confirm('Appliquer nginx.conf et recharger Nginx ?')) return
+  const out = document.getElementById('nginx-output')
+  out.style.display = 'block'
+  out.innerHTML = '<div class="alert alert-info">Application en cours...</div>'
+
+  const json = await apiFetch('/api/admin/nginx-apply', { method: 'POST' })
+  if (json?.ok) {
+    out.innerHTML = `<div class="alert" style="background:rgba(46,204,113,.1);border:1px solid rgba(46,204,113,.2);color:var(--green)">
+      <strong>Nginx recharg\u00e9</strong>
+      <pre style="margin-top:.5rem;font-size:.7rem;color:var(--text-secondary);white-space:pre-wrap">${json.data.steps.join('\n')}</pre>
+    </div>`
   } else {
     out.innerHTML = `<div class="alert alert-danger">
       <strong>Erreur</strong>
