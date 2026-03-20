@@ -980,9 +980,9 @@
                 }"
                 @click="selectDm(s)"
               >
-                <span class="dm-avatar" :style="{ background: avatarColor(s.name) }">{{ s.avatar_initials }}</span>
+                <span class="dm-avatar" :class="{ 'dm-avatar-teacher': s.id < 0 }" :style="{ background: s.id < 0 ? 'var(--accent)' : avatarColor(s.name) }">{{ s.avatar_initials }}</span>
                 <span class="dm-info">
-                  <span class="channel-name">{{ s.name }}</span>
+                  <span class="channel-name">{{ s.name }} <span v-if="s.id < 0" class="dm-teacher-tag">Prof</span></span>
                   <span v-if="getDmPreview(s.name)" class="dm-preview">{{ getDmPreview(s.name) }}</span>
                 </span>
                 <span
@@ -1326,6 +1326,21 @@
 .dm-preview {
   font-size: 10px; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
   line-height: 1.3; margin-top: 1px;
+}
+.dm-avatar-teacher {
+  box-shadow: 0 0 0 2px var(--accent-subtle, rgba(74,144,217,.2));
+}
+.dm-teacher-tag {
+  font-size: 8px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .4px;
+  color: var(--accent);
+  background: var(--accent-subtle, rgba(74,144,217,.14));
+  padding: 0 4px;
+  border-radius: 3px;
+  margin-left: 4px;
+  vertical-align: middle;
 }
 .dm-empty {
   font-size: 11px; color: var(--text-muted); padding: 6px 16px; font-style: italic;

@@ -42,40 +42,49 @@ WHERE m.dm_student_id = ? ORDER BY m.created_at ASC`
 }
 
 /**
+ * Résoudre le nom d'un utilisateur par son ID.
+ * ID négatif = enseignant (abs(id) dans teachers), ID positif = étudiant.
+ */
+function resolveUserName(userId) {
+  if (userId < 0) {
+    const t = getDb().prepare('SELECT name FROM teachers WHERE id = ?').get(Math.abs(userId))
+    return t?.name ?? null
+  }
+  const s = getDb().prepare('SELECT name FROM students WHERE id = ?').get(userId)
+  return s?.name ?? null
+}
+
+/**
  * Pagination DM — supporte les conversations bidirectionnelles.
- * Si `peerStudentId` est fourni, retourne les messages des DEUX boîtes
- * (dm_student_id = studentId OU dm_student_id = peerStudentId)
- * filtrés aux seuls messages entre ces deux personnes.
+ * Si `peerStudentId` est fourni, retourne les messages entre ces deux personnes
+ * en cherchant dans la boîte de l'étudiant (dm_student_id positif).
  */
 function getDmMessagesPage(studentId, beforeId, peerStudentId) {
-  // Conversation bidirectionnelle (entre deux étudiants ou étudiant ↔ prof)
   if (peerStudentId) {
-    const peerName = getDb().prepare(
-      'SELECT name FROM students WHERE id = ? UNION SELECT name FROM teachers WHERE id = ?'
-    ).get(Math.abs(peerStudentId), Math.abs(peerStudentId))
-    const selfName = getDb().prepare(
-      'SELECT name FROM students WHERE id = ? UNION SELECT name FROM teachers WHERE id = ?'
-    ).get(Math.abs(studentId), Math.abs(studentId))
+    const selfName = resolveUserName(studentId)
+    const peerName = resolveUserName(peerStudentId)
 
-    if (peerName && selfName) {
-      const names = [peerName.name, selfName.name]
+    if (selfName && peerName) {
+      // La boîte DM est toujours celle de l'étudiant (id positif)
+      const boxId = studentId > 0 ? studentId : (peerStudentId > 0 ? peerStudentId : studentId)
+
       if (beforeId) {
         return getDb().prepare(
           `SELECT m.*, COALESCE(s.avatar_initials, substr(upper(m.author_name), 1, 2)) AS author_initials, s.photo_data AS author_photo
            FROM messages m LEFT JOIN students s ON s.name = m.author_name
-           WHERE m.dm_student_id IN (?, ?)
+           WHERE m.dm_student_id = ?
              AND m.author_name IN (?, ?)
              AND m.id < ?
            ORDER BY m.id DESC LIMIT ?`
-        ).all(studentId, peerStudentId, names[0], names[1], beforeId, PAGE_SIZE)
+        ).all(boxId, selfName, peerName, beforeId, PAGE_SIZE)
       }
       return getDb().prepare(
         `SELECT m.*, COALESCE(s.avatar_initials, substr(upper(m.author_name), 1, 2)) AS author_initials, s.photo_data AS author_photo
          FROM messages m LEFT JOIN students s ON s.name = m.author_name
-         WHERE m.dm_student_id IN (?, ?)
+         WHERE m.dm_student_id = ?
            AND m.author_name IN (?, ?)
          ORDER BY m.id DESC LIMIT ?`
-      ).all(studentId, peerStudentId, names[0], names[1], PAGE_SIZE)
+      ).all(boxId, selfName, peerName, PAGE_SIZE)
     }
   }
 

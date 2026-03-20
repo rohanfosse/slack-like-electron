@@ -60,6 +60,7 @@ export interface Message {
   dm_student_id: number | null
   author_id: number
   author_name: string
+  author_type: 'teacher' | 'student'
   author_initials: string
   author_photo: string | null
   content: string

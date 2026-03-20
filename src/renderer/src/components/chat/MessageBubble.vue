@@ -258,12 +258,13 @@ function closeAll() { showMenu.value = false; showPicker.value = false; confirmi
         <div class="msg-meta">
           <span
             class="msg-author"
-            :class="{ clickable: !isOwnMessage }"
+            :class="{ clickable: !isOwnMessage, 'msg-author-teacher': msg.author_type === 'teacher' }"
             :role="isOwnMessage ? undefined : 'button'"
             :tabindex="isOwnMessage ? undefined : 0"
             @click="openDmWithAuthor"
             @keydown.enter="openDmWithAuthor"
           >{{ msg.author_name }}</span>
+          <span v-if="msg.author_type === 'teacher'" class="msg-role-badge">Prof</span>
           <span class="msg-time">{{ formatTime(msg.created_at) }}</span>
           <span v-if="isEdited" class="msg-edited-tag">(modifié)</span>
           <span v-if="isPinned" class="pin-badge" title="Message épinglé">📌</span>
@@ -475,10 +476,25 @@ function closeAll() { showMenu.value = false; showPicker.value = false; confirmi
   color: var(--text-primary);
   letter-spacing: .01em;
 }
+/* Nom du prof — couleur accent distincte */
+.msg-author-teacher { color: var(--accent); }
 /* Légère teinte accent sur hover de la row */
 .msg-row:hover .msg-author { color: var(--accent-light, #7db8f0); }
 .msg-author.clickable { cursor: pointer; }
 .msg-author.clickable:hover { text-decoration: underline; color: var(--accent); }
+
+/* Badge rôle Prof */
+.msg-role-badge {
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+  color: var(--accent);
+  background: var(--accent-subtle, rgba(74,144,217,.14));
+  padding: 1px 6px;
+  border-radius: 4px;
+  line-height: 1.4;
+}
 
 /* Heure — plus discrète */
 .msg-time {
