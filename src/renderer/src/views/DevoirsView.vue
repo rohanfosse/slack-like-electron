@@ -30,6 +30,60 @@ const teacherView = ref<'gantt' | 'liste' | 'rendus'>('gantt')
 const filterCategory = ref<string>('')
 const filterRendusStatus = ref<'all' | 'ungraded' | 'graded' | 'missing'>('all')
 const sortRendus = ref<'name' | 'date'>('name')
+const teacherSearch = ref('')
+const filterStatus = ref<'all' | 'draft' | 'expired' | 'pending'>('all')
+const collapsedProjects = ref<Set<string>>(new Set())
+
+function toggleProjectCollapse(project: string) {
+  if (collapsedProjects.value.has(project)) collapsedProjects.value.delete(project)
+  else collapsedProjects.value.add(project)
+}
+
+// ── Tableau unifié prof ─────────────────────────────────────────────────────
+type UnifiedRow = Devoir & { depots_count: number; students_total: number; noted_count: number; statusLabel: string; statusCls: string }
+
+const unifiedGrouped = computed(() => {
+  const raw = travauxStore.ganttData as (Devoir & { depots_count?: number; students_total?: number })[]
+  const q = teacherSearch.value.toLowerCase().trim()
+  const now = Date.now()
+
+  const filtered = raw.filter(t => {
+    if (filterCategory.value && t.category?.trim() !== filterCategory.value) return false
+    if (q && !t.title.toLowerCase().includes(q)) return false
+    if (filterStatus.value === 'draft' && t.is_published) return false
+    if (filterStatus.value === 'expired' && (new Date(t.deadline).getTime() > now || !t.is_published)) return false
+    if (filterStatus.value === 'pending') {
+      const dc = t.depots_count ?? 0
+      const st = t.students_total ?? 0
+      if (dc >= st && st > 0) return false // complet
+    }
+    return true
+  })
+
+  // Grouper par catégorie
+  const groups = new Map<string, UnifiedRow[]>()
+  for (const t of filtered) {
+    const cat = t.category?.trim() || 'Sans projet'
+    if (!groups.has(cat)) groups.set(cat, [])
+    const dc = t.depots_count ?? 0
+    const st = t.students_total ?? 0
+    // Compter les notés depuis allRendus
+    const noted = travauxStore.allRendus.filter(r => r.travail_id === t.id && r.note != null).length
+
+    let statusLabel = 'Publié'
+    let statusCls = 'status-pub'
+    if (!t.is_published) { statusLabel = 'Brouillon'; statusCls = 'status-draft' }
+    else if (st > 0 && dc >= st) { statusLabel = 'Complet'; statusCls = 'status-complete' }
+    else if (new Date(t.deadline).getTime() < now) { statusLabel = 'Expiré'; statusCls = 'status-expired' }
+
+    groups.get(cat)!.push({ ...t, depots_count: dc, students_total: st, noted_count: noted, statusLabel, statusCls })
+  }
+  // Trier par deadline dans chaque groupe
+  for (const rows of groups.values()) {
+    rows.sort((a, b) => new Date(a.deadline).getTime() - new Date(b.deadline).getTime())
+  }
+  return [...groups.entries()].sort(([a], [b]) => a.localeCompare(b))
+})
 
 // ── Horloge temps réel pour verrouillage des deadlines ────────────────────────
 const now = ref(Date.now())
@@ -366,55 +420,30 @@ function typeLabel(t: string): string {
       </div>
 
       <div class="devoirs-header-actions">
-        <!-- Toggle vue (prof) — masqué quand on est sur la fiche projet -->
+        <!-- Actions prof — masqué quand on est sur la fiche projet -->
         <template v-if="appStore.isTeacher && !appStore.activeProject">
-          <div class="view-toggle">
-            <button
-              class="view-toggle-btn"
-              :class="{ active: teacherView === 'gantt' }"
-              @click="setTeacherView('gantt')"
-            >
-              <BarChart2 :size="13" /> Gantt
-            </button>
-            <button
-              class="view-toggle-btn"
-              :class="{ active: teacherView === 'liste' }"
-              @click="setTeacherView('liste')"
-            >
-              <Grid :size="13" /> Liste
-            </button>
-            <button
-              class="view-toggle-btn"
-              :class="{ active: teacherView === 'rendus' }"
-              @click="setTeacherView('rendus')"
-            >
-              <List :size="13" /> Rendus
-            </button>
-          </div>
-
           <button class="btn-primary btn-nouveau" @click="modals.newDevoir = true">
             <Plus :size="14" /> Nouveau
           </button>
         </template>
       </div>
 
-      <!-- Filtres prof -->
-      <div v-if="appStore.isTeacher && !appStore.activeProject" class="teacher-filters">
+      <!-- Barre de recherche + filtres prof -->
+      <div v-if="appStore.isTeacher && !appStore.activeProject" class="teacher-toolbar">
+        <div class="teacher-search-wrap">
+          <Search :size="14" class="teacher-search-icon" />
+          <input v-model="teacherSearch" class="teacher-search" placeholder="Rechercher un devoir..." />
+        </div>
         <select v-model="filterCategory" class="teacher-filter-select">
           <option value="">Tous les projets</option>
           <option v-for="cat in teacherCategories" :key="cat" :value="cat">{{ cat }}</option>
         </select>
-        <template v-if="teacherView === 'rendus'">
-          <select v-model="filterRendusStatus" class="teacher-filter-select">
-            <option value="all">Tous</option>
-            <option value="ungraded">À noter</option>
-            <option value="graded">Notés</option>
-          </select>
-          <select v-model="sortRendus" class="teacher-filter-select">
-            <option value="name">Tri : Nom</option>
-            <option value="date">Tri : Date</option>
-          </select>
-        </template>
+        <select v-model="filterStatus" class="teacher-filter-select">
+          <option value="all">Tous les statuts</option>
+          <option value="draft">Brouillons</option>
+          <option value="pending">En cours</option>
+          <option value="expired">Expirés</option>
+        </select>
       </div>
     </header>
 
@@ -785,66 +814,58 @@ function typeLabel(t: string): string {
         <ProjetFiche :project-key="appStore.activeProject" :promo-id="appStore.activePromoId" />
       </template>
 
-      <!-- ════════════════════════ Vue GANTT (prof) ════════════════════════ -->
-      <template v-else-if="teacherView === 'gantt'">
+      <!-- ════════════════════════ Tableau unifié (prof) ════════════════════════ -->
+      <template v-else-if="appStore.isTeacher">
 
-        <div v-if="travauxStore.loading" class="gantt-skel">
-          <div v-for="i in 5" :key="i" class="gantt-skel-row">
-            <div class="skel skel-line skel-w30" style="height:13px;flex-shrink:0;width:200px" />
-            <div class="skel skel-line" style="height:24px;flex:1" />
-          </div>
+        <div v-if="travauxStore.loading" class="ut-loading">
+          <div v-for="i in 6" :key="i" class="skel skel-line" style="height:40px;margin-bottom:6px;border-radius:8px" />
         </div>
 
-        <div v-else-if="ganttItems.items.length === 0" class="empty-state-custom">
-          <BarChart2 :size="48" class="empty-icon" />
-          <h3>Aucun devoir créé</h3>
-          <p>Créez un premier devoir pour visualiser le Gantt.</p>
+        <div v-else-if="!unifiedGrouped.length" class="empty-state-custom">
+          <BookOpen :size="48" class="empty-icon" />
+          <h3>Aucun devoir trouvé</h3>
+          <p v-if="teacherSearch || filterCategory || filterStatus !== 'all'">Essayez d'ajuster vos filtres.</p>
+          <p v-else>Créez un premier devoir avec le bouton "Nouveau".</p>
         </div>
 
-        <div v-else class="gantt-wrapper">
-          <!-- Légende -->
-          <div class="gantt-legend">
-            <span class="legend-pill type-livrable">Livrable</span>
-            <span class="legend-pill type-soutenance">Soutenance</span>
-            <span class="legend-pill type-cctl">CCTL</span>
-            <span class="legend-pill type-etude_de_cas">Étude de cas</span>
-            <span class="legend-pill type-memoire">Mémoire</span>
-            <span class="legend-pill type-autre">Autre</span>
-            <span class="legend-separator" />
-            <span class="legend-today">
-              <span class="legend-today-line" /> Aujourd'hui
-            </span>
-          </div>
+        <div v-else class="ut-table">
+          <div v-for="[project, rows] in unifiedGrouped" :key="project" class="ut-group">
+            <!-- En-tête de groupe (catégorie) -->
+            <button class="ut-group-header" @click="toggleProjectCollapse(project)">
+              <ChevronRight :size="13" class="ut-group-chevron" :class="{ rotated: !collapsedProjects.has(project) }" />
+              <span class="ut-group-name">{{ project }}</span>
+              <span class="ut-group-count">{{ rows.length }} devoir{{ rows.length > 1 ? 's' : '' }}</span>
+            </button>
 
-          <!-- Grille Gantt -->
-          <div class="gantt-chart">
-            <div
-              v-for="item in ganttItems.items"
-              :key="item.id"
-              class="gantt-row"
-              @click="openDevoir(item.id)"
-            >
-              <div class="gantt-row-label">
-                <span class="gantt-label-type devoir-type-badge" :class="`type-${item.type}`">{{ typeLabel(item.type) }}</span>
-                <span v-if="!item.is_published" class="draft-badge">Brouillon</span>
-                <span class="gantt-label-name" :class="{ 'draft-text': !item.is_published }">{{ item.title }}</span>
-                <span class="deadline-badge" :class="item.dlClass">{{ formatDate(item.deadline) }}</span>
-              </div>
-              <div class="gantt-track">
-                <div class="gantt-today-marker" :style="{ left: ganttItems.todayPct + '%' }" />
-                <div
-                  class="gantt-bar"
-                  :class="`type-${item.type}`"
-                  :style="{ left: item.left + '%', width: item.width + '%' }"
-                  :title="item.title"
-                />
+            <!-- Lignes -->
+            <div v-show="!collapsedProjects.has(project)" class="ut-rows">
+              <div
+                v-for="t in rows"
+                :key="t.id"
+                class="ut-row"
+                :class="{ 'ut-row--draft': !t.is_published }"
+                @click="openDevoir(t.id)"
+              >
+                <span class="ut-type devoir-type-badge" :class="`type-${t.type}`">{{ typeLabel(t.type) }}</span>
+                <span class="ut-title">{{ t.title }}</span>
+                <span class="ut-deadline deadline-badge" :class="deadlineClass(t.deadline)">{{ deadlineLabel(t.deadline) }}</span>
+                <span class="ut-progress">
+                  <span v-if="t.students_total > 0" class="ut-progress-bar">
+                    <span class="ut-progress-fill" :style="{ width: Math.round((t.depots_count / t.students_total) * 100) + '%' }" />
+                  </span>
+                  <span class="ut-progress-text">{{ t.depots_count }}/{{ t.students_total }} soumis</span>
+                </span>
+                <span class="ut-noted">{{ t.noted_count }} noté{{ t.noted_count > 1 ? 's' : '' }}</span>
+                <span class="ut-status" :class="t.statusCls">{{ t.statusLabel }}</span>
+                <ChevronRight :size="13" class="ut-chevron" />
               </div>
             </div>
           </div>
         </div>
       </template>
 
-      <!-- ════════════════════════ Vue LISTE (prof) ════════════════════════ -->
+      <!-- Anciennes vues Liste/Rendus supprimées — remplacées par le tableau unifié ci-dessus -->
+      <!-- ════════════════════════ (OBSOLÈTE) ════════════════════════ -->
       <template v-else-if="teacherView === 'liste'">
 
         <div v-if="travauxStore.loading" class="liste-grid">
@@ -1090,6 +1111,82 @@ function typeLabel(t: string): string {
 }
 
 /* ── Toggle vue enseignant ───────────────────────────────────────────────── */
+/* ══════════════════════════════════════════════════════════════════════════════
+   TABLEAU UNIFIÉ PROF
+═══════════════════════════════════════════════════════════════════════════════ */
+.teacher-toolbar {
+  display: flex; gap: 8px; padding: 0 20px 10px; flex-wrap: wrap; align-items: center;
+}
+.teacher-search-wrap {
+  position: relative; flex: 1; min-width: 160px; max-width: 280px;
+}
+.teacher-search-icon {
+  position: absolute; left: 10px; top: 50%; transform: translateY(-50%);
+  color: var(--text-muted); pointer-events: none;
+}
+.teacher-search {
+  width: 100%; padding: 6px 10px 6px 30px; background: var(--bg-input);
+  border: 1px solid var(--border-input); border-radius: 6px;
+  color: var(--text-primary); font-size: 13px; font-family: var(--font);
+}
+.teacher-search:focus { border-color: var(--accent); outline: none; }
+.teacher-search::placeholder { color: var(--text-muted); }
+
+.ut-loading { padding: 20px; }
+.ut-table { padding: 0 20px 20px; }
+
+.ut-group { margin-bottom: 8px; }
+.ut-group-header {
+  display: flex; align-items: center; gap: 6px; width: 100%;
+  padding: 8px 10px; background: none; border: none;
+  cursor: pointer; color: var(--text-secondary); font-family: var(--font);
+  font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .4px;
+  transition: color var(--t-fast);
+}
+.ut-group-header:hover { color: var(--text-primary); }
+.ut-group-chevron { transition: transform var(--t-fast); flex-shrink: 0; }
+.ut-group-chevron.rotated { transform: rotate(90deg); }
+.ut-group-name { flex: 1; text-align: left; }
+.ut-group-count { font-weight: 400; color: var(--text-muted); text-transform: none; letter-spacing: 0; }
+
+.ut-rows { display: flex; flex-direction: column; gap: 2px; }
+
+.ut-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 12px; border-radius: 8px; cursor: pointer;
+  background: rgba(255,255,255,.02); transition: background var(--t-fast);
+}
+.ut-row:hover { background: rgba(255,255,255,.06); }
+.ut-row--draft { opacity: .6; border: 1px dashed var(--border-input); }
+
+.ut-type { flex-shrink: 0; }
+.ut-title { flex: 1; font-size: 13px; font-weight: 600; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.ut-deadline { flex-shrink: 0; font-size: 11px; }
+
+.ut-progress { display: flex; align-items: center; gap: 4px; flex-shrink: 0; width: 120px; }
+.ut-progress-bar { width: 40px; height: 4px; border-radius: 2px; background: rgba(255,255,255,.08); overflow: hidden; flex-shrink: 0; }
+.ut-progress-fill { height: 100%; background: var(--color-success); border-radius: 2px; transition: width .3s; }
+.ut-progress-text { font-size: 11px; color: var(--text-muted); white-space: nowrap; }
+
+.ut-noted { font-size: 11px; color: var(--text-muted); flex-shrink: 0; width: 60px; text-align: right; }
+
+.ut-status {
+  font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 4px;
+  flex-shrink: 0; text-transform: uppercase; letter-spacing: .3px;
+}
+.status-pub      { background: rgba(46,204,113,.1); color: #2ecc71; }
+.status-draft    { background: rgba(255,255,255,.05); color: var(--text-muted); border: 1px dashed var(--border-input); }
+.status-expired  { background: rgba(231,76,60,.1); color: #e74c3c; }
+.status-complete { background: rgba(59,130,246,.1); color: #60a5fa; }
+
+.ut-chevron { flex-shrink: 0; color: var(--text-muted); opacity: .4; transition: opacity var(--t-fast); }
+.ut-row:hover .ut-chevron { opacity: 1; }
+
+@media (max-width: 768px) {
+  .ut-progress, .ut-noted { display: none; }
+  .ut-row { gap: 6px; padding: 6px 8px; }
+}
+
 .draft-badge {
   font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: .3px;
   padding: 1px 5px; border-radius: 3px;
