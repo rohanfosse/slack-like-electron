@@ -843,8 +843,8 @@ router.post('/import-examens', (req, res) => {
 
     let imported = 0
     const insert = db.prepare(`
-      INSERT INTO travaux (channel_id, title, description, type, category, deadline, start_date, published, requires_submission, room)
-      VALUES (?, ?, ?, ?, ?, ?, ?, 1, 0, NULL)
+      INSERT INTO travaux (promo_id, channel_id, title, description, type, category, deadline, start_date, published, requires_submission, room)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, 0, NULL)
     `)
 
     for (const e of filtered) {
@@ -853,7 +853,7 @@ router.post('/import-examens', (req, res) => {
       if (!deadline) continue
       const existing = db.prepare('SELECT id FROM travaux WHERE channel_id = ? AND title = ? AND deadline LIKE ?').get(channelId, e.title, e.date + '%')
       if (existing) continue
-      insert.run(channelId, e.title, e.description, e.type, e.project, deadline, null)
+      insert.run(promoId, channelId, e.title, e.description, e.type, e.project, deadline, null)
       imported++
     }
 
@@ -908,7 +908,7 @@ router.post('/seed-promos', (req, res) => {
           if (!deadline) continue
           const existing = db.prepare('SELECT id FROM travaux WHERE channel_id = ? AND title = ? AND deadline LIKE ?').get(channelId, e.title, e.date + '%')
           if (existing) continue
-          insert.run(channelId, e.title, e.description, e.type, e.project, deadline, null)
+          insert.run(promoId, channelId, e.title, e.description, e.type, e.project, deadline, null)
           exImported++
         }
         results.push(`  ${exImported} examens importés`)
