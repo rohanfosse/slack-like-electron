@@ -27,13 +27,14 @@
 
   // ── Add modal ────────────────────────────────────────────────────────────
   const showAddModal = ref(false)
-  const addName      = ref('')
-  const addCategory  = ref('')
-  const addType      = ref<'file' | 'link'>('file')
-  const addLink      = ref('')
-  const addFile      = ref<string | null>(null)
-  const addFileName  = ref<string | null>(null)
-  const adding       = ref(false)
+  const addName        = ref('')
+  const addCategory    = ref('')
+  const addDescription = ref('')
+  const addType        = ref<'file' | 'link'>('file')
+  const addLink        = ref('')
+  const addFile        = ref<string | null>(null)
+  const addFileName    = ref<string | null>(null)
+  const adding         = ref(false)
 
   // ── Chargement ───────────────────────────────────────────────────────────
   async function loadDocuments() {
@@ -47,12 +48,26 @@
   watch(() => appStore.activeProject, loadDocuments)
   watch(() => appStore.activePromoId, loadDocuments)
 
-  // ── Filtrage + catégories ────────────────────────────────────────────────
+  // ── Icônes & types ─────────────────────────────────────────────────────
+  type DocIconType = 'image' | 'pdf' | 'video' | 'link' | 'file'
+
+  // ── Filtrage + catégories + type ─────────────────────────────────────────
+  const activeTypeFilter = ref<DocIconType | null>(null)
+  const TYPE_FILTERS: { id: DocIconType | null; label: string }[] = [
+    { id: null,     label: 'Tous' },
+    { id: 'pdf',    label: 'PDF' },
+    { id: 'image',  label: 'Images' },
+    { id: 'video',  label: 'Vidéos' },
+    { id: 'link',   label: 'Liens' },
+    { id: 'file',   label: 'Autres' },
+  ]
+
   const filtered = computed(() => {
     const q = docStore.searchQuery.trim().toLowerCase()
     return docStore.documents.filter((d) => {
       if (q && !d.name.toLowerCase().includes(q) && !(d.description ?? '').toLowerCase().includes(q)) return false
       if (docStore.activeCategory && d.category !== docStore.activeCategory) return false
+      if (activeTypeFilter.value && docIconType(d) !== activeTypeFilter.value) return false
       return true
     })
   })
@@ -73,8 +88,6 @@
   })
 
   // ── Icônes & couleurs selon le type ─────────────────────────────────────
-  type DocIconType = 'image' | 'pdf' | 'video' | 'link' | 'file'
-
   function docIconType(doc: AppDocument): DocIconType {
     if (doc.type === 'link') return 'link'
     const ext = doc.content?.split('.').pop()?.toLowerCase() ?? ''
@@ -112,14 +125,17 @@
 
   async function deleteDoc(id: number) {
     if (!await confirmAction('Supprimer ce document ?', 'danger', 'Supprimer')) return
-    await docStore.deleteDocument(id)
+    const ok = await docStore.deleteDocument(id)
+    if (ok) showToast('Document supprimé.', 'success')
+    else showToast('Erreur lors de la suppression.', 'error')
   }
 
   // ── Ajout ────────────────────────────────────────────────────────────────
   function openAddModal() {
-    addName.value      = ''
-    addCategory.value  = ''
-    addType.value      = 'file'
+    addName.value        = ''
+    addCategory.value    = ''
+    addDescription.value = ''
+    addType.value        = 'file'
     addLink.value      = ''
     addFile.value      = null
     addFileName.value  = null
@@ -159,7 +175,7 @@
         type:        addType.value,
         pathOrUrl,
         category:    addCategory.value.trim() || null,
-        description: null,
+        description: addDescription.value.trim() || null,
         authorName:  appStore.currentUser?.name ?? 'Système',
         authorType:  appStore.currentUser?.type ?? 'teacher',
       })
@@ -233,6 +249,19 @@
       >
         {{ cat }}
         <span class="docs-cat-count">{{ docStore.documents.filter((d) => (d.category ?? 'Général') === cat).length }}</span>
+      </button>
+    </div>
+
+    <!-- ── Filtres par type ──────────────────────────────────────────── -->
+    <div class="docs-categories docs-type-filters">
+      <button
+        v-for="tf in TYPE_FILTERS"
+        :key="tf.id ?? 'all'"
+        class="docs-cat-pill"
+        :class="{ active: activeTypeFilter === tf.id }"
+        @click="activeTypeFilter = activeTypeFilter === tf.id ? null : tf.id"
+      >
+        {{ tf.label }}
       </button>
     </div>
 
@@ -360,6 +389,20 @@
             type="text"
             class="form-input"
             placeholder="ex : Cours, TP, Exercices…"
+          />
+        </div>
+
+        <!-- Description -->
+        <div class="form-group">
+          <label class="form-label">
+            Description
+            <span class="form-label-hint">(optionnelle)</span>
+          </label>
+          <input
+            v-model="addDescription"
+            type="text"
+            class="form-input"
+            placeholder="Brève description du document…"
           />
         </div>
 

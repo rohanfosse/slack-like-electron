@@ -17,6 +17,7 @@ export const useDocumentsStore = defineStore('documents', () => {
     const pid = promoId ?? appStore.activePromoId ?? appStore.currentUser?.promo_id
     if (!pid) { documents.value = []; return }
     loading.value = true
+    activeCategory.value = '' // reset filtre catégorie quand on recharge
     try {
       const res = await window.api.getProjectDocuments(pid, project ?? appStore.activeProject ?? null)
       documents.value = res?.ok ? res.data : []
@@ -34,12 +35,13 @@ export const useDocumentsStore = defineStore('documents', () => {
     return res?.ok ?? false
   }
 
-  async function deleteDocument(id: number) {
+  async function deleteDocument(id: number): Promise<boolean> {
     const res = await window.api.deleteChannelDocument(id)
     if (res?.ok) {
       const pid = appStore.activePromoId ?? appStore.currentUser?.promo_id
       await fetchDocuments(pid ?? undefined, appStore.activeProject)
     }
+    return res?.ok ?? false
   }
 
   function openPreview(doc: AppDocument) { previewDoc.value = doc }

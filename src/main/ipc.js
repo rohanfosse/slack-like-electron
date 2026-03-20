@@ -359,7 +359,21 @@ function register() {
       const mimeMap = {
         pdf: 'application/pdf', png: 'image/png', jpg: 'image/jpeg',
         jpeg: 'image/jpeg', gif: 'image/gif', webp: 'image/webp', svg: 'image/svg+xml',
-        mp4: 'video/mp4', txt: 'text/plain',
+        bmp: 'image/bmp', ico: 'image/x-icon',
+        mp4: 'video/mp4', mov: 'video/quicktime', avi: 'video/x-msvideo',
+        mkv: 'video/x-matroska', webm: 'video/webm',
+        mp3: 'audio/mpeg', wav: 'audio/wav', ogg: 'audio/ogg',
+        txt: 'text/plain', csv: 'text/csv', json: 'application/json',
+        html: 'text/html', css: 'text/css', js: 'application/javascript',
+        xml: 'application/xml', md: 'text/markdown',
+        docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        doc: 'application/msword',
+        xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        xls: 'application/vnd.ms-excel',
+        pptx: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+        ppt: 'application/vnd.ms-powerpoint',
+        zip: 'application/zip', rar: 'application/x-rar-compressed',
+        '7z': 'application/x-7z-compressed', gz: 'application/gzip',
       }
       const mime = mimeMap[ext] ?? 'application/octet-stream'
       return { ok: true, data: { mime, b64: buffer.toString('base64'), ext } }
