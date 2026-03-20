@@ -31,6 +31,7 @@ function createWindow(): void {
     minWidth: 960,
     minHeight: 640,
     title: 'Cursus',
+    show: false, // affiché uniquement quand le renderer est prêt
     icon: join(__dirname, '../../resources/icon.png'),
     backgroundColor: '#111214',
     titleBarStyle: 'hidden',
@@ -41,6 +42,30 @@ function createWindow(): void {
       sandbox: true,
       devTools: !app.isPackaged,
     },
+  })
+
+  // Afficher la fenêtre seulement quand le renderer est chargé
+  win.once('ready-to-show', () => {
+    win.show()
+    win.focus()
+  })
+
+  // Diagnostic : échec de chargement du renderer
+  win.webContents.on('did-fail-load', (_event, code, desc, url) => {
+    console.error(`[Main] did-fail-load  code=${code}  desc=${desc}  url=${url}`)
+    dialog.showErrorBox(
+      'Erreur de chargement',
+      `Impossible de charger l'interface.\n\nCode : ${code}\nDétail : ${desc}\nURL : ${url}`
+    )
+  })
+
+  // Diagnostic : crash du renderer
+  win.webContents.on('render-process-gone', (_event, details) => {
+    console.error('[Main] render-process-gone', details)
+    dialog.showErrorBox(
+      'Processus renderer terminé',
+      `Raison : ${details.reason}\nCode de sortie : ${details.exitCode}`
+    )
   })
 
   // Push événements maximize/unmaximize vers le renderer
