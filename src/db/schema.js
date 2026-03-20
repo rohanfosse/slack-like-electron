@@ -1,6 +1,6 @@
 const { getDb } = require('./connection');
 
-const CURRENT_VERSION = 18;
+const CURRENT_VERSION = 19;
 
 // ─── Schema initial ───────────────────────────────────────────────────────────
 // Crée toutes les tables avec leur schéma complet (colonnes UTC, toutes colonnes incluses).
@@ -434,6 +434,67 @@ function runMigrations(db) {
         CREATE INDEX IF NOT EXISTS idx_login_email   ON login_attempts(email);
         CREATE INDEX IF NOT EXISTS idx_login_created ON login_attempts(created_at);
       `);
+    },
+
+    // v19 : signalements, annonces planifiées, sessions, archivage promos, mode lecture seule
+    (db) => {
+      db.exec(`
+        -- Signalements de messages
+        CREATE TABLE IF NOT EXISTS reports (
+          id          INTEGER PRIMARY KEY AUTOINCREMENT,
+          message_id  INTEGER NOT NULL REFERENCES messages(id) ON DELETE CASCADE,
+          reporter_id INTEGER NOT NULL,
+          reporter_name TEXT NOT NULL,
+          reporter_type TEXT NOT NULL,
+          reason      TEXT NOT NULL DEFAULT 'other'
+              CHECK(reason IN ('spam','harassment','inappropriate','off_topic','other')),
+          details     TEXT,
+          status      TEXT NOT NULL DEFAULT 'pending'
+              CHECK(status IN ('pending','reviewed','dismissed')),
+          created_at  TEXT NOT NULL DEFAULT (datetime('now')),
+          resolved_at TEXT,
+          resolved_by TEXT
+        );
+        CREATE INDEX IF NOT EXISTS idx_reports_status ON reports(status);
+        CREATE INDEX IF NOT EXISTS idx_reports_message ON reports(message_id);
+
+        -- Annonces planifiées
+        CREATE TABLE IF NOT EXISTS scheduled_messages (
+          id          INTEGER PRIMARY KEY AUTOINCREMENT,
+          channel_id  INTEGER NOT NULL REFERENCES channels(id) ON DELETE CASCADE,
+          author_name TEXT NOT NULL,
+          author_type TEXT NOT NULL DEFAULT 'teacher',
+          content     TEXT NOT NULL,
+          send_at     TEXT NOT NULL,
+          sent        INTEGER NOT NULL DEFAULT 0,
+          created_at  TEXT NOT NULL DEFAULT (datetime('now'))
+        );
+        CREATE INDEX IF NOT EXISTS idx_scheduled_send ON scheduled_messages(send_at, sent);
+
+        -- Sessions actives
+        CREATE TABLE IF NOT EXISTS active_sessions (
+          id         INTEGER PRIMARY KEY AUTOINCREMENT,
+          user_id    INTEGER NOT NULL,
+          user_name  TEXT NOT NULL,
+          user_type  TEXT NOT NULL,
+          token_hash TEXT NOT NULL UNIQUE,
+          ip         TEXT,
+          user_agent TEXT,
+          created_at TEXT NOT NULL DEFAULT (datetime('now')),
+          last_seen  TEXT NOT NULL DEFAULT (datetime('now'))
+        );
+        CREATE INDEX IF NOT EXISTS idx_sessions_user ON active_sessions(user_id);
+
+        -- Config globale (mode lecture seule, etc.)
+        CREATE TABLE IF NOT EXISTS app_config (
+          key   TEXT PRIMARY KEY,
+          value TEXT NOT NULL
+        );
+        INSERT OR IGNORE INTO app_config (key, value) VALUES ('read_only', '0');
+      `);
+
+      // Archivage promos
+      tryAlter(db, 'ALTER TABLE promotions ADD COLUMN archived INTEGER NOT NULL DEFAULT 0');
     },
   ];
 

@@ -465,4 +465,166 @@ router.post('/cleanup-logs', (req, res) => {
   }
 })
 
+router.post('/purge', (req, res) => {
+  try {
+    const { auditDays, loginDays, sessionDays } = req.body
+    const data = queries.purgeOldData({
+      auditDays: Number(auditDays) || 90,
+      loginDays: Number(loginDays) || 30,
+      sessionDays: Number(sessionDays) || 30,
+    })
+    res.json({ ok: true, data })
+  } catch (err) {
+    res.status(500).json({ ok: false, error: err.message })
+  }
+})
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// SIGNALEMENTS
+// ═══════════════════════════════════════════════════════════════════════════════
+
+router.get('/reports', (req, res) => {
+  try {
+    const { status, page, limit } = req.query
+    const data = queries.getReports({
+      status: status || null, page: Number(page) || 1, limit: Number(limit) || 50,
+    })
+    data.pendingCount = queries.getPendingReportsCount()
+    res.json({ ok: true, data })
+  } catch {
+    res.json({ ok: true, data: { entries: [], total: 0, page: 1, limit: 50, pendingCount: 0 } })
+  }
+})
+
+router.post('/reports/:id/resolve', (req, res) => {
+  try {
+    const { status } = req.body // 'reviewed' or 'dismissed'
+    queries.resolveReport(Number(req.params.id), status || 'reviewed', req.user.name)
+    res.json({ ok: true, data: null })
+  } catch (err) {
+    res.status(500).json({ ok: false, error: err.message })
+  }
+})
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// HEATMAP
+// ═══════════════════════════════════════════════════════════════════════════════
+
+router.get('/heatmap', (req, res) => {
+  try {
+    const data = queries.getActivityHeatmap()
+    res.json({ ok: true, data })
+  } catch {
+    res.json({ ok: true, data: [] })
+  }
+})
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// ANNONCES PLANIFIÉES
+// ═══════════════════════════════════════════════════════════════════════════════
+
+router.get('/scheduled', (req, res) => {
+  try {
+    const data = queries.getScheduledMessages()
+    res.json({ ok: true, data })
+  } catch {
+    res.json({ ok: true, data: [] })
+  }
+})
+
+router.post('/scheduled', (req, res) => {
+  try {
+    const { channelId, content, sendAt } = req.body
+    if (!channelId || !content || !sendAt) {
+      return res.status(400).json({ ok: false, error: 'channelId, content et sendAt requis.' })
+    }
+    queries.createScheduledMessage({
+      channelId: Number(channelId),
+      authorName: req.user.name,
+      authorType: req.user.type,
+      content,
+      sendAt,
+    })
+    res.json({ ok: true, data: null })
+  } catch (err) {
+    res.status(500).json({ ok: false, error: err.message })
+  }
+})
+
+router.delete('/scheduled/:id', (req, res) => {
+  try {
+    queries.deleteScheduledMessage(Number(req.params.id))
+    res.json({ ok: true, data: null })
+  } catch (err) {
+    res.status(500).json({ ok: false, error: err.message })
+  }
+})
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// SESSIONS ACTIVES
+// ═══════════════════════════════════════════════════════════════════════════════
+
+router.get('/sessions', (req, res) => {
+  try {
+    const data = queries.getActiveSessions()
+    res.json({ ok: true, data })
+  } catch {
+    res.json({ ok: true, data: [] })
+  }
+})
+
+router.delete('/sessions/:id', (req, res) => {
+  try {
+    queries.revokeSession(Number(req.params.id))
+    res.json({ ok: true, data: null })
+  } catch (err) {
+    res.status(500).json({ ok: false, error: err.message })
+  }
+})
+
+router.post('/sessions/revoke-user', (req, res) => {
+  try {
+    const { userId } = req.body
+    queries.revokeUserSessions(Number(userId))
+    res.json({ ok: true, data: null })
+  } catch (err) {
+    res.status(500).json({ ok: false, error: err.message })
+  }
+})
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// MODE LECTURE SEULE + ARCHIVAGE
+// ═══════════════════════════════════════════════════════════════════════════════
+
+router.get('/config', (req, res) => {
+  try {
+    const readOnly = queries.getAppConfig('read_only')
+    res.json({ ok: true, data: { read_only: readOnly === '1' } })
+  } catch {
+    res.json({ ok: true, data: { read_only: false } })
+  }
+})
+
+router.post('/config', (req, res) => {
+  try {
+    const { key, value } = req.body
+    const allowed = ['read_only']
+    if (!allowed.includes(key)) return res.status(400).json({ ok: false, error: 'Clé non autorisée.' })
+    queries.setAppConfig(key, value)
+    res.json({ ok: true, data: null })
+  } catch (err) {
+    res.status(500).json({ ok: false, error: err.message })
+  }
+})
+
+router.post('/promos/:id/archive', (req, res) => {
+  try {
+    const { archived } = req.body
+    queries.togglePromoArchive(Number(req.params.id), archived)
+    res.json({ ok: true, data: null })
+  } catch (err) {
+    res.status(500).json({ ok: false, error: err.message })
+  }
+})
+
 module.exports = router

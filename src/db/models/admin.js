@@ -94,7 +94,7 @@ function getAdminStats() {
 
   // Résumé par promo
   const promosSummary = db.prepare(`
-    SELECT p.id, p.name, p.color,
+    SELECT p.id, p.name, p.color, COALESCE(p.archived, 0) AS archived,
       (SELECT COUNT(*) FROM students s WHERE s.promo_id = p.id) AS student_count,
       (SELECT COUNT(*) FROM channels c WHERE c.promo_id = p.id) AS channel_count,
       (SELECT COUNT(*) FROM travaux t WHERE t.promo_id = p.id AND t.published = 1) AS travaux_count,
@@ -259,8 +259,172 @@ function getAdminChannels() {
   `).all()
 }
 
+// ── Signalements ─────────────────────────────────────────────────────────────
+
+function createReport({ messageId, reporterId, reporterName, reporterType, reason, details }) {
+  return getDb().prepare(`
+    INSERT INTO reports (message_id, reporter_id, reporter_name, reporter_type, reason, details)
+    VALUES (?, ?, ?, ?, ?, ?)
+  `).run(messageId, reporterId, reporterName, reporterType, reason || 'other', details || null)
+}
+
+function getReports({ status, page = 1, limit = 50 }) {
+  const db = getDb()
+  const offset = (page - 1) * limit
+  const params = []
+  let where = ''
+  if (status) { where = ' WHERE r.status = ?'; params.push(status) }
+
+  const total = db.prepare(`SELECT COUNT(*) AS c FROM reports r${where}`).get(...params).c
+
+  const entries = db.prepare(`
+    SELECT r.*, m.content AS message_content, m.author_name AS message_author,
+           c.name AS channel_name, p.name AS promo_name
+    FROM reports r
+    LEFT JOIN messages m ON r.message_id = m.id
+    LEFT JOIN channels c ON m.channel_id = c.id
+    LEFT JOIN promotions p ON c.promo_id = p.id
+    ${where}
+    ORDER BY r.created_at DESC LIMIT ? OFFSET ?
+  `).all(...params, limit, offset)
+
+  return { entries, total, page, limit }
+}
+
+function resolveReport(reportId, status, resolvedBy) {
+  return getDb().prepare(`
+    UPDATE reports SET status = ?, resolved_at = datetime('now'), resolved_by = ? WHERE id = ?
+  `).run(status, resolvedBy, reportId)
+}
+
+function getPendingReportsCount() {
+  return getDb().prepare(`SELECT COUNT(*) AS count FROM reports WHERE status = 'pending'`).get().count
+}
+
+// ── Heatmap d'activité ───────────────────────────────────────────────────────
+
+function getActivityHeatmap() {
+  return getDb().prepare(`
+    SELECT
+      CAST(strftime('%w', created_at) AS INTEGER) AS day_of_week,
+      CAST(strftime('%H', created_at) AS INTEGER) AS hour,
+      COUNT(*) AS count
+    FROM messages
+    WHERE created_at >= datetime('now', '-90 days')
+    GROUP BY day_of_week, hour
+    ORDER BY day_of_week, hour
+  `).all()
+}
+
+// ── Annonces planifiées ──────────────────────────────────────────────────────
+
+function getScheduledMessages() {
+  return getDb().prepare(`
+    SELECT sm.*, c.name AS channel_name, p.name AS promo_name
+    FROM scheduled_messages sm
+    JOIN channels c ON sm.channel_id = c.id
+    JOIN promotions p ON c.promo_id = p.id
+    ORDER BY sm.send_at ASC
+  `).all()
+}
+
+function createScheduledMessage({ channelId, authorName, authorType, content, sendAt }) {
+  return getDb().prepare(`
+    INSERT INTO scheduled_messages (channel_id, author_name, author_type, content, send_at)
+    VALUES (?, ?, ?, ?, ?)
+  `).run(channelId, authorName, authorType, content, sendAt)
+}
+
+function deleteScheduledMessage(id) {
+  return getDb().prepare('DELETE FROM scheduled_messages WHERE id = ? AND sent = 0').run(id)
+}
+
+function getDueScheduledMessages() {
+  return getDb().prepare(`
+    SELECT * FROM scheduled_messages
+    WHERE sent = 0 AND send_at <= datetime('now')
+  `).all()
+}
+
+function markScheduledSent(id) {
+  return getDb().prepare('UPDATE scheduled_messages SET sent = 1 WHERE id = ?').run(id)
+}
+
+// ── Sessions actives ─────────────────────────────────────────────────────────
+
+function upsertSession({ userId, userName, userType, tokenHash, ip, userAgent }) {
+  return getDb().prepare(`
+    INSERT INTO active_sessions (user_id, user_name, user_type, token_hash, ip, user_agent)
+    VALUES (?, ?, ?, ?, ?, ?)
+    ON CONFLICT(token_hash) DO UPDATE SET last_seen = datetime('now'), ip = excluded.ip
+  `).run(userId, userName, userType, tokenHash, ip, userAgent)
+}
+
+function getActiveSessions() {
+  return getDb().prepare(`
+    SELECT * FROM active_sessions
+    WHERE last_seen >= datetime('now', '-7 days')
+    ORDER BY last_seen DESC
+  `).all()
+}
+
+function revokeSession(sessionId) {
+  return getDb().prepare('DELETE FROM active_sessions WHERE id = ?').run(sessionId)
+}
+
+function revokeUserSessions(userId) {
+  return getDb().prepare('DELETE FROM active_sessions WHERE user_id = ?').run(userId)
+}
+
+// ── Config globale ───────────────────────────────────────────────────────────
+
+function getAppConfig(key) {
+  const row = getDb().prepare('SELECT value FROM app_config WHERE key = ?').get(key)
+  return row ? row.value : null
+}
+
+function setAppConfig(key, value) {
+  return getDb().prepare(`
+    INSERT INTO app_config (key, value) VALUES (?, ?)
+    ON CONFLICT(key) DO UPDATE SET value = excluded.value
+  `).run(key, String(value))
+}
+
+// ── Archivage promos ─────────────────────────────────────────────────────────
+
+function togglePromoArchive(promoId, archived) {
+  return getDb().prepare('UPDATE promotions SET archived = ? WHERE id = ?').run(archived ? 1 : 0, promoId)
+}
+
+// ── Politique de rétention ───────────────────────────────────────────────────
+
+function purgeOldData({ auditDays = 90, loginDays = 30, sessionDays = 30 }) {
+  const db = getDb()
+  const results = {}
+  try { results.audit = db.prepare(`DELETE FROM audit_log WHERE created_at < datetime('now', '-' || ? || ' days')`).run(auditDays).changes } catch { results.audit = 0 }
+  try { results.logins = db.prepare(`DELETE FROM login_attempts WHERE created_at < datetime('now', '-' || ? || ' days')`).run(loginDays).changes } catch { results.logins = 0 }
+  try { results.sessions = db.prepare(`DELETE FROM active_sessions WHERE last_seen < datetime('now', '-' || ? || ' days')`).run(sessionDays).changes } catch { results.sessions = 0 }
+  try { results.reports = db.prepare(`DELETE FROM reports WHERE status != 'pending' AND created_at < datetime('now', '-' || ? || ' days')`).run(auditDays).changes } catch { results.reports = 0 }
+  return results
+}
+
 module.exports = {
   getAdminStats,
   getAdminUsers, getAdminUserDetail,
   getAdminMessages, getAdminChannels,
+  // Signalements
+  createReport, getReports, resolveReport, getPendingReportsCount,
+  // Heatmap
+  getActivityHeatmap,
+  // Annonces planifiées
+  getScheduledMessages, createScheduledMessage, deleteScheduledMessage,
+  getDueScheduledMessages, markScheduledSent,
+  // Sessions
+  upsertSession, getActiveSessions, revokeSession, revokeUserSessions,
+  // Config
+  getAppConfig, setAppConfig,
+  // Archivage
+  togglePromoArchive,
+  // Rétention
+  purgeOldData,
 }

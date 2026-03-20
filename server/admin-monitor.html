@@ -149,6 +149,33 @@
     .alert { padding: .75rem 1rem; border-radius: var(--radius-sm); margin-bottom: 1rem; font-size: .8rem; }
     .alert-warn { background: rgba(243,156,18,.1); border: 1px solid rgba(243,156,18,.2); color: var(--orange); }
     .alert-danger { background: rgba(231,76,60,.1); border: 1px solid rgba(231,76,60,.2); color: var(--red); }
+    .alert-info { background: rgba(74,144,217,.1); border: 1px solid rgba(74,144,217,.2); color: var(--accent); }
+
+    /* ── Heatmap ── */
+    .heatmap { display: grid; grid-template-columns: 40px repeat(24, 1fr); gap: 2px; font-size: .65rem; }
+    .heatmap-label { display: flex; align-items: center; color: var(--text-muted); font-size: .65rem; }
+    .heatmap-cell { aspect-ratio: 1; border-radius: 3px; position: relative; cursor: default; }
+    .heatmap-cell:hover::after { content: attr(data-tip); position: absolute; bottom: 110%; left: 50%; transform: translateX(-50%);
+      background: var(--bg-card); border: 1px solid var(--border); border-radius: 4px; padding: 2px 6px;
+      font-size: .6rem; white-space: nowrap; color: var(--text); z-index: 10; pointer-events: none; }
+    .heatmap-hour { text-align: center; color: var(--text-muted); font-size: .6rem; padding-bottom: 2px; }
+
+    /* ── Tab badge ── */
+    .tab-badge { background: var(--red); color: #fff; font-size: .6rem; padding: 1px 5px; border-radius: 8px; margin-left: 4px; font-weight: 700; }
+
+    /* ── Toggle switch ── */
+    .toggle { position: relative; display: inline-block; width: 44px; height: 24px; cursor: pointer; }
+    .toggle input { opacity: 0; width: 0; height: 0; }
+    .toggle-slider { position: absolute; inset: 0; background: var(--border); border-radius: 12px; transition: .3s; }
+    .toggle-slider::before { content: ''; position: absolute; width: 18px; height: 18px; left: 3px; top: 3px; background: var(--text); border-radius: 50%; transition: .3s; }
+    .toggle input:checked + .toggle-slider { background: var(--accent); }
+    .toggle input:checked + .toggle-slider::before { transform: translateX(20px); }
+
+    /* ── Archived badge ── */
+    .badge.archived { background: rgba(78,82,96,.2); color: var(--text-muted); }
+    .badge.pending  { background: rgba(243,156,18,.15); color: var(--orange); }
+    .badge.reviewed { background: rgba(46,204,113,.15); color: var(--green); }
+    .badge.dismissed { background: rgba(78,82,96,.2); color: var(--text-muted); }
   </style>
 </head>
 <body>
@@ -177,14 +204,21 @@
     </div>
   </div>
 
+  <!-- Read-only banner -->
+  <div id="readonly-banner" class="alert alert-warn" style="display:none">
+    La plateforme est en <strong>mode lecture seule</strong>. Les &eacute;tudiants ne peuvent pas poster de messages ni soumettre de d&eacute;p&ocirc;ts.
+  </div>
+
   <!-- Tab bar -->
   <div class="tab-bar">
     <button class="tab-btn active" data-tab="serveur" onclick="switchTab('serveur')">Serveur</button>
     <button class="tab-btn" data-tab="stats" onclick="switchTab('stats')">Statistiques</button>
     <button class="tab-btn" data-tab="users" onclick="switchTab('users')">Utilisateurs</button>
-    <button class="tab-btn" data-tab="moderation" onclick="switchTab('moderation')">Mod&eacute;ration</button>
+    <button class="tab-btn" data-tab="moderation" onclick="switchTab('moderation')">Mod&eacute;ration <span id="reports-badge" class="tab-badge" style="display:none"></span></button>
     <button class="tab-btn" data-tab="audit" onclick="switchTab('audit')">Audit</button>
     <button class="tab-btn" data-tab="security" onclick="switchTab('security')">S&eacute;curit&eacute;</button>
+    <button class="tab-btn" data-tab="scheduled" onclick="switchTab('scheduled')">Annonces</button>
+    <button class="tab-btn" data-tab="sessions" onclick="switchTab('sessions')">Sessions</button>
     <button class="tab-btn" data-tab="maintenance" onclick="switchTab('maintenance')">Maintenance</button>
   </div>
 
@@ -208,6 +242,7 @@
       </select>
       <select id="user-promo-filter"><option value="">Toutes les promos</option></select>
       <button class="btn btn-primary btn-sm" onclick="loadUsers()">Filtrer</button>
+      <button class="btn btn-sm" style="background:var(--green);color:#fff" onclick="exportUsers()">Exporter CSV</button>
     </div>
     <div id="users-content">Chargement...</div>
   </div>
@@ -222,6 +257,19 @@
       <button class="btn btn-primary btn-sm" onclick="loadModeration()">Rechercher</button>
     </div>
     <div id="moderation-content">Chargement...</div>
+
+    <div style="margin-top:2rem">
+      <div style="display:flex;align-items:center;gap:1rem;margin-bottom:1rem">
+        <h3 style="font-size:1rem;font-weight:600">Signalements</h3>
+        <select id="report-status-filter" onchange="loadReports()" style="padding:.3rem .5rem;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-size:.8rem">
+          <option value="">Tous</option>
+          <option value="pending" selected>En attente</option>
+          <option value="reviewed">Trait&eacute;s</option>
+          <option value="dismissed">Rejet&eacute;s</option>
+        </select>
+      </div>
+      <div id="reports-list">Chargement...</div>
+    </div>
   </div>
 
   <div id="tab-audit" class="tab-panel">
@@ -239,12 +287,24 @@
       <input type="date" id="audit-from" />
       <input type="date" id="audit-to" />
       <button class="btn btn-primary btn-sm" onclick="loadAudit()">Filtrer</button>
+      <button class="btn btn-sm" style="background:var(--green);color:#fff" onclick="exportAudit()">Exporter CSV</button>
     </div>
     <div id="audit-content">Chargement...</div>
   </div>
 
   <div id="tab-security" class="tab-panel">
     <div id="security-content">Chargement...</div>
+  </div>
+
+  <div id="tab-scheduled" class="tab-panel">
+    <div style="margin-bottom:1rem">
+      <button class="btn btn-primary" onclick="showScheduleModal()">Planifier une annonce</button>
+    </div>
+    <div id="scheduled-content">Chargement...</div>
+  </div>
+
+  <div id="tab-sessions" class="tab-panel">
+    <div id="sessions-content">Chargement...</div>
   </div>
 
   <div id="tab-maintenance" class="tab-panel">
@@ -324,9 +384,12 @@ function switchTab(tab) {
 function refreshActiveTab() {
   const loaders = {
     serveur: refreshServer, stats: loadStats, users: loadUsers,
-    moderation: loadModeration, audit: loadAudit, security: loadSecurity, maintenance: loadMaintenance,
+    moderation: loadModeration, audit: loadAudit, security: loadSecurity,
+    scheduled: loadScheduled, sessions: loadSessions, maintenance: loadMaintenance,
   }
   if (loaders[activeTab]) loaders[activeTab]()
+  checkReadOnlyBanner()
+  checkReportsBadge()
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -541,16 +604,30 @@ async function loadStats() {
     </div>
 
     <div class="card wide" style="margin-top:1rem">
-      <div class="card-title">R\u00e9sum\u00e9 par promotion</div>
+      <div class="card-title" style="display:flex;justify-content:space-between;align-items:center">
+        R\u00e9sum\u00e9 par promotion
+        <button class="btn btn-sm btn-primary" onclick="exportStats()">Exporter CSV</button>
+      </div>
       <table class="data-table">
-        <tr><th>Promotion</th><th>\u00c9tudiants</th><th>Canaux</th><th>Travaux</th><th>Moyenne</th></tr>
+        <tr><th>Promotion</th><th>\u00c9tudiants</th><th>Canaux</th><th>Travaux</th><th>Moyenne</th><th>Archiver</th></tr>
         ${d.promosSummary.map(p => `<tr>
-          <td><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${p.color};margin-right:.5rem"></span>${escHtml(p.name)}</td>
+          <td><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${p.color};margin-right:.5rem"></span>${escHtml(p.name)}
+            ${p.archived ? ' <span class="badge archived">archiv\u00e9e</span>' : ''}</td>
           <td>${p.student_count}</td><td>${p.channel_count}</td><td>${p.travaux_count}</td>
           <td>${p.avg_grade ? (Math.round(p.avg_grade * 100) / 100) + '/20' : '\u2014'}</td>
+          <td><label class="toggle"><input type="checkbox" ${p.archived ? 'checked' : ''} onchange="toggleArchivePromo(${p.id}, this.checked)"><span class="toggle-slider"></span></label></td>
         </tr>`).join('')}
       </table>
     </div>`
+
+  // Charger la heatmap en parallèle
+  const heatmapHtml = await loadHeatmap()
+  if (heatmapHtml) {
+    el.innerHTML += `<div class="card wide" style="margin-top:1rem">
+      <div class="card-title">Heatmap d'activit\u00e9 (90 jours)</div>
+      ${heatmapHtml}
+    </div>`
+  }
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -655,6 +732,7 @@ async function loadModeration(page) {
   modPage = page || 1
   const el = document.getElementById('moderation-content')
   el.innerHTML = 'Chargement...'
+  loadReports() // charger les signalements en parallèle
 
   const params = new URLSearchParams({ page: modPage, limit: 50 })
   const search = document.getElementById('mod-search').value
@@ -792,16 +870,38 @@ async function loadMaintenance() {
   const el = document.getElementById('maintenance-content')
   el.innerHTML = 'Chargement...'
 
-  const [backupsJson, dbInfoJson] = await Promise.all([
+  const [backupsJson, dbInfoJson, configJson] = await Promise.all([
     apiFetch('/api/admin/backups'),
     apiFetch('/api/admin/db-info'),
+    apiFetch('/api/admin/config'),
   ])
 
-  const backups = backupsJson?.ok ? backupsJson.data : []
-  const dbInfo  = dbInfoJson?.ok ? dbInfoJson.data : []
+  const backups  = backupsJson?.ok ? backupsJson.data : []
+  const dbInfo   = dbInfoJson?.ok ? dbInfoJson.data : []
+  const readOnly = configJson?.ok ? configJson.data.read_only : false
 
   el.innerHTML = `
     <div class="grid">
+      <div class="card">
+        <div class="card-title">Mode plateforme</div>
+        <div style="display:flex;align-items:center;gap:1rem;margin-bottom:.5rem">
+          <label class="toggle">
+            <input type="checkbox" ${readOnly ? 'checked' : ''} onchange="toggleReadOnly(this.checked)">
+            <span class="toggle-slider"></span>
+          </label>
+          <span style="font-size:.85rem">${readOnly ? '<span style="color:var(--orange)">Lecture seule activ\u00e9e</span>' : 'Mode normal'}</span>
+        </div>
+        <div class="card-sub">En mode lecture seule, les \u00e9tudiants ne peuvent plus poster de messages ni soumettre de d\u00e9p\u00f4ts.</div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Politique de r\u00e9tention</div>
+        <button class="btn" style="background:var(--accent);color:#fff" onclick="purgeOldData()">Purger les donn\u00e9es anciennes</button>
+        <div class="card-sub" style="margin-top:.5rem">Supprime : audit > 90j, logins > 30j, sessions > 30j, signalements trait\u00e9s > 90j</div>
+      </div>
+    </div>
+
+    <div class="grid" style="margin-top:1rem">
       <div class="card">
         <div class="card-title">Sauvegardes</div>
         <button class="btn btn-primary" onclick="createBackup()" style="margin-bottom:1rem">Cr\u00e9er un backup</button>
@@ -869,6 +969,297 @@ async function resetSeed() {
   const json = await apiFetch('/api/admin/reset-seed', { method: 'POST' })
   if (json?.ok) { alert('Base de donn\u00e9es r\u00e9initialis\u00e9e.'); location.reload() }
   else alert('Erreur: ' + (json?.error || 'inconnue'))
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// SIGNALEMENTS (intégré dans Modération)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+let reportsPage = 1
+async function loadReports(page) {
+  reportsPage = page || 1
+  const el = document.getElementById('reports-list')
+  if (!el) return
+  el.innerHTML = 'Chargement...'
+  const statusFilter = document.getElementById('report-status-filter')?.value || ''
+  const params = new URLSearchParams({ page: reportsPage, limit: 30 })
+  if (statusFilter) params.set('status', statusFilter)
+
+  const json = await apiFetch(`/api/admin/reports?${params}`)
+  if (!json?.ok) { el.innerHTML = 'Erreur'; return }
+  const { entries, total, page: pg, limit } = json.data
+
+  if (!entries.length) { el.innerHTML = '<div class="card-sub">Aucun signalement</div>'; return }
+
+  const reasonLabels = { spam: 'Spam', harassment: 'Harc\u00e8lement', inappropriate: 'Inappropri\u00e9', off_topic: 'Hors-sujet', other: 'Autre' }
+
+  el.innerHTML = `<table class="data-table">
+    <tr><th>Date</th><th>Signal\u00e9 par</th><th>Raison</th><th>Message</th><th>Auteur msg</th><th>Status</th><th>Actions</th></tr>
+    ${entries.map(r => `<tr>
+      <td style="white-space:nowrap;font-size:.75rem">${fmtDate(r.created_at)}</td>
+      <td>${escHtml(r.reporter_name)}</td>
+      <td><span class="badge warn">${reasonLabels[r.reason] || r.reason}</span></td>
+      <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml((r.message_content || '[supprim\u00e9]').substring(0, 100))}</td>
+      <td style="color:var(--text-secondary)">${escHtml(r.message_author || '\u2014')}</td>
+      <td><span class="badge ${r.status}">${r.status}</span></td>
+      <td>${r.status === 'pending' ? `
+        <button class="btn btn-primary btn-sm" onclick="resolveReport(${r.id},'reviewed')">Trait\u00e9</button>
+        <button class="btn btn-sm" style="background:var(--text-muted);color:#fff" onclick="resolveReport(${r.id},'dismissed')">Rejeter</button>
+        ${r.message_content ? `<button class="btn btn-danger btn-sm" onclick="deleteMessage(${r.message_id});resolveReport(${r.id},'reviewed')">Suppr. msg</button>` : ''}
+      ` : `${r.resolved_by ? escHtml(r.resolved_by) : ''}`}</td>
+    </tr>`).join('')}
+  </table>
+  ${pagination(total, pg, limit, 'loadReports')}`
+}
+
+async function resolveReport(id, status) {
+  await apiFetch(`/api/admin/reports/${id}/resolve`, { method: 'POST', body: JSON.stringify({ status }) })
+  loadReports(reportsPage)
+  checkReportsBadge()
+}
+
+async function checkReportsBadge() {
+  try {
+    const json = await apiFetch('/api/admin/reports?status=pending&limit=1')
+    const badge = document.getElementById('reports-badge')
+    if (json?.ok && json.data.pendingCount > 0) {
+      badge.textContent = json.data.pendingCount
+      badge.style.display = 'inline'
+    } else {
+      badge.style.display = 'none'
+    }
+  } catch {}
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// HEATMAP D'ACTIVITÉ (intégré dans Stats)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+async function loadHeatmap() {
+  const json = await apiFetch('/api/admin/heatmap')
+  if (!json?.ok) return ''
+  const data = json.data
+  const dayNames = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam']
+  const grid = {}
+  let maxCount = 1
+  for (const d of data) {
+    const key = `${d.day_of_week}-${d.hour}`
+    grid[key] = d.count
+    if (d.count > maxCount) maxCount = d.count
+  }
+
+  let html = '<div class="heatmap"><div></div>'
+  for (let h = 0; h < 24; h++) html += `<div class="heatmap-hour">${h}h</div>`
+  for (let d = 0; d < 7; d++) {
+    html += `<div class="heatmap-label">${dayNames[d]}</div>`
+    for (let h = 0; h < 24; h++) {
+      const count = grid[`${d}-${h}`] || 0
+      const intensity = count / maxCount
+      const color = count === 0 ? 'rgba(255,255,255,.03)' : `rgba(74,144,217,${0.15 + intensity * 0.85})`
+      html += `<div class="heatmap-cell" style="background:${color}" data-tip="${dayNames[d]} ${h}h: ${count} msg"></div>`
+    }
+  }
+  html += '</div>'
+  return html
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// EXPORT CSV
+// ═══════════════════════════════════════════════════════════════════════════════
+
+function exportCsv(filename, headers, rows) {
+  const escape = v => `"${String(v ?? '').replace(/"/g, '""')}"`
+  const lines = [headers.join(',')]
+  for (const r of rows) lines.push(r.map(escape).join(','))
+  const blob = new Blob(['\uFEFF' + lines.join('\n')], { type: 'text/csv;charset=utf-8' })
+  const a = document.createElement('a')
+  a.href = URL.createObjectURL(blob)
+  a.download = filename
+  a.click()
+  URL.revokeObjectURL(a.href)
+}
+
+async function exportUsers() {
+  const json = await apiFetch('/api/admin/users?limit=10000')
+  if (!json?.ok) return
+  exportCsv('utilisateurs.csv',
+    ['Nom', 'Email', 'Type', 'Promotion'],
+    json.data.users.map(u => [u.name, u.email, u.type, u.promo_name || ''])
+  )
+}
+
+async function exportAudit() {
+  const json = await apiFetch('/api/admin/audit?limit=10000')
+  if (!json?.ok) return
+  exportCsv('audit.csv',
+    ['Date', 'Acteur', 'Type', 'Action', 'Cible', 'D\u00e9tails'],
+    json.data.entries.map(e => [e.created_at, e.actor_name, e.actor_type, e.action, e.target || '', e.details || ''])
+  )
+}
+
+async function exportStats() {
+  const json = await apiFetch('/api/admin/stats')
+  if (!json?.ok) return
+  exportCsv('promos-stats.csv',
+    ['Promotion', '\u00c9tudiants', 'Canaux', 'Travaux', 'Moyenne'],
+    json.data.promosSummary.map(p => [p.name, p.student_count, p.channel_count, p.travaux_count, p.avg_grade ? Math.round(p.avg_grade * 100) / 100 : ''])
+  )
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// MODE LECTURE SEULE
+// ═══════════════════════════════════════════════════════════════════════════════
+
+async function checkReadOnlyBanner() {
+  try {
+    const json = await apiFetch('/api/admin/config')
+    const banner = document.getElementById('readonly-banner')
+    if (json?.ok && json.data.read_only) {
+      banner.style.display = 'block'
+    } else {
+      banner.style.display = 'none'
+    }
+  } catch {}
+}
+
+async function toggleReadOnly(checked) {
+  await apiFetch('/api/admin/config', { method: 'POST', body: JSON.stringify({ key: 'read_only', value: checked ? '1' : '0' }) })
+  checkReadOnlyBanner()
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// ARCHIVAGE PROMOS
+// ═══════════════════════════════════════════════════════════════════════════════
+
+async function toggleArchivePromo(promoId, archived) {
+  await apiFetch(`/api/admin/promos/${promoId}/archive`, { method: 'POST', body: JSON.stringify({ archived }) })
+  loadStats()
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// ANNONCES PLANIFIÉES
+// ═══════════════════════════════════════════════════════════════════════════════
+
+async function loadScheduled() {
+  const el = document.getElementById('scheduled-content')
+  el.innerHTML = 'Chargement...'
+  const json = await apiFetch('/api/admin/scheduled')
+  if (!json?.ok) { el.innerHTML = 'Erreur'; return }
+  const msgs = json.data
+
+  if (!msgs.length) { el.innerHTML = '<div class="card"><div class="card-sub">Aucune annonce planifi\u00e9e</div></div>'; return }
+
+  el.innerHTML = `<table class="data-table">
+    <tr><th>Envoi pr\u00e9vu</th><th>Canal</th><th>Promo</th><th>Message</th><th>Status</th><th>Actions</th></tr>
+    ${msgs.map(m => `<tr>
+      <td style="white-space:nowrap;font-size:.75rem">${fmtDate(m.send_at)}</td>
+      <td>${escHtml(m.channel_name)}</td>
+      <td style="color:var(--text-secondary)">${escHtml(m.promo_name)}</td>
+      <td style="max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(m.content.substring(0, 150))}</td>
+      <td>${m.sent ? '<span class="badge online">Envoy\u00e9</span>' : '<span class="badge warn">En attente</span>'}</td>
+      <td>${!m.sent ? `<button class="btn btn-danger btn-sm" onclick="cancelScheduled(${m.id})">Annuler</button>` : ''}</td>
+    </tr>`).join('')}
+  </table>`
+}
+
+async function showScheduleModal() {
+  // Charger la liste des canaux d'annonce
+  const cJson = await apiFetch('/api/admin/channels')
+  const channels = cJson?.ok ? cJson.data.filter(c => c.type === 'annonce') : []
+
+  showModal(`<div class="modal-overlay" onclick="if(event.target===this)closeModal()">
+    <div class="modal">
+      <h3>Planifier une annonce</h3>
+      <label style="font-size:.75rem;color:var(--text-muted)">Canal d'annonce</label>
+      <select id="sched-channel">
+        ${channels.map(c => `<option value="${c.id}">${escHtml(c.name)} (${escHtml(c.promo_name)})</option>`).join('')}
+        ${!channels.length ? '<option disabled>Aucun canal d\'annonce</option>' : ''}
+      </select>
+      <label style="font-size:.75rem;color:var(--text-muted)">Date et heure d'envoi</label>
+      <input type="datetime-local" id="sched-date" />
+      <label style="font-size:.75rem;color:var(--text-muted)">Message</label>
+      <textarea id="sched-content" rows="4" placeholder="Contenu de l'annonce..."></textarea>
+      <div class="modal-actions">
+        <button class="btn" style="background:var(--border);color:var(--text)" onclick="closeModal()">Annuler</button>
+        <button class="btn btn-primary" onclick="submitScheduled()">Planifier</button>
+      </div>
+    </div>
+  </div>`)
+}
+
+async function submitScheduled() {
+  const channelId = document.getElementById('sched-channel')?.value
+  const sendAt = document.getElementById('sched-date')?.value
+  const content = document.getElementById('sched-content')?.value
+  if (!channelId || !sendAt || !content) { alert('Tous les champs sont requis.'); return }
+  const json = await apiFetch('/api/admin/scheduled', {
+    method: 'POST', body: JSON.stringify({ channelId: Number(channelId), content, sendAt }),
+  })
+  if (json?.ok) { closeModal(); loadScheduled() }
+  else alert('Erreur: ' + (json?.error || 'inconnue'))
+}
+
+async function cancelScheduled(id) {
+  if (!confirm('Annuler cette annonce planifi\u00e9e ?')) return
+  await apiFetch(`/api/admin/scheduled/${id}`, { method: 'DELETE' })
+  loadScheduled()
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// SESSIONS ACTIVES
+// ═══════════════════════════════════════════════════════════════════════════════
+
+async function loadSessions() {
+  const el = document.getElementById('sessions-content')
+  el.innerHTML = 'Chargement...'
+  const json = await apiFetch('/api/admin/sessions')
+  if (!json?.ok) { el.innerHTML = 'Erreur'; return }
+  const sessions = json.data
+
+  if (!sessions.length) { el.innerHTML = '<div class="card"><div class="card-sub">Aucune session active</div></div>'; return }
+
+  el.innerHTML = `
+    <div class="card-sub" style="margin-bottom:1rem">${sessions.length} session(s) active(s) ces 7 derniers jours</div>
+    <table class="data-table">
+      <tr><th>Utilisateur</th><th>Type</th><th>Derni\u00e8re activit\u00e9</th><th>IP</th><th>Navigateur</th><th>Actions</th></tr>
+      ${sessions.map(s => `<tr>
+        <td><strong>${escHtml(s.user_name)}</strong></td>
+        <td><span class="badge ${s.user_type}">${s.user_type}</span></td>
+        <td style="font-size:.75rem">${fmtDate(s.last_seen)}</td>
+        <td style="color:var(--text-muted);font-size:.75rem">${escHtml(s.ip || '\u2014')}</td>
+        <td style="color:var(--text-muted);font-size:.7rem;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml((s.user_agent || '').substring(0, 60))}</td>
+        <td>
+          <button class="btn btn-danger btn-sm" onclick="revokeSession(${s.id})">R\u00e9voquer</button>
+          <button class="btn btn-sm" style="background:var(--orange);color:#fff" onclick="revokeAllSessions(${s.user_id})">Tout r\u00e9voquer</button>
+        </td>
+      </tr>`).join('')}
+    </table>`
+}
+
+async function revokeSession(id) {
+  if (!confirm('R\u00e9voquer cette session ?')) return
+  await apiFetch(`/api/admin/sessions/${id}`, { method: 'DELETE' })
+  loadSessions()
+}
+
+async function revokeAllSessions(userId) {
+  if (!confirm('R\u00e9voquer toutes les sessions de cet utilisateur ?')) return
+  await apiFetch('/api/admin/sessions/revoke-user', { method: 'POST', body: JSON.stringify({ userId }) })
+  loadSessions()
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// POLITIQUE DE RÉTENTION (intégré dans Maintenance)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+async function purgeOldData() {
+  if (!confirm('Purger les donn\u00e9es anciennes ?\n\n- Audit > 90 jours\n- Tentatives login > 30 jours\n- Sessions > 30 jours\n- Signalements trait\u00e9s > 90 jours')) return
+  const json = await apiFetch('/api/admin/purge', { method: 'POST', body: JSON.stringify({}) })
+  if (json?.ok) {
+    const d = json.data
+    alert(`Purge termin\u00e9e :\n- ${d.audit} entr\u00e9es audit\n- ${d.logins} tentatives login\n- ${d.sessions} sessions\n- ${d.reports} signalements`)
+    loadMaintenance()
+  } else alert('Erreur: ' + (json?.error || 'inconnue'))
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════

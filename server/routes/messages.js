@@ -82,4 +82,18 @@ router.post('/reactions', wrap((req) => queries.updateReactions(req.body.msgId, 
 router.delete('/:id',     wrap((req) => queries.deleteMessage(Number(req.params.id))))
 router.patch('/:id',      wrap((req) => queries.editMessage(Number(req.params.id), req.body.content)))
 
+// ── Signalement de message ──────────────────────────────────────────────────
+router.post('/:id/report', wrap((req) => {
+  const messageId = Number(req.params.id)
+  const { reason, details } = req.body
+  return queries.createReport({
+    messageId,
+    reporterId: Math.abs(req.user.id),
+    reporterName: req.user.name,
+    reporterType: req.user.type,
+    reason: reason || 'other',
+    details: details || null,
+  })
+}))
+
 module.exports = router

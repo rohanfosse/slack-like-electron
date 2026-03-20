@@ -43,6 +43,35 @@ app.use('/api/auth', require('./routes/auth'))
 const authMiddleware = require('./middleware/auth')
 app.use('/api', authMiddleware)
 
+// ── Middleware mode lecture seule (bloque POST/PUT/PATCH/DELETE sauf admin) ──
+app.use('/api', (req, res, next) => {
+  if (req.method === 'GET' || req.path.startsWith('/admin')) return next()
+  try {
+    const { getAppConfig } = require('../src/db/models/admin')
+    if (getAppConfig('read_only') === '1' && req.user?.type !== 'teacher') {
+      return res.status(503).json({ ok: false, error: 'La plateforme est en mode lecture seule.' })
+    }
+  } catch {}
+  next()
+})
+
+// ── Session tracking (async, non bloquant) ──────────────────────────────────
+app.use('/api', (req, _res, next) => {
+  if (req.user && req.headers.authorization) {
+    try {
+      const crypto = require('crypto')
+      const token = req.headers.authorization.replace('Bearer ', '')
+      const tokenHash = crypto.createHash('sha256').update(token).digest('hex').substring(0, 32)
+      const { upsertSession } = require('../src/db/models/admin')
+      upsertSession({
+        userId: req.user.id, userName: req.user.name, userType: req.user.type,
+        tokenHash, ip: req.ip, userAgent: req.get('user-agent') || '',
+      })
+    } catch {}
+  }
+  next()
+})
+
 // ── Routes protégées ─────────────────────────────────────────────────────────
 app.use('/api/promotions',  require('./routes/promotions'))
 app.use('/api/students',    require('./routes/students'))
@@ -130,6 +159,30 @@ io.on('connection', (socket) => {
 // ── Initialisation DB ─────────────────────────────────────────────────────────
 queries.init()
 console.log('[DB] Base de données initialisée')
+
+// ── Timer : envoi des annonces planifiées (toutes les 30s) ─────────────────
+setInterval(() => {
+  try {
+    const { getDueScheduledMessages, markScheduledSent } = require('../src/db/models/admin')
+    const due = getDueScheduledMessages()
+    for (const sm of due) {
+      try {
+        queries.sendMessage({
+          channelId: sm.channel_id, authorName: sm.author_name,
+          authorType: sm.author_type, content: sm.content,
+        })
+        markScheduledSent(sm.id)
+        io.emit('msg:new', {
+          channelId: sm.channel_id, authorName: sm.author_name,
+          preview: sm.content.replace(/[*_`>#[\]!]/g, '').slice(0, 80),
+        })
+        console.log(`[Scheduled] Message #${sm.id} envoyé dans canal ${sm.channel_id}`)
+      } catch (err) {
+        console.error(`[Scheduled] Erreur envoi #${sm.id}:`, err.message)
+      }
+    }
+  } catch {}
+}, 30000)
 
 // ── Démarrage ─────────────────────────────────────────────────────────────────
 server.listen(PORT, () => {
