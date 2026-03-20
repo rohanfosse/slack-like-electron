@@ -110,13 +110,17 @@ app.use('/webhook/deploy', require('./routes/deploy'))
 
 // ── Page admin monitoring ─────────────────────────────────────────────────────
 app.get('/admin-monitor', (_req, res) => {
+  res.set('Cache-Control', 'no-cache, no-store, must-revalidate')
   res.sendFile(path.join(__dirname, 'admin-monitor.html'))
 })
 
 // ── Landing page vitrine (page d'accueil) ──────────────────────────────────
 const LANDING = path.join(__dirname, '../landing/index.html')
 if (fs.existsSync(LANDING)) {
-  app.get('/', (_req, res) => res.sendFile(LANDING))
+  app.get('/', (_req, res) => {
+    res.set('Cache-Control', 'no-cache, no-store, must-revalidate')
+    res.sendFile(LANDING)
+  })
 }
 
 // ── SPA web — servie sous /app et en fallback ────────────────────────────────
@@ -124,6 +128,7 @@ const WEB_DIST = path.join(__dirname, '../dist-web')
 if (fs.existsSync(WEB_DIST)) {
   app.use(express.static(WEB_DIST))
   app.get(/^(?!\/api|\/socket\.io|\/uploads|\/health|\/$).*/, (_req, res) => {
+    res.set('Cache-Control', 'no-cache, no-store, must-revalidate')
     res.sendFile(path.join(WEB_DIST, 'index.html'))
   })
 }
