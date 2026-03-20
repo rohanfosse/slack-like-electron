@@ -49,6 +49,14 @@ export const useMessagesStore = defineStore('messages', () => {
     typingUsers.value = typingUsers.value.filter((n) => n !== name)
   }
 
+  function clearAllTyping() {
+    for (const name of Object.keys(_typingTimers)) {
+      clearTimeout(_typingTimers[name])
+      delete _typingTimers[name]
+    }
+    typingUsers.value = []
+  }
+
   // ── Réactions en mémoire ──────────────────────────────────────────────────
   const reactions = reactive<Record<number, Record<string, number>>>({})
   const userVotes = reactive<Record<number, Set<string>>>({})
@@ -154,23 +162,41 @@ export const useMessagesStore = defineStore('messages', () => {
   }
 
   // ── Envoi ──────────────────────────────────────────────────────────────────
-  async function sendMessage(content: string) {
-    if (!appStore.currentUser || !content.trim()) return
+  const MAX_MESSAGE_LENGTH = 10_000
+  const sendError = ref(false)
+
+  async function sendMessage(content: string): Promise<boolean> {
+    if (!appStore.currentUser || !content.trim()) return false
+    if (content.length > MAX_MESSAGE_LENGTH) {
+      sendError.value = true
+      return false
+    }
     const quote = quotedMessage.value
-    await window.api.sendMessage({
-      channelId:   appStore.activeChannelId   ?? undefined,
-      dmStudentId: appStore.activeDmStudentId ?? undefined,
-      authorName:  appStore.currentUser.name,
-      authorType:  appStore.currentUser.type,
-      channelName: appStore.activeChannelName || undefined,
-      promoId:     appStore.activePromoId     ?? undefined,
-      content:     content.trim(),
-      replyToId:      quote?.id       ?? undefined,
-      replyToAuthor:  quote?.author_name ?? undefined,
-      replyToPreview: quote ? quote.content.slice(0, 120) : undefined,
-    })
-    clearQuote()
-    await fetchMessages()
+    try {
+      const res = await window.api.sendMessage({
+        channelId:   appStore.activeChannelId   ?? undefined,
+        dmStudentId: appStore.activeDmStudentId ?? undefined,
+        authorName:  appStore.currentUser.name,
+        authorType:  appStore.currentUser.type,
+        channelName: appStore.activeChannelName || undefined,
+        promoId:     appStore.activePromoId     ?? undefined,
+        content:     content.trim(),
+        replyToId:      quote?.id       ?? undefined,
+        replyToAuthor:  quote?.author_name ?? undefined,
+        replyToPreview: quote ? quote.content.slice(0, 120) : undefined,
+      })
+      if (!res?.ok) {
+        sendError.value = true
+        return false // NE PAS effacer le contenu
+      }
+      sendError.value = false
+      clearQuote()
+      await fetchMessages()
+      return true
+    } catch {
+      sendError.value = true
+      return false
+    }
   }
 
   // ── Épinglage ──────────────────────────────────────────────────────────────
@@ -273,11 +299,11 @@ export const useMessagesStore = defineStore('messages', () => {
   }
 
   return {
-    messages, pinned, loading, loadingMore, hasMore,
+    messages, pinned, loading, loadingMore, hasMore, sendError, MAX_MESSAGE_LENGTH,
     searchTerm, firstUnreadId, highlightMessageId,
     reactions, userVotes,
     quotedMessage, setQuote, clearQuote,
-    typingText, setTyping, stopTyping, initTypingListener,
+    typingText, setTyping, stopTyping, clearAllTyping, initTypingListener,
     isGrouped, fetchMessages, loadOlderMessages, fetchPinned,
     sendMessage, togglePin,
     initReactions, toggleReaction, getReactionUsers, clearSearch,

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, nextTick, watch } from 'vue'
+import { ref, computed, nextTick, watch, onMounted } from 'vue'
 import { Send, Paperclip, Loader2, X as XIcon, Reply, Bold, Italic, Code, SquareCode, Strikethrough, Quote, List, ListOrdered, Smile, Eye, EyeOff } from 'lucide-vue-next'
 import { useAppStore }      from '@/stores/app'
 import { useMessagesStore } from '@/stores/messages'
@@ -98,6 +98,12 @@ async function loadDocs() {
   const res = await window.api.getProjectDocuments(promoId)
   docList.value = res?.ok ? (res.data as RefDoc[]) : []
 }
+
+// Précharger les données d'autocomplete au montage
+onMounted(() => {
+  loadUsers()
+  loadChannels()
+})
 
 function insertRef(text: string) {
   const el = inputEl.value
@@ -368,10 +374,19 @@ async function attachFile() {
 // ── Envoi ──────────────────────────────────────────────────────────────────
 const everyoneWarning = ref(false)
 
+const isOfflineOrDisconnected = computed(() => !appStore.isOnline || !appStore.socketConnected)
+const charCount = computed(() => content.value.length)
+const showCharCount = computed(() => charCount.value > messagesStore.MAX_MESSAGE_LENGTH * 0.8)
+const charCountOver = computed(() => charCount.value > messagesStore.MAX_MESSAGE_LENGTH)
+
 async function send() {
   if (!content.value.trim() || sending.value || appStore.isReadonly) return
-  if (!appStore.isOnline) {
+  if (isOfflineOrDisconnected.value) {
     showToast('Hors-ligne — message non envoyé.', 'error')
+    return
+  }
+  if (charCountOver.value) {
+    showToast(`Message trop long (${charCount.value}/${messagesStore.MAX_MESSAGE_LENGTH})`, 'error')
     return
   }
 
@@ -385,10 +400,14 @@ async function send() {
   mentionActive.value = false
   sending.value = true
   try {
-    await messagesStore.sendMessage(content.value)
-    clearDraft()
-    content.value = ''
-    if (inputEl.value) inputEl.value.style.height = 'auto'
+    const ok = await messagesStore.sendMessage(content.value)
+    if (ok) {
+      clearDraft()
+      content.value = ''
+      if (inputEl.value) inputEl.value.style.height = 'auto'
+    } else {
+      showToast('Message non envoyé — réessayez.', 'error')
+    }
   } finally {
     sending.value = false
     inputEl.value?.focus()
@@ -727,10 +746,14 @@ watch(
               <Paperclip v-else :size="14" />
             </button>
 
+            <span v-if="showCharCount" class="mi-char-count" :class="{ over: charCountOver }">
+              {{ charCount }}/{{ messagesStore.MAX_MESSAGE_LENGTH }}
+            </span>
             <button
               id="btn-send"
               class="mi-send-btn"
-              :disabled="!content.trim() || sending"
+              :disabled="!content.trim() || sending || isOfflineOrDisconnected || charCountOver"
+              :title="isOfflineOrDisconnected ? 'Vous êtes hors ligne' : charCountOver ? 'Message trop long' : 'Envoyer (Entrée)'"
               aria-label="Envoyer le message (Entrée)"
               @click="send"
             >
@@ -1073,6 +1096,11 @@ watch(
 .mi-icon-btn:disabled { opacity: .4; cursor: not-allowed; }
 
 /* Bouton Envoyer */
+.mi-char-count {
+  font-size: 10px; color: var(--text-muted); font-variant-numeric: tabular-nums;
+  padding: 0 4px;
+}
+.mi-char-count.over { color: #f87171; font-weight: 600; }
 .mi-send-btn {
   display: flex;
   align-items: center;

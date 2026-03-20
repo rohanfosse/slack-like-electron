@@ -72,13 +72,22 @@ function createWindow(): void {
     )
   })
 
-  // Diagnostic : crash du renderer
+  // Diagnostic : crash du renderer — proposer de relancer
   win.webContents.on('render-process-gone', (_event, details) => {
     console.error('[Main] render-process-gone', details)
-    dialog.showErrorBox(
-      'Processus renderer terminé',
-      `Raison : ${details.reason}\nCode de sortie : ${details.exitCode}`
-    )
+    dialog.showMessageBox(win, {
+      type: 'error',
+      title: 'Processus renderer terminé',
+      message: `L'interface a cessé de fonctionner.\nRaison : ${details.reason}`,
+      buttons: ['Relancer', 'Quitter'],
+      defaultId: 0,
+    }).then(({ response }) => {
+      if (response === 0) {
+        win.reload()
+      } else {
+        app.quit()
+      }
+    })
   })
 
   // Push événements maximize/unmaximize vers le renderer
@@ -94,7 +103,18 @@ function createWindow(): void {
 }
 
 app.whenReady().then(() => {
-  db.init()
+  try {
+    db.init()
+  } catch (dbErr: unknown) {
+    const msg = dbErr instanceof Error ? dbErr.message : String(dbErr)
+    console.error('[Main] DB init failed:', dbErr)
+    dialog.showErrorBox(
+      'Erreur de base de données',
+      `Impossible d\'initialiser la base de données.\n\n${msg}\n\nSi le problème persiste, supprimez le fichier de données dans %APPDATA%\\Cursus.`,
+    )
+    app.quit()
+    return
+  }
   ipc.register()
   notifications.start()
   createWindow()

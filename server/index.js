@@ -234,7 +234,7 @@ queries.init()
 console.log('[DB] Base de données initialisée')
 
 // ── Timer : envoi des annonces planifiées (toutes les 30s) ─────────────────
-setInterval(() => {
+const _scheduledTimer = setInterval(() => {
   try {
     const { getDueScheduledMessages, markScheduledSent } = require('../src/db/models/admin')
     const due = getDueScheduledMessages()
@@ -269,6 +269,7 @@ server.listen(PORT, () => {
 // ── Arrêt gracieux ────────────────────────────────────────────────────────────
 function shutdown() {
   console.log('[Cursus] Arrêt en cours...')
+  clearInterval(_scheduledTimer)
   server.close(() => {
     try { queries.close() } catch {}
     process.exit(0)

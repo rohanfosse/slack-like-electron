@@ -107,6 +107,17 @@ export const useAppStore = defineStore('app', () => {
     try { localStorage.removeItem(SESSION_KEY) } catch {}
   }
 
+  // ── Écouter l'expiration de session (émis par apiFetch sur 401) ──────────
+  const sessionExpiredMessage = ref('')
+  function initAuthExpiredListener(): () => void {
+    const handler = () => {
+      sessionExpiredMessage.value = 'Votre session a expiré. Veuillez vous reconnecter.'
+      logout()
+    }
+    window.addEventListener('cursus:auth-expired', handler)
+    return () => window.removeEventListener('cursus:auth-expired', handler)
+  }
+
   function clearMustChangePassword(): void {
     if (!currentUser.value) return
     currentUser.value = { ...currentUser.value, must_change_password: 0 }
@@ -258,6 +269,7 @@ export const useAppStore = defineStore('app', () => {
   function isDmMuted(name: string): boolean { return _getMutedDms().has(name) }
 
   let _audioCtx: AudioContext | null = null
+  let _audioIdleTimer: ReturnType<typeof setTimeout> | null = null
   function _playNotifSound(freq = 800, dur = 0.25) {
     if (!_prefNotifSound()) return
     try {
@@ -271,6 +283,13 @@ export const useAppStore = defineStore('app', () => {
       osc.start()
       gain.gain.exponentialRampToValueAtTime(0.001, _audioCtx.currentTime + dur)
       osc.stop(_audioCtx.currentTime + dur)
+      // Fermer l'AudioContext après 30s d'inactivité
+      if (_audioIdleTimer) clearTimeout(_audioIdleTimer)
+      _audioIdleTimer = setTimeout(() => {
+        _audioCtx?.close().catch(() => {})
+        _audioCtx = null
+        _audioIdleTimer = null
+      }, 30_000)
     } catch {}
   }
 
@@ -423,8 +442,8 @@ export const useAppStore = defineStore('app', () => {
     startSimulation, stopSimulation,
     openChannel, openDm, markRead, markDmRead, markAllRead, loadTaChannels,
     muteDm, unmuteDm, isDmMuted,
-    onlineUsers, isUserOnline,
-    initUnreadListener, initOnlineListener, initSocketListener, initPresenceListener,
+    onlineUsers, isUserOnline, sessionExpiredMessage,
+    initUnreadListener, initOnlineListener, initSocketListener, initPresenceListener, initAuthExpiredListener,
     onDmRefresh, offDmRefresh,
     api,
   }

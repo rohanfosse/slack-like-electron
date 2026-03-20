@@ -49,13 +49,17 @@
       <button
         v-if="appStore.isStaff"
         class="nav-logo-btn"
-        title="Tableau de bord"
+        :title="!appStore.isOnline ? 'Hors ligne' : !appStore.socketConnected ? 'Reconnexion...' : 'Tableau de bord'"
         aria-label="Accueil — Tableau de bord"
         @click="router.push('/dashboard')"
       >
         <img :src="logoUrl" class="nav-logo-img" alt="Cursus" />
+        <span v-if="!appStore.isOnline || !appStore.socketConnected" class="nav-status-dot" />
       </button>
-      <img v-else :src="logoUrl" class="nav-logo-img" alt="Cursus" />
+      <template v-else>
+        <img :src="logoUrl" class="nav-logo-img" alt="Cursus" />
+        <span v-if="!appStore.isOnline || !appStore.socketConnected" class="nav-status-dot" />
+      </template>
     </div>
 
     <!-- ── Tableau de bord ── -->
@@ -252,6 +256,24 @@
 }
 .nav-logo-img:hover {
   transform: scale(1.07);
+}
+.nav-logo {
+  position: relative;
+}
+.nav-status-dot {
+  position: absolute;
+  bottom: 2px;
+  right: 2px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #ef4444;
+  border: 2px solid var(--bg-primary, #111214);
+  animation: pulse-dot 2s infinite;
+}
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: .4; }
 }
 
 /* Avatar carré arrondi en bas du rail (même style que les avatars dans le chat) */

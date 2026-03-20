@@ -30,7 +30,9 @@ function connectSocket(token: string): void {
   socket = io(SERVER_URL, {
     auth: { token },
     transports: ['websocket', 'polling'],
-    reconnectionAttempts: 5,
+    reconnectionAttempts: Infinity,
+    reconnectionDelay: 1000,
+    reconnectionDelayMax: 30000,
   })
   socket.on('msg:new', (data: MsgNewPayload) => {
     msgCallbacks.forEach((cb) => cb(data))
@@ -50,19 +52,41 @@ function connectSocket(token: string): void {
   })
 }
 
-// ─── Fetch vers le serveur ────────────────────────────────────────────────────
-async function apiFetch(path: string, options: RequestInit = {}): Promise<unknown> {
+// ─── Fetch vers le serveur (avec timeout, retry, 401 handling) ───────────────
+const FETCH_TIMEOUT = 15_000
+const MAX_RETRIES   = 2
+
+async function apiFetch(path: string, options: RequestInit = {}, retries = MAX_RETRIES): Promise<unknown> {
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     ...(jwtToken ? { Authorization: `Bearer ${jwtToken}` } : {}),
     ...(options.headers as Record<string, string> ?? {}),
   }
-  const res = await fetch(`${SERVER_URL}${path}`, { ...options, headers })
-  if (!res.ok && res.status === 401) {
-    jwtToken = null
-    socket?.disconnect()
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      const ctrl = new AbortController()
+      const timer = setTimeout(() => ctrl.abort(), FETCH_TIMEOUT)
+      const res = await fetch(`${SERVER_URL}${path}`, { ...options, headers, signal: ctrl.signal })
+      clearTimeout(timer)
+      if (res.status === 401) {
+        jwtToken = null
+        socket?.disconnect()
+        // Notifier le renderer que la session a expiré
+        try { ipcRenderer.send('auth:expired') } catch {}
+        return { ok: false, error: 'Session expirée. Veuillez vous reconnecter.' }
+      }
+      return await res.json()
+    } catch (e: unknown) {
+      const isAbort = e instanceof Error && e.name === 'AbortError'
+      if (attempt === retries) {
+        console.warn(`[API] ${path} échoué après ${retries + 1} tentative(s):`, isAbort ? 'timeout' : (e as Error).message)
+        return { ok: false, error: isAbort ? 'Délai d\'attente dépassé' : 'Erreur réseau — vérifiez votre connexion' }
+      }
+      // Backoff avant retry (1s, 3s)
+      await new Promise(r => setTimeout(r, 1000 * (attempt + 1)))
+    }
   }
-  return res.json()
+  return { ok: false, error: 'Erreur réseau' }
 }
 
 function get(path: string)                      { return apiFetch(path) }

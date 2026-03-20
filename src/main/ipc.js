@@ -32,7 +32,13 @@ function handle(channel, fn) {
     try {
       return { ok: true, data: fn(...args) }
     } catch (err) {
-      console.error(`[IPC ${channel}]`, err.message)
+      // Log complet (stack + type d'erreur) pour le debugging
+      const isDbError = err.code && err.code.startsWith('SQLITE_')
+      if (isDbError) {
+        console.error(`[IPC ${channel}] DB error (${err.code}):`, err.message)
+      } else {
+        console.error(`[IPC ${channel}]`, err.stack || err.message)
+      }
       return { ok: false, error: err.message }
     }
   })

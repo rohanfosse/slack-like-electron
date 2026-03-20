@@ -42,6 +42,17 @@
   const promoCreatedKey = ref(0)
   function onPromoCreated() { promoCreatedKey.value++ }
 
+  // Flash "Reconnecté" pendant 3s
+  const justReconnected = ref(false)
+  let _wasDisconnected = false
+  watch(() => appStore.socketConnected, (connected) => {
+    if (connected && _wasDisconnected) {
+      justReconnected.value = true
+      setTimeout(() => { justReconnected.value = false }, 3000)
+    }
+    _wasDisconnected = !connected
+  })
+
   // ── Mobile sidebar drawer ──────────────────────────────────────────────────
   const sidebarOpen = ref(false)
   function toggleSidebar() { sidebarOpen.value = !sidebarOpen.value }
@@ -83,7 +94,8 @@
   let unsubOnline:   (() => void) | null = null
   let unsubSocket:   (() => void) | null = null
   let unsubTyping:   (() => void) | null = null
-  let unsubPresence: (() => void) | null = null
+  let unsubPresence:    (() => void) | null = null
+  let unsubAuthExpired: (() => void) | null = null
 
   onMounted(() => {
     // Appliquer le thème sauvegardé
@@ -124,13 +136,14 @@
     // Écouter l'état du socket temps-réel
     unsubSocket = appStore.initSocketListener()
     unsubPresence = appStore.initPresenceListener()
+    unsubAuthExpired = appStore.initAuthExpiredListener()
 
     // Écouter les indicateurs de frappe
     const messagesStore = useMessagesStore()
     unsubTyping = messagesStore.initTypingListener()
   })
 
-  onUnmounted(() => { unsubUnread?.(); unsubOnline?.(); unsubSocket?.(); unsubTyping?.(); unsubPresence?.() })
+  onUnmounted(() => { unsubUnread?.(); unsubOnline?.(); unsubSocket?.(); unsubTyping?.(); unsubPresence?.(); unsubAuthExpired?.() })
 </script>
 
 <template>
@@ -152,14 +165,26 @@
     <NavRail />
 
     <!-- Bandeau hors-ligne -->
-    <div v-if="!appStore.isOnline" class="offline-banner">
-      <span>Mode hors-ligne — les données locales restent accessibles, les liens externes sont indisponibles.</span>
+    <div v-if="!appStore.isOnline" class="offline-banner offline-banner-red">
+      <span>Vous êtes hors ligne — vérifiez votre connexion internet.</span>
     </div>
 
     <!-- Bandeau reconnexion socket -->
     <div v-else-if="appStore.currentUser && !appStore.socketConnected" class="socket-banner">
       <span class="socket-spinner" />
       <span>Reconnexion au serveur en cours…</span>
+    </div>
+
+    <!-- Bandeau reconnecté (flash vert) -->
+    <Transition name="reconnected-fade">
+      <div v-if="justReconnected" class="offline-banner offline-banner-green">
+        <span>Reconnecté</span>
+      </div>
+    </Transition>
+
+    <!-- Bandeau session expirée -->
+    <div v-if="appStore.sessionExpiredMessage" class="offline-banner offline-banner-red">
+      <span>{{ appStore.sessionExpiredMessage }}</span>
     </div>
 
     <!-- Bandeau simulation étudiant -->
@@ -326,6 +351,11 @@
     border-bottom: 1px solid rgba(255,255,255,.07);
   }
 
+  .offline-banner-red  { background: #991b1b; color: #fecaca; }
+  .offline-banner-green { background: #166534; color: #bbf7d0; }
+  .reconnected-fade-enter-active { transition: opacity .3s; }
+  .reconnected-fade-leave-active { transition: opacity .5s; }
+  .reconnected-fade-enter-from, .reconnected-fade-leave-to { opacity: 0; }
   .simulation-banner.banner-shift { top: calc(var(--titlebar-height, 32px) + 36px); }
 
   /* Bandeau reconnexion socket */
