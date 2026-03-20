@@ -1156,7 +1156,7 @@
 
 /* ── Catégories de canaux ── */
 .sidebar-category {
-  margin-bottom: 4px;
+  margin-bottom: 2px;
 }
 
 .sidebar-category-header {
@@ -1302,7 +1302,7 @@
 .dm-toggle-btn:hover { color: var(--accent, #4a90d9); background: rgba(255,255,255,.06); }
 
 .dm-item {
-  display: flex !important; align-items: center; gap: 8px; padding: 5px 12px !important;
+  display: flex !important; align-items: center; gap: 6px; padding: 4px 10px 4px 14px !important;
 }
 .dm-avatar {
   width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center;

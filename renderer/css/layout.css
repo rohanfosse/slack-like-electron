@@ -291,12 +291,12 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 14px 16px 4px;
-  font-size: 12px;
+  padding: 10px 14px 3px;
+  font-size: 11px;
   font-weight: 700;
-  color: var(--text-secondary);
+  color: var(--text-muted);
   text-transform: uppercase;
-  letter-spacing: .6px;
+  letter-spacing: .5px;
   flex-shrink: 0;
 }
 
@@ -311,10 +311,10 @@ nav[aria-label="Messages directs"] {
 .sidebar-item {
   display: flex;
   align-items: center;
-  gap: 8px;
-  width: 100%;
-  padding: 7px 12px 7px 16px;
-  min-height: 36px; /* touch target */
+  gap: 6px;
+  width: calc(100% - 8px);
+  padding: 4px 10px 4px 14px;
+  min-height: 30px;
   border: none;
   background: transparent;
   color: var(--text-secondary);
@@ -322,15 +322,13 @@ nav[aria-label="Messages directs"] {
   font-size: 14px;
   font-weight: 400;
   cursor: pointer;
-  border-radius: 6px;
-  margin: 1px 4px;
-  transition: background var(--t-fast), color var(--t-fast);
-  width: calc(100% - 8px);
+  border-radius: 5px;
+  margin: 0 4px;
   text-align: left;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  transition: background .1s, color .1s;
+  transition: background var(--t-fast), color var(--t-fast);
 }
 
 .sidebar-item:hover {
