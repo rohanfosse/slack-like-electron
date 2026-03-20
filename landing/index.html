@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="description" content="Cursus — La plateforme pédagogique pour les formations CESI. Messagerie, devoirs, documents et suivi en un seul endroit." />
-  <meta name="theme-color" content="#4A90D9" />
+  <meta name="theme-color" content="#0a0a0f" />
   <title>Cursus — Plateforme pédagogique CESI</title>
   <link rel="icon" type="image/png" href="/assets/icon-192.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -12,30 +12,27 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
   <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js" defer></script>
   <style>
-    /* ═══ Reset ═══ */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     html { scroll-behavior: smooth; }
 
     :root {
-      --bg: #08090c;
-      --bg-elevated: #0f1117;
-      --bg-card: #13151b;
-      --bg-card-hover: #191c24;
-      --accent: #4A90D9;
-      --accent-hover: #5da3f0;
-      --accent-glow: rgba(74,144,217,.15);
-      --accent-glow-strong: rgba(74,144,217,.3);
-      --purple: #9b87f5;
-      --green: #2ECC71;
-      --orange: #F39C12;
-      --text: #e2e4e8;
-      --text-secondary: #8b8f98;
-      --text-muted: #4e5260;
-      --border: rgba(255,255,255,.06);
-      --border-accent: rgba(74,144,217,.15);
-      --radius: 16px;
-      --radius-sm: 10px;
-      --font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      --bg:            #0a0a0f;
+      --bg-card:       rgba(255,255,255,.03);
+      --bg-card-hover: rgba(255,255,255,.055);
+      --accent:        #4A90D9;
+      --accent-dim:    rgba(74,144,217,.12);
+      --accent-glow:   rgba(74,144,217,.25);
+      --purple:        #9b87f5;
+      --green:         #34d399;
+      --orange:        #fb923c;
+      --text:          #f0f2f5;
+      --text-2:        #8b90a0;
+      --text-3:        #40444f;
+      --border:        rgba(255,255,255,.07);
+      --border-2:      rgba(255,255,255,.12);
+      --r:             14px;
+      --r-sm:          9px;
+      --font:          'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
     }
 
     body {
@@ -45,358 +42,530 @@
       -webkit-font-smoothing: antialiased;
       overflow-x: hidden;
       line-height: 1.6;
+      position: relative;
     }
 
-    a { color: var(--accent); text-decoration: none; transition: color .15s; }
-    a:hover { color: var(--accent-hover); }
+    /* ── Grille de fond (style Linear) ── */
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background-image:
+        linear-gradient(var(--border) 1px, transparent 1px),
+        linear-gradient(90deg, var(--border) 1px, transparent 1px);
+      background-size: 44px 44px;
+      pointer-events: none; z-index: 0;
+      mask-image: linear-gradient(to bottom, transparent, black 8%, black 90%, transparent);
+    }
 
-    .container { max-width: 1100px; margin: 0 auto; padding: 0 24px; }
+    a { color: var(--accent); text-decoration: none; }
+    .container { max-width: 1080px; margin: 0 auto; padding: 0 28px; position: relative; z-index: 1; }
 
-    /* ═══ Nav ═══ */
+    /* ════════ NAV ════════ */
     .nav {
-      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
-      padding: 12px 0;
-      background: rgba(8,9,12,.8);
-      backdrop-filter: blur(20px) saturate(1.4);
+      position: fixed; top: 0; left: 0; right: 0; z-index: 200;
+      padding: 14px 0;
+      background: rgba(10,10,15,.75);
+      backdrop-filter: blur(24px) saturate(1.5);
       border-bottom: 1px solid var(--border);
     }
-    .nav .container { display: flex; align-items: center; gap: 12px; }
-    .nav-logo { display: flex; align-items: center; gap: 10px; font-size: 17px; font-weight: 800; letter-spacing: -.3px; color: var(--text); }
-    .nav-logo img { width: 30px; height: 30px; border-radius: 8px; }
-    .nav-links { display: flex; gap: 32px; margin-left: auto; font-size: 13.5px; font-weight: 500; }
-    .nav-links a { color: var(--text-secondary); }
-    .nav-links a:hover { color: #fff; }
-    .nav-cta {
-      padding: 8px 22px; background: var(--accent); color: #fff !important;
-      border-radius: var(--radius-sm); font-weight: 600; font-size: 13px;
-      transition: all .15s; box-shadow: 0 2px 12px var(--accent-glow);
-    }
-    .nav-cta:hover { background: var(--accent-hover); transform: translateY(-1px); box-shadow: 0 4px 20px var(--accent-glow-strong); }
+    .nav .container { display: flex; align-items: center; }
+    .nav-logo { display: flex; align-items: center; gap: 9px; font-size: 16px; font-weight: 800; letter-spacing: -.4px; color: var(--text); }
+    .nav-logo img { width: 28px; height: 28px; border-radius: 7px; }
+    .nav-links { display: flex; gap: 4px; margin-left: auto; margin-right: 16px; }
+    .nav-links a { padding: 6px 13px; font-size: 13px; font-weight: 500; color: var(--text-2); border-radius: var(--r-sm); transition: color .15s, background .15s; }
+    .nav-links a:hover { color: var(--text); background: rgba(255,255,255,.05); }
+    .nav-cta { padding: 8px 20px; background: var(--text); color: var(--bg) !important; border-radius: var(--r-sm); font-size: 13px; font-weight: 700; transition: opacity .15s; }
+    .nav-cta:hover { opacity: .88; }
 
-    /* ═══ Hero ═══ */
-    .hero {
-      padding: 180px 0 120px; text-align: center; position: relative; overflow: hidden;
-    }
-    .hero::before {
-      content: ''; position: absolute; top: -200px; left: 50%; transform: translateX(-50%);
-      width: 900px; height: 900px; border-radius: 50%;
-      background: radial-gradient(circle, rgba(74,144,217,.1) 0%, rgba(74,144,217,.03) 40%, transparent 70%);
+    /* ════════ HERO ════════ */
+    .hero { padding: 170px 0 100px; text-align: center; position: relative; overflow: hidden; }
+    .hero-glow {
+      position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+      width: 700px; height: 500px;
+      background: radial-gradient(ellipse at 50% 20%, rgba(74,144,217,.18) 0%, transparent 65%);
       pointer-events: none;
     }
-    .hero::after {
-      content: ''; position: absolute; top: 60%; right: -100px;
-      width: 500px; height: 500px; border-radius: 50%;
-      background: radial-gradient(circle, rgba(155,135,245,.06) 0%, transparent 70%);
-      pointer-events: none;
-    }
-    .hero .container { position: relative; z-index: 1; }
 
-    .hero-badge {
-      display: inline-flex; align-items: center; gap: 8px;
-      padding: 7px 18px 7px 12px;
-      background: rgba(74,144,217,.08); border: 1px solid rgba(74,144,217,.18);
-      border-radius: 100px; font-size: 12.5px; font-weight: 600;
-      color: var(--accent); margin-bottom: 32px;
+    .hero-eyebrow {
+      display: inline-flex; align-items: center; gap: 7px;
+      padding: 5px 14px 5px 10px;
+      border: 1px solid var(--border-2); border-radius: 100px;
+      font-size: 12px; font-weight: 600; color: var(--text-2);
+      margin-bottom: 36px; background: rgba(255,255,255,.03);
     }
-    .hero-badge-dot {
-      width: 8px; height: 8px; border-radius: 50%;
-      background: var(--green);
-      box-shadow: 0 0 8px rgba(46,204,113,.5);
-      animation: pulse-dot 2s ease-in-out infinite;
+    .hero-eyebrow-dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: var(--green); box-shadow: 0 0 8px var(--green);
+      animation: blink 2.5s ease-in-out infinite;
     }
-    @keyframes pulse-dot {
-      0%, 100% { opacity: 1; transform: scale(1); }
-      50% { opacity: .6; transform: scale(.8); }
-    }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.4} }
 
     .hero h1 {
-      font-size: clamp(38px, 5.5vw, 62px); font-weight: 900;
-      line-height: 1.08; letter-spacing: -2px;
-      max-width: 740px; margin: 0 auto 22px;
-      background: linear-gradient(135deg, #fff 0%, #c8d6e8 100%);
-      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-      background-clip: text;
+      font-size: clamp(42px, 6vw, 72px); font-weight: 900;
+      letter-spacing: -3px; line-height: 1.04;
+      max-width: 760px; margin: 0 auto 20px; color: #fff;
     }
-    .hero h1 em {
-      font-style: normal;
-      background: linear-gradient(135deg, var(--accent) 0%, var(--purple) 100%);
-      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-      background-clip: text;
+    .hero h1 span {
+      background: linear-gradient(130deg, var(--accent) 0%, var(--purple) 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
     }
-    .hero-sub {
-      font-size: 17px; color: var(--text-secondary);
-      max-width: 520px; margin: 0 auto 44px; line-height: 1.7;
-    }
-    .hero-ctas { display: flex; justify-content: center; gap: 14px; flex-wrap: wrap; margin-bottom: 64px; }
+    .hero-sub { font-size: 17px; color: var(--text-2); max-width: 480px; margin: 0 auto 44px; line-height: 1.65; }
 
-    .btn-primary {
+    .hero-actions { display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; margin-bottom: 64px; }
+    .btn {
       display: inline-flex; align-items: center; gap: 8px;
-      padding: 14px 34px; background: var(--accent); color: #fff; border: none;
-      border-radius: var(--radius-sm); font-family: var(--font); font-size: 15px; font-weight: 700;
-      cursor: pointer; transition: all .2s;
-      box-shadow: 0 4px 20px var(--accent-glow);
+      padding: 13px 28px; border-radius: var(--r-sm);
+      font-family: var(--font); font-size: 14.5px; font-weight: 700;
+      cursor: pointer; transition: all .18s; border: none;
     }
-    .btn-primary:hover { background: var(--accent-hover); transform: translateY(-2px); box-shadow: 0 8px 40px var(--accent-glow-strong); }
-    .btn-ghost {
-      display: inline-flex; align-items: center; gap: 8px;
-      padding: 14px 34px; background: rgba(255,255,255,.04); color: var(--text);
-      border: 1.5px solid rgba(255,255,255,.1); border-radius: var(--radius-sm);
-      font-family: var(--font); font-size: 15px; font-weight: 700; cursor: pointer;
-      transition: all .2s;
-    }
-    .btn-ghost:hover { background: rgba(255,255,255,.08); border-color: rgba(255,255,255,.2); color: #fff; }
+    .btn-white { background: #fff; color: #0a0a0f; }
+    .btn-white:hover { background: #e8edf5; }
+    .btn-outline { background: transparent; color: var(--text-2); border: 1px solid var(--border-2); }
+    .btn-outline:hover { color: var(--text); border-color: rgba(255,255,255,.25); background: rgba(255,255,255,.04); }
 
-    /* ═══ Floating mockup ═══ */
-    .hero-mockup {
-      max-width: 860px; margin: 0 auto; position: relative;
-      background: var(--bg-elevated); border: 1px solid var(--border);
-      border-radius: 16px; overflow: hidden;
-      box-shadow: 0 32px 80px rgba(0,0,0,.5), 0 0 0 1px rgba(255,255,255,.03) inset;
+    /* ════════ DEMO WINDOW ════════ */
+    .demo-wrapper {
+      max-width: 860px; margin: 0 auto;
+      position: relative;
     }
-    .mockup-bar {
-      display: flex; align-items: center; gap: 7px;
-      padding: 11px 16px; background: rgba(255,255,255,.03);
-      border-bottom: 1px solid var(--border);
+    /* Halo glow sous la fenêtre */
+    .demo-wrapper::after {
+      content: '';
+      position: absolute; bottom: -40px; left: 10%; right: 10%; height: 60px;
+      background: radial-gradient(ellipse, rgba(74,144,217,.25) 0%, transparent 70%);
+      filter: blur(20px);
+      pointer-events: none;
     }
-    .mockup-dot { width: 11px; height: 11px; border-radius: 50%; }
-    .mockup-body {
-      display: grid; grid-template-columns: 60px 200px 1fr;
-      min-height: 340px;
+
+    .demo-window {
+      background: #0f1017;
+      border: 1px solid rgba(255,255,255,.1);
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 40px 100px rgba(0,0,0,.7), 0 0 0 1px rgba(255,255,255,.04) inset;
+      text-align: left;
     }
-    .mockup-rail {
-      background: rgba(255,255,255,.02); border-right: 1px solid var(--border);
-      padding: 16px 0; display: flex; flex-direction: column; align-items: center; gap: 12px;
-    }
-    .mockup-rail-icon {
-      width: 32px; height: 32px; border-radius: 8px;
-      background: rgba(255,255,255,.05); display: flex; align-items: center; justify-content: center;
-    }
-    .mockup-rail-icon.active { background: var(--accent-glow-strong); }
-    .mockup-sidebar {
-      background: rgba(255,255,255,.015); border-right: 1px solid var(--border);
-      padding: 16px 12px;
-    }
-    .mockup-sidebar-title { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .8px; color: var(--text-muted); margin-bottom: 10px; }
-    .mockup-channel {
+
+    /* Barre de titre style macOS */
+    .demo-titlebar {
       display: flex; align-items: center; gap: 6px;
-      padding: 6px 8px; border-radius: 6px; font-size: 12px;
-      color: var(--text-secondary); margin-bottom: 2px;
+      padding: 12px 16px;
+      background: rgba(255,255,255,.025);
+      border-bottom: 1px solid rgba(255,255,255,.06);
     }
-    .mockup-channel.active { background: var(--accent-glow); color: var(--accent); font-weight: 600; }
-    .mockup-channel-hash { opacity: .5; }
-    .mockup-main { padding: 20px; }
-    .mockup-msg { display: flex; gap: 10px; margin-bottom: 14px; }
-    .mockup-avatar { width: 28px; height: 28px; border-radius: 6px; flex-shrink: 0; }
-    .mockup-msg-body { flex: 1; }
-    .mockup-msg-name { font-size: 11px; font-weight: 700; margin-bottom: 2px; }
-    .mockup-msg-text { font-size: 11.5px; color: var(--text-secondary); line-height: 1.5; }
-    .mockup-msg-text code {
-      background: rgba(255,255,255,.08); padding: 1px 4px; border-radius: 3px; font-size: 10.5px;
+    .demo-dot { width: 11px; height: 11px; border-radius: 50%; }
+
+    /* Onglets */
+    .demo-tabs {
+      display: flex; gap: 2px;
+      padding: 10px 12px 0;
+      background: rgba(255,255,255,.015);
+      border-bottom: 1px solid rgba(255,255,255,.06);
+    }
+    .demo-tab {
+      display: flex; align-items: center; gap: 6px;
+      padding: 8px 16px 9px;
+      font-size: 12.5px; font-weight: 600;
+      color: var(--text-3); cursor: pointer;
+      border-radius: 8px 8px 0 0;
+      border: 1px solid transparent;
+      border-bottom: none;
+      transition: color .2s, background .2s;
+      user-select: none;
+    }
+    .demo-tab svg { width: 13px; height: 13px; }
+    .demo-tab.active {
+      color: var(--text);
+      background: #0f1017;
+      border-color: rgba(255,255,255,.08);
+      border-bottom-color: #0f1017;
+    }
+    .demo-tab:not(.active):hover { color: var(--text-2); background: rgba(255,255,255,.03); }
+
+    /* Progress bar en haut de la fenêtre */
+    .demo-progress {
+      height: 2px;
+      background: rgba(255,255,255,.05);
+      position: relative;
+      overflow: hidden;
+    }
+    .demo-progress-bar {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent), var(--purple));
+      width: 0%;
+      transition: width 0.1s linear;
     }
 
-    /* ═══ Stats bar ═══ */
-    .stats { padding: 40px 0 0; }
-    .stats-grid { display: flex; justify-content: center; gap: 48px; flex-wrap: wrap; }
-    .stat { text-align: center; }
-    .stat-value { font-size: 32px; font-weight: 800; letter-spacing: -1px; color: var(--accent); }
-    .stat-label { font-size: 13px; color: var(--text-muted); font-weight: 500; margin-top: 2px; }
+    /* Contenu des onglets */
+    .demo-body {
+      display: flex;
+      min-height: 320px;
+    }
+    .demo-sidebar {
+      width: 180px; flex-shrink: 0;
+      background: rgba(255,255,255,.015);
+      border-right: 1px solid rgba(255,255,255,.06);
+      padding: 14px 10px;
+    }
+    .demo-sidebar-title {
+      font-size: 9.5px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .9px; color: var(--text-3); margin-bottom: 6px; padding: 0 6px;
+    }
+    .demo-channel {
+      display: flex; align-items: center; gap: 5px;
+      padding: 5px 8px; border-radius: 6px;
+      font-size: 12px; color: var(--text-2); cursor: pointer;
+      transition: background .15s;
+    }
+    .demo-channel.active { background: rgba(74,144,217,.12); color: var(--accent); font-weight: 600; }
+    .demo-channel:hover:not(.active) { background: rgba(255,255,255,.04); }
+    .demo-channel-hash { opacity: .5; font-size: 11px; }
 
-    /* ═══ Pour qui ═══ */
-    .who { padding: 100px 0 0; }
-    .who-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-top: 56px; }
-    .who-card {
-      background: var(--bg-card); border: 1px solid var(--border);
-      border-radius: var(--radius); padding: 36px 32px;
-    }
-    .who-card-head {
-      display: flex; align-items: center; gap: 14px; margin-bottom: 24px;
-    }
-    .who-icon {
-      width: 48px; height: 48px; border-radius: 14px;
-      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
-    }
-    .who-icon svg { width: 22px; height: 22px; }
-    .wi-student { background: rgba(74,144,217,.1); color: var(--accent); }
-    .wi-teacher { background: rgba(155,135,245,.1); color: var(--purple); }
-    .who-card h3 { font-size: 19px; font-weight: 700; }
-    .who-card p { font-size: 13.5px; color: var(--text-secondary); margin-bottom: 20px; }
-    .who-list { list-style: none; display: flex; flex-direction: column; gap: 10px; }
-    .who-list li {
-      display: flex; align-items: flex-start; gap: 10px;
-      font-size: 14px; color: var(--text-secondary);
-    }
-    .who-list li::before {
-      content: ''; width: 6px; height: 6px; border-radius: 50%;
-      background: var(--accent); flex-shrink: 0; margin-top: 7px;
-    }
-    .wi-teacher ~ .who-list li::before { background: var(--purple); }
-    .who-card.teacher .who-list li::before { background: var(--purple); }
+    .demo-main { flex: 1; padding: 18px 20px; display: flex; flex-direction: column; }
 
-    /* ═══ Features ═══ */
-    .features { padding: 100px 0 80px; }
-    .section-label {
-      text-align: center; font-size: 12px; font-weight: 700; text-transform: uppercase;
-      letter-spacing: 2px; color: var(--accent); margin-bottom: 14px;
+    /* Panel chat */
+    .chat-panel {}
+    .chat-messages { display: flex; flex-direction: column; gap: 12px; flex: 1; overflow: hidden; }
+    .chat-msg {
+      display: flex; gap: 9px; align-items: flex-start;
+      opacity: 0; transform: translateY(8px);
+      transition: opacity .35s ease, transform .35s ease;
     }
-    .section-title {
-      text-align: center; font-size: 34px; font-weight: 800; letter-spacing: -.8px; margin-bottom: 14px;
+    .chat-msg.visible { opacity: 1; transform: translateY(0); }
+    .chat-av {
+      width: 28px; height: 28px; border-radius: 7px;
+      flex-shrink: 0; display: flex; align-items: center;
+      justify-content: center; font-size: 10px; font-weight: 800; color: #fff;
     }
-    .section-sub {
-      text-align: center; color: var(--text-secondary); font-size: 16px; margin-bottom: 56px;
-      max-width: 500px; margin-left: auto; margin-right: auto;
+    .chat-name { font-size: 11.5px; font-weight: 700; margin-bottom: 2px; }
+    .chat-time { font-size: 10px; color: var(--text-3); margin-left: 6px; font-weight: 400; }
+    .chat-text { font-size: 12.5px; color: var(--text-2); line-height: 1.55; }
+    .chat-text code {
+      font-size: 11px; background: rgba(255,255,255,.07);
+      padding: 1px 5px; border-radius: 3px;
+      font-family: 'SF Mono', 'Fira Code', monospace;
     }
-    .features-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 18px; }
-    .feature-card {
-      background: var(--bg-card); border: 1px solid var(--border);
-      border-radius: var(--radius); padding: 34px 30px;
-      transition: all .25s cubic-bezier(.4,0,.2,1);
-      position: relative; overflow: hidden;
+    .chat-text strong { color: var(--text); font-weight: 700; }
+    .chat-pill {
+      display: inline-flex; align-items: center; gap: 5px;
+      font-size: 11px; font-weight: 600;
+      padding: 2px 9px; border-radius: 4px;
+      background: var(--accent-dim); color: var(--accent);
+      margin-top: 5px;
     }
-    .feature-card::before {
-      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
-      background: linear-gradient(90deg, transparent, var(--accent), transparent);
-      opacity: 0; transition: opacity .25s;
+    .chat-input-row {
+      margin-top: 14px;
+      display: flex; align-items: center; gap: 8px;
+      background: rgba(255,255,255,.04);
+      border: 1px solid rgba(255,255,255,.08);
+      border-radius: 8px; padding: 9px 12px;
     }
-    .feature-card:hover {
-      background: var(--bg-card-hover); border-color: var(--border-accent);
-      transform: translateY(-4px); box-shadow: 0 16px 48px rgba(0,0,0,.3);
+    .chat-input-text {
+      flex: 1; font-size: 12px; color: var(--text-2);
+      font-family: var(--font);
     }
-    .feature-card:hover::before { opacity: 1; }
-    .feature-icon-wrap {
-      width: 52px; height: 52px; border-radius: 14px;
-      display: flex; align-items: center; justify-content: center;
-      margin-bottom: 20px;
+    .chat-cursor {
+      display: inline-block; width: 2px; height: 13px;
+      background: var(--accent); vertical-align: middle; margin-left: 1px;
+      animation: cursor-blink .8s step-end infinite;
     }
-    .feature-icon-wrap svg { width: 24px; height: 24px; }
-    .fi-blue   { background: rgba(74,144,217,.1); color: var(--accent); }
-    .fi-orange { background: rgba(243,156,18,.1); color: var(--orange); }
-    .fi-green  { background: rgba(46,204,113,.1); color: var(--green); }
-    .fi-purple { background: rgba(155,135,245,.1); color: var(--purple); }
-    .feature-card h3 { font-size: 18px; font-weight: 700; margin-bottom: 8px; letter-spacing: -.2px; }
-    .feature-card p { font-size: 14px; color: var(--text-secondary); line-height: 1.7; }
-    .feature-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 14px; }
-    .feature-tag {
-      font-size: 11px; font-weight: 600; padding: 3px 10px;
-      border-radius: 100px; background: rgba(255,255,255,.04);
-      color: var(--text-muted); border: 1px solid rgba(255,255,255,.06);
+    @keyframes cursor-blink { 0%,100%{opacity:1} 50%{opacity:0} }
+    .typing-indicator {
+      display: flex; align-items: center; gap: 6px;
+      font-size: 11px; color: var(--text-3);
+      min-height: 18px; margin-top: 4px;
     }
+    .typing-dots { display: flex; gap: 3px; }
+    .typing-dots span {
+      width: 4px; height: 4px; border-radius: 50%; background: var(--text-3);
+      animation: tdot 1.2s ease-in-out infinite;
+    }
+    .typing-dots span:nth-child(2) { animation-delay: .2s; }
+    .typing-dots span:nth-child(3) { animation-delay: .4s; }
+    @keyframes tdot { 0%,80%,100%{transform:translateY(0)} 40%{transform:translateY(-4px)} }
 
-    /* ═══ Download ═══ */
-    .download { padding: 80px 0 0; }
-    .download-grid {
-      display: grid; grid-template-columns: repeat(3, 1fr);
-      gap: 18px; max-width: 860px; margin: 0 auto;
-    }
-    .dl-card {
-      background: var(--bg-card); border: 1px solid var(--border);
-      border-radius: var(--radius); padding: 40px 28px 32px;
-      text-align: center; transition: all .25s; position: relative;
-    }
-    .dl-card:hover { border-color: var(--border-accent); transform: translateY(-3px); box-shadow: 0 12px 40px rgba(0,0,0,.3); }
-    .dl-card.recommended {
-      border-color: rgba(74,144,217,.3);
-      box-shadow: 0 0 60px var(--accent-glow), 0 0 0 1px rgba(74,144,217,.1) inset;
-    }
-    .dl-card.recommended::after {
-      content: 'Recommandé'; position: absolute; top: 12px; right: 12px;
-      font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px;
-      padding: 3px 10px; border-radius: 100px;
-      background: var(--accent); color: #fff;
-    }
-    .dl-icon-wrap {
-      width: 64px; height: 64px; border-radius: 16px;
-      display: flex; align-items: center; justify-content: center;
-      margin: 0 auto 20px; font-size: 28px;
-    }
-    .dl-icon-wrap svg { width: 28px; height: 28px; }
-    .dli-win { background: rgba(74,144,217,.08); color: var(--accent); }
-    .dli-mac { background: rgba(155,135,245,.08); color: var(--purple); }
-    .dli-web { background: rgba(46,204,113,.08); color: var(--green); }
-    .dl-card h3 { font-size: 17px; font-weight: 700; margin-bottom: 4px; }
-    .dl-card p { font-size: 13px; color: var(--text-muted); margin-bottom: 22px; }
-    .dl-btn {
-      display: inline-flex; align-items: center; gap: 7px;
-      padding: 11px 26px; border-radius: var(--radius-sm);
-      font-family: var(--font); font-size: 13.5px; font-weight: 700;
-      cursor: pointer; transition: all .15s; text-decoration: none;
-    }
-    .dl-btn-primary { background: var(--accent); color: #fff; border: none; box-shadow: 0 2px 12px var(--accent-glow); }
-    .dl-btn-primary:hover { background: var(--accent-hover); color: #fff; transform: translateY(-1px); }
-    .dl-btn-ghost { background: rgba(255,255,255,.04); color: var(--text); border: 1.5px solid rgba(255,255,255,.1); }
-    .dl-btn-ghost:hover { background: rgba(255,255,255,.08); border-color: rgba(255,255,255,.2); color: #fff; }
-
-    /* ═══ Changelog ═══ */
-    .changelog { padding: 56px 0 100px; }
-    .changelog-inner {
-      max-width: 680px; margin: 0 auto;
-      background: var(--bg-card); border: 1px solid var(--border);
-      border-radius: var(--radius); padding: 32px 36px;
-    }
-    .changelog-head {
+    /* Panel devoirs */
+    .devoirs-panel { display: none; flex-direction: column; gap: 0; }
+    .devoirs-panel.active { display: flex; }
+    .devoirs-header {
       display: flex; align-items: center; justify-content: space-between;
-      margin-bottom: 20px; flex-wrap: wrap; gap: 8px;
+      margin-bottom: 14px;
     }
-    .changelog-title { font-size: 16px; font-weight: 700; }
-    .changelog-version {
-      font-size: 12px; font-weight: 700; padding: 4px 12px;
-      background: rgba(74,144,217,.1); color: var(--accent);
-      border-radius: 100px; border: 1px solid rgba(74,144,217,.2);
+    .devoirs-title { font-size: 14px; font-weight: 700; }
+    .devoirs-count { font-size: 11px; color: var(--text-3); }
+    .devoir-row {
+      display: flex; align-items: center; gap: 12px;
+      padding: 10px 0;
+      border-bottom: 1px solid rgba(255,255,255,.05);
+      opacity: 0; transform: translateX(-8px);
+      transition: opacity .3s ease, transform .3s ease;
     }
-    .changelog-date { font-size: 12px; color: var(--text-muted); margin-bottom: 16px; }
-    .changelog-list { list-style: none; display: flex; flex-direction: column; gap: 9px; }
-    .changelog-list li {
-      display: flex; align-items: flex-start; gap: 10px;
-      font-size: 13.5px; color: var(--text-secondary);
+    .devoir-row.visible { opacity: 1; transform: translateX(0); }
+    .devoir-row:last-child { border-bottom: none; }
+    .devoir-check {
+      width: 16px; height: 16px; border-radius: 4px;
+      border: 1.5px solid var(--border-2); flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
     }
-    .changelog-list li::before {
-      content: '✦'; font-size: 9px; color: var(--accent); flex-shrink: 0; margin-top: 4px;
+    .devoir-check.done { background: var(--green); border-color: var(--green); }
+    .devoir-check.done::after { content: '✓'; font-size: 9px; color: #0a0a0f; font-weight: 800; }
+    .devoir-info { flex: 1; }
+    .devoir-name { font-size: 13px; font-weight: 600; }
+    .devoir-sub { font-size: 11px; color: var(--text-3); }
+    .devoir-badge {
+      font-size: 10.5px; font-weight: 700;
+      padding: 3px 10px; border-radius: 5px;
     }
+    .badge-urgent { background: rgba(251,146,60,.12); color: var(--orange); }
+    .badge-ok     { background: rgba(52,211,153,.1);  color: var(--green); }
+    .badge-late   { background: rgba(239,68,68,.1);   color: #f87171; }
+    .badge-done   { background: rgba(255,255,255,.05); color: var(--text-3); }
 
-    /* ═══ Footer ═══ */
-    .footer {
-      padding: 48px 0 40px; border-top: 1px solid var(--border);
-      text-align: center; color: var(--text-muted); font-size: 13px;
+    /* Panel notes */
+    .docs-panel { display: none; flex-direction: column; gap: 0; }
+    .docs-panel.active { display: flex; }
+    .docs-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 14px;
     }
-    .footer-logo { display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 14px; font-size: 15px; font-weight: 700; color: var(--text-secondary); }
-    .footer-logo img { width: 22px; height: 22px; opacity: .6; border-radius: 5px; }
-    .footer-links { display: flex; justify-content: center; gap: 24px; margin-bottom: 12px; flex-wrap: wrap; }
-    .footer-links a { color: var(--text-muted); font-size: 13px; font-weight: 500; }
-    .footer-links a:hover { color: var(--accent); }
+    .docs-title { font-size: 14px; font-weight: 700; }
+    .docs-count { font-size: 11px; color: var(--text-3); }
+    .doc-row {
+      display: flex; align-items: center; gap: 10px;
+      padding: 9px 0; border-bottom: 1px solid rgba(255,255,255,.05);
+      opacity: 0; transform: translateX(-8px);
+      transition: opacity .3s ease, transform .3s ease;
+    }
+    .doc-row.visible { opacity: 1; transform: translateX(0); }
+    .doc-row:last-child { border-bottom: none; }
+    .doc-icon {
+      width: 30px; height: 30px; border-radius: 7px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 10px; font-weight: 800; flex-shrink: 0;
+    }
+    .doc-pdf  { background: rgba(239,68,68,.12);  color: #f87171; }
+    .doc-word { background: rgba(74,144,217,.12); color: var(--accent); }
+    .doc-xlsx { background: rgba(52,211,153,.1);  color: var(--green); }
+    .doc-ppt  { background: rgba(251,146,60,.12); color: var(--orange); }
+    .doc-info { flex: 1; min-width: 0; }
+    .doc-name { font-size: 12.5px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .doc-meta { font-size: 10.5px; color: var(--text-3); }
+    .doc-dl {
+      width: 26px; height: 26px; border-radius: 6px;
+      background: rgba(255,255,255,.04); border: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; cursor: pointer; transition: background .15s;
+    }
+    .doc-dl:hover { background: rgba(255,255,255,.09); }
+    .doc-dl svg { width: 12px; height: 12px; color: var(--text-2); }
 
-    /* ═══ Animations ═══ */
-    .fade-in { opacity: 0; transform: translateY(28px); transition: opacity .7s cubic-bezier(.4,0,.2,1), transform .7s cubic-bezier(.4,0,.2,1); }
-    .fade-in.visible { opacity: 1; transform: translateY(0); }
-    .fade-in:nth-child(2) { transition-delay: .08s; }
-    .fade-in:nth-child(3) { transition-delay: .16s; }
-    .fade-in:nth-child(4) { transition-delay: .24s; }
+    /* ════════ STATS ════════ */
+    .stats { padding: 80px 0; }
+    .stats-grid {
+      display: grid; grid-template-columns: repeat(4, 1fr);
+      gap: 1px; background: var(--border);
+      border: 1px solid var(--border); border-radius: var(--r); overflow: hidden;
+    }
+    .stat { padding: 32px 28px; background: var(--bg); display: flex; flex-direction: column; gap: 6px; }
+    .stat-icon {
+      width: 36px; height: 36px; border-radius: 9px; background: var(--accent-dim);
+      display: flex; align-items: center; justify-content: center;
+      margin-bottom: 8px; color: var(--accent);
+    }
+    .stat-icon svg { width: 18px; height: 18px; }
+    .stat-val { font-size: 26px; font-weight: 900; letter-spacing: -1px; color: #fff; }
+    .stat-lbl { font-size: 13px; color: var(--text-2); }
 
-    /* ═══ Responsive ═══ */
+    /* ════════ POUR QUI ════════ */
+    .who { padding: 40px 0 80px; }
+    .who-block {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 80px; align-items: center;
+      padding: 64px 0;
+      border-top: 1px solid var(--border);
+    }
+    .who-block:last-child { border-bottom: 1px solid var(--border); }
+    .who-block.reverse { direction: rtl; }
+    .who-block.reverse > * { direction: ltr; }
+    .who-eyebrow {
+      display: inline-flex; align-items: center; gap: 8px;
+      font-size: 11px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 1.2px; color: var(--accent); margin-bottom: 16px;
+    }
+    .who-eyebrow-icon {
+      width: 24px; height: 24px; border-radius: 6px; background: var(--accent-dim);
+      display: flex; align-items: center; justify-content: center; color: var(--accent);
+    }
+    .who-eyebrow-icon svg { width: 13px; height: 13px; }
+    .who-title { font-size: 28px; font-weight: 800; letter-spacing: -.8px; margin-bottom: 14px; }
+    .who-desc { font-size: 15px; color: var(--text-2); line-height: 1.7; margin-bottom: 24px; }
+    .who-list { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+    .who-list li { display: flex; align-items: flex-start; gap: 10px; font-size: 14px; color: var(--text-2); }
+    .who-list li::before { content: ''; width: 5px; height: 5px; border-radius: 50%; background: var(--accent); flex-shrink: 0; margin-top: 8px; }
+    .who-block.reverse .who-list li::before { background: var(--purple); }
+    .who-block.reverse .who-eyebrow { color: var(--purple); }
+    .who-block.reverse .who-eyebrow-icon { background: rgba(155,135,245,.12); color: var(--purple); }
+    .who-visual {
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: var(--r); padding: 24px; min-height: 220px;
+      display: flex; flex-direction: column; gap: 10px;
+    }
+    .visual-label { font-size: 9.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .9px; color: var(--text-3); margin-bottom: 6px; }
+    .timeline-item { display: flex; align-items: flex-start; gap: 12px; }
+    .tl-col { display: flex; flex-direction: column; align-items: center; }
+    .tl-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; margin-top: 4px; }
+    .tl-line { width: 1px; flex: 1; background: var(--border); margin: 3px 0; min-height: 20px; }
+    .tl-title { font-size: 12px; font-weight: 600; }
+    .tl-sub { font-size: 11px; color: var(--text-2); }
+    .dash-row {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 7px 0; border-bottom: 1px solid var(--border); font-size: 12px;
+    }
+    .dash-row:last-child { border-bottom: none; }
+    .dash-name { color: var(--text-2); }
+    .dash-badge { font-size: 10.5px; font-weight: 700; padding: 2px 9px; border-radius: 4px; }
+
+    /* ════════ FEATURES ════════ */
+    .features { padding: 40px 0 80px; }
+    .section-eyebrow { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px; color: var(--accent); margin-bottom: 12px; }
+    .section-title { font-size: clamp(26px, 3.5vw, 36px); font-weight: 800; letter-spacing: -.8px; margin-bottom: 8px; }
+    .section-sub { font-size: 15px; color: var(--text-2); max-width: 440px; line-height: 1.6; }
+    .section-head { margin-bottom: 40px; }
+
+    .feat-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; grid-template-rows: auto auto; gap: 10px; }
+    .feat-big {
+      grid-column: span 3;
+      display: grid; grid-template-columns: 1fr 1fr;
+      background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--r); overflow: hidden;
+    }
+    .feat-big-text { padding: 36px; }
+    .feat-big-preview {
+      background: rgba(255,255,255,.015); border-left: 1px solid var(--border);
+      padding: 24px; display: flex; flex-direction: column; gap: 10px;
+    }
+    .feat-icon {
+      width: 44px; height: 44px; border-radius: 12px;
+      display: flex; align-items: center; justify-content: center; margin-bottom: 18px;
+    }
+    .feat-icon svg { width: 22px; height: 22px; }
+    .fi-blue   { background: rgba(74,144,217,.1); color: var(--accent); }
+    .fi-orange { background: rgba(251,146,60,.1); color: var(--orange); }
+    .fi-green  { background: rgba(52,211,153,.1); color: var(--green); }
+    .fi-purple { background: rgba(155,135,245,.1); color: var(--purple); }
+    .feat-big-text h3 { font-size: 20px; font-weight: 700; letter-spacing: -.3px; margin-bottom: 10px; }
+    .feat-big-text p { font-size: 14px; color: var(--text-2); line-height: 1.7; }
+    .feat-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 18px; }
+    .feat-tag { font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 100px; background: rgba(255,255,255,.04); color: var(--text-3); border: 1px solid var(--border); }
+    .feat-card {
+      background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--r);
+      padding: 28px 26px; transition: border-color .2s, background .2s; position: relative; overflow: hidden;
+    }
+    .feat-card::after { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px; background: linear-gradient(90deg, transparent, rgba(255,255,255,.1), transparent); }
+    .feat-card:hover { border-color: var(--border-2); background: var(--bg-card-hover); }
+    .feat-card h3 { font-size: 16px; font-weight: 700; margin-bottom: 8px; }
+    .feat-card p { font-size: 13px; color: var(--text-2); line-height: 1.65; }
+
+    /* ════════ DOWNLOAD ════════ */
+    .download { padding: 40px 0 80px; }
+    .dl-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; max-width: 820px; margin: 0 auto; }
+    .dl-card {
+      background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--r);
+      padding: 32px 24px 28px; text-align: center; transition: border-color .2s; position: relative;
+    }
+    .dl-card:hover { border-color: var(--border-2); }
+    .dl-card.recommended { border-color: rgba(74,144,217,.35); background: rgba(74,144,217,.04); }
+    .dl-card.recommended::before {
+      content: 'Recommandé'; position: absolute; top: -1px; left: 50%; transform: translateX(-50%);
+      font-size: 10px; font-weight: 700; letter-spacing: .5px; text-transform: uppercase;
+      padding: 3px 12px; border-radius: 0 0 8px 8px; background: var(--accent); color: #fff;
+    }
+    .dl-icon { width: 56px; height: 56px; border-radius: 14px; display: flex; align-items: center; justify-content: center; margin: 0 auto 18px; }
+    .dl-icon svg { width: 26px; height: 26px; }
+    .dli-win { background: rgba(74,144,217,.1); color: var(--accent); }
+    .dli-mac { background: rgba(155,135,245,.1); color: var(--purple); }
+    .dli-web { background: rgba(52,211,153,.1); color: var(--green); }
+    .dl-card h3 { font-size: 16px; font-weight: 700; margin-bottom: 4px; }
+    .dl-card p { font-size: 12.5px; color: var(--text-3); margin-bottom: 20px; }
+    .dl-btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 10px 22px; border-radius: var(--r-sm);
+      font-family: var(--font); font-size: 13px; font-weight: 700; cursor: pointer; transition: all .15s;
+    }
+    .dl-btn-solid { background: var(--accent); color: #fff; border: none; }
+    .dl-btn-solid:hover { background: #5da3f0; color: #fff; }
+    .dl-btn-ghost { background: transparent; color: var(--text-2); border: 1px solid var(--border-2); }
+    .dl-btn-ghost:hover { color: var(--text); border-color: rgba(255,255,255,.25); }
+
+    .changelog {
+      max-width: 640px; margin: 40px auto 0;
+      background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--r); padding: 24px 28px;
+    }
+    .changelog-head { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+    .cl-title { font-size: 14px; font-weight: 700; }
+    .cl-ver { font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 100px; background: var(--accent-dim); color: var(--accent); border: 1px solid rgba(74,144,217,.2); }
+    .cl-date { font-size: 12px; color: var(--text-3); margin-left: auto; }
+    .cl-list { list-style: none; display: flex; flex-direction: column; gap: 8px; }
+    .cl-list li { display: flex; gap: 10px; align-items: flex-start; font-size: 13px; color: var(--text-2); }
+    .cl-list li::before { content: '–'; color: var(--text-3); flex-shrink: 0; }
+
+    /* ════════ CTA ════════ */
+    .cta-final { padding: 80px 0 100px; text-align: center; position: relative; overflow: hidden; }
+    .cta-final::before {
+      content: ''; position: absolute; bottom: 0; left: 50%; transform: translateX(-50%);
+      width: 600px; height: 300px;
+      background: radial-gradient(ellipse at 50% 100%, rgba(74,144,217,.15) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .cta-final h2 { font-size: clamp(28px, 4vw, 48px); font-weight: 900; letter-spacing: -1.5px; margin-bottom: 14px; }
+    .cta-final p { font-size: 16px; color: var(--text-2); margin-bottom: 36px; }
+    .cta-actions { display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; }
+
+    /* ════════ FOOTER ════════ */
+    .footer { border-top: 1px solid var(--border); padding: 32px 0; }
+    .footer .container { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; }
+    .footer-logo { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 700; color: var(--text-2); }
+    .footer-logo img { width: 20px; height: 20px; opacity: .5; border-radius: 5px; }
+    .footer-links { display: flex; gap: 20px; flex-wrap: wrap; }
+    .footer-links a { font-size: 13px; color: var(--text-3); transition: color .15s; }
+    .footer-links a:hover { color: var(--text-2); }
+    .footer-copy { font-size: 12px; color: var(--text-3); }
+
+    /* ════════ ANIMATIONS ════════ */
+    .fade-up {
+      opacity: 0; transform: translateY(24px);
+      transition: opacity .65s cubic-bezier(.4,0,.2,1), transform .65s cubic-bezier(.4,0,.2,1);
+    }
+    .fade-up.visible { opacity: 1; transform: translateY(0); }
+    .fade-up:nth-child(2) { transition-delay: .07s; }
+    .fade-up:nth-child(3) { transition-delay: .14s; }
+    .fade-up:nth-child(4) { transition-delay: .21s; }
+
+    /* ════════ RESPONSIVE ════════ */
     @media (max-width: 900px) {
-      .features-grid { grid-template-columns: 1fr; }
-      .download-grid { grid-template-columns: 1fr; max-width: 360px; }
-      .who-grid { grid-template-columns: 1fr; }
-      .mockup-body { grid-template-columns: 1fr; }
-      .mockup-rail, .mockup-sidebar { display: none; }
+      .demo-sidebar { display: none; }
+      .stats-grid { grid-template-columns: 1fr 1fr; }
+      .feat-grid { grid-template-columns: 1fr; }
+      .feat-big { grid-column: span 1; grid-template-columns: 1fr; }
+      .feat-big-preview { display: none; }
+      .dl-grid { grid-template-columns: 1fr; max-width: 340px; }
+      .who-block, .who-block.reverse { grid-template-columns: 1fr; direction: ltr; gap: 32px; }
     }
     @media (max-width: 768px) {
-      .hero { padding: 130px 0 70px; }
-      .hero h1 { font-size: 32px; letter-spacing: -1px; }
+      .hero { padding: 120px 0 60px; }
+      .hero h1 { letter-spacing: -2px; }
       .nav-links { display: none; }
-      .stats-grid { gap: 28px; }
-      .stat-value { font-size: 26px; }
-      .changelog-inner { padding: 24px 20px; }
+      .footer .container { flex-direction: column; align-items: flex-start; }
     }
-    @media (max-width: 480px) {
-      .hero { padding: 110px 0 50px; }
-      .hero-ctas { flex-direction: column; align-items: stretch; }
-      .btn-primary, .btn-ghost { justify-content: center; }
-      .hero-mockup { margin: 0 -12px; border-radius: 12px; }
+    @media (max-width: 520px) {
+      .hero-actions { flex-direction: column; align-items: stretch; }
+      .hero-actions .btn { justify-content: center; }
+      .stats-grid { grid-template-columns: 1fr; }
     }
   </style>
 </head>
 <body>
 
-  <!-- ═══ Nav ═══ -->
+  <!-- NAV -->
   <nav class="nav">
     <div class="container">
       <a href="/" class="nav-logo">
@@ -412,137 +581,272 @@
     </div>
   </nav>
 
-  <!-- ═══ Hero ═══ -->
+  <!-- HERO -->
   <section class="hero">
+    <div class="hero-glow"></div>
     <div class="container">
-      <div class="hero-badge" id="version-badge">
-        <span class="hero-badge-dot"></span>
+
+      <div class="hero-eyebrow" id="version-badge">
+        <span class="hero-eyebrow-dot"></span>
         Disponible maintenant
       </div>
-      <h1>La plateforme pensée pour <em>votre formation</em></h1>
+
+      <h1>Votre classe.<br><span>Organisée.</span> Connectée.</h1>
+
       <p class="hero-sub">
-        Messagerie, devoirs, documents et collaboration en temps réel — tout centralisé en un seul endroit, pour étudiants et enseignants CESI.
+        Messagerie, devoirs et documents centralisés pour étudiants et enseignants CESI — sur le web, Windows ou macOS.
       </p>
-      <div class="hero-ctas">
-        <a href="#download" class="btn-primary">
-          <i data-lucide="download" style="width:16px;height:16px"></i>
+
+      <div class="hero-actions">
+        <a href="#download" class="btn btn-white">
+          <i data-lucide="download" style="width:15px;height:15px"></i>
           Télécharger
         </a>
-        <a href="/app" class="btn-ghost">
-          <i data-lucide="globe" style="width:16px;height:16px"></i>
-          Version en ligne
+        <a href="/app" class="btn btn-outline">
+          <i data-lucide="arrow-right" style="width:15px;height:15px"></i>
+          Ouvrir dans le navigateur
         </a>
       </div>
 
-      <!-- App mockup -->
-      <div class="hero-mockup fade-in">
-        <div class="mockup-bar">
-          <div class="mockup-dot" style="background:#ff5f57"></div>
-          <div class="mockup-dot" style="background:#ffbd2e"></div>
-          <div class="mockup-dot" style="background:#28c840"></div>
-        </div>
-        <div class="mockup-body">
-          <div class="mockup-rail">
-            <div class="mockup-rail-icon active"><i data-lucide="message-square" style="width:16px;height:16px;color:var(--accent)"></i></div>
-            <div class="mockup-rail-icon"><i data-lucide="book-open" style="width:16px;height:16px;color:var(--text-muted)"></i></div>
-            <div class="mockup-rail-icon"><i data-lucide="folder-open" style="width:16px;height:16px;color:var(--text-muted)"></i></div>
-            <div class="mockup-rail-icon"><i data-lucide="layout-dashboard" style="width:16px;height:16px;color:var(--text-muted)"></i></div>
+      <!-- ═══ DÉMO INTERACTIVE ═══ -->
+      <div class="demo-wrapper fade-up">
+        <div class="demo-window">
+
+          <!-- Barre titre macOS -->
+          <div class="demo-titlebar">
+            <div class="demo-dot" style="background:#ff5f57"></div>
+            <div class="demo-dot" style="background:#ffbd2e"></div>
+            <div class="demo-dot" style="background:#28c840"></div>
+            <span style="font-size:11.5px;font-weight:600;color:var(--text-3);margin:0 auto">Cursus — Promo CESI 2025</span>
           </div>
-          <div class="mockup-sidebar">
-            <div class="mockup-sidebar-title">Canaux</div>
-            <div class="mockup-channel active"><span class="mockup-channel-hash">#</span> général</div>
-            <div class="mockup-channel"><span class="mockup-channel-hash">#</span> annonces</div>
-            <div class="mockup-channel"><span class="mockup-channel-hash">#</span> projet-web</div>
-            <div class="mockup-channel"><span class="mockup-channel-hash">#</span> algo-tp</div>
-            <div style="margin-top:16px">
-              <div class="mockup-sidebar-title">Messages directs</div>
-              <div class="mockup-channel"><span class="mockup-channel-hash">@</span> Jean Dupont</div>
-              <div class="mockup-channel"><span class="mockup-channel-hash">@</span> Marie Martin</div>
-            </div>
+
+          <!-- Barre de progression auto-cycle -->
+          <div class="demo-progress">
+            <div class="demo-progress-bar" id="demo-progress-bar"></div>
           </div>
-          <div class="mockup-main">
-            <div class="mockup-msg">
-              <div class="mockup-avatar" style="background:var(--accent)"></div>
-              <div class="mockup-msg-body">
-                <div class="mockup-msg-name" style="color:var(--accent)">Prof. Fosse</div>
-                <div class="mockup-msg-text">Le rendu du projet est pour vendredi. Pensez à consulter la grille d'évaluation dans <code>#projet-web</code></div>
-              </div>
+
+          <!-- Onglets -->
+          <div class="demo-tabs">
+            <div class="demo-tab active" data-tab="chat" onclick="switchTab('chat')">
+              <i data-lucide="message-square"></i> Chat
             </div>
-            <div class="mockup-msg">
-              <div class="mockup-avatar" style="background:#e53935"></div>
-              <div class="mockup-msg-body">
-                <div class="mockup-msg-name">Jean Dupont</div>
-                <div class="mockup-msg-text">Merci ! On a une question sur le cahier des charges, c'est normal qu'il n'y ait pas de maquettes ?</div>
-              </div>
+            <div class="demo-tab" data-tab="devoirs" onclick="switchTab('devoirs')">
+              <i data-lucide="clipboard-list"></i> Devoirs
             </div>
-            <div class="mockup-msg">
-              <div class="mockup-avatar" style="background:var(--accent)"></div>
-              <div class="mockup-msg-body">
-                <div class="mockup-msg-name" style="color:var(--accent)">Prof. Fosse</div>
-                <div class="mockup-msg-text">Les maquettes sont optionnelles pour ce livrable. Concentrez-vous sur l'architecture et le code.</div>
-              </div>
+            <div class="demo-tab" data-tab="docs" onclick="switchTab('docs')">
+              <i data-lucide="folder-open"></i> Documents
             </div>
           </div>
-        </div>
-      </div>
+
+          <!-- Corps -->
+          <div class="demo-body">
+
+            <!-- Sidebar commune -->
+            <div class="demo-sidebar">
+              <div class="demo-sidebar-title">Canaux</div>
+              <div class="demo-channel active"><span class="demo-channel-hash">#</span> général</div>
+              <div class="demo-channel"><span class="demo-channel-hash">#</span> annonces</div>
+              <div class="demo-channel"><span class="demo-channel-hash">#</span> projet-web</div>
+              <div class="demo-channel"><span class="demo-channel-hash">#</span> algo-tp</div>
+              <div style="margin-top:14px">
+                <div class="demo-sidebar-title">Directs</div>
+                <div class="demo-channel"><span class="demo-channel-hash">@</span> Prof. Fosse</div>
+                <div class="demo-channel"><span class="demo-channel-hash">@</span> Marie Martin</div>
+              </div>
+            </div>
+
+            <!-- Panneau Chat -->
+            <div class="demo-main" id="panel-chat">
+              <div class="chat-messages" id="chat-messages"></div>
+              <div class="typing-indicator" id="typing-indicator"></div>
+              <div class="chat-input-row">
+                <span class="chat-input-text" id="chat-input-text">&nbsp;</span>
+                <span class="chat-cursor"></span>
+              </div>
+            </div>
+
+            <!-- Panneau Devoirs -->
+            <div class="demo-main devoirs-panel" id="panel-devoirs">
+              <div class="devoirs-header">
+                <span class="devoirs-title">Mes devoirs</span>
+                <span class="devoirs-count">4 travaux • 1 urgent</span>
+              </div>
+              <div class="devoir-row" data-delay="0">
+                <div class="devoir-check"></div>
+                <div class="devoir-info">
+                  <div class="devoir-name">Projet Web E4</div>
+                  <div class="devoir-sub">Équipe B · Livrable complet</div>
+                </div>
+                <span class="devoir-badge badge-urgent">Dans 3j</span>
+              </div>
+              <div class="devoir-row" data-delay="80">
+                <div class="devoir-check"></div>
+                <div class="devoir-info">
+                  <div class="devoir-name">Rapport de stage</div>
+                  <div class="devoir-sub">Individuel · 20 pages min</div>
+                </div>
+                <span class="devoir-badge badge-ok">Dans 21j</span>
+              </div>
+              <div class="devoir-row" data-delay="160">
+                <div class="devoir-check done"></div>
+                <div class="devoir-info">
+                  <div class="devoir-name" style="text-decoration:line-through;color:var(--text-3)">TP Algo noté</div>
+                  <div class="devoir-sub">Note : 13.5/20</div>
+                </div>
+                <span class="devoir-badge badge-done">Rendu ✓</span>
+              </div>
+              <div class="devoir-row" data-delay="240">
+                <div class="devoir-check"></div>
+                <div class="devoir-info">
+                  <div class="devoir-name">Soutenance E5</div>
+                  <div class="devoir-sub">Oral 20 min + questions</div>
+                </div>
+                <span class="devoir-badge badge-ok">Dans 3 sem</span>
+              </div>
+            </div>
+
+            <!-- Panneau Documents -->
+            <div class="demo-main docs-panel" id="panel-docs">
+              <div class="docs-header">
+                <span class="docs-title">Ressources — Projet Web E4</span>
+                <span class="docs-count">6 fichiers</span>
+              </div>
+              <div class="doc-row" data-delay="0">
+                <div class="doc-icon doc-pdf">PDF</div>
+                <div class="doc-info">
+                  <div class="doc-name">Cahier des charges v2.pdf</div>
+                  <div class="doc-meta">Ajouté par Prof. Fosse · 1.2 Mo</div>
+                </div>
+                <div class="doc-dl"><i data-lucide="download" style="width:12px;height:12px;color:var(--text-2)"></i></div>
+              </div>
+              <div class="doc-row" data-delay="80">
+                <div class="doc-icon doc-word">DOC</div>
+                <div class="doc-info">
+                  <div class="doc-name">Guide de rédaction rapport.docx</div>
+                  <div class="doc-meta">Ajouté par Prof. Fosse · 340 Ko</div>
+                </div>
+                <div class="doc-dl"><i data-lucide="download" style="width:12px;height:12px;color:var(--text-2)"></i></div>
+              </div>
+              <div class="doc-row" data-delay="160">
+                <div class="doc-icon doc-xlsx">XLS</div>
+                <div class="doc-info">
+                  <div class="doc-name">Grille d'évaluation E4.xlsx</div>
+                  <div class="doc-meta">Ajouté par Prof. Fosse · 78 Ko</div>
+                </div>
+                <div class="doc-dl"><i data-lucide="download" style="width:12px;height:12px;color:var(--text-2)"></i></div>
+              </div>
+              <div class="doc-row" data-delay="240">
+                <div class="doc-icon doc-pdf">PDF</div>
+                <div class="doc-info">
+                  <div class="doc-name">Architecture système — diagramme.pdf</div>
+                  <div class="doc-meta">Ajouté par Équipe B · 560 Ko</div>
+                </div>
+                <div class="doc-dl"><i data-lucide="download" style="width:12px;height:12px;color:var(--text-2)"></i></div>
+              </div>
+              <div class="doc-row" data-delay="320">
+                <div class="doc-icon doc-ppt">PPT</div>
+                <div class="doc-info">
+                  <div class="doc-name">Présentation soutenance.pptx</div>
+                  <div class="doc-meta">Ajouté par Équipe B · 2.8 Mo</div>
+                </div>
+                <div class="doc-dl"><i data-lucide="download" style="width:12px;height:12px;color:var(--text-2)"></i></div>
+              </div>
+            </div>
+
+          </div><!-- /demo-body -->
+        </div><!-- /demo-window -->
+      </div><!-- /demo-wrapper -->
+
     </div>
   </section>
 
-  <!-- ═══ Stats ═══ -->
-  <section class="stats fade-in">
+  <!-- STATS -->
+  <section class="stats">
     <div class="container">
-      <div class="stats-grid">
+      <div class="stats-grid fade-up">
         <div class="stat">
-          <div class="stat-value">100%</div>
-          <div class="stat-label">Des rendus centralisés</div>
+          <div class="stat-icon"><i data-lucide="inbox"></i></div>
+          <div class="stat-val">100%</div>
+          <div class="stat-lbl">Des rendus centralisés</div>
         </div>
         <div class="stat">
-          <div class="stat-value">Web</div>
-          <div class="stat-label">+ Desktop Windows & macOS</div>
+          <div class="stat-icon"><i data-lucide="zap"></i></div>
+          <div class="stat-val">&lt; 1s</div>
+          <div class="stat-lbl">Messagerie temps réel</div>
         </div>
         <div class="stat">
-          <div class="stat-value">&lt;1s</div>
-          <div class="stat-label">Messagerie temps réel</div>
+          <div class="stat-icon"><i data-lucide="monitor-smartphone"></i></div>
+          <div class="stat-val">3</div>
+          <div class="stat-lbl">Plateformes — Web, Windows, macOS</div>
         </div>
         <div class="stat">
-          <div class="stat-value">PWA</div>
-          <div class="stat-label">Installable & hors-ligne</div>
+          <div class="stat-icon"><i data-lucide="wifi-off"></i></div>
+          <div class="stat-val">PWA</div>
+          <div class="stat-lbl">Installable & hors-ligne</div>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- ═══ Pour qui ? ═══ -->
+  <!-- POUR QUI -->
   <section id="who" class="who">
     <div class="container">
-      <div class="section-label fade-in">Pour qui ?</div>
-      <h2 class="section-title fade-in">Un outil pour toute la promo</h2>
-      <p class="section-sub fade-in">Conçu pour les étudiants comme pour les enseignants, avec des vues adaptées à chaque rôle.</p>
-      <div class="who-grid">
-        <div class="who-card fade-in">
-          <div class="who-card-head">
-            <div class="who-icon wi-student"><i data-lucide="graduation-cap"></i></div>
-            <div>
-              <h3>Étudiants</h3>
-            </div>
+      <div class="who-block fade-up">
+        <div class="who-text">
+          <div class="who-eyebrow">
+            <div class="who-eyebrow-icon"><i data-lucide="graduation-cap"></i></div>
+            Étudiants
           </div>
-          <p>Suivez votre parcours, restez connecté à vos groupes et ne ratez plus aucune deadline.</p>
+          <h2 class="who-title">Ne ratez plus rien</h2>
+          <p class="who-desc">Toutes vos deadlines, vos rendus et vos notes en un seul endroit. Restez connecté à votre promo, même hors campus.</p>
           <ul class="who-list">
             <li>Retrouver tous vos devoirs et leurs deadlines en un coup d'œil</li>
             <li>Déposer vos rendus directement depuis l'app ou le navigateur</li>
-            <li>Consulter vos notes et les retours détaillés de vos profs</li>
+            <li>Consulter vos notes et les retours de vos professeurs</li>
             <li>Messagerie instantanée avec votre groupe et vos intervenants</li>
-            <li>Accéder aux ressources et documents de cours par canal</li>
+            <li>Accéder aux documents de cours organisés par canal</li>
           </ul>
         </div>
-        <div class="who-card teacher fade-in">
-          <div class="who-card-head">
-            <div class="who-icon wi-teacher"><i data-lucide="book-marked"></i></div>
+        <div class="who-visual">
+          <div class="visual-label">Ma timeline</div>
+          <div class="timeline-item">
+            <div class="tl-col">
+              <div class="tl-dot" style="background:var(--green)"></div>
+              <div class="tl-line"></div>
+            </div>
             <div>
-              <h3>Enseignants</h3>
+              <div class="tl-title">Rapport de stage déposé ✓</div>
+              <div class="tl-sub">Il y a 2 jours · Note : 16/20</div>
             </div>
           </div>
-          <p>Gérez vos promotions, organisez les travaux et suivez la progression de chaque étudiant.</p>
+          <div class="timeline-item">
+            <div class="tl-col">
+              <div class="tl-dot" style="background:var(--orange)"></div>
+              <div class="tl-line"></div>
+            </div>
+            <div>
+              <div class="tl-title">Projet Web E4 — deadline vendredi</div>
+              <div class="tl-sub">3 jours restants · Groupe : Équipe B</div>
+            </div>
+          </div>
+          <div class="timeline-item">
+            <div class="tl-col"><div class="tl-dot" style="background:var(--text-3)"></div></div>
+            <div>
+              <div class="tl-title">Soutenance E5</div>
+              <div class="tl-sub">Dans 3 semaines</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="who-block reverse fade-up">
+        <div class="who-text">
+          <div class="who-eyebrow">
+            <div class="who-eyebrow-icon"><i data-lucide="book-marked"></i></div>
+            Enseignants
+          </div>
+          <h2 class="who-title">Gérez votre promo</h2>
+          <p class="who-desc">Créez des travaux, gérez les groupes et suivez chaque étudiant. Tout ce dont vous avez besoin, sans outil tiers.</p>
           <ul class="who-list">
             <li>Créer des travaux avec grilles d'évaluation multi-critères</li>
             <li>Gérer les promotions, groupes et intervenants</li>
@@ -551,121 +855,155 @@
             <li>Vue Gantt pour visualiser le calendrier des livrables</li>
           </ul>
         </div>
+        <div class="who-visual">
+          <div class="visual-label">Suivi — Projet Web E4</div>
+          <div class="dash-row">
+            <span class="dash-name">Jean Dupont</span>
+            <span class="dash-badge" style="background:rgba(52,211,153,.1);color:var(--green)">Rendu · 16/20</span>
+          </div>
+          <div class="dash-row">
+            <span class="dash-name">Marie Martin</span>
+            <span class="dash-badge" style="background:rgba(52,211,153,.1);color:var(--green)">Rendu · 14/20</span>
+          </div>
+          <div class="dash-row">
+            <span class="dash-name">Équipe C</span>
+            <span class="dash-badge" style="background:rgba(251,146,60,.1);color:var(--orange)">En attente</span>
+          </div>
+          <div class="dash-row">
+            <span class="dash-name">Lucas Bernard</span>
+            <span class="dash-badge" style="background:rgba(239,68,68,.1);color:#f87171">Non rendu</span>
+          </div>
+        </div>
       </div>
     </div>
   </section>
 
-  <!-- ═══ Features ═══ -->
+  <!-- FEATURES -->
   <section id="features" class="features">
     <div class="container">
-      <div class="section-label fade-in">Fonctionnalités</div>
-      <h2 class="section-title fade-in">Tout ce dont vous avez besoin</h2>
-      <p class="section-sub fade-in">Conçu pour étudiants et enseignants, avec une attention particulière à la simplicité.</p>
-      <div class="features-grid">
-        <div class="feature-card fade-in">
-          <div class="feature-icon-wrap fi-blue"><i data-lucide="messages-square"></i></div>
-          <h3>Messagerie temps réel</h3>
-          <p>Canaux par promotion, messages directs, mentions @utilisateur et @everyone, formatage Markdown complet avec aperçu et coloration syntaxique.</p>
-          <div class="feature-tags">
-            <span class="feature-tag">Ctrl+B Gras</span>
-            <span class="feature-tag">Emojis</span>
-            <span class="feature-tag">Typing</span>
-            <span class="feature-tag">#canal</span>
+      <div class="section-head">
+        <div class="section-eyebrow fade-up">Fonctionnalités</div>
+        <h2 class="section-title fade-up">Tout ce dont vous avez besoin</h2>
+        <p class="section-sub fade-up">Conçu pour étudiants et enseignants, avec une attention particulière à la simplicité.</p>
+      </div>
+      <div class="feat-grid">
+        <div class="feat-big fade-up">
+          <div class="feat-big-text">
+            <div class="feat-icon fi-blue"><i data-lucide="messages-square"></i></div>
+            <h3>Messagerie temps réel</h3>
+            <p>Canaux par promotion, messages directs, mentions @utilisateur et @everyone. Formatage Markdown complet avec aperçu, coloration syntaxique, réactions et messages épinglés.</p>
+            <div class="feat-tags">
+              <span class="feat-tag">Markdown</span>
+              <span class="feat-tag">Socket.io</span>
+              <span class="feat-tag">Mentions</span>
+              <span class="feat-tag">Épingles</span>
+              <span class="feat-tag">Typing indicator</span>
+            </div>
+          </div>
+          <div class="feat-big-preview">
+            <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--text-3);margin-bottom:10px">Aperçu Markdown</div>
+            <div style="font-size:12px;color:var(--text-2);line-height:1.7">
+              Code rendu avec coloration :
+              <code style="display:block;background:rgba(255,255,255,.06);padding:10px 12px;border-radius:6px;margin-top:8px;font-size:11px;font-family:'SF Mono','Fira Code',monospace;color:#a5d6a7">
+                <span style="color:#81d4fa">function</span> <span style="color:#fff">hello</span>() {<br>
+                &nbsp;&nbsp;<span style="color:#81d4fa">return</span> <span style="color:#a5d6a7">"Cursus 🎓"</span><br>
+                }
+              </code>
+            </div>
           </div>
         </div>
-        <div class="feature-card fade-in">
-          <div class="feature-icon-wrap fi-orange"><i data-lucide="clipboard-check"></i></div>
-          <h3>Suivi des devoirs</h3>
-          <p>Soumission de rendus avant deadline, grilles d'évaluation multicritères, notes, feedback personnalisé et frise chronologique.</p>
-          <div class="feature-tags">
-            <span class="feature-tag">Deadlines</span>
-            <span class="feature-tag">Rubriques</span>
-            <span class="feature-tag">AAVs</span>
-            <span class="feature-tag">Salles</span>
-          </div>
+        <div class="feat-card fade-up">
+          <div class="feat-icon fi-orange"><i data-lucide="clipboard-check"></i></div>
+          <h3>Devoirs & rendus</h3>
+          <p>Deadlines, soumissions, grilles multi-critères, notes et feedback. Vue Gantt pour le planning.</p>
+          <div class="feat-tags"><span class="feat-tag">Rubriques</span><span class="feat-tag">Gantt</span></div>
         </div>
-        <div class="feature-card fade-in">
-          <div class="feature-icon-wrap fi-green"><i data-lucide="file-text"></i></div>
+        <div class="feat-card fade-up">
+          <div class="feat-icon fi-green"><i data-lucide="file-text"></i></div>
           <h3>Documents centralisés</h3>
-          <p>Ressources par projet avec aperçu intégré PDF, Word et Excel. Téléchargement en un clic, organisation par catégorie.</p>
-          <div class="feature-tags">
-            <span class="feature-tag">PDF</span>
-            <span class="feature-tag">Word</span>
-            <span class="feature-tag">Excel</span>
-            <span class="feature-tag">Aperçu</span>
-          </div>
+          <p>Ressources par projet avec aperçu intégré PDF, Word et Excel. Organisation par catégorie.</p>
+          <div class="feat-tags"><span class="feat-tag">PDF</span><span class="feat-tag">Word</span><span class="feat-tag">Excel</span></div>
         </div>
-        <div class="feature-card fade-in">
-          <div class="feature-icon-wrap fi-purple"><i data-lucide="users"></i></div>
-          <h3>Collaboration & suivi</h3>
-          <p>Groupes de travail, tableau de bord avec prochaine action, frise Gantt, timeline étudiante, et export CSV des notes.</p>
-          <div class="feature-tags">
-            <span class="feature-tag">Dashboard</span>
-            <span class="feature-tag">Gantt</span>
-            <span class="feature-tag">Groupes</span>
-            <span class="feature-tag">Export CSV</span>
-          </div>
+        <div class="feat-card fade-up">
+          <div class="feat-icon fi-purple"><i data-lucide="bar-chart-2"></i></div>
+          <h3>Suivi & export</h3>
+          <p>Dashboard personnalisé, timeline étudiante, notes par matière et export CSV/Excel des résultats.</p>
+          <div class="feat-tags"><span class="feat-tag">Dashboard</span><span class="feat-tag">Export CSV</span></div>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- ═══ Download ═══ -->
+  <!-- DOWNLOAD -->
   <section id="download" class="download">
     <div class="container">
-      <div class="section-label fade-in">Télécharger</div>
-      <h2 class="section-title fade-in">Disponible partout</h2>
-      <p class="section-sub fade-in">Application native ou version web — choisissez votre plateforme</p>
-      <div class="download-grid">
-        <div class="dl-card fade-in" id="dl-win">
-          <div class="dl-icon-wrap dli-win"><i data-lucide="monitor"></i></div>
+      <div class="section-head" style="text-align:center">
+        <div class="section-eyebrow fade-up" style="text-align:center">Télécharger</div>
+        <h2 class="section-title fade-up">Disponible partout</h2>
+        <p class="section-sub fade-up" style="margin:0 auto">Application native ou version web — choisissez votre plateforme.</p>
+      </div>
+      <div class="dl-grid">
+        <div class="dl-card fade-up" id="dl-win">
+          <div class="dl-icon dli-win"><i data-lucide="monitor"></i></div>
           <h3>Windows</h3>
           <p>Windows 10 ou supérieur</p>
           <a href="/download/windows" class="dl-btn dl-btn-ghost">
-            <i data-lucide="download" style="width:14px;height:14px"></i> Télécharger .exe
+            <i data-lucide="download" style="width:13px;height:13px"></i> Télécharger .exe
           </a>
         </div>
-        <div class="dl-card fade-in" id="dl-mac">
-          <div class="dl-icon-wrap dli-mac"><i data-lucide="laptop"></i></div>
+        <div class="dl-card fade-up" id="dl-mac">
+          <div class="dl-icon dli-mac"><i data-lucide="laptop"></i></div>
           <h3>macOS</h3>
           <p>macOS 11 Big Sur+</p>
           <a href="/download/mac" class="dl-btn dl-btn-ghost">
-            <i data-lucide="download" style="width:14px;height:14px"></i> Télécharger .dmg
+            <i data-lucide="download" style="width:13px;height:13px"></i> Télécharger .dmg
           </a>
         </div>
-        <div class="dl-card fade-in" id="dl-web">
-          <div class="dl-icon-wrap dli-web"><i data-lucide="globe"></i></div>
+        <div class="dl-card fade-up" id="dl-web">
+          <div class="dl-icon dli-web"><i data-lucide="globe"></i></div>
           <h3>Version Web</h3>
           <p>Aucune installation requise</p>
-          <a href="/app" class="dl-btn dl-btn-primary">
-            <i data-lucide="external-link" style="width:14px;height:14px"></i> Ouvrir
+          <a href="/app" class="dl-btn dl-btn-solid">
+            <i data-lucide="arrow-right" style="width:13px;height:13px"></i> Ouvrir
           </a>
         </div>
       </div>
-    </div>
-  </section>
-
-  <!-- ═══ Changelog ═══ -->
-  <section class="changelog">
-    <div class="container">
-      <div class="changelog-inner fade-in">
+      <div class="changelog fade-up">
         <div class="changelog-head">
-          <span class="changelog-title">Dernière version</span>
-          <span class="changelog-version" id="cl-version">v2.0.0</span>
+          <span class="cl-title">Dernière version</span>
+          <span class="cl-ver" id="cl-version">v2.0.0</span>
+          <span class="cl-date" id="cl-date">Mars 2026</span>
         </div>
-        <div class="changelog-date" id="cl-date">Mars 2026</div>
-        <ul class="changelog-list">
-          <li>Refonte design — identité visuelle modernisée (style Apple/Linear)</li>
-          <li>Améliorations RGPD — export des données personnelles et politique de confidentialité</li>
-          <li>Rubriques multi-critères pour une évaluation fine des rendus</li>
+        <ul class="cl-list">
+          <li>Refonte design — identité visuelle modernisée</li>
+          <li>Rubriques multi-critères pour l'évaluation des rendus</li>
           <li>Markdown et coloration syntaxique dans la messagerie</li>
-          <li>Export CSV/Excel des notes avec encodage UTF-8 pour Excel</li>
+          <li>Export CSV/Excel des notes</li>
+          <li>Améliorations RGPD et politique de confidentialité</li>
         </ul>
       </div>
     </div>
   </section>
 
-  <!-- ═══ Footer ═══ -->
+  <!-- CTA FINALE -->
+  <section class="cta-final">
+    <div class="container">
+      <h2 class="fade-up">Prêt à démarrer ?</h2>
+      <p class="fade-up">Rejoignez la plateforme et simplifiez votre formation dès aujourd'hui.</p>
+      <div class="cta-actions fade-up">
+        <a href="/app" class="btn btn-white">
+          <i data-lucide="arrow-right" style="width:15px;height:15px"></i>
+          Ouvrir l'app
+        </a>
+        <a href="#download" class="btn btn-outline">
+          <i data-lucide="download" style="width:15px;height:15px"></i>
+          Télécharger
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
   <footer class="footer">
     <div class="container">
       <div class="footer-logo">
@@ -679,54 +1017,201 @@
         <a href="/app">Se connecter</a>
         <a href="/app#privacy">Confidentialité</a>
       </div>
-      <p>Conçu par <a href="https://github.com/rohanfosse" target="_blank" rel="noopener">Rohan Fosse</a> — <span id="footer-version">v2.0.0</span></p>
+      <span class="footer-copy">Conçu par <a href="https://github.com/rohanfosse" target="_blank" rel="noopener" style="color:var(--text-2)">Rohan Fosse</a> · <span id="footer-version">v2.0.0</span></span>
     </div>
   </footer>
 
   <script>
-    // Init Lucide icons
-    document.addEventListener('DOMContentLoaded', () => {
-      if (window.lucide) lucide.createIcons()
+  document.addEventListener('DOMContentLoaded', () => {
+    if (window.lucide) lucide.createIcons()
 
-      // Version dynamique depuis /download
-      fetch('/download')
-        .then(r => r.ok ? r.json() : null)
-        .then(data => {
-          if (!data?.version) return
-          const v = data.version
-          const badge = document.getElementById('version-badge')
-          if (badge) badge.innerHTML = `<span class="hero-badge-dot"></span>${v} — Disponible maintenant`
-          const clv = document.getElementById('cl-version')
-          if (clv) clv.textContent = v
-          const fv = document.getElementById('footer-version')
-          if (fv) fv.textContent = v
-          if (data.published_at) {
-            const d = new Date(data.published_at)
-            const label = d.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })
-            const cl = document.getElementById('cl-date')
-            if (cl) cl.textContent = label.charAt(0).toUpperCase() + label.slice(1)
-          }
+    // ── Version dynamique ──────────────────────────────────────────────────────
+    fetch('/download')
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        if (!data?.version) return
+        const v = data.version
+        const badge = document.getElementById('version-badge')
+        if (badge) badge.innerHTML = `<span class="hero-eyebrow-dot"></span>${v} — Disponible maintenant`
+        ;['cl-version','footer-version'].forEach(id => {
+          const el = document.getElementById(id); if (el) el.textContent = v
         })
-        .catch(() => {}) // fallback silencieux sur les valeurs hardcodées
-    })
+        if (data.published_at) {
+          const label = new Date(data.published_at).toLocaleDateString('fr-FR', { month:'long', year:'numeric' })
+          const cl = document.getElementById('cl-date')
+          if (cl) cl.textContent = label.charAt(0).toUpperCase() + label.slice(1)
+        }
+      }).catch(() => {})
 
-    // Détection OS pour recommander la bonne plateforme
-    ;(function() {
-      const ua = navigator.userAgent.toLowerCase()
-      let os = 'web'
-      if (ua.includes('win')) os = 'win'
-      else if (ua.includes('mac')) os = 'mac'
-      const el = document.getElementById('dl-' + os)
-      if (el) el.classList.add('recommended')
-    })()
+    // ── Détection OS ──────────────────────────────────────────────────────────
+    const ua = navigator.userAgent.toLowerCase()
+    const os = ua.includes('win') ? 'win' : ua.includes('mac') ? 'mac' : 'web'
+    document.getElementById('dl-' + os)?.classList.add('recommended')
 
-    // Animations au scroll
-    const observer = new IntersectionObserver((entries) => {
-      entries.forEach(e => {
-        if (e.isIntersecting) { e.target.classList.add('visible'); observer.unobserve(e.target) }
+    // ── Scroll animations ────────────────────────────────────────────────────
+    const obs = new IntersectionObserver(entries => {
+      entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); obs.unobserve(e.target) } })
+    }, { threshold: 0.06 })
+    document.querySelectorAll('.fade-up').forEach(el => obs.observe(el))
+
+    // ── DÉMO INTERACTIVE ─────────────────────────────────────────────────────
+    const TABS      = ['chat', 'devoirs', 'docs']
+    const TAB_DURATION = 7000  // ms par onglet
+    let currentTab  = 0
+    let cycleTimer  = null
+    let progressTimer = null
+    let paused      = false
+
+    // Messages du chat (simulés)
+    const MESSAGES = [
+      { av:'RF', color:'#4A90D9', name:'Prof. Fosse', nameColor:'#4A90D9',
+        text: 'Le rendu du <strong>Projet Web E4</strong> est pour vendredi soir. Pensez à consulter la grille dans <code>#projet-web</code>.', delay:400 },
+      { av:'JD', color:'#6366f1', name:'Jean Dupont', nameColor:'',
+        text: 'Merci ! Est-ce que les maquettes sont obligatoires pour ce livrable ?', delay:1800 },
+      { av:'MM', color:'#ec4899', name:'Marie Martin', nameColor:'',
+        text: 'On avait la même question 😅 Notre groupe a déjà commencé le code.', delay:3200 },
+      { av:'RF', color:'#4A90D9', name:'Prof. Fosse', nameColor:'#4A90D9',
+        text: 'Les maquettes sont <strong>optionnelles</strong> pour ce livrable. Concentrez-vous sur l\'architecture et la qualité du code.', delay:4800 },
+    ]
+    const TYPING_TEXTS = [
+      { text: 'Marie Martin écrit…', show: 2800, hide: 3200 },
+    ]
+
+    function renderChat() {
+      const container = document.getElementById('chat-messages')
+      const inputEl   = document.getElementById('chat-input-text')
+      const typingEl  = document.getElementById('typing-indicator')
+      container.innerHTML = ''
+      inputEl.textContent = ''
+      typingEl.innerHTML  = ''
+
+      MESSAGES.forEach(msg => {
+        const el = document.createElement('div')
+        el.className = 'chat-msg'
+        el.innerHTML = `
+          <div class="chat-av" style="background:${msg.color}">${msg.av}</div>
+          <div>
+            <div class="chat-name" style="${msg.nameColor ? 'color:'+msg.nameColor : ''}">${msg.name} <span class="chat-time">${formatTime()}</span></div>
+            <div class="chat-text">${msg.text}</div>
+          </div>`
+        container.appendChild(el)
+        setTimeout(() => el.classList.add('visible'), msg.delay)
       })
-    }, { threshold: 0.08 })
-    document.querySelectorAll('.fade-in').forEach(el => observer.observe(el))
+
+      // Indicateur typing
+      TYPING_TEXTS.forEach(t => {
+        setTimeout(() => {
+          typingEl.innerHTML = `<div class="typing-dots"><span></span><span></span><span></span></div>&nbsp;${t.text}`
+        }, t.show)
+        setTimeout(() => { typingEl.innerHTML = '' }, t.hide)
+      })
+
+      // Animation de saisie dans l'input
+      const draftMsg = 'Parfait merci !'
+      let i = 0
+      setTimeout(() => {
+        const typeInterval = setInterval(() => {
+          if (i < draftMsg.length) {
+            inputEl.textContent = draftMsg.slice(0, ++i)
+          } else {
+            clearInterval(typeInterval)
+          }
+        }, 60)
+      }, 5800)
+    }
+
+    function renderDevoirs() {
+      document.querySelectorAll('.devoir-row').forEach(row => {
+        row.classList.remove('visible')
+        const delay = parseInt(row.dataset.delay || 0)
+        setTimeout(() => row.classList.add('visible'), delay + 50)
+      })
+    }
+
+    function renderDocs() {
+      document.querySelectorAll('.doc-row').forEach(row => {
+        row.classList.remove('visible')
+        const delay = parseInt(row.dataset.delay || 0)
+        setTimeout(() => row.classList.add('visible'), delay + 50)
+      })
+      // Réinitialiser les icônes Lucide dans le panel
+      if (window.lucide) lucide.createIcons()
+    }
+
+    function formatTime() {
+      const now = new Date()
+      return `${now.getHours()}:${String(now.getMinutes()).padStart(2,'0')}`
+    }
+
+    // Barre de progression
+    let progressStart = null
+    function startProgress() {
+      const bar = document.getElementById('demo-progress-bar')
+      bar.style.transition = 'none'
+      bar.style.width = '0%'
+      void bar.offsetWidth // reflow
+      bar.style.transition = `width ${TAB_DURATION}ms linear`
+      bar.style.width = '100%'
+    }
+    function resetProgress() {
+      const bar = document.getElementById('demo-progress-bar')
+      bar.style.transition = 'none'
+      bar.style.width = '0%'
+    }
+
+    window.switchTab = function(name) {
+      clearTimeout(cycleTimer)
+      resetProgress()
+      const idx = TABS.indexOf(name)
+      if (idx !== -1) { currentTab = idx; activateTab(name); scheduleCycle() }
+    }
+
+    function activateTab(name) {
+      // Onglets
+      document.querySelectorAll('.demo-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === name))
+      // Panneaux
+      document.getElementById('panel-chat').style.display    = name === 'chat'    ? 'flex' : 'none'
+      document.getElementById('panel-devoirs').style.display = name === 'devoirs' ? 'flex' : 'none'
+      document.getElementById('panel-docs').style.display    = name === 'docs'    ? 'flex' : 'none'
+
+      if (name === 'chat')    renderChat()
+      if (name === 'devoirs') renderDevoirs()
+      if (name === 'docs')    renderDocs()
+
+      startProgress()
+    }
+
+    function scheduleCycle() {
+      cycleTimer = setTimeout(() => {
+        currentTab = (currentTab + 1) % TABS.length
+        activateTab(TABS[currentTab])
+        scheduleCycle()
+      }, TAB_DURATION)
+    }
+
+    // Init
+    activateTab('chat')
+    scheduleCycle()
+
+    // Pause au hover
+    const demoEl = document.querySelector('.demo-window')
+    if (demoEl) {
+      demoEl.addEventListener('mouseenter', () => {
+        clearTimeout(cycleTimer)
+        const bar = document.getElementById('demo-progress-bar')
+        // Figer la barre
+        const computed = getComputedStyle(bar).width
+        const parent   = bar.parentElement
+        const pct      = parseFloat(computed) / parseFloat(getComputedStyle(parent).width) * 100
+        bar.style.transition = 'none'
+        bar.style.width = pct + '%'
+      })
+      demoEl.addEventListener('mouseleave', () => {
+        scheduleCycle()
+        startProgress()
+      })
+    }
+  })
   </script>
 </body>
 </html>
