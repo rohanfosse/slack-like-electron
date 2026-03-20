@@ -52,13 +52,11 @@
     showNotifBanner.value = false
   }
 
-  // Flash "Reconnecté" pendant 3s
-  const justReconnected = ref(false)
+  // Toast discret à la reconnexion
   let _wasDisconnected = false
   watch(() => appStore.socketConnected, (connected) => {
     if (connected && _wasDisconnected) {
-      justReconnected.value = true
-      setTimeout(() => { justReconnected.value = false }, 3000)
+      showToast('Reconnecté', 'success')
     }
     _wasDisconnected = !connected
   })
@@ -193,12 +191,7 @@
       <span>Reconnexion au serveur en cours…</span>
     </div>
 
-    <!-- Bandeau reconnecté (flash vert) -->
-    <Transition name="reconnected-fade">
-      <div v-if="justReconnected" class="offline-banner offline-banner-green">
-        <span>Reconnecté</span>
-      </div>
-    </Transition>
+    <!-- Reconnecté : simple toast (pas de bandeau) -->
 
     <!-- Bandeau session expirée -->
     <div v-if="appStore.sessionExpiredMessage" class="offline-banner offline-banner-red">

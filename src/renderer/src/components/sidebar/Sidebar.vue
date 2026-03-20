@@ -617,35 +617,6 @@
       </div>
     </div>
 
-    <!-- Barre de recherche rapide -->
-    <button
-      class="sidebar-search-bar"
-      aria-label="Rechercher (Ctrl+K)"
-      @click="modals.cmdPalette = true"
-    >
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
-      </svg>
-      <span class="sidebar-search-placeholder">Rechercher…</span>
-      <kbd class="sidebar-search-kbd">Ctrl K</kbd>
-    </button>
-
-    <!-- Indicateur de section actuelle -->
-    <div class="sidebar-section-indicator" :class="`sidebar-section--${route.name as string}`">
-      {{ sectionLabel }}
-    </div>
-
-    <!-- Raccourci contextuel "Tout afficher" (caché sur le dashboard) -->
-    <button
-      v-if="sectionShortcut"
-      class="sidebar-all-docs-btn"
-      :class="{ active: sectionShortcut.active, [`section-${route.name as string}`]: true }"
-      @click="sectionShortcut.action(); emit('navigate')"
-    >
-      <component :is="sectionShortcut.icon" :size="13" class="sidebar-all-docs-icon" />
-      {{ sectionShortcut.label }}
-    </button>
-
     <!-- Section Messages -->
     <div id="sidebar-section-messages">
       <!-- Rail des promos (prof/TA) -->
