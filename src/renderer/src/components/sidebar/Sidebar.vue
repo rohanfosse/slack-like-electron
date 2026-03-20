@@ -197,21 +197,25 @@
       return dmStudents.value.slice(0, DM_RECENT_LIMIT)
     }
 
+    // Enseignants toujours visibles en premier pour les étudiants
+    const teachers = dmStudents.value.filter(s => s.id < 0)
+
     const recentNames = new Set(recentDmContacts.value.map(c => c.name))
     // Ajouter les noms avec unread
     for (const name of Object.keys(appStore.unreadDms)) {
       recentNames.add(name)
     }
-    // Mapper vers les objets Student pour avoir l'id
-    const contactStudents = dmStudents.value.filter(s => recentNames.has(s.name))
-    // Trier par date de dernier message (les récents d'abord)
+    // Contacts récents (hors enseignants déjà inclus)
+    const teacherNames = new Set(teachers.map(t => t.name))
+    const recentStudents = dmStudents.value.filter(s => s.id > 0 && recentNames.has(s.name))
+    // Trier les étudiants par date de dernier message
     const orderMap = new Map(recentDmContacts.value.map((c, i) => [c.name, i]))
-    contactStudents.sort((a, b) => {
+    recentStudents.sort((a, b) => {
       const ai = orderMap.get(a.name) ?? 999
       const bi = orderMap.get(b.name) ?? 999
       return ai - bi
     })
-    return contactStudents
+    return [...teachers, ...recentStudents]
   })
 
   function getDmPreview(name: string) {

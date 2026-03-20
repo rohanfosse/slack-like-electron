@@ -15,6 +15,7 @@ export const useAppStore = defineStore('app', () => {
   const teacherUser       = ref<User | null>(null)   // sauvegarde pendant simulation
   const activeChannelId   = ref<number | null>(null)
   const activeDmStudentId = ref<number | null>(null)
+  const activeDmPeerId    = ref<number | null>(null)    // l'autre personne dans le DM (pour conversations bidirectionnelles)
   const activePromoId     = ref<number | null>(null)
   const activeChannelType = ref<'chat' | 'annonce'>('chat')
   const activeChannelName = ref<string>('')
@@ -138,7 +139,19 @@ export const useAppStore = defineStore('app', () => {
   }
 
   function openDm(studentId: number, promoId: number, name: string) {
-    activeDmStudentId.value = studentId
+    const myId = currentUser.value?.id ?? 0
+    const isStudentOpeningTeacherDm = myId > 0 && studentId < 0
+
+    if (isStudentOpeningTeacherDm) {
+      // Étudiant ouvre DM avec un prof → lire la boîte de l'étudiant avec peer = prof
+      activeDmStudentId.value = myId
+      activeDmPeerId.value    = studentId
+    } else {
+      // Prof ouvre DM avec étudiant, ou étudiant ouvre DM avec étudiant → boîte du destinataire
+      activeDmStudentId.value = studentId
+      activeDmPeerId.value    = myId
+    }
+
     activeChannelId.value   = null
     activePromoId.value     = promoId
     activeChannelType.value = 'chat'
@@ -305,7 +318,7 @@ export const useAppStore = defineStore('app', () => {
 
   return {
     // état
-    isOnline, socketConnected, currentUser, activeChannelId, activeDmStudentId, activePromoId,
+    isOnline, socketConnected, currentUser, activeChannelId, activeDmStudentId, activeDmPeerId, activePromoId,
     activeChannelType, activeChannelName, activeProject, pendingChannelCategory, rightPanel, currentTravailId,
     pendingNoteDepotId, rubricDepotId, unread, mentionChannels, unreadDms, notificationHistory, taChannelIds,
     // calculs

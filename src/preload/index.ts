@@ -149,8 +149,11 @@ contextBridge.exposeInMainWorld('api', {
     const qs = beforeId != null ? `?before=${beforeId}` : ''
     return get(`/api/messages/channel/${channelId}/page${qs}`)
   },
-  getDmMessagesPage: (studentId: number, beforeId?: number) => {
-    const qs = beforeId != null ? `?before=${beforeId}` : ''
+  getDmMessagesPage: (studentId: number, beforeId?: number, peer?: number) => {
+    const params = new URLSearchParams()
+    if (beforeId != null) params.set('before', String(beforeId))
+    if (peer != null) params.set('peer', String(peer))
+    const qs = params.toString() ? `?${params}` : ''
     return get(`/api/messages/dm/${studentId}/page${qs}`)
   },
   getRecentDmContacts: (studentId: number, limit?: number) =>

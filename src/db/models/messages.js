@@ -41,7 +41,45 @@ WHERE m.dm_student_id = ? ORDER BY m.created_at ASC`
   ).all(studentId);
 }
 
-function getDmMessagesPage(studentId, beforeId) {
+/**
+ * Pagination DM — supporte les conversations bidirectionnelles.
+ * Si `peerStudentId` est fourni, retourne les messages des DEUX boîtes
+ * (dm_student_id = studentId OU dm_student_id = peerStudentId)
+ * filtrés aux seuls messages entre ces deux personnes.
+ */
+function getDmMessagesPage(studentId, beforeId, peerStudentId) {
+  // Conversation bidirectionnelle (entre deux étudiants ou étudiant ↔ prof)
+  if (peerStudentId) {
+    const peerName = getDb().prepare(
+      'SELECT name FROM students WHERE id = ? UNION SELECT name FROM teachers WHERE id = ?'
+    ).get(Math.abs(peerStudentId), Math.abs(peerStudentId))
+    const selfName = getDb().prepare(
+      'SELECT name FROM students WHERE id = ? UNION SELECT name FROM teachers WHERE id = ?'
+    ).get(Math.abs(studentId), Math.abs(studentId))
+
+    if (peerName && selfName) {
+      const names = [peerName.name, selfName.name]
+      if (beforeId) {
+        return getDb().prepare(
+          `SELECT m.*, COALESCE(s.avatar_initials, substr(upper(m.author_name), 1, 2)) AS author_initials, s.photo_data AS author_photo
+           FROM messages m LEFT JOIN students s ON s.name = m.author_name
+           WHERE m.dm_student_id IN (?, ?)
+             AND m.author_name IN (?, ?)
+             AND m.id < ?
+           ORDER BY m.id DESC LIMIT ?`
+        ).all(studentId, peerStudentId, names[0], names[1], beforeId, PAGE_SIZE)
+      }
+      return getDb().prepare(
+        `SELECT m.*, COALESCE(s.avatar_initials, substr(upper(m.author_name), 1, 2)) AS author_initials, s.photo_data AS author_photo
+         FROM messages m LEFT JOIN students s ON s.name = m.author_name
+         WHERE m.dm_student_id IN (?, ?)
+           AND m.author_name IN (?, ?)
+         ORDER BY m.id DESC LIMIT ?`
+      ).all(studentId, peerStudentId, names[0], names[1], PAGE_SIZE)
+    }
+  }
+
+  // Fallback : boîte unique (comportement existant)
   if (beforeId) {
     return getDb().prepare(
       `SELECT m.*, COALESCE(s.avatar_initials, substr(upper(m.author_name), 1, 2)) AS author_initials, s.photo_data AS author_photo

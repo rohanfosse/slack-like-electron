@@ -92,7 +92,8 @@ export const useMessagesStore = defineStore('messages', () => {
         fetched      = page.slice().reverse()
         hasMore.value = page.length === PAGE_SIZE
       } else if (activeDmStudentId) {
-        const res    = await window.api.getDmMessagesPage(activeDmStudentId)
+        const peer   = appStore.activeDmPeerId ?? undefined
+        const res    = await window.api.getDmMessagesPage(activeDmStudentId, undefined, peer)
         const page   = res?.ok ? (res.data as Message[]) : []
         fetched      = page.slice().reverse()
         hasMore.value = page.length === PAGE_SIZE
@@ -128,7 +129,8 @@ export const useMessagesStore = defineStore('messages', () => {
         const res = await window.api.getChannelMessagesPage(activeChannelId, oldestId)
         page = res?.ok ? (res.data as Message[]) : []
       } else if (activeDmStudentId) {
-        const res = await window.api.getDmMessagesPage(activeDmStudentId, oldestId)
+        const peer = appStore.activeDmPeerId ?? undefined
+        const res = await window.api.getDmMessagesPage(activeDmStudentId, oldestId, peer)
         page = res?.ok ? (res.data as Message[]) : []
       }
 

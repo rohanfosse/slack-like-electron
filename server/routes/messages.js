@@ -18,7 +18,8 @@ router.get('/channel/:channelId/page',  wrap((req) => {
 }))
 router.get('/dm/:studentId/page', wrap((req) => {
   const before = req.query.before ? Number(req.query.before) : null
-  return queries.getDmMessagesPage(Number(req.params.studentId), before)
+  const peer   = req.query.peer ? Number(req.query.peer) : null
+  return queries.getDmMessagesPage(Number(req.params.studentId), before, peer)
 }))
 router.get('/search', wrap((req) => queries.searchMessages(Number(req.query.channelId), req.query.q)))
 router.post('/search-all', wrap((req) => {
