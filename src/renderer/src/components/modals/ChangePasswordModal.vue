@@ -112,7 +112,7 @@ function tryClose() {
                 {{ forced ? 'Définissez votre mot de passe' : 'Changer le mot de passe' }}
               </h3>
               <p v-if="forced" class="cpw-subtitle">
-                Pour des raisons de sécurité, vous devez définir un mot de passe personnalisé avant de continuer.
+                Bienvenue sur Cursus ! Pour sécuriser votre compte, choisissez un mot de passe personnel avant de commencer.
               </p>
             </div>
           </div>

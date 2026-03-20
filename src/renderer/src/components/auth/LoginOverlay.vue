@@ -186,6 +186,10 @@
               <span v-if="submitting" class="auth-spinner" />
               {{ submitting ? 'Connexion…' : 'Se connecter' }}
             </button>
+
+            <p class="auth-forgot">
+              Mot de passe oublié ? Contactez votre enseignant.
+            </p>
           </form>
 
           <div class="auth-divider"><span>Pas encore de compte ?</span></div>
@@ -474,6 +478,10 @@
 .auth-pwd-toggle:hover { opacity: 1; }
 
 /* ── Erreur ── */
+.auth-forgot {
+  text-align: center; font-size: 12px; color: var(--text-muted, #999);
+  margin-top: 8px;
+}
 .auth-error {
   background: rgba(231,76,60,.1);
   border: 1px solid rgba(231,76,60,.3);

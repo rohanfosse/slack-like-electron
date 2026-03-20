@@ -42,6 +42,16 @@
   const promoCreatedKey = ref(0)
   function onPromoCreated() { promoCreatedKey.value++ }
 
+  // Bandeau demande de notifications
+  const showNotifBanner = ref(false)
+  function acceptNotifs() {
+    Notification.requestPermission().catch(() => {})
+    showNotifBanner.value = false
+  }
+  function dismissNotifs() {
+    showNotifBanner.value = false
+  }
+
   // Flash "Reconnecté" pendant 3s
   const justReconnected = ref(false)
   let _wasDisconnected = false
@@ -98,8 +108,13 @@
   let unsubAuthExpired: (() => void) | null = null
 
   onMounted(() => {
-    // Appliquer le thème sauvegardé
-    const theme = getPref('theme') ?? 'dark'
+    // Appliquer le thème sauvegardé (ou suivre le thème système si pas de préférence)
+    let theme = getPref('theme') as string | null
+    if (!theme) {
+      // Première visite : suivre le thème système
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
+      theme = prefersDark ? 'dark' : 'cursus'
+    }
     document.body.classList.remove('light', 'night', 'marine', 'cursus')
     if (theme !== 'dark') document.body.classList.add(theme)
 
@@ -113,9 +128,12 @@
     const spacings: Record<string, string> = { compact: '2px', default: '6px', cozy: '10px' }
     document.documentElement.style.setProperty('--msg-spacing', spacings[dens])
 
-    // Demander la permission pour les notifications natives
+    // Demander la permission notifications APRÈS un délai (pas au premier chargement)
+    // pour laisser l'utilisateur voir l'app d'abord
     if ('Notification' in window && Notification.permission === 'default') {
-      Notification.requestPermission().catch(() => {})
+      setTimeout(() => {
+        showNotifBanner.value = true
+      }, 15_000) // Afficher le bandeau après 15s
     }
 
     // Toast in-app pour les notifications quand la fenêtre est au premier plan
@@ -186,6 +204,17 @@
     <div v-if="appStore.sessionExpiredMessage" class="offline-banner offline-banner-red">
       <span>{{ appStore.sessionExpiredMessage }}</span>
     </div>
+
+    <!-- Bandeau demande de notifications -->
+    <Transition name="reconnected-fade">
+      <div v-if="showNotifBanner && appStore.currentUser" class="notif-request-banner">
+        <span>Activez les notifications pour ne pas manquer les messages et les deadlines.</span>
+        <div style="display:flex;gap:6px">
+          <button class="notif-req-btn notif-req-accept" @click="acceptNotifs">Activer</button>
+          <button class="notif-req-btn notif-req-dismiss" @click="dismissNotifs">Plus tard</button>
+        </div>
+      </div>
+    </Transition>
 
     <!-- Bandeau simulation étudiant -->
     <div v-if="appStore.isSimulating" id="simulation-banner" class="simulation-banner" :class="{ 'banner-shift': !appStore.isOnline }">
@@ -356,6 +385,24 @@
   .reconnected-fade-enter-active { transition: opacity .3s; }
   .reconnected-fade-leave-active { transition: opacity .5s; }
   .reconnected-fade-enter-from, .reconnected-fade-leave-to { opacity: 0; }
+  .notif-request-banner {
+    position: fixed;
+    bottom: 16px; left: 50%; transform: translateX(-50%);
+    z-index: 500;
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 16px; border-radius: 10px;
+    background: var(--bg-elevated, #272829);
+    border: 1px solid var(--border, rgba(255,255,255,.06));
+    box-shadow: 0 8px 30px rgba(0,0,0,.4);
+    font-size: 13px; color: var(--text-primary);
+    max-width: 520px;
+  }
+  .notif-req-btn {
+    padding: 5px 12px; border-radius: 6px; font-size: 12px; font-weight: 600;
+    border: none; cursor: pointer;
+  }
+  .notif-req-accept { background: var(--accent); color: #fff; }
+  .notif-req-dismiss { background: rgba(255,255,255,.08); color: var(--text-muted); }
   .simulation-banner.banner-shift { top: calc(var(--titlebar-height, 32px) + 36px); }
 
   /* Bandeau reconnexion socket */

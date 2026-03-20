@@ -284,6 +284,7 @@ function closeAll() { showMenu.value = false; showPicker.value = false; confirmi
             :class="{ clickable: !isOwnMessage, 'msg-author-teacher': msg.author_type === 'teacher' }"
             :role="isOwnMessage ? undefined : 'button'"
             :tabindex="isOwnMessage ? undefined : 0"
+            :title="isOwnMessage ? '' : 'Cliquer pour envoyer un message direct'"
             @click="openDmWithAuthor"
             @keydown.enter="openDmWithAuthor"
           >{{ msg.author_name }}</span>

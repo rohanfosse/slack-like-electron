@@ -270,10 +270,24 @@ export const useAppStore = defineStore('app', () => {
 
   let _audioCtx: AudioContext | null = null
   let _audioIdleTimer: ReturnType<typeof setTimeout> | null = null
+  // Débloquer AudioContext au premier clic utilisateur (requis par les navigateurs)
+  let _audioUnlocked = false
+  if (typeof document !== 'undefined') {
+    const unlockAudio = () => {
+      if (_audioUnlocked) return
+      _audioUnlocked = true
+      if (_audioCtx && _audioCtx.state === 'suspended') _audioCtx.resume().catch(() => {})
+      document.removeEventListener('click', unlockAudio)
+      document.removeEventListener('keydown', unlockAudio)
+    }
+    document.addEventListener('click', unlockAudio, { once: false })
+    document.addEventListener('keydown', unlockAudio, { once: false })
+  }
   function _playNotifSound(freq = 800, dur = 0.25) {
     if (!_prefNotifSound()) return
     try {
       if (!_audioCtx) _audioCtx = new AudioContext()
+      if (_audioCtx.state === 'suspended') _audioCtx.resume().catch(() => {})
       const osc = _audioCtx.createOscillator()
       const gain = _audioCtx.createGain()
       osc.connect(gain).connect(_audioCtx.destination)

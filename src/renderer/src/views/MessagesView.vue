@@ -338,11 +338,33 @@
       </Transition>
     </div>
 
-    <!-- Aucun canal sélectionné -->
+    <!-- Aucun canal sélectionné — écran d'accueil -->
     <div v-else class="no-channel-hint" id="no-channel-hint">
       <MessageSquare :size="40" style="opacity:.2;margin-bottom:12px" />
-      <h3 style="font-size:16px;font-weight:700;color:var(--text-secondary);margin-bottom:4px">Bienvenue !</h3>
-      <p>Choisissez un canal dans la barre latérale pour commencer à discuter.</p>
+      <h3 style="font-size:16px;font-weight:700;color:var(--text-secondary);margin-bottom:4px">
+        Bienvenue{{ appStore.currentUser ? ', ' + appStore.currentUser.name.split(' ')[0] : '' }} !
+      </h3>
+      <p style="margin-bottom:16px;max-width:360px;line-height:1.5">
+        Choisissez un canal dans la barre latérale pour commencer.
+      </p>
+      <div v-if="appStore.isStudent" class="welcome-tips">
+        <div class="welcome-tip">
+          <span class="welcome-tip-icon">💬</span>
+          <span><strong>Canaux</strong> — Échangez avec votre promo dans les canaux à gauche</span>
+        </div>
+        <div class="welcome-tip">
+          <span class="welcome-tip-icon">📝</span>
+          <span><strong>Devoirs</strong> — Consultez et rendez vos travaux dans l'onglet Devoirs</span>
+        </div>
+        <div class="welcome-tip">
+          <span class="welcome-tip-icon">👤</span>
+          <span><strong>Messages directs</strong> — Cliquez sur un nom dans le chat pour lui écrire en privé</span>
+        </div>
+        <div class="welcome-tip">
+          <span class="welcome-tip-icon">🐛</span>
+          <span><strong>Feedback</strong> — Signalez un bug ou suggérez une amélioration via le bouton en bas à gauche</span>
+        </div>
+      </div>
     </div>
 
     <!-- Overlay drag & drop -->
