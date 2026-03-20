@@ -861,4 +861,61 @@ router.post('/import-examens', (req, res) => {
   }
 })
 
+// ═══════════════════════════════════════════════════════════════════════════════
+// RAPPELS PROF (ÉCHÉANCIER SCOLARITÉ)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// Importer les rappels depuis le JSON
+router.post('/import-rappels', (req, res) => {
+  try {
+    const path = require('path')
+    const fs = require('fs')
+    const dataPath = path.join(__dirname, '..', 'rappels-data.json')
+    if (!fs.existsSync(dataPath)) return res.status(404).json({ ok: false, error: 'rappels-data.json introuvable.' })
+
+    const rappels = JSON.parse(fs.readFileSync(dataPath, 'utf8'))
+    const { getDb } = require('../../src/db/connection')
+    const db = getDb()
+
+    let imported = 0
+    const insert = db.prepare('INSERT INTO teacher_reminders (promo_tag, date, title, description, bloc) VALUES (?, ?, ?, ?, ?)')
+
+    // Supprimer les anciens rappels avant import
+    db.prepare('DELETE FROM teacher_reminders').run()
+
+    for (const r of rappels) {
+      insert.run(r.promoTag, r.date, r.title, r.description, r.bloc)
+      imported++
+    }
+
+    res.json({ ok: true, data: { imported, message: `${imported} rappels importés.` } })
+  } catch (err) {
+    res.status(500).json({ ok: false, error: err.message })
+  }
+})
+
+// Lister les rappels (pour le dashboard prof)
+router.get('/rappels', (req, res) => {
+  try {
+    const { getDb } = require('../../src/db/connection')
+    const db = getDb()
+    const rappels = db.prepare('SELECT * FROM teacher_reminders ORDER BY date ASC').all()
+    res.json({ ok: true, data: rappels })
+  } catch (err) {
+    res.json({ ok: true, data: [] })
+  }
+})
+
+// Marquer un rappel comme fait
+router.post('/rappels/:id/done', (req, res) => {
+  try {
+    const { done } = req.body
+    const { getDb } = require('../../src/db/connection')
+    getDb().prepare('UPDATE teacher_reminders SET done = ? WHERE id = ?').run(done ? 1 : 0, Number(req.params.id))
+    res.json({ ok: true, data: null })
+  } catch (err) {
+    res.status(500).json({ ok: false, error: err.message })
+  }
+})
+
 module.exports = router

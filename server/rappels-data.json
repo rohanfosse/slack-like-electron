@@ -1,0 +1,275 @@
+[
+  {
+    "promoTag": "FISA4",
+    "date": "2025-09-01",
+    "title": "Appréciation de la formation par l'entreprise",
+    "description": "Appréciation de la formation par l'entreprise\n\nAprès jury intermédiaire, communiquer le résultat à l'étudiant et à l'entreprise.",
+    "bloc": null
+  },
+  {
+    "promoTag": "CPIA2",
+    "date": "2025-09-08",
+    "title": "Toute l'année :",
+    "description": "Toute l'année : \n\n(Chaque fin de mois) Remontée des informations pour l'édition des cartes étudiantes\n(Tous les 15 jours) Bilan-briefing avec Compte-rendu\n(Minimum une fois par mois) Régulariser la saisie des absences",
+    "bloc": null
+  },
+  {
+    "promoTag": "FISA4",
+    "date": "2025-09-15",
+    "title": "Toute l'année :",
+    "description": "Toute l'année : \n\n(Une fois par alternance) Bilan-briefing avec Compte-rendu\n(Minimum une fois par mois) Régulariser la saisie des absences + Envoi des informations aux entreprises",
+    "bloc": null
+  },
+  {
+    "promoTag": "CPIA2",
+    "date": "2025-09-22",
+    "title": "Remettre les documents administratifs (certificat scolarité, attestation remise de documents…)",
+    "description": "Remettre les documents administratifs (certificat scolarité, attestation remise de documents…)\n\nElection délégués (à réaliser entre la 20ème et la 40ème heure après le début de la formation)\n\nRéunion des parents optionnelle",
+    "bloc": "Systèmes embarqués"
+  },
+  {
+    "promoTag": "CPIA2",
+    "date": "2025-10-27",
+    "title": "Appréciation du bloc",
+    "description": "Appréciation du bloc\n\nBilan et analyse du bloc par le tuteur (+ débriefing programmé au minimum 1 semaine après la fin du bloc - 1 représentant par campus)",
+    "bloc": null
+  },
+  {
+    "promoTag": "FISA4",
+    "date": "2025-10-27",
+    "title": "Appréciation du bloc",
+    "description": "Appréciation du bloc",
+    "bloc": null
+  },
+  {
+    "promoTag": "CPIA2",
+    "date": "2025-11-03",
+    "title": "Réunion des délégués n°1",
+    "description": "Réunion des délégués n°1",
+    "bloc": null
+  },
+  {
+    "promoTag": "FISA4",
+    "date": "2025-11-03",
+    "title": "Bilan et analyse du bloc par le tuteur (+ débriefing programmé au minimum 1 semaine après la fin du bloc - 1 représentant par campus)",
+    "description": "Bilan et analyse du bloc par le tuteur (+ débriefing programmé au minimum 1 semaine après la fin du bloc - 1 représentant par campus)",
+    "bloc": null
+  },
+  {
+    "promoTag": "CPIA2",
+    "date": "2025-11-17",
+    "title": "Envoi de la convocation avant session de rattrapage par mail",
+    "description": "Envoi de la convocation avant session de rattrapage par mail",
+    "bloc": "Conception et programmation orientée objet"
+  },
+  {
+    "promoTag": "CPIA2",
+    "date": "2025-11-24",
+    "title": "Bilans Individuels avec le référent ou un tuteur (si nécessaire)",
+    "description": "Bilans Individuels avec le référent ou un tuteur (si nécessaire)",
+    "bloc": null
+  },
+  {
+    "promoTag": "CPIA2",
+    "date": "2025-12-08",
+    "title": "Appréciation du bloc",
+    "description": "Appréciation du bloc\n\nBilan et analyse du bloc par le tuteur (+ débriefing programmé au minimum 1 semaine après la fin du bloc - 1 représentant par campus)",
+    "bloc": null
+  },
+  {
+    "promoTag": "CPIA2",
+    "date": "2025-12-22",
+    "title": "Appréciation du bloc",
+    "description": "Appréciation du bloc\n\nBilan et analyse du bloc par le tuteur (+ débriefing programmé au minimum 1 semaine après la fin du bloc - 1 représentant par campus)\n\nEnvoi de la convocation avant session de rattrapage par mail",
+    "bloc": "Vacances"
+  },
+  {
+    "promoTag": "CPIA2",
+    "date": "2026-01-05",
+    "title": "Envoi de la convocation avant session de rattrapage par mail",
+    "description": "Envoi de la convocation avant session de rattrapage par mail",
+    "bloc": "Réseaux & Système"
+  },
+  {
+    "promoTag": "FISA4",
+    "date": "2026-01-05",
+    "title": "Envoi de la convocation avant session de rattrapage par mail (informer également l'entreprise)",
+    "description": "Envoi de la convocation avant session de rattrapage par mail (informer également l'entreprise)",
+    "bloc": null
+  },
+  {
+    "promoTag": "CPIA2",
+    "date": "2026-01-12",
+    "title": "Envoi de la convocation avant session de rattrapage par mail",
+    "description": "Envoi de la convocation avant session de rattrapage par mail",
+    "bloc": null
+  },
+  {
+    "promoTag": "FISA4",
+    "date": "2026-01-12",
+    "title": "Réunion des délégués",
+    "description": "Réunion des délégués",
+    "bloc": "IoT"
+  },
+  {
+    "promoTag": "CPIA2",
+    "date": "2026-01-19",
+    "title": "Optionnelle : Réunion des délégués n°2",
+    "description": "Optionnelle : Réunion des délégués n°2",
+    "bloc": null
+  },
+  {
+    "promoTag": "CPIA2",
+    "date": "2026-01-26",
+    "title": "Appréciation du bloc",
+    "description": "Appréciation du bloc\n\nBilan et analyse du bloc par le tuteur (+ débriefing programmé au minimum 1 semaine après la fin du bloc - 1 représentant par campus)",
+    "bloc": null
+  },
+  {
+    "promoTag": "CPIA2",
+    "date": "2026-02-02",
+    "title": "Envoi de la convocation avant session de rattrapage par mail",
+    "description": "Envoi de la convocation avant session de rattrapage par mail",
+    "bloc": null
+  },
+  {
+    "promoTag": "CPIA2",
+    "date": "2026-02-09",
+    "title": "Appréciation du bloc",
+    "description": "Appréciation du bloc\n\nBilan et analyse du bloc par le tuteur (+ débriefing programmé au minimum 1 semaine après la fin du bloc - 1 représentant par campus)",
+    "bloc": null
+  },
+  {
+    "promoTag": "FISA4",
+    "date": "2026-02-09",
+    "title": "Appréciation du bloc",
+    "description": "Appréciation du bloc",
+    "bloc": null
+  },
+  {
+    "promoTag": "FISA4",
+    "date": "2026-02-16",
+    "title": "Bilan et analyse du bloc par le tuteur (+ débriefing programmé au minimum 1 semaine après la fin du bloc - 1 représentant par campus)",
+    "description": "Bilan et analyse du bloc par le tuteur (+ débriefing programmé au minimum 1 semaine après la fin du bloc - 1 représentant par campus)",
+    "bloc": "Entreprise"
+  },
+  {
+    "promoTag": "CPIA2",
+    "date": "2026-02-23",
+    "title": "Envoi de la convocation avant session de rattrapage par mail",
+    "description": "Envoi de la convocation avant session de rattrapage par mail",
+    "bloc": null
+  },
+  {
+    "promoTag": "CPIA2",
+    "date": "2026-03-02",
+    "title": "Envoi de la convocation avant session de rattrapage par mail",
+    "description": "Envoi de la convocation avant session de rattrapage par mail",
+    "bloc": "Développement web"
+  },
+  {
+    "promoTag": "FISA4",
+    "date": "2026-03-02",
+    "title": "Chaque semestre :",
+    "description": "Chaque semestre :\nObjectifs / Bilan semestriel / CR si visite en entreprise\nEnvoi du dossier de synthèse à l'entreprise",
+    "bloc": null
+  },
+  {
+    "promoTag": "CPIA2",
+    "date": "2026-03-09",
+    "title": "Envoi de la convocation avant session de rattrapage par mail",
+    "description": "Envoi de la convocation avant session de rattrapage par mail",
+    "bloc": null
+  },
+  {
+    "promoTag": "FISA4",
+    "date": "2026-03-09",
+    "title": "Envoi de la convocation avant session de rattrapage par mail (informer également l'entreprise)",
+    "description": "Envoi de la convocation avant session de rattrapage par mail (informer également l'entreprise)",
+    "bloc": null
+  },
+  {
+    "promoTag": "CPIA2",
+    "date": "2026-03-23",
+    "title": "Récupération des fiches de validation de stage et rédaction des conventions de stage",
+    "description": "Récupération des fiches de validation de stage et rédaction des conventions de stage",
+    "bloc": null
+  },
+  {
+    "promoTag": "CPIA2",
+    "date": "2026-03-30",
+    "title": "Bilan de formation",
+    "description": "Bilan de formation\n\nAppréciation du bloc",
+    "bloc": null
+  },
+  {
+    "promoTag": "CPIA2",
+    "date": "2026-04-06",
+    "title": "Bilan et analyse du bloc par le tuteur (+ débriefing programmé au minimum 1 semaine après la fin du bloc - 1 représentant par campus)",
+    "description": "Bilan et analyse du bloc par le tuteur (+ débriefing programmé au minimum 1 semaine après la fin du bloc - 1 représentant par campus)",
+    "bloc": "Stage 12 semaines à effectuer (minimum 8)"
+  },
+  {
+    "promoTag": "FISA4",
+    "date": "2026-04-13",
+    "title": "Bilan de formation",
+    "description": "Bilan de formation\n\nAppréciation des blocs\n\nEnvoi de la convocation avant session de rattrapage par mail (informer également l'entreprise)",
+    "bloc": "Projet Innovation"
+  },
+  {
+    "promoTag": "CPIA2",
+    "date": "2026-04-20",
+    "title": "Envoi de la convocation avant session de rattrapage par mail",
+    "description": "Envoi de la convocation avant session de rattrapage par mail",
+    "bloc": null
+  },
+  {
+    "promoTag": "FISA4",
+    "date": "2026-04-20",
+    "title": "Bilan et analyse des blocs par le tuteur (+ débriefing programmé au minimum 1 semaine après la fin du bloc - 1 représentant par campus)",
+    "description": "Bilan et analyse des blocs par le tuteur (+ débriefing programmé au minimum 1 semaine après la fin du bloc - 1 représentant par campus)",
+    "bloc": "Entreprise"
+  },
+  {
+    "promoTag": "CPIA2",
+    "date": "2026-04-27",
+    "title": "Suivi du stage en entreprise (privilégier le lieu du stage pour la visite)",
+    "description": "Suivi du stage en entreprise (privilégier le lieu du stage pour la visite)",
+    "bloc": null
+  },
+  {
+    "promoTag": "CPIA2",
+    "date": "2026-06-01",
+    "title": "Envoi des rapports aux membres de jury + fiche de confidentialité",
+    "description": "Envoi des rapports aux membres de jury + fiche de confidentialité",
+    "bloc": null
+  },
+  {
+    "promoTag": "CPIA2",
+    "date": "2026-06-15",
+    "title": "Récupérer la fiche d'évaluation de l'étudiant par l'entreprise",
+    "description": "Récupérer la fiche d'évaluation de l'étudiant par l'entreprise",
+    "bloc": "Soutenances stage"
+  },
+  {
+    "promoTag": "CPIA2",
+    "date": "2026-06-29",
+    "title": "Appréciation du stage par le tuteur entreprise",
+    "description": "Appréciation du stage par le tuteur entreprise",
+    "bloc": null
+  },
+  {
+    "promoTag": "CPIA2",
+    "date": "2026-07-13",
+    "title": "Envoi Convention de ré-inscription + demande de prélèvement (plus tard)",
+    "description": "Envoi Convention de ré-inscription + demande de prélèvement (plus tard)",
+    "bloc": null
+  },
+  {
+    "promoTag": "FISA4",
+    "date": "2026-07-13",
+    "title": "Chaque semestre :",
+    "description": "Chaque semestre :\nObjectifs / Bilan semestriel / CR si visite en entreprise\nEnvoi du dossier de synthèse à l'entreprise",
+    "bloc": null
+  }
+]

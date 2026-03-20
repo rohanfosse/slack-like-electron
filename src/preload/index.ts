@@ -223,6 +223,10 @@ contextBridge.exposeInMainWorld('api', {
   reportMessage:  (messageId: number, reason: string) => post(`/api/messages/${messageId}/report`, { reason }),
 
   // Feedback
+  // Rappels prof
+  getTeacherReminders: () => get('/api/admin/rappels'),
+  toggleReminderDone: (id: number, done: boolean) => post(`/api/admin/rappels/${id}/done`, { done }),
+
   submitFeedback: (type: string, title: string, description: string) =>
     post('/api/admin/feedback', { type, title, description }),
   getMyFeedback: () => get('/api/admin/feedback/mine'),

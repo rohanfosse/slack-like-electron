@@ -89,6 +89,7 @@ onMounted(async () => {
       }
       if (studRes?.ok) allStudents.value = studRes.data as { id: number; promo_id: number }[]
       if (ganttRes?.ok) ganttAll.value = ganttRes.data as GanttRow[]
+      loadReminders()
     } finally { loadingTeacher.value = false }
   } else {
     try {
@@ -104,6 +105,40 @@ onUnmounted(() => {
   if (_studentClock) clearInterval(_studentClock)
   if (_studentRefresh) clearInterval(_studentRefresh)
 })
+
+// ── Rappels prof (échéancier scolarité) ──────────────────────────────────────
+type Reminder = { id: number; promo_tag: string; date: string; title: string; description: string; bloc: string | null; done: number; isOverdue?: boolean }
+const allReminders = ref<Reminder[]>([])
+const showAllReminders = ref(false)
+
+const upcomingReminders = computed(() => {
+  const now = Date.now()
+  const enriched = allReminders.value.map(r => ({
+    ...r,
+    isOverdue: !r.done && new Date(r.date).getTime() < now,
+  }))
+  // Trier : non faits d'abord (overdue en premier), puis faits
+  const sorted = enriched.sort((a, b) => {
+    if (a.done !== b.done) return a.done - b.done
+    return new Date(a.date).getTime() - new Date(b.date).getTime()
+  })
+  return showAllReminders.value ? sorted : sorted.slice(0, 5)
+})
+
+async function loadReminders() {
+  try {
+    const res = await window.api.getTeacherReminders()
+    if (res?.ok) allReminders.value = res.data as Reminder[]
+  } catch {}
+}
+
+async function toggleReminder(id: number, done: boolean) {
+  try {
+    await window.api.toggleReminderDone(id, done)
+    const r = allReminders.value.find(r => r.id === id)
+    if (r) r.done = done ? 1 : 0
+  } catch {}
+}
 
 // ── Promo active + données filtrées ──────────────────────────────────────────
 const activePromo = computed(() =>
@@ -556,6 +591,35 @@ function onMilestoneClick(ms: FriseMilestone) {
           </div>
         </div>
 
+        <!-- Rappels prof (échéancier) -->
+        <div v-if="upcomingReminders.length" class="db-reminders">
+          <h4 class="db-reminders-title"><Clock :size="14" /> Échéancier</h4>
+          <div class="db-reminders-list">
+            <div
+              v-for="r in upcomingReminders"
+              :key="r.id"
+              class="db-reminder-item"
+              :class="{ done: r.done, overdue: r.isOverdue }"
+            >
+              <button class="db-reminder-check" @click="toggleReminder(r.id, !r.done)">
+                <CheckCircle2 v-if="r.done" :size="14" style="color:var(--color-success)" />
+                <div v-else class="db-reminder-circle" />
+              </button>
+              <div class="db-reminder-content">
+                <div class="db-reminder-header">
+                  <span class="db-reminder-promo">{{ r.promo_tag === 'CPIA2' ? 'CPI A2' : 'FISA A4' }}</span>
+                  <span class="db-reminder-date" :class="{ 'text-danger': r.isOverdue }">{{ formatDate(r.date) }}</span>
+                  <span v-if="r.bloc" class="db-reminder-bloc">{{ r.bloc }}</span>
+                </div>
+                <span class="db-reminder-title" :class="{ 'line-through': r.done }">{{ r.title }}</span>
+              </div>
+            </div>
+          </div>
+          <button v-if="allReminders.length > 5" class="btn-ghost db-reminders-toggle" @click="showAllReminders = !showAllReminders">
+            {{ showAllReminders ? 'Voir moins' : `Voir tout (${allReminders.length})` }}
+          </button>
+        </div>
+
         <!-- Tabs -->
         <div class="db-tabs">
           <button class="db-tab" :class="{ active: dashTab === 'projets' }" @click="dashTab = 'projets'">
@@ -965,6 +1029,45 @@ function onMilestoneClick(ms: FriseMilestone) {
 .db-date  { font-size: 12px; color: var(--text-muted); margin-top: 2px; text-transform: capitalize; }
 .db-echeancier-btn { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; padding: 6px 12px; flex-shrink: 0; }
 .db-header-actions { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+
+/* ── Rappels prof ── */
+.db-reminders { margin-bottom: 16px; }
+.db-reminders-title {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 12px; font-weight: 700; color: var(--text-muted);
+  text-transform: uppercase; letter-spacing: .5px; margin-bottom: 8px;
+}
+.db-reminders-list { display: flex; flex-direction: column; gap: 4px; }
+.db-reminder-item {
+  display: flex; align-items: flex-start; gap: 8px;
+  padding: 8px 12px; border-radius: 8px;
+  background: rgba(255,255,255,.02); transition: background var(--t-fast);
+}
+.db-reminder-item:hover { background: rgba(255,255,255,.05); }
+.db-reminder-item.done { opacity: .5; }
+.db-reminder-item.overdue { background: rgba(239,68,68,.06); }
+.db-reminder-check {
+  margin-top: 2px; background: none; border: none; cursor: pointer; flex-shrink: 0; padding: 0;
+}
+.db-reminder-circle {
+  width: 16px; height: 16px; border-radius: 50%;
+  border: 2px solid var(--border-input); transition: border-color var(--t-fast);
+}
+.db-reminder-check:hover .db-reminder-circle { border-color: var(--accent); }
+.db-reminder-content { flex: 1; min-width: 0; }
+.db-reminder-header { display: flex; align-items: center; gap: 6px; margin-bottom: 2px; flex-wrap: wrap; }
+.db-reminder-promo {
+  font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 4px;
+  background: rgba(74,144,217,.12); color: var(--accent); text-transform: uppercase;
+}
+.db-reminder-date { font-size: 11px; color: var(--text-muted); }
+.db-reminder-bloc {
+  font-size: 10px; padding: 1px 5px; border-radius: 3px;
+  background: rgba(255,255,255,.06); color: var(--text-secondary);
+}
+.db-reminder-title { font-size: 13px; color: var(--text-primary); line-height: 1.4; }
+.line-through { text-decoration: line-through; opacity: .6; }
+.db-reminders-toggle { margin-top: 6px; font-size: 12px; }
 
 /* ── Stats ── */
 .db-stats {

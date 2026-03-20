@@ -962,7 +962,32 @@ async function loadMaintenance() {
         </div>
         <div id="import-result" style="margin-top:.5rem;font-size:.85rem"></div>
       </div>
+
+      <div class="card">
+        <div class="card-title">Import rappels (échéancier scolarité)</div>
+        <div class="card-sub" style="margin-bottom:.75rem">Importe les rappels prof depuis le calendrier de scolarité (rappels-data.json).</div>
+        <button class="btn btn-primary" onclick="importRappels()">Importer les rappels</button>
+        <div id="rappels-result" style="margin-top:.5rem;font-size:.85rem"></div>
+      </div>
     </div>`
+}
+
+async function importRappels() {
+  const resultEl = document.getElementById('rappels-result')
+  resultEl.innerHTML = 'Import en cours...'
+  try {
+    const json = await fetch(\`\${API}/api/admin/import-rappels\`, {
+      method: 'POST', headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+      body: '{}',
+    }).then(r => r.json())
+    if (json.ok) {
+      resultEl.innerHTML = \`<span style="color:var(--green)">\${json.data.message}</span>\`
+    } else {
+      resultEl.innerHTML = \`<span style="color:var(--red)">\${json.error}</span>\`
+    }
+  } catch (err) {
+    resultEl.innerHTML = \`<span style="color:var(--red)">Erreur : \${err.message}</span>\`
+  }
 }
 
 async function importExamens() {

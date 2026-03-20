@@ -1,6 +1,6 @@
 const { getDb } = require('./connection');
 
-const CURRENT_VERSION = 21;
+const CURRENT_VERSION = 22;
 
 // ─── Schema initial ───────────────────────────────────────────────────────────
 // Crée toutes les tables avec leur schéma complet (colonnes UTC, toutes colonnes incluses).
@@ -522,6 +522,24 @@ function runMigrations(db) {
         );
         CREATE INDEX IF NOT EXISTS idx_feedback_status ON feedback(status);
         CREATE INDEX IF NOT EXISTS idx_feedback_user ON feedback(user_id);
+      `);
+    },
+
+    // v22 : rappels prof (échéancier scolarité)
+    (db) => {
+      db.exec(`
+        CREATE TABLE IF NOT EXISTS teacher_reminders (
+          id          INTEGER PRIMARY KEY AUTOINCREMENT,
+          promo_tag   TEXT NOT NULL,
+          date        TEXT NOT NULL,
+          title       TEXT NOT NULL,
+          description TEXT NOT NULL DEFAULT '',
+          bloc        TEXT,
+          done        INTEGER NOT NULL DEFAULT 0,
+          created_at  TEXT NOT NULL DEFAULT (datetime('now'))
+        );
+        CREATE INDEX IF NOT EXISTS idx_reminders_date ON teacher_reminders(date);
+        CREATE INDEX IF NOT EXISTS idx_reminders_promo ON teacher_reminders(promo_tag);
       `);
     },
   ];
