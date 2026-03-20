@@ -798,43 +798,48 @@ router.post('/feedback/:id/status', (req, res) => {
 })
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// IMPORT EXAMENS DEPUIS JSON
+// IMPORT DONNÉES — Examens, Rappels, Seed complet
 // ═══════════════════════════════════════════════════════════════════════════════
 
+// Helper : trouver ou créer une promo par nom
+function getOrCreatePromo(db, name, color) {
+  let promo = db.prepare('SELECT id FROM promotions WHERE name = ?').get(name)
+  if (promo) return promo.id
+  const id = db.prepare('INSERT INTO promotions (name, color) VALUES (?, ?)').run(name, color || '#4A90D9').lastInsertRowid
+  // Créer les canaux par défaut
+  db.prepare("INSERT INTO channels (promo_id, name, description, type) VALUES (?, 'annonces', 'Informations importantes', 'annonce')").run(id)
+  db.prepare("INSERT INTO channels (promo_id, name, description, type) VALUES (?, 'general', 'Canal principal', 'chat')").run(id)
+  return id
+}
+
+// Helper : trouver ou créer un canal par catégorie dans une promo
+function getOrCreateChannel(db, promoId, project) {
+  let ch = db.prepare('SELECT id FROM channels WHERE promo_id = ? AND category = ?').get(promoId, project)
+  if (ch) return ch.id
+  const chName = project.toLowerCase().replace(/[^a-z0-9àâéèêëïîôùûüç]+/g, '-').replace(/^-|-$/g, '')
+  return db.prepare("INSERT INTO channels (promo_id, name, description, type, category) VALUES (?, ?, ?, 'chat', ?)").run(
+    promoId, chName, 'Canal ' + project, project
+  ).lastInsertRowid
+}
+
+// Import examens par nom de promo
 router.post('/import-examens', (req, res) => {
   try {
-    const { promoId, promoTag } = req.body // promoTag: 'CPIA2' ou 'FISA4'
-    if (!promoId || !promoTag) return res.status(400).json({ ok: false, error: 'promoId et promoTag requis.' })
+    const { promoName, promoTag } = req.body
+    if (!promoName || !promoTag) return res.status(400).json({ ok: false, error: 'promoName et promoTag requis.' })
 
     const path = require('path')
     const fs = require('fs')
     const dataPath = path.join(__dirname, '..', 'examens-data.json')
     if (!fs.existsSync(dataPath)) return res.status(404).json({ ok: false, error: 'examens-data.json introuvable.' })
 
-    const examens = JSON.parse(fs.readFileSync(dataPath, 'utf8'))
-    const filtered = examens.filter(e => e.promoTag === promoTag)
-    if (!filtered.length) return res.json({ ok: true, data: { imported: 0, message: 'Aucun examen trouvé pour ' + promoTag } })
-
     const { getDb } = require('../../src/db/connection')
     const db = getDb()
+    const promoId = getOrCreatePromo(db, promoName)
 
-    // Trouver ou créer les canaux correspondants aux projets
-    const channelCache = {}
-    function getOrCreateChannel(project) {
-      if (channelCache[project]) return channelCache[project]
-      let ch = db.prepare('SELECT id FROM channels WHERE promo_id = ? AND category = ?').get(promoId, project)
-      if (!ch) {
-        // Créer un canal avec le nom du projet comme catégorie
-        const chName = project.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
-        const chId = db.prepare("INSERT INTO channels (promo_id, name, description, type, category) VALUES (?, ?, ?, 'chat', ?)").run(
-          promoId, chName, 'Canal ' + project, project
-        ).lastInsertRowid
-        channelCache[project] = chId
-        return chId
-      }
-      channelCache[project] = ch.id
-      return ch.id
-    }
+    const examens = JSON.parse(fs.readFileSync(dataPath, 'utf8'))
+    const filtered = examens.filter(e => e.promoTag === promoTag)
+    if (!filtered.length) return res.json({ ok: true, data: { imported: 0, message: 'Aucun examen pour ' + promoTag } })
 
     let imported = 0
     const insert = db.prepare(`
@@ -843,22 +848,99 @@ router.post('/import-examens', (req, res) => {
     `)
 
     for (const e of filtered) {
-      const channelId = getOrCreateChannel(e.project)
+      const channelId = getOrCreateChannel(db, promoId, e.project)
       const deadline = e.date ? e.date + 'T' + (e.hDebut ? e.hDebut.replace('h', ':') : '23:59') + ':00' : null
       if (!deadline) continue
-
-      // Vérifier si l'examen existe déjà (même titre + même date)
       const existing = db.prepare('SELECT id FROM travaux WHERE channel_id = ? AND title = ? AND deadline LIKE ?').get(channelId, e.title, e.date + '%')
       if (existing) continue
-
       insert.run(channelId, e.title, e.description, e.type, e.project, deadline, null)
       imported++
     }
 
-    res.json({ ok: true, data: { imported, total: filtered.length, message: `${imported} examens importés pour ${promoTag}.` } })
+    res.json({ ok: true, data: { imported, total: filtered.length, promoId, message: `${imported} examens importés dans "${promoName}".` } })
   } catch (err) {
     res.status(500).json({ ok: false, error: err.message })
   }
+})
+
+// Seed complet : crée les promos + canaux + importe examens + rappels
+router.post('/seed-promos', (req, res) => {
+  try {
+    const path = require('path')
+    const fs = require('fs')
+    const { getDb } = require('../../src/db/connection')
+    const db = getDb()
+    const results = []
+
+    // ── Promos à créer ──
+    const PROMOS = [
+      { name: 'CPI A2 Informatique', tag: 'CPIA2', color: '#4A90D9', blocs: [
+        'Systèmes embarqués', 'Conception et programmation objet', 'Réseaux et Système', 'Développement web'
+      ]},
+      { name: 'FISA Informatique A4', tag: 'FISA4', color: '#7B5EA7', blocs: [
+        'Big data', 'IoT', 'Intelligence Artificielle', 'Développement web avancé', 'Anglais'
+      ]},
+    ]
+
+    for (const p of PROMOS) {
+      const promoId = getOrCreatePromo(db, p.name, p.color)
+      results.push(`Promo "${p.name}" → ID ${promoId}`)
+
+      // Créer les canaux par bloc
+      for (const bloc of p.blocs) {
+        getOrCreateChannel(db, promoId, bloc)
+      }
+      results.push(`  ${p.blocs.length} canaux de projet créés`)
+
+      // Import examens
+      const examPath = path.join(__dirname, '..', 'examens-data.json')
+      if (fs.existsSync(examPath)) {
+        const examens = JSON.parse(fs.readFileSync(examPath, 'utf8'))
+        const filtered = examens.filter(e => e.promoTag === p.tag)
+        let exImported = 0
+        const insert = db.prepare(`
+          INSERT INTO travaux (channel_id, title, description, type, category, deadline, start_date, published, requires_submission, room)
+          VALUES (?, ?, ?, ?, ?, ?, ?, 1, 0, NULL)
+        `)
+        for (const e of filtered) {
+          const channelId = getOrCreateChannel(db, promoId, e.project)
+          const deadline = e.date ? e.date + 'T' + (e.hDebut ? e.hDebut.replace('h', ':') : '23:59') + ':00' : null
+          if (!deadline) continue
+          const existing = db.prepare('SELECT id FROM travaux WHERE channel_id = ? AND title = ? AND deadline LIKE ?').get(channelId, e.title, e.date + '%')
+          if (existing) continue
+          insert.run(channelId, e.title, e.description, e.type, e.project, deadline, null)
+          exImported++
+        }
+        results.push(`  ${exImported} examens importés`)
+      }
+    }
+
+    // Import rappels
+    const rappelsPath = path.join(__dirname, '..', 'rappels-data.json')
+    if (fs.existsSync(rappelsPath)) {
+      const rappels = JSON.parse(fs.readFileSync(rappelsPath, 'utf8'))
+      db.prepare('DELETE FROM teacher_reminders').run()
+      const insertR = db.prepare('INSERT INTO teacher_reminders (promo_tag, date, title, description, bloc) VALUES (?, ?, ?, ?, ?)')
+      for (const r of rappels) insertR.run(r.promoTag, r.date, r.title, r.description, r.bloc)
+      results.push(`${rappels.length} rappels prof importés`)
+    }
+
+    // Lister les promos
+    const allPromos = db.prepare('SELECT id, name FROM promotions').all()
+
+    res.json({ ok: true, data: { steps: results, promos: allPromos } })
+  } catch (err) {
+    res.status(500).json({ ok: false, error: err.message })
+  }
+})
+
+// Lister les promos (pour les selects)
+router.get('/promos-list', (req, res) => {
+  try {
+    const { getDb } = require('../../src/db/connection')
+    const promos = getDb().prepare('SELECT id, name, color FROM promotions ORDER BY name').all()
+    res.json({ ok: true, data: promos })
+  } catch { res.json({ ok: true, data: [] }) }
 })
 
 // ═══════════════════════════════════════════════════════════════════════════════
