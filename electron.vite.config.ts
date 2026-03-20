@@ -1,6 +1,6 @@
 import { resolve }         from 'path'
 import { builtinModules }  from 'module'
-import { defineConfig, externalizeDepsPlugin } from 'electron-vite'
+import { defineConfig } from 'electron-vite'
 import vue       from '@vitejs/plugin-vue'
 import commonjs  from '@rollup/plugin-commonjs'
 
@@ -40,7 +40,18 @@ export default defineConfig({
     },
   },
   preload: {
-    plugins: [externalizeDepsPlugin()],
+    // Ne pas externaliser socket.io-client — il doit être bundlé dans le preload
+    // car le preload packagé n'a pas accès à node_modules au runtime.
+    // On externalise uniquement electron et les builtins Node.
+    build: {
+      rollupOptions: {
+        external: [
+          'electron',
+          ...builtinModules,
+          ...builtinModules.map((m) => `node:${m}`),
+        ],
+      },
+    },
   },
   renderer: {
     root: resolve(__dirname, 'src/renderer'),
