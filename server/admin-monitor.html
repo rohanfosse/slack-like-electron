@@ -450,6 +450,10 @@ function showDashboard() {
   switchTab('serveur')
 }
 
+function authHeaders() {
+  return { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
+}
+
 async function apiFetch(url, opts = {}) {
   try {
     const ctrl = new AbortController()
