@@ -840,9 +840,9 @@
           </button>
         </div>
 
+        <div v-show="!channelsCollapsed" class="sidebar-scroll-list">
         <div
           v-for="group in channelGroups"
-          v-show="!channelsCollapsed"
           :key="group.key"
           class="sidebar-category"
           :class="{ 'drag-over': appStore.isStaff && dragOverCategory === group.key }"
@@ -929,6 +929,7 @@
             </template>
           </nav>
         </div>
+        </div><!-- /sidebar-scroll-list canaux -->
 
         <!-- Messages directs -->
         <template v-if="dmStudents.length">
@@ -950,53 +951,55 @@
             </button>
           </div>
 
-          <!-- Conversations récentes -->
-          <nav v-show="!dmCollapsed" aria-label="Messages directs">
-            <button
-              v-for="s in dmContactsToShow"
-              :key="s.id"
-              class="sidebar-item dm-item"
-              :class="{
-                active:    appStore.activeDmStudentId === s.id,
-                'dm-has-unread': !!appStore.unreadDms[s.name],
-              }"
-              @click="selectDm(s)"
-            >
-              <span class="dm-avatar" :style="{ background: avatarColor(s.name) }">{{ s.avatar_initials }}</span>
-              <span class="dm-info">
-                <span class="channel-name">{{ s.name }}</span>
-                <span v-if="getDmPreview(s.name)" class="dm-preview">{{ getDmPreview(s.name) }}</span>
-              </span>
-              <span
-                v-if="appStore.unreadDms[s.name]"
-                class="dm-unread-badge"
-              >
-                {{ (appStore.unreadDms[s.name] as number) > 9 ? '9+' : appStore.unreadDms[s.name] }}
-              </span>
-            </button>
-
-            <!-- Aucune conversation récente -->
-            <div v-if="!dmContactsToShow.length && !showAllDmStudents" class="dm-empty">
-              Aucune conversation
-            </div>
-          </nav>
-
-          <!-- Liste complète (toggle) -->
-          <template v-if="showAllDmStudents && !dmCollapsed">
-            <div class="dm-all-header">Tous les étudiants</div>
-            <nav aria-label="Tous les étudiants">
+          <!-- Conversations récentes + liste complète -->
+          <div v-show="!dmCollapsed" class="sidebar-scroll-list">
+            <nav aria-label="Messages directs">
               <button
-                v-for="s in dmStudents"
-                :key="'all-' + s.id"
-                class="sidebar-item"
-                :class="{ active: appStore.activeDmStudentId === s.id }"
-                @click="selectDm(s); showAllDmStudents = false"
+                v-for="s in dmContactsToShow"
+                :key="s.id"
+                class="sidebar-item dm-item"
+                :class="{
+                  active:    appStore.activeDmStudentId === s.id,
+                  'dm-has-unread': !!appStore.unreadDms[s.name],
+                }"
+                @click="selectDm(s)"
               >
-                <span class="channel-prefix">@</span>
-                <span class="channel-name">{{ s.name }}</span>
+                <span class="dm-avatar" :style="{ background: avatarColor(s.name) }">{{ s.avatar_initials }}</span>
+                <span class="dm-info">
+                  <span class="channel-name">{{ s.name }}</span>
+                  <span v-if="getDmPreview(s.name)" class="dm-preview">{{ getDmPreview(s.name) }}</span>
+                </span>
+                <span
+                  v-if="appStore.unreadDms[s.name]"
+                  class="dm-unread-badge"
+                >
+                  {{ (appStore.unreadDms[s.name] as number) > 9 ? '9+' : appStore.unreadDms[s.name] }}
+                </span>
               </button>
+
+              <!-- Aucune conversation récente -->
+              <div v-if="!dmContactsToShow.length && !showAllDmStudents" class="dm-empty">
+                Aucune conversation
+              </div>
             </nav>
-          </template>
+
+            <!-- Liste complète (toggle) -->
+            <template v-if="showAllDmStudents">
+              <div class="dm-all-header">Tous les étudiants</div>
+              <nav aria-label="Tous les étudiants">
+                <button
+                  v-for="s in dmStudents"
+                  :key="'all-' + s.id"
+                  class="sidebar-item"
+                  :class="{ active: appStore.activeDmStudentId === s.id }"
+                  @click="selectDm(s); showAllDmStudents = false"
+                >
+                  <span class="channel-prefix">@</span>
+                  <span class="channel-name">{{ s.name }}</span>
+                </button>
+              </nav>
+            </template>
+          </div>
         </template>
       </template>
     </div>
@@ -1259,6 +1262,19 @@
   font-weight: 700;
   color: var(--text-primary);
 }
+
+/* ── Liste déroulante (scroll) ── */
+.sidebar-scroll-list {
+  max-height: 40vh;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,255,255,.1) transparent;
+}
+.sidebar-scroll-list::-webkit-scrollbar { width: 4px; }
+.sidebar-scroll-list::-webkit-scrollbar-track { background: transparent; }
+.sidebar-scroll-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,.12); border-radius: 2px; }
+.sidebar-scroll-list::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,.2); }
 
 /* ── Section repliable ── */
 .sidebar-collapsible-header {
