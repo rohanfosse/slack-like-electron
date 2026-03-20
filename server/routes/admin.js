@@ -801,12 +801,22 @@ router.post('/feedback/:id/status', (req, res) => {
 // IMPORT DONNÉES — Examens, Rappels, Seed complet
 // ═══════════════════════════════════════════════════════════════════════════════
 
-// Helper : trouver ou créer une promo par nom
-function getOrCreatePromo(db, name, color) {
+// Helper : trouver une promo par nom (exact ou partiel) — NE PAS créer
+function findPromo(db, name) {
+  // Recherche exacte
   let promo = db.prepare('SELECT id FROM promotions WHERE name = ?').get(name)
   if (promo) return promo.id
+  // Recherche partielle (le nom contient le terme ou inversement)
+  promo = db.prepare('SELECT id FROM promotions WHERE name LIKE ? OR ? LIKE \'%\' || name || \'%\' ORDER BY id LIMIT 1').get(`%${name}%`, name)
+  if (promo) return promo.id
+  return null
+}
+
+// Helper : trouver ou créer une promo par nom (fallback si introuvable)
+function getOrCreatePromo(db, name, color) {
+  const existing = findPromo(db, name)
+  if (existing) return existing
   const id = db.prepare('INSERT INTO promotions (name, color) VALUES (?, ?)').run(name, color || '#4A90D9').lastInsertRowid
-  // Créer les canaux par défaut
   db.prepare("INSERT INTO channels (promo_id, name, description, type) VALUES (?, 'annonces', 'Informations importantes', 'annonce')").run(id)
   db.prepare("INSERT INTO channels (promo_id, name, description, type) VALUES (?, 'general', 'Canal principal', 'chat')").run(id)
   return id
@@ -883,8 +893,11 @@ router.post('/seed-promos', (req, res) => {
     ]
 
     for (const p of PROMOS) {
-      const promoId = getOrCreatePromo(db, p.name, p.color)
-      results.push(`Promo "${p.name}" → ID ${promoId}`)
+      const existingId = findPromo(db, p.name)
+      const promoId = existingId || getOrCreatePromo(db, p.name, p.color)
+      results.push(existingId
+        ? `Promo "${p.name}" trouvée → ID ${promoId} (existante)`
+        : `Promo "${p.name}" créée → ID ${promoId}`)
 
       // Créer les canaux par bloc
       for (const bloc of p.blocs) {

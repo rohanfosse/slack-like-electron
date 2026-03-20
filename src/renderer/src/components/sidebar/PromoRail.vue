@@ -12,17 +12,21 @@
 </script>
 
 <template>
-  <ul id="nav-promo-list" class="nav-promo-list" aria-label="Promotions">
-    <li v-for="p in props.promotions" :key="p.id">
-      <button
-        class="nav-promo-btn"
-        :class="{ active: appStore.activePromoId === p.id }"
-        :title="p.name"
-        :style="{ '--promo-color': p.color }"
-        @click="emit('select', p.id)"
-      >
-        {{ p.name }}
-      </button>
-    </li>
-  </ul>
+  <div class="nav-promo-section">
+    <span class="nav-promo-label">Promotions</span>
+    <ul id="nav-promo-list" class="nav-promo-list" aria-label="Promotions">
+      <li v-for="p in props.promotions" :key="p.id">
+        <button
+          class="nav-promo-btn"
+          :class="{ active: appStore.activePromoId === p.id }"
+          :title="p.name"
+          :style="{ '--promo-color': p.color }"
+          @click="emit('select', p.id)"
+        >
+          <span class="nav-promo-dot" :style="{ background: p.color }" />
+          {{ p.name }}
+        </button>
+      </li>
+    </ul>
+  </div>
 </template>
