@@ -86,6 +86,10 @@ router.post('/', validate(sendMessageSchema), (req, res) => {
     }
 
     const result  = queries.sendMessage(payload)
+    const message = queries.getMessageById(Number(result.lastInsertRowid))
+    if (!message) {
+      throw new Error('Le message a été inséré mais n’a pas pu être relu.')
+    }
 
     // ── Parsing des mentions ─────────────────────────────────────────────────
     const rawContent      = payload.content ?? ''
@@ -124,7 +128,7 @@ router.post('/', validate(sendMessageSchema), (req, res) => {
       }
     }
 
-    res.json({ ok: true, data: result })
+    res.json({ ok: true, data: message })
   } catch (err) {
     res.status(400).json({ ok: false, error: err.message })
   }

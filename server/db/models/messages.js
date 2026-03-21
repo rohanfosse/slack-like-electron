@@ -1,17 +1,29 @@
 const { getDb } = require('../connection');
 
 const PAGE_SIZE = 50;
+const MESSAGE_SELECT = `
+  SELECT m.*,
+         m.pinned AS is_pinned,
+         COALESCE(s.avatar_initials, substr(upper(m.author_name), 1, 2)) AS author_initials,
+         COALESCE(s.photo_data, t.photo_data) AS author_photo
+  FROM messages m
+  LEFT JOIN students s ON s.name = m.author_name
+  LEFT JOIN teachers t ON t.name = m.author_name
+`;
 
 function getChannelMessages(channelId) {
   return getDb().prepare(
-    `SELECT m.*,
-           COALESCE(s.avatar_initials, substr(upper(m.author_name), 1, 2)) AS author_initials,
-           COALESCE(s.photo_data, t.photo_data) AS author_photo
-    FROM messages m
-    LEFT JOIN students s ON s.name = m.author_name
-    LEFT JOIN teachers t ON t.name = m.author_name
-    WHERE m.channel_id = ? ORDER BY m.created_at ASC`
+    `${MESSAGE_SELECT}
+     WHERE m.channel_id = ?
+     ORDER BY m.created_at ASC`
   ).all(channelId);
+}
+
+function getMessageById(messageId) {
+  return getDb().prepare(
+    `${MESSAGE_SELECT}
+     WHERE m.id = ?`
+  ).get(messageId) ?? null;
 }
 
 /**
@@ -22,32 +34,25 @@ function getChannelMessages(channelId) {
 function getChannelMessagesPage(channelId, beforeId) {
   if (beforeId) {
     return getDb().prepare(
-      `SELECT m.*, COALESCE(s.avatar_initials, substr(upper(m.author_name), 1, 2)) AS author_initials,
-           COALESCE(s.photo_data, t.photo_data) AS author_photo
-    FROM messages m
-    LEFT JOIN students s ON s.name = m.author_name
-    LEFT JOIN teachers t ON t.name = m.author_name
-WHERE m.channel_id = ? AND m.id < ? ORDER BY m.id DESC LIMIT ?`
+      `${MESSAGE_SELECT}
+       WHERE m.channel_id = ? AND m.id < ?
+       ORDER BY m.id DESC
+       LIMIT ?`
     ).all(channelId, beforeId, PAGE_SIZE);
   }
   return getDb().prepare(
-    `SELECT m.*, COALESCE(s.avatar_initials, substr(upper(m.author_name), 1, 2)) AS author_initials,
-           COALESCE(s.photo_data, t.photo_data) AS author_photo
-    FROM messages m
-    LEFT JOIN students s ON s.name = m.author_name
-    LEFT JOIN teachers t ON t.name = m.author_name
-WHERE m.channel_id = ? ORDER BY m.id DESC LIMIT ?`
+    `${MESSAGE_SELECT}
+     WHERE m.channel_id = ?
+     ORDER BY m.id DESC
+     LIMIT ?`
   ).all(channelId, PAGE_SIZE);
 }
 
 function getDmMessages(studentId) {
   return getDb().prepare(
-    `SELECT m.*, COALESCE(s.avatar_initials, substr(upper(m.author_name), 1, 2)) AS author_initials,
-           COALESCE(s.photo_data, t.photo_data) AS author_photo
-    FROM messages m
-    LEFT JOIN students s ON s.name = m.author_name
-    LEFT JOIN teachers t ON t.name = m.author_name
-WHERE m.dm_student_id = ? ORDER BY m.created_at ASC`
+    `${MESSAGE_SELECT}
+     WHERE m.dm_student_id = ?
+     ORDER BY m.created_at ASC`
   ).all(studentId);
 }
 
@@ -80,20 +85,20 @@ function getDmMessagesPage(studentId, beforeId, peerStudentId) {
 
       if (beforeId) {
         return getDb().prepare(
-          `SELECT m.*, COALESCE(s.avatar_initials, substr(upper(m.author_name), 1, 2)) AS author_initials, COALESCE(s.photo_data, t.photo_data) AS author_photo
-           FROM messages m LEFT JOIN students s ON s.name = m.author_name LEFT JOIN teachers t ON t.name = m.author_name
+          `${MESSAGE_SELECT}
            WHERE m.dm_student_id = ?
              AND m.author_name IN (?, ?)
              AND m.id < ?
-           ORDER BY m.id DESC LIMIT ?`
+           ORDER BY m.id DESC
+           LIMIT ?`
         ).all(boxId, selfName, peerName, beforeId, PAGE_SIZE)
       }
       return getDb().prepare(
-        `SELECT m.*, COALESCE(s.avatar_initials, substr(upper(m.author_name), 1, 2)) AS author_initials, COALESCE(s.photo_data, t.photo_data) AS author_photo
-         FROM messages m LEFT JOIN students s ON s.name = m.author_name LEFT JOIN teachers t ON t.name = m.author_name
+        `${MESSAGE_SELECT}
          WHERE m.dm_student_id = ?
            AND m.author_name IN (?, ?)
-         ORDER BY m.id DESC LIMIT ?`
+         ORDER BY m.id DESC
+         LIMIT ?`
       ).all(boxId, selfName, peerName, PAGE_SIZE)
     }
   }
@@ -101,29 +106,26 @@ function getDmMessagesPage(studentId, beforeId, peerStudentId) {
   // Fallback : boîte unique (comportement existant)
   if (beforeId) {
     return getDb().prepare(
-      `SELECT m.*, COALESCE(s.avatar_initials, substr(upper(m.author_name), 1, 2)) AS author_initials,
-           COALESCE(s.photo_data, t.photo_data) AS author_photo
-    FROM messages m
-    LEFT JOIN students s ON s.name = m.author_name
-    LEFT JOIN teachers t ON t.name = m.author_name
-WHERE m.dm_student_id = ? AND m.id < ? ORDER BY m.id DESC LIMIT ?`
+      `${MESSAGE_SELECT}
+       WHERE m.dm_student_id = ? AND m.id < ?
+       ORDER BY m.id DESC
+       LIMIT ?`
     ).all(studentId, beforeId, PAGE_SIZE);
   }
   return getDb().prepare(
-    `SELECT m.*, COALESCE(s.avatar_initials, substr(upper(m.author_name), 1, 2)) AS author_initials,
-           COALESCE(s.photo_data, t.photo_data) AS author_photo
-    FROM messages m
-    LEFT JOIN students s ON s.name = m.author_name
-    LEFT JOIN teachers t ON t.name = m.author_name
-WHERE m.dm_student_id = ? ORDER BY m.id DESC LIMIT ?`
+    `${MESSAGE_SELECT}
+     WHERE m.dm_student_id = ?
+     ORDER BY m.id DESC
+     LIMIT ?`
   ).all(studentId, PAGE_SIZE);
 }
 
 function searchMessages(channelId, query) {
   return getDb().prepare(`
-    SELECT * FROM messages
-    WHERE channel_id = ? AND content LIKE '%' || ? || '%'
-    ORDER BY created_at ASC LIMIT 200
+    ${MESSAGE_SELECT}
+    WHERE m.channel_id = ? AND m.content LIKE '%' || ? || '%'
+    ORDER BY m.created_at ASC
+    LIMIT 200
   `).all(channelId, query);
 }
 
@@ -142,13 +144,10 @@ function searchDmMessages(studentId, query, peerId) {
   }
 
   return getDb().prepare(`
-    SELECT m.*, COALESCE(s.avatar_initials, substr(upper(m.author_name), 1, 2)) AS author_initials,
-           COALESCE(s.photo_data, t.photo_data) AS author_photo
-    FROM messages m
-    LEFT JOIN students s ON s.name = m.author_name
-    LEFT JOIN teachers t ON t.name = m.author_name
+    ${MESSAGE_SELECT}
     WHERE ${where}
-    ORDER BY m.created_at ASC LIMIT 200
+    ORDER BY m.created_at ASC
+    LIMIT 200
   `).all(...params);
 }
 
@@ -280,6 +279,7 @@ function getRecentDmContacts(studentId, limit = 15) {
 }
 
 module.exports = {
+  getMessageById,
   getChannelMessages, getChannelMessagesPage,
   getDmMessages, getDmMessagesPage,
   searchMessages, searchDmMessages, searchAllMessages, sendMessage,
