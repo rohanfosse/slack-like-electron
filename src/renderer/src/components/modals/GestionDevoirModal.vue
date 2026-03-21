@@ -365,17 +365,31 @@
         {{ devoirStatus.label }}
       </div>
 
-      <!-- ── Onglets ──────────────────────────────────────────────────────── -->
+      <!-- ── Onglets (pills) ──────────────────────────────────────────────── -->
       <div class="gd-tabs">
-        <button class="gd-tab" :class="{ active: activeTab === 'apercu' }" @click="activeTab = 'apercu'">Aperçu</button>
-        <button class="gd-tab" :class="{ active: activeTab === 'rendus' }" @click="activeTab = 'rendus'">
-          Rendus <span v-if="totalCount" class="gd-tab-badge">{{ submittedDepots.length }}/{{ totalCount }}</span>
+        <button class="gd-tab-pill" :class="{ active: activeTab === 'apercu' }" @click="activeTab = 'apercu'">Aperçu</button>
+        <button class="gd-tab-pill" :class="{ active: activeTab === 'rendus' }" @click="activeTab = 'rendus'">
+          Rendus <span v-if="totalCount" class="gd-tab-pill-badge">{{ submittedDepots.length }}/{{ totalCount }}</span>
         </button>
-        <button class="gd-tab" :class="{ active: activeTab === 'rubrique' }" @click="activeTab = 'rubrique'">Rubrique</button>
+        <button class="gd-tab-pill" :class="{ active: activeTab === 'rubrique' }" @click="activeTab = 'rubrique'">Rubrique</button>
       </div>
 
       <!-- ════════ ONGLET APERÇU ════════ -->
       <div v-if="activeTab === 'apercu'" class="gd-panel">
+
+        <!-- Barre de progression soumissions -->
+        <div v-if="totalCount" class="gd-submit-progress">
+          <div class="gd-submit-progress-header">
+            <span class="gd-submit-progress-label">Soumissions</span>
+            <span class="gd-submit-progress-pct">{{ submittedDepots.length }}/{{ totalCount }} ({{ submitPct }}%)</span>
+          </div>
+          <div class="linear-progress"><div class="linear-progress-fill" :style="{ width: submitPct + '%' }" /></div>
+          <div class="gd-quick-stats">
+            <span class="gd-qs-badge gd-qs-submitted"><CheckCircle2 :size="10" /> {{ submittedDepots.length }} rendu{{ submittedDepots.length > 1 ? 's' : '' }}</span>
+            <span class="gd-qs-badge gd-qs-graded"><Star :size="10" /> {{ notedDepots.length }} noté{{ notedDepots.length > 1 ? 's' : '' }}</span>
+            <span class="gd-qs-badge gd-qs-pending"><Clock :size="10" /> {{ pendingDepots.length }} en attente</span>
+          </div>
+        </div>
 
         <!-- Carte Informations -->
         <div class="gd-card">
@@ -631,6 +645,11 @@
           <button class="btn-primary" style="font-size:13px;margin-top:8px" @click="openRubricModal">Créer une rubrique</button>
         </div>
       </div>
+      <!-- Raccourcis clavier -->
+      <div class="gd-kbd-hints">
+        <span><kbd>Esc</kbd> Fermer</span>
+        <span v-if="editingTitle || editingDeadline || editingDesc"><kbd>Enter</kbd> Sauvegarder</span>
+      </div>
     </template>
   </Modal>
 </template>
@@ -648,20 +667,57 @@
 .status-expired   { background: rgba(239,68,68,.08); color: #f87171; }
 .status-complete  { background: rgba(59,130,246,.08); color: #60a5fa; }
 
-/* Onglets */
+/* Onglets — style pills */
 .gd-tabs {
-  display: flex; border-bottom: 1px solid var(--border); padding: 0 20px;
+  display: flex; gap: 6px; padding: 8px 20px;
+  border-bottom: 1px solid var(--border);
 }
-.gd-tab {
-  padding: 8px 14px; font-size: 12px; font-weight: 600; color: var(--text-muted);
-  background: none; border: none; cursor: pointer;
-  border-bottom: 2px solid transparent; transition: all var(--t-fast);
+.gd-tab-pill {
+  padding: 5px 14px; font-size: 12px; font-weight: 600; color: var(--text-muted);
+  background: rgba(255,255,255,.04); border: 1px solid transparent;
+  border-radius: 20px; cursor: pointer; font-family: var(--font);
+  transition: all var(--t-fast);
 }
-.gd-tab:hover { color: var(--text-secondary); }
-.gd-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
-.gd-tab-badge {
+.gd-tab-pill:hover { background: rgba(255,255,255,.08); color: var(--text-secondary); }
+.gd-tab-pill.active {
+  background: rgba(var(--accent-rgb, 74,144,217), .15); color: var(--accent);
+  border-color: rgba(var(--accent-rgb, 74,144,217), .3);
+}
+.gd-tab-pill-badge {
   font-size: 10px; font-weight: 700; padding: 1px 5px; border-radius: 8px;
-  background: rgba(255,255,255,.08); margin-left: 4px;
+  background: rgba(255,255,255,.1); margin-left: 4px;
+}
+
+/* Barre de progression soumissions (onglet Aperçu) */
+.gd-submit-progress {
+  margin-bottom: 12px; padding: 10px 12px; border-radius: 8px;
+  background: rgba(255,255,255,.02); border: 1px solid var(--border);
+}
+.gd-submit-progress-header {
+  display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 4px;
+}
+.gd-submit-progress-label { font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: .3px; }
+.gd-submit-progress-pct { font-size: 12px; font-weight: 700; color: var(--accent); }
+
+/* Quick stats badges */
+.gd-quick-stats { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+.gd-qs-badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 12px;
+}
+.gd-qs-submitted { background: rgba(34,197,94,.1); color: #22c55e; }
+.gd-qs-graded    { background: rgba(59,130,246,.1); color: #60a5fa; }
+.gd-qs-pending   { background: rgba(243,156,18,.1); color: var(--color-warning); }
+
+/* Raccourcis clavier */
+.gd-kbd-hints {
+  display: flex; gap: 14px; justify-content: center; padding: 6px 20px;
+  font-size: 10px; color: var(--text-muted); border-top: 1px solid var(--border);
+}
+.gd-kbd-hints kbd {
+  display: inline-block; padding: 1px 4px; border-radius: 3px; font-size: 9px;
+  background: rgba(255,255,255,.06); border: 1px solid var(--border);
+  font-family: var(--font); margin-right: 2px;
 }
 
 /* Panel commun */

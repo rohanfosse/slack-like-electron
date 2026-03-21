@@ -83,7 +83,7 @@ app.use('/api/resources',   require('./routes/resources'))
 app.use('/api/documents',   require('./routes/documents'))
 app.use('/api/teachers',    require('./routes/teachers'))
 app.use('/api/rubrics',     require('./routes/rubrics'))
-app.use('/api/admin',       require('./routes/admin'))
+app.use('/api/admin',       require('./routes/admin/index'))
 
 // ── Fichiers statiques & SPA ──────────────────────────────────────────────────
 const path = require('path')
