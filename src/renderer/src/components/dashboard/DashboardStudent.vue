@@ -87,13 +87,34 @@ const emit = defineEmits<{
       @navigate-devoirs="emit('navigateDevoirs')"
     />
 
-    <!-- Bannière onboarding (première visite) -->
-    <div v-if="showOnboarding" class="db-onboarding">
-      <div class="db-onboarding-content">
-        <strong>Bienvenue sur Cursus !</strong>
-        <span>Consultez vos <b>devoirs</b> dans la section Devoirs, discutez dans les <b>canaux</b>, et suivez votre <b>progression</b> ici.</span>
+    <!-- Encart première connexion (beta + guide) -->
+    <div v-if="showOnboarding" class="db-welcome">
+      <div class="db-welcome-header">
+        <span class="db-welcome-badge">Beta</span>
+        <span class="db-welcome-title">Bienvenue sur Cursus</span>
       </div>
-      <button class="btn-ghost db-onboarding-close" @click="emit('dismissOnboarding')">C'est compris</button>
+      <p class="db-welcome-intro">
+        Cette plateforme est en <strong>version beta</strong>. Vous êtes parmi les premiers à l'utiliser.
+        N'hésitez pas à signaler tout problème à votre enseignant.
+      </p>
+      <div class="db-welcome-grid">
+        <div class="db-welcome-card">
+          <strong>Devoirs</strong>
+          <span>Consultez vos devoirs, déposez vos rendus et suivez vos notes dans la section Devoirs.</span>
+        </div>
+        <div class="db-welcome-card">
+          <strong>Messages</strong>
+          <span>Échangez avec vos enseignants et camarades dans les canaux de votre promotion.</span>
+        </div>
+        <div class="db-welcome-card">
+          <strong>Documents</strong>
+          <span>Retrouvez les ressources partagées par vos enseignants dans la section Documents.</span>
+        </div>
+      </div>
+      <div class="db-welcome-footer">
+        <span class="db-welcome-hint">Utilisez la barre latérale pour naviguer entre les sections.</span>
+        <button class="btn-primary db-welcome-btn" @click="emit('dismissOnboarding')">C'est noté</button>
+      </div>
     </div>
 
     <StudentUrgentActions
@@ -152,16 +173,51 @@ const emit = defineEmits<{
 .db-skel-card { height: 76px; border-radius: 10px; flex-shrink: 0; }
 .db-skel-content { display: flex; flex-direction: column; gap: 10px; margin-top: 8px; }
 
-/* ── Onboarding ── */
-.db-onboarding {
-  display: flex; align-items: center; gap: 16px;
-  padding: 14px 20px; background: rgba(74,144,217,.1);
-  border: 1px solid rgba(74,144,217,.25);
-  border-radius: var(--radius); margin-bottom: 16px;
+/* ── Welcome (beta) ── */
+.db-welcome {
+  background: var(--bg-elevated, rgba(255,255,255,.03));
+  border: 1px solid var(--border); border-radius: 12px;
+  padding: 20px 24px; margin-bottom: 16px;
 }
-.db-onboarding-content { flex: 1; font-size: 13.5px; color: var(--text-secondary); line-height: 1.5; }
-.db-onboarding-content strong { color: var(--text-primary); display: block; margin-bottom: 2px; }
-.db-onboarding-close { flex-shrink: 0; white-space: nowrap; }
+.db-welcome-header {
+  display: flex; align-items: center; gap: 10px; margin-bottom: 10px;
+}
+.db-welcome-badge {
+  font-size: 10px; font-weight: 800; text-transform: uppercase;
+  letter-spacing: .6px; padding: 3px 10px; border-radius: 6px;
+  background: rgba(74,144,217,.15); color: var(--accent);
+}
+.db-welcome-title {
+  font-size: 16px; font-weight: 700; color: var(--text-primary);
+}
+.db-welcome-intro {
+  font-size: 13px; color: var(--text-secondary); line-height: 1.6;
+  margin-bottom: 16px; max-width: 520px;
+}
+.db-welcome-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;
+  margin-bottom: 16px;
+}
+.db-welcome-card {
+  background: rgba(255,255,255,.02); border: 1px solid var(--border);
+  border-radius: 8px; padding: 12px; display: flex; flex-direction: column; gap: 4px;
+}
+.db-welcome-card strong {
+  font-size: 13px; font-weight: 700; color: var(--text-primary);
+}
+.db-welcome-card span {
+  font-size: 11.5px; color: var(--text-muted); line-height: 1.4;
+}
+.db-welcome-footer {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+}
+.db-welcome-hint {
+  font-size: 12px; color: var(--text-muted); font-style: italic;
+}
+.db-welcome-btn { font-size: 13px; }
+@media (max-width: 600px) {
+  .db-welcome-grid { grid-template-columns: 1fr; }
+}
 
 /* ── Tabs ── */
 .db-tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--border); padding-bottom: 0; }
