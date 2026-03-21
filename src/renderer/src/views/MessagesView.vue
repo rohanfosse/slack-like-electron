@@ -191,15 +191,19 @@
           <Menu :size="22" />
         </button>
         <span id="channel-icon" class="channel-icon">{{ appStore.activeDmStudentId ? '@' : '#' }}</span>
-        <span id="channel-name" class="channel-name">{{ appStore.activeChannelName }}</span>
-        <span
-          v-if="channelHeader?.type === 'annonce'"
-          id="channel-type-badge"
-          class="channel-type-badge"
-        >
-          Annonce
-        </span>
-        <span v-if="appStore.activeChannelDescription" class="channel-description" :title="appStore.activeChannelDescription">{{ appStore.activeChannelDescription }}</span>
+        <div class="channel-header-info">
+          <div class="channel-header-title-row">
+            <span id="channel-name" class="channel-name">{{ appStore.activeChannelName }}</span>
+            <span
+              v-if="channelHeader?.type === 'annonce'"
+              id="channel-type-badge"
+              class="channel-type-badge"
+            >
+              Annonce
+            </span>
+          </div>
+          <span v-if="appStore.activeChannelDescription" class="channel-description" :title="appStore.activeChannelDescription">{{ appStore.activeChannelDescription }}</span>
+        </div>
       </div>
 
       <!-- Barre de recherche -->
@@ -342,12 +346,14 @@
 
     <!-- Aucun canal sélectionné - écran d'accueil -->
     <div v-else class="no-channel-hint" id="no-channel-hint">
-      <MessageSquare :size="40" style="opacity:.2;margin-bottom:12px" />
-      <h3 style="font-size:16px;font-weight:700;color:var(--text-secondary);margin-bottom:4px">
+      <div class="welcome-icon-wrapper">
+        <MessageSquare :size="32" class="welcome-icon" />
+      </div>
+      <h3 class="welcome-heading">
         Bienvenue{{ appStore.currentUser ? ', ' + appStore.currentUser.name.split(' ')[0] : '' }} !
       </h3>
-      <p style="margin-bottom:16px;max-width:360px;line-height:1.5">
-        Choisissez un canal dans la barre latérale pour commencer.
+      <p class="welcome-sub">
+        Selectionnez un canal dans la barre laterale pour commencer a echanger.
       </p>
       <div v-if="appStore.isStudent" class="welcome-tips">
         <div class="welcome-tip">

@@ -300,12 +300,20 @@
 .auth-brand {
   flex: 0 0 42%;
   background: linear-gradient(155deg, #1a2535 0%, #141618 55%, #111827 100%);
+  background-size: 300% 300%;
+  animation: auth-gradient-shift 12s ease infinite;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 40px;
   position: relative;
   overflow: hidden;
+}
+
+@keyframes auth-gradient-shift {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
 }
 
 /* Cercles décoratifs */
@@ -453,13 +461,14 @@
   font-size: 14px;
   font-family: var(--font);
   outline: none;
-  transition: border-color .15s, box-shadow .15s;
+  transition: border-color .25s ease, box-shadow .25s ease, background .25s ease;
   box-sizing: border-box;
 }
 .auth-input:focus-visible { outline: 2px solid var(--accent); outline-offset: -1px; }
 .auth-input:focus {
   border-color: var(--accent, #4A90D9);
-  box-shadow: 0 0 0 3px rgba(74,144,217,.15);
+  box-shadow: 0 0 0 3.5px rgba(74,144,217,.12);
+  background: rgba(74,144,217,.04);
 }
 .auth-input::placeholder { color: var(--text-muted); opacity: .6; }
 
