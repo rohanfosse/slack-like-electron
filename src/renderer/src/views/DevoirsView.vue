@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue'
+import { onMounted, onBeforeUnmount, watch } from 'vue'
 import {
   BookOpen, BarChart2, List, Grid, Plus, Upload, Link2, X,
   FileText, CheckCircle2, Clock, Lock, AlertTriangle, ChevronRight,
@@ -8,618 +8,84 @@ import {
 import { useAppStore }     from '@/stores/app'
 import { useTravauxStore } from '@/stores/travaux'
 import { useModalsStore }  from '@/stores/modals'
-import { useToast }        from '@/composables/useToast'
 import { deadlineClass, deadlineLabel, formatDate } from '@/utils/date'
 import { avatarColor, initials } from '@/utils/format'
 import { parseCategoryIcon } from '@/utils/categoryIcon'
-import type { Devoir, Rubric, GanttRow } from '@/types'
+import { typeLabel, extractDuration, isExpired as _isExpired } from '@/utils/devoir'
+import type { Devoir } from '@/types'
+import { useRealtimeClock }      from '@/composables/useRealtimeClock'
+import { useDevoirsTeacher }     from '@/composables/useDevoirsTeacher'
+import { useDevoirsStudent }     from '@/composables/useDevoirsStudent'
+import { useStudentDeposit }     from '@/composables/useStudentDeposit'
+import { useTeacherGrading }     from '@/composables/useTeacherGrading'
+import { useDevoirContextMenu }  from '@/composables/useDevoirContextMenu'
 import ProjetFiche        from '@/components/projet/ProjetFiche.vue'
 import StudentProjetFiche from '@/components/projet/StudentProjetFiche.vue'
 
 const props = defineProps<{ toggleSidebar?: () => void }>()
-const { showToast } = useToast()
 
 const appStore     = useAppStore()
 const travauxStore = useTravauxStore()
 const modals       = useModalsStore()
 
-// ── Vue locale enseignant ──────────────────────────────────────────────────────
-const teacherView = ref<'gantt' | 'liste' | 'rendus'>('gantt')
+// ── Composables ──────────────────────────────────────────────────────────────
+const { now } = useRealtimeClock()
 
-// ── Filtres prof ─────────────────────────────────────────────────────────────
-const filterCategory = ref<string>('')
-const filterRendusStatus = ref<'all' | 'ungraded' | 'graded' | 'missing'>('all')
-const sortRendus = ref<'name' | 'date'>('name')
-const teacherSearch = ref('')
-const filterStatus = ref<'all' | 'draft' | 'expired' | 'pending'>('all')
-const collapsedProjects = ref<Set<string>>(new Set())
+const {
+  teacherView, filterCategory, filterRendusStatus, sortRendus, teacherSearch,
+  filterStatus, collapsedProjects, toggleProjectCollapse,
+  unifiedGrouped, unifiedFlat, globalDrafts, globalToGrade,
+  upcomingDevoirs, devoirsByType, teacherCategories, ganttItems, rendusByDevoir,
+  publishDevoir, publishAllDrafts, addDevoirOfType,
+  projectDevoirCount, projectNextDeadline, projectTypeCounts, projectStats,
+  loadView, setTeacherView, openDevoir,
+} = useDevoirsTeacher()
 
-function toggleProjectCollapse(project: string) {
-  if (collapsedProjects.value.has(project)) collapsedProjects.value.delete(project)
-  else collapsedProjects.value.add(project)
-}
+const {
+  studentGroups, filteredDevoirs, submittedDevoirs, pendingDeposit,
+  eventDevoirs, studentStats, studentProjectOverview,
+  loadView: loadStudentView,
+} = useDevoirsStudent(now)
 
-// ── Tableau unifié prof ─────────────────────────────────────────────────────
-type UnifiedRow = GanttRow & { noted_count: number; statusLabel: string; statusCls: string }
+const {
+  depositingDevoirId, depositMode, depositLink, depositFile, depositFileName,
+  depositing, rubricPreview,
+  startDeposit, cancelDeposit, pickFile, clearDepositFile, submitDeposit,
+} = useStudentDeposit(now)
 
-const unifiedGrouped = computed(() => {
-  const raw = travauxStore.ganttData
-  const q = teacherSearch.value.toLowerCase().trim()
-  const now = Date.now()
+const {
+  editingDepotId, pendingNoteValue, pendingFeedbackValue, savingGrade,
+  startEditGrade, cancelEditGrade, saveGrade,
+} = useTeacherGrading()
 
-  const filtered = raw.filter(t => {
-    if (filterCategory.value && t.category?.trim() !== filterCategory.value) return false
-    if (q && !t.title.toLowerCase().includes(q)) return false
-    if (filterStatus.value === 'draft' && t.is_published) return false
-    if (filterStatus.value === 'expired' && (new Date(t.deadline).getTime() > now || !t.is_published)) return false
-    if (filterStatus.value === 'pending') {
-      const dc = t.depots_count ?? 0
-      const st = t.students_total ?? 0
-      if (dc >= st && st > 0) return false // complet
-    }
-    return true
-  })
+const {
+  ctxMenu, openCtxMenu, closeCtxMenu,
+  ctxPublishToggle, ctxDuplicate, ctxDelete, ctxOpen,
+} = useDevoirContextMenu(loadView)
 
-  // Grouper par catégorie
-  const groups = new Map<string, UnifiedRow[]>()
-  for (const t of filtered) {
-    const cat = t.category?.trim() || 'Sans projet'
-    if (!groups.has(cat)) groups.set(cat, [])
-    const dc = t.depots_count ?? 0
-    const st = t.students_total ?? 0
-    // Compter les notés depuis allRendus
-    const noted = travauxStore.allRendus.filter(r => r.travail_id === t.id && r.note != null).length
-
-    let statusLabel = 'Publié'
-    let statusCls = 'status-pub'
-    if (!t.is_published) { statusLabel = 'Brouillon'; statusCls = 'status-draft' }
-    else if (st > 0 && dc >= st) { statusLabel = 'Complet'; statusCls = 'status-complete' }
-    else if (new Date(t.deadline).getTime() < now) { statusLabel = 'Expiré'; statusCls = 'status-expired' }
-
-    groups.get(cat)!.push({ ...t, depots_count: dc, students_total: st, noted_count: noted, statusLabel, statusCls })
-  }
-  // Trier par deadline dans chaque groupe
-  for (const rows of groups.values()) {
-    rows.sort((a, b) => new Date(a.deadline).getTime() - new Date(b.deadline).getTime())
-  }
-  return [...groups.entries()].sort(([a], [b]) => a.localeCompare(b))
-})
-
-// ── Publish inline + ajout par type ──────────────────────────────────────────
-async function publishDevoir(id: number, event: Event) {
-  event.stopPropagation()
-  try {
-    await window.api.updateTravailPublished({ travailId: id, published: true })
-    showToast('Devoir publié.', 'success')
-    loadView()
-  } catch { showToast('Erreur.', 'error') }
-}
-
-async function publishAllDrafts() {
-  const drafts = unifiedFlat.value.filter(t => !t.is_published)
-  if (!drafts.length) return
-  let count = 0
-  for (const d of drafts) {
-    try {
-      await window.api.updateTravailPublished({ travailId: d.id, published: true })
-      count++
-    } catch {}
-  }
-  showToast(`${count} devoir${count > 1 ? 's' : ''} publié${count > 1 ? 's' : ''}.`, 'success')
-  loadView()
-}
-
-function addDevoirOfType(type: string) {
-  // Pré-sélectionner le type dans la modale
-  appStore.pendingDevoirType = type
-  modals.newDevoir = true
-}
-
-// ── Menu contextuel cartes devoirs ───────────────────────────────────────────
-const ctxMenu = ref<{ x: number; y: number; devoir: (Devoir & { is_published?: boolean | number }) | null }>({ x: 0, y: 0, devoir: null })
-
-function openCtxMenu(e: MouseEvent, devoir: Devoir | GanttRow | UnifiedFlatRow) {
-  e.preventDefault()
-  e.stopPropagation()
-  ctxMenu.value = { x: e.clientX, y: e.clientY, devoir: devoir as any }
-}
-
-function closeCtxMenu() {
-  ctxMenu.value = { x: 0, y: 0, devoir: null }
-}
-
-async function ctxPublishToggle() {
-  const d = ctxMenu.value.devoir
-  if (!d) return
-  const newVal = !d.is_published
-  try {
-    await window.api.updateTravailPublished({ travailId: d.id, published: newVal })
-    showToast(newVal ? 'Devoir publié.' : 'Devoir dépublié.', 'success')
-    loadView()
-  } catch { showToast('Erreur.', 'error') }
-  closeCtxMenu()
-}
-
-async function ctxDuplicate() {
-  const d = ctxMenu.value.devoir
-  if (!d) return
-  try {
-    await window.api.createTravail({
-      title: d.title + ' (copie)',
-      description: d.description || '',
-      deadline: d.deadline,
-      channel_id: d.channel_id,
-      promo_id: d.promo_id,
-      type: d.type || 'devoir',
-      category: d.category || '',
-      room: d.room || '',
-      published: false,
-    })
-    showToast('Devoir dupliqué (brouillon).', 'success')
-    loadView()
-  } catch { showToast('Erreur lors de la duplication.', 'error') }
-  closeCtxMenu()
-}
-
-async function ctxDelete() {
-  const d = ctxMenu.value.devoir
-  if (!d) return
-  if (!confirm(`Supprimer « ${d.title} » ? Les soumissions et notes seront perdues.`)) {
-    closeCtxMenu()
-    return
-  }
-  try {
-    await window.api.deleteTravail(d.id)
-    showToast('Devoir supprimé.', 'success')
-    loadView()
-  } catch { showToast('Erreur.', 'error') }
-  closeCtxMenu()
-}
-
-function ctxOpen() {
-  const d = ctxMenu.value.devoir
-  if (!d) return
-  closeCtxMenu()
-  openDevoir(d.id)
-}
-
-// ── Stats globales promo ────────────────────────────────────────────────────
-const globalDrafts = computed(() =>
-  (travauxStore.ganttData).filter(t => !t.is_published).length,
-)
-const globalToGrade = computed(() => {
-  const all = travauxStore.allRendus
-  return all.filter(r => !r.note && r.submitted_at).length
-})
-
-// ── Prochains événements (tous types, triés par deadline) ───────────────────
-const upcomingDevoirs = computed(() => {
-  const now = Date.now()
-  return (travauxStore.ganttData)
-    .filter(t => t.is_published && new Date(t.deadline).getTime() > now)
-    .sort((a, b) => new Date(a.deadline).getTime() - new Date(b.deadline).getTime())
-    .slice(0, 5)
-})
-
-// ── Helpers pour la page d'accueil projets ──────────────────────────────────
-function projectDevoirCount(cat: string): number {
-  return (travauxStore.ganttData).filter(t => t.category?.trim() === cat).length
-}
-function projectNextDeadline(cat: string): string | null {
-  const now = Date.now()
-  const upcoming = (travauxStore.ganttData)
-    .filter(t => t.category?.trim() === cat && t.is_published && new Date(t.deadline).getTime() > now)
-    .sort((a, b) => new Date(a.deadline).getTime() - new Date(b.deadline).getTime())
-  return upcoming[0]?.deadline ?? null
-}
-function projectTypeCounts(cat: string): { type: string; count: number }[] {
-  const counts: Record<string, number> = {}
-  for (const t of (travauxStore.ganttData).filter(d => d.category?.trim() === cat)) {
-    counts[t.type] = (counts[t.type] ?? 0) + 1
-  }
-  return Object.entries(counts).map(([type, count]) => ({ type, count })).sort((a, b) => b.count - a.count)
-}
-
-// Stats enrichies par projet (pour cartes et résumé)
-function projectStats(cat: string) {
-  const devoirs = (travauxStore.ganttData)
-    .filter(d => d.category?.trim() === cat)
-  const totalDepots = devoirs.reduce((s, d) => s + (d.depots_count ?? 0), 0)
-  const totalExpected = devoirs.reduce((s, d) => s + (d.students_total ?? 0), 0)
-  const pct = totalExpected > 0 ? Math.round((totalDepots / totalExpected) * 100) : 0
-  const drafts = devoirs.filter(d => !d.is_published).length
-  const noted = travauxStore.allRendus.filter(r => devoirs.some(d => d.id === r.travail_id) && r.note != null).length
-  const toGrade = totalDepots - noted
-  return { totalDepots, totalExpected, pct, drafts, noted, toGrade }
-}
-
-// Extraire la durée depuis la description (ex: "Durée : 20 min")
-function extractDuration(desc: string | null): string | null {
-  if (!desc) return null
-  const m = desc.match(/Durée\s*:\s*(\d+)\s*min/i)
-  return m ? m[1] + ' min' : null
-}
-
-// Déterminer si c'est un rattrapage
-function isRattrapage(t: { title: string; description?: string | null }): boolean {
-  return !!(t.title?.includes('Rattrapage') || t.description?.includes('Rattrapage'))
-}
-
-// ── Devoirs par type (pour la vue projet sélectionné) ───────────────────────
-const TYPE_ORDER = ['cctl', 'soutenance', 'etude_de_cas', 'livrable', 'memoire', 'autre']
-const devoirsByType = computed(() => {
-  const groups: Record<string, typeof unifiedFlat.value> = {}
-  for (const t of unifiedFlat.value) {
-    if (!groups[t.type]) groups[t.type] = []
-    groups[t.type].push(t)
-  }
-  return TYPE_ORDER
-    .filter(type => groups[type]?.length)
-    .map(type => {
-      const items = groups[type]
-      const initiales = items.filter(t => !isRattrapage(t)).sort((a, b) => new Date(a.deadline).getTime() - new Date(b.deadline).getTime())
-      const rattrapages = items.filter(t => isRattrapage(t)).sort((a, b) => new Date(a.deadline).getTime() - new Date(b.deadline).getTime())
-      return { type, initiales, rattrapages, total: items.length }
-    })
-})
-
-// Liste plate pour le tableau (quand on filtre par catégorie via onglets)
-type UnifiedFlatRow = UnifiedRow & { hasSubmission: boolean }
-const unifiedFlat = computed((): UnifiedFlatRow[] => {
-  const raw = travauxStore.ganttData
-  const now = Date.now()
-
-  return raw
-    .filter(t => {
-      // Filtre par projet actif (prioritaire) ou par onglet catégorie
-      const catFilter = appStore.activeProject || filterCategory.value
-      if (catFilter && t.category?.trim() !== catFilter) return false
-      if (teacherSearch.value) {
-        const q = teacherSearch.value.toLowerCase().trim()
-        if (!t.title.toLowerCase().includes(q)) return false
-      }
-      return true
-    })
-    .map(t => {
-      const dc = t.depots_count ?? 0
-      const st = t.students_total ?? 0
-      const noted = travauxStore.allRendus.filter(r => r.travail_id === t.id && r.note != null).length
-      const isEvent = t.type === 'soutenance' || t.type === 'cctl'
-
-      let statusLabel = 'Publié'
-      let statusCls = 'status-pub'
-      if (!t.is_published) { statusLabel = 'Brouillon'; statusCls = 'status-draft' }
-      else if (!isEvent && st > 0 && dc >= st) { statusLabel = 'Complet'; statusCls = 'status-complete' }
-      else if (new Date(t.deadline).getTime() < now) { statusLabel = 'Passé'; statusCls = 'status-expired' }
-
-      return {
-        ...t,
-        depots_count: dc,
-        students_total: st,
-        noted_count: noted,
-        statusLabel,
-        statusCls,
-        hasSubmission: !isEvent,
-      } as UnifiedFlatRow
-    })
-    .sort((a, b) => new Date(a.deadline).getTime() - new Date(b.deadline).getTime())
-})
-
-// ── Horloge temps réel pour verrouillage des deadlines ────────────────────────
-const now = ref(Date.now())
-let clockInterval: ReturnType<typeof setInterval> | null = null
-
-/** Renvoie true si la deadline est passée (verrouille le bouton Déposer) */
+// ── Wrapper pour template (isExpired avec now implicite) ─────────────────────
 function isExpired(deadline: string | null | undefined): boolean {
-  if (!deadline) return false
-  return now.value >= new Date(deadline).getTime()
+  return _isExpired(deadline, now.value)
 }
 
-/** Types qui n'ont pas de dépôt fichier (présence requise) */
-function isEventType(type: string): boolean {
-  return type === 'soutenance' || type === 'cctl'
-}
-
-/** Vérifie si un devoir nécessite un rendu (basé sur requires_submission du backend) */
-function needsSubmission(devoir: Devoir): boolean {
-  return devoir.requires_submission !== 0
-}
-
-// ── Dépôt inline (étudiant) ───────────────────────────────────────────────────
-const depositingDevoirId = ref<number | null>(null)
-const depositMode        = ref<'file' | 'link'>('file')
-const depositLink        = ref('')
-const depositFile        = ref<string | null>(null)
-const depositFileName    = ref<string | null>(null)
-const depositing         = ref(false)
-const rubricPreview      = ref<Rubric | null>(null)
-
-// ── Notation inline (prof, vue rendus) ────────────────────────────────────────
-const editingDepotId      = ref<number | null>(null)
-const pendingNoteValue    = ref('')
-const pendingFeedbackValue = ref('')
-const savingGrade         = ref(false)
-
-// ── Lifecycle ─────────────────────────────────────────────────────────────────
+// ── Lifecycle ────────────────────────────────────────────────────────────────
 function handleGlobalClick() { closeCtxMenu() }
 
 onMounted(async () => {
-  clockInterval = setInterval(() => { now.value = Date.now() }, 30_000)
   document.addEventListener('click', handleGlobalClick)
-  await loadView()
+  if (appStore.isStudent) await loadStudentView()
+  else await loadView()
 })
 
 onBeforeUnmount(() => {
-  if (clockInterval !== null) clearInterval(clockInterval)
   document.removeEventListener('click', handleGlobalClick)
 })
-
-// ── Chargement des données ─────────────────────────────────────────────────────
-async function loadView() {
-  if (appStore.isStudent) {
-    await travauxStore.fetchStudentDevoirs()
-  } else {
-    const promoId = appStore.activePromoId
-    if (!promoId) return
-    await travauxStore.fetchGantt(promoId)
-    if (teacherView.value === 'rendus') {
-      await travauxStore.fetchRendus(promoId)
-    }
-    travauxStore.setView(teacherView.value === 'rendus' ? 'rendus' : 'gantt')
-  }
-}
-
-function setTeacherView(v: 'gantt' | 'liste' | 'rendus') {
-  teacherView.value = v
-  loadView()
-}
 
 watch(() => appStore.activePromoId, loadView)
 
 watch(() => appStore.activeChannelId, () => {
-  if (appStore.isStudent) travauxStore.fetchStudentDevoirs()
+  if (appStore.isStudent) loadStudentView()
 })
-
-// ── Groupes urgence étudiant ───────────────────────────────────────────────────
-const studentGroups = computed(() => {
-  const all = appStore.activeProject
-    ? travauxStore.devoirs.filter(t => t.category === appStore.activeProject)
-    : travauxStore.devoirs
-  return {
-    overdue:   all.filter(t => t.depot_id == null && needsSubmission(t) && isExpired(t.deadline)),
-    urgent:    all.filter(t => {
-      if (t.depot_id != null || isExpired(t.deadline) || !needsSubmission(t)) return false
-      return new Date(t.deadline).getTime() - now.value < 3 * 86_400_000
-    }),
-    pending:   all.filter(t => {
-      if (t.depot_id != null || isExpired(t.deadline) || !needsSubmission(t)) return false
-      return new Date(t.deadline).getTime() - now.value >= 3 * 86_400_000
-    }),
-    event:     all.filter(t => !needsSubmission(t) && t.depot_id == null),
-    submitted: all.filter(t => t.depot_id != null || (!needsSubmission(t) && isExpired(t.deadline))),
-  }
-})
-
-// Simplification : submitted = ceux qui ont depot_id
-const filteredDevoirs  = computed(() =>
-  appStore.activeProject
-    ? travauxStore.devoirs.filter(t => t.category === appStore.activeProject)
-    : travauxStore.devoirs
-)
-const submittedDevoirs = computed(() => filteredDevoirs.value.filter(t => t.depot_id != null))
-const pendingDeposit   = computed(() =>
-  filteredDevoirs.value.filter(t => t.depot_id == null && needsSubmission(t)),
-)
-const eventDevoirs     = computed(() => filteredDevoirs.value.filter(t => !needsSubmission(t)))
-
-const studentStats = computed(() => ({
-  total:     filteredDevoirs.value.length,
-  pending:   studentGroups.value.overdue.length + studentGroups.value.urgent.length + studentGroups.value.pending.length,
-  urgent:    studentGroups.value.overdue.length + studentGroups.value.urgent.length,
-  submitted: submittedDevoirs.value.length,
-}))
-
-// ── Dépôt étudiant ─────────────────────────────────────────────────────────────
-async function startDeposit(t: Devoir) {
-  depositingDevoirId.value = t.id
-  depositMode.value        = 'file'
-  depositLink.value        = ''
-  depositFile.value        = null
-  depositFileName.value    = null
-  rubricPreview.value      = null
-  const res = await window.api.getRubric(t.id)
-  rubricPreview.value = res?.ok && res.data ? res.data : null
-}
-
-function cancelDeposit() {
-  depositingDevoirId.value = null
-  rubricPreview.value      = null
-}
-
-async function pickFile() {
-  const res = await window.api.openFileDialog()
-  if (res?.ok && res.data) {
-    depositFile.value     = res.data
-    depositFileName.value = res.data.split(/[\\/]/).pop() ?? res.data
-  }
-}
-
-function clearDepositFile() {
-  depositFile.value     = null
-  depositFileName.value = null
-}
-
-async function submitDeposit(devoir: Devoir) {
-  if (depositing.value) return
-  if (!appStore.currentUser) return
-  if (depositMode.value === 'file' && !depositFile.value) return
-  if (depositMode.value === 'link' && !depositLink.value.trim()) return
-  if (isExpired(devoir.deadline)) return
-
-  depositing.value = true
-  try {
-    const ok = await travauxStore.addDepot({
-      travail_id: devoir.id,
-      student_id: appStore.currentUser.id,
-      type:       depositMode.value,
-      content:    depositMode.value === 'file' ? depositFile.value! : depositLink.value.trim(),
-      file_name:  depositMode.value === 'file' ? depositFileName.value : null,
-    })
-    if (ok) {
-      const fileName = depositMode.value === 'file' ? depositFileName.value : depositLink.value.trim()
-      const time = new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
-      showToast(`Rendu soumis — ${fileName} — ${time}`, 'success')
-      cancelDeposit()
-      await travauxStore.fetchStudentDevoirs()
-    } else {
-      showToast('Erreur lors du dépôt. Veuillez réessayer.', 'error')
-    }
-  } finally {
-    depositing.value = false
-  }
-}
-
-// ── Vue prof : ouvrir un devoir ────────────────────────────────────────────────
-async function openDevoir(devoirId: number) {
-  appStore.currentTravailId = devoirId
-  await travauxStore.openTravail(devoirId)
-  modals.gestionDevoir = true
-}
-
-// ── Notation inline (prof) ─────────────────────────────────────────────────────
-function startEditGrade(depotId: number, currentNote: string | null, currentFeedback: string | null) {
-  editingDepotId.value       = depotId
-  pendingNoteValue.value     = currentNote ?? ''
-  pendingFeedbackValue.value = currentFeedback ?? ''
-}
-
-function cancelEditGrade() {
-  editingDepotId.value = null
-}
-
-async function saveGrade(depotId: number) {
-  savingGrade.value = true
-  try {
-    await travauxStore.setNote({ depotId, note: pendingNoteValue.value.trim() || null })
-    await travauxStore.setFeedback({ depotId, feedback: pendingFeedbackValue.value.trim() || null })
-    editingDepotId.value = null
-    // Refresh rendus
-    const promoId = appStore.activePromoId
-    if (promoId) await travauxStore.fetchRendus(promoId)
-  } finally {
-    savingGrade.value = false
-  }
-}
-
-// ── Gantt : calcul des positions ───────────────────────────────────────────────
-type GanttItem = GanttRow & { left: number; width: number; dlClass: string }
-
-// Catégories disponibles pour le filtre
-const teacherCategories = computed(() => {
-  const cats = new Set((travauxStore.ganttData).map(t => t.category?.trim()).filter(Boolean))
-  return Array.from(cats).sort() as string[]
-})
-
-const ganttItems = computed((): { items: GanttItem[]; todayPct: number } => {
-  let raw = travauxStore.ganttData
-  if (filterCategory.value) raw = raw.filter(t => t.category?.trim() === filterCategory.value)
-  if (!raw.length) return { items: [], todayPct: 0 }
-
-  const dates = raw.flatMap(t => [
-    t.start_date ? new Date(t.start_date).getTime() : new Date(t.deadline).getTime() - 7 * 86400000,
-    new Date(t.deadline).getTime(),
-  ])
-  const minT = Math.min(...dates)
-  const maxT = Math.max(...dates)
-  const span = maxT - minT || 1
-
-  const todayPct = Math.max(0, Math.min(100, ((now.value - minT) / span) * 100))
-
-  const items = raw.map(t => {
-    const startMs = t.start_date
-      ? new Date(t.start_date).getTime()
-      : new Date(t.deadline).getTime() - 7 * 86400000
-    const endMs   = new Date(t.deadline).getTime()
-    const left    = ((startMs - minT) / span) * 100
-    const width   = Math.max(((endMs - startMs) / span) * 100, 2)
-    return { ...t, left, width, dlClass: deadlineClass(t.deadline) }
-  })
-
-  return { items, todayPct }
-})
-
-// ── Rendus : grouper par devoir avec titres + filtres ──────────────────────────
-const rendusByDevoir = computed(() => {
-  const ganttMap = new Map(travauxStore.ganttData.map(t => [t.id, t]))
-  const map = new Map<number, { devoir: Partial<GanttRow>; rendus: typeof travauxStore.allRendus }>()
-  for (const r of travauxStore.allRendus) {
-    // Filtre par catégorie
-    const gt = ganttMap.get(r.travail_id)
-    if (filterCategory.value && gt?.category?.trim() !== filterCategory.value) continue
-    if (!map.has(r.travail_id)) {
-      map.set(r.travail_id, { devoir: gt ?? { id: r.travail_id }, rendus: [] })
-    }
-    map.get(r.travail_id)!.rendus.push(r)
-  }
-  // Filtre par statut + tri
-  const groups = [...map.values()]
-  for (const g of groups) {
-    // Filtre statut
-    if (filterRendusStatus.value === 'ungraded') g.rendus = g.rendus.filter(r => !r.note)
-    else if (filterRendusStatus.value === 'graded') g.rendus = g.rendus.filter(r => !!r.note)
-    // Tri
-    g.rendus.sort((a, b) => {
-      if (sortRendus.value === 'name') return (a.student_name ?? '').localeCompare(b.student_name ?? '')
-      return new Date(b.submitted_at ?? 0).getTime() - new Date(a.submitted_at ?? 0).getTime()
-    })
-  }
-  // Retirer les groupes vides après filtre
-  return groups.filter(g => g.rendus.length > 0)
-})
-
-// ── Vue étudiant : résumé par projet (sans filtre actif) ──────────────────
-const studentProjectOverview = computed(() => {
-  if (appStore.activeProject) return []
-  const map = new Map<string, { key: string; label: string; total: number; submitted: number; pending: number }>()
-  for (const t of travauxStore.devoirs) {
-    const cat   = t.category?.trim() || null
-    const mKey  = cat ?? '__none__'
-    if (!map.has(mKey)) {
-      map.set(mKey, {
-        key:       mKey,
-        label:     cat ? parseCategoryIcon(cat).label || cat : 'Sans projet',
-        total:     0,
-        submitted: 0,
-        pending:   0,
-      })
-    }
-    const g = map.get(mKey)!
-    g.total++
-    if (t.depot_id != null) g.submitted++
-    else if (!isEventType(t.type)) g.pending++
-  }
-  return [...map.values()]
-    .filter(g => g.total > 0 && g.key !== '__none__')
-    .sort((a, b) => a.label.localeCompare(b.label, 'fr'))
-})
-
-// ── Label lisible pour les types ──────────────────────────────────────────────
-const TYPE_LABELS: Record<string, string> = {
-  livrable:    'Livrable',
-  soutenance:  'Soutenance',
-  cctl:        'CCTL',
-  etude_de_cas:'Étude de cas',
-  memoire:     'Mémoire',
-  autre:       'Autre',
-  // backward compat
-  devoir:      'Devoir',
-  projet:      'Projet',
-  jalon:       'Jalon',
-}
-
-function typeLabel(t: string): string {
-  return TYPE_LABELS[t] ?? t
-}
 </script>
 
 <template>

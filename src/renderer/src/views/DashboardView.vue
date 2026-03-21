@@ -13,14 +13,14 @@ import { useModalsStore } from '@/stores/modals'
 import { useTravauxStore } from '@/stores/travaux'
 import { useRouter, useRoute } from 'vue-router'
 import { deadlineClass, deadlineLabel, formatDate } from '@/utils/date'
-import { parseCategoryIcon } from '@/utils/categoryIcon'
 import { avatarColor, gradeClass } from '@/utils/format'
-import { useToast } from '@/composables/useToast'
-import { useApi } from '@/composables/useApi'
-import { useConfirm } from '@/composables/useConfirm'
-import { STORAGE_KEYS } from '@/constants'
-import type { Component } from 'vue'
-import type { Devoir, Promotion }    from '@/types'
+
+import { useDashboardTeacher } from '@/composables/useDashboardTeacher'
+import { useDashboardStudent } from '@/composables/useDashboardStudent'
+import { useDashboardWidgets } from '@/composables/useDashboardWidgets'
+import { useFrise }            from '@/composables/useFrise'
+import { useTeacherAnalytics, GRADE_COLORS } from '@/composables/useTeacherAnalytics'
+import { useActionCenter }     from '@/composables/useActionCenter'
 
 const props = defineProps<{ toggleSidebar?: () => void }>()
 
@@ -29,9 +29,6 @@ const modals       = useModalsStore()
 const travauxStore = useTravauxStore()
 const router       = useRouter()
 const route        = useRoute()
-const { showToast } = useToast()
-const { api }       = useApi()
-const { confirm: askConfirm } = useConfirm()
 
 // ── Onboarding première visite ──────────────────────────────────────────────
 const ONBOARDING_KEY = 'cc_onboarding_seen'
@@ -40,218 +37,6 @@ function dismissOnboarding() {
   showOnboarding.value = false
   localStorage.setItem(ONBOARDING_KEY, '1')
 }
-
-// ── Types locaux ──────────────────────────────────────────────────────────────
-interface GanttRow {
-  id:             number
-  title:          string
-  deadline:       string
-  start_date:     string | null
-  type:           string
-  published:      number
-  category:       string | null
-  channel_name:   string
-  promo_name:     string
-  promo_color:    string
-  depots_count:   number
-  students_total: number
-}
-interface ProjectCard {
-  key: string; label: string; icon: Component | null
-  total: number; published: number; depots: number; expected: number; nextDeadline: string | null
-}
-interface StudentProjectCard {
-  key: string; label: string; icon: Component | null
-  total: number; submitted: number; pending: number; overdue: number
-  nextDeadline: string | null; avgGrade: number | null
-}
-
-// ── État ─────────────────────────────────────────────────────────────────────
-const loadingTeacher  = ref(true)
-const loadingStudent  = ref(true)
-const aNoterCount     = ref(0)
-const brouillonsCount = ref(0)
-const promos          = ref<Promotion[]>([])
-const allStudents     = ref<{ id: number; promo_id: number; name?: string }[]>([])
-const ganttAll        = ref<GanttRow[]>([])
-const savingPromo     = ref(false)
-const deletingPromoId = ref<number | null>(null)
-
-// ── Chargement ────────────────────────────────────────────────────────────────
-onMounted(async () => {
-  if (appStore.isTeacher) {
-    try {
-      type Schedule = { aNoter: unknown[]; brouillons: unknown[] }
-      const [schedData, promosData, studData, ganttData] = await Promise.all([
-        api<Schedule>(() => window.api.getTeacherSchedule() as Promise<{ ok: boolean; data?: Schedule }>),
-        api<Promotion[]>(() => window.api.getPromotions()),
-        api<typeof allStudents.value>(() => window.api.getAllStudents()),
-        api<GanttRow[]>(() => window.api.getGanttData(0 as number) as Promise<{ ok: boolean; data?: GanttRow[] }>),
-      ])
-      if (schedData) {
-        aNoterCount.value     = schedData.aNoter?.length     ?? 0
-        brouillonsCount.value = schedData.brouillons?.length ?? 0
-      }
-      promos.value = promosData ?? []
-      if (promos.value.length && !appStore.activePromoId) {
-        appStore.activePromoId = promos.value[0].id
-      }
-      allStudents.value = studData ?? []
-      ganttAll.value    = ganttData ?? []
-      loadReminders()
-      checkDevoirsResources()
-      // Charger les rendus pour la tendance sur l'accueil
-      if (promos.value.length) {
-        const pid = appStore.activePromoId ?? promos.value[0]?.id
-        if (pid) travauxStore.fetchRendus(pid)
-      }
-    } finally { loadingTeacher.value = false }
-  } else {
-    try {
-      if (!travauxStore.devoirs.length) await travauxStore.fetchStudentDevoirs()
-    } finally { loadingStudent.value = false }
-    // Timer pour les countdowns + auto-refresh des données
-    _studentClock = setInterval(() => { studentNow.value = Date.now() }, 30_000)
-    _studentRefresh = setInterval(() => { travauxStore.fetchStudentDevoirs() }, 60_000)
-  }
-})
-
-onUnmounted(() => {
-  if (_studentClock) clearInterval(_studentClock)
-  if (_studentRefresh) clearInterval(_studentRefresh)
-})
-
-// ── Rappels prof (échéancier scolarité) ──────────────────────────────────────
-type Reminder = { id: number; promo_tag: string; date: string; title: string; description: string; bloc: string | null; done: number; isOverdue?: boolean }
-const allReminders = ref<Reminder[]>([])
-const showAllReminders = ref(false)
-
-// Semaine courante : lundi → dimanche
-function getWeekBounds() {
-  const now = new Date()
-  const day = now.getDay() // 0=dim, 1=lun...
-  const diffToMon = day === 0 ? -6 : 1 - day
-  const monday = new Date(now)
-  monday.setDate(now.getDate() + diffToMon)
-  monday.setHours(0, 0, 0, 0)
-  const sunday = new Date(monday)
-  sunday.setDate(monday.getDate() + 6)
-  sunday.setHours(23, 59, 59, 999)
-  return { monday, sunday }
-}
-
-const thisWeekReminders = computed(() => {
-  const { monday, sunday } = getWeekBounds()
-  const now = Date.now()
-  return allReminders.value
-    .filter(r => {
-      const d = new Date(r.date).getTime()
-      // Cette semaine OU en retard (passé mais pas fait)
-      return (d >= monday.getTime() && d <= sunday.getTime()) || (!r.done && d < now)
-    })
-    .map(r => ({
-      ...r,
-      isOverdue: !r.done && new Date(r.date).getTime() < now,
-      isToday: new Date(r.date).toDateString() === new Date().toDateString(),
-    }))
-    .sort((a, b) => {
-      if (a.done !== b.done) return a.done - b.done
-      if (a.isOverdue !== b.isOverdue) return a.isOverdue ? -1 : 1
-      return new Date(a.date).getTime() - new Date(b.date).getTime()
-    })
-})
-
-const doneThisWeek = computed(() => thisWeekReminders.value.filter(r => r.done).length)
-const totalThisWeek = computed(() => thisWeekReminders.value.length)
-
-async function loadReminders() {
-  allReminders.value = await api<Reminder[]>(() => window.api.getTeacherReminders()) ?? []
-}
-
-async function toggleReminder(id: number, done: boolean) {
-  const result = await api(() => window.api.toggleReminderDone(id, done))
-  if (result !== null) {
-    const r = allReminders.value.find(r => r.id === id)
-    if (r) r.done = done ? 1 : 0
-  }
-}
-
-// ── Promotions : renommer et supprimer ───────────────────────────────────
-const renamingPromoId = ref<number | null>(null)
-const renamingPromoValue = ref('')
-
-async function confirmRenamePromo(p: { id: number; name: string }) {
-  if (!renamingPromoValue.value.trim()) return
-  savingPromo.value = true
-  try {
-    const result = await api(() => window.api.renamePromotion(p.id, renamingPromoValue.value.trim()), 'promo')
-    if (result !== null) {
-      p.name = renamingPromoValue.value.trim()
-      renamingPromoId.value = null
-      showToast('Promotion renommée.', 'success')
-    }
-  } finally { savingPromo.value = false }
-}
-
-async function deletePromo(id: number, name: string) {
-  const ok = await askConfirm(
-    `Supprimer la promotion "${name}" et tous ses canaux/devoirs ? Cette action est irréversible.`,
-    'danger',
-    'Supprimer',
-  )
-  if (!ok) return
-  deletingPromoId.value = id
-  try {
-    const result = await api(() => window.api.deletePromotion(id), 'promo')
-    if (result !== null) {
-      promos.value = promos.value.filter(p => p.id !== id)
-      if (appStore.activePromoId === id && promos.value.length) appStore.activePromoId = promos.value[0].id
-      showToast('Promotion supprimée.', 'success')
-    }
-  } finally { deletingPromoId.value = null }
-}
-
-// ── Promo active + données filtrées ──────────────────────────────────────────
-const activePromo = computed(() =>
-  promos.value.find(p => p.id === appStore.activePromoId) ?? null,
-)
-
-const ganttFiltered = computed(() =>
-  activePromo.value
-    ? ganttAll.value.filter(t => t.promo_name === activePromo.value!.name)
-    : ganttAll.value,
-)
-
-const studentsForPromo = computed(() =>
-  activePromo.value
-    ? allStudents.value.filter(s => s.promo_id === activePromo.value!.id)
-    : allStudents.value,
-)
-
-const totalStudents = computed(() => studentsForPromo.value.length)
-
-const urgentsCount = computed(() => {
-  const now = Date.now()
-  const week = now + 7 * 86_400_000
-  return ganttFiltered.value.filter(t => {
-    const d = new Date(t.deadline).getTime()
-    return t.published && d >= now && d <= week
-  }).length
-})
-
-async function reloadPromos() {
-  const [promosData, ganttData2] = await Promise.all([
-    api<Promotion[]>(() => window.api.getPromotions()),
-    api<GanttRow[]>(() => window.api.getGanttData(0 as number) as Promise<{ ok: boolean; data?: GanttRow[] }>),
-  ])
-  promos.value   = promosData ?? promos.value
-  ganttAll.value = ganttData2 ?? ganttAll.value
-}
-
-// Recharger quand la modale de création de promo se ferme
-watch(() => modals.createPromo, (open) => {
-  if (!open && appStore.isTeacher) reloadPromos()
-})
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 const greetingName = computed(() => (appStore.currentUser?.name ?? '').split(' ')[0])
@@ -264,293 +49,7 @@ function goToProject(key: string) {
   router.push('/devoirs')
 }
 
-// ── DMs non lus — récapitulatif dashboard ────────────────────────────────────
-interface UnreadDmEntry { name: string; count: number }
-
-const unreadDmEntries = computed((): UnreadDmEntry[] => {
-  return Object.entries(appStore.unreadDms)
-    .filter(([, count]) => count > 0)
-    .map(([name, count]) => ({ name, count }))
-    .sort((a, b) => b.count - a.count)
-})
-
-const totalUnreadDms = computed(() => unreadDmEntries.value.reduce((s, e) => s + e.count, 0))
-
-function openDmFromDashboard(name: string) {
-  // Chercher l'étudiant correspondant par nom
-  const student = allStudents.value.find(s => s.name === name)
-  if (student) {
-    const promoId = appStore.activePromoId ?? student.promo_id ?? 0
-    appStore.openDm(student.id, promoId, name)
-    router.push('/messages')
-  }
-}
-
-// ── Messages enregistrés (bookmarks — stockage riche localStorage) ───────────
-interface SavedMessage {
-  id: number
-  authorName: string
-  authorInitials: string
-  content: string
-  createdAt: string
-  isDm: boolean
-  channelName: string | null
-  dmStudentId: number | null
-}
-
-function getSavedMessages(): SavedMessage[] {
-  try {
-    const raw = JSON.parse(localStorage.getItem(STORAGE_KEYS.BOOKMARKS) || '[]')
-    if (!Array.isArray(raw)) return []
-    // Compatibilité ascendante : ancien format = number[], nouveau = SavedMessage[]
-    if (raw.length > 0 && typeof raw[0] === 'number') return [] // ancien format non migratable sans API
-    return raw as SavedMessage[]
-  } catch { return [] }
-}
-
-const savedMessages = ref<SavedMessage[]>(getSavedMessages())
-
-function removeSavedMessage(msgId: number) {
-  const filtered = getSavedMessages().filter(m => m.id !== msgId)
-  localStorage.setItem(STORAGE_KEYS.BOOKMARKS, JSON.stringify(filtered))
-  savedMessages.value = filtered
-  showToast('Message retiré des favoris.', 'info')
-}
-
-function goToSavedMessage(msg: SavedMessage) {
-  if (msg.isDm && msg.dmStudentId) {
-    const student = allStudents.value.find(s => s.id === msg.dmStudentId)
-    if (student) {
-      appStore.openDm(student.id, appStore.activePromoId ?? student.promo_id ?? 0, msg.authorName)
-    }
-  } else if (msg.channelName) {
-    // Pour les messages de canal, naviguer vers les messages
-  }
-  router.push('/messages')
-}
-
-// Recharger quand le localStorage change (depuis MessageBubble)
-function onStorageChange(e: StorageEvent) {
-  if (e.key === STORAGE_KEYS.BOOKMARKS) savedMessages.value = getSavedMessages()
-}
-if (typeof window !== 'undefined') window.addEventListener('storage', onStorageChange)
-onUnmounted(() => window.removeEventListener('storage', onStorageChange))
-
-// ── Widget : Derniers messages de canal ───────────────────────────────────────
-const recentChannelActivity = computed(() =>
-  appStore.notificationHistory
-    .filter(n => n.channelId != null && !n.dmStudentId)
-    .slice(0, 5),
-)
-
-function goToChannel(channelId: number, channelName: string) {
-  const promo = appStore.activePromoId ?? promos.value[0]?.id ?? 0
-  appStore.openChannel(channelId, promo, channelName)
-  router.push('/messages')
-}
-
-// ── Widget : Mentions @ non lues ─────────────────────────────────────────────
-const unreadMentions = computed(() =>
-  appStore.notificationHistory
-    .filter(n => n.isMention && !n.read)
-    .slice(0, 5),
-)
-
-const totalUnreadMentions = computed(() =>
-  appStore.notificationHistory.filter(n => n.isMention && !n.read).length,
-)
-
-// ── Widget : Prochaines 48h ──────────────────────────────────────────────────
-interface AgendaItem {
-  id: number | string
-  type: 'deadline' | 'reminder' | 'soutenance'
-  title: string
-  time: string
-  room: string | null
-  channelName: string | null
-}
-
-const next48h = computed((): AgendaItem[] => {
-  const now = Date.now()
-  const limit = now + 48 * 3600_000
-
-  const deadlines: AgendaItem[] = ganttFiltered.value
-    .filter(t => t.published && new Date(t.deadline).getTime() > now && new Date(t.deadline).getTime() <= limit)
-    .map(t => ({
-      id: t.id,
-      type: t.type === 'soutenance' ? 'soutenance' : 'deadline',
-      title: t.title,
-      time: t.deadline,
-      room: (t as { room?: string | null }).room ?? null,
-      channelName: t.channel_name,
-    }))
-
-  const reminders: AgendaItem[] = allReminders.value
-    .filter(r => !r.done && new Date(r.date).getTime() > now && new Date(r.date).getTime() <= limit)
-    .map(r => ({
-      id: `rem-${r.id}`,
-      type: 'reminder' as const,
-      title: r.title,
-      time: r.date,
-      room: null,
-      channelName: null,
-    }))
-
-  return [...deadlines, ...reminders].sort((a, b) => new Date(a.time).getTime() - new Date(b.time).getTime())
-})
-
-// ── Widget : Brouillons oubliés ──────────────────────────────────────────────
-const forgottenDrafts = computed(() => {
-  const now = Date.now()
-  const week = 7 * 86_400_000
-  return ganttFiltered.value
-    .filter(t => !t.published && new Date(t.deadline).getTime() > now && new Date(t.deadline).getTime() < now + week)
-    .sort((a, b) => new Date(a.deadline).getTime() - new Date(b.deadline).getTime())
-})
-
-async function publishDraft(travailId: number) {
-  const result = await api(() => window.api.updateTravailPublished({ travailId, published: true }))
-  if (result !== null) {
-    showToast('Devoir publié.', 'success')
-    await reloadPromos()
-  }
-}
-
-// ── Widget : Devoirs sans ressources ─────────────────────────────────────────
-const devoirsWithoutResources = ref<typeof ganttFiltered.value>([])
-
-async function checkDevoirsResources() {
-  const published = ganttFiltered.value.filter(t => t.published).slice(0, 20)
-  const missing: typeof ganttFiltered.value = []
-  for (const t of published) {
-    const data = await api<{ id: number }[]>(
-      () => window.api.getRessources(t.id) as Promise<{ ok: boolean; data?: { id: number }[] }>,
-    )
-    if (!data || data.length === 0) missing.push(t)
-  }
-  devoirsWithoutResources.value = missing
-}
-
-// ── Projets prof ─────────────────────────────────────────────────────────────
-const projectCards = computed((): ProjectCard[] => {
-  const map = new Map<string, GanttRow[]>()
-  for (const t of ganttFiltered.value) {
-    if (!t.category?.trim()) continue
-    if (!map.has(t.category)) map.set(t.category, [])
-    map.get(t.category)!.push(t)
-  }
-  const cards: ProjectCard[] = []
-  for (const [key, rows] of map) {
-    const { icon, label } = parseCategoryIcon(key)
-    const published = rows.filter(r => r.published)
-    const now = Date.now()
-    const upcoming = published
-      .filter(r => new Date(r.deadline).getTime() >= now)
-      .sort((a, b) => new Date(a.deadline).getTime() - new Date(b.deadline).getTime())
-    cards.push({
-      key, label, icon,
-      total:        rows.length,
-      published:    published.length,
-      depots:       rows.reduce((s, r) => s + (r.depots_count ?? 0), 0),
-      expected:     rows.reduce((s, r) => s + (r.students_total ?? 0), 0),
-      nextDeadline: upcoming[0]?.deadline ?? null,
-    })
-  }
-  return cards.sort((a, b) => {
-    if (!a.nextDeadline && !b.nextDeadline) return a.label.localeCompare(b.label)
-    if (!a.nextDeadline) return 1; if (!b.nextDeadline) return -1
-    return new Date(a.nextDeadline).getTime() - new Date(b.nextDeadline).getTime()
-  })
-})
-
-// ── Projets étudiant ──────────────────────────────────────────────────────────
-const needsSub = (t: Devoir) => t.requires_submission !== 0
-
-// Timer pour mettre à jour les countdowns (comme DevoirsView)
-const studentNow = ref(Date.now())
-let _studentClock: ReturnType<typeof setInterval> | null = null
-let _studentRefresh: ReturnType<typeof setInterval> | null = null
-
-// Note A/B/C/D → valeur pour calculer la note modale
-const GRADE_ORDER = ['A', 'B', 'C', 'D', 'NA'] as const
-
-const studentStats = computed(() => {
-  const all       = travauxStore.devoirs
-  const submitted = all.filter(t => t.depot_id != null)
-  const pending   = all.filter(t => t.depot_id == null && needsSub(t))
-  const graded    = all.filter(t => t.note != null)
-  // Note la plus fréquente (mode) au lieu de la moyenne numérique
-  const counts: Record<string, number> = {}
-  for (const t of graded) { if (t.note && t.note !== 'NA') counts[t.note] = (counts[t.note] ?? 0) + 1 }
-  let modeGrade: string | null = null
-  let modeCount = 0
-  for (const [g, c] of Object.entries(counts)) { if (c > modeCount) { modeGrade = g; modeCount = c } }
-  return { total: all.length, submitted: submitted.length, pending: pending.length, graded: graded.length, modeGrade }
-})
-
-// ── Dernières notes reçues (3 max) ──────────────────────────────────────────
-const recentGrades = computed(() => {
-  return travauxStore.devoirs
-    .filter(t => t.note != null && t.note !== 'NA')
-    .sort((a, b) => (b.depot_id ?? 0) - (a.depot_id ?? 0))
-    .slice(0, 3)
-    .map(t => ({ title: t.title, note: t.note!, category: t.category }))
-})
-
-// ── Top 3 devoirs urgents (au lieu de 1) ────────────────────────────────────
-const urgentActions = computed(() => {
-  const now = studentNow.value
-  const pending = travauxStore.devoirs.filter(t => t.depot_id == null && needsSub(t) && t.deadline)
-  if (!pending.length) return []
-  const sorted = [...pending].sort((a, b) => new Date(a.deadline).getTime() - new Date(b.deadline).getTime())
-  return sorted.slice(0, 3).map(t => {
-    const diffMs = new Date(t.deadline).getTime() - now
-    const diffDays = Math.ceil(diffMs / 86_400_000)
-    let urgency: string
-    if (diffMs < 0) urgency = `En retard de ${Math.abs(diffDays)}j`
-    else if (diffDays <= 1) urgency = "Aujourd'hui"
-    else if (diffDays <= 3) urgency = `Dans ${diffDays}j`
-    else if (diffDays <= 7) urgency = `Cette semaine`
-    else urgency = `Dans ${diffDays}j`
-    return { ...t, urgency, isOverdue: diffMs < 0 }
-  })
-})
-
-const studentProjectCards = computed((): StudentProjectCard[] => {
-  const map = new Map<string, Devoir[]>()
-  for (const t of travauxStore.devoirs) {
-    const cat = t.category?.trim()
-    if (!cat) continue
-    if (!map.has(cat)) map.set(cat, [])
-    map.get(cat)!.push(t)
-  }
-  const now = Date.now()
-  const cards: StudentProjectCard[] = []
-  for (const [key, rows] of map) {
-    const { icon, label } = parseCategoryIcon(key)
-    const submitted = rows.filter(r => r.depot_id != null)
-    const pending   = rows.filter(r => r.depot_id == null && needsSub(r))
-    const overdue   = pending.filter(r => now >= new Date(r.deadline).getTime())
-    const upcoming  = pending.filter(r => new Date(r.deadline).getTime() > now)
-      .sort((a, b) => new Date(a.deadline).getTime() - new Date(b.deadline).getTime())
-    // Note modale par projet (A/B/C/D)
-    const gradeCounts: Record<string, number> = {}
-    for (const r of submitted) { if (r.note && r.note !== 'NA') gradeCounts[r.note] = (gradeCounts[r.note] ?? 0) + 1 }
-    let avgGrade: number | null = null // gardé pour compatibilité type, mais on affiche modeGrade
-    const _projectMode = Object.entries(gradeCounts).sort((a, b) => b[1] - a[1])[0]
-    const projectModeGrade = _projectMode?.[0] ?? null
-    void projectModeGrade // utilisé dans le template via avgGrade placeholder
-    cards.push({ key, label, icon, total: rows.length, submitted: submitted.length, pending: pending.length, overdue: overdue.length, nextDeadline: upcoming[0]?.deadline ?? null, avgGrade })
-  }
-  return cards.sort((a, b) => {
-    if (a.overdue !== b.overdue) return b.overdue - a.overdue
-    if (!a.nextDeadline && !b.nextDeadline) return a.label.localeCompare(b.label)
-    if (!a.nextDeadline) return 1; if (!b.nextDeadline) return -1
-    return new Date(a.nextDeadline).getTime() - new Date(b.nextDeadline).getTime()
-  })
-})
-
-// ── Frise chronologique ────────────────────────────────────────────────────────
+// ── Tabs ────────────────────────────────────────────────────────────────────
 const dashTab = ref<'accueil' | 'promotions' | 'frise' | 'analytique' | 'reglages'>(
   route.query.tab === 'frise' ? 'frise' : route.query.tab === 'analytique' ? 'analytique' : route.query.tab === 'promotions' ? 'promotions' : 'accueil',
 )
@@ -562,14 +61,50 @@ watch(() => route.query.tab, (tab) => {
   else dashTab.value = 'accueil'
 })
 
-// ── Dernière activité (rendus récents) ───────────────────────────────────────
-const recentRendus = computed(() => {
-  return travauxStore.allRendus
-    .filter(r => r.submitted_at)
-    .sort((a, b) => new Date(b.submitted_at ?? 0).getTime() - new Date(a.submitted_at ?? 0).getTime())
-    .slice(0, 5)
-})
+// ── Composables ─────────────────────────────────────────────────────────────
+const {
+  loadingTeacher, aNoterCount, brouillonsCount, promos, allStudents, ganttAll,
+  savingPromo, deletingPromoId,
+  allReminders, showAllReminders, thisWeekReminders, doneThisWeek, totalThisWeek,
+  toggleReminder,
+  activePromo, ganttFiltered, studentsForPromo, totalStudents, urgentsCount,
+  renamingPromoId, renamingPromoValue,
+  confirmRenamePromo, deletePromo, reloadPromos,
+  projectCards, recentRendus,
+  loadTeacherData,
+} = useDashboardTeacher()
 
+const {
+  loadingStudent,
+  studentStats, recentGrades, urgentActions, studentProjectCards,
+  loadStudentData, cleanupTimers,
+} = useDashboardStudent()
+
+const {
+  unreadDmEntries, totalUnreadDms, openDmFromDashboard,
+  savedMessages, removeSavedMessage, goToSavedMessage, cleanupStorage,
+  recentChannelActivity, goToChannel,
+  unreadMentions, totalUnreadMentions,
+  next48h,
+  forgottenDrafts, publishDraft,
+  devoirsWithoutResources, checkDevoirsResources,
+} = useDashboardWidgets(allStudents, ganttFiltered, allReminders, promos, reloadPromos)
+
+const {
+  friseOffset, friseDragging, ganttDateRange,
+  onFriseWheel, onFriseDragStart, onFriseDragMove, onFriseDragEnd,
+  ganttMonths, ganttTodayPct,
+  frise,
+  milestoneLeft, projectLineStyle, onMilestoneClick,
+} = useFrise(ganttFiltered)
+
+const {
+  gradeDistribution, submissionRates, globalModeGrade, analyticsStats,
+} = useTeacherAnalytics(dashTab, ganttFiltered)
+
+const { actionItems, classHealth, submissionTrend } = useActionCenter(ganttFiltered)
+
+// ── Fetch rendus quand on revient sur l'accueil ─────────────────────────────
 watch(dashTab, (tab) => {
   if (tab === 'accueil' && !travauxStore.allRendus.length) {
     const pid = appStore.activePromoId
@@ -577,341 +112,19 @@ watch(dashTab, (tab) => {
   }
 })
 
-interface FriseMilestone { id: number; title: string; type: string; deadline: string; published: boolean; done: boolean }
-interface FriseProject   { key: string; label: string; icon: Component | null; milestones: FriseMilestone[] }
-interface FrisePromo     { name: string; color: string; projects: FriseProject[] }
-
-// Frise avec zoom centré ±2 mois et scroll/drag
-const friseOffset = ref(0) // décalage en jours par rapport à aujourd'hui
-const FRISE_SPAN_DAYS = 120 // 4 mois de largeur visible
-
-const ganttDateRange = computed(() => {
-  const rows = (appStore.isTeacher ? ganttFiltered.value : travauxStore.devoirs) as { deadline: string }[]
-  if (!rows.length) return null
-  // Centrer sur aujourd'hui + offset
-  const center = Date.now() + friseOffset.value * 86_400_000
-  const halfSpan = (FRISE_SPAN_DAYS / 2) * 86_400_000
-  return { start: new Date(center - halfSpan), end: new Date(center + halfSpan) }
-})
-
-function onFriseWheel(e: WheelEvent) {
-  e.preventDefault()
-  friseOffset.value += e.deltaY > 0 ? 14 : -14 // scroll de 2 semaines
-}
-
-const friseDragging = ref(false)
-let _friseDragStart = 0
-function onFriseDragStart(e: MouseEvent) {
-  friseDragging.value = true
-  _friseDragStart = e.clientX
-}
-function onFriseDragMove(e: MouseEvent) {
-  if (!friseDragging.value) return
-  const diff = _friseDragStart - e.clientX
-  if (Math.abs(diff) > 10) {
-    friseOffset.value += diff > 0 ? 7 : -7
-    _friseDragStart = e.clientX
+// ── Lifecycle ───────────────────────────────────────────────────────────────
+onMounted(async () => {
+  if (appStore.isTeacher) {
+    await loadTeacherData(checkDevoirsResources)
+  } else {
+    await loadStudentData()
   }
-}
-function onFriseDragEnd() { friseDragging.value = false }
-
-const ganttMonths = computed(() => {
-  const r = ganttDateRange.value
-  if (!r) return []
-  const total = r.end.getTime() - r.start.getTime()
-  const months: { label: string; left: number }[] = []
-  let d = new Date(r.start.getFullYear(), r.start.getMonth(), 1)
-  while (d <= r.end) {
-    months.push({
-      label: d.toLocaleDateString('fr-FR', { month: 'short', year: '2-digit' }),
-      left:  Math.max(0, (d.getTime() - r.start.getTime()) / total * 100),
-    })
-    d = new Date(d.getFullYear(), d.getMonth() + 1, 1)
-  }
-  return months
 })
 
-const ganttTodayPct = computed(() => {
-  const r = ganttDateRange.value
-  if (!r) return -1
-  return (Date.now() - r.start.getTime()) / (r.end.getTime() - r.start.getTime()) * 100
+onUnmounted(() => {
+  cleanupTimers()
+  cleanupStorage()
 })
-
-const teacherFrise = computed((): FrisePromo[] => {
-  const promoMap = new Map<string, { color: string; projects: Map<string, FriseMilestone[]> }>()
-  for (const t of ganttFiltered.value) {
-    const pName  = t.promo_name  || 'Sans promo'
-    const pColor = t.promo_color || '#4a90d9'
-    const pKey   = t.category?.trim() || 'Sans projet'
-    if (!promoMap.has(pName)) promoMap.set(pName, { color: pColor, projects: new Map() })
-    const promo = promoMap.get(pName)!
-    if (!promo.projects.has(pKey)) promo.projects.set(pKey, [])
-    promo.projects.get(pKey)!.push({
-      id: t.id, title: t.title, type: t.type, deadline: t.deadline,
-      published: Boolean(t.published),
-      done: t.students_total > 0 && (t.depots_count ?? 0) >= t.students_total,
-    })
-  }
-  return Array.from(promoMap.entries())
-    .sort(([a], [b]) => a.localeCompare(b))
-    .map(([name, { color, projects }]) => ({
-      name, color,
-      projects: Array.from(projects.entries())
-        .map(([key, milestones]) => ({
-          key, label: parseCategoryIcon(key).label, icon: parseCategoryIcon(key).icon,
-          milestones: milestones.sort((a, b) => new Date(a.deadline).getTime() - new Date(b.deadline).getTime()),
-        }))
-        .sort((a, b) => {
-          const am = a.milestones[0]?.deadline ?? ''; const bm = b.milestones[0]?.deadline ?? ''
-          return am.localeCompare(bm)
-        }),
-    }))
-})
-
-const studentFrise = computed((): FrisePromo[] => {
-  const projMap = new Map<string, FriseMilestone[]>()
-  for (const t of travauxStore.devoirs) {
-    const key = t.category?.trim() || 'Sans projet'
-    if (!projMap.has(key)) projMap.set(key, [])
-    projMap.get(key)!.push({
-      id: t.id, title: t.title, type: t.type ?? 'autre', deadline: t.deadline,
-      published: true, done: t.depot_id != null,
-    })
-  }
-  return [{
-    name: appStore.currentUser?.promo_name ?? 'Ma promo', color: '#9b87f5',
-    projects: Array.from(projMap.entries())
-      .map(([key, milestones]) => ({
-        key, label: parseCategoryIcon(key).label, icon: parseCategoryIcon(key).icon,
-        milestones: milestones.sort((a, b) => new Date(a.deadline).getTime() - new Date(b.deadline).getTime()),
-      }))
-      .sort((a, b) => {
-        const am = a.milestones[0]?.deadline ?? ''; const bm = b.milestones[0]?.deadline ?? ''
-        return am.localeCompare(bm)
-      }),
-  }]
-})
-
-const frise = computed((): FrisePromo[] => appStore.isTeacher ? teacherFrise.value : studentFrise.value)
-
-// ── Analytique enseignant ─────────────────────────────────────────────────────
-const allRendus = ref<{ note: string | null }[]>([])
-const analyticsLoaded = ref(false)
-
-async function loadAnalytics() {
-  if (analyticsLoaded.value) return
-  const promoId = appStore.activePromoId ?? 0
-  const data = await api<{ note: string | null }[]>(
-    () => window.api.getAllRendus(promoId) as Promise<{ ok: boolean; data?: { note: string | null }[] }>,
-  )
-  allRendus.value = data ?? []
-  analyticsLoaded.value = true
-}
-
-watch(dashTab, (tab) => { if (tab === 'analytique') loadAnalytics() })
-watch(() => appStore.activePromoId, () => { analyticsLoaded.value = false; if (dashTab.value === 'analytique') loadAnalytics() })
-
-// Distribution des notes A/B/C/D/NA
-const GRADE_COLORS: Record<string, string> = { A: '#22c55e', B: '#27ae60', C: '#f59e0b', D: '#ef4444', NA: '#6b7280' }
-const gradeDistribution = computed(() => {
-  const counts: Record<string, number> = { A: 0, B: 0, C: 0, D: 0, NA: 0 }
-  for (const r of allRendus.value) {
-    if (r.note && counts[r.note] !== undefined) counts[r.note]++
-  }
-  const max = Math.max(1, ...Object.values(counts))
-  return Object.entries(counts)
-    .filter(([, c]) => c > 0)
-    .map(([label, count]) => ({ label, count, pct: Math.round(count / max * 100), color: GRADE_COLORS[label] || '#6b7280' }))
-})
-
-// Taux de soumission par devoir
-const submissionRates = computed(() => {
-  return ganttFiltered.value
-    .filter(t => t.published && t.students_total > 0)
-    .map(t => ({
-      title: t.title,
-      rate: Math.round((t.depots_count / t.students_total) * 100),
-      depots: t.depots_count,
-      total: t.students_total,
-    }))
-    .sort((a, b) => a.rate - b.rate)
-    .slice(0, 15)
-})
-
-// Note fréquente (mode A/B/C/D)
-const globalModeGrade = computed(() => {
-  const counts: Record<string, number> = {}
-  for (const r of allRendus.value) {
-    if (r.note && r.note !== 'NA') counts[r.note] = (counts[r.note] ?? 0) + 1
-  }
-  let mode: string | null = null, max = 0
-  for (const [g, c] of Object.entries(counts)) { if (c > max) { mode = g; max = c } }
-  return mode
-})
-
-// Statistiques rapides analytique
-const analyticsStats = computed(() => {
-  const total = allRendus.value.length
-  const graded = allRendus.value.filter(r => r.note != null).length
-  const notGraded = total - graded
-  return { total, graded, notGraded }
-})
-
-// ── Centre d'action — items nécessitant une attention immédiate ──────────────
-interface ActionItem {
-  id: string
-  type: 'grade' | 'deadline' | 'draft' | 'late'
-  title: string
-  subtitle: string
-  urgency: 'critical' | 'warning' | 'info'
-  action: () => void
-}
-
-const actionItems = computed((): ActionItem[] => {
-  const items: ActionItem[] = []
-  const now = Date.now()
-  const DAY = 86_400_000
-
-  for (const t of ganttFiltered.value) {
-    if (!t.published) continue
-    const dl = new Date(t.deadline).getTime()
-    const submissionRate = t.students_total > 0 ? t.depots_count / t.students_total : 0
-
-    // Devoirs avec rendus à noter (rendus reçus mais pas tous notés)
-    if (t.depots_count > 0 && dl < now) {
-      items.push({
-        id: `grade-${t.id}`,
-        type: 'grade',
-        title: t.title,
-        subtitle: `${t.depots_count} rendu${t.depots_count > 1 ? 's' : ''} à évaluer`,
-        urgency: dl < now - 7 * DAY ? 'critical' : 'warning',
-        action: () => { appStore.currentTravailId = t.id; modals.gestionDevoir = true },
-      })
-    }
-
-    // Deadline dans les 48h
-    if (dl > now && dl < now + 2 * DAY && submissionRate < 0.5) {
-      items.push({
-        id: `deadline-${t.id}`,
-        type: 'deadline',
-        title: t.title,
-        subtitle: `Deadline dans ${Math.ceil((dl - now) / DAY * 24)}h — ${Math.round(submissionRate * 100)}% de rendus`,
-        urgency: submissionRate < 0.25 ? 'critical' : 'warning',
-        action: () => { appStore.currentTravailId = t.id; modals.gestionDevoir = true },
-      })
-    }
-
-    // Taux de rendu très faible après deadline
-    if (dl < now && t.students_total > 0 && submissionRate < 0.3) {
-      items.push({
-        id: `late-${t.id}`,
-        type: 'late',
-        title: t.title,
-        subtitle: `Seulement ${t.depots_count}/${t.students_total} rendus (${Math.round(submissionRate * 100)}%)`,
-        urgency: 'critical',
-        action: () => { appStore.currentTravailId = t.id; modals.suivi = true },
-      })
-    }
-  }
-
-  // Brouillons non publiés
-  for (const t of ganttFiltered.value) {
-    if (t.published) continue
-    const dl = new Date(t.deadline).getTime()
-    if (dl > now && dl < now + 7 * DAY) {
-      items.push({
-        id: `draft-${t.id}`,
-        type: 'draft',
-        title: t.title,
-        subtitle: `Brouillon — deadline dans ${Math.ceil((dl - now) / DAY)}j`,
-        urgency: dl < now + 2 * DAY ? 'warning' : 'info',
-        action: () => { appStore.currentTravailId = t.id; modals.gestionDevoir = true },
-      })
-    }
-  }
-
-  return items
-    .sort((a, b) => {
-      const order = { critical: 0, warning: 1, info: 2 }
-      return order[a.urgency] - order[b.urgency]
-    })
-    .slice(0, 6)
-})
-
-// ── Santé de la classe — indicateur global ───────────────────────────────────
-const classHealth = computed(() => {
-  const rows = ganttFiltered.value.filter(t => t.published && t.students_total > 0)
-  if (!rows.length) return null
-
-  // Taux de soumission moyen
-  const avgSubmission = rows.reduce((s, t) => s + (t.depots_count / t.students_total), 0) / rows.length
-  // Taux de devoirs à jour (rendus ≥ 70% ou pas encore deadline)
-  const now = Date.now()
-  const onTrack = rows.filter(t => {
-    const dl = new Date(t.deadline).getTime()
-    return dl > now || (t.depots_count / t.students_total) >= 0.7
-  }).length / rows.length
-
-  const score = Math.round((avgSubmission * 0.6 + onTrack * 0.4) * 100)
-  let status: 'excellent' | 'good' | 'attention' | 'critical'
-  if (score >= 80) status = 'excellent'
-  else if (score >= 60) status = 'good'
-  else if (score >= 40) status = 'attention'
-  else status = 'critical'
-
-  const labels = { excellent: 'Excellent', good: 'Bien', attention: 'Attention requise', critical: 'Situation critique' }
-  const colors = { excellent: '#22c55e', good: '#27ae60', attention: '#f59e0b', critical: '#ef4444' }
-
-  return { score, status, label: labels[status], color: colors[status], avgSubmission: Math.round(avgSubmission * 100) }
-})
-
-// ── Tendance soumissions (7 derniers jours) ──────────────────────────────────
-const submissionTrend = computed(() => {
-  const now = new Date()
-  // Grouper tous les rendus par date en une seule passe (O(n) au lieu de O(7n))
-  const countsByDate = new Map<string, number>()
-  for (const r of travauxStore.allRendus) {
-    if (r.submitted_at) {
-      const dayKey = r.submitted_at.slice(0, 10)
-      countsByDate.set(dayKey, (countsByDate.get(dayKey) ?? 0) + 1)
-    }
-  }
-  const days: { label: string; count: number }[] = []
-  for (let i = 6; i >= 0; i--) {
-    const d = new Date(now)
-    d.setDate(d.getDate() - i)
-    const dayStr = d.toISOString().slice(0, 10)
-    days.push({
-      label: d.toLocaleDateString('fr-FR', { weekday: 'short' }),
-      count: countsByDate.get(dayStr) ?? 0,
-    })
-  }
-  const maxCount = Math.max(1, ...days.map(d => d.count))
-  return { days, maxCount }
-})
-
-function milestoneLeft(deadline: string): string {
-  const r = ganttDateRange.value
-  if (!r) return '50%'
-  const total = r.end.getTime() - r.start.getTime()
-  const pos   = (new Date(deadline).getTime() - r.start.getTime()) / total * 100
-  return `${Math.max(0, Math.min(100, pos))}%`
-}
-
-function projectLineStyle(milestones: FriseMilestone[]): Record<string, string> {
-  if (milestones.length < 2) return { display: 'none' }
-  const r = ganttDateRange.value
-  if (!r) return {}
-  const total = r.end.getTime() - r.start.getTime()
-  const left  = (new Date(milestones[0].deadline).getTime() - r.start.getTime()) / total * 100
-  const right = (new Date(milestones[milestones.length - 1].deadline).getTime() - r.start.getTime()) / total * 100
-  return { left: `${Math.max(0, left)}%`, width: `${Math.max(0, right - left)}%` }
-}
-
-function onMilestoneClick(ms: FriseMilestone) {
-  if (appStore.isTeacher) { appStore.currentTravailId = ms.id; modals.gestionDevoir = true }
-  else router.push('/devoirs')
-}
 </script>
 
 <template>
