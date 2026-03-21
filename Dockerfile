@@ -1,33 +1,21 @@
-# ── Stage 1 : Build du frontend web ──────────────────────────────────────────
-FROM node:20-alpine AS build
+# ── Image de production — serveur Cursus ─────────────────────────────────────
+FROM node:20-alpine
+
+RUN apk add --no-cache tini python3 make g++
 
 WORKDIR /app
 
-COPY package.json package-lock.json ./
-RUN npm ci
-
-COPY . .
-
-ARG VITE_SERVER_URL
-ENV VITE_SERVER_URL=${VITE_SERVER_URL}
-
-RUN npm run build:web
-
-# ── Stage 2 : Image de production (serveur uniquement) ───────────────────────
-FROM node:20-alpine AS production
-
-RUN apk add --no-cache tini
-
-WORKDIR /app
-
+# Installer uniquement les dépendances de production
 COPY package.json package-lock.json ./
 RUN npm ci --omit=dev --ignore-scripts && \
     npm rebuild better-sqlite3 && \
-    npm cache clean --force
+    npm cache clean --force && \
+    apk del python3 make g++
 
+# Copier le serveur et le frontend pré-buildé
 COPY server/ ./server/
 COPY src/landing/ ./src/landing/
-COPY --from=build /app/dist-web/ ./dist-web/
+COPY dist-web/ ./dist-web/
 
 RUN mkdir -p /data/db /data/uploads logs
 
