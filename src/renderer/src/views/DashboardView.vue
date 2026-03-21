@@ -93,6 +93,11 @@ onMounted(async () => {
       if (studRes?.ok) allStudents.value = studRes.data as typeof allStudents.value
       if (ganttRes?.ok) ganttAll.value = ganttRes.data as GanttRow[]
       loadReminders()
+      // Charger les rendus pour la tendance sur l'accueil
+      if (promos.value.length) {
+        const pid = appStore.activePromoId ?? promos.value[0]?.id
+        if (pid) travauxStore.fetchRendus(pid)
+      }
     } finally { loadingTeacher.value = false }
   } else {
     try {
@@ -587,6 +592,130 @@ const analyticsStats = computed(() => {
   return { total, graded, notGraded }
 })
 
+// ── Centre d'action — items nécessitant une attention immédiate ──────────────
+interface ActionItem {
+  id: string
+  type: 'grade' | 'deadline' | 'draft' | 'late'
+  title: string
+  subtitle: string
+  urgency: 'critical' | 'warning' | 'info'
+  action: () => void
+}
+
+const actionItems = computed((): ActionItem[] => {
+  const items: ActionItem[] = []
+  const now = Date.now()
+  const DAY = 86_400_000
+
+  for (const t of ganttFiltered.value) {
+    if (!t.published) continue
+    const dl = new Date(t.deadline).getTime()
+    const submissionRate = t.students_total > 0 ? t.depots_count / t.students_total : 0
+
+    // Devoirs avec rendus à noter (rendus reçus mais pas tous notés)
+    if (t.depots_count > 0 && dl < now) {
+      items.push({
+        id: `grade-${t.id}`,
+        type: 'grade',
+        title: t.title,
+        subtitle: `${t.depots_count} rendu${t.depots_count > 1 ? 's' : ''} à évaluer`,
+        urgency: dl < now - 7 * DAY ? 'critical' : 'warning',
+        action: () => { appStore.currentTravailId = t.id; modals.gestionDevoir = true },
+      })
+    }
+
+    // Deadline dans les 48h
+    if (dl > now && dl < now + 2 * DAY && submissionRate < 0.5) {
+      items.push({
+        id: `deadline-${t.id}`,
+        type: 'deadline',
+        title: t.title,
+        subtitle: `Deadline dans ${Math.ceil((dl - now) / DAY * 24)}h — ${Math.round(submissionRate * 100)}% de rendus`,
+        urgency: submissionRate < 0.25 ? 'critical' : 'warning',
+        action: () => { appStore.currentTravailId = t.id; modals.gestionDevoir = true },
+      })
+    }
+
+    // Taux de rendu très faible après deadline
+    if (dl < now && t.students_total > 0 && submissionRate < 0.3) {
+      items.push({
+        id: `late-${t.id}`,
+        type: 'late',
+        title: t.title,
+        subtitle: `Seulement ${t.depots_count}/${t.students_total} rendus (${Math.round(submissionRate * 100)}%)`,
+        urgency: 'critical',
+        action: () => { appStore.currentTravailId = t.id; modals.suivi = true },
+      })
+    }
+  }
+
+  // Brouillons non publiés
+  for (const t of ganttFiltered.value) {
+    if (t.published) continue
+    const dl = new Date(t.deadline).getTime()
+    if (dl > now && dl < now + 7 * DAY) {
+      items.push({
+        id: `draft-${t.id}`,
+        type: 'draft',
+        title: t.title,
+        subtitle: `Brouillon — deadline dans ${Math.ceil((dl - now) / DAY)}j`,
+        urgency: dl < now + 2 * DAY ? 'warning' : 'info',
+        action: () => { appStore.currentTravailId = t.id; modals.gestionDevoir = true },
+      })
+    }
+  }
+
+  return items
+    .sort((a, b) => {
+      const order = { critical: 0, warning: 1, info: 2 }
+      return order[a.urgency] - order[b.urgency]
+    })
+    .slice(0, 6)
+})
+
+// ── Santé de la classe — indicateur global ───────────────────────────────────
+const classHealth = computed(() => {
+  const rows = ganttFiltered.value.filter(t => t.published && t.students_total > 0)
+  if (!rows.length) return null
+
+  // Taux de soumission moyen
+  const avgSubmission = rows.reduce((s, t) => s + (t.depots_count / t.students_total), 0) / rows.length
+  // Taux de devoirs à jour (rendus ≥ 70% ou pas encore deadline)
+  const now = Date.now()
+  const onTrack = rows.filter(t => {
+    const dl = new Date(t.deadline).getTime()
+    return dl > now || (t.depots_count / t.students_total) >= 0.7
+  }).length / rows.length
+
+  const score = Math.round((avgSubmission * 0.6 + onTrack * 0.4) * 100)
+  let status: 'excellent' | 'good' | 'attention' | 'critical'
+  if (score >= 80) status = 'excellent'
+  else if (score >= 60) status = 'good'
+  else if (score >= 40) status = 'attention'
+  else status = 'critical'
+
+  const labels = { excellent: 'Excellent', good: 'Bien', attention: 'Attention requise', critical: 'Situation critique' }
+  const colors = { excellent: '#22c55e', good: '#27ae60', attention: '#f59e0b', critical: '#ef4444' }
+
+  return { score, status, label: labels[status], color: colors[status], avgSubmission: Math.round(avgSubmission * 100) }
+})
+
+// ── Tendance soumissions (7 derniers jours) ──────────────────────────────────
+const submissionTrend = computed(() => {
+  const now = new Date()
+  const days: { label: string; count: number }[] = []
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(now)
+    d.setDate(d.getDate() - i)
+    const dayStr = d.toISOString().slice(0, 10)
+    const label = d.toLocaleDateString('fr-FR', { weekday: 'short' })
+    const count = travauxStore.allRendus.filter(r => r.submitted_at?.startsWith(dayStr)).length
+    days.push({ label, count })
+  }
+  const maxCount = Math.max(1, ...days.map(d => d.count))
+  return { days, maxCount }
+})
+
 function milestoneLeft(deadline: string): string {
   const r = ganttDateRange.value
   if (!r) return '50%'
@@ -669,6 +798,78 @@ function onMilestoneClick(ms: FriseMilestone) {
           <div class="db-stat-pill">
             <Users :size="14" />
             <strong>{{ totalStudents }}</strong> étudiant{{ totalStudents > 1 ? 's' : '' }}
+          </div>
+        </div>
+
+        <!-- Centre d'action + Santé classe -->
+        <div v-if="actionItems.length || classHealth" class="db-action-row">
+
+          <!-- Centre d'action -->
+          <div v-if="actionItems.length" class="db-action-center">
+            <h4 class="db-section-title"><AlertTriangle :size="14" /> Actions requises</h4>
+            <div class="db-action-list">
+              <button
+                v-for="item in actionItems"
+                :key="item.id"
+                class="db-action-item"
+                :class="'db-action-' + item.urgency"
+                @click="item.action()"
+              >
+                <span class="db-action-badge" :class="'db-badge-' + item.type">
+                  <Edit3 v-if="item.type === 'grade'" :size="11" />
+                  <Clock v-else-if="item.type === 'deadline'" :size="11" />
+                  <FileText v-else-if="item.type === 'draft'" :size="11" />
+                  <AlertTriangle v-else :size="11" />
+                </span>
+                <div class="db-action-text">
+                  <span class="db-action-title">{{ item.title }}</span>
+                  <span class="db-action-sub">{{ item.subtitle }}</span>
+                </div>
+                <ChevronRight :size="12" class="db-action-arrow" />
+              </button>
+            </div>
+          </div>
+
+          <!-- Santé de la classe -->
+          <div v-if="classHealth" class="db-class-health">
+            <h4 class="db-section-title"><TrendingUp :size="14" /> Santé de la classe</h4>
+            <div class="db-health-ring-wrap">
+              <svg class="db-health-ring" viewBox="0 0 80 80">
+                <circle cx="40" cy="40" r="34" fill="none" stroke="rgba(255,255,255,.08)" stroke-width="6" />
+                <circle
+                  cx="40" cy="40" r="34"
+                  fill="none"
+                  :stroke="classHealth.color"
+                  stroke-width="6"
+                  stroke-linecap="round"
+                  :stroke-dasharray="`${classHealth.score * 2.136} 213.6`"
+                  transform="rotate(-90 40 40)"
+                  style="transition: stroke-dasharray .6s ease"
+                />
+              </svg>
+              <div class="db-health-score">
+                <span class="db-health-value" :style="{ color: classHealth.color }">{{ classHealth.score }}</span>
+                <span class="db-health-unit">%</span>
+              </div>
+            </div>
+            <span class="db-health-label" :style="{ color: classHealth.color }">{{ classHealth.label }}</span>
+            <span class="db-health-detail">Taux de soumission moyen : {{ classHealth.avgSubmission }}%</span>
+
+            <!-- Mini sparkline des soumissions des 7 derniers jours -->
+            <div v-if="submissionTrend.days.some(d => d.count > 0)" class="db-trend">
+              <span class="db-trend-title">Rendus cette semaine</span>
+              <div class="db-trend-bars">
+                <div v-for="d in submissionTrend.days" :key="d.label" class="db-trend-col">
+                  <div class="db-trend-bar-bg">
+                    <div
+                      class="db-trend-bar-fill"
+                      :style="{ height: (d.count / submissionTrend.maxCount * 100) + '%' }"
+                    />
+                  </div>
+                  <span class="db-trend-label">{{ d.label }}</span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -786,6 +987,22 @@ function onMilestoneClick(ms: FriseMilestone) {
                     />
                   </div>
                   <span class="analytics-bar-count">{{ s.rate }}%</span>
+                </div>
+              </div>
+            </div>
+            <!-- Tendance des rendus (7 derniers jours) -->
+            <div v-if="submissionTrend.days.some(d => d.count > 0)" class="analytics-card">
+              <h3 class="analytics-card-title"><TrendingUp :size="14" /> Rendus des 7 derniers jours</h3>
+              <div class="analytics-trend-chart">
+                <div v-for="d in submissionTrend.days" :key="d.label" class="analytics-trend-col">
+                  <span class="analytics-trend-count">{{ d.count || '' }}</span>
+                  <div class="analytics-trend-bar-bg">
+                    <div
+                      class="analytics-trend-bar-fill"
+                      :style="{ height: (d.count / submissionTrend.maxCount * 100) + '%' }"
+                    />
+                  </div>
+                  <span class="analytics-trend-label">{{ d.label }}</span>
                 </div>
               </div>
             </div>
@@ -1043,6 +1260,22 @@ function onMilestoneClick(ms: FriseMilestone) {
               </div>
             </div>
           </div>
+        </div>
+
+        <!-- Barre d'actions rapides flottante -->
+        <div class="db-fab-bar">
+          <button class="db-fab" title="Nouveau devoir" @click="modals.newDevoir = true">
+            <PlusCircle :size="15" /> Nouveau devoir
+          </button>
+          <button class="db-fab db-fab-ghost" title="Échéancier" @click="modals.echeancier = true">
+            <CalendarDays :size="14" />
+          </button>
+          <button class="db-fab db-fab-ghost" title="Classe" @click="modals.classe = true">
+            <GraduationCap :size="14" />
+          </button>
+          <button class="db-fab db-fab-ghost" title="Réglages" @click="modals.settings = true">
+            <Settings :size="14" />
+          </button>
         </div>
 
       </template>
@@ -2079,4 +2312,202 @@ function onMilestoneClick(ms: FriseMilestone) {
   transition: all .15s ease;
 }
 .db-new-promo-btn:hover { color: var(--accent); border-color: var(--accent); background: rgba(74,144,217,.07); }
+
+/* ── Centre d'action + Santé classe (row layout) ── */
+.db-action-row {
+  display: grid;
+  grid-template-columns: 1fr 280px;
+  gap: 16px;
+  align-items: start;
+}
+@media (max-width: 768px) {
+  .db-action-row { grid-template-columns: 1fr; }
+}
+
+.db-section-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  margin: 0 0 10px;
+}
+
+/* ── Action center ── */
+.db-action-center { min-width: 0; }
+.db-action-list { display: flex; flex-direction: column; gap: 4px; }
+.db-action-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  background: var(--bg-elevated, rgba(255,255,255,.04));
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all .15s ease;
+  text-align: left;
+  width: 100%;
+}
+.db-action-item:hover { background: rgba(255,255,255,.07); border-color: var(--accent); }
+.db-action-critical { border-left: 3px solid #ef4444; }
+.db-action-warning  { border-left: 3px solid #f59e0b; }
+.db-action-info     { border-left: 3px solid var(--accent); }
+
+.db-action-badge {
+  width: 28px; height: 28px;
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.db-badge-grade    { background: rgba(239,68,68,.15); color: #ef4444; }
+.db-badge-deadline { background: rgba(245,158,11,.15); color: #f59e0b; }
+.db-badge-draft    { background: rgba(74,144,217,.15); color: var(--accent); }
+.db-badge-late     { background: rgba(239,68,68,.2); color: #ef4444; }
+
+.db-action-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.db-action-title { font-size: 13px; font-weight: 600; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.db-action-sub   { font-size: 11.5px; color: var(--text-muted); }
+.db-action-arrow { color: var(--text-muted); flex-shrink: 0; opacity: 0; transition: opacity .15s; }
+.db-action-item:hover .db-action-arrow { opacity: 1; }
+
+/* ── Santé de la classe ── */
+.db-class-health {
+  background: var(--bg-elevated, rgba(255,255,255,.04));
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.db-health-ring-wrap { position: relative; width: 80px; height: 80px; margin: 4px 0; }
+.db-health-ring { width: 100%; height: 100%; }
+.db-health-score {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center; gap: 1px;
+}
+.db-health-value { font-size: 22px; font-weight: 800; }
+.db-health-unit  { font-size: 11px; font-weight: 600; margin-top: 4px; }
+
+.db-health-label  { font-size: 13px; font-weight: 700; margin-top: 2px; }
+.db-health-detail { font-size: 11px; color: var(--text-muted); text-align: center; }
+
+/* ── Tendance soumissions (sparkline) ── */
+.db-trend { margin-top: 12px; width: 100%; }
+.db-trend-title { font-size: 11px; color: var(--text-muted); display: block; margin-bottom: 6px; text-align: center; }
+.db-trend-bars {
+  display: flex; gap: 4px; justify-content: center;
+  height: 40px; align-items: flex-end;
+}
+.db-trend-col {
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
+  flex: 1; min-width: 0;
+}
+.db-trend-bar-bg {
+  width: 100%; max-width: 22px; height: 32px;
+  background: rgba(255,255,255,.05);
+  border-radius: 3px;
+  display: flex; align-items: flex-end;
+  overflow: hidden;
+}
+.db-trend-bar-fill {
+  width: 100%;
+  background: var(--accent);
+  border-radius: 3px;
+  min-height: 2px;
+  transition: height .3s ease;
+}
+.db-trend-label { font-size: 9px; color: var(--text-muted); text-transform: capitalize; }
+
+/* ── Barre d'actions rapides flottante ── */
+.db-fab-bar {
+  position: sticky;
+  bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  justify-content: center;
+  padding: 8px 14px;
+  background: color-mix(in srgb, var(--bg-primary) 85%, transparent);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  width: fit-content;
+  margin: 0 auto;
+  box-shadow: 0 4px 20px rgba(0,0,0,.25);
+  z-index: 10;
+}
+
+.db-fab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  font-size: 12.5px;
+  font-weight: 600;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all .15s ease;
+  font-family: var(--font);
+}
+.db-fab:hover { filter: brightness(1.1); transform: translateY(-1px); }
+
+.db-fab-ghost {
+  background: transparent;
+  color: var(--text-secondary);
+  padding: 7px 10px;
+}
+.db-fab-ghost:hover { background: rgba(255,255,255,.08); color: var(--text-primary); filter: none; }
+
+/* ── Analytics trend chart ── */
+.analytics-trend-chart {
+  display: flex;
+  gap: 8px;
+  align-items: flex-end;
+  padding: 12px 4px 0;
+  height: 120px;
+}
+.analytics-trend-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  height: 100%;
+}
+.analytics-trend-count {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  min-height: 16px;
+}
+.analytics-trend-bar-bg {
+  flex: 1;
+  width: 100%;
+  max-width: 32px;
+  background: rgba(255,255,255,.05);
+  border-radius: 4px;
+  display: flex;
+  align-items: flex-end;
+  overflow: hidden;
+}
+.analytics-trend-bar-fill {
+  width: 100%;
+  background: linear-gradient(to top, var(--accent), color-mix(in srgb, var(--accent) 60%, #fff));
+  border-radius: 4px;
+  min-height: 3px;
+  transition: height .3s ease;
+}
+.analytics-trend-label {
+  font-size: 10px;
+  color: var(--text-muted);
+  text-transform: capitalize;
+}
 </style>
