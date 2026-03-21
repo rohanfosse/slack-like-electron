@@ -1,15 +1,20 @@
+/**
+ * Modale de création de devoir — formulaire adaptatif selon le type choisi.
+ * Champs simplifiés avec smart defaults et descriptions contextuelles.
+ */
 <script setup lang="ts">
   import { ref, watch, computed } from 'vue'
-  import { Users, Plus, X } from 'lucide-vue-next'
+  import {
+    FileText, Mic, Award, BookOpen, File, HelpCircle,
+    Clock, MapPin, Calculator, FolderOpen, ChevronDown,
+  } from 'lucide-vue-next'
   import { useAppStore }     from '@/stores/app'
   import { useTravauxStore } from '@/stores/travaux'
   import { useToast }        from '@/composables/useToast'
-  import { avatarColor, initials } from '@/utils/format'
   import { parseCategoryIcon } from '@/utils/categoryIcon'
   import Modal from '@/components/ui/Modal.vue'
   import { isoForDatetimeLocal } from '@/utils/date'
-  import type { Student, Group } from '@/types'
-  import type { ProjectMeta } from '@/components/modals/NewProjectModal.vue'
+  import type { Component } from 'vue'
 
   const props = defineProps<{ modelValue: boolean }>()
   const emit  = defineEmits<{ 'update:modelValue': [v: boolean] }>()
@@ -18,180 +23,129 @@
   const travauxStore = useTravauxStore()
   const { showToast } = useToast()
 
-  // ── Types disponibles ──────────────────────────────────────────────────────
-  type DevoirType = 'soutenance' | 'livrable' | 'cctl' | 'etude_de_cas' | 'memoire' | 'autre'
+  // ── Types ────────────────────────────────────────────────────────────────
+  type DevoirType = 'cctl' | 'etude_de_cas' | 'soutenance' | 'livrable' | 'memoire' | 'autre'
 
-  const TYPE_OPTIONS: { value: DevoirType; label: string }[] = [
-    { value: 'livrable',    label: 'Livrable' },
-    { value: 'soutenance',  label: 'Soutenance' },
-    { value: 'cctl',        label: 'CCTL' },
-    { value: 'etude_de_cas', label: 'Étude de cas' },
-    { value: 'memoire',     label: 'Mémoire' },
-    { value: 'autre',       label: 'Autre' },
+  interface TypeOption {
+    value: DevoirType
+    label: string
+    icon: Component
+    desc: string
+    color: string
+  }
+
+  const TYPE_OPTIONS: TypeOption[] = [
+    { value: 'cctl',         label: 'CCTL',           icon: Award,    desc: 'Contrôle de connaissances en temps limité', color: '#9b87f5' },
+    { value: 'etude_de_cas', label: 'Étude de cas',   icon: BookOpen, desc: 'Analyse et résolution en conditions d\'examen', color: '#2ecc71' },
+    { value: 'soutenance',   label: 'Soutenance',     icon: Mic,      desc: 'Présentation orale devant un jury', color: '#f39c12' },
+    { value: 'livrable',     label: 'Livrable',       icon: FileText, desc: 'Rendu de fichier avec une date limite', color: '#4a90d9' },
+    { value: 'memoire',      label: 'Mémoire',        icon: File,     desc: 'Document long type rapport ou mémoire', color: '#e74c3c' },
+    { value: 'autre',        label: 'Autre',          icon: HelpCircle, desc: 'Autre type de devoir', color: '#95a5a6' },
   ]
 
-  // ── Formulaire ────────────────────────────────────────────────────────────
+  // ── Formulaire ──────────────────────────────────────────────────────────
+  const type        = ref<DevoirType>('cctl')
   const title       = ref('')
   const description = ref('')
-  const type        = ref<DevoirType>('cctl')
   const category    = ref('')
   const deadline    = ref(isoForDatetimeLocal())
   const startDate   = ref(isoForDatetimeLocal())
-  const isDraft     = ref(false)
-  const isGraded    = ref(false)
   const room        = ref('')
   const aavs        = ref('')
-  const requiresSubmission = ref(true)
-  const assignTo    = ref<'all' | 'group'>('all')
+  const isDraft     = ref(false)
   const channelId   = ref<number | null>(null)
   const channels    = ref<{ id: number; name: string }[]>([])
   const creating    = ref(false)
+  const showAdvanced = ref(false)
 
-  // ── Champs structurés (auto-générés en description) ─────────────────────
+  // Champs structurés (événements)
   const duration      = ref<number | null>(20)
   const calculatrice  = ref(true)
   const ressources    = ref('Aucune')
   const session       = ref<'Initiale' | 'Rattrapage'>('Initiale')
+  const requiresSubmission = ref(true)
 
-  // ── Projets disponibles (depuis localStorage) ─────────────────────────────
-  const projects = computed((): ProjectMeta[] => {
+  // ── Projets ─────────────────────────────────────────────────────────────
+  const projects = computed(() => {
     if (!appStore.activePromoId) return []
     try {
       const raw = localStorage.getItem(`cc_projects_${appStore.activePromoId}`)
-      return raw ? (JSON.parse(raw) as ProjectMeta[]) : []
+      return raw ? JSON.parse(raw) : []
     } catch { return [] }
   })
 
-  // ── Comportements selon le type ───────────────────────────────────────────
-  /** Pour soutenance et cctl : pas de date de début (présence à une date fixe) */
+  // ── Computed ────────────────────────────────────────────────────────────
   const isEventType = computed(() => type.value === 'soutenance' || type.value === 'cctl' || type.value === 'etude_de_cas')
+  const activeType  = computed(() => TYPE_OPTIONS.find(t => t.value === type.value)!)
 
-  /** Afficher le champ salle pour les événements */
-  const showRoomField = computed(() => isEventType.value)
+  const canSubmit = computed(() =>
+    title.value.trim().length > 0 && channelId.value != null && !creating.value,
+  )
 
-  /** Pour étude de cas : le prof peut activer/désactiver le rendu */
-  const showSubmissionToggle = computed(() => type.value === 'etude_de_cas')
-
-  /** Pour livrable et autre : afficher "Ce devoir est noté" */
-  const needsGradedToggle = computed(() => type.value === 'livrable' || type.value === 'autre')
-
-  // Quand le type change, ajuster requiresSubmission automatiquement
-  watch(type, (t) => {
-    if (t === 'soutenance' || t === 'cctl') requiresSubmission.value = false
-    else if (t === 'etude_de_cas') requiresSubmission.value = false  // défaut, modifiable
-    else requiresSubmission.value = true
-  })
-
-  // ── Gestion des groupes ────────────────────────────────────────────────────
-  const students        = ref<Student[]>([])
-  const groups          = ref<Group[]>([])
-  const selectedGroupId = ref<number | null>(null)
-  const newGroupName    = ref('')
-  const newGroupMembers = ref<number[]>([])
-  const creatingGroup   = ref(false)
-  const showGroupForm   = ref(false)
-  const groupMembers    = ref<Record<number, number[]>>({})
-
+  // ── Init ────────────────────────────────────────────────────────────────
   watch(() => props.modelValue, async (open) => {
-    if (open && appStore.activePromoId) {
-      const [chRes, stuRes, grpRes] = await Promise.all([
-        window.api.getChannels(appStore.activePromoId),
-        window.api.getStudents(appStore.activePromoId),
-        window.api.getGroups(appStore.activePromoId),
-      ])
-      channels.value = chRes?.ok ? chRes.data : []
-      students.value = stuRes?.ok ? stuRes.data : []
-      groups.value   = grpRes?.ok ? grpRes.data : []
+    if (!open || !appStore.activePromoId) return
 
-      // Pré-sélectionner le projet actif (ou vider)
-      category.value = appStore.activeProject ?? ''
+    const chRes = await window.api.getChannels(appStore.activePromoId)
+    channels.value = chRes?.ok ? chRes.data : []
 
-      // Pré-sélectionner le canal : priorité canal actif, sinon premier canal du projet
-      if (appStore.activeChannelId) {
-        channelId.value = appStore.activeChannelId
-      } else if (appStore.activeProject) {
-        const projChannel = (channels.value as { id: number; name: string; category?: string }[])
-          .find(c => c.category?.trim() === appStore.activeProject)
-        channelId.value = projChannel?.id ?? null
-      } else {
-        channelId.value = null
-      }
+    // Smart defaults
+    category.value = appStore.activeProject ?? ''
+    type.value = (appStore.pendingDevoirType as DevoirType) || 'cctl'
+    appStore.pendingDevoirType = null
 
-      title.value = description.value = ''
-      // Pré-sélectionner le type depuis le bouton "Ajouter un CCTL" etc.
-      type.value = (appStore.pendingDevoirType as DevoirType) || 'cctl'
-      appStore.pendingDevoirType = null
-      assignTo.value = 'all'
-      isDraft.value  = false
-      isGraded.value = false
-      room.value     = ''
-      aavs.value     = ''
-      requiresSubmission.value = true
-      deadline.value = startDate.value = isoForDatetimeLocal()
-      selectedGroupId.value = null
-      showGroupForm.value   = false
-      newGroupName.value    = ''
-      newGroupMembers.value = []
+    // Auto-sélection du canal
+    if (appStore.activeChannelId) {
+      channelId.value = appStore.activeChannelId
+    } else if (appStore.activeProject) {
+      const projChannel = (channels.value as { id: number; name: string; category?: string }[])
+        .find(c => c.category?.trim() === appStore.activeProject)
+      channelId.value = projChannel?.id ?? channels.value[0]?.id ?? null
+    } else {
+      channelId.value = channels.value[0]?.id ?? null
     }
+
+    // Reset
+    title.value = ''
+    description.value = ''
+    room.value = ''
+    aavs.value = ''
+    isDraft.value = false
+    showAdvanced.value = false
+    deadline.value = startDate.value = isoForDatetimeLocal()
+    duration.value = 20
+    calculatrice.value = true
+    ressources.value = 'Aucune'
+    session.value = 'Initiale'
+    requiresSubmission.value = true
   })
 
-  async function selectGroup(g: Group) {
-    selectedGroupId.value = g.id
-    if (!groupMembers.value[g.id]) {
-      const res = await window.api.getGroupMembers(g.id)
-      groupMembers.value[g.id] = res?.ok ? res.data.map((m: { student_id: number }) => m.student_id) : []
-    }
-  }
+  // Adapter requiresSubmission quand le type change
+  watch(type, (t) => {
+    requiresSubmission.value = t !== 'soutenance' && t !== 'cctl'
+  })
 
-  async function createGroup() {
-    if (!newGroupName.value.trim() || !appStore.activePromoId) return
-    creatingGroup.value = true
-    try {
-      const res = await window.api.createGroup({ name: newGroupName.value.trim(), promoId: appStore.activePromoId })
-      if (!res?.ok) return
-      const newId = res.data.id
-      await window.api.setGroupMembers({ groupId: newId, memberIds: newGroupMembers.value })
-      groupMembers.value[newId] = [...newGroupMembers.value]
-
-      const grpRes = await window.api.getGroups(appStore.activePromoId)
-      groups.value = grpRes?.ok ? grpRes.data : []
-
-      selectedGroupId.value = newId
-      showGroupForm.value   = false
-      newGroupName.value    = ''
-      newGroupMembers.value = []
-    } finally {
-      creatingGroup.value = false
-    }
-  }
-
-  function toggleMember(studentId: number) {
-    const idx = newGroupMembers.value.indexOf(studentId)
-    if (idx >= 0) newGroupMembers.value.splice(idx, 1)
-    else newGroupMembers.value.push(studentId)
-  }
-
-  // Auto-générer la description pour les types structurés
+  // ── Description auto ────────────────────────────────────────────────────
   function buildDescription(): string {
-    if (type.value === 'livrable' || type.value === 'autre' || type.value === 'memoire') {
-      return description.value.trim()
-    }
+    if (!isEventType.value) return description.value.trim()
     const parts: string[] = []
     parts.push(`**Session ${session.value}**`)
     if (duration.value) parts.push(`Durée : ${duration.value} min`)
-    parts.push(`Format : ${type.value === 'cctl' ? 'Test' : type.value === 'etude_de_cas' ? 'Étude de cas' : 'Soutenance'}`)
-    if (calculatrice.value) parts.push('Calculatrice autorisée')
-    else parts.push('Calculatrice non autorisée')
-    parts.push(ressources.value === 'Aucune' ? 'Aucune ressource autorisée' : `Ressources : ${ressources.value}`)
+    if (calculatrice.value && type.value !== 'soutenance') parts.push('Calculatrice autorisée')
+    else if (type.value !== 'soutenance') parts.push('Calculatrice non autorisée')
+    if (type.value !== 'soutenance') {
+      parts.push(ressources.value === 'Aucune' ? 'Aucune ressource autorisée' : `Ressources : ${ressources.value}`)
+    }
     if (room.value.trim()) parts.push(`Salle : ${room.value.trim()}`)
     return parts.join('\n')
   }
 
+  // ── Submit ──────────────────────────────────────────────────────────────
   async function submit() {
-    if (!title.value.trim() || !channelId.value) return
+    if (!canSubmit.value) return
     creating.value = true
     try {
-      if (!isEventType.value && startDate.value && startDate.value > deadline.value) {
+      if (!isEventType.value && startDate.value > deadline.value) {
         showToast('La date de début doit être avant la deadline.', 'error')
         return
       }
@@ -203,16 +157,16 @@
         deadline:     deadline.value,
         startDate:    isEventType.value ? null : startDate.value,
         isPublished:  !isDraft.value,
-        isGraded:     needsGradedToggle.value ? isGraded.value : null,
-        assignedTo:   assignTo.value,
-        groupId:      assignTo.value === 'group' ? selectedGroupId.value : null,
+        isGraded:     null,
+        assignedTo:   'all',
+        groupId:      null,
         channelId:    channelId.value,
         room:         room.value.trim() || null,
         aavs:         aavs.value.trim() || null,
         requiresSubmission: requiresSubmission.value,
       })
-      if (!res) { showToast('Erreur lors de la création du devoir.', 'error'); return }
-      showToast('Devoir créé.', 'success')
+      if (!res) { showToast('Erreur lors de la création.', 'error'); return }
+      showToast(isDraft.value ? 'Brouillon enregistré.' : 'Devoir publié.', 'success')
       emit('update:modelValue', false)
     } finally {
       creating.value = false
@@ -221,43 +175,47 @@
 </script>
 
 <template>
-  <Modal :model-value="modelValue" title="Nouveau devoir" max-width="620px" @update:model-value="emit('update:modelValue', $event)">
-    <form class="nd-form" @submit.prevent="submit">
+  <Modal :model-value="modelValue" title="Nouveau devoir" max-width="560px" @update:model-value="emit('update:modelValue', $event)">
+    <form class="nd" @submit.prevent="submit">
 
-      <!-- Onglets par type -->
-      <div class="nd-tabs">
+      <!-- ── Sélection du type ──────────────────────────────────────── -->
+      <div class="nd-types">
         <button
           v-for="opt in TYPE_OPTIONS" :key="opt.value" type="button"
-          class="nd-tab" :class="{ active: type === opt.value, [`nd-tab--${opt.value}`]: true }"
+          class="nd-type-card"
+          :class="{ active: type === opt.value }"
+          :style="type === opt.value ? { borderColor: opt.color, background: opt.color + '0D' } : {}"
           @click="type = opt.value"
-        >{{ opt.label }}</button>
+        >
+          <component :is="opt.icon" :size="18" :style="{ color: type === opt.value ? opt.color : undefined }" />
+          <span class="nd-type-label">{{ opt.label }}</span>
+        </button>
       </div>
 
-      <!-- Titre + Canal -->
-      <div class="nd-row">
-        <div class="form-group" style="flex:2">
-          <label class="form-label">Titre</label>
-          <input v-model="title" type="text" class="form-input" placeholder="Titre du devoir" required />
-        </div>
-        <div class="form-group" style="flex:1">
-          <label class="form-label">Canal</label>
-          <select v-model="channelId" class="form-select" required>
-            <option :value="null">Choisir…</option>
-            <option v-for="c in channels" :key="c.id" :value="c.id">{{ c.name }}</option>
-          </select>
-        </div>
+      <!-- Description du type sélectionné -->
+      <p class="nd-type-desc" :style="{ color: activeType.color }">
+        {{ activeType.desc }}
+      </p>
+
+      <!-- ── Titre ──────────────────────────────────────────────────── -->
+      <div class="nd-field">
+        <label class="nd-label">Titre</label>
+        <input
+          v-model="title" type="text" class="nd-input" required autofocus
+          :placeholder="isEventType ? `ex : ${activeType.label} — Module X` : 'ex : Rapport final — Module X'"
+        />
       </div>
 
-      <!-- ═══ Champs CCTL / Soutenance / Étude de cas ═══ -->
+      <!-- ═══ Champs ÉVÉNEMENT (CCTL / Soutenance / Étude de cas) ═══ -->
       <template v-if="isEventType">
         <div class="nd-row">
-          <div class="form-group" style="flex:1">
-            <label class="form-label">Date de l'épreuve</label>
-            <input v-model="deadline" type="datetime-local" class="form-input" required />
+          <div class="nd-field nd-flex1">
+            <label class="nd-label"><Clock :size="12" /> Date de l'épreuve</label>
+            <input v-model="deadline" type="datetime-local" class="nd-input" required />
           </div>
-          <div class="form-group" style="flex:1">
-            <label class="form-label">Session</label>
-            <select v-model="session" class="form-select">
+          <div class="nd-field nd-flex1">
+            <label class="nd-label">Session</label>
+            <select v-model="session" class="nd-input">
               <option value="Initiale">Initiale</option>
               <option value="Rattrapage">Rattrapage</option>
             </select>
@@ -265,297 +223,201 @@
         </div>
 
         <div class="nd-row">
-          <div class="form-group" style="flex:1">
-            <label class="form-label">Durée (min)</label>
-            <input v-model.number="duration" type="number" class="form-input" min="5" max="240" step="5" placeholder="20" />
+          <div class="nd-field nd-flex1">
+            <label class="nd-label"><Clock :size="12" /> Durée</label>
+            <select v-model.number="duration" class="nd-input">
+              <option :value="15">15 min</option>
+              <option :value="20">20 min</option>
+              <option :value="30">30 min</option>
+              <option :value="45">45 min</option>
+              <option :value="60">1h</option>
+              <option :value="90">1h30</option>
+              <option :value="120">2h</option>
+              <option :value="180">3h</option>
+            </select>
           </div>
-          <div class="form-group" style="flex:1">
-            <label class="form-label">Salle</label>
-            <input v-model="room" type="text" class="form-input" placeholder="ex : B204" />
+          <div class="nd-field nd-flex1">
+            <label class="nd-label"><MapPin :size="12" /> Salle</label>
+            <input v-model="room" type="text" class="nd-input" placeholder="ex : B204" />
           </div>
         </div>
 
-        <div v-if="type !== 'soutenance'" class="nd-row nd-toggles">
-          <label class="nd-toggle-label">
-            <input v-model="calculatrice" type="checkbox" /> Calculatrice autorisée
+        <!-- Options examen (pas pour soutenance) -->
+        <div v-if="type !== 'soutenance'" class="nd-options">
+          <label class="nd-option">
+            <input v-model="calculatrice" type="checkbox" />
+            <Calculator :size="13" /> Calculatrice autorisée
           </label>
-          <label v-if="type === 'etude_de_cas'" class="nd-toggle-label">
-            <input v-model="requiresSubmission" type="checkbox" /> Rendu attendu
+          <label v-if="type === 'etude_de_cas'" class="nd-option">
+            <input v-model="requiresSubmission" type="checkbox" />
+            <FileText :size="13" /> Rendu attendu
           </label>
         </div>
 
-        <div v-if="type !== 'soutenance'" class="form-group">
-          <label class="form-label">Ressources autorisées</label>
-          <select v-model="ressources" class="form-select">
-            <option value="Aucune">Aucune</option>
+        <div v-if="type !== 'soutenance'" class="nd-field">
+          <label class="nd-label">Ressources autorisées</label>
+          <select v-model="ressources" class="nd-input">
+            <option value="Aucune">Aucune ressource</option>
             <option value="Documents personnels">Documents personnels</option>
             <option value="Tous documents">Tous documents</option>
           </select>
         </div>
       </template>
 
-      <!-- ═══ Champs Livrable / Mémoire / Autre ═══ -->
+      <!-- ═══ Champs LIVRABLE / MÉMOIRE / AUTRE ═══ -->
       <template v-else>
-        <div class="form-group">
-          <label class="form-label">Description <span style="opacity:.6">(optionnel)</span></label>
-          <textarea v-model="description" class="form-input" rows="3" style="resize:vertical" placeholder="Instructions, objectifs…" />
+        <div class="nd-field">
+          <label class="nd-label">Description <span class="nd-hint">(optionnel)</span></label>
+          <textarea v-model="description" class="nd-input nd-textarea" rows="3" placeholder="Instructions, objectifs, format attendu…" />
         </div>
+
         <div class="nd-row">
-          <div class="form-group" style="flex:1">
-            <label class="form-label">Date de début</label>
-            <input v-model="startDate" type="datetime-local" class="form-input" />
+          <div class="nd-field nd-flex1">
+            <label class="nd-label"><Clock :size="12" /> Ouverture</label>
+            <input v-model="startDate" type="datetime-local" class="nd-input" />
           </div>
-          <div class="form-group" style="flex:1">
-            <label class="form-label">Date limite</label>
-            <input v-model="deadline" type="datetime-local" class="form-input" required />
+          <div class="nd-field nd-flex1">
+            <label class="nd-label"><Clock :size="12" /> Date limite</label>
+            <input v-model="deadline" type="datetime-local" class="nd-input" required />
           </div>
-        </div>
-        <div class="nd-row nd-toggles">
-          <label v-if="needsGradedToggle" class="nd-toggle-label">
-            <input v-model="isGraded" type="checkbox" /> Ce devoir est noté
-          </label>
         </div>
       </template>
 
-      <!-- Projet (tous types) -->
-      <div class="form-group">
-        <label class="form-label">Projet</label>
-        <select v-if="projects.length" v-model="category" class="form-select">
-          <option value="">Aucun projet</option>
-          <option v-for="p in projects" :key="p.name" :value="p.name">
-            {{ parseCategoryIcon(p.name).label || p.name }}
-          </option>
-        </select>
-        <input v-else v-model="category" type="text" class="form-input" placeholder="ex : Systèmes embarqués" />
-      </div>
+      <!-- ── Projet + Canal (section repliable) ─────────────────────── -->
+      <button type="button" class="nd-advanced-toggle" @click="showAdvanced = !showAdvanced">
+        <ChevronDown :size="14" :class="{ rotated: showAdvanced }" />
+        Options avancées
+      </button>
 
-      <!-- ── Constructeur de groupes ──────────────────────────────────── -->
-      <div v-if="assignTo === 'group' && !isEventType" class="group-builder">
-        <div class="form-label" style="margin-bottom:8px">
-          <Users :size="13" style="vertical-align:middle;margin-right:4px" /> Groupes disponibles
+      <div v-if="showAdvanced" class="nd-advanced">
+        <div class="nd-row">
+          <div class="nd-field nd-flex1">
+            <label class="nd-label"><FolderOpen :size="12" /> Projet</label>
+            <select v-if="projects.length" v-model="category" class="nd-input">
+              <option value="">Aucun projet</option>
+              <option v-for="p in projects" :key="p.name" :value="p.name">
+                {{ parseCategoryIcon(p.name).label || p.name }}
+              </option>
+            </select>
+            <input v-else v-model="category" type="text" class="nd-input" placeholder="ex : Systèmes embarqués" />
+          </div>
+          <div class="nd-field nd-flex1">
+            <label class="nd-label">Canal d'annonce</label>
+            <select v-model="channelId" class="nd-input" required>
+              <option :value="null" disabled>Choisir…</option>
+              <option v-for="c in channels" :key="c.id" :value="c.id">{{ c.name }}</option>
+            </select>
+          </div>
         </div>
 
-        <div v-if="groups.length" class="group-list">
+        <div class="nd-field">
+          <label class="nd-label">AAVs <span class="nd-hint">(un par ligne, optionnel)</span></label>
+          <textarea v-model="aavs" class="nd-input nd-textarea" rows="2" placeholder="Acquis d'Apprentissage Visés…" />
+        </div>
+      </div>
+
+      <!-- ── Footer ─────────────────────────────────────────────────── -->
+      <div class="nd-footer">
+        <label class="nd-draft-toggle">
+          <input v-model="isDraft" type="checkbox" />
+          Brouillon
+        </label>
+        <div class="nd-footer-actions">
+          <button type="button" class="btn-ghost" @click="emit('update:modelValue', false)">Annuler</button>
           <button
-            v-for="g in groups"
-            :key="g.id"
-            class="group-card"
-            :class="{ selected: selectedGroupId === g.id }"
-            type="button"
-            @click="selectGroup(g)"
+            type="submit" class="btn-primary nd-submit"
+            :disabled="!canSubmit"
+            :style="{ background: canSubmit ? activeType.color : undefined }"
           >
-            <span class="group-card-name">{{ g.name }}</span>
-            <span v-if="groupMembers[g.id]" class="group-card-count">
-              {{ groupMembers[g.id].length }} membre{{ groupMembers[g.id].length > 1 ? 's' : '' }}
-            </span>
+            {{ creating ? 'Création…' : isDraft ? 'Enregistrer' : 'Publier' }}
           </button>
         </div>
-        <p v-else-if="!showGroupForm" class="group-empty">Aucun groupe créé pour cette promotion.</p>
-
-        <div v-if="showGroupForm" class="group-form">
-          <input
-            v-model="newGroupName"
-            class="form-input"
-            placeholder="Nom du groupe…"
-            style="font-size:13px"
-          />
-          <div class="group-members-grid">
-            <button
-              v-for="s in students"
-              :key="s.id"
-              class="group-member-btn"
-              :class="{ selected: newGroupMembers.includes(s.id) }"
-              type="button"
-              @click="toggleMember(s.id)"
-            >
-              <div
-                class="avatar"
-                :style="{ background: avatarColor(s.name), width:'22px', height:'22px', fontSize:'9px', borderRadius:'4px' }"
-              >
-                {{ initials(s.name) }}
-              </div>
-              <span>{{ s.name }}</span>
-            </button>
-          </div>
-          <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px">
-            <button class="btn-ghost" type="button" style="font-size:12px" @click="showGroupForm = false">
-              <X :size="12" /> Annuler
-            </button>
-            <button
-              class="btn-primary"
-              type="button"
-              style="font-size:12px"
-              :disabled="!newGroupName.trim() || creatingGroup"
-              @click="createGroup"
-            >
-              {{ creatingGroup ? 'Création…' : 'Créer le groupe' }}
-            </button>
-          </div>
-        </div>
-
-        <button
-          v-if="!showGroupForm"
-          class="btn-ghost"
-          type="button"
-          style="font-size:12px;margin-top:8px"
-          @click="showGroupForm = true"
-        >
-          <Plus :size="12" /> Nouveau groupe
-        </button>
       </div>
-
-      <!-- Brouillon -->
-      <label class="checkbox-label" style="display:flex;align-items:center;gap:8px">
-        <input v-model="isDraft" type="checkbox" />
-        Enregistrer comme brouillon (non visible par les étudiants)
-      </label>
     </form>
-
-    <div class="modal-footer" style="padding:12px 16px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px;flex-shrink:0">
-      <button class="btn-ghost" @click="emit('update:modelValue', false)">Annuler</button>
-      <button class="btn-primary" :disabled="!title.trim() || !channelId || creating" @click="submit">
-        {{ creating ? 'Création…' : isDraft ? 'Enregistrer brouillon' : 'Publier' }}
-      </button>
-    </div>
   </Modal>
 </template>
 
 <style scoped>
-.nd-form { padding: 0; display: flex; flex-direction: column; gap: 0; }
-.nd-tabs {
-  display: flex; gap: 0; border-bottom: 1px solid var(--border);
-  padding: 0; overflow-x: auto;
-}
-.nd-tab {
-  flex: 1; padding: 10px 8px; font-size: 12px; font-weight: 600;
-  color: var(--text-muted); background: none; border: none; cursor: pointer;
-  border-bottom: 2px solid transparent; white-space: nowrap;
-  font-family: var(--font); transition: all .15s; text-align: center;
-}
-.nd-tab:hover { color: var(--text-secondary); }
-.nd-tab.active { border-bottom-color: var(--accent); color: var(--accent); }
-.nd-tab--cctl.active        { color: #a569bd; border-bottom-color: #a569bd; }
-.nd-tab--soutenance.active  { color: var(--color-warning); border-bottom-color: var(--color-warning); }
-.nd-tab--etude_de_cas.active { color: var(--color-success); border-bottom-color: var(--color-success); }
-.nd-tab--livrable.active    { color: var(--accent); border-bottom-color: var(--accent); }
-.nd-tab--memoire.active     { color: #e74c3c; border-bottom-color: #e74c3c; }
+.nd { display: flex; flex-direction: column; gap: 14px; padding: 16px 20px 0; }
 
-.nd-form > .form-group,
-.nd-form > .nd-row,
-.nd-form > .nd-toggles,
-.nd-form > template > .form-group,
-.nd-form > template > .nd-row,
-.nd-form > template > .nd-toggles { padding: 0 16px; }
-.nd-form > :first-child { margin-top: 0; }
+/* ── Sélection de type ─────────────────────────────────────────────────── */
+.nd-types {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;
+}
+.nd-type-card {
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  padding: 12px 8px; border-radius: 10px; cursor: pointer;
+  border: 1.5px solid var(--border); background: transparent;
+  color: var(--text-muted); font-family: var(--font);
+  transition: all .15s;
+}
+.nd-type-card:hover { border-color: var(--text-secondary); color: var(--text-primary); }
+.nd-type-card.active { color: var(--text-primary); }
+.nd-type-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .3px; }
 
-.nd-row { display: flex; gap: 10px; padding: 0 16px; }
-.nd-toggles { display: flex; gap: 16px; padding: 4px 16px; }
-.nd-toggle-label {
+.nd-type-desc {
+  font-size: 12px; font-weight: 500; text-align: center;
+  margin: -6px 0 2px; line-height: 1.3;
+}
+
+/* ── Champs ─────────────────────────────────────────────────────────────── */
+.nd-field { display: flex; flex-direction: column; gap: 4px; }
+.nd-label {
+  font-size: 12px; font-weight: 600; color: var(--text-secondary);
+  display: flex; align-items: center; gap: 4px;
+}
+.nd-hint { font-weight: 400; opacity: .6; }
+.nd-input {
+  padding: 9px 12px; border-radius: 8px; font-size: 13px;
+  border: 1px solid var(--border-input); background: var(--bg-input);
+  color: var(--text-primary); font-family: var(--font);
+  transition: border-color .15s;
+}
+.nd-input:focus { border-color: var(--accent); outline: none; box-shadow: 0 0 0 3px rgba(74,144,217,.12); }
+.nd-textarea { resize: vertical; min-height: 60px; }
+.nd-row { display: flex; gap: 10px; }
+.nd-flex1 { flex: 1; }
+
+/* ── Options (checkboxes) ──────────────────────────────────────────────── */
+.nd-options { display: flex; gap: 16px; flex-wrap: wrap; }
+.nd-option {
   display: flex; align-items: center; gap: 6px;
   font-size: 13px; color: var(--text-secondary); cursor: pointer;
 }
+.nd-option input { accent-color: var(--accent); }
 
-/* Override form padding */
-.nd-form .form-group { padding: 0 16px; margin-bottom: 10px; }
-.nd-form .nd-row { margin-bottom: 10px; }
-.nd-form .nd-row .form-group { padding: 0; margin-bottom: 0; }
-.nd-form .nd-toggles { margin-bottom: 10px; }
-.nd-form .nd-tabs + .nd-row { margin-top: 14px; }
-
-.group-builder {
-  background: rgba(255,255,255,.04);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 12px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+/* ── Section avancée ───────────────────────────────────────────────────── */
+.nd-advanced-toggle {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 12px; font-weight: 600; color: var(--text-muted);
+  background: none; border: none; cursor: pointer; padding: 0;
+  font-family: var(--font); transition: color .15s;
+}
+.nd-advanced-toggle:hover { color: var(--text-primary); }
+.nd-advanced-toggle svg { transition: transform .2s; }
+.nd-advanced-toggle .rotated { transform: rotate(180deg); }
+.nd-advanced {
+  display: flex; flex-direction: column; gap: 12px;
+  padding: 14px; border-radius: 10px;
+  background: rgba(255,255,255,.02); border: 1px solid var(--border);
 }
 
-.group-empty {
-  font-size: 12.5px;
-  color: var(--text-muted);
-  font-style: italic;
+/* ── Footer ────────────────────────────────────────────────────────────── */
+.nd-footer {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 0 4px; border-top: 1px solid var(--border);
+  margin-top: 4px;
 }
+.nd-footer-actions { display: flex; gap: 8px; }
+.nd-draft-toggle {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 12px; color: var(--text-muted); cursor: pointer;
+}
+.nd-draft-toggle input { accent-color: var(--accent); }
+.nd-submit { min-width: 110px; transition: background .15s, opacity .15s; }
 
-.group-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
+@media (max-width: 500px) {
+  .nd-types { grid-template-columns: repeat(2, 1fr); }
+  .nd-row { flex-direction: column; }
 }
-
-.group-card {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 12px;
-  border: 1.5px solid var(--border-input);
-  border-radius: 6px;
-  background: transparent;
-  color: var(--text-secondary);
-  font-family: var(--font);
-  cursor: pointer;
-  transition: all .12s;
-}
-.group-card:hover    { border-color: var(--accent); color: var(--text-primary); }
-.group-card.selected { border-color: var(--accent); background: rgba(74,144,217,.15); color: var(--accent); }
-
-.group-card-name  { font-size: 13px; font-weight: 600; }
-.group-card-count { font-size: 11px; opacity: .7; }
-
-.group-form {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  border-top: 1px solid var(--border);
-  padding-top: 10px;
-  margin-top: 2px;
-}
-
-.group-members-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-  gap: 4px;
-  max-height: 180px;
-  overflow-y: auto;
-}
-
-.group-member-btn {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 5px 8px;
-  border: 1px solid transparent;
-  border-radius: 6px;
-  background: transparent;
-  color: var(--text-secondary);
-  font-family: var(--font);
-  font-size: 12.5px;
-  cursor: pointer;
-  transition: all .1s;
-  text-align: left;
-}
-.group-member-btn:hover   { background: var(--bg-hover); color: var(--text-primary); }
-.group-member-btn.selected {
-  background: rgba(74,144,217,.15);
-  border-color: rgba(74,144,217,.4);
-  color: var(--accent);
-}
-
-.radio-label {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 13px;
-  color: var(--text-secondary);
-  cursor: pointer;
-}
-.radio-label input { accent-color: var(--accent); }
-
-.checkbox-label {
-  font-size: 13px;
-  color: var(--text-secondary);
-  cursor: pointer;
-}
-.checkbox-label input { accent-color: var(--accent); }
 </style>
