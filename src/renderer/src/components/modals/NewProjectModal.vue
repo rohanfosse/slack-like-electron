@@ -17,6 +17,7 @@ export interface ProjectMeta {
   startDate:   string
   endDate:     string
   wholeYear?:  boolean
+  color?:      string
 }
 
 interface Group {

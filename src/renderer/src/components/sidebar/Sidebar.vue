@@ -1,9 +1,12 @@
 <script setup lang="ts">
   import { watch, onMounted } from 'vue'
   import { useRoute, useRouter } from 'vue-router'
-  import { Plus, ChevronDown, FolderOpen, Layers, BookOpen, BarChart2, CalendarDays } from 'lucide-vue-next'
+  import { Plus, ChevronDown, FolderOpen, Layers, BookOpen, BarChart2, CalendarDays, Pencil, Trash2 } from 'lucide-vue-next'
   import NewProjectModal from '@/components/modals/NewProjectModal.vue'
+  import type { ProjectMeta } from '@/components/modals/NewProjectModal.vue'
+  import ProjectEditPanel from './ProjectEditPanel.vue'
   import ContextMenu from '@/components/ui/ContextMenu.vue'
+  import type { ContextMenuItem } from '@/components/ui/ContextMenu.vue'
   import { parseCategoryIcon } from '@/utils/categoryIcon'
   import { useAppStore }    from '@/stores/app'
   import { useModalsStore } from '@/stores/modals'
@@ -56,7 +59,32 @@
   const {
     allProjects, projectStats, loadCustomProjects, loadDbProjects,
     onProjectCreated, selectProject, dashboardProjectGroups,
+    editingProject, getProjectMeta, saveProjectMeta, deleteProject, getProjectColor,
   } = useSidebarProjects(visibleChannels)
+
+  // ── Project context menu ──────────────────────────────────────────────────
+  function openProjectCtx(e: MouseEvent, proj: string) {
+    const isCustom = (() => {
+      try {
+        const raw = JSON.parse(localStorage.getItem('cc_custom_projects') ?? '[]') as string[]
+        return raw.includes(proj)
+      } catch { return false }
+    })()
+
+    const items: ContextMenuItem[] = [
+      { label: 'Modifier', icon: Pencil, action: () => { editingProject.value = proj } },
+    ]
+    if (isCustom) {
+      items.push({ label: 'Supprimer', icon: Trash2, danger: true, action: () => { deleteProject(proj) } })
+    }
+
+    ctx.value = { x: e.clientX, y: e.clientY, items }
+  }
+
+  function onProjectEditSave(proj: string, meta: ProjectMeta) {
+    saveProjectMeta(proj, meta)
+    editingProject.value = null
+  }
 
   // Wire up DM loading into data composable so load*Sidebar calls it
   setLoadRecentDmContacts(loadRecentDmContacts)
@@ -214,7 +242,12 @@
               class="sidebar-item sidebar-project-item"
               :class="{ active: appStore.activeProject === proj }"
               @click="selectProject(proj)"
+              @contextmenu.prevent="openProjectCtx($event, proj)"
             >
+              <span
+                class="project-color-dot"
+                :style="{ background: getProjectColor(proj) }"
+              />
               <component
                 v-if="parseCategoryIcon(proj).icon"
                 :is="parseCategoryIcon(proj).icon!"
@@ -224,7 +257,26 @@
               <span v-else class="project-bullet" />
               <span class="channel-name">{{ parseCategoryIcon(proj).label }}</span>
             </button>
+
+            <!-- Inline edit panel -->
+            <ProjectEditPanel
+              v-if="editingProject === proj"
+              :project-key="proj"
+              :meta="getProjectMeta(proj)"
+              :color="getProjectColor(proj)"
+              @save="onProjectEditSave(proj, $event)"
+              @cancel="editingProject = null"
+            />
           </div>
+
+          <!-- + Nouveau projet -->
+          <button
+            class="sidebar-item sidebar-add-project"
+            @click="modals.newProject = true"
+          >
+            <Plus :size="13" class="project-icon" />
+            <span class="channel-name">Nouveau projet</span>
+          </button>
         </nav>
 
         <NewProjectModal v-model="modals.newProject" @created="onProjectCreated" />
@@ -670,6 +722,21 @@
 }
 
 .sidebar-item.active .project-bullet { opacity: 1; background: #9B87F5; }
+
+.project-color-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  opacity: .8;
+}
+.sidebar-item.active .project-color-dot { opacity: 1; }
+
+.sidebar-add-project {
+  opacity: .6;
+  transition: opacity .12s;
+}
+.sidebar-add-project:hover { opacity: 1; }
 
 .project-add-row {
   display: flex;

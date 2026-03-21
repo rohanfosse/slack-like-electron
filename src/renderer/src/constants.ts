@@ -92,3 +92,10 @@ export const COLORS = {
   gradeD:      '#E74C3C',
   gradeNA:     '#95A5A6',
 } as const
+
+// ─── Palette de couleurs prédéfinies pour les projets ───────────────────────
+
+export const PROJECT_COLORS = [
+  '#4A90D9', '#2ECC71', '#9B87F5', '#F39C12', '#E74C3C',
+  '#1ABC9C', '#E67E22', '#3498DB', '#8E44AD', '#27AE60',
+] as const

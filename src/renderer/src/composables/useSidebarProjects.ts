@@ -7,9 +7,10 @@ import { useRouter } from 'vue-router'
 import { useAppStore } from '@/stores/app'
 import { useTravauxStore } from '@/stores/travaux'
 import { parseCategoryIcon } from '@/utils/categoryIcon'
-import { STORAGE_KEYS } from '@/constants'
+import { STORAGE_KEYS, PROJECT_COLORS } from '@/constants'
 import { NO_CAT } from './useSidebarData'
 import type { Channel } from '@/types'
+import type { ProjectMeta } from '@/components/modals/NewProjectModal.vue'
 
 export interface DashboardProjectGroup {
   key: string
@@ -26,6 +27,9 @@ export function useSidebarProjects(visibleChannels: Ref<Channel[]>) {
 
   const dbProjects     = ref<string[]>([])
   const customProjects = ref<string[]>([])
+
+  /** Which project is currently being edited inline (null = none) */
+  const editingProject = ref<string | null>(null)
 
   function loadCustomProjects() {
     try {
@@ -69,6 +73,67 @@ export function useSidebarProjects(visibleChannels: Ref<Channel[]>) {
     router.push('/devoirs')
   }
 
+  // ── Métadonnées projet ────────────────────────────────────────────────────
+
+  function _promoId(): number | null {
+    return appStore.activePromoId ?? user.value?.promo_id ?? null
+  }
+
+  function _loadMetas(): ProjectMeta[] {
+    const pid = _promoId()
+    if (!pid) return []
+    try {
+      const raw = localStorage.getItem(STORAGE_KEYS.projectsMeta(pid))
+      return raw ? JSON.parse(raw) : []
+    } catch { return [] }
+  }
+
+  function _saveMetas(metas: ProjectMeta[]) {
+    const pid = _promoId()
+    if (!pid) return
+    localStorage.setItem(STORAGE_KEYS.projectsMeta(pid), JSON.stringify(metas))
+  }
+
+  /** Read metadata for a given project key */
+  function getProjectMeta(key: string): ProjectMeta | null {
+    return _loadMetas().find(m => m.name === key) ?? null
+  }
+
+  /** Write (create or update) metadata for a given project key */
+  function saveProjectMeta(key: string, meta: ProjectMeta) {
+    const metas = _loadMetas()
+    const idx = metas.findIndex(m => m.name === key)
+    if (idx >= 0) metas[idx] = meta
+    else metas.push(meta)
+    _saveMetas(metas)
+  }
+
+  /** Delete a custom project (from custom list + metadata) */
+  function deleteProject(key: string) {
+    // Remove from custom projects list
+    const raw = (() => { try { return JSON.parse(localStorage.getItem(STORAGE_KEYS.CUSTOM_PROJECTS) ?? '[]') as string[] } catch { return [] } })()
+    const filtered = raw.filter(p => p !== key)
+    localStorage.setItem(STORAGE_KEYS.CUSTOM_PROJECTS, JSON.stringify(filtered))
+
+    // Remove metadata
+    const metas = _loadMetas().filter(m => m.name !== key)
+    _saveMetas(metas)
+
+    // Reload
+    loadCustomProjects()
+    if (appStore.activeProject === key) appStore.activeProject = null
+    if (editingProject.value === key) editingProject.value = null
+  }
+
+  /** Get a project's color: from meta, or auto-assigned based on index */
+  function getProjectColor(key: string): string {
+    const meta = getProjectMeta(key)
+    if (meta?.color) return meta.color
+    // Auto-assign a stable color based on position in allProjects
+    const idx = allProjects.value.indexOf(key)
+    return PROJECT_COLORS[((idx >= 0 ? idx : 0) % PROJECT_COLORS.length)]
+  }
+
   const dashboardProjectGroups = computed((): DashboardProjectGroup[] => {
     const all = [...allProjects.value]
     const groups: DashboardProjectGroup[] = []
@@ -95,5 +160,10 @@ export function useSidebarProjects(visibleChannels: Ref<Channel[]>) {
     onProjectCreated,
     selectProject,
     dashboardProjectGroups,
+    editingProject,
+    getProjectMeta,
+    saveProjectMeta,
+    deleteProject,
+    getProjectColor,
   }
 }
