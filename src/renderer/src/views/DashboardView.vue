@@ -12,7 +12,8 @@ import { useTravauxStore } from '@/stores/travaux'
 import { useRouter, useRoute } from 'vue-router'
 import { deadlineClass, deadlineLabel, formatDate } from '@/utils/date'
 import { parseCategoryIcon } from '@/utils/categoryIcon'
-import { avatarColor } from '@/utils/format'
+import { avatarColor, gradeClass } from '@/utils/format'
+import { useToast } from '@/composables/useToast'
 import type { Component } from 'vue'
 import type { Devoir }    from '@/types'
 
@@ -23,6 +24,7 @@ const modals       = useModalsStore()
 const travauxStore = useTravauxStore()
 const router       = useRouter()
 const route        = useRoute()
+const { showToast } = useToast()
 
 // ── Onboarding première visite ──────────────────────────────────────────────
 const ONBOARDING_KEY = 'cc_onboarding_seen'
@@ -172,6 +174,30 @@ const promoNameDraft = ref('')
 function startEditPromoName() {
   promoNameDraft.value = activePromo.value?.name ?? ''
   editingPromoName.value = true
+}
+
+// ── Promotions : renommer et supprimer ───────────────────────────────────
+const renamingPromoId = ref<number | null>(null)
+const renamingPromoValue = ref('')
+
+async function confirmRenamePromo(p: { id: number; name: string }) {
+  if (!renamingPromoValue.value.trim()) return
+  try {
+    await window.api.renamePromotion(p.id, renamingPromoValue.value.trim())
+    ;(p as any).name = renamingPromoValue.value.trim()
+    renamingPromoId.value = null
+    showToast('Promotion renommée.', 'success')
+  } catch { showToast('Erreur.', 'error') }
+}
+
+async function deletePromo(id: number, name: string) {
+  if (!confirm(`Supprimer la promotion "${name}" et tous ses canaux/devoirs ? Cette action est irréversible.`)) return
+  try {
+    await window.api.deletePromotion(id)
+    promos.value = promos.value.filter(p => p.id !== id)
+    if (appStore.activePromoId === id && promos.value.length) appStore.activePromoId = promos.value[0].id
+    showToast('Promotion supprimée.', 'success')
+  } catch { showToast('Erreur.', 'error') }
 }
 
 async function savePromoName() {
@@ -368,6 +394,21 @@ watch(() => route.query.tab, (tab) => {
   else dashTab.value = 'accueil'
 })
 
+// ── Dernière activité (rendus récents) ───────────────────────────────────────
+const recentRendus = computed(() => {
+  return travauxStore.allRendus
+    .filter(r => r.submitted_at)
+    .sort((a, b) => new Date(b.submitted_at ?? 0).getTime() - new Date(a.submitted_at ?? 0).getTime())
+    .slice(0, 5)
+})
+
+watch(dashTab, (tab) => {
+  if (tab === 'accueil' && !travauxStore.allRendus.length) {
+    const pid = appStore.activePromoId
+    if (pid) travauxStore.fetchRendus(pid)
+  }
+})
+
 interface FriseMilestone { id: number; title: string; type: string; deadline: string; published: boolean; done: boolean }
 interface FriseProject   { key: string; label: string; icon: Component | null; milestones: FriseMilestone[] }
 interface FrisePromo     { name: string; color: string; projects: FriseProject[] }
@@ -500,33 +541,23 @@ async function loadAnalytics() {
 watch(dashTab, (tab) => { if (tab === 'analytique') loadAnalytics() })
 watch(() => appStore.activePromoId, () => { analyticsLoaded.value = false; if (dashTab.value === 'analytique') loadAnalytics() })
 
-// Distribution des notes (barres) : 0-4, 4-8, 8-10, 10-12, 12-14, 14-16, 16-20
+// Distribution des notes A/B/C/D/NA
+const GRADE_COLORS: Record<string, string> = { A: '#22c55e', B: '#27ae60', C: '#f59e0b', D: '#ef4444', NA: '#6b7280' }
 const gradeDistribution = computed(() => {
-  const buckets = [
-    { label: '0–4', min: 0, max: 4, count: 0 },
-    { label: '4–8', min: 4, max: 8, count: 0 },
-    { label: '8–10', min: 8, max: 10, count: 0 },
-    { label: '10–12', min: 10, max: 12, count: 0 },
-    { label: '12–14', min: 12, max: 14, count: 0 },
-    { label: '14–16', min: 14, max: 16, count: 0 },
-    { label: '16–20', min: 16, max: 20.01, count: 0 },
-  ]
+  const counts: Record<string, number> = { A: 0, B: 0, C: 0, D: 0, NA: 0 }
   for (const r of allRendus.value) {
-    if (r.note == null) continue
-    const n = parseFloat(r.note)
-    if (isNaN(n)) continue
-    for (const b of buckets) {
-      if (n >= b.min && n < b.max) { b.count++; break }
-    }
+    if (r.note && counts[r.note] !== undefined) counts[r.note]++
   }
-  const max = Math.max(1, ...buckets.map(b => b.count))
-  return buckets.map(b => ({ ...b, pct: Math.round(b.count / max * 100) }))
+  const max = Math.max(1, ...Object.values(counts))
+  return Object.entries(counts)
+    .filter(([, c]) => c > 0)
+    .map(([label, count]) => ({ label, count, pct: Math.round(count / max * 100), color: GRADE_COLORS[label] || '#6b7280' }))
 })
 
 // Taux de soumission par devoir
 const submissionRates = computed(() => {
   return ganttFiltered.value
-    .filter(t => t.published && t.students_total > 0)
+    .filter(t => (t as any).is_published && t.students_total > 0)
     .map(t => ({
       title: t.title,
       rate: Math.round((t.depots_count / t.students_total) * 100),
@@ -537,13 +568,15 @@ const submissionRates = computed(() => {
     .slice(0, 15)
 })
 
-// Moyenne générale
-const globalAvg = computed(() => {
-  const grades = allRendus.value
-    .map(r => parseFloat(r.note ?? ''))
-    .filter(n => !isNaN(n))
-  if (!grades.length) return null
-  return Math.round(grades.reduce((a, b) => a + b, 0) / grades.length * 10) / 10
+// Note fréquente (mode A/B/C/D)
+const globalModeGrade = computed(() => {
+  const counts: Record<string, number> = {}
+  for (const r of allRendus.value) {
+    if (r.note && r.note !== 'NA') counts[r.note] = (counts[r.note] ?? 0) + 1
+  }
+  let mode: string | null = null, max = 0
+  for (const [g, c] of Object.entries(counts)) { if (c > max) { mode = g; max = c } }
+  return mode
 })
 
 // Statistiques rapides analytique
@@ -731,10 +764,10 @@ function onMilestoneClick(ms: FriseMilestone) {
                 <span class="analytics-stat-label">En attente</span>
               </div>
               <div class="analytics-stat">
-                <span class="analytics-stat-value" :style="{ color: globalAvg != null && globalAvg >= 10 ? '#22c55e' : '#f87171' }">
-                  {{ globalAvg != null ? globalAvg + '/20' : '—' }}
+                <span class="analytics-stat-value" :style="{ color: globalModeGrade ? GRADE_COLORS[globalModeGrade] || '#fff' : '#6b7280' }">
+                  {{ globalModeGrade ?? '—' }}
                 </span>
-                <span class="analytics-stat-label">Moyenne générale</span>
+                <span class="analytics-stat-label">Note fréquente</span>
               </div>
               <div class="analytics-stat">
                 <span class="analytics-stat-value" style="color:#22c55e">{{ appStore.onlineUsers.length }}</span>
@@ -751,7 +784,7 @@ function onMilestoneClick(ms: FriseMilestone) {
                   <div class="analytics-bar-track">
                     <div
                       class="analytics-bar-fill"
-                      :style="{ width: b.pct + '%', background: b.min >= 10 ? '#22c55e' : b.min >= 8 ? '#f59e0b' : '#f87171' }"
+                      :style="{ width: b.pct + '%', background: b.color }"
                     />
                   </div>
                   <span class="analytics-bar-count">{{ b.count }}</span>
@@ -788,9 +821,22 @@ function onMilestoneClick(ms: FriseMilestone) {
             <div v-for="p in promos" :key="p.id" class="promo-list-card" :class="{ 'promo-active': appStore.activePromoId === p.id }">
               <div class="promo-list-header">
                 <span class="promo-list-dot" :style="{ background: p.color }" />
-                <span class="promo-list-name">{{ p.name }}</span>
-                <button v-if="appStore.activePromoId !== p.id" class="gestion-btn-sm" @click="appStore.activePromoId = p.id">Sélectionner</button>
-                <span v-else class="promo-list-active-tag">Active</span>
+                <template v-if="renamingPromoId === p.id">
+                  <input
+                    v-model="renamingPromoValue"
+                    class="promo-rename-input"
+                    @keydown.enter="confirmRenamePromo(p)"
+                    @keydown.escape="renamingPromoId = null"
+                  />
+                  <button class="gestion-btn-sm gestion-btn-accent" @click="confirmRenamePromo(p)">OK</button>
+                  <button class="gestion-btn-sm" @click="renamingPromoId = null">Annuler</button>
+                </template>
+                <template v-else>
+                  <span class="promo-list-name">{{ p.name }}</span>
+                  <button class="gestion-btn-sm" @click="renamingPromoId = p.id; renamingPromoValue = p.name">Renommer</button>
+                  <button v-if="appStore.activePromoId !== p.id" class="gestion-btn-sm" @click="appStore.activePromoId = p.id">Sélectionner</button>
+                  <span v-else class="promo-list-active-tag">Active</span>
+                </template>
               </div>
               <div class="promo-list-stats">
                 <span>{{ allStudents.filter(s => s.promo_id === p.id).length }} étudiants</span>
@@ -799,6 +845,7 @@ function onMilestoneClick(ms: FriseMilestone) {
               <div class="promo-list-actions">
                 <button class="gestion-btn" @click="appStore.activePromoId = p.id; modals.classe = true">Voir la classe</button>
                 <button class="gestion-btn" @click="appStore.activePromoId = p.id; modals.importStudents = true">Importer CSV</button>
+                <button class="gestion-btn" style="color:var(--color-danger)" @click="deletePromo(p.id, p.name)">Supprimer</button>
               </div>
             </div>
           </div>
@@ -837,9 +884,29 @@ function onMilestoneClick(ms: FriseMilestone) {
               <ChevronRight :size="14" class="db-project-chevron" />
             </div>
           </div>
+
+          <!-- Dernière activité -->
+          <div v-if="recentRendus.length" class="db-activity">
+            <h4 class="db-activity-title"><Clock :size="14" /> Dernière activité</h4>
+            <div class="db-activity-list">
+              <div v-for="r in recentRendus" :key="r.id" class="db-activity-item">
+                <div class="db-activity-avatar" :style="{ background: avatarColor(r.student_name ?? '') }">
+                  {{ (r.student_name ?? '').slice(0, 2).toUpperCase() }}
+                </div>
+                <div class="db-activity-info">
+                  <span class="db-activity-name">{{ r.student_name }}</span>
+                  <span class="db-activity-devoir">{{ (r as any).travail_title ?? 'Devoir #' + r.travail_id }}</span>
+                </div>
+                <div class="db-activity-right">
+                  <span v-if="r.note" class="db-activity-note" :class="gradeClass(r.note)">{{ r.note }}</span>
+                  <span class="db-activity-date">{{ new Date(r.submitted_at ?? '').toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }) }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
-        <!-- Tab Gestion -->
+        <!-- Tab Réglages -->
         <div v-else-if="dashTab === 'reglages'" class="db-tab-content">
           <div class="gestion-grid">
             <!-- Carte Promotion active -->
@@ -911,6 +978,9 @@ function onMilestoneClick(ms: FriseMilestone) {
 
         <!-- Tab Frise -->
         <div v-else-if="dashTab === 'frise'" class="db-tab-content db-frise-outer">
+          <div v-if="friseOffset !== 0" class="frise-recenter">
+            <button class="gestion-btn" @click="friseOffset = 0">Recentrer sur aujourd'hui</button>
+          </div>
           <div v-if="!ganttDateRange || !frise.length" class="db-empty-hint">
             <BarChart2 :size="36" style="opacity:.2;margin-bottom:10px" />
             <p>Aucune donnée de planification disponible.</p>
@@ -1285,7 +1355,42 @@ function onMilestoneClick(ms: FriseMilestone) {
   background: rgba(74,144,217,.15); color: var(--accent);
 }
 .promo-list-stats { font-size: 12px; color: var(--text-muted); display: flex; gap: 12px; margin-bottom: 8px; }
-.promo-list-actions { display: flex; gap: 6px; }
+.promo-list-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+.promo-rename-input {
+  flex: 1; font-size: 14px; font-weight: 600; padding: 3px 8px;
+  background: var(--bg-input); border: 1px solid var(--accent); border-radius: 6px;
+  color: var(--text-primary); font-family: var(--font); outline: none;
+}
+
+/* Dernière activité */
+.db-activity { margin-top: 16px; }
+.db-activity-title {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 13px; font-weight: 700; color: var(--text-primary); margin-bottom: 8px;
+}
+.db-activity-list { display: flex; flex-direction: column; gap: 4px; }
+.db-activity-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 6px 10px; border-radius: 8px;
+  background: rgba(255,255,255,.02);
+}
+.db-activity-avatar {
+  width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center;
+  justify-content: center; font-size: 10px; font-weight: 700; color: #fff; flex-shrink: 0;
+}
+.db-activity-info { flex: 1; min-width: 0; }
+.db-activity-name { font-size: 13px; font-weight: 600; color: var(--text-primary); display: block; }
+.db-activity-devoir { font-size: 11px; color: var(--text-muted); display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.db-activity-right { text-align: right; flex-shrink: 0; }
+.db-activity-note { font-size: 13px; font-weight: 800; display: block; }
+.db-activity-note.grade-a { color: var(--color-success); }
+.db-activity-note.grade-b { color: #27ae60; }
+.db-activity-note.grade-c { color: var(--color-warning); }
+.db-activity-note.grade-d { color: var(--color-danger); }
+.db-activity-date { font-size: 10px; color: var(--text-muted); }
+
+/* Bouton recentrer frise */
+.frise-recenter { padding: 6px 12px; text-align: right; }
 
 /* ── Onglet Réglages (ex-Gestion) ── */
 .gestion-grid {
