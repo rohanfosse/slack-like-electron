@@ -1,23 +1,19 @@
 <script setup lang="ts">
-import { ref, computed, nextTick } from 'vue'
 import {
   Pin, PinOff, MoreHorizontal, Copy, Trash2, Check, Pencil,
   SmilePlus, Bookmark, BookmarkCheck, Reply, AlertTriangle, Flame, Download, X,
 } from 'lucide-vue-next'
-import { useRouter }        from 'vue-router'
 import { useAppStore }      from '@/stores/app'
 import { useMessagesStore } from '@/stores/messages'
-import type { Channel }     from '@/types'
 import Avatar       from '@/components/ui/Avatar.vue'
 import EmojiPicker  from '@/components/ui/EmojiPicker.vue'
 import ContextMenu  from '@/components/ui/ContextMenu.vue'
-import type { ContextMenuItem } from '@/components/ui/ContextMenu.vue'
-import { avatarColor }          from '@/utils/format'
-import { useToast }             from '@/composables/useToast'
-import { STORAGE_KEYS }         from '@/constants'
-import { formatTime }           from '@/utils/date'
-import { renderMessageContent } from '@/utils/html'
-import { useOpenExternal }      from '@/composables/useOpenExternal'
+import { formatTime }      from '@/utils/date'
+import { useOpenExternal } from '@/composables/useOpenExternal'
+import { useBubbleActions }   from '@/composables/useBubbleActions'
+import { useBubbleReactions } from '@/composables/useBubbleReactions'
+import { useBubbleBookmarks } from '@/composables/useBubbleBookmarks'
+import { useBubbleMenu }      from '@/composables/useBubbleMenu'
 import type { Message } from '@/types'
 
 interface Props {
@@ -28,261 +24,54 @@ interface Props {
 
 const props = withDefaults(defineProps<Props>(), { grouped: false, searchTerm: '' })
 
-const router        = useRouter()
 const appStore      = useAppStore()
 const messagesStore = useMessagesStore()
 const { openExternal } = useOpenExternal()
-const { showToast }    = useToast()
 
-// ── Clic sur le nom de l'auteur → ouvrir un DM
-const isOwnMessage = computed(() => props.msg.author_name === appStore.currentUser?.name)
+// ── Composables
+const msgGetter   = () => props.msg
+const searchGetter = () => props.searchTerm
 
-async function openDmWithAuthor() {
-  if (isOwnMessage.value) return
-  try {
-    const res = await window.api.findUserByName(props.msg.author_name)
-    if (res?.ok && res.data) {
-      appStore.openDm(res.data.id, res.data.promo_id ?? appStore.activePromoId ?? 0, res.data.name)
-      if (router.currentRoute.value.name !== 'messages') router.push('/messages')
-    } else {
-      showToast('Utilisateur introuvable.', 'error')
-    }
-  } catch {
-    showToast('Impossible d\'ouvrir la conversation.', 'error')
-  }
-}
+const {
+  isOwnMessage, isMine, isPinned, isEdited, canEdit, canDelete, hasQuote,
+  openDmWithAuthor, onReply: _onReply, togglePin: _togglePin,
+  copyMessage: _copyMessage, startEdit: _startEdit,
+  editing, editContent, editEl, commitEdit, cancelEdit, onEditKeydown,
+  confirmingDelete, deleteMessage: _deleteMessage, confirmDelete, cancelDelete,
+  reportingMsg, reportReason, reportMessage, onMsgClick,
+} = useBubbleActions(msgGetter)
 
-// ── State
-const lightboxUrl      = ref<string | null>(null)
-const showMenu         = ref(false)
-const showPicker       = ref(false)
-const editing          = ref(false)
-const editContent      = ref('')
-const editEl           = ref<HTMLTextAreaElement | null>(null)
-const confirmingDelete = ref(false)
+const {
+  QUICK_REACTS, showPicker, quickReact, pickEmojiReact, reactionsToShow,
+} = useBubbleReactions(msgGetter)
 
-// ── Bookmarks (localStorage — stockage riche)
-interface SavedMessage {
-  id: number
-  authorName: string
-  authorInitials: string
-  content: string
-  createdAt: string
-  isDm: boolean
-  channelName: string | null
-  dmStudentId: number | null
-}
+const { isBookmarked, toggleBookmark } = useBubbleBookmarks(msgGetter)
 
-function getSavedMessages(): SavedMessage[] {
-  try {
-    const raw = JSON.parse(localStorage.getItem(STORAGE_KEYS.BOOKMARKS) || '[]')
-    if (!Array.isArray(raw)) return []
-    // Compatibilité : ancien format = number[]
-    if (raw.length > 0 && typeof raw[0] === 'number') return []
-    return raw as SavedMessage[]
-  } catch { return [] }
-}
-
-const isBookmarked = ref(getSavedMessages().some(m => m.id === props.msg.id))
-
-function toggleBookmark() {
-  const saved = getSavedMessages()
-  const idx = saved.findIndex(m => m.id === props.msg.id)
-  if (idx === -1) {
-    // Ajouter avec données riches
-    saved.push({
-      id:             props.msg.id,
-      authorName:     props.msg.author_name,
-      authorInitials: props.msg.author_initials ?? props.msg.author_name.slice(0, 2).toUpperCase(),
-      content:        props.msg.content.slice(0, 200),
-      createdAt:      props.msg.created_at,
-      isDm:           props.msg.dm_student_id != null,
-      channelName:    appStore.activeChannelName || null,
-      dmStudentId:    props.msg.dm_student_id ?? null,
-    })
-    isBookmarked.value = true
-  } else {
-    saved.splice(idx, 1)
-    isBookmarked.value = false
-  }
-  localStorage.setItem(STORAGE_KEYS.BOOKMARKS, JSON.stringify(saved))
-}
-
-// ── Menu contextuel (clic droit)
-const ctxVisible = ref(false)
-const ctxX       = ref(0)
-const ctxY       = ref(0)
-
-function onContextMenu(e: MouseEvent) {
-  e.preventDefault()
-  ctxX.value = e.clientX
-  ctxY.value = e.clientY
-  ctxVisible.value = true
-}
-
-const reportingMsg = ref(false)
-const reportReason = ref('')
-
-async function reportMessage() {
-  if (!reportReason.value.trim()) { showToast('Veuillez indiquer une raison.', 'error'); return }
-  reportingMsg.value = false
-  try {
-    const res = await window.api.reportMessage(props.msg.id, reportReason.value.trim())
-    if (res?.ok) { showToast('Message signalé. Un modérateur examinera votre signalement.', 'info') }
-    else { showToast(res?.error ?? 'Erreur lors du signalement', 'error') }
-  } catch { showToast('Erreur lors du signalement', 'error') }
-  reportReason.value = ''
-}
-
-const ctxItems = computed<ContextMenuItem[]>(() => [
-  { label: 'Répondre',  icon: Reply,  action: onReply },
-  { label: 'Copier',    icon: Copy,   action: copyMessage },
-  ...(canEdit.value    ? [{ label: 'Modifier',   icon: Pencil, action: startEdit }] : []),
-  ...(appStore.isTeacher
-    ? [{ label: isPinned.value ? 'Désépingler' : 'Épingler', icon: isPinned.value ? PinOff : Pin, action: togglePin }]
-    : []),
-  ...(!isMine.value ? [{ label: 'Signaler', icon: AlertTriangle, separator: true, action: () => { reportingMsg.value = true } }] : []),
-  ...(canDelete.value  ? [{ label: 'Supprimer',  icon: Trash2, danger: true, separator: !isMine.value ? false : true, action: deleteMessage }] : []),
-])
-
-// ── Computed
-const content  = computed(() =>
-  renderMessageContent(props.msg.content, props.searchTerm, appStore.currentUser?.name ?? ''),
-)
-const color    = computed(() => {
-  if (isMine.value && appStore.currentUser) {
-    const t = appStore.currentUser.type
-    if (t === 'teacher') return 'var(--accent)'
-    if (t === 'ta')      return 'var(--color-ta)'
-  }
-  return avatarColor(props.msg.author_name)
-})
-const isPinned = computed(() => !!props.msg.is_pinned)
-const isEdited = computed(() => !!props.msg.edited)
-const isMine   = computed(() => props.msg.author_name === appStore.currentUser?.name)
-const canEdit   = computed(() => isMine.value)
-const canDelete = computed(() => appStore.isTeacher || isMine.value)
-const hasQuote  = computed(() => !!props.msg.reply_to_author)
-
-// Prévisualisation d'image — première URL image trouvée dans le contenu brut
-const imagePreviewUrl = computed<string | null>(() => {
-  const m = props.msg.content.match(
-    /(https?:\/\/[^\s"<>]+\.(?:png|jpg|jpeg|gif|webp|svg))(?:\s|$)/i,
-  )
-  return m ? m[1] : null
+const {
+  lightboxUrl, showMenu,
+  ctxVisible, ctxX, ctxY, onContextMenu, ctxItems,
+  content, color, imagePreviewUrl, closeAll: _closeAll,
+} = useBubbleMenu(msgGetter, searchGetter, {
+  isMine:   () => isMine.value,
+  isPinned: () => isPinned.value,
+  canEdit:  () => canEdit.value,
+  canDelete: () => canDelete.value,
+  onReply:      () => { _onReply(); showMenu.value = false },
+  copyMessage:  () => { _copyMessage(); showMenu.value = false },
+  startEdit:    () => { showMenu.value = false; _startEdit() },
+  togglePin:    () => { _togglePin(); showMenu.value = false },
+  deleteMessage: () => { showMenu.value = false; _deleteMessage() },
+  reportingMsg,
 })
 
-// ── Réactions
-const REACT_TYPES = [
-  { type: 'check', emoji: '✅' },
-  { type: 'thumb', emoji: '👍' },
-  { type: 'fire',  emoji: '🔥' },
-  { type: 'heart', emoji: '❤️' },
-  { type: 'think', emoji: '🤔' },
-  { type: 'eyes',  emoji: '👀' },
-]
-const QUICK_REACTS = REACT_TYPES.slice(0, 4)
+// ── Wrappers that also close menu (used by inline template menu)
+function onReply()      { _onReply(); showMenu.value = false }
+function togglePin()    { _togglePin(); showMenu.value = false }
+function copyMessage()  { _copyMessage(); showMenu.value = false }
+function startEdit()    { showMenu.value = false; _startEdit() }
+function deleteMessage(){ showMenu.value = false; _deleteMessage() }
 
-function quickReact(type: string) { messagesStore.toggleReaction(props.msg.id, type) }
-function pickReact(type: string) {
-  messagesStore.toggleReaction(props.msg.id, type)
-  showPicker.value = false
-}
-function pickEmojiReact(emoji: string) {
-  // Utilise l'emoji directement comme clé de réaction
-  messagesStore.toggleReaction(props.msg.id, emoji)
-  showPicker.value = false
-}
-
-const reactionsToShow = computed(() => {
-  const r    = messagesStore.reactions[props.msg.id] ?? {}
-  const mine = messagesStore.userVotes[props.msg.id] ?? new Set()
-  return REACT_TYPES.filter((t) => (r[t.type] ?? 0) > 0).map((t) => ({
-    ...t,
-    count:  r[t.type] as number,
-    isMine: mine.has(t.type),
-  }))
-})
-
-// ── Actions
-function onReply() {
-  messagesStore.setQuote(props.msg)
-  showMenu.value = false
-}
-
-function togglePin() {
-  messagesStore.togglePin(props.msg.id, !isPinned.value)
-  showMenu.value = false
-}
-
-async function copyMessage() {
-  try { await navigator.clipboard.writeText(props.msg.content) } catch { /* noop */ }
-  showMenu.value = false
-}
-
-async function startEdit() {
-  showMenu.value    = false
-  editing.value     = true
-  editContent.value = props.msg.content
-  await nextTick()
-  editEl.value?.focus()
-  editEl.value?.select()
-}
-
-async function commitEdit() {
-  const trimmed = editContent.value.trim()
-  if (!trimmed || trimmed === props.msg.content) { cancelEdit(); return }
-  await messagesStore.editMessage(props.msg.id, trimmed)
-  editing.value = false
-}
-
-function cancelEdit() { editing.value = false; editContent.value = '' }
-
-function onEditKeydown(e: KeyboardEvent) {
-  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); commitEdit() }
-  if (e.key === 'Escape') cancelEdit()
-}
-
-function deleteMessage() {
-  showMenu.value = false
-  confirmingDelete.value = true
-}
-
-async function confirmDelete() {
-  confirmingDelete.value = false
-  await messagesStore.deleteMessage(props.msg.id)
-}
-
-function cancelDelete() { confirmingDelete.value = false }
-
-function onMsgClick(e: MouseEvent) {
-  // Liens externes
-  const a = (e.target as HTMLElement).closest('a[data-url]') as HTMLAnchorElement | null
-  if (a) {
-    e.preventDefault()
-    const url = a.dataset.url
-    if (url) openExternal(url)
-    return
-  }
-  // Références #canal — naviguer vers le canal
-  const chanRef = (e.target as HTMLElement).closest('.channel-ref') as HTMLElement | null
-  if (chanRef) {
-    e.preventDefault()
-    const channelName = chanRef.dataset.channel
-    if (channelName) {
-      // Chercher le canal par nom et naviguer
-      const promoId = appStore.activePromoId ?? appStore.currentUser?.promo_id
-      if (promoId) {
-        window.api.getChannels(promoId).then((res) => {
-          const ch = res?.ok ? res.data.find((c: Channel) => c.name === channelName) : null
-          if (ch) appStore.openChannel(ch.id, ch.promo_id, ch.name, ch.type)
-        })
-      }
-    }
-  }
-}
-
-function closeAll() { showMenu.value = false; showPicker.value = false; confirmingDelete.value = false }
+function closeAll() { _closeAll(showPicker, confirmingDelete) }
 </script>
 
 <template>
