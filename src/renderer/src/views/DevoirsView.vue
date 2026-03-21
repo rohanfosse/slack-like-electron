@@ -3,7 +3,7 @@ import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue'
 import {
   BookOpen, BarChart2, List, Grid, Plus, Upload, Link2, X,
   FileText, CheckCircle2, Clock, Lock, AlertTriangle, ChevronRight,
-  Users, Award, Calendar, LayoutList, Menu, Eye, PlusCircle,
+  Users, Award, Calendar, LayoutList, Menu, Eye, EyeOff, PlusCircle,
 } from 'lucide-vue-next'
 import { useAppStore }     from '@/stores/app'
 import { useTravauxStore } from '@/stores/travaux'
@@ -118,7 +118,7 @@ function addDevoirOfType(type: string) {
 // ── Menu contextuel cartes devoirs ───────────────────────────────────────────
 const ctxMenu = ref<{ x: number; y: number; devoir: (Devoir & { is_published?: boolean | number }) | null }>({ x: 0, y: 0, devoir: null })
 
-function openCtxMenu(e: MouseEvent, devoir: Devoir) {
+function openCtxMenu(e: MouseEvent, devoir: Devoir | GanttRow | UnifiedFlatRow) {
   e.preventDefault()
   e.stopPropagation()
   ctxMenu.value = { x: e.clientX, y: e.clientY, devoir: devoir as any }

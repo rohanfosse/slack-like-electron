@@ -85,13 +85,12 @@
   // ── Mise à jour champs (titre, deadline, description, room) ────────────
   async function saveField(field: string, value: string) {
     if (!travail.value) return
-    const current = new Date(travail.value.deadline)
-    current.setDate(current.getDate() + days)
+    const payload = { ...travail.value, [field]: value, id: travail.value.id, _update: true }
     const result = await api(
-      () => window.api.createTravail({ ...travail.value, deadline: current.toISOString(), id: travail.value!.id, _update: true }),
+      () => window.api.createTravail(payload),
     )
     if (result !== null) {
-      showToast(`Deadline prolongée de ${days}j.`, 'success')
+      showToast('Modifié.', 'success')
       await travauxStore.openTravail(travail.value.id)
     }
   }

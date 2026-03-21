@@ -1,14 +1,27 @@
+<h1 align="center">Cursus</h1>
+
 <p align="center">
-  <h1 align="center">Cursus</h1>
-  <p align="center">
-    La plateforme de communication pensée pour l'enseignement.
-    <br />
-    Messagerie, travaux, documents - tout au même endroit.
-  </p>
-  <p align="center">
-    <a href="https://cours.music-music.fr">Site web</a> · <a href="https://github.com/rohanfosse/slack-like-electron/issues">Issues</a> · <a href="https://github.com/rohanfosse/slack-like-electron/releases">Releases</a>
-  </p>
+  <strong>La plateforme de communication pensée pour l'enseignement.</strong>
+  <br />
+  Messagerie, travaux, documents - tout au même endroit.
 </p>
+
+<p align="center">
+  <a href="https://github.com/rohanfosse/slack-like-electron/actions"><img src="https://img.shields.io/github/actions/workflow/status/rohanfosse/slack-like-electron/release.yml?style=flat-square&label=build" alt="Build" /></a>
+  <a href="https://github.com/rohanfosse/slack-like-electron/releases"><img src="https://img.shields.io/github/v/release/rohanfosse/slack-like-electron?style=flat-square&label=version" alt="Release" /></a>
+  <a href="LICENSE"><img src="https://img.shields.io/github/license/rohanfosse/slack-like-electron?style=flat-square" alt="License" /></a>
+  <a href="https://github.com/rohanfosse/slack-like-electron/stargazers"><img src="https://img.shields.io/github/stars/rohanfosse/slack-like-electron?style=flat-square" alt="Stars" /></a>
+</p>
+
+<p align="center">
+  <a href="https://cours.music-music.fr">Site web</a>
+  &nbsp;&middot;&nbsp;
+  <a href="https://github.com/rohanfosse/slack-like-electron/issues">Issues</a>
+  &nbsp;&middot;&nbsp;
+  <a href="https://github.com/rohanfosse/slack-like-electron/releases">Releases</a>
+</p>
+
+<br />
 
 ## Pourquoi Cursus ?
 
@@ -16,11 +29,24 @@ Les formations s'appuient sur un patchwork d'outils : mails institutionnels, gro
 
 Cursus part d'un constat simple : **une promo a besoin d'un seul endroit pour communiquer, déposer du travail et accéder à ses ressources**. L'application remplace la dispersion par un espace unifié, accessible en version desktop (Electron) et en version web (PWA).
 
-**Moins de friction.** L'interface est construite pour que chaque action soit à un ou deux clics. Pas de menus imbriqués, pas de pages à chercher. Un étudiant qui ouvre l'application voit directement ses canaux, ses devoirs en cours et ses documents.
+<table>
+  <tr>
+    <td width="33%" valign="top">
+      <strong>Moins de friction</strong><br />
+      L'interface est construite pour que chaque action soit à un ou deux clics. Un étudiant qui ouvre l'application voit directement ses canaux, ses devoirs en cours et ses documents.
+    </td>
+    <td width="33%" valign="top">
+      <strong>Droit à l'erreur</strong><br />
+      Un étudiant peut remplacer son rendu avant l'échéance sans demander à l'enseignant. Après la deadline, les dépôts se verrouillent automatiquement.
+    </td>
+    <td width="33%" valign="top">
+      <strong>Plus de temps pour l'humain</strong><br />
+      Grilles d'évaluation par critères, notation par lettres, export CSV. L'enseignant passe moins de temps sur la logistique et plus sur les retours qualitatifs.
+    </td>
+  </tr>
+</table>
 
-**Droit à l'erreur.** Un étudiant peut remplacer son rendu avant l'échéance sans demander à l'enseignant. Le stress du mauvais fichier envoyé disparaît. Après la deadline, les dépôts se verrouillent automatiquement.
-
-**Plus de temps pour l'accompagnement.** Grilles d'évaluation par critères, notation par lettres directement depuis la liste des rendus, export CSV. L'enseignant passe moins de temps sur la logistique administrative et plus sur les retours qualitatifs.
+<br />
 
 ## Fonctionnalités
 
@@ -50,6 +76,8 @@ Vue d'ensemble de l'avancement des dépôts par promotion avec indicateurs visue
 
 Vue personnalisée avec les devoirs à rendre classés par urgence, les notes reçues (système A/B/C/D), les annonces récentes et l'accès rapide aux canaux et documents de sa promotion.
 
+<br />
+
 ## Démarrage rapide
 
 **Prérequis** : Node.js 18+ et npm.
@@ -74,6 +102,8 @@ npm run build
 
 La base de données SQLite est créée automatiquement au premier lancement dans le répertoire utilisateur. Pour charger des données de démonstration, ouvrir le panneau d'administration et utiliser **Réinitialiser et peupler**.
 
+<br />
+
 ## Version web
 
 L'application est aussi disponible en version web (PWA), déployée automatiquement à chaque push sur `main`. Le build web utilise un shim qui remplace les appels IPC Electron par des requêtes HTTP vers le serveur Node.js.
@@ -84,14 +114,22 @@ npm run build:web
 
 Les fichiers sont générés dans `dist-web/` et servis par le serveur Express intégré.
 
+<br />
+
 ## Stack technique
 
-* **Desktop** - Electron 29, avec context isolation et Node integration désactivé côté renderer
-* **Frontend** - Vue 3 (Composition API), TypeScript, Pinia, Vue Router
-* **Base de données** - SQLite via Better-SQLite3, schéma versionné avec migrations
-* **Build** - electron-vite + Vite, packaging via electron-builder
-* **Serveur web** - Express, Socket.IO pour le temps réel, déployé derrière Nginx
+| Couche | Technologie |
+|--------|------------|
+| Desktop | Electron 29, context isolation, Node integration désactivé côté renderer |
+| Frontend | Vue 3 (Composition API), TypeScript, Pinia, Vue Router |
+| Base de données | SQLite via Better-SQLite3, schéma versionné avec migrations |
+| Build | electron-vite + Vite, packaging via electron-builder |
+| Serveur web | Express, Socket.IO pour le temps réel, déployé derrière Nginx |
+
+<br />
 
 ## Licence
 
-Projet développé dans le cadre du cursus CESI.
+MIT - voir le fichier [LICENSE](LICENSE) pour les détails.
+
+Projet développé par [Rohan Fossé](https://github.com/rohanfosse)
