@@ -322,62 +322,62 @@ button { font-family: var(--font); }
 }
 
 /* Mentions dans les messages */
+/* ── Mentions @utilisateur ── */
 .mention-tag {
-  background: rgba(74,144,217,.18);
-  color: var(--accent);
-  border-radius: 3px;
-  padding: 1px 4px;
-  font-weight: 600;
+  background: rgba(74,144,217,.08);
+  color: var(--accent-light);
+  border-radius: 4px;
+  padding: 1px 5px;
+  font-weight: 500;
   cursor: default;
 }
 
-/* Référence #canal dans les messages */
+/* ── Référence #canal ── */
 .channel-ref {
-  background: rgba(74,144,217,.12);
-  color: var(--accent);
-  border-radius: 3px;
-  padding: 1px 4px;
-  font-weight: 600;
+  background: rgba(74,144,217,.06);
+  color: var(--accent-light);
+  border-radius: 4px;
+  padding: 1px 5px;
+  font-weight: 500;
   cursor: pointer;
+  transition: background .15s;
 }
 .channel-ref:hover {
-  background: rgba(74,144,217,.25);
+  background: rgba(74,144,217,.14);
   text-decoration: underline;
 }
 
-/* Référence 📋 devoir dans les messages */
+/* ── Référence devoir ── */
 .devoir-ref {
-  background: rgba(243,156,18,.12);
-  color: var(--color-warning);
-  border-radius: 3px;
+  background: rgba(155,135,245,.08);
+  color: var(--color-cctl);
+  border-radius: 4px;
   padding: 1px 5px;
-  font-weight: 600;
-  transition: background .15s, filter .15s;
+  font-weight: 500;
+  transition: background .15s;
 }
 .devoir-ref[data-devoir-id] {
   cursor: pointer;
 }
 .devoir-ref[data-devoir-id]:hover {
-  background: rgba(243,156,18,.22);
-  filter: brightness(1.1);
+  background: rgba(155,135,245,.16);
 }
 .devoir-ref[data-devoir-id]:focus-visible {
-  outline: 2px solid var(--color-warning);
+  outline: 2px solid var(--color-cctl);
   outline-offset: 1px;
 }
 
-/* Style "rappel" — message contenant une ref devoir (rappel prof) */
+/* ── Message avec lien devoir (rappel prof) ── */
 .msg-text:has(.devoir-ref) {
-  background: linear-gradient(135deg, rgba(243,156,18,.06) 0%, rgba(74,144,217,.04) 100%);
-  border-left: 3px solid var(--color-warning);
-  border-radius: 6px;
-  padding: 10px 14px;
+  background: rgba(155,135,245,.04);
+  border-left: 2px solid rgba(155,135,245,.3);
+  border-radius: 4px;
+  padding: 8px 12px;
   margin: 2px 0;
 }
 .msg-text:has(.devoir-ref) .devoir-ref {
-  font-size: 14px;
-  font-weight: 700;
-  padding: 2px 8px;
+  font-weight: 600;
+  padding: 2px 6px;
 }
 
 /* Référence 📄 document dans les messages */
@@ -391,11 +391,11 @@ button { font-family: var(--font); }
 
 /* Mention de l'utilisateur courant ou @everyone */
 .mention-me {
-  background: rgba(243,156,18,.2);
-  color: var(--color-warning);
-  border-radius: 3px;
-  padding: 1px 4px;
-  font-weight: 700;
+  background: rgba(243,156,18,.1);
+  color: #f0c674;
+  border-radius: 4px;
+  padding: 1px 5px;
+  font-weight: 500;
   cursor: default;
 }
 
