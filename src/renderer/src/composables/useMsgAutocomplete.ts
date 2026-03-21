@@ -14,7 +14,7 @@ export interface MentionUser {
 }
 
 export interface RefChannel { name: string; type: string }
-export interface RefDevoir { title: string; type: string; deadline: string }
+export interface RefDevoir { id: number; title: string; type: string; deadline: string }
 export interface RefDoc    { name: string; type: string; category: string | null }
 
 function normalize(s: string) {
@@ -193,6 +193,7 @@ export function useMsgAutocomplete(
 
     const matchMention = before.match(/@([^\s@]*)$/)
     const matchChannel = before.match(/#([^\s#]*)$/)
+    const matchTilde   = before.match(/~([^\s~]*)$/)
     const matchDevoir  = before.match(/\/devoir\s?(.*)$/i)
     const matchDoc     = before.match(/\/doc\s?(.*)$/i)
 
@@ -208,6 +209,12 @@ export function useMsgAutocomplete(
       refStart.value  = cursor - matchChannel[0].length
       mentionActive.value = false
       loadChannels()
+    } else if (matchTilde) {
+      activeRef.value = 'devoir'
+      refSearch.value = matchTilde[1]
+      refStart.value  = cursor - matchTilde[0].length
+      mentionActive.value = false
+      loadDevoirs()
     } else if (matchDevoir) {
       activeRef.value = 'devoir'
       refSearch.value = matchDevoir[1]

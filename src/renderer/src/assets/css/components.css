@@ -352,6 +352,18 @@ button { font-family: var(--font); }
   border-radius: 3px;
   padding: 1px 5px;
   font-weight: 600;
+  transition: background .15s, filter .15s;
+}
+.devoir-ref[data-devoir-id] {
+  cursor: pointer;
+}
+.devoir-ref[data-devoir-id]:hover {
+  background: rgba(243,156,18,.22);
+  filter: brightness(1.1);
+}
+.devoir-ref[data-devoir-id]:focus-visible {
+  outline: 2px solid var(--color-warning);
+  outline-offset: 1px;
 }
 
 /* Référence 📄 document dans les messages */

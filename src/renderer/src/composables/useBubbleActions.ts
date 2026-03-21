@@ -6,6 +6,7 @@ import { ref, computed, nextTick } from 'vue'
 import { useRouter }        from 'vue-router'
 import { useAppStore }      from '@/stores/app'
 import { useMessagesStore } from '@/stores/messages'
+import { useModalsStore }   from '@/stores/modals'
 import { useToast }         from '@/composables/useToast'
 import { useOpenExternal }  from '@/composables/useOpenExternal'
 import type { Message, Channel } from '@/types'
@@ -17,6 +18,7 @@ export function useBubbleActions(msg: () => Message) {
   const router        = useRouter()
   const appStore      = useAppStore()
   const messagesStore = useMessagesStore()
+  const modals        = useModalsStore()
   const { openExternal } = useOpenExternal()
   const { showToast }    = useToast()
 
@@ -123,6 +125,16 @@ export function useBubbleActions(msg: () => Message) {
       e.preventDefault()
       const url = a.dataset.url
       if (url) openExternal(url)
+      return
+    }
+    const devoirRef = (e.target as HTMLElement).closest('.devoir-ref[data-devoir-id]') as HTMLElement | null
+    if (devoirRef) {
+      e.preventDefault()
+      const devoirId = Number(devoirRef.dataset.devoirId)
+      if (devoirId) {
+        appStore.currentTravailId = devoirId
+        modals.gestionDevoir = true
+      }
       return
     }
     const chanRef = (e.target as HTMLElement).closest('.channel-ref') as HTMLElement | null

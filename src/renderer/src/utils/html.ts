@@ -111,7 +111,11 @@ export function applyChannelRefs(html: string): string {
 // ─── Références 📋 devoirs et 📄 documents ─────────────────────────────────
 
 export function applyInlineRefs(html: string): string {
-  // 📋 [Titre du devoir]
+  // ~[Title](devoir:ID) — clickable devoir reference
+  html = html.replace(/~\[([^\]]+)\]\(devoir:(\d+)\)/g, (_m, title, id) => {
+    return `<span class="devoir-ref" data-devoir-id="${escapeHtml(id)}" role="link" tabindex="0">~${escapeHtml(title)}</span>`
+  })
+  // 📋 [Titre du devoir] — legacy static format
   html = html.replace(/📋\s*\[([^\]]+)\]/g, (_m, title) => {
     return `<span class="devoir-ref">📋 ${escapeHtml(title)}</span>`
   })
@@ -132,6 +136,6 @@ export function renderMessageContent(raw: string, searchTerm = '', currentUserNa
   if (searchTerm) html = highlightInHtml(html, searchTerm)
   return DOMPurify.sanitize(html, {
     ALLOWED_TAGS: ['p', 'br', 'strong', 'em', 'code', 'pre', 'a', 'span', 'div', 'mark', 'ul', 'ol', 'li', 'blockquote', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'hr', 'img', 'del', 's'],
-    ALLOWED_ATTR: ['class', 'data-url', 'data-channel', 'href', 'tabindex', 'style', 'src', 'alt'],
+    ALLOWED_ATTR: ['class', 'data-url', 'data-channel', 'data-devoir-id', 'role', 'href', 'tabindex', 'style', 'src', 'alt'],
   })
 }

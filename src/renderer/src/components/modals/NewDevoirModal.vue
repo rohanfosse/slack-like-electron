@@ -123,7 +123,7 @@
 
   // Adapter requiresSubmission quand le type change
   watch(type, (t) => {
-    requiresSubmission.value = t !== 'soutenance' && t !== 'cctl'
+    requiresSubmission.value = t === 'livrable' || t === 'memoire' || t === 'autre'
   })
 
   // ── Description auto ────────────────────────────────────────────────────

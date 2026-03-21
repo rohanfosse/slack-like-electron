@@ -3,6 +3,7 @@
   import {
     Users, Clock, CheckCircle2, XCircle, Copy, Eye, EyeOff,
     FileText, Star, Bell, ExternalLink, ChevronRight, Award,
+    Calendar, MapPin, Calculator, BookOpen,
   } from 'lucide-vue-next'
   import { useTravauxStore } from '@/stores/travaux'
   import { useAppStore }     from '@/stores/app'
@@ -145,7 +146,7 @@
           authorName: appStore.currentUser?.name ?? 'Système',
           authorType: appStore.currentUser?.type ?? 'teacher',
           promoId: appStore.activePromoId ?? undefined,
-          content: `📢 **Nouveau** : **${travail.value.title}** - à rendre avant le **${formatDate(travail.value.deadline)}**.`,
+          content: `📢 **Nouveau devoir** : ~[${travail.value.title}](devoir:${travail.value.id}) — à rendre avant le **${formatDate(travail.value.deadline)}**. Cliquez sur le lien pour voir les détails.`,
         })
       }
       showToast('Publié et notifié.', 'success')
@@ -176,30 +177,39 @@
   const parsedDesc = computed(() => {
     const desc = travail.value?.description ?? ''
     if (!desc) return null
-    const fields: { label: string; value: string; icon?: string }[] = []
+    const fields: { label: string; value: string; iconKey: string }[] = []
     const sessionMatch = desc.match(/\*\*Session\s+(\w+)\*\*/)
-    if (sessionMatch) fields.push({ label: 'Session', value: sessionMatch[1], icon: sessionMatch[1] === 'Rattrapage' ? '🔄' : '📝' })
+    if (sessionMatch) fields.push({ label: 'Session', value: sessionMatch[1], iconKey: 'calendar' })
     const dureeMatch = desc.match(/Durée\s*:\s*(\d+)\s*min/i)
-    if (dureeMatch) fields.push({ label: 'Durée', value: dureeMatch[1] + ' min', icon: '⏱' })
+    if (dureeMatch) fields.push({ label: 'Durée', value: dureeMatch[1] + ' min', iconKey: 'clock' })
     const formatMatch = desc.match(/Format\s*:\s*(.+)/i)
-    if (formatMatch) fields.push({ label: 'Format', value: formatMatch[1].trim(), icon: '📋' })
-    if (/Calculatrice autorisée/i.test(desc)) fields.push({ label: 'Calculatrice', value: 'Autorisée', icon: '🧮' })
-    else if (/Calculatrice non/i.test(desc)) fields.push({ label: 'Calculatrice', value: 'Non autorisée', icon: '🚫' })
+    if (formatMatch) fields.push({ label: 'Format', value: formatMatch[1].trim(), iconKey: 'filetext' })
+    if (/Calculatrice autorisée/i.test(desc)) fields.push({ label: 'Calculatrice', value: 'Autorisée', iconKey: 'calculator' })
+    else if (/Calculatrice non/i.test(desc)) fields.push({ label: 'Calculatrice', value: 'Non autorisée', iconKey: 'calculator' })
     const resMatch = desc.match(/(?:Aucune ressource|Ressources?\s*:\s*(.+))/i)
-    if (resMatch) fields.push({ label: 'Ressources', value: resMatch[1] || 'Aucune', icon: '📚' })
+    if (resMatch) fields.push({ label: 'Ressources', value: resMatch[1] || 'Aucune', iconKey: 'bookopen' })
     const salleMatch = desc.match(/Salle\s*:\s*(.+)/i)
-    if (salleMatch) fields.push({ label: 'Salle', value: salleMatch[1].trim(), icon: '🏫' })
+    if (salleMatch) fields.push({ label: 'Salle', value: salleMatch[1].trim(), iconKey: 'mappin' })
     const horaireMatch = desc.match(/Horaire\s*:\s*(.+)/i)
-    if (horaireMatch) fields.push({ label: 'Horaire', value: horaireMatch[1].trim(), icon: '🕐' })
+    if (horaireMatch) fields.push({ label: 'Horaire', value: horaireMatch[1].trim(), iconKey: 'clock' })
     return fields.length > 0 ? fields : null
   })
+
+  const parsedIconMap: Record<string, object> = {
+    calendar: Calendar,
+    clock: Clock,
+    calculator: Calculator,
+    bookopen: BookOpen,
+    mappin: MapPin,
+    filetext: FileText,
+  }
 
   // ── Notifier les étudiants ────────────────────────────────────────────────
   async function notifyStudents() {
     if (!travail.value) return
     const channelId = travail.value.channel_id
     if (!channelId) { showToast('Aucun canal associé.', 'error'); return }
-    const msg = `📢 **Rappel** : le devoir **${travail.value.title}** est à rendre avant le **${formatDate(travail.value.deadline)}**.`
+    const msg = `📢 **Rappel** : ~[${travail.value.title}](devoir:${travail.value.id}) est à rendre avant le **${formatDate(travail.value.deadline)}**. N'oubliez pas de déposer votre rendu !`
     try {
       await window.api.sendMessage({
         channelId,
@@ -317,7 +327,7 @@
           <template v-if="parsedDesc && !editingDesc">
             <div class="gd-parsed-fields">
               <div v-for="f in parsedDesc" :key="f.label" class="gd-parsed-field">
-                <span class="gd-parsed-icon">{{ f.icon }}</span>
+                <span class="gd-parsed-icon"><component :is="parsedIconMap[f.iconKey]" :size="13" /></span>
                 <span class="gd-parsed-label">{{ f.label }}</span>
                 <span class="gd-parsed-value">{{ f.value }}</span>
               </div>
@@ -368,8 +378,8 @@
             </button>
           </template>
           <template v-else>
-            <button class="gd-action-btn" @click="notifyStudents">
-              <Bell :size="13" /> Rappeler
+            <button class="gd-action-btn" @click="notifyStudents" title="Envoie un message dans le canal associé pour rappeler la deadline">
+              <Bell :size="13" /> Envoyer un rappel aux étudiants
             </button>
             <button class="gd-action-btn" @click="togglePublish">
               <EyeOff :size="13" /> Dépublier

@@ -103,7 +103,7 @@ function onKeydown(e: KeyboardEvent) {
       e.preventDefault()
       const item = refResults.value[refIndex.value]
       if (activeRef.value === 'channel') insertRef('#' + (item as { name: string }).name)
-      else if (activeRef.value === 'devoir') insertRef('📋 [' + (item as { title: string }).title + ']')
+      else if (activeRef.value === 'devoir') insertRef('~[' + (item as RefDevoir).title + '](devoir:' + (item as RefDevoir).id + ')')
       else if (activeRef.value === 'doc') insertRef('📄 [' + (item as { name: string }).name + ']')
       return
     }
@@ -244,7 +244,7 @@ function onKeydown(e: KeyboardEvent) {
                 :key="(d as RefDevoir).title"
                 class="mi-mention-item"
                 :class="{ 'mi-mention-selected': i === refIndex }"
-                @mousedown.prevent="insertRef('📋 [' + (d as RefDevoir).title + ']')"
+                @mousedown.prevent="insertRef('~[' + (d as RefDevoir).title + '](devoir:' + (d as RefDevoir).id + ')')"
                 @mouseenter="refIndex = i"
               >
                 <span class="mi-ref-icon">📋</span>
