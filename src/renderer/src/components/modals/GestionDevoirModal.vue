@@ -146,7 +146,7 @@
           authorName: appStore.currentUser?.name ?? 'Système',
           authorType: appStore.currentUser?.type ?? 'teacher',
           promoId: appStore.activePromoId ?? undefined,
-          content: `📢 **Nouveau devoir** : ~[${travail.value.title}](devoir:${travail.value.id}) — à rendre avant le **${formatDate(travail.value.deadline)}**. Cliquez sur le lien pour voir les détails.`,
+          content: `~[${travail.value.title}](devoir:${travail.value.id}) — ${devoirMeta.value.isEvent ? `le **${formatDate(travail.value.deadline)}**` : `à rendre avant le **${formatDate(travail.value.deadline)}**`}${devoirMeta.value.salle ? ` — Salle : **${devoirMeta.value.salle}**` : ''}`,
         })
       }
       showToast('Publié et notifié.', 'success')
@@ -204,21 +204,116 @@
     filetext: FileText,
   }
 
-  // ── Notifier les étudiants ────────────────────────────────────────────────
-  async function notifyStudents() {
-    if (!travail.value) return
+  // ── Constructeur de rappel modulaire ──────────────────────────────────────
+  const showReminderBuilder = ref(false)
+  const reminderOpts = ref({
+    deadline: true,
+    salle: true,
+    duree: true,
+    ressources: true,
+    aavs: false,
+    lien: true,
+    custom: '',
+  })
+  const sendingReminder = ref(false)
+
+  // Infos extraites de la description structurée
+  const devoirMeta = computed(() => {
+    const desc = travail.value?.description ?? ''
+    return {
+      salle:        desc.match(/Salle\s*:\s*(.+)/i)?.[1]?.trim() ?? travail.value?.room ?? null,
+      duree:        desc.match(/Durée\s*:\s*(\d+)\s*min/i)?.[1] ?? null,
+      session:      desc.match(/\*\*Session\s+(\w+)\*\*/)?.[1] ?? null,
+      calculatrice: /Calculatrice autorisée/i.test(desc),
+      ressources:   desc.match(/Ressources?\s*:\s*(.+)/i)?.[1]?.trim() ?? (/Aucune ressource/i.test(desc) ? 'Aucune' : null),
+      aavs:         travail.value?.aavs ?? null,
+      isEvent:      travail.value?.type === 'soutenance' || travail.value?.type === 'cctl' || travail.value?.type === 'etude_de_cas',
+    }
+  })
+
+  const reminderPreview = computed(() => {
+    if (!travail.value) return ''
+    const t = travail.value
+    const meta = devoirMeta.value
+    const parts: string[] = []
+
+    // Titre avec lien
+    if (reminderOpts.value.lien) {
+      parts.push(`~[${t.title}](devoir:${t.id})`)
+    } else {
+      parts.push(`**${t.title}**`)
+    }
+
+    // Deadline / date
+    if (reminderOpts.value.deadline) {
+      if (meta.isEvent) {
+        parts.push(`le **${formatDate(t.deadline)}**`)
+        if (meta.session) parts[parts.length - 1] += ` (session ${meta.session})`
+      } else {
+        parts.push(`à rendre avant le **${formatDate(t.deadline)}**`)
+      }
+    }
+
+    // Durée
+    if (reminderOpts.value.duree && meta.duree) {
+      parts.push(`Durée : ${meta.duree} min`)
+    }
+
+    // Salle
+    if (reminderOpts.value.salle && meta.salle) {
+      parts.push(`Salle : **${meta.salle}**`)
+    }
+
+    // Ressources (examen)
+    if (reminderOpts.value.ressources && meta.isEvent && meta.ressources) {
+      const calc = meta.calculatrice ? 'calculatrice autorisée' : 'calculatrice non autorisée'
+      parts.push(`${meta.ressources === 'Aucune' ? 'Aucune ressource autorisée' : `Ressources : ${meta.ressources}`}, ${calc}`)
+    }
+
+    // AAVs
+    if (reminderOpts.value.aavs && meta.aavs) {
+      parts.push(`Compétences évaluées : ${meta.aavs.split('\n').filter(Boolean).join(', ')}`)
+    }
+
+    // Message personnalisé
+    if (reminderOpts.value.custom.trim()) {
+      parts.push(reminderOpts.value.custom.trim())
+    }
+
+    return parts.join('\n')
+  })
+
+  function openReminderBuilder() {
+    const meta = devoirMeta.value
+    // Smart defaults selon le type
+    reminderOpts.value = {
+      deadline: true,
+      salle: !!meta.salle,
+      duree: !!meta.duree && meta.isEvent,
+      ressources: meta.isEvent && !!meta.ressources,
+      aavs: false,
+      lien: true,
+      custom: '',
+    }
+    showReminderBuilder.value = true
+  }
+
+  async function sendReminder() {
+    if (!travail.value || sendingReminder.value) return
     const channelId = travail.value.channel_id
     if (!channelId) { showToast('Aucun canal associé.', 'error'); return }
-    const msg = `📢 **Rappel** : ~[${travail.value.title}](devoir:${travail.value.id}) est à rendre avant le **${formatDate(travail.value.deadline)}**. N'oubliez pas de déposer votre rendu !`
+    sendingReminder.value = true
     try {
       await window.api.sendMessage({
         channelId,
         authorName: appStore.currentUser?.name ?? 'Système',
         authorType: appStore.currentUser?.type ?? 'teacher',
-        content: msg,
+        content: reminderPreview.value,
       })
       showToast('Rappel envoyé dans le canal.', 'success')
+      showReminderBuilder.value = false
     } catch { showToast('Erreur lors de l\'envoi.', 'error') }
+    finally { sendingReminder.value = false }
   }
 
   // ── Navigation ────────────────────────────────────────────────────────────
@@ -378,8 +473,8 @@
             </button>
           </template>
           <template v-else>
-            <button class="gd-action-btn" @click="notifyStudents" title="Envoie un message dans le canal associé pour rappeler la deadline">
-              <Bell :size="13" /> Envoyer un rappel aux étudiants
+            <button class="gd-action-btn" @click="openReminderBuilder">
+              <Bell :size="13" /> Envoyer un rappel
             </button>
             <button class="gd-action-btn" @click="togglePublish">
               <EyeOff :size="13" /> Dépublier
@@ -391,6 +486,69 @@
           <button class="gd-action-btn gd-action-btn--danger" @click="deleteDevoir">
             Supprimer
           </button>
+        </div>
+
+        <!-- ── Constructeur de rappel ──────────────────────────────── -->
+        <div v-if="showReminderBuilder" class="gd-reminder-builder">
+          <div class="gd-reminder-header">
+            <Bell :size="14" />
+            <span>Composer le rappel</span>
+            <button class="gd-reminder-close" @click="showReminderBuilder = false">&times;</button>
+          </div>
+
+          <p class="gd-reminder-hint">Cochez les informations à inclure dans le message envoyé aux étudiants.</p>
+
+          <div class="gd-reminder-options">
+            <label class="gd-reminder-opt">
+              <input v-model="reminderOpts.lien" type="checkbox" />
+              Lien vers le devoir
+            </label>
+            <label class="gd-reminder-opt">
+              <input v-model="reminderOpts.deadline" type="checkbox" />
+              {{ devoirMeta.isEvent ? 'Date et heure' : 'Date limite' }}
+            </label>
+            <label v-if="devoirMeta.duree" class="gd-reminder-opt">
+              <input v-model="reminderOpts.duree" type="checkbox" />
+              Durée ({{ devoirMeta.duree }} min)
+            </label>
+            <label v-if="devoirMeta.salle" class="gd-reminder-opt">
+              <input v-model="reminderOpts.salle" type="checkbox" />
+              Salle ({{ devoirMeta.salle }})
+            </label>
+            <label v-if="devoirMeta.isEvent && devoirMeta.ressources" class="gd-reminder-opt">
+              <input v-model="reminderOpts.ressources" type="checkbox" />
+              Ressources autorisées
+            </label>
+            <label v-if="devoirMeta.aavs" class="gd-reminder-opt">
+              <input v-model="reminderOpts.aavs" type="checkbox" />
+              Compétences évaluées (AAVs)
+            </label>
+          </div>
+
+          <div class="gd-reminder-custom">
+            <input
+              v-model="reminderOpts.custom"
+              type="text" class="form-input"
+              placeholder="Ajouter un message personnalisé (optionnel)"
+              style="font-size:12px"
+            />
+          </div>
+
+          <div class="gd-reminder-preview">
+            <span class="gd-reminder-preview-label">Aperçu :</span>
+            <div class="gd-reminder-preview-text">{{ reminderPreview }}</div>
+          </div>
+
+          <div class="gd-reminder-footer">
+            <button class="btn-ghost" style="font-size:12px" @click="showReminderBuilder = false">Annuler</button>
+            <button
+              class="btn-primary" style="font-size:12px"
+              :disabled="!reminderPreview.trim() || sendingReminder"
+              @click="sendReminder"
+            >
+              {{ sendingReminder ? 'Envoi…' : 'Envoyer dans le canal' }}
+            </button>
+          </div>
         </div>
       </div>
 
@@ -684,4 +842,47 @@
 .type-memoire       { background: rgba(231,76,60,.2);     color: var(--color-danger); }
 .type-autre         { background: rgba(127,140,141,.2);   color: var(--color-autre); }
 .tag-badge          { font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 12px; background: rgba(255,255,255,.06); color: var(--text-secondary); }
+
+/* ── Constructeur de rappel ─────────────────────────────────────────────── */
+.gd-reminder-builder {
+  margin-top: 14px; padding: 14px; border-radius: 10px;
+  background: rgba(255,255,255,.03); border: 1px solid var(--border);
+}
+.gd-reminder-header {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 14px; font-weight: 700; color: var(--text-primary);
+  margin-bottom: 8px;
+}
+.gd-reminder-close {
+  margin-left: auto; background: none; border: none; color: var(--text-muted);
+  font-size: 18px; cursor: pointer; line-height: 1; padding: 2px 6px;
+}
+.gd-reminder-close:hover { color: var(--text-primary); }
+.gd-reminder-hint {
+  font-size: 12px; color: var(--text-muted); margin-bottom: 12px; line-height: 1.4;
+}
+.gd-reminder-options {
+  display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px;
+}
+.gd-reminder-opt {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 13px; color: var(--text-secondary); cursor: pointer;
+}
+.gd-reminder-opt input { accent-color: var(--accent); }
+.gd-reminder-custom { margin-bottom: 12px; }
+.gd-reminder-preview {
+  padding: 10px; border-radius: 8px;
+  background: rgba(255,255,255,.02); border: 1px solid var(--border);
+  margin-bottom: 12px;
+}
+.gd-reminder-preview-label {
+  font-size: 10px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .4px; color: var(--text-muted); display: block; margin-bottom: 6px;
+}
+.gd-reminder-preview-text {
+  font-size: 13px; color: var(--text-primary); white-space: pre-line; line-height: 1.5;
+}
+.gd-reminder-footer {
+  display: flex; justify-content: flex-end; gap: 8px;
+}
 </style>
