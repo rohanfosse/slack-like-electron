@@ -44,11 +44,6 @@ export const useTravauxStore = defineStore('travaux', () => {
     }
   }
 
-  /** @deprecated use fetchStudentDevoirs */
-  async function fetchStudentTravaux() {
-    return fetchStudentDevoirs()
-  }
-
   async function fetchGantt(promoId: number) {
     loading.value = true
     try {
@@ -127,7 +122,7 @@ export const useTravauxStore = defineStore('travaux', () => {
     depots, ressources,
     ganttData, allRendus, loading, view,
     hasPendingUrgent,
-    fetchStudentTravaux, fetchGantt, fetchRendus,
+    fetchGantt, fetchRendus,
     fetchDepots, fetchRessources, openTravail,
     createTravail, addDepot, setNote, setFeedback,
     markNonSubmittedAsD, setView,

@@ -3,9 +3,10 @@ import { defineStore } from 'pinia'
 import { useAppStore } from './app'
 import { useApi } from '@/composables/useApi'
 import type { Message } from '@/types'
-
-const GROUP_THRESHOLD_MS = 5 * 60 * 1000
-const PAGE_SIZE          = 50
+import {
+  STORAGE_KEYS, GROUP_THRESHOLD_MS, MESSAGE_PAGE_SIZE,
+  MAX_MESSAGE_LENGTH, TYPING_TIMEOUT_MS,
+} from '@/constants'
 
 export const useMessagesStore = defineStore('messages', () => {
   const appStore = useAppStore()
@@ -42,7 +43,7 @@ export const useMessagesStore = defineStore('messages', () => {
   function setTyping(name: string) {
     if (!typingUsers.value.includes(name)) typingUsers.value = [...typingUsers.value, name]
     clearTimeout(_typingTimers[name])
-    _typingTimers[name] = setTimeout(() => stopTyping(name), 3000)
+    _typingTimers[name] = setTimeout(() => stopTyping(name), TYPING_TIMEOUT_MS)
   }
 
   function stopTyping(name: string) {
@@ -73,8 +74,8 @@ export const useMessagesStore = defineStore('messages', () => {
   // ── Clé localStorage pour le marqueur de lecture ──────────────────────────
   function _lrKey(): string | null {
     const { activeChannelId, activeDmStudentId } = appStore
-    if (activeChannelId)   return `lastRead:ch:${activeChannelId}`
-    if (activeDmStudentId) return `lastRead:dm:${activeDmStudentId}`
+    if (activeChannelId)   return STORAGE_KEYS.lastReadChannel(activeChannelId)
+    if (activeDmStudentId) return STORAGE_KEYS.lastReadDm(activeDmStudentId)
     return null
   }
 
@@ -102,12 +103,12 @@ export const useMessagesStore = defineStore('messages', () => {
       } else if (activeChannelId) {
         const page    = await api<Message[]>(() => window.api.getChannelMessagesPage(activeChannelId)) ?? []
         fetched       = page.slice().reverse()
-        hasMore.value = page.length === PAGE_SIZE
+        hasMore.value = page.length === MESSAGE_PAGE_SIZE
       } else if (activeDmStudentId) {
         const peer   = appStore.activeDmPeerId ?? undefined
         const page   = await api<Message[]>(() => window.api.getDmMessagesPage(activeDmStudentId, undefined, peer)) ?? []
         fetched      = page.slice().reverse()
-        hasMore.value = page.length === PAGE_SIZE
+        hasMore.value = page.length === MESSAGE_PAGE_SIZE
       }
 
       messages.value = fetched
@@ -144,7 +145,7 @@ export const useMessagesStore = defineStore('messages', () => {
       }
 
       const older   = page.slice().reverse()
-      hasMore.value = page.length === PAGE_SIZE
+      hasMore.value = page.length === MESSAGE_PAGE_SIZE
       messages.value = [...older, ...messages.value]
     } finally {
       loadingMore.value = false
@@ -157,7 +158,6 @@ export const useMessagesStore = defineStore('messages', () => {
   }
 
   // ── Envoi ──────────────────────────────────────────────────────────────────
-  const MAX_MESSAGE_LENGTH = 10_000
   const sendError = ref(false)
 
   async function sendMessage(content: string): Promise<boolean> {

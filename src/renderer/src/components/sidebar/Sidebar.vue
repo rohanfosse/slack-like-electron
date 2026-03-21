@@ -16,10 +16,9 @@
   import ChannelItem  from './ChannelItem.vue'
   import { avatarColor }  from '@/utils/format'
   import type { Channel, Student, Promotion } from '@/types'
+  import { STORAGE_KEYS, DM_RECENT_LIMIT } from '@/constants'
 
   const emit = defineEmits<{ navigate: [] }>()
-
-  const CUSTOM_PROJECTS_KEY = 'cc_custom_projects'
 
   const appStore      = useAppStore()
   const modals        = useModalsStore()
@@ -178,7 +177,6 @@
   interface DmContact { name: string; last_message_at: string; last_message_preview: string }
   const recentDmContacts = ref<DmContact[]>([])
   const showAllDmStudents = ref(false)
-  const DM_RECENT_LIMIT = 10
 
   async function loadRecentDmContacts() {
     if (!user.value?.id) return
@@ -233,7 +231,7 @@
 
   function loadCustomProjects() {
     try {
-      const raw = localStorage.getItem(CUSTOM_PROJECTS_KEY)
+      const raw = localStorage.getItem(STORAGE_KEYS.CUSTOM_PROJECTS)
       customProjects.value = raw ? JSON.parse(raw) : []
     } catch { customProjects.value = [] }
   }

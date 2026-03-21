@@ -3,7 +3,7 @@ import { useToast } from './useToast'
 
 interface ApiResult<T = unknown> {
   ok: boolean
-  data?: T
+  data?: T | null
   error?: string
 }
 
