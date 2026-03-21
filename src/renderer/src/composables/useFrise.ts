@@ -65,21 +65,48 @@ export function useFrise(ganttFiltered: Ref<GanttRow[]>) {
   }
   function onFriseDragEnd() { friseDragging.value = false }
 
-  // ── Months axis ───────────────────────────────────────────────────────────
+  // ── Time axis (adaptatif : jours pour semaine, semaines pour mois, mois sinon)
   const ganttMonths = computed(() => {
     const r = ganttDateRange.value
     if (!r) return []
     const total = r.end.getTime() - r.start.getTime()
-    const months: { label: string; left: number }[] = []
-    let d = new Date(r.start.getFullYear(), r.start.getMonth(), 1)
-    while (d <= r.end) {
-      months.push({
-        label: d.toLocaleDateString('fr-FR', { month: 'short', year: '2-digit' }),
-        left:  Math.max(0, (d.getTime() - r.start.getTime()) / total * 100),
-      })
-      d = new Date(d.getFullYear(), d.getMonth() + 1, 1)
+    const ticks: { label: string; left: number }[] = []
+    const spanDays = friseSpanDays.value
+
+    if (spanDays <= 14) {
+      // Vue semaine : un tick par jour
+      let d = new Date(r.start)
+      d.setHours(0, 0, 0, 0)
+      while (d <= r.end) {
+        ticks.push({
+          label: d.toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric' }),
+          left: Math.max(0, (d.getTime() - r.start.getTime()) / total * 100),
+        })
+        d = new Date(d.getTime() + 86_400_000)
+      }
+    } else if (spanDays <= 45) {
+      // Vue mois : un tick par semaine (lundi)
+      let d = new Date(r.start)
+      d.setDate(d.getDate() - d.getDay() + 1) // lundi
+      while (d <= r.end) {
+        ticks.push({
+          label: d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }),
+          left: Math.max(0, (d.getTime() - r.start.getTime()) / total * 100),
+        })
+        d = new Date(d.getTime() + 7 * 86_400_000)
+      }
+    } else {
+      // Vue trimestre/année : un tick par mois
+      let d = new Date(r.start.getFullYear(), r.start.getMonth(), 1)
+      while (d <= r.end) {
+        ticks.push({
+          label: d.toLocaleDateString('fr-FR', { month: 'short', year: '2-digit' }),
+          left: Math.max(0, (d.getTime() - r.start.getTime()) / total * 100),
+        })
+        d = new Date(d.getFullYear(), d.getMonth() + 1, 1)
+      }
     }
-    return months
+    return ticks
   })
 
   const ganttTodayPct = computed(() => {

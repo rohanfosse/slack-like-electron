@@ -1,14 +1,17 @@
 /**
- * TabFrise.vue
- * ---------------------------------------------------------------------------
- * Timeline / Frise visualization tab with drag, zoom, milestone display.
+ * Frise chronologique unifiée — tous les devoirs sur une seule ligne temporelle.
+ * Couleur par projet, vue semaine/mois/trimestre/année, drag & zoom.
  */
 <script setup lang="ts">
-import { BarChart2, ChevronRight } from 'lucide-vue-next'
+import { ref, computed } from 'vue'
+import { BarChart2, ChevronLeft, ChevronRight } from 'lucide-vue-next'
 import { formatDate } from '@/utils/date'
+import { typeLabel } from '@/utils/devoir'
+import { parseCategoryIcon } from '@/utils/categoryIcon'
 import type { FriseMilestone, FrisePromo } from '@/composables/useFrise'
+import { COLORS } from '@/constants'
 
-defineProps<{
+const props = defineProps<{
   friseOffset: number
   friseDragging: boolean
   ganttDateRange: { start: Date; end: Date } | null
@@ -29,208 +32,297 @@ const emit = defineEmits<{
   onMilestoneClick: [ms: FriseMilestone]
   setFriseZoom: [days: number]
 }>()
+
+// ── Zoom presets ──────────────────────────────────────────────────────────
+type ZoomLevel = 'semaine' | 'mois' | 'trimestre' | 'annee'
+const activeZoom = ref<ZoomLevel>('mois')
+const ZOOM_MAP: Record<ZoomLevel, { days: number; label: string }> = {
+  semaine:   { days: 14,  label: 'Semaine' },
+  mois:      { days: 30,  label: 'Mois' },
+  trimestre: { days: 90,  label: 'Trimestre' },
+  annee:     { days: 365, label: 'Année' },
+}
+
+function setZoom(z: ZoomLevel) {
+  activeZoom.value = z
+  emit('setFriseZoom', ZOOM_MAP[z].days)
+}
+
+// ── Palette de couleurs par projet ────────────────────────────────────────
+const PROJECT_COLORS = [
+  '#4A90D9', '#2ECC71', '#9B87F5', '#F39C12', '#E74C3C',
+  '#1ABC9C', '#E67E22', '#3498DB', '#8E44AD', '#27AE60',
+]
+
+const projectColorMap = computed(() => {
+  const map = new Map<string, string>()
+  const allProjects = new Set<string>()
+  for (const promo of props.frise) {
+    for (const proj of promo.projects) allProjects.add(proj.key)
+  }
+  let i = 0
+  for (const key of allProjects) {
+    map.set(key, PROJECT_COLORS[i % PROJECT_COLORS.length])
+    i++
+  }
+  return map
+})
+
+// ── Flat milestones (single timeline) ─────────────────────────────────────
+const flatMilestones = computed(() => {
+  const all: (FriseMilestone & { projectKey: string; projectLabel: string; color: string })[] = []
+  for (const promo of props.frise) {
+    for (const proj of promo.projects) {
+      const color = projectColorMap.value.get(proj.key) ?? '#4A90D9'
+      for (const ms of proj.milestones) {
+        all.push({ ...ms, projectKey: proj.key, projectLabel: proj.label, color })
+      }
+    }
+  }
+  return all.sort((a, b) => new Date(a.deadline).getTime() - new Date(b.deadline).getTime())
+})
+
+// ── Légende projets ──────────────────────────────────────────────────────
+const projectLegend = computed(() => {
+  const seen = new Map<string, { label: string; color: string; count: number }>()
+  for (const ms of flatMilestones.value) {
+    if (!seen.has(ms.projectKey)) {
+      seen.set(ms.projectKey, { label: ms.projectLabel, color: ms.color, count: 0 })
+    }
+    seen.get(ms.projectKey)!.count++
+  }
+  return [...seen.values()]
+})
+
+// ── Hovered milestone ────────────────────────────────────────────────────
+const hoveredMs = ref<(FriseMilestone & { projectLabel: string; color: string }) | null>(null)
+
+// ── Type dot shape class ─────────────────────────────────────────────────
+function dotClass(ms: FriseMilestone) {
+  return {
+    'tf-dot--diamond': ms.type === 'soutenance' || ms.type === 'cctl',
+    'tf-dot--done': ms.done,
+    'tf-dot--draft': !ms.published,
+  }
+}
 </script>
 
 <template>
-  <div class="db-tab-content db-frise-outer">
-    <div class="frise-toolbar">
-      <div class="frise-zoom-presets">
-        <button class="frise-zoom-btn" @click="emit('setFriseZoom', 365)">Année</button>
-        <button class="frise-zoom-btn" @click="emit('setFriseZoom', 90)">Trimestre</button>
-        <button class="frise-zoom-btn" @click="emit('setFriseZoom', 30)">Mois</button>
+  <div class="tf">
+    <!-- Toolbar -->
+    <div class="tf-toolbar">
+      <div class="tf-zoom-group">
+        <button
+          v-for="(v, k) in ZOOM_MAP" :key="k"
+          class="tf-zoom-btn" :class="{ active: activeZoom === k }"
+          @click="setZoom(k as ZoomLevel)"
+        >{{ v.label }}</button>
       </div>
-      <button v-if="friseOffset !== 0" class="gestion-btn" @click="emit('update:friseOffset', 0)">Recentrer sur aujourd'hui</button>
+      <div class="tf-nav">
+        <button class="tf-nav-btn" title="Période précédente" @click="emit('update:friseOffset', friseOffset - ZOOM_MAP[activeZoom].days / 2)">
+          <ChevronLeft :size="16" />
+        </button>
+        <button v-if="friseOffset !== 0" class="tf-nav-center" @click="emit('update:friseOffset', 0)">Aujourd'hui</button>
+        <button class="tf-nav-btn" title="Période suivante" @click="emit('update:friseOffset', friseOffset + ZOOM_MAP[activeZoom].days / 2)">
+          <ChevronRight :size="16" />
+        </button>
+      </div>
     </div>
-    <div v-if="!ganttDateRange || !frise.length" class="db-empty-hint">
+
+    <!-- Empty -->
+    <div v-if="!ganttDateRange || !flatMilestones.length" class="tf-empty">
       <BarChart2 :size="36" style="opacity:.2;margin-bottom:10px" />
       <p>Aucune donnée de planification disponible.</p>
     </div>
+
+    <!-- Timeline -->
     <div
       v-else
-      class="frise-wrap frise-interactive"
-      :class="{ 'frise-grabbing': friseDragging }"
+      class="tf-timeline"
+      :class="{ 'tf-grabbing': friseDragging }"
       @wheel.prevent="(e: WheelEvent) => emit('onFriseWheel', e)"
       @mousedown="(e: MouseEvent) => emit('onFriseDragStart', e)"
       @mousemove="(e: MouseEvent) => emit('onFriseDragMove', e)"
       @mouseup="(e: MouseEvent) => emit('onFriseDragEnd', e)"
       @mouseleave="(e: MouseEvent) => emit('onFriseDragEnd', e)"
     >
-      <!-- Axe des mois -->
-      <div class="frise-axis-row">
-        <div class="frise-label-col frise-axis-label">Projet</div>
-        <div class="frise-bar-col frise-axis-months">
-          <div v-for="(m, i) in ganttMonths" :key="i" class="frise-month-tick" :style="{ left: m.left + '%' }">{{ m.label }}</div>
-          <div v-for="(m, i) in ganttMonths" :key="`bg${i}`" class="frise-month-bg" :class="{ even: i % 2 === 0 }"
-            :style="i < ganttMonths.length - 1 ? { left: m.left + '%', width: (ganttMonths[i+1].left - m.left) + '%' } : { left: m.left + '%', right: '0' }" />
-          <div v-if="ganttTodayPct >= 0 && ganttTodayPct <= 100" class="frise-today" :style="{ left: ganttTodayPct + '%' }" />
+      <!-- Axis -->
+      <div class="tf-axis">
+        <div v-for="(m, i) in ganttMonths" :key="i" class="tf-month" :style="{ left: m.left + '%' }">
+          {{ m.label }}
+        </div>
+        <div v-for="(m, i) in ganttMonths" :key="`bg${i}`" class="tf-month-bg" :class="{ even: i % 2 === 0 }"
+          :style="i < ganttMonths.length - 1 ? { left: m.left + '%', width: (ganttMonths[i+1].left - m.left) + '%' } : { left: m.left + '%', right: '0' }" />
+        <div v-if="ganttTodayPct >= 0 && ganttTodayPct <= 100" class="tf-today" :style="{ left: ganttTodayPct + '%' }">
+          <span class="tf-today-label">Auj.</span>
         </div>
       </div>
-      <!-- Promos -->
-      <div v-for="promo in frise" :key="promo.name" class="frise-promo">
-        <div class="frise-promo-heading">
-          <div class="frise-label-col frise-promo-label-col">
-            <span class="frise-promo-dot" :style="{ background: promo.color }" />
-            <span class="frise-promo-name">{{ promo.name }}</span>
-          </div>
-          <div class="frise-bar-col frise-promo-bar-col" />
-        </div>
-        <!-- Lignes projet -->
-        <div v-for="proj in promo.projects" :key="proj.key" class="frise-row" :aria-label="`Projet ${proj.label} — ${proj.milestones.length} jalon${proj.milestones.length > 1 ? 's' : ''}`" @click="emit('goToProject', proj.key)">
-          <div class="frise-label-col frise-project-label">
-            <component :is="proj.icon" v-if="proj.icon" :size="11" class="frise-project-icon" />
-            <span>{{ proj.label }}</span>
-            <ChevronRight :size="10" class="frise-project-arrow" />
-          </div>
-          <div class="frise-bar-col frise-timeline">
-            <div class="frise-proj-line" :style="projectLineStyle(proj.milestones)" />
-            <div v-if="ganttTodayPct >= 0 && ganttTodayPct <= 100" class="frise-today" :style="{ left: ganttTodayPct + '%' }" />
-            <div
-              v-for="(ms, mi) in proj.milestones"
-              :key="ms.id"
-              class="frise-milestone"
-              :class="[`frise-ms-${ms.type}`, { 'frise-ms-done': ms.done, 'frise-ms-draft': !ms.published, 'frise-ms-above': mi % 2 === 0 }]"
-              :style="{ left: milestoneLeft(ms.deadline) }"
-              :title="`${ms.title} - ${formatDate(ms.deadline)}`"
-              @click.stop="emit('onMilestoneClick', ms)"
-            >
-              <div v-if="mi % 2 === 0" class="frise-ms-label">
-                <span class="frise-ms-title">{{ ms.title }}</span>
-                <span class="frise-ms-date">{{ formatDate(ms.deadline) }}</span>
-              </div>
-              <div class="frise-ms-dot" />
-              <div v-if="mi % 2 !== 0" class="frise-ms-label">
-                <span class="frise-ms-title">{{ ms.title }}</span>
-                <span class="frise-ms-date">{{ formatDate(ms.deadline) }}</span>
-              </div>
-            </div>
-          </div>
-        </div>
+
+      <!-- Single lane: all milestones -->
+      <div class="tf-lane">
+        <div class="tf-lane-line" />
+        <div
+          v-for="ms in flatMilestones" :key="ms.id"
+          class="tf-dot" :class="dotClass(ms)"
+          :style="{ left: milestoneLeft(ms.deadline), background: ms.color }"
+          :title="`${ms.title} — ${formatDate(ms.deadline)}`"
+          @click.stop="emit('onMilestoneClick', ms)"
+          @mouseenter="hoveredMs = ms"
+          @mouseleave="hoveredMs = null"
+        />
       </div>
+    </div>
+
+    <!-- Hover tooltip -->
+    <div v-if="hoveredMs" class="tf-tooltip">
+      <span class="tf-tooltip-dot" :style="{ background: hoveredMs.color }" />
+      <div class="tf-tooltip-body">
+        <span class="tf-tooltip-title">{{ hoveredMs.title }}</span>
+        <span class="tf-tooltip-meta">
+          {{ typeLabel(hoveredMs.type) }} · {{ hoveredMs.projectLabel }} · {{ formatDate(hoveredMs.deadline) }}
+        </span>
+      </div>
+    </div>
+
+    <!-- Légende projets -->
+    <div v-if="projectLegend.length > 1" class="tf-legend">
+      <button
+        v-for="p in projectLegend" :key="p.label"
+        class="tf-legend-item"
+        @click="emit('goToProject', p.label)"
+      >
+        <span class="tf-legend-dot" :style="{ background: p.color }" />
+        <span class="tf-legend-label">{{ p.label }}</span>
+        <span class="tf-legend-count">{{ p.count }}</span>
+      </button>
     </div>
   </div>
 </template>
 
 <style scoped>
-.db-tab-content { display: flex; flex-direction: column; gap: 0; }
-.db-empty-hint {
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
-  padding: 60px 20px; color: var(--text-muted); font-size: 13px; text-align: center; gap: 4px;
-}
+.tf { display: flex; flex-direction: column; gap: 12px; padding-top: 8px; }
 
-.gestion-btn {
-  font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 6px;
-  background: rgba(255,255,255,.06); color: var(--text-secondary);
-  border: 1px solid var(--border-input); cursor: pointer; font-family: var(--font);
-  transition: all var(--t-fast);
+/* ── Toolbar ─────────────────────────────────────────────────────────────── */
+.tf-toolbar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 4px; gap: 8px; flex-wrap: wrap;
 }
-.gestion-btn:hover { background: rgba(255,255,255,.1); color: var(--text-primary); }
-
-/* ── Frise ── */
-.db-frise-outer { flex: 1; min-height: 0; overflow: hidden; padding-top: 12px; }
-.frise-toolbar { display: flex; align-items: center; justify-content: space-between; padding: 6px 12px; gap: 8px; }
-.frise-zoom-presets { display: flex; gap: 4px; }
-.frise-zoom-btn {
-  font-size: 11px; font-weight: 600; padding: 4px 12px; border-radius: 6px;
-  background: rgba(255,255,255,.06); color: var(--text-secondary);
-  border: 1px solid var(--border); cursor: pointer; font-family: var(--font);
+.tf-zoom-group { display: flex; gap: 0; border-radius: 8px; overflow: hidden; border: 1px solid var(--border); }
+.tf-zoom-btn {
+  font-size: 12px; font-weight: 600; padding: 6px 14px;
+  background: transparent; color: var(--text-muted);
+  border: none; cursor: pointer; font-family: var(--font);
   transition: all .15s;
 }
-.frise-zoom-btn:hover { background: rgba(255,255,255,.1); color: var(--text-primary); }
-.frise-wrap {
-  overflow-x: auto; overflow-y: auto; max-height: calc(100vh - 340px);
+.tf-zoom-btn:hover { background: rgba(255,255,255,.05); color: var(--text-primary); }
+.tf-zoom-btn.active { background: var(--accent); color: #fff; }
+.tf-nav { display: flex; align-items: center; gap: 4px; }
+.tf-nav-btn {
+  display: flex; align-items: center; justify-content: center;
+  width: 30px; height: 30px; border-radius: 8px;
+  background: rgba(255,255,255,.04); border: 1px solid var(--border);
+  color: var(--text-secondary); cursor: pointer; transition: all .15s;
+}
+.tf-nav-btn:hover { background: rgba(255,255,255,.08); color: var(--text-primary); }
+.tf-nav-center {
+  font-size: 12px; font-weight: 600; padding: 5px 12px; border-radius: 8px;
+  background: rgba(74,144,217,.12); color: var(--accent);
+  border: 1px solid rgba(74,144,217,.25); cursor: pointer; font-family: var(--font);
+  transition: all .15s;
+}
+.tf-nav-center:hover { background: rgba(74,144,217,.2); }
+
+/* ── Empty ────────────────────────────────────────────────────────────────── */
+.tf-empty {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: 60px 20px; color: var(--text-muted); font-size: 13px; text-align: center;
+}
+
+/* ── Timeline ─────────────────────────────────────────────────────────────── */
+.tf-timeline {
   border: 1px solid var(--border); border-radius: var(--radius);
-  background: var(--bg-sidebar); min-width: 0;
+  background: var(--bg-sidebar); position: relative;
+  cursor: grab; user-select: none; min-height: 120px;
 }
-.frise-label-col {
-  width: 180px; min-width: 180px; flex-shrink: 0;
-  position: sticky; left: 0; background: var(--bg-sidebar);
-  z-index: 2; border-right: 1px solid var(--border);
+.tf-grabbing { cursor: grabbing; }
+
+/* Axis */
+.tf-axis {
+  position: relative; height: 32px;
+  border-bottom: 1px solid var(--border);
 }
-.frise-bar-col { flex: 1; position: relative; overflow: hidden; }
-.frise-axis-row {
-  display: flex; align-items: stretch; border-bottom: 1px solid var(--border);
-  position: sticky; top: 0; z-index: 4; background: var(--bg-sidebar);
-}
-.frise-axis-label {
-  display: flex; align-items: center; padding: 0 12px;
-  font-size: 10px; font-weight: 700; text-transform: uppercase;
-  letter-spacing: .5px; color: var(--text-muted); height: 32px; z-index: 5;
-}
-.frise-axis-months { height: 32px; position: relative; }
-.frise-month-tick {
-  position: absolute; top: 8px; font-size: 10px; font-weight: 600;
+.tf-month {
+  position: absolute; top: 9px; font-size: 10px; font-weight: 600;
   color: var(--text-muted); white-space: nowrap; transform: translateX(-50%);
   pointer-events: none; letter-spacing: .3px;
 }
-.frise-month-bg { position: absolute; top: 0; bottom: 0; }
-.frise-month-bg.even { background: rgba(255,255,255,.018); }
-.frise-today {
-  position: absolute; top: 0; bottom: 0; width: 1.5px;
-  background: rgba(74,144,217,.55); z-index: 1; pointer-events: none;
+.tf-month-bg { position: absolute; top: 0; bottom: 0; }
+.tf-month-bg.even { background: rgba(255,255,255,.018); }
+.tf-today {
+  position: absolute; top: 0; bottom: -120px; width: 2px;
+  background: rgba(74,144,217,.4); z-index: 3; pointer-events: none;
 }
-.frise-promo-heading { display: flex; align-items: stretch; border-bottom: 1px solid var(--border); }
-.frise-promo-label-col {
-  display: flex; align-items: center; gap: 8px; padding: 7px 12px;
-  font-size: 10.5px; font-weight: 800; text-transform: uppercase;
-  letter-spacing: .4px; color: var(--text-secondary);
+.tf-today-label {
+  position: absolute; top: -1px; left: 50%; transform: translateX(-50%);
+  font-size: 9px; font-weight: 700; color: var(--accent);
+  background: var(--bg-sidebar); padding: 1px 5px; border-radius: 4px;
+  white-space: nowrap;
 }
-.frise-promo-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; box-shadow: 0 0 6px currentColor; }
-.frise-promo-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.frise-promo-bar-col { background: rgba(255,255,255,.015); }
-.frise-row {
-  display: flex; align-items: stretch; height: 96px;
-  border-bottom: 1px solid rgba(255,255,255,.04);
-  cursor: pointer; transition: background var(--t-fast); min-width: 700px;
+
+/* Lane */
+.tf-lane {
+  position: relative; height: 80px;
+  display: flex; align-items: center;
 }
-.frise-row:hover { background: rgba(74,144,217,.04); }
-.frise-row:hover .frise-label-col { background: rgba(74,144,217,.06); }
-.frise-project-label {
-  display: flex; align-items: center; gap: 7px; padding: 0 10px 0 14px;
-  font-size: 12px; font-weight: 600; color: var(--text-secondary);
-  cursor: pointer; transition: color var(--t-fast);
+.tf-lane-line {
+  position: absolute; left: 2%; right: 2%; top: 50%;
+  height: 2px; background: rgba(255,255,255,.08); border-radius: 1px;
+  transform: translateY(-50%);
 }
-.frise-row:hover .frise-project-label { color: var(--accent-light); }
-.frise-project-icon { color: var(--accent); flex-shrink: 0; }
-.frise-project-label > span { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.frise-project-arrow { color: var(--text-muted); flex-shrink: 0; transition: transform var(--t-fast), color var(--t-fast); }
-.frise-row:hover .frise-project-arrow { transform: translateX(2px); color: var(--accent); }
-.frise-timeline { position: relative; }
-.frise-proj-line {
-  position: absolute; top: 50%; height: 2px; transform: translateY(-50%);
-  background: rgba(255,255,255,.12); border-radius: 1px; pointer-events: none;
-}
-.frise-milestone {
+.tf-dot {
   position: absolute; top: 50%; transform: translate(-50%, -50%);
-  display: flex; flex-direction: column; align-items: center;
-  cursor: pointer; z-index: 2; transition: transform var(--t-fast);
+  width: 12px; height: 12px; border-radius: 50%;
+  border: 2px solid var(--bg-sidebar);
+  cursor: pointer; z-index: 2; transition: transform .15s, box-shadow .15s;
 }
-.frise-milestone:hover { transform: translate(-50%, -50%) scale(1.15); }
-.frise-ms-dot {
-  width: 10px; height: 10px; border-radius: 50%;
-  border: 2px solid var(--bg-sidebar); flex-shrink: 0; transition: box-shadow var(--t-fast);
+.tf-dot:hover {
+  transform: translate(-50%, -50%) scale(1.4);
+  box-shadow: 0 0 0 4px rgba(255,255,255,.1);
 }
-.frise-milestone:hover .frise-ms-dot { box-shadow: 0 0 0 3px rgba(255,255,255,.15); }
-.frise-ms-soutenance .frise-ms-dot,
-.frise-ms-cctl .frise-ms-dot { border-radius: 2px; transform: rotate(45deg); }
-.frise-ms-livrable .frise-ms-dot     { background: var(--accent); }
-.frise-ms-soutenance .frise-ms-dot   { background: var(--color-warning); }
-.frise-ms-cctl .frise-ms-dot         { background: #9b87f5; }
-.frise-ms-etude_de_cas .frise-ms-dot { background: var(--color-success); }
-.frise-ms-memoire .frise-ms-dot      { background: #e74c3c; }
-.frise-ms-autre .frise-ms-dot        { background: #95a5a6; }
-.frise-ms-draft .frise-ms-dot { opacity: .35; }
-.frise-ms-done .frise-ms-dot { filter: brightness(1.2); box-shadow: 0 0 0 2px rgba(255,255,255,.2); }
-.frise-ms-label {
-  display: flex; flex-direction: column; align-items: center;
-  gap: 1px; pointer-events: none; white-space: nowrap;
+.tf-dot--diamond { border-radius: 2px; transform: translate(-50%, -50%) rotate(45deg); }
+.tf-dot--diamond:hover { transform: translate(-50%, -50%) rotate(45deg) scale(1.4); }
+.tf-dot--draft { opacity: .35; }
+.tf-dot--done { box-shadow: 0 0 0 2px rgba(255,255,255,.2); }
+
+/* ── Tooltip ──────────────────────────────────────────────────────────────── */
+.tf-tooltip {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 12px; border-radius: 8px;
+  background: var(--bg-elevated); border: 1px solid var(--border);
 }
-.frise-ms-above .frise-ms-label { margin-bottom: 5px; }
-.frise-milestone:not(.frise-ms-above) .frise-ms-label { margin-top: 5px; }
-.frise-ms-title {
-  font-size: 9.5px; font-weight: 700; color: var(--text-secondary);
-  max-width: 90px; overflow: hidden; text-overflow: ellipsis; text-align: center;
+.tf-tooltip-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.tf-tooltip-body { display: flex; flex-direction: column; gap: 2px; }
+.tf-tooltip-title { font-size: 13px; font-weight: 600; color: var(--text-primary); }
+.tf-tooltip-meta { font-size: 11px; color: var(--text-muted); }
+
+/* ── Légende ──────────────────────────────────────────────────────────────── */
+.tf-legend {
+  display: flex; gap: 6px; flex-wrap: wrap; padding: 0 4px;
 }
-.frise-ms-date { font-size: 8.5px; color: var(--text-muted); font-weight: 500; }
-.frise-interactive { cursor: grab; user-select: none; }
-.frise-grabbing    { cursor: grabbing; }
+.tf-legend-item {
+  display: flex; align-items: center; gap: 6px;
+  padding: 4px 10px; border-radius: 16px;
+  background: rgba(255,255,255,.03); border: 1px solid var(--border);
+  cursor: pointer; font-family: var(--font); transition: all .15s;
+}
+.tf-legend-item:hover { background: rgba(255,255,255,.06); border-color: var(--text-muted); }
+.tf-legend-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.tf-legend-label { font-size: 12px; font-weight: 500; color: var(--text-secondary); }
+.tf-legend-count { font-size: 11px; color: var(--text-muted); }
+
+@media (max-width: 600px) {
+  .tf-toolbar { flex-direction: column; align-items: stretch; }
+  .tf-zoom-group { width: 100%; }
+  .tf-zoom-btn { flex: 1; text-align: center; }
+}
 </style>
