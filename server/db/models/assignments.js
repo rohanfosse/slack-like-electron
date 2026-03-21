@@ -140,7 +140,7 @@ function setTravailGroupMember({ travailId, studentId, groupId }) {
 
 // ─── Gantt ────────────────────────────────────────────────────────────────────
 
-function getGanttData(promoId) {
+function getGanttData(promoId, channelId) {
   const db = getDb();
   const base = `
     SELECT t.id, t.title, t.category, t.type, t.published AS is_published,
@@ -159,6 +159,9 @@ function getGanttData(promoId) {
     LEFT JOIN channels ch ON ch.id = t.channel_id
     LEFT JOIN groups g ON g.id = t.group_id
   `;
+  if (channelId) {
+    return db.prepare(`${base} WHERE t.channel_id = ? ORDER BY t.deadline ASC`).all(channelId);
+  }
   if (promoId) {
     return db.prepare(`${base} WHERE t.promo_id = ? ORDER BY t.deadline ASC`).all(promoId);
   }

@@ -117,7 +117,7 @@ declare global {
       // Données prof
       getTeacherSchedule(): Promise<IpcResponse<object>>
       getTravailCategories(promoId: number): Promise<IpcResponse<string[]>>
-      getGanttData(promoId: number): Promise<IpcResponse<object[]>>
+      getGanttData(promoId: number, channelId?: number): Promise<IpcResponse<object[]>>
       getAllRendus(promoId: number): Promise<IpcResponse<Depot[]>>
 
       // PDF

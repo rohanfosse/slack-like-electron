@@ -25,7 +25,10 @@
     if (open) {
       loading.value = true
       try {
-        const res = await window.api.getGanttData(appStore.activePromoId ?? undefined as unknown as number)
+        const res = await window.api.getGanttData(
+          appStore.activePromoId ?? undefined as unknown as number,
+          appStore.activeChannelId ?? undefined,
+        )
         items.value = res?.ok ? (res.data as typeof items.value) : []
       } finally {
         loading.value = false

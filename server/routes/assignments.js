@@ -33,7 +33,7 @@ const createAssignmentSchema = z.object({
 
 router.get('/teacher-schedule',         wrap(() => queries.getTeacherSchedule()))
 router.get('/categories',               wrap((req) => queries.getTravailCategories(Number(req.query.promoId))))
-router.get('/gantt',                    wrap((req) => queries.getGanttData(req.query.promoId ? Number(req.query.promoId) : null)))
+router.get('/gantt',                    wrap((req) => queries.getGanttData(req.query.promoId ? Number(req.query.promoId) : null, req.query.channelId ? Number(req.query.channelId) : null)))
 router.get('/rendus',                   wrap((req) => queries.getAllRendus(req.query.promoId ? Number(req.query.promoId) : null)))
 router.get('/',                         wrap((req) => queries.getTravaux(Number(req.query.channelId))))
 router.get('/:id',                      wrap((req) => queries.getTravailById(Number(req.params.id))))

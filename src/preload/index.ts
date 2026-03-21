@@ -244,7 +244,7 @@ contextBridge.exposeInMainWorld('api', {
   getTravauxSuivi:        (travailId: number)  => get(`/api/assignments/${travailId}/suivi`),
   updateTravailPublished: (payload: unknown)   => post('/api/assignments/publish', payload),
   getTravailCategories:   (promoId: number)    => get(`/api/assignments/categories?promoId=${promoId}`),
-  getGanttData:           (promoId: number)    => get(`/api/assignments/gantt?promoId=${promoId}`),
+  getGanttData:           (promoId: number, channelId?: number) => get(`/api/assignments/gantt?promoId=${promoId}${channelId ? `&channelId=${channelId}` : ''}`),
   getAllRendus:            (promoId: number)    => get(`/api/assignments/rendus?promoId=${promoId}`),
   getTeacherSchedule:     ()                   => get('/api/assignments/teacher-schedule'),
   markNonSubmittedAsD:    (travailId: number)  => post(`/api/assignments/${travailId}/mark-missing`, {}),
