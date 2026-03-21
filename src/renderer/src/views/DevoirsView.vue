@@ -949,67 +949,90 @@ function typeLabel(t: string): string {
         </div>
 
         <template v-else>
-          <!-- Stats globales promo -->
-          <div class="home-stats-bar">
-            <span class="home-stat"><strong>{{ (travauxStore.ganttData as any[]).length }}</strong> devoirs</span>
-            <span v-if="globalToGrade > 0" class="home-stat home-stat--warn"><strong>{{ globalToGrade }}</strong> à noter</span>
-            <span v-if="globalDrafts > 0" class="home-stat home-stat--muted"><strong>{{ globalDrafts }}</strong> brouillon{{ globalDrafts > 1 ? 's' : '' }}</span>
-          </div>
+          <div class="dh-home">
 
-          <!-- Prochains événements -->
-          <div v-if="upcomingDevoirs.length" class="upcoming-section">
-            <h4 class="upcoming-title"><Clock :size="14" /> Prochains événements</h4>
-            <div class="upcoming-list">
-              <div
-                v-for="d in upcomingDevoirs"
-                :key="d.id"
-                class="upcoming-item"
-                @click="openDevoir(d.id)"
-              >
-                <span class="devoir-type-badge" :class="`type-${d.type}`" style="font-size:9px">{{ typeLabel(d.type) }}</span>
-                <span class="upcoming-item-title">{{ d.title }}</span>
-                <span v-if="d.category" class="upcoming-item-cat">{{ d.category }}</span>
-                <span v-if="extractDuration(d.description)" class="upcoming-item-dur">{{ extractDuration(d.description) }}</span>
-                <span class="upcoming-item-deadline deadline-badge" :class="deadlineClass(d.deadline)">{{ deadlineLabel(d.deadline) }}</span>
+            <!-- Résumé promo -->
+            <div class="dh-summary">
+              <div class="dh-summary-stats">
+                <div class="dh-stat">
+                  <span class="dh-stat-value">{{ (travauxStore.ganttData as any[]).length }}</span>
+                  <span class="dh-stat-label">Devoirs</span>
+                </div>
+                <div class="dh-stat">
+                  <span class="dh-stat-value" style="color:var(--color-success)">{{ (travauxStore.ganttData as any[]).filter((t: any) => t.is_published).length }}</span>
+                  <span class="dh-stat-label">Publiés</span>
+                </div>
+                <div v-if="globalToGrade > 0" class="dh-stat">
+                  <span class="dh-stat-value" style="color:var(--color-warning)">{{ globalToGrade }}</span>
+                  <span class="dh-stat-label">À noter</span>
+                </div>
+                <div v-if="globalDrafts > 0" class="dh-stat">
+                  <span class="dh-stat-value" style="color:var(--text-muted)">{{ globalDrafts }}</span>
+                  <span class="dh-stat-label">Brouillons</span>
+                </div>
               </div>
             </div>
-          </div>
 
-          <!-- Cartes projets -->
-          <div class="proj-grid">
-          <div
-            v-for="cat in teacherCategories"
-            :key="cat"
-            class="proj-card"
-            @click="appStore.activeProject = cat"
-          >
-            <div class="proj-card-header">
-              <span class="proj-card-name">{{ cat }}</span>
-              <ChevronRight :size="14" class="proj-card-chevron" />
+            <!-- Prochains événements -->
+            <div v-if="upcomingDevoirs.length" class="dh-section">
+              <h4 class="dh-section-title"><Clock :size="14" /> Prochains événements</h4>
+              <div class="dh-upcoming-cards">
+                <div
+                  v-for="d in upcomingDevoirs"
+                  :key="d.id"
+                  class="dh-upcoming-card"
+                  @click="openDevoir(d.id)"
+                >
+                  <div class="dh-upcoming-top">
+                    <span class="devoir-type-badge" :class="`type-${d.type}`">{{ typeLabel(d.type) }}</span>
+                    <span class="dh-upcoming-deadline deadline-badge" :class="deadlineClass(d.deadline)">{{ deadlineLabel(d.deadline) }}</span>
+                  </div>
+                  <span class="dh-upcoming-title">{{ d.title }}</span>
+                  <div class="dh-upcoming-meta">
+                    <span v-if="d.category" class="dh-upcoming-cat">{{ d.category }}</span>
+                    <span v-if="extractDuration(d.description)" class="dh-upcoming-dur">{{ extractDuration(d.description) }}</span>
+                  </div>
+                </div>
+              </div>
             </div>
-            <div class="proj-card-types">
-              <span v-for="tl in projectTypeCounts(cat)" :key="tl.type" class="proj-type-pill" :class="`type-${tl.type}`">
-                {{ tl.count }} {{ typeLabel(tl.type) }}
-              </span>
-            </div>
-            <!-- Stats enrichies -->
-            <div class="proj-card-stats-row">
-              <span>{{ projectStats(cat).totalDepots }}/{{ projectStats(cat).totalExpected }} soumis</span>
-              <span v-if="projectStats(cat).toGrade > 0" class="proj-stat-warn">{{ projectStats(cat).toGrade }} à noter</span>
-              <span v-if="projectStats(cat).drafts > 0" class="proj-stat-draft">{{ projectStats(cat).drafts }} brouillon{{ projectStats(cat).drafts > 1 ? 's' : '' }}</span>
-            </div>
-            <!-- Barre de progression -->
-            <div class="proj-card-progress">
-              <div class="proj-card-progress-fill" :style="{ width: projectStats(cat).pct + '%' }" />
-            </div>
-            <div class="proj-card-footer">
+
+            <!-- Projets -->
+            <div class="dh-section">
+              <h4 class="dh-section-title"><FolderOpen :size="14" /> Projets</h4>
+              <div class="proj-grid">
+                <div
+                  v-for="cat in teacherCategories"
+                  :key="cat"
+                  class="proj-card"
+                  @click="appStore.activeProject = cat"
+                >
+                  <div class="proj-card-header">
+                    <span class="proj-card-name">{{ cat }}</span>
+                    <ChevronRight :size="14" class="proj-card-chevron" />
+                  </div>
+                  <div class="proj-card-types">
+                    <span v-for="tl in projectTypeCounts(cat)" :key="tl.type" class="proj-type-pill" :class="`type-${tl.type}`">
+                      {{ tl.count }} {{ typeLabel(tl.type) }}
+                    </span>
+                  </div>
+                  <div class="proj-card-stats-row">
+                    <span>{{ projectStats(cat).totalDepots }}/{{ projectStats(cat).totalExpected }} soumis</span>
+                    <span v-if="projectStats(cat).toGrade > 0" class="proj-stat-warn">{{ projectStats(cat).toGrade }} à noter</span>
+                  </div>
+                  <div class="proj-card-progress">
+                    <div class="proj-card-progress-fill" :style="{ width: projectStats(cat).pct + '%' }" />
+                  </div>
+                  <div class="proj-card-footer">
               <span class="proj-card-total">{{ projectDevoirCount(cat) }} devoir{{ projectDevoirCount(cat) > 1 ? 's' : '' }}</span>
               <span v-if="projectNextDeadline(cat)" class="proj-card-next deadline-badge" :class="deadlineClass(projectNextDeadline(cat)!)">
                 <Clock :size="10" /> {{ deadlineLabel(projectNextDeadline(cat)!) }}
               </span>
+                  </div>
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
+
+          </div><!-- /dh-home -->
         </template>
       </template>
 
@@ -1422,37 +1445,67 @@ function typeLabel(t: string): string {
 /* ══════════════════════════════════════════════════════════════════════════════
    PROCHAINS ÉVÉNEMENTS (accueil devoirs)
 ═══════════════════════════════════════════════════════════════════════════════ */
-/* ── Stats globales accueil ── */
-.home-stats-bar {
-  display: flex; gap: 14px; padding: 10px 20px;
-  font-size: 13px; color: var(--text-secondary);
-}
-.home-stat strong { color: var(--text-primary); font-weight: 700; }
-.home-stat--warn { color: var(--color-warning); }
-.home-stat--warn strong { color: var(--color-warning); }
-.home-stat--muted { color: var(--text-muted); font-style: italic; }
+/* ══════════════════════════════════════════════════════════════════════════════
+   ACCUEIL DEVOIRS PROF (dh-home)
+═══════════════════════════════════════════════════════════════════════════════ */
+.dh-home { padding: 16px 20px; }
 
-.upcoming-item-cat {
+/* Résumé stats */
+.dh-summary {
+  margin-bottom: 20px;
+}
+.dh-summary-stats {
+  display: flex; gap: 16px; flex-wrap: wrap;
+}
+.dh-stat {
+  background: var(--bg-elevated, rgba(255,255,255,.03));
+  border: 1px solid var(--border); border-radius: 10px;
+  padding: 12px 20px; min-width: 80px; text-align: center;
+}
+.dh-stat-value { font-size: 22px; font-weight: 800; color: var(--text-primary); display: block; }
+.dh-stat-label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .4px; }
+
+/* Sections */
+.dh-section { margin-bottom: 20px; }
+.dh-section-title {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 14px; font-weight: 700; color: var(--text-primary);
+  margin-bottom: 10px;
+}
+
+/* Prochains événements — cartes horizontales */
+.dh-upcoming-cards {
+  display: flex; gap: 10px; overflow-x: auto; padding-bottom: 4px;
+}
+.dh-upcoming-card {
+  flex-shrink: 0; width: 200px;
+  background: var(--bg-elevated, rgba(255,255,255,.03));
+  border: 1px solid var(--border); border-radius: 10px;
+  padding: 12px; cursor: pointer;
+  transition: all var(--t-fast);
+}
+.dh-upcoming-card:hover { border-color: var(--accent); background: rgba(74,144,217,.04); }
+.dh-upcoming-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+.dh-upcoming-deadline { font-size: 10px; }
+.dh-upcoming-title {
+  font-size: 13px; font-weight: 600; color: var(--text-primary);
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+  overflow: hidden; line-height: 1.3; margin-bottom: 6px;
+}
+.dh-upcoming-meta { display: flex; gap: 6px; flex-wrap: wrap; }
+.dh-upcoming-cat {
   font-size: 10px; color: var(--text-muted);
   background: rgba(255,255,255,.05); padding: 1px 6px; border-radius: 4px;
-  flex-shrink: 0;
+}
+.dh-upcoming-dur {
+  font-size: 10px; color: var(--text-muted);
+  background: rgba(255,255,255,.05); padding: 1px 5px; border-radius: 6px;
 }
 
-.upcoming-section { padding: 12px 20px 0; }
-.upcoming-title {
-  display: flex; align-items: center; gap: 6px;
-  font-size: 13px; font-weight: 700; color: var(--text-primary); margin-bottom: 8px;
+@media (max-width: 600px) {
+  .dh-upcoming-cards { flex-direction: column; }
+  .dh-upcoming-card { width: 100%; }
 }
-.upcoming-list { display: flex; flex-direction: column; gap: 3px; margin-bottom: 16px; }
-.upcoming-item {
-  display: flex; align-items: center; gap: 8px;
-  padding: 6px 10px; border-radius: 6px; cursor: pointer;
-  transition: background var(--t-fast);
-}
-.upcoming-item:hover { background: rgba(255,255,255,.04); }
-.upcoming-item-title { flex: 1; font-size: 13px; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.upcoming-item-dur { font-size: 10px; color: var(--text-muted); background: rgba(255,255,255,.05); padding: 1px 5px; border-radius: 6px; }
-.upcoming-item-deadline { font-size: 10px; flex-shrink: 0; }
 
 /* ══════════════════════════════════════════════════════════════════════════════
    CARTES DEVOIRS PAR TYPE (vue projet)
