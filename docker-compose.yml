@@ -1,0 +1,30 @@
+services:
+  cursus:
+    build:
+      context: .
+      args:
+        VITE_SERVER_URL: ${VITE_SERVER_URL:-https://cursus.devrohan.cloud}
+    container_name: cursus-server
+    restart: unless-stopped
+    ports:
+      - "3001:3001"
+    volumes:
+      - cursus-db:/data/db
+      - cursus-uploads:/data/uploads
+    environment:
+      - NODE_ENV=production
+      - PORT=3001
+      - JWT_SECRET=${JWT_SECRET}
+      - CORS_ORIGIN=${CORS_ORIGIN:-*}
+      - DB_PATH=/data/db/cesi-classroom.db
+      - UPLOAD_DIR=/data/uploads
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3001/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+volumes:
+  cursus-db:
+  cursus-uploads:
