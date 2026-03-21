@@ -11,20 +11,32 @@ export type RefType = 'mention' | 'channel' | 'devoir' | 'doc' | 'command'
 export interface SlashCommand {
   name: string
   description: string
-  usage: string
-  action?: string // 'insert' = inserts text, 'navigate' = emits event
+  icon: string
+  category: 'ref' | 'format' | 'util'
+  color: string
 }
 
 export const SLASH_COMMANDS: SlashCommand[] = [
-  { name: 'devoir',   description: 'Référencer un devoir de la promotion',     usage: '/devoir <recherche>' },
-  { name: 'doc',      description: 'Référencer un document partagé',           usage: '/doc <recherche>' },
-  { name: 'annonce',  description: 'Envoyer un message d\'annonce formaté',    usage: '/annonce <message>', action: 'insert' },
-  { name: 'sondage',  description: 'Créer un sondage rapide',                  usage: '/sondage Question ? | Option 1 | Option 2', action: 'insert' },
-  { name: 'rappel',   description: 'Rappeler un devoir aux étudiants',         usage: '/rappel <titre du devoir>' },
-  { name: 'tableau',  description: 'Insérer un tableau markdown',              usage: '/tableau', action: 'insert' },
-  { name: 'code',     description: 'Insérer un bloc de code',                  usage: '/code <langage>', action: 'insert' },
-  { name: 'aide',     description: 'Afficher les raccourcis et commandes',     usage: '/aide', action: 'insert' },
+  // Références
+  { name: 'devoir',   description: 'Référencer un devoir',                icon: 'BookOpen',     category: 'ref',    color: '#9B87F5' },
+  { name: 'doc',      description: 'Référencer un document',              icon: 'FileText',     category: 'ref',    color: '#2ECC71' },
+  { name: 'rappel',   description: 'Rappeler un devoir aux étudiants',    icon: 'Bell',         category: 'ref',    color: '#F39C12' },
+  // Formatage
+  { name: 'annonce',  description: 'Message d\'annonce officiel',         icon: 'Megaphone',    category: 'format', color: '#4A90D9' },
+  { name: 'sondage',  description: 'Sondage avec options de vote',        icon: 'BarChart2',    category: 'format', color: '#1ABC9C' },
+  { name: 'tableau',  description: 'Tableau en colonnes',                 icon: 'Table',        category: 'format', color: '#E67E22' },
+  { name: 'code',     description: 'Bloc de code avec coloration',        icon: 'Code2',        category: 'format', color: '#8E44AD' },
+  // Utilitaires
+  { name: 'aide',     description: 'Raccourcis et syntaxe disponibles',   icon: 'HelpCircle',   category: 'util',   color: '#95A5A6' },
+  { name: 'date',     description: 'Insérer la date du jour',             icon: 'Calendar',     category: 'util',   color: '#3498DB' },
+  { name: 'hr',       description: 'Séparateur horizontal',               icon: 'Minus',        category: 'util',   color: '#7F8C8D' },
 ]
+
+export const COMMAND_CATEGORIES: Record<string, string> = {
+  ref:    'Références',
+  format: 'Formatage',
+  util:   'Utilitaires',
+}
 
 export interface MentionUser {
   name: string
@@ -312,59 +324,71 @@ export function useMsgAutocomplete(
   function executeCommand(cmd: SlashCommand) {
     const el = inputEl.value
     if (!el) return
-    // Remplacer le "/xxx" par le résultat de la commande
     const before = content.value.slice(0, refStart.value)
     const after  = content.value.slice(el.selectionStart ?? content.value.length)
 
-    if (cmd.name === 'devoir') {
-      // Passer en mode autocomplete devoir
-      content.value = before + '/devoir ' + after
-      activeRef.value = 'devoir'
-      refSearch.value = ''
-      refStart.value = before.length
-      loadDevoirs()
-    } else if (cmd.name === 'doc') {
-      content.value = before + '/doc ' + after
-      activeRef.value = 'doc'
-      refSearch.value = ''
-      refStart.value = before.length
-      loadDocs()
-    } else if (cmd.name === 'annonce') {
-      content.value = before + '**📢 Annonce** : ' + after
-      activeRef.value = null
-    } else if (cmd.name === 'sondage') {
-      content.value = before + '**📊 Sondage** : Votre question ici ?\n- Option 1\n- Option 2\n- Option 3' + after
-      activeRef.value = null
-    } else if (cmd.name === 'rappel') {
-      content.value = before + '/devoir ' + after
-      activeRef.value = 'devoir'
-      refSearch.value = ''
-      refStart.value = before.length
-      loadDevoirs()
-    } else if (cmd.name === 'tableau') {
-      content.value = before + '| Colonne 1 | Colonne 2 | Colonne 3 |\n|-----------|-----------|----------|\n| Valeur    | Valeur    | Valeur   |' + after
-      activeRef.value = null
-    } else if (cmd.name === 'code') {
-      content.value = before + '```\n// Votre code ici\n```' + after
-      activeRef.value = null
-    } else if (cmd.name === 'aide') {
-      content.value = before + [
-        '**Raccourcis disponibles** :',
-        '`@nom` — Mentionner quelqu\'un',
-        '`#canal` — Référencer un canal',
-        '`\\titre` — Référencer un devoir',
-        '`/commande` — Commandes slash',
-        '`**texte**` — **Gras**',
-        '`*texte*` — *Italique*',
-        '`` `code` `` — `Code`',
-      ].join('\n') + after
-      activeRef.value = null
+    const TEMPLATES: Record<string, () => void> = {
+      devoir() {
+        content.value = before + '/devoir ' + after
+        activeRef.value = 'devoir'; refSearch.value = ''; refStart.value = before.length
+        loadDevoirs()
+      },
+      doc() {
+        content.value = before + '/doc ' + after
+        activeRef.value = 'doc'; refSearch.value = ''; refStart.value = before.length
+        loadDocs()
+      },
+      rappel() {
+        content.value = before + '/devoir ' + after
+        activeRef.value = 'devoir'; refSearch.value = ''; refStart.value = before.length
+        loadDevoirs()
+      },
+      annonce() {
+        content.value = before + '**Annonce** — ' + after
+        activeRef.value = null
+      },
+      sondage() {
+        content.value = before + '**Sondage** — Votre question ?\n\n1. Option A\n2. Option B\n3. Option C\n\n*Répondez en réaction avec 1️⃣ 2️⃣ 3️⃣*' + after
+        activeRef.value = null
+      },
+      tableau() {
+        content.value = before + '| Colonne 1 | Colonne 2 | Colonne 3 |\n|---|---|---|\n| … | … | … |\n| … | … | … |' + after
+        activeRef.value = null
+      },
+      code() {
+        content.value = before + '```js\n\n```' + after
+        activeRef.value = null
+        // Placer le curseur au milieu du bloc
+        nextTick(() => { const pos = before.length + 6; el.setSelectionRange(pos, pos) })
+      },
+      aide() {
+        content.value = before + [
+          '**Raccourcis Cursus**',
+          '',
+          '`@nom` Mentionner · `#canal` Référencer · `\\titre` Devoir',
+          '`/commande` Menu commandes',
+          '`**gras**` · `*italique*` · `` `code` `` · `~~barré~~`',
+          '`> citation` · `- liste`',
+        ].join('\n') + after
+        activeRef.value = null
+      },
+      date() {
+        const d = new Date()
+        const formatted = d.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
+        content.value = before + formatted + after
+        activeRef.value = null
+      },
+      hr() {
+        content.value = before + '\n---\n' + after
+        activeRef.value = null
+      },
     }
 
-    nextTick(() => {
-      el.focus()
-      autoResize()
-    })
+    const handler = TEMPLATES[cmd.name]
+    if (handler) handler()
+    else { activeRef.value = null }
+
+    nextTick(() => { el.focus(); autoResize() })
   }
 
   function triggerDevoir() {

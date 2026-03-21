@@ -7,7 +7,14 @@ import { usePrefs }         from '@/composables/usePrefs'
 import { avatarColor, initials } from '@/utils/format'
 
 import { useMsgDraft }        from '@/composables/useMsgDraft'
-import { useMsgAutocomplete, type SlashCommand } from '@/composables/useMsgAutocomplete'
+import { useMsgAutocomplete, COMMAND_CATEGORIES, type SlashCommand } from '@/composables/useMsgAutocomplete'
+import {
+  BookOpen, FileText, Bell, Megaphone, BarChart2 as BarChart2Icon, Table, Code2, HelpCircle, Calendar, Minus,
+} from 'lucide-vue-next'
+
+const CMD_ICONS: Record<string, object> = {
+  BookOpen, FileText, Bell, Megaphone, BarChart2: BarChart2Icon, Table, Code2, HelpCircle, Calendar, Minus,
+}
 import { useMsgAttachment }   from '@/composables/useMsgAttachment'
 import { useMsgSend }         from '@/composables/useMsgSend'
 import { useMsgFormatting }   from '@/composables/useMsgFormatting'
@@ -227,17 +234,30 @@ function onKeydown(e: KeyboardEvent) {
             </div>
             <!-- Commandes slash -->
             <template v-if="activeRef === 'command'">
-              <button
-                v-for="(cmd, i) in refResults"
-                :key="(cmd as SlashCommand).name"
-                class="mi-mention-item mi-cmd-item"
-                :class="{ 'mi-mention-selected': i === refIndex }"
-                @mousedown.prevent="executeCommand(cmd as SlashCommand)"
-                @mouseenter="refIndex = i"
-              >
-                <span class="mi-cmd-slash">/{{ (cmd as SlashCommand).name }}</span>
-                <span class="mi-cmd-desc">{{ (cmd as SlashCommand).description }}</span>
-              </button>
+              <template v-for="cat in ['ref', 'format', 'util']" :key="cat">
+                <div
+                  v-if="(refResults as SlashCommand[]).filter(c => c.category === cat).length"
+                  class="mi-cmd-cat"
+                >{{ COMMAND_CATEGORIES[cat] }}</div>
+                <button
+                  v-for="(cmd, i) in refResults"
+                  :key="(cmd as SlashCommand).name + cat"
+                  v-show="(cmd as SlashCommand).category === cat"
+                  class="mi-mention-item mi-cmd-item"
+                  :class="{ 'mi-mention-selected': i === refIndex }"
+                  @mousedown.prevent="executeCommand(cmd as SlashCommand)"
+                  @mouseenter="refIndex = i"
+                >
+                  <span class="mi-cmd-icon" :style="{ background: (cmd as SlashCommand).color + '18', color: (cmd as SlashCommand).color }">
+                    <component :is="CMD_ICONS[(cmd as SlashCommand).icon]" :size="14" />
+                  </span>
+                  <div class="mi-cmd-body">
+                    <span class="mi-cmd-name">/{{ (cmd as SlashCommand).name }}</span>
+                    <span class="mi-cmd-desc">{{ (cmd as SlashCommand).description }}</span>
+                  </div>
+                  <span class="mi-cmd-shortcut">↵</span>
+                </button>
+              </template>
             </template>
             <template v-else-if="activeRef === 'channel'">
               <button
@@ -813,19 +833,38 @@ function onKeydown(e: KeyboardEvent) {
 }
 
 /* ── Commandes slash ── */
-.mi-cmd-item {
-  flex-direction: column !important;
-  align-items: flex-start !important;
-  gap: 2px !important;
-  padding: 8px 12px !important;
+.mi-cmd-cat {
+  font-size: 10px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .5px; color: var(--text-muted);
+  padding: 8px 12px 4px; opacity: .7;
 }
-.mi-cmd-slash {
-  font-size: 13px; font-weight: 600; color: var(--accent);
+.mi-cmd-item {
+  display: flex !important; flex-direction: row !important;
+  align-items: center !important; gap: 10px !important;
+  padding: 7px 12px !important;
+}
+.mi-cmd-icon {
+  width: 30px; height: 30px; border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; transition: transform .15s;
+}
+.mi-cmd-item:hover .mi-cmd-icon { transform: scale(1.1); }
+.mi-cmd-body { flex: 1; display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.mi-cmd-name {
+  font-size: 13px; font-weight: 600; color: var(--text-primary);
   font-family: 'Fira Code', 'Consolas', monospace;
 }
 .mi-cmd-desc {
-  font-size: 11px; color: var(--text-muted); line-height: 1.3;
+  font-size: 11px; color: var(--text-muted); line-height: 1.2;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
-.mi-mention-selected .mi-cmd-slash { color: #fff; }
-.mi-mention-selected .mi-cmd-desc { color: rgba(255,255,255,.7); }
+.mi-cmd-shortcut {
+  font-size: 10px; color: var(--text-muted); opacity: .4;
+  background: rgba(255,255,255,.06); padding: 2px 6px;
+  border-radius: 4px; flex-shrink: 0;
+}
+.mi-mention-selected .mi-cmd-name { color: #fff; }
+.mi-mention-selected .mi-cmd-desc { color: rgba(255,255,255,.6); }
+.mi-mention-selected .mi-cmd-icon { background: rgba(255,255,255,.15) !important; color: #fff !important; }
+.mi-mention-selected .mi-cmd-shortcut { background: rgba(255,255,255,.15); color: rgba(255,255,255,.7); opacity: 1; }
 </style>
