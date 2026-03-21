@@ -15,7 +15,8 @@
       "Bash(pip install:*)",
       "Bash(done)",
       "Bash(npm ls:*)",
-      "Bash(find 'c:\\\\Users\\\\Rohan\\\\OneDrive - Cesi\\\\Bureau\\\\CESI\\\\slack-like-electron\\\\src\\\\renderer' -path *css* -o -path *style*)"
+      "Bash(find 'c:\\\\Users\\\\Rohan\\\\OneDrive - Cesi\\\\Bureau\\\\CESI\\\\slack-like-electron\\\\src\\\\renderer' -path *css* -o -path *style*)",
+      "Bash(curl -sL https://raw.githubusercontent.com/hoppscotch/hoppscotch/main/README.md)"
     ]
   }
 }

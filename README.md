@@ -1,74 +1,97 @@
-# Cursus — Plateforme de Communication pour l'Enseignement
-
-Application de bureau collaborative conçue pour le milieu éducatif. Elle réunit messagerie instantanée, gestion des travaux et partage de ressources dans un seul espace, pensé pour les étudiants et les équipes pédagogiques.
-
----
+<p align="center">
+  <h1 align="center">Cursus</h1>
+  <p align="center">
+    La plateforme de communication pensée pour l'enseignement.
+    <br />
+    Messagerie, travaux, documents - tout au même endroit.
+  </p>
+  <p align="center">
+    <a href="https://cours.music-music.fr">Site web</a> · <a href="https://github.com/rohanfosse/slack-like-electron/issues">Issues</a> · <a href="https://github.com/rohanfosse/slack-like-electron/releases">Releases</a>
+  </p>
+</p>
 
 ## Pourquoi Cursus ?
 
-Dans la plupart des formations, les échanges passent par des outils dispersés : mails, groupes WhatsApp, plateformes LMS lourdes, dossiers partagés. Le résultat : des informations perdues, des deadlines oubliées, et un temps précieux gaspillé à naviguer entre les outils.
+Les formations s'appuient sur un patchwork d'outils : mails institutionnels, groupes WhatsApp, Moodle, dossiers partagés sur Teams ou Drive. Chaque outil couvre un besoin, mais aucun ne couvre le quotidien. Les étudiants ratent des annonces parce qu'elles sont sur le mauvais canal. Les enseignants passent plus de temps à relancer qu'à accompagner. Les deadlines se perdent entre trois plateformes.
 
-Cursus répond à ce problème en proposant un environnement unique, structuré autour de trois principes :
+Cursus part d'un constat simple : **une promo a besoin d'un seul endroit pour communiquer, déposer du travail et accéder à ses ressources**. L'application remplace la dispersion par un espace unifié, accessible en version desktop (Electron) et en version web (PWA).
 
-* **Réduire la charge cognitive** — Une interface épurée où chaque fonctionnalité est accessible en un ou deux clics. Pas de menus imbriqués, pas de pages à chercher.
-* **Sécuriser le droit à l'erreur** — Les étudiants peuvent remplacer un rendu avant l'échéance, sans intervention de l'enseignant. Le stress du "mauvais fichier envoyé" disparaît.
-* **Libérer du temps pour l'accompagnement** — Grilles d'évaluation par critères, notation rapide par lettres et export CSV : l'enseignant passe moins de temps sur la logistique et plus sur les retours qualitatifs.
+**Moins de friction.** L'interface est construite pour que chaque action soit à un ou deux clics. Pas de menus imbriqués, pas de pages à chercher. Un étudiant qui ouvre l'application voit directement ses canaux, ses devoirs en cours et ses documents.
 
----
+**Droit à l'erreur.** Un étudiant peut remplacer son rendu avant l'échéance sans demander à l'enseignant. Le stress du mauvais fichier envoyé disparaît. Après la deadline, les dépôts se verrouillent automatiquement.
+
+**Plus de temps pour l'accompagnement.** Grilles d'évaluation par critères, notation par lettres directement depuis la liste des rendus, export CSV. L'enseignant passe moins de temps sur la logistique administrative et plus sur les retours qualitatifs.
 
 ## Fonctionnalités
 
 ### Messagerie
 
-Canaux publics, canaux d'annonce (lecture seule pour les étudiants) et messages privés. Les messages supportent les réponses avec citation, les réactions par emoji, l'épinglage, les mentions (`@nom`, `@everyone`) et la recherche plein texte. Les notifications de bureau signalent les messages importants.
+Canaux publics organisés par promotion ou par thématique. Canaux d'annonce en lecture seule pour les communications officielles. Messages privés entre étudiants ou avec les enseignants. Chaque message supporte les réponses avec citation du message d'origine, les réactions par emoji, l'épinglage (jusqu'à 5 par canal) et les mentions `@nom` ou `@everyone` avec compteur de non-lus. La recherche plein texte permet de retrouver n'importe quel message dans un canal. Les notifications de bureau signalent les mentions et les messages directs.
 
-### Travaux & Évaluation
+### Travaux et évaluation
 
-L'enseignant crée des devoirs (livrable, soutenance, CCTL, étude de cas, mémoire...) avec date limite et mode brouillon. Les dépôts sont automatiquement bloqués après l'échéance. Chaque devoir peut avoir sa propre grille d'évaluation multicritères, et la notation par lettres (A à F) se fait directement depuis la liste des rendus. Les notes sont exportables en CSV.
+L'enseignant crée un devoir en choisissant son type (livrable, soutenance, CCTL, étude de cas, mémoire) et sa date limite. Un mode brouillon permet de préparer un devoir sans le rendre visible. Une fois publié, les étudiants déposent leur travail depuis l'application. Les dépôts sont automatiquement bloqués après l'échéance, sauf pour les soutenances et CCTL qui suivent un calendrier différent.
 
-### Documents & Ressources
+Chaque devoir peut avoir sa propre grille d'évaluation multicritères avec pondération. La notation se fait par lettres (A à F) directement depuis la liste des rendus, avec possibilité d'ajouter un commentaire de retour individuel. Les notes sont exportables en CSV pour intégration dans les outils de scolarité.
 
-Fichiers et liens attachés à un canal ou un projet. La visionneuse intégrée ouvre les PDF, images, documents Word et tableurs sans quitter l'application.
+### Documents et ressources
 
-### Promotions & Groupes
+Fichiers et liens externes attachés à un canal ou à un projet entier. Les documents peuvent être catégorisés et décrits. La visionneuse intégrée ouvre les PDF, les images, les documents Word (.docx) et les tableurs Excel (.xlsx) sans quitter l'application.
 
-Chaque promotion a sa couleur et ses canaux. Les groupes de travail disposent de canaux privés et de devoirs ciblés. L'import en masse des étudiants se fait par CSV.
+### Promotions et groupes
 
-### Tableau de bord enseignant
+Chaque promotion dispose de sa couleur et de ses canaux dédiés. Les groupes de travail sont créés par l'enseignant avec des membres assignés, un canal privé automatique et des devoirs ciblés. L'import en masse des étudiants se fait par fichier CSV.
 
-Vue d'ensemble de l'avancement des dépôts par promotion, planificateur visuel des jalons et rappels automatiques de deadline la veille de l'échéance.
+### Dashboard enseignant
 
----
+Vue d'ensemble de l'avancement des dépôts par promotion avec indicateurs visuels. Frise chronologique des jalons (deadlines, soutenances, examens). Rappels automatiques envoyés la veille de chaque échéance. Analytique par promotion : répartition des notes, taux de dépôt, activité récente.
+
+### Dashboard étudiant
+
+Vue personnalisée avec les devoirs à rendre classés par urgence, les notes reçues (système A/B/C/D), les annonces récentes et l'accès rapide aux canaux et documents de sa promotion.
 
 ## Démarrage rapide
 
+**Prérequis** : Node.js 18+ et npm.
+
 ```bash
-# Cloner le dépôt
-git clone <url-du-repo>
+git clone https://github.com/rohanfosse/slack-like-electron.git
 cd slack-like-electron
-
-# Installer les dépendances
 npm install
+```
 
-# Lancer en mode développement
+Lancer en développement :
+
+```bash
 npm run dev
+```
 
-# Construire l'exécutable
+Construire l'exécutable :
+
+```bash
 npm run build
 ```
 
-La base de données est créée automatiquement au premier lancement. Pour peupler l'application avec des données de démonstration, utiliser le bouton **Réinitialiser et peupler** dans le panneau d'administration.
+La base de données SQLite est créée automatiquement au premier lancement dans le répertoire utilisateur. Pour charger des données de démonstration, ouvrir le panneau d'administration et utiliser **Réinitialiser et peupler**.
 
----
+## Version web
 
-## Pistes d'évolution
+L'application est aussi disponible en version web (PWA), déployée automatiquement à chaque push sur `main`. Le build web utilise un shim qui remplace les appels IPC Electron par des requêtes HTTP vers le serveur Node.js.
 
-* **Fils de discussion** — Répondre dans un fil dédié sans polluer le canal principal
-* **Recherche globale** — Recherche plein texte sur l'ensemble des canaux avec filtres par auteur, date et canal
-* **Centre de notifications** — Historique centralisé des mentions, réponses et rappels de deadline
-* **Accusés de lecture des annonces** — Confirmation de lecture obligatoire, avec suivi côté enseignant
-* **Sondages dans les canaux** — Votes rapides à choix unique ou multiple
-* **Vue calendrier** — Calendrier mensuel des deadlines et soutenances, filtrable par promotion
-* **Portfolio étudiant** — Récapitulatif par étudiant de tous ses dépôts, notes et retours sur le semestre
-* **Évaluation par les pairs** — Permettre aux étudiants d'évaluer le travail d'autres groupes
-* **Messages vocaux** — Enregistrement audio court pour les retours enseignant ou les questions étudiant
+```bash
+npm run build:web
+```
+
+Les fichiers sont générés dans `dist-web/` et servis par le serveur Express intégré.
+
+## Stack technique
+
+* **Desktop** - Electron 29, avec context isolation et Node integration désactivé côté renderer
+* **Frontend** - Vue 3 (Composition API), TypeScript, Pinia, Vue Router
+* **Base de données** - SQLite via Better-SQLite3, schéma versionné avec migrations
+* **Build** - electron-vite + Vite, packaging via electron-builder
+* **Serveur web** - Express, Socket.IO pour le temps réel, déployé derrière Nginx
+
+## Licence
+
+Projet développé dans le cadre du cursus CESI.
