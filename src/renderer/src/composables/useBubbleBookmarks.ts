@@ -1,5 +1,5 @@
 /**
- * Bookmark (favoris) d'un message — stockage localStorage avec métadonnées.
+ * Bookmark (favoris) d'un message - stockage localStorage avec métadonnées.
  * Used by ChatBubble.vue
  */
 import { ref } from 'vue'
@@ -29,7 +29,7 @@ function getSavedMessages(): SavedMessage[] {
 }
 
 /**
- * Bookmark (favoris) d'un message — stockage localStorage.
+ * Bookmark (favoris) d'un message - stockage localStorage.
  */
 export function useBubbleBookmarks(msg: () => Message) {
   const appStore = useAppStore()

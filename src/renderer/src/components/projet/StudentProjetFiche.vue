@@ -530,7 +530,7 @@ function gradeColor(note: string | null | undefined): string {
           </ul>
         </div>
 
-        <!-- P3 — Membres du groupe -->
+        <!-- P3 - Membres du groupe -->
         <div v-if="groupName" class="spf-aside-section" style="margin-top:20px">
           <div class="spf-aside-header">
             <Users :size="11" />
@@ -560,7 +560,7 @@ function gradeColor(note: string | null | undefined): string {
           </ul>
         </div>
 
-        <!-- P5 — Mes résultats -->
+        <!-- P5 - Mes résultats -->
         <div v-if="devoirsSubmitted.length > 0" class="spf-aside-section" style="margin-top:20px">
           <div class="spf-aside-header">
             <Award :size="11" />
@@ -576,7 +576,7 @@ function gradeColor(note: string | null | undefined): string {
               <div class="spf-result-top">
                 <span class="spf-result-title">{{ t.title }}</span>
                 <span v-if="t.note" class="spf-result-grade" :class="gradeColor(t.note)">{{ t.note }}</span>
-                <span v-else class="spf-result-pending">—</span>
+                <span v-else class="spf-result-pending">-</span>
               </div>
               <div v-if="t.feedback" class="spf-result-feedback">
                 « {{ t.feedback }} »

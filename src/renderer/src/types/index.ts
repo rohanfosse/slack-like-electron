@@ -98,7 +98,7 @@ export interface Devoir {
   promo_id?: number | null
 }
 
-// backward compat alias — le backend renvoie toujours Travail, on l'aliase ici
+// backward compat alias - le backend renvoie toujours Travail, on l'aliase ici
 export type Travail = Devoir
 
 export interface Depot {

@@ -31,10 +31,10 @@ function generateTempPassword() {
 function checkPassword(plain, stored) {
   if (!plain || !stored) return { match: false, needsRehash: false };
   if (stored.startsWith('$2')) {
-    // Hash bcrypt — comparaison sécurisée
+    // Hash bcrypt - comparaison sécurisée
     return { match: bcrypt.compareSync(plain, stored), needsRehash: false };
   }
-  // Mot de passe en clair hérité — migration automatique
+  // Mot de passe en clair hérité - migration automatique
   return { match: plain === stored, needsRehash: true };
 }
 

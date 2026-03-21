@@ -294,7 +294,7 @@
                   <!-- Note moyenne -->
                   <div class="classe-grade" :style="{ color: gradeColor(s.avg_grade) }">
                     <TrendingUp :size="12" class="classe-grade-icon" />
-                    <span>{{ s.avg_grade !== null ? s.avg_grade.toFixed(1) + '/20' : '—' }}</span>
+                    <span>{{ s.avg_grade !== null ? s.avg_grade.toFixed(1) + '/20' : '-' }}</span>
                     <span v-if="s.graded_count" class="classe-graded-count">({{ s.graded_count }})</span>
                   </div>
 
@@ -364,7 +364,7 @@
                     </div>
                     <div v-if="t.note !== null" class="pt-note" :style="{ color: gradeColor(t.note) }">
                       {{ t.note }}/20
-                      <span v-if="t.feedback" class="pt-feedback">— {{ t.feedback }}</span>
+                      <span v-if="t.feedback" class="pt-feedback">- {{ t.feedback }}</span>
                     </div>
                   </div>
                 </div>

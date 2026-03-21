@@ -48,7 +48,7 @@ export function useActionCenter(ganttFiltered: Ref<GanttRow[]>) {
           id: `deadline-${t.id}`,
           type: 'deadline',
           title: t.title,
-          subtitle: `Deadline dans ${Math.ceil((dl - now) / DAY * 24)}h — ${Math.round(submissionRate * 100)}% de rendus`,
+          subtitle: `Deadline dans ${Math.ceil((dl - now) / DAY * 24)}h - ${Math.round(submissionRate * 100)}% de rendus`,
           urgency: submissionRate < 0.25 ? 'critical' : 'warning',
           action: () => { appStore.currentTravailId = t.id; modals.gestionDevoir = true },
         })
@@ -74,7 +74,7 @@ export function useActionCenter(ganttFiltered: Ref<GanttRow[]>) {
           id: `draft-${t.id}`,
           type: 'draft',
           title: t.title,
-          subtitle: `Brouillon — deadline dans ${Math.ceil((dl - now) / DAY)}j`,
+          subtitle: `Brouillon - deadline dans ${Math.ceil((dl - now) / DAY)}j`,
           urgency: dl < now + 2 * DAY ? 'warning' : 'info',
           action: () => { appStore.currentTravailId = t.id; modals.gestionDevoir = true },
         })

@@ -193,7 +193,7 @@ button { font-family: var(--font); }
   transition: background .08s;
 }
 
-/* Messages groupés (suite du même auteur) — espacement réduit */
+/* Messages groupés (suite du même auteur) - espacement réduit */
 .msg-row.grouped {
   padding-top: 2px;
   padding-bottom: 2px;
@@ -400,7 +400,7 @@ button { font-family: var(--font); }
 .msg-reaction-pill.mine       { background: rgba(74,144,217,.2); border-color: rgba(74,144,217,.4); color: var(--accent); }
 .msg-reaction-pill.mine:hover { background: rgba(74,144,217,.3); }
 
-/* Boutons d'action au survol — flottent au-dessus du message (style Slack) */
+/* Boutons d'action au survol - flottent au-dessus du message (style Slack) */
 /* .msg-actions remplacé par .msg-action-pill dans MessageBubble.vue */
 
 /* Séparateur de date */
@@ -502,7 +502,7 @@ button { font-family: var(--font); }
 }
 
 /* ════════════════════════════════════════════
-   TRAVAUX — cartes
+   TRAVAUX - cartes
 ════════════════════════════════════════════ */
 .travail-card {
   background: var(--bg-sidebar);
@@ -625,7 +625,7 @@ button { font-family: var(--font); }
 }
 
 /* ════════════════════════════════════════════
-   MODALES — base
+   MODALES - base
 ════════════════════════════════════════════ */
 .modal-overlay {
   position: fixed;
@@ -1178,7 +1178,7 @@ button { font-family: var(--font); }
 /* ════════════════════════════════════════════
    UTILITAIRES
 ════════════════════════════════════════════ */
-/* Bouton compact — pour les bannières, inline */
+/* Bouton compact - pour les bannières, inline */
 .btn-sm  { font-size: 12px !important; padding: 4px 10px !important; }
 .btn-xs  { font-size: 11px !important; padding: 3px 8px  !important; }
 
@@ -1447,7 +1447,7 @@ button { font-family: var(--font); }
 }
 
 /* ════════════════════════════════════════════
-   MODAL — composant Modal.vue (classes .modal-box)
+   MODAL - composant Modal.vue (classes .modal-box)
 ════════════════════════════════════════════ */
 .modal-box {
   background: var(--bg-modal);
@@ -1518,7 +1518,7 @@ button { font-family: var(--font); }
 .format-btn:hover { background: var(--bg-hover); color: var(--text-primary); }
 
 /* ════════════════════════════════════════════
-   RESPONSIVE — Hamburger button (hidden by default)
+   RESPONSIVE - Hamburger button (hidden by default)
 ════════════════════════════════════════════ */
 .mobile-hamburger {
   display: none;
@@ -1555,7 +1555,7 @@ button { font-family: var(--font); }
 }
 
 /* ════════════════════════════════════════════
-   RESPONSIVE — Touch targets & mobile (≤ 768px)
+   RESPONSIVE - Touch targets & mobile (≤ 768px)
 ════════════════════════════════════════════ */
 @media (max-width: 768px) {
   /* Agrandir les cibles tactiles */
@@ -1642,7 +1642,7 @@ button { font-family: var(--font); }
     max-width: 100%;
   }
 
-  /* Sidebar items — larger touch targets */
+  /* Sidebar items - larger touch targets */
   .sidebar-item {
     padding: 8px 12px 8px 16px;
     min-height: 40px;
@@ -1678,7 +1678,7 @@ button { font-family: var(--font); }
     padding: 10px 12px;
   }
 
-  /* Checkbox — larger for touch */
+  /* Checkbox - larger for touch */
   .check-row input[type="checkbox"] {
     width: 20px;
     height: 20px;
@@ -1697,7 +1697,7 @@ button { font-family: var(--font); }
 }
 
 /* ════════════════════════════════════════════
-   RESPONSIVE — Small mobile (≤ 480px)
+   RESPONSIVE - Small mobile (≤ 480px)
 ════════════════════════════════════════════ */
 @media (max-width: 480px) {
   .modal-header { padding: 14px 16px 12px; }

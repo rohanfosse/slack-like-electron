@@ -16,7 +16,11 @@
       "Bash(done)",
       "Bash(npm ls:*)",
       "Bash(find 'c:\\\\Users\\\\Rohan\\\\OneDrive - Cesi\\\\Bureau\\\\CESI\\\\slack-like-electron\\\\src\\\\renderer' -path *css* -o -path *style*)",
-      "Bash(curl -sL https://raw.githubusercontent.com/hoppscotch/hoppscotch/main/README.md)"
+      "Bash(curl -sL https://raw.githubusercontent.com/hoppscotch/hoppscotch/main/README.md)",
+      "Bash(gh secret:*)",
+      "Bash(gh run:*)",
+      "Bash(ssh root@cursus.devrohan.cloud \"ls -la /opt/ceslack/ && echo ''===SEPARATOR==='' && ls -la /opt/ && echo ''===SEPARATOR==='' && ls -la /var/www/ && echo ''===SEPARATOR==='' && ls -la /home/ && echo ''===SEPARATOR==='' && ls -la /srv/ 2>/dev/null\")",
+      "Bash(ssh root@cursus.devrohan.cloud \"nginx -T 2>/dev/null | head -100\")"
     ]
   }
 }

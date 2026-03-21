@@ -270,7 +270,7 @@ if (token) {
       else { logout() }
     })
     .catch(() => {
-      // Serveur injoignable mais token existe — tenter quand même
+      // Serveur injoignable mais token existe - tenter quand même
       showDashboard()
     })
 } else {

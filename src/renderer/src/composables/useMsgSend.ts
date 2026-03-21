@@ -31,7 +31,7 @@ export function useMsgSend(
   async function send() {
     if (!content.value.trim() || sending.value || appStore.isReadonly) return
     if (isOfflineOrDisconnected.value) {
-      showToast('Hors-ligne — message non envoyé.', 'error')
+      showToast('Hors-ligne - message non envoyé.', 'error')
       return
     }
     if (charCountOver.value) {
@@ -55,7 +55,7 @@ export function useMsgSend(
         content.value = ''
         if (inputEl.value) inputEl.value.style.height = 'auto'
       } else {
-        showToast('Message non envoyé — réessayez.', 'error')
+        showToast('Message non envoyé - réessayez.', 'error')
       }
     } finally {
       sending.value = false

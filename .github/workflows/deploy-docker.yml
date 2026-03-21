@@ -38,4 +38,4 @@ jobs:
             docker compose up -d --force-recreate
             docker image prune -f
 
-            echo "Deploy complete — $(docker ps --format '{{.Status}}' --filter name=cursus-server)"
+            echo "Deploy complete - $(docker ps --format '{{.Status}}' --filter name=cursus-server)"

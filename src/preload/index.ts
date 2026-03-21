@@ -92,7 +92,7 @@ async function apiFetch(path: string, options: RequestInit = {}, retries = MAX_R
       const isAbort = e instanceof Error && e.name === 'AbortError'
       if (attempt === retries) {
         console.warn(`[API] ${path} échoué après ${retries + 1} tentative(s):`, isAbort ? 'timeout' : (e as Error).message)
-        return { ok: false, error: isAbort ? 'Délai d\'attente dépassé' : 'Erreur réseau — vérifiez votre connexion' }
+        return { ok: false, error: isAbort ? 'Délai d\'attente dépassé' : 'Erreur réseau - vérifiez votre connexion' }
       }
       // Backoff avant retry (1s, 3s)
       await new Promise(r => setTimeout(r, 1000 * (attempt + 1)))
@@ -412,7 +412,7 @@ contextBridge.exposeInMainWorld('api', {
     }
   },
 
-  // Typing indicator (stub — Electron desktop doesn't use Socket.io directly)
+  // Typing indicator (stub - Electron desktop doesn't use Socket.io directly)
   emitTyping: (_channelId: number) => {},
   emitDmTyping: (_dmStudentId: number) => {},
   onTyping: (_cb: (data: { channelId?: number; dmStudentId?: number; userName: string }) => void) => () => {},

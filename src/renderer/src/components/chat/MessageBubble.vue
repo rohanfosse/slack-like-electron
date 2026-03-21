@@ -125,7 +125,7 @@ function closeAll() { _closeAll(showPicker, confirmingDelete) }
         <span class="msg-quote-preview">{{ msg.reply_to_preview }}</span>
       </div>
 
-      <!-- Texte — mode lecture -->
+      <!-- Texte - mode lecture -->
       <template v-if="!editing">
         <!-- eslint-disable vue/no-v-html -->
         <p class="msg-text" v-html="content" @click="onMsgClick" />
@@ -137,7 +137,7 @@ function closeAll() { _closeAll(showPicker, confirmingDelete) }
         </div>
       </template>
 
-      <!-- Texte — mode édition inline -->
+      <!-- Texte - mode édition inline -->
       <div v-else class="msg-edit-box">
         <textarea
           ref="editEl"
@@ -182,7 +182,7 @@ function closeAll() { _closeAll(showPicker, confirmingDelete) }
     </div>
 
     <!-- ═══════════════════════════════════════════
-         PILL D'ACTIONS (style Slack) — au survol
+         PILL D'ACTIONS (style Slack) - au survol
     ════════════════════════════════════════════ -->
     <div v-if="!editing" class="msg-action-pill">
 
@@ -329,7 +329,7 @@ function closeAll() { _closeAll(showPicker, confirmingDelete) }
 
 <style scoped>
 /* ════════════════════════════════════════════
-   LIGNE DE MESSAGE — hover + états
+   LIGNE DE MESSAGE - hover + états
 ════════════════════════════════════════════ */
 
 /* Pastille de présence sur l'avatar */
@@ -348,7 +348,7 @@ function closeAll() { _closeAll(showPicker, confirmingDelete) }
 }
 .presence-online  { background: #22c55e; }
 
-/* Fond subtil au survol — effet Discord */
+/* Fond subtil au survol - effet Discord */
 .msg-row:hover {
   background: rgba(255, 255, 255, 0.025);
   border-radius: 4px;
@@ -367,14 +367,14 @@ function closeAll() { _closeAll(showPicker, confirmingDelete) }
   margin-bottom: 1px;
 }
 
-/* Nom de l'auteur — plus impactant */
+/* Nom de l'auteur - plus impactant */
 .msg-author {
   font-weight: 700;
   font-size: 13.5px;
   color: var(--text-primary);
   letter-spacing: .01em;
 }
-/* Nom du prof — couleur accent distincte */
+/* Nom du prof - couleur accent distincte */
 .msg-author-teacher { color: var(--accent); }
 /* Légère teinte accent sur hover de la row */
 .msg-row:hover .msg-author { color: var(--accent-light, #7db8f0); }
@@ -394,7 +394,7 @@ function closeAll() { _closeAll(showPicker, confirmingDelete) }
   line-height: 1.4;
 }
 
-/* Heure — plus discrète */
+/* Heure - plus discrète */
 .msg-time {
   font-size: 10.5px;
   color: var(--text-muted);
@@ -437,7 +437,7 @@ function closeAll() { _closeAll(showPicker, confirmingDelete) }
 }
 
 /* ════════════════════════════════════════════
-   CONTENU ENRICHI — blockquote, code, pre
+   CONTENU ENRICHI - blockquote, code, pre
 ════════════════════════════════════════════ */
 /* Blockquotes markdown */
 :deep(.msg-text blockquote) {
@@ -510,7 +510,7 @@ function closeAll() { _closeAll(showPicker, confirmingDelete) }
 .msg-img-preview img:hover { opacity: .88; }
 
 /* ════════════════════════════════════════════
-   PILL D'ACTIONS — style Slack
+   PILL D'ACTIONS - style Slack
 ════════════════════════════════════════════ */
 .msg-action-pill {
   position: absolute;
@@ -619,7 +619,7 @@ function closeAll() { _closeAll(showPicker, confirmingDelete) }
 .msg-menu-danger:hover { background: rgba(231,76,60,.12); color: #ff8070; }
 
 /* ════════════════════════════════════════════
-   RÉACTIONS — design "juicy"
+   RÉACTIONS - design "juicy"
 ════════════════════════════════════════════ */
 .msg-reactions-row {
   display: flex;
@@ -659,7 +659,7 @@ function closeAll() { _closeAll(showPicker, confirmingDelete) }
   box-shadow: 0 4px 12px rgba(0,0,0,.25);
 }
 
-/* Réaction de l'utilisateur courant — visuel accentué */
+/* Réaction de l'utilisateur courant - visuel accentué */
 .msg-reaction-pill.mine {
   background: rgba(74, 144, 217, .2);
   border-color: rgba(74, 144, 217, .65);

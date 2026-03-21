@@ -23,7 +23,7 @@ function createIntervenant({ name, email, password }) {
 
 /**
  * Supprime un intervenant (ne peut pas supprimer un teacher).
- * teacherId peut être négatif (convention renderer) — Math.abs() appliqué.
+ * teacherId peut être négatif (convention renderer) - Math.abs() appliqué.
  */
 function deleteIntervenant(teacherId) {
   const realId = Math.abs(teacherId)
@@ -34,7 +34,7 @@ function deleteIntervenant(teacherId) {
 }
 
 /**
- * Canaux assignés à un intervenant — renvoie un tableau d'ids (number[]).
+ * Canaux assignés à un intervenant - renvoie un tableau d'ids (number[]).
  * Si aucune assignation : tableau vide (l'intervenant voit tous les canaux).
  */
 function getTeacherChannels(teacherId) {

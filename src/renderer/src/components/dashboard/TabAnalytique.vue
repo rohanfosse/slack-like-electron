@@ -38,7 +38,7 @@ defineProps<{
         </div>
         <div class="analytics-stat">
           <span class="analytics-stat-value" :style="{ color: globalModeGrade ? GRADE_COLORS[globalModeGrade] || '#fff' : '#6b7280' }">
-            {{ globalModeGrade ?? '—' }}
+            {{ globalModeGrade ?? '-' }}
           </span>
           <span class="analytics-stat-label">Note fréquente</span>
         </div>

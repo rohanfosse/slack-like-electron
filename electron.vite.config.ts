@@ -9,7 +9,7 @@ const { dependencies = {} } = require('./package.json') as {
   dependencies?: Record<string, string>
 }
 
-// Modules qui doivent rester en require() natif dans le bundle Node.js —
+// Modules qui doivent rester en require() natif dans le bundle Node.js -
 // @rollup/plugin-commonjs ne doit PAS les envelopper dans son helper interne.
 const cjsIgnore = [
   'electron',
@@ -40,7 +40,7 @@ export default defineConfig({
     },
   },
   preload: {
-    // Ne pas externaliser socket.io-client — il doit être bundlé dans le preload
+    // Ne pas externaliser socket.io-client - il doit être bundlé dans le preload
     // car le preload packagé n'a pas accès à node_modules au runtime.
     // On externalise uniquement electron et les builtins Node.
     build: {

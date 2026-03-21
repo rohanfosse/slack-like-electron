@@ -102,7 +102,7 @@
       <div class="ch-privacy-badge" :class="channel?.is_private ? 'badge-private' : 'badge-public'">
         <Lock v-if="channel?.is_private" :size="12" />
         <Globe v-else :size="12" />
-        <span>{{ channel?.is_private ? 'Canal privé' : 'Canal public — ouvert à toute la promo' }}</span>
+        <span>{{ channel?.is_private ? 'Canal privé' : 'Canal public - ouvert à toute la promo' }}</span>
       </div>
 
       <!-- Liste des membres -->

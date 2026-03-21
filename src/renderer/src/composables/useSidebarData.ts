@@ -37,7 +37,7 @@ export function useSidebarData() {
   }
 
   async function loadRecentDmContacts_internal(): Promise<void> {
-    // Stub — real implementation is in useSidebarDm; this is used by load*Sidebar
+    // Stub - real implementation is in useSidebarDm; this is used by load*Sidebar
     // Will be replaced after composition
   }
 

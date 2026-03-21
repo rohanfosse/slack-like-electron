@@ -110,7 +110,7 @@ watch(() => appStore.activeChannelId, () => {
       </div>
 
       <div class="devoirs-header-actions">
-        <!-- Actions prof — masqué quand on est sur la fiche projet -->
+        <!-- Actions prof - masqué quand on est sur la fiche projet -->
         <template v-if="appStore.isTeacher && !appStore.activeProject">
           <button class="btn-primary btn-nouveau" @click="modals.newDevoir = true">
             <Plus :size="14" /> Nouveau
@@ -207,10 +207,10 @@ watch(() => appStore.activeChannelId, () => {
 
           <!-- ▸ EN RETARD -->
           <template v-if="studentGroups.overdue.length">
-            <div class="group-header group-header--danger" title="Deadline dépassée — dépôt verrouillé">
+            <div class="group-header group-header--danger" title="Deadline dépassée - dépôt verrouillé">
               <Lock :size="12" /> En retard
               <span class="group-count">{{ studentGroups.overdue.length }}</span>
-              <span class="group-subtitle">La deadline est dépassée — le dépôt n'est plus possible</span>
+              <span class="group-subtitle">La deadline est dépassée - le dépôt n'est plus possible</span>
             </div>
             <div class="devoirs-list">
               <div v-for="t in studentGroups.overdue" :key="t.id" class="devoir-card devoir-card--overdue">
@@ -438,7 +438,7 @@ watch(() => appStore.activeChannelId, () => {
                 <div v-if="t.aavs" class="devoir-card-aavs"><span v-for="a in t.aavs.split('\n').filter(Boolean)" :key="a" class="aav-tag">{{ a.trim() }}</span></div>
                 <div class="devoir-presence-notice">
                   <Calendar :size="14" class="devoir-presence-icon" />
-                  <span>Présence requise — pas de dépôt fichier</span>
+                  <span>Présence requise - pas de dépôt fichier</span>
                 </div>
                 <div class="devoir-card-footer">
                   <span class="devoir-deadline-date">Date : {{ formatDate(t.deadline) }}</span>
@@ -1066,7 +1066,7 @@ watch(() => appStore.activeChannelId, () => {
   margin-bottom: 10px;
 }
 
-/* Prochains événements — cartes horizontales */
+/* Prochains événements - cartes horizontales */
 .dh-upcoming-cards {
   display: flex; gap: 10px; overflow-x: auto; padding-bottom: 4px;
 }

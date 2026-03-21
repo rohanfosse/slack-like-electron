@@ -91,7 +91,7 @@ onUnmounted(() => { unsubMaximize?.() })
   z-index: 100;
 }
 
-/* Zone draggable — occupe l'espace restant */
+/* Zone draggable - occupe l'espace restant */
 .titlebar-drag {
   flex: 1;
   height: 100%;

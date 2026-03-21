@@ -26,7 +26,7 @@ function checkAndNotify() {
       notifiedIds.add(t.id)
 
       const notif = new Notification({
-        title: `⏰ Rendu demain — ${t.title}`,
+        title: `⏰ Rendu demain - ${t.title}`,
         body:  `${t.promo_name} · encore ${formatHoursLeft(t.deadline)}`,
         urgency: 'normal',
       })

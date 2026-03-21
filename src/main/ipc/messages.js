@@ -13,7 +13,7 @@ function register() {
   handle('db:searchMessages',         (channelId, query)       => queries.searchMessages(channelId, query))
   handle('db:searchAllMessages',      ({ promoId, query, limit }) => queries.searchAllMessages(promoId ?? null, query, limit ?? 8))
 
-  // ── Envoi — handler dédié : DB + push temps-réel ────────────────────────
+  // ── Envoi - handler dédié : DB + push temps-réel ────────────────────────
   ipcMain.handle('db:sendMessage', async (_event, payload) => {
     try {
       // Validation du payload

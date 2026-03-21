@@ -99,7 +99,7 @@ export const useAppStore = defineStore('app', () => {
         return true
       }
     } catch {
-      // Session corrompue — nettoyer et avertir
+      // Session corrompue - nettoyer et avertir
       localStorage.removeItem(STORAGE_KEYS.SESSION)
       const { showToast } = useToast()
       showToast('Session expirée ou corrompue. Veuillez vous reconnecter.', 'error')
@@ -353,7 +353,7 @@ export const useAppStore = defineStore('app', () => {
     }
   }
 
-  // Listener temps-réel — appelé une seule fois au démarrage (App.vue onMounted)
+  // Listener temps-réel - appelé une seule fois au démarrage (App.vue onMounted)
   function initUnreadListener(): () => void {
     return window.api.onNewMessage(({ channelId, dmStudentId, authorName, channelName, promoId, preview, mentionEveryone, mentionNames }) => {
       // Ne pas compter ses propres messages

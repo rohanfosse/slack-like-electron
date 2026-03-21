@@ -1,6 +1,6 @@
 <script setup lang="ts">
   /**
-   * NewTravailModal — Création d'un travail (devoir / jalon / projet)
+   * NewTravailModal - Création d'un travail (devoir / jalon / projet)
    *
    * TODO: Implémenter le formulaire complet avec :
    *   - Sélection du type (devoir / jalon / projet)
@@ -121,7 +121,7 @@
     else newGroupMembers.value.push(studentId)
   }
 
-  // Soutenance et CCTL sont des événements ponctuels — pas de date de début
+  // Soutenance et CCTL sont des événements ponctuels - pas de date de début
   const isEvent = computed(() => type.value === 'soutenance' || type.value === 'cctl')
 
   async function submit() {
@@ -158,7 +158,7 @@
         <div class="form-group" style="flex:2">
           <label class="form-label">Projet</label>
           <select v-model="category" class="form-select">
-            <option value="">— Aucun projet —</option>
+            <option value="">- Aucun projet -</option>
             <option v-for="p in allProjects" :key="p" :value="p">
               {{ parseCategoryIcon(p).label }}
             </option>

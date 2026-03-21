@@ -15,7 +15,7 @@ function validate(schema) {
         const details = err.errors.map(e => `${e.path.join('.')}: ${e.message}`).join('; ')
         return res.status(400).json({
           ok: false,
-          error: `Données invalides — ${details}`,
+          error: `Données invalides - ${details}`,
         })
       }
       return res.status(400).json({ ok: false, error: err.message })
@@ -36,7 +36,7 @@ function validateQuery(schema) {
         const details = err.errors.map(e => `${e.path.join('.')}: ${e.message}`).join('; ')
         return res.status(400).json({
           ok: false,
-          error: `Paramètres invalides — ${details}`,
+          error: `Paramètres invalides - ${details}`,
         })
       }
       return res.status(400).json({ ok: false, error: err.message })

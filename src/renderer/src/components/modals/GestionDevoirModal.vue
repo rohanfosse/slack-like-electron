@@ -145,7 +145,7 @@
           authorName: appStore.currentUser?.name ?? 'Système',
           authorType: appStore.currentUser?.type ?? 'teacher',
           promoId: appStore.activePromoId ?? undefined,
-          content: `📢 **Nouveau** : **${travail.value.title}** — à rendre avant le **${formatDate(travail.value.deadline)}**.`,
+          content: `📢 **Nouveau** : **${travail.value.title}** - à rendre avant le **${formatDate(travail.value.deadline)}**.`,
         })
       }
       showToast('Publié et notifié.', 'success')
@@ -328,7 +328,7 @@
           <!-- Vue texte brut (non structuré ou édition) -->
           <template v-else-if="!editingDesc">
             <div class="gd-description" @click="startEditDesc" title="Cliquer pour modifier">
-              <pre class="gd-desc-pre">{{ travail.description || 'Aucune description — cliquez pour en ajouter.' }}</pre>
+              <pre class="gd-desc-pre">{{ travail.description || 'Aucune description - cliquez pour en ajouter.' }}</pre>
             </div>
           </template>
 
@@ -419,7 +419,7 @@
                   <span v-if="d.feedback" class="gd-student-feedback">{{ d.feedback }}</span>
                 </div>
                 <span v-if="d.note" class="gd-grade" :class="gradeClass(d.note)">{{ formatGrade(d.note) }}</span>
-                <span v-else class="gd-no-grade">—</span>
+                <span v-else class="gd-no-grade">-</span>
               </div>
               <div v-if="!submittedDepots.length" class="gd-empty">Aucun rendu.</div>
             </div>

@@ -84,7 +84,7 @@ const emit = defineEmits<{
               class="frise-milestone"
               :class="[`frise-ms-${ms.type}`, { 'frise-ms-done': ms.done, 'frise-ms-draft': !ms.published, 'frise-ms-above': mi % 2 === 0 }]"
               :style="{ left: milestoneLeft(ms.deadline) }"
-              :title="`${ms.title} — ${formatDate(ms.deadline)}`"
+              :title="`${ms.title} - ${formatDate(ms.deadline)}`"
               @click.stop="emit('onMilestoneClick', ms)"
             >
               <div v-if="mi % 2 === 0" class="frise-ms-label">

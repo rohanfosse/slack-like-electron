@@ -1,4 +1,4 @@
-// ─── Handlers IPC — processus Main ────────────────────────────────────────────
+// ─── Handlers IPC - processus Main ────────────────────────────────────────────
 // Orchestrateur : charge et enregistre les modules IPC spécialisés.
 // Ce fichier est intentionnellement en JavaScript pour la compatibilité
 // avec better-sqlite3 (module natif CommonJS).

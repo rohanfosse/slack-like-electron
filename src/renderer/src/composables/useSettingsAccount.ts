@@ -1,5 +1,5 @@
 /**
- * Account settings composable — profile photo upload/remove/save, avatar display,
+ * Account settings composable - profile photo upload/remove/save, avatar display,
  * password change, data export, demo reset, logout, and privacy link.
  * Used by SettingsModal.vue
  */

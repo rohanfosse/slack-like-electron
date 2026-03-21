@@ -34,7 +34,7 @@ const feedbackSchema = z.object({
 
 router.get('/',         wrap((req) => queries.getDepots(Number(req.query.travailId))))
 
-// Soumission de dépôt — vérifier que l'étudiant soumet pour lui-même
+// Soumission de dépôt - vérifier que l'étudiant soumet pour lui-même
 router.post('/', validate(submitDepotSchema), (req, res) => {
   try {
     const payload = req.body
@@ -49,7 +49,7 @@ router.post('/', validate(submitDepotSchema), (req, res) => {
   }
 })
 
-// Note et feedback — réservés aux enseignants
+// Note et feedback - réservés aux enseignants
 router.post('/note', validate(noteSchema), (req, res) => {
   if (req.user.type === 'student') {
     return res.status(403).json({ ok: false, error: 'Seuls les enseignants peuvent attribuer des notes.' })

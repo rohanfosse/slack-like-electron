@@ -22,7 +22,7 @@ export function useOpenExternal() {
       return false
     }
     if (!appStore.isOnline) {
-      showToast('Hors-ligne — impossible d\'ouvrir le lien externe.', 'error')
+      showToast('Hors-ligne - impossible d\'ouvrir le lien externe.', 'error')
       return false
     }
     // Call synchronously to stay within the user gesture for popup blocker

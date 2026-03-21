@@ -29,7 +29,7 @@ declare global {
       // Messages
       getChannelMessages(channelId: number): Promise<IpcResponse<Message[]>>
       getDmMessages(studentId: number): Promise<IpcResponse<Message[]>>
-      // Pagination par curseur — beforeId omis pour la première page
+      // Pagination par curseur - beforeId omis pour la première page
       getChannelMessagesPage(channelId: number, beforeId?: number | null): Promise<IpcResponse<Message[]>>
       getDmMessagesPage(studentId: number, beforeId?: number | null, peer?: number | null): Promise<IpcResponse<Message[]>>
       findUserByName(name: string): Promise<IpcResponse<{ id: number; name: string; promo_id: number | null; avatar_initials: string; photo_data: string | null; type: string } | null>>
@@ -177,7 +177,7 @@ declare global {
       onMaximizeChange(cb: (maximized: boolean) => void): () => void
       platform: string
 
-      // Temps réel — push du Main process
+      // Temps réel - push du Main process
       onNewMessage(cb: (data: {
         channelId:       number | null
         dmStudentId:     number | null

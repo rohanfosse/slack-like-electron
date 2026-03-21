@@ -11,7 +11,7 @@ function register() {
     try {
       const win = new BrowserWindow({
         width: 960, height: 780,
-        title: 'Visualisation — Cursus',
+        title: 'Visualisation - Cursus',
         backgroundColor: '#111214',
         webPreferences: { nodeIntegration: false, contextIsolation: true },
       })
@@ -22,7 +22,7 @@ function register() {
     }
   })
 
-  // ── Shell — ouvrir fichier/lien ─────────────────────────────────────────
+  // ── Shell - ouvrir fichier/lien ─────────────────────────────────────────
   ipcMain.handle('shell:openPath', async (_event, filePath) => {
     try {
       const resolved = assertSafePath(filePath)

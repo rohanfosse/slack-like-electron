@@ -469,7 +469,7 @@
             <p>
               Plateforme pédagogique open-source combinant messagerie en temps réel,
               suivi des devoirs et rendus, gestion documentaire et planification Gantt
-              — tout en un seul endroit.
+              - tout en un seul endroit.
             </p>
           </div>
         </section>

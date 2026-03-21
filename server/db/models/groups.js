@@ -24,7 +24,7 @@ function createGroup({ promoId, name }) {
     // Créer le canal privé associé
     db.prepare(
       'INSERT INTO channels (promo_id, name, description, type, is_private, group_id) VALUES (?, ?, ?, ?, 1, ?)'
-    ).run(promoId, `🔒 ${name}`, `Canal privé — groupe ${name}`, 'chat', groupId);
+    ).run(promoId, `🔒 ${name}`, `Canal privé - groupe ${name}`, 'chat', groupId);
 
     return groupResult;
   })();

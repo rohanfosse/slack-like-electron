@@ -124,7 +124,7 @@
 
 <template>
   <div class="auth-shell">
-    <!-- Panneau gauche — branding -->
+    <!-- Panneau gauche - branding -->
     <div class="auth-brand">
       <div class="auth-brand-inner">
         <img :src="logoUrl" class="auth-brand-logo" alt="Cursus" />
@@ -140,7 +140,7 @@
       </div>
     </div>
 
-    <!-- Panneau droit — formulaire -->
+    <!-- Panneau droit - formulaire -->
     <div class="auth-form-panel">
       <Transition name="auth-slide" mode="out-in">
 

@@ -1,4 +1,4 @@
-// ─── Route téléchargement — proxy vers GitHub Releases ────────────────────────
+// ─── Route téléchargement - proxy vers GitHub Releases ────────────────────────
 const { Router } = require('express')
 const router = Router()
 

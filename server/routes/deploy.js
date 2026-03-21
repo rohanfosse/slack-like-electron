@@ -1,4 +1,4 @@
-// ─── Webhook de déploiement — appelé par GitHub Actions ──────────────────────
+// ─── Webhook de déploiement - appelé par GitHub Actions ──────────────────────
 const router = require('express').Router()
 const { exec } = require('child_process')
 const path    = require('path')

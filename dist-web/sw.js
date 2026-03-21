@@ -1,4 +1,4 @@
-// ─── Service Worker — Cursus PWA ─────────────────────────────────────────────
+// ─── Service Worker - Cursus PWA ─────────────────────────────────────────────
 // Stratégie : Network-First pour HTML/navigation, Cache-First pour assets statiques
 
 const CACHE_NAME = 'cursus-v3'

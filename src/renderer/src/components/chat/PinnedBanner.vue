@@ -12,7 +12,7 @@
 
   const hasPinned = computed(() => store.pinned.length > 0)
 
-  // Message épinglé le plus récent — affiché en aperçu en permanence
+  // Message épinglé le plus récent - affiché en aperçu en permanence
   const preview = computed(() => store.pinned[store.pinned.length - 1] ?? null)
 
   function jump(id: number) {
@@ -28,7 +28,7 @@
     <div class="pinned-bar">
       <Pin :size="12" class="pinned-bar-icon" />
 
-      <!-- Aperçu du dernier message épinglé — cliquable -->
+      <!-- Aperçu du dernier message épinglé - cliquable -->
       <button
         v-if="preview"
         class="pinned-bar-preview"
@@ -98,7 +98,7 @@
   flex-shrink: 0;
 }
 
-/* Bouton aperçu — prend tout l'espace disponible */
+/* Bouton aperçu - prend tout l'espace disponible */
 .pinned-bar-preview {
   display: flex;
   align-items: baseline;

@@ -18,7 +18,7 @@
       <stop offset="100%" stop-color="#606164"/>
     </linearGradient>
   </defs>
-  <!-- Arc du C — ouvert à droite -->
+  <!-- Arc du C - ouvert à droite -->
   <path d="M300 80 C180 30, 50 100, 50 256 C50 412, 180 482, 300 432"
         stroke="url(#arc)" stroke-width="54" stroke-linecap="round" fill="none"/>
   <!-- Petit accent en haut du C -->

@@ -56,7 +56,7 @@ function logLoginAttempt(email, success, req) {
     getDb().prepare(
       `INSERT INTO login_attempts (email, success, ip, user_agent) VALUES (?, ?, ?, ?)`
     ).run(email || '', success ? 1 : 0, req.ip, req.get('user-agent') || '')
-  } catch { /* table pas encore créée — ignoré */ }
+  } catch { /* table pas encore créée - ignoré */ }
 }
 
 // POST /api/auth/login
@@ -92,10 +92,10 @@ router.get('/identities', (req, res, next) => {
 // GET /api/auth/student-by-email?email=X  (requiert JWT)
 router.get('/student-by-email', auth, wrap((req) => queries.getStudentByEmail(req.query.email)))
 
-// GET /api/auth/find-user?name=X  (requiert JWT — accessible à tous)
+// GET /api/auth/find-user?name=X  (requiert JWT - accessible à tous)
 router.get('/find-user', auth, wrap((req) => queries.findUserByName(req.query.name)))
 
-// GET /api/auth/teachers  (requiert JWT — retourne les enseignants visibles pour les DMs)
+// GET /api/auth/teachers  (requiert JWT - retourne les enseignants visibles pour les DMs)
 router.get('/teachers', auth, wrap(() => {
   const { getDb } = require('../db/connection')
   return getDb().prepare('SELECT id, name, role, photo_data FROM teachers ORDER BY name').all().map(t => ({

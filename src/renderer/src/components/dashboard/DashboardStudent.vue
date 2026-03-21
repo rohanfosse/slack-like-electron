@@ -151,7 +151,7 @@ const emit = defineEmits<{
         <Award :size="18" class="db-stat-icon" />
       </div>
       <div class="db-stat-card db-stat-neutral">
-        <span class="db-stat-value">{{ studentStats.modeGrade ?? '—' }}</span>
+        <span class="db-stat-value">{{ studentStats.modeGrade ?? '-' }}</span>
         <span class="db-stat-label">Note fréquente</span>
         <TrendingUp :size="18" class="db-stat-icon" />
       </div>
@@ -254,7 +254,7 @@ const emit = defineEmits<{
                 class="frise-milestone"
                 :class="[`frise-ms-${ms.type}`, { 'frise-ms-done': ms.done, 'frise-ms-draft': !ms.published, 'frise-ms-above': mi % 2 === 0 }]"
                 :style="{ left: milestoneLeft(ms.deadline) }"
-                :title="`${ms.title} — ${formatDate(ms.deadline)}`"
+                :title="`${ms.title} - ${formatDate(ms.deadline)}`"
                 @click.stop="emit('onMilestoneClick', ms)"
               >
                 <div v-if="mi % 2 === 0" class="frise-ms-label">

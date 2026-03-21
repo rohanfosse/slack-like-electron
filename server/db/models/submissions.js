@@ -26,7 +26,7 @@ function addDepot(payload) {
   const travail = getDb().prepare('SELECT deadline, type, requires_submission FROM travaux WHERE id = ?').get(travailId)
   if (travail && travail.requires_submission) {
     if (Date.now() > new Date(travail.deadline).getTime()) {
-      throw new Error('Délai expiré — dépôt refusé.')
+      throw new Error('Délai expiré - dépôt refusé.')
     }
   }
   // ─────────────────────────────────────────────────────────────────────────

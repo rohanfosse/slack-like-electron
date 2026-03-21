@@ -65,7 +65,7 @@ function resolveUserName(userId) {
 }
 
 /**
- * Pagination DM — supporte les conversations bidirectionnelles.
+ * Pagination DM - supporte les conversations bidirectionnelles.
  * Si `peerStudentId` est fourni, retourne les messages entre ces deux personnes
  * en cherchant dans la boîte de l'étudiant (dm_student_id positif).
  */
@@ -153,7 +153,7 @@ function searchDmMessages(studentId, query, peerId) {
 }
 
 function sendMessage({ channelId, dmStudentId, authorName, authorType, content, replyToId, replyToAuthor, replyToPreview }) {
-  // 'ta' n'est pas dans le CHECK constraint de la table — on le stocke comme 'teacher'
+  // 'ta' n'est pas dans le CHECK constraint de la table - on le stocke comme 'teacher'
   const safeType = authorType === 'ta' ? 'teacher' : authorType;
   return getDb().prepare(`
     INSERT INTO messages

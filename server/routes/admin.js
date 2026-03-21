@@ -23,7 +23,7 @@ function run(cmd) {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// SERVEUR — métriques système (existant)
+// SERVEUR - métriques système (existant)
 // ═══════════════════════════════════════════════════════════════════════════════
 
 router.get('/monitor', (req, res) => {
@@ -346,13 +346,13 @@ router.get('/audit', (req, res) => {
     const entries = db.prepare(sql).all(...params)
     res.json({ ok: true, data: { entries, total, page: Number(page) || 1, limit: Number(limit) || 100 } })
   } catch (err) {
-    // Table n'existe pas encore (avant migration v18) — renvoyer vide
+    // Table n'existe pas encore (avant migration v18) - renvoyer vide
     res.json({ ok: true, data: { entries: [], total: 0, page: 1, limit: 100 } })
   }
 })
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// SÉCURITÉ — tentatives de connexion
+// SÉCURITÉ - tentatives de connexion
 // ═══════════════════════════════════════════════════════════════════════════════
 
 router.get('/security', (req, res) => {
@@ -373,7 +373,7 @@ router.get('/security', (req, res) => {
 
     res.json({ ok: true, data: { recentLogins, failedByEmail } })
   } catch {
-    // Table n'existe pas encore — renvoyer vide
+    // Table n'existe pas encore - renvoyer vide
     res.json({ ok: true, data: { recentLogins: [], failedByEmail: [] } })
   }
 })
@@ -639,7 +639,7 @@ router.post('/promos/:id/archive', (req, res) => {
 })
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// DÉPLOIEMENT — Git & PM2
+// DÉPLOIEMENT - Git & PM2
 // ═══════════════════════════════════════════════════════════════════════════════
 
 router.get('/git-status', (req, res) => {
@@ -689,7 +689,7 @@ router.post('/docker-rebuild', (req, res) => {
 })
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// NGINX — Appliquer la config et recharger
+// NGINX - Appliquer la config et recharger
 // ═══════════════════════════════════════════════════════════════════════════════
 
 router.get('/server-info', (req, res) => {
@@ -808,10 +808,10 @@ router.post('/feedback/:id/status', (req, res) => {
 })
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// IMPORT DONNÉES — Examens, Rappels, Seed complet
+// IMPORT DONNÉES - Examens, Rappels, Seed complet
 // ═══════════════════════════════════════════════════════════════════════════════
 
-// Helper : trouver une promo par nom (exact ou partiel) — NE PAS créer
+// Helper : trouver une promo par nom (exact ou partiel) - NE PAS créer
 function findPromo(db, name) {
   // Recherche exacte
   let promo = db.prepare('SELECT id FROM promotions WHERE name = ?').get(name)

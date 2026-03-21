@@ -30,7 +30,7 @@ function autoResize() {
 
 // ── Placeholder ───────────────────────────────────────────────────────────
 const placeholder = computed(() => {
-  if (appStore.isReadonly) return 'Canal d\'annonces — lecture seule'
+  if (appStore.isReadonly) return 'Canal d\'annonces - lecture seule'
   if (appStore.activeChannelName) return `Message dans #${appStore.activeChannelName}`
   return 'Votre message…'
 })
@@ -412,7 +412,7 @@ function onKeydown(e: KeyboardEvent) {
 
     </template>
 
-    <p v-else class="readonly-notice">Canal d'annonces — seuls les enseignants peuvent publier ici.</p>
+    <p v-else class="readonly-notice">Canal d'annonces - seuls les enseignants peuvent publier ici.</p>
   </div>
 </template>
 

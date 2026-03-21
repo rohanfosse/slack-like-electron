@@ -268,7 +268,7 @@
           :key="g.grade"
           class="grade-dist-pill"
           :class="gradeClass(g.grade)"
-          :title="`${g.count} étudiant${g.count > 1 ? 's' : ''} — ${g.grade}`"
+          :title="`${g.count} étudiant${g.count > 1 ? 's' : ''} - ${g.grade}`"
         >
           {{ g.grade }} <strong>{{ g.count }}</strong>
         </span>
@@ -416,7 +416,7 @@
               :title="d.note ? `Note : ${d.note}` : 'Cliquer pour noter'"
               @click="startNote(d)"
             >
-              {{ d.note ? formatGrade(d.note) : '—' }}
+              {{ d.note ? formatGrade(d.note) : '-' }}
             </button>
           </template>
 

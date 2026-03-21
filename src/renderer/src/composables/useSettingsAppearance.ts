@@ -1,5 +1,5 @@
 /**
- * Appearance settings composable — theme selection, font size, display density,
+ * Appearance settings composable - theme selection, font size, display density,
  * message display toggles, and CSS variable management.
  * Used by SettingsModal.vue
  */

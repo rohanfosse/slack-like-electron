@@ -1,5 +1,5 @@
 /**
- * Preferences settings composable — notification toggles, input behavior,
+ * Preferences settings composable - notification toggles, input behavior,
  * and document opening defaults.
  * Used by SettingsModal.vue
  */

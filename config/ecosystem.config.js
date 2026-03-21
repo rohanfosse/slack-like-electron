@@ -1,4 +1,4 @@
-// ─── Configuration PM2 — Cursus Serveur ──────────────────────────────────────
+// ─── Configuration PM2 - Cursus Serveur ──────────────────────────────────────
 module.exports = {
   apps: [
     {

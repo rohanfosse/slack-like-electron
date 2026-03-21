@@ -716,7 +716,7 @@
 
 /* ── Sous-listes (pas de max-height propre, le parent scroll) ── */
 .sidebar-scroll-list {
-  /* Pas de contrainte ici — le scroll est géré par le parent */
+  /* Pas de contrainte ici - le scroll est géré par le parent */
 }
 
 /* ── Section repliable ── */

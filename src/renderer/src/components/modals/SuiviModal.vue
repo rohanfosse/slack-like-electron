@@ -127,7 +127,7 @@
       <div class="suivi-progress-header">
         <div class="suivi-progress-labels">
           <span class="suivi-progress-title">Progression des rendus</span>
-          <span class="suivi-progress-pct">{{ submitted.length }} / {{ rows.length }} — {{ pct }}%</span>
+          <span class="suivi-progress-pct">{{ submitted.length }} / {{ rows.length }} - {{ pct }}%</span>
         </div>
         <div class="suivi-progress-track">
           <div class="suivi-progress-fill" :style="{ width: `${pct}%` }" />
@@ -170,7 +170,7 @@
           <div v-if="r.submitted_at" class="suivi-file">
             <Link2 v-if="r.link_url" :size="11" class="suivi-file-icon" />
             <FileText v-else :size="11" class="suivi-file-icon" />
-            <span class="suivi-file-name">{{ r.file_name ?? r.link_url ?? '—' }}</span>
+            <span class="suivi-file-name">{{ r.file_name ?? r.link_url ?? '-' }}</span>
             <span class="suivi-file-date">{{ formatDate(r.submitted_at) }}</span>
           </div>
           <div v-else class="suivi-not-submitted">

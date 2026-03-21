@@ -1,7 +1,7 @@
 {
   "name": "cursus",
   "version": "2.0.0",
-  "description": "Cursus — Suivez votre parcours de formation",
+  "description": "Cursus - Suivez votre parcours de formation",
   "main": "out/main/index.js",
   "scripts": {
     "dev": "electron-vite dev",

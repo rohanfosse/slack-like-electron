@@ -7,10 +7,10 @@
    VARIABLES
 ════════════════════════════════════════════ */
 :root {
-  /* Fonds — thème sombre neutre (moderne, épuré) */
-  --bg-rail:    #161819;   /* Rail de navigation — near-black neutre */
-  --bg-sidebar: #1c1d1f;   /* Sidebar canaux — gris neutre */
-  --bg-main:    #232425;   /* Zone principale — gris pur */
+  /* Fonds - thème sombre neutre (moderne, épuré) */
+  --bg-rail:    #161819;   /* Rail de navigation - near-black neutre */
+  --bg-sidebar: #1c1d1f;   /* Sidebar canaux - gris neutre */
+  --bg-main:    #232425;   /* Zone principale - gris pur */
   --bg-input:   #1a1b1d;   /* Zone de saisie */
   --bg-hover:   rgba(255,255,255,.05);
   --bg-active:  rgba(74,144,217,.16);
@@ -24,7 +24,7 @@
   --bg-light:   #2a2b2d;
   --bg-primary: #121314;
 
-  /* Texte — contraste soigné */
+  /* Texte - contraste soigné */
   --text-primary:   #E8E9EA;   /* Blanc neutre, lisible */
   --text-secondary: #8B8D91;   /* Gris moyen neutre */
   --text-muted:     #616467;   /* Gris discret */
@@ -36,7 +36,7 @@
   --accent-light:  #7EB8FF;
   --accent-subtle: rgba(74,144,217,.14);
 
-  /* Ombres — légères, modernes */
+  /* Ombres - légères, modernes */
   --shadow-sm: 0 1px 2px rgba(0,0,0,.2);
   --shadow-md: 0 4px 12px rgba(0,0,0,.25);
   --shadow-lg: 0 8px 30px rgba(0,0,0,.35);
@@ -71,7 +71,7 @@
   /* Densité d'affichage (espacement entre messages) */
   --msg-spacing: 6px;
 
-  /* Rayons — coins arrondis modernes */
+  /* Rayons - coins arrondis modernes */
   --radius-sm: 6px;
   --radius:    10px;
   --radius-lg: 14px;
@@ -108,7 +108,7 @@
    THÈME CRÈME / SÉPIA  (body.light)
 ════════════════════════════════════════════ */
 body.light {
-  /* Fonds — tons chauds crème/sépia */
+  /* Fonds - tons chauds crème/sépia */
   --bg-rail:    #f0ebe3;
   --bg-sidebar: #f5f0e8;
   --bg-main:    #faf8f4;
@@ -130,7 +130,7 @@ body.light {
   --text-secondary: #7a6e5e;
   --text-muted:     #b0a594;
 
-  /* Accent — ambre/doré */
+  /* Accent - ambre/doré */
   --accent:        #c27c2c;
   --accent-hover:  #d4892f;
   --accent-dark:   #a06420;
@@ -141,7 +141,7 @@ body.light {
   --border:       rgba(100,70,30,.1);
   --border-input: rgba(100,70,30,.16);
 
-  /* Ombres — chaudes */
+  /* Ombres - chaudes */
   --shadow-sm: 0 1px 2px rgba(80,50,10,.06);
   --shadow-md: 0 4px 12px rgba(80,50,10,.1);
   --shadow-lg: 0 8px 30px rgba(80,50,10,.14);
@@ -228,10 +228,10 @@ body.marine {
 
 /* ════════════════════════════════════════════
    THÈME CURSUS  (body.cursus)
-   Inspiré de la landing page — clair, bleu vif, Inter
+   Inspiré de la landing page - clair, bleu vif, Inter
 ════════════════════════════════════════════ */
 body.cursus {
-  /* Fonds — tons landing page */
+  /* Fonds - tons landing page */
   --bg-rail:    #eef2f7;
   --bg-sidebar: #f4f6f9;
   --bg-main:    #f9fafb;
@@ -253,7 +253,7 @@ body.cursus {
   --text-secondary: #4b5563;
   --text-muted:     #9ca3af;
 
-  /* Accent — bleu landing */
+  /* Accent - bleu landing */
   --accent:        #3b82f6;
   --accent-hover:  #2563eb;
   --accent-dark:   #1d4ed8;
@@ -264,7 +264,7 @@ body.cursus {
   --border:       rgba(0,0,0,.08);
   --border-input: rgba(0,0,0,.15);
 
-  /* Ombres — douces */
+  /* Ombres - douces */
   --shadow-sm: 0 1px 2px rgba(0,0,0,.04);
   --shadow-md: 0 4px 12px rgba(0,0,0,.06);
   --shadow-lg: 0 8px 30px rgba(0,0,0,.1);
@@ -282,11 +282,11 @@ body.cursus {
   --color-warning: #d97706;
   --color-success: #059669;
 
-  /* Typo — Inter comme la landing */
+  /* Typo - Inter comme la landing */
   --font:      'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   --font-base: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 
-  /* Rayons — plus arrondis comme la landing (14px) */
+  /* Rayons - plus arrondis comme la landing (14px) */
   --radius-sm: 9px;
   --radius:    14px;
   --radius-lg: 18px;
@@ -314,7 +314,7 @@ html, body {
   overflow: hidden;
 }
 
-/* Focus-visible — accessibilité clavier */
+/* Focus-visible - accessibilité clavier */
 *:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
@@ -327,7 +327,7 @@ html, body {
 ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,.25); }
 * { scrollbar-width: thin; scrollbar-color: rgba(255,255,255,.15) transparent; }
 
-/* Scrollbars — thèmes clairs */
+/* Scrollbars - thèmes clairs */
 body.light ::-webkit-scrollbar-thumb       { background: rgba(120,80,40,.2); }
 body.light ::-webkit-scrollbar-thumb:hover { background: rgba(120,80,40,.35); }
 body.light * { scrollbar-color: rgba(120,80,40,.2) transparent; }

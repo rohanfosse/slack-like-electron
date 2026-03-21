@@ -1,4 +1,4 @@
-// ─── Point d'entrée web — charge le shim window.api puis monte Vue ────────────
+// ─── Point d'entrée web - charge le shim window.api puis monte Vue ────────────
 import './api-shim'
 
 import { createApp } from 'vue'

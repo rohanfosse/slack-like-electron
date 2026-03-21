@@ -70,7 +70,7 @@
   flex-shrink: 0;
 }
 
-/* Bouton de navigation — icône + label */
+/* Bouton de navigation - icône + label */
 .nav-btn {
   width: 56px;
   min-height: 50px;
@@ -216,7 +216,7 @@
   overflow: hidden;
 }
 
-/* En-tête sidebar — nom utilisateur */
+/* En-tête sidebar - nom utilisateur */
 .sidebar-header {
   padding: 14px 16px 12px;
   border-bottom: 1px solid var(--border);
@@ -412,7 +412,7 @@ nav[aria-label="Messages directs"] {
   padding: 6px 16px;
 }
 
-/* Rail des promos (prof) — pills côte à côte avec wrap */
+/* Rail des promos (prof) - pills côte à côte avec wrap */
 .nav-promo-section { flex-shrink: 0; }
 .nav-promo-label {
   display: block; padding: 8px 12px 4px;
@@ -843,7 +843,7 @@ nav[aria-label="Messages directs"] {
 }
 
 /* ════════════════════════════════════════════
-   RESPONSIVE — Tablette (≤ 1024px)
+   RESPONSIVE - Tablette (≤ 1024px)
 ════════════════════════════════════════════ */
 @media (max-width: 1024px) {
   #right-panel {
@@ -859,7 +859,7 @@ nav[aria-label="Messages directs"] {
 }
 
 /* ════════════════════════════════════════════
-   RESPONSIVE — Mobile (≤ 768px)
+   RESPONSIVE - Mobile (≤ 768px)
 ════════════════════════════════════════════ */
 @media (max-width: 768px) {
   /* ── Hamburger button ── */
@@ -917,7 +917,7 @@ nav[aria-label="Messages directs"] {
     width: 120px;
   }
 
-  /* ── Messages — réduire le padding ── */
+  /* ── Messages - réduire le padding ── */
   .msg-row {
     padding: 7px 12px;
   }
@@ -943,7 +943,7 @@ nav[aria-label="Messages directs"] {
 }
 
 /* ════════════════════════════════════════════
-   RESPONSIVE — Petit mobile (≤ 480px)
+   RESPONSIVE - Petit mobile (≤ 480px)
 ════════════════════════════════════════════ */
 @media (max-width: 480px) {
   .channel-header {
@@ -968,7 +968,7 @@ nav[aria-label="Messages directs"] {
 }
 
 /* ════════════════════════════════════════════
-   OVERRIDES THÈME CLAIR — couleurs hardcodées
+   OVERRIDES THÈME CLAIR - couleurs hardcodées
 ════════════════════════════════════════════ */
 body.light .nav-divider           { background: rgba(0,0,0,.1); }
 body.light .nav-btn:hover         { background: rgba(0,0,0,.06); }

@@ -78,7 +78,7 @@ watch(() => store.loading, (loading) => {
   if (loading) { initialScrollDone = false; unreadBelowCount.value = 0 }
 })
 
-// ── Infinite scroll vers le haut — IntersectionObserver ──────────────────
+// ── Infinite scroll vers le haut - IntersectionObserver ──────────────────
 const sentinelEl = ref<HTMLElement | null>(null)
 let   observer: IntersectionObserver | null = null
 
@@ -236,7 +236,7 @@ const dateGroups = computed<DateGroup[]>(() => {
 /* ── Wrapper de groupe (TransitionGroup tag) ── */
 .msg-group-wrap { display: contents; }
 
-/* ── Animation d'entrée — nouveaux messages seulement ── */
+/* ── Animation d'entrée - nouveaux messages seulement ── */
 .msg-fade-enter-active {
   transition: opacity .18s ease-out, transform .18s ease-out;
 }

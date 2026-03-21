@@ -182,13 +182,13 @@
   <Modal
     :model-value="modelValue"
     :title="isScoring
-      ? `Évaluation — ${scoringDepotName}`
+      ? `Évaluation - ${scoringDepotName}`
       : `Grille d'évaluation`"
     max-width="560px"
     @update:model-value="close"
   >
     <div v-if="loading" class="rubric-loading">Chargement…</div>
-    <div v-else-if="loadError" class="rubric-loading" style="color:var(--color-danger)">Erreur de chargement — vérifiez votre connexion.</div>
+    <div v-else-if="loadError" class="rubric-loading" style="color:var(--color-danger)">Erreur de chargement - vérifiez votre connexion.</div>
 
     <!-- ── Mode édition grille ── -->
     <template v-else-if="!isScoring">

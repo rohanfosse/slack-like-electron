@@ -1,7 +1,7 @@
 import { app, BrowserWindow, dialog } from 'electron'
 import { join } from 'path'
 
-// Modules CommonJS — import default : Rollup + @rollup/plugin-commonjs convertit
+// Modules CommonJS - import default : Rollup + @rollup/plugin-commonjs convertit
 // module.exports en export default, ce qui permet le bundling correct.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 import dbRaw            from '../../server/db/index'
@@ -72,7 +72,7 @@ function createWindow(): void {
     )
   })
 
-  // Diagnostic : crash du renderer — proposer de relancer
+  // Diagnostic : crash du renderer - proposer de relancer
   win.webContents.on('render-process-gone', (_event, details) => {
     console.error('[Main] render-process-gone', details)
     dialog.showMessageBox(win, {

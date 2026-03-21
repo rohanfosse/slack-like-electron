@@ -271,7 +271,7 @@ function markNonSubmittedAsD(travailId) {
 
   if (!students.length) return 0;
   const ins = db.prepare(
-    `INSERT OR IGNORE INTO depots (travail_id, student_id, file_name, file_path, note) VALUES (?, ?, '—', '', 'D')`
+    `INSERT OR IGNORE INTO depots (travail_id, student_id, file_name, file_path, note) VALUES (?, ?, '-', '', 'D')`
   );
   db.transaction(() => { for (const s of students) ins.run(travailId, s.id); })();
   return students.length;

@@ -87,13 +87,13 @@
 
 <template>
   <nav class="nav-rail" aria-label="Navigation principale">
-    <!-- Logo — cliquable pour le prof -->
+    <!-- Logo - cliquable pour le prof -->
     <div class="nav-logo">
       <button
         v-if="appStore.isStaff"
         class="nav-logo-btn"
         :title="!appStore.isOnline ? 'Hors ligne' : !appStore.socketConnected ? 'Reconnexion...' : 'Tableau de bord'"
-        aria-label="Accueil — Tableau de bord"
+        aria-label="Accueil - Tableau de bord"
         @click="router.push('/dashboard')"
       >
         <img :src="logoUrl" class="nav-logo-img" alt="Cursus" />
@@ -234,7 +234,7 @@
       id="nav-user-avatar"
       class="nav-avatar-btn"
       :style="avatarStyle"
-      :title="`${user?.name} — Paramètres`"
+      :title="`${user?.name} - Paramètres`"
       aria-label="Paramètres du compte"
       @click="modals.settings = true"
     >

@@ -1,4 +1,4 @@
-// ─── Serveur Express + Socket.io — Cursus ─────────────────────────────────────
+// ─── Serveur Express + Socket.io - Cursus ─────────────────────────────────────
 require('dotenv').config({ path: require('path').join(__dirname, '.env') })
 
 const express    = require('express')
@@ -89,14 +89,14 @@ app.use('/api/admin',       require('./routes/admin'))
 const path = require('path')
 const fs   = require('fs')
 
-// Fichiers uploadés — servis sans auth (nom UUID suffisamment sécurisé)
+// Fichiers uploadés - servis sans auth (nom UUID suffisamment sécurisé)
 const UPLOAD_DIR = process.env.UPLOAD_DIR
   ? path.join(process.env.UPLOAD_DIR, 'uploads')
   : path.join(__dirname, '../uploads')
 if (!fs.existsSync(UPLOAD_DIR)) fs.mkdirSync(UPLOAD_DIR, { recursive: true })
 app.use('/uploads', express.static(UPLOAD_DIR))
 
-// Route upload (auth requise — montée après authMiddleware global /api)
+// Route upload (auth requise - montée après authMiddleware global /api)
 app.use('/api/files', require('./routes/files'))
 
 // ── Health check ─────────────────────────────────────────────────────────────
@@ -140,7 +140,7 @@ if (fs.existsSync(LANDING)) {
   })
 }
 
-// ── SPA web — servie sous /app et en fallback ────────────────────────────────
+// ── SPA web - servie sous /app et en fallback ────────────────────────────────
 const WEB_DIST = path.join(__dirname, '../dist-web')
 if (fs.existsSync(WEB_DIST)) {
   // Service worker : toujours revalider (le navigateur DOIT checker les mises à jour)
@@ -166,7 +166,7 @@ if (fs.existsSync(WEB_DIST)) {
   })
 }
 
-// ── Socket.io — authentification ──────────────────────────────────────────────
+// ── Socket.io - authentification ──────────────────────────────────────────────
 io.use((socket, next) => {
   const token = socket.handshake.auth?.token
   if (!token) return next(new Error('Non authentifié'))
@@ -225,10 +225,10 @@ io.on('connection', (socket) => {
   // Indicateur de frappe
   socket.on('typing', ({ channelId, dmStudentId }) => {
     if (channelId) {
-      // Canal — envoyer à la promo du canal
+      // Canal - envoyer à la promo du canal
       socket.to('all').emit('typing', { channelId, userName: socket.user?.name })
     } else if (dmStudentId) {
-      // DM — envoyer uniquement au destinataire
+      // DM - envoyer uniquement au destinataire
       socket.to(userRoom(dmStudentId)).emit('typing', { dmStudentId, userName: socket.user?.name })
     }
   })

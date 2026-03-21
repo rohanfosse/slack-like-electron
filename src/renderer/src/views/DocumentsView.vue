@@ -373,7 +373,7 @@
             v-model="addName"
             type="text"
             class="form-input"
-            placeholder="ex : Cours réseaux — chapitre 3"
+            placeholder="ex : Cours réseaux - chapitre 3"
             autofocus
           />
         </div>

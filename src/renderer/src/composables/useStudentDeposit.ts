@@ -70,7 +70,7 @@ export function useStudentDeposit(now: { value: number }) {
       if (ok) {
         const fileName = depositMode.value === 'file' ? depositFileName.value : depositLink.value.trim()
         const time = new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
-        showToast(`Rendu soumis — ${fileName} — ${time}`, 'success')
+        showToast(`Rendu soumis - ${fileName} - ${time}`, 'success')
         cancelDeposit()
         await travauxStore.fetchStudentDevoirs()
       } else {

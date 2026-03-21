@@ -43,7 +43,7 @@ export async function loadDeploy() {
       </div>
 
       <div class="card">
-        <div class="card-title">Docker — Rebuild & Restart</div>
+        <div class="card-title">Docker - Rebuild & Restart</div>
         <div class="card-sub" style="margin-bottom:1rem">Rebuilder l'image Docker et relancer le container apr\u00e8s un pull.</div>
 
         <div style="display:flex;gap:.75rem;flex-wrap:wrap">
@@ -56,7 +56,7 @@ export async function loadDeploy() {
       </div>
 
       <div class="card">
-        <div class="card-title">Nginx — Configuration</div>
+        <div class="card-title">Nginx - Configuration</div>
         <div class="card-sub" style="margin-bottom:1rem">Appliquer le fichier <code>nginx.conf</code> du repo et recharger Nginx.</div>
         <button class="btn btn-primary" onclick="nginxApply()">Appliquer & Recharger Nginx</button>
         <div id="nginx-output" style="margin-top:1rem;display:none"></div>

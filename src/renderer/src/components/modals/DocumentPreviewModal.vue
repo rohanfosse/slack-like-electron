@@ -98,7 +98,7 @@ watch(() => props.modelValue, async (open) => {
       blobUrl.value = URL.createObjectURL(blob)
 
     } else if (mime.value === 'application/pdf') {
-      // Blob URL pour PDF — les data: URI sont bloqués par le CSP dans les iframes
+      // Blob URL pour PDF - les data: URI sont bloqués par le CSP dans les iframes
       const buf  = b64ToBuffer(b64)
       const blob = new Blob([buf], { type: 'application/pdf' })
       blobUrl.value = URL.createObjectURL(blob)
@@ -196,7 +196,7 @@ function openWith() {
       <div v-else-if="previewType === 'excel'" class="preview-excel">
         <div class="preview-word-toolbar">
           <Table2 :size="13" style="color:#1D6F42" />
-          <span>Classeur Excel — {{ doc?.name }}</span>
+          <span>Classeur Excel - {{ doc?.name }}</span>
           <button class="btn-ghost preview-toolbar-btn" @click="openWith">Ouvrir avec Excel</button>
         </div>
         <div class="preview-excel-wrap">

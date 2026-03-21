@@ -131,7 +131,7 @@ function initSchema() {
 
 // ─── Migrations versionnées (PRAGMA user_version) ─────────────────────────────
 // Chaque entrée correspond à un numéro de version (index = version cible).
-// tryAlter() ignore silencieusement si la colonne existe déjà — safe pour
+// tryAlter() ignore silencieusement si la colonne existe déjà - safe pour
 // les bases créées avant l'introduction de ce système.
 
 function runMigrations(db) {
@@ -373,7 +373,7 @@ function runMigrations(db) {
       `);
     },
 
-    // v16 : sécurité — hashage bcrypt + must_change_password
+    // v16 : sécurité - hashage bcrypt + must_change_password
     (db) => {
       const bcrypt = require('bcryptjs');
       tryAlter(db, 'ALTER TABLE students ADD COLUMN must_change_password INTEGER NOT NULL DEFAULT 1');
@@ -553,7 +553,7 @@ function runMigrations(db) {
 }
 
 function tryAlter(db, sql) {
-  try { db.exec(sql); } catch { /* colonne déjà présente — ignoré */ }
+  try { db.exec(sql); } catch { /* colonne déjà présente - ignoré */ }
 }
 
 module.exports = { initSchema };

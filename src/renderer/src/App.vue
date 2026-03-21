@@ -143,7 +143,7 @@
 
     // Toast in-app pour les notifications quand la fenêtre est au premier plan
     window.addEventListener('cursus:notif-toast', ((e: CustomEvent) => {
-      showToast(`${e.detail.title} — ${e.detail.body}`, 'info')
+      showToast(`${e.detail.title} - ${e.detail.body}`, 'info')
     }) as EventListener)
 
     // Restaurer la session depuis localStorage
@@ -189,7 +189,7 @@
 
     <!-- Bandeau hors-ligne -->
     <div v-if="!appStore.isOnline" class="offline-banner offline-banner-red">
-      <span>Vous êtes hors ligne — vérifiez votre connexion internet.</span>
+      <span>Vous êtes hors ligne - vérifiez votre connexion internet.</span>
     </div>
 
     <!-- Bandeau reconnexion socket -->
@@ -215,7 +215,7 @@
     <div v-if="appStore.isSimulating" id="simulation-banner" class="simulation-banner" :class="{ 'banner-shift': !appStore.isOnline }">
       <span>
         Simulation : <strong>{{ appStore.currentUser?.name }}</strong>
-        — vous voyez l'app comme cet étudiant
+        - vous voyez l'app comme cet étudiant
       </span>
       <button class="btn-ghost simulation-stop-btn" @click="appStore.stopSimulation()">
         Quitter la simulation
@@ -238,7 +238,7 @@
     </div><!-- /.app-columns -->
   </div>
 
-  <!-- Modales globales — montées une fois, visibilité gérée par le store modals -->
+  <!-- Modales globales - montées une fois, visibilité gérée par le store modals -->
   <template v-if="appStore.currentUser">
     <CmdPalette />
     <SettingsModal        v-model="modals.settings"        />

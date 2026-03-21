@@ -5,7 +5,7 @@ const path   = require('path')
 const fs     = require('fs')
 const crypto = require('crypto')
 
-// Dossier de stockage — configurable via UPLOAD_DIR dans .env
+// Dossier de stockage - configurable via UPLOAD_DIR dans .env
 const UPLOAD_DIR = process.env.UPLOAD_DIR
   ? path.join(process.env.UPLOAD_DIR, 'uploads')
   : path.join(__dirname, '../../uploads')
@@ -33,7 +33,7 @@ const upload = multer({
 // POST /api/files/upload
 router.post('/upload', upload.single('file'), (req, res) => {
   if (!req.file) return res.status(400).json({ ok: false, error: 'Aucun fichier reçu.' })
-  // Retourne le chemin relatif — le client préfixe avec SERVER_URL
+  // Retourne le chemin relatif - le client préfixe avec SERVER_URL
   res.json({ ok: true, data: `/uploads/${req.file.filename}` })
 })
 
