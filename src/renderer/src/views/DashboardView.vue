@@ -625,72 +625,50 @@ function onMilestoneClick(ms: FriseMilestone) {
       </div>
 
       <template v-else>
-        <!-- En-tête -->
+        <!-- En-tête compact -->
         <div class="db-header">
           <div class="db-header-left">
             <button v-if="props.toggleSidebar" class="mobile-hamburger" aria-label="Ouvrir le menu" @click="props.toggleSidebar">
               <Menu :size="22" />
             </button>
-            <LayoutDashboard :size="20" class="db-header-icon" />
             <div>
               <h1 class="db-title">Bonjour, {{ greetingName }}</h1>
               <p class="db-date">{{ today }}</p>
             </div>
           </div>
-          <div class="db-header-actions">
-            <button class="btn-ghost db-echeancier-btn" @click="modals.classe = true">
-              <GraduationCap :size="14" /> Classe
-            </button>
-            <button class="btn-ghost db-echeancier-btn" @click="modals.intervenants = true">
-              <Users :size="14" /> Intervenants
-            </button>
-            <button class="btn-ghost db-echeancier-btn" @click="modals.echeancier = true">
-              <Clock :size="14" /> Échéancier
-            </button>
-          </div>
-        </div>
-
-        <!-- Sélecteur de promo -->
-        <div class="db-promo-bar">
-          <div class="db-promo-pills">
+          <!-- Sélecteur de promo inline dans le header -->
+          <div class="db-header-promos">
             <button
               v-for="p in promos"
               :key="p.id"
-              class="db-promo-pill"
+              class="db-promo-chip"
               :class="{ active: appStore.activePromoId === p.id }"
-              :style="appStore.activePromoId === p.id ? { background: p.color, borderColor: p.color } : { borderColor: p.color + '55' }"
+              :style="appStore.activePromoId === p.id ? { background: 'color-mix(in srgb, ' + p.color + ' 20%, transparent)', color: p.color, borderColor: p.color } : {}"
               @click="appStore.activePromoId = p.id"
             >
-              <span class="db-promo-dot" :style="{ background: appStore.activePromoId === p.id ? '#fff' : p.color }" />
+              <span class="db-promo-chip-dot" :style="{ background: p.color }" />
               {{ p.name }}
             </button>
           </div>
-          <button class="db-new-promo-btn btn-ghost" @click="modals.createPromo = true">
-            <PlusCircle :size="13" /> Nouvelle promo
-          </button>
         </div>
 
-        <!-- Stats -->
-        <div class="db-stats">
-          <div class="db-stat-card db-stat-danger">
-            <span class="db-stat-value">{{ aNoterCount }}</span>
-            <span class="db-stat-label">Rendus à noter</span>
-            <Edit3 :size="18" class="db-stat-icon" />
+        <!-- Stats compactes en ligne -->
+        <div class="db-stats-row">
+          <div class="db-stat-pill" :class="{ 'db-stat-pill--alert': aNoterCount > 0 }">
+            <Edit3 :size="14" />
+            <strong>{{ aNoterCount }}</strong> à noter
           </div>
-          <div class="db-stat-card db-stat-warning">
-            <span class="db-stat-value">{{ urgentsCount }}</span>
-            <span class="db-stat-label">Devoirs cette semaine</span>
-            <AlertTriangle :size="18" class="db-stat-icon" />
+          <div class="db-stat-pill" :class="{ 'db-stat-pill--warn': urgentsCount > 0 }">
+            <AlertTriangle :size="14" />
+            <strong>{{ urgentsCount }}</strong> cette semaine
           </div>
-          <div class="db-stat-card db-stat-muted">
-            <span class="db-stat-value">{{ brouillonsCount }}</span>
-            <span class="db-stat-label">Brouillons</span>
-            <FileText :size="18" class="db-stat-icon" />
+          <div v-if="brouillonsCount > 0" class="db-stat-pill db-stat-pill--muted">
+            <FileText :size="14" />
+            <strong>{{ brouillonsCount }}</strong> brouillon{{ brouillonsCount > 1 ? 's' : '' }}
           </div>
-          <div class="db-stat-card db-stat-accent">
-            <span class="db-stat-value">{{ totalStudents }}</span>
-            <span class="db-stat-label">Étudiants · {{ promos.length }} promos</span>
-            <Users :size="18" class="db-stat-icon" />
+          <div class="db-stat-pill">
+            <Users :size="14" />
+            <strong>{{ totalStudents }}</strong> étudiant{{ totalStudents > 1 ? 's' : '' }}
           </div>
         </div>
 
@@ -962,16 +940,35 @@ function onMilestoneClick(ms: FriseMilestone) {
                 <h4 class="gestion-card-title">Intervenants</h4>
                 <button class="gestion-btn" @click="modals.intervenants = true">Gérer</button>
               </div>
-              <p class="gestion-hint">Ajoutez et gérez les intervenants, assignez-les à des canaux spécifiques.</p>
+              <p class="gestion-hint">Ajoutez des intervenants et assignez-les à des canaux.</p>
+              <button class="gestion-btn" style="margin-top:8px" @click="modals.intervenants = true">
+                <Users :size="12" /> Ouvrir la gestion
+              </button>
             </div>
 
             <!-- Carte Canaux -->
             <div class="gestion-card">
               <div class="gestion-card-header">
                 <h4 class="gestion-card-title">Canaux</h4>
-                <button class="gestion-btn" @click="modals.createChannel = true">Nouveau canal</button>
+                <button class="gestion-btn" @click="modals.createChannel = true">+ Nouveau</button>
               </div>
-              <p class="gestion-hint">Créez et organisez les canaux de discussion pour cette promotion.</p>
+              <div class="gestion-channels-preview">
+                <div v-for="ch in ganttFiltered.slice(0,1)" :key="'ch'" />
+                <span class="gestion-hint">Les canaux sont gérés dans la sidebar Messages.</span>
+                <button class="gestion-btn" style="margin-top:4px" @click="router.push('/messages')">
+                  Aller aux messages
+                </button>
+              </div>
+            </div>
+
+            <!-- Carte Actions rapides -->
+            <div class="gestion-card">
+              <h4 class="gestion-card-title">Actions rapides</h4>
+              <div style="display:flex;flex-direction:column;gap:6px">
+                <button class="gestion-btn" @click="modals.classe = true"><GraduationCap :size="12" /> Voir la classe</button>
+                <button class="gestion-btn" @click="modals.echeancier = true"><Clock :size="12" /> Échéancier</button>
+                <button class="gestion-btn" @click="router.push('/devoirs')"><BookOpen :size="12" /> Aller aux devoirs</button>
+              </div>
             </div>
           </div>
         </div>
@@ -1439,7 +1436,37 @@ function onMilestoneClick(ms: FriseMilestone) {
 .gestion-empty { font-size: 12px; color: var(--text-muted); font-style: italic; }
 .gestion-hint { font-size: 12px; color: var(--text-muted); line-height: 1.5; }
 
-/* ── Stats ── */
+/* ── Header promos inline ── */
+.db-header-promos { display: flex; gap: 6px; flex-wrap: wrap; }
+.db-promo-chip {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 4px 10px; border-radius: 14px; font-size: 11px; font-weight: 600;
+  background: rgba(255,255,255,.04); color: var(--text-secondary);
+  border: 1.5px solid rgba(255,255,255,.08); cursor: pointer;
+  font-family: var(--font); transition: all .15s;
+}
+.db-promo-chip:hover { background: rgba(255,255,255,.08); }
+.db-promo-chip.active { font-weight: 700; }
+.db-promo-chip-dot { width: 7px; height: 7px; border-radius: 50%; }
+
+/* ── Stats compactes en ligne ── */
+.db-stats-row {
+  display: flex; gap: 8px; padding: 0 0 12px; flex-wrap: wrap;
+}
+.db-stat-pill {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 6px 12px; border-radius: 8px; font-size: 12px;
+  background: rgba(255,255,255,.03); color: var(--text-secondary);
+  border: 1px solid var(--border);
+}
+.db-stat-pill strong { color: var(--text-primary); font-weight: 700; }
+.db-stat-pill--alert { background: rgba(231,76,60,.08); border-color: rgba(231,76,60,.2); color: var(--color-danger); }
+.db-stat-pill--alert strong { color: var(--color-danger); }
+.db-stat-pill--warn { background: rgba(243,156,18,.08); border-color: rgba(243,156,18,.2); color: var(--color-warning); }
+.db-stat-pill--warn strong { color: var(--color-warning); }
+.db-stat-pill--muted { opacity: .6; }
+
+/* ── (ancien) Stats grid — gardé pour compatibilité étudiant ── */
 .db-stats {
   display: grid;
   grid-template-columns: repeat(4, 1fr);

@@ -1116,6 +1116,10 @@ function typeLabel(t: string): string {
                     <div class="dc-card-meta">
                       <span class="dc-card-date deadline-badge" :class="deadlineClass(t.deadline)">{{ deadlineLabel(t.deadline) }}</span>
                       <span v-if="extractDuration(t.description)" class="dc-card-duration">{{ extractDuration(t.description) }}</span>
+                      <span v-if="t.room" class="dc-card-duration">{{ t.room }}</span>
+                    </div>
+                    <div v-if="t.hasSubmission && t.students_total > 0" class="dc-card-progress">
+                      <div class="dc-card-progress-fill" :style="{ width: Math.round((t.depots_count / t.students_total) * 100) + '%' }" />
                     </div>
                     <span v-if="!t.is_published" class="dc-card-draft-tag">Brouillon</span>
                   </div>
@@ -1566,6 +1570,12 @@ function typeLabel(t: string): string {
 .dc-card-meta { display: flex; align-items: center; gap: 5px; margin-top: 6px; }
 .dc-card-date { font-size: 10px; }
 .dc-card-duration { font-size: 10px; color: var(--text-muted); background: rgba(255,255,255,.05); padding: 1px 5px; border-radius: 6px; }
+.dc-card-progress {
+  height: 2px; border-radius: 1px; background: rgba(255,255,255,.06);
+  margin-top: 6px; overflow: hidden;
+}
+.dc-card-progress-fill { height: 100%; background: var(--color-success); border-radius: 1px; }
+
 .dc-card-draft-tag {
   position: absolute; top: 4px; right: 4px;
   font-size: 8px; font-weight: 700; text-transform: uppercase;
