@@ -234,7 +234,7 @@
 }
 .badge-private {
   background: rgba(155,135,245,.1);
-  color: #9b87f5;
+  color: var(--color-cctl);
   border: 1px solid rgba(155,135,245,.2);
 }
 .badge-public {

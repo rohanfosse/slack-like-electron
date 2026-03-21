@@ -96,6 +96,21 @@
   /* Couleurs sémantiques complémentaires */
   --color-ta: #7B5EA7;
 
+  /* Types de devoirs */
+  --color-livrable:     #4A90D9;
+  --color-soutenance:   #F39C12;
+  --color-cctl:         #9B87F5;
+  --color-etude-de-cas: #2ECC71;
+  --color-memoire:      #E74C3C;
+  --color-autre:        #95A5A6;
+
+  /* Notes (A-F) */
+  --color-grade-a: #2ECC71;
+  --color-grade-b: #4A90D9;
+  --color-grade-c: #F39C12;
+  --color-grade-d: #E74C3C;
+  --color-grade-na: #95A5A6;
+
   /* Dimensions de layout */
   --rail-width:    72px;
   --sidebar-width: 240px;

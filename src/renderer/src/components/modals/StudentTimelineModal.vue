@@ -204,7 +204,7 @@ function gradeColor(note: string | null | undefined): string {
 .stl-leg-done    { background: rgba(39,174,96,.1);   color: var(--color-success); }
 .stl-leg-urgent  { background: rgba(243,156,18,.1);  color: var(--color-warning); }
 .stl-leg-overdue { background: rgba(231,76,60,.1);   color: var(--color-danger);  }
-.stl-leg-event   { background: rgba(155,135,245,.1); color: #9B87F5; }
+.stl-leg-event   { background: rgba(155,135,245,.1); color: var(--color-cctl); }
 .stl-leg-pending { background: rgba(255,255,255,.04); color: var(--text-muted); border: 1px solid var(--border); }
 
 /* Groupes mois */
@@ -249,7 +249,7 @@ function gradeColor(note: string | null | undefined): string {
 .stl-dot--done    { background: var(--color-success); border-color: var(--color-success); }
 .stl-dot--overdue { background: var(--color-danger);  border-color: var(--color-danger);  }
 .stl-dot--urgent  { background: var(--color-warning); border-color: var(--color-warning); }
-.stl-dot--event   { background: #9B87F5;              border-color: #9B87F5;              }
+.stl-dot--event   { background: #9B87F5;              border-color: var(--color-cctl);              }
 .stl-dot--pending { background: var(--bg-secondary);  border-color: var(--border);        }
 
 .stl-line-v {
@@ -294,10 +294,10 @@ function gradeColor(note: string | null | undefined): string {
 }
 .type-livrable     { background: rgba(74,144,217,.2);   color: var(--accent); }
 .type-soutenance   { background: rgba(243,156,18,.2);   color: var(--color-warning); }
-.type-cctl         { background: rgba(123,104,238,.2);  color: #9b87f5; }
+.type-cctl         { background: rgba(123,104,238,.2);  color: var(--color-cctl); }
 .type-etude_de_cas { background: rgba(39,174,96,.2);    color: var(--color-success); }
-.type-memoire      { background: rgba(231,76,60,.2);    color: #e74c3c; }
-.type-autre        { background: rgba(127,140,141,.2);  color: #95a5a6; }
+.type-memoire      { background: rgba(231,76,60,.2);    color: var(--color-danger); }
+.type-autre        { background: rgba(127,140,141,.2);  color: var(--color-autre); }
 
 .stl-card-title {
   flex: 1;
@@ -338,7 +338,7 @@ function gradeColor(note: string | null | undefined): string {
   padding: 2px 7px;
   border-radius: 10px;
   background: rgba(155,135,245,.1);
-  color: #9B87F5;
+  color: var(--color-cctl);
 }
 .stl-date { font-size: 11px; color: var(--text-muted); }
 
@@ -355,7 +355,7 @@ function gradeColor(note: string | null | undefined): string {
 .grade-b { background: rgba(74,144,217,.15); color: var(--accent); }
 .grade-c { background: rgba(243,156,18,.15); color: var(--color-warning); }
 .grade-d { background: rgba(231,76,60,.15);  color: var(--color-danger); }
-.grade-letter { background: rgba(155,135,245,.15); color: #9B87F5; }
+.grade-letter { background: rgba(155,135,245,.15); color: var(--color-cctl); }
 
 .stl-feedback {
   font-size: 11.5px;

@@ -66,3 +66,29 @@ export const FRISE_DEFAULT_SPAN_DAYS = 120
 
 /** Ordre de priorité des urgences */
 export const URGENCY_ORDER = { critical: 0, warning: 1, info: 2 } as const
+
+// ─── Palette de couleurs (miroir des CSS custom properties) ─────────────────
+// Utiliser ces constantes dans le JS quand les variables CSS ne sont pas accessibles
+// (props dynamiques, canvas, etc.). Garder synchronisé avec base.css :root.
+
+export const COLORS = {
+  accent:      '#4A90D9',
+  danger:      '#E74C3C',
+  warning:     '#F39C12',
+  success:     '#2ECC71',
+
+  // Types de devoirs
+  livrable:    '#4A90D9',
+  soutenance:  '#F39C12',
+  cctl:        '#9B87F5',
+  etudeDeCas:  '#2ECC71',
+  memoire:     '#E74C3C',
+  autre:       '#95A5A6',
+
+  // Notes
+  gradeA:      '#2ECC71',
+  gradeB:      '#4A90D9',
+  gradeC:      '#F39C12',
+  gradeD:      '#E74C3C',
+  gradeNA:     '#95A5A6',
+} as const

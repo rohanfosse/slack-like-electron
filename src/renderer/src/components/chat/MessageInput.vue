@@ -589,7 +589,7 @@ function onKeydown(e: KeyboardEvent) {
   flex-shrink: 0;
   white-space: nowrap;
 }
-.mi-badge-teacher { background: rgba(123, 104, 238, .2); color: #9b87f5; }
+.mi-badge-teacher { background: rgba(123, 104, 238, .2); color: var(--color-cctl); }
 .mi-badge-ta      { background: rgba(39, 174, 96, .2); color: var(--color-success); }
 
 /* Transition popup mention */

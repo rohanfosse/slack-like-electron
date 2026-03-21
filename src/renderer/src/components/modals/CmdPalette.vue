@@ -410,7 +410,7 @@
 /* Icône type ── */
 .cmd-result-icon { flex-shrink: 0; color: var(--text-muted); }
 .icon-channel { color: var(--accent); }
-.icon-message { color: #9B87F5; }
+.icon-message { color: var(--color-cctl); }
 .icon-dm      { color: #27AE60; }
 .icon-section { color: var(--color-warning, #E5A842); }
 

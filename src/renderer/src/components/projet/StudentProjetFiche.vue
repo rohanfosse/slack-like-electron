@@ -644,7 +644,7 @@ function gradeColor(note: string | null | undefined): string {
   justify-content: center;
   flex-shrink: 0;
 }
-.spf-project-icon { color: #9B87F5; }
+.spf-project-icon { color: var(--color-cctl); }
 
 .spf-header-text { display: flex; flex-direction: column; gap: 3px; flex: 1; }
 .spf-project-name {
@@ -681,7 +681,7 @@ function gradeColor(note: string | null | undefined): string {
   padding: 2px 8px;
   border-radius: 12px;
   background: rgba(155,135,245,.12);
-  color: #9B87F5;
+  color: var(--color-cctl);
 }
 
 /* Stats chips */
@@ -807,10 +807,10 @@ function gradeColor(note: string | null | undefined): string {
 }
 .type-livrable     { background: rgba(74,144,217,.2);   color: var(--accent); }
 .type-soutenance   { background: rgba(243,156,18,.2);   color: var(--color-warning); }
-.type-cctl         { background: rgba(123,104,238,.2);  color: #9b87f5; }
+.type-cctl         { background: rgba(123,104,238,.2);  color: var(--color-cctl); }
 .type-etude_de_cas { background: rgba(39,174,96,.2);    color: var(--color-success); }
-.type-memoire      { background: rgba(231,76,60,.2);    color: #e74c3c; }
-.type-autre        { background: rgba(127,140,141,.2);  color: #95a5a6; }
+.type-memoire      { background: rgba(231,76,60,.2);    color: var(--color-danger); }
+.type-autre        { background: rgba(127,140,141,.2);  color: var(--color-autre); }
 
 .spf-card-title {
   flex: 1;
@@ -842,7 +842,7 @@ function gradeColor(note: string | null | undefined): string {
   flex-wrap: wrap;
 }
 .spf-card-date  { font-size: 11px; color: var(--text-muted); }
-.spf-card-group { display: inline-flex; align-items: center; gap: 3px; font-size: 11px; color: #9B87F5; }
+.spf-card-group { display: inline-flex; align-items: center; gap: 3px; font-size: 11px; color: var(--color-cctl); }
 .spf-card-desc  { font-size: 12px; color: var(--text-muted); margin: 0; line-height: 1.4; }
 
 /* Note */
@@ -864,7 +864,7 @@ function gradeColor(note: string | null | undefined): string {
 .grade-b { background: rgba(74,144,217,.15);  color: var(--accent); }
 .grade-c { background: rgba(243,156,18,.15);  color: var(--color-warning); }
 .grade-d { background: rgba(231,76,60,.15);   color: var(--color-danger); }
-.grade-letter { background: rgba(155,135,245,.15); color: #9B87F5; }
+.grade-letter { background: rgba(155,135,245,.15); color: var(--color-cctl); }
 
 .spf-feedback-text {
   font-size: 11.5px;
@@ -887,7 +887,7 @@ function gradeColor(note: string | null | undefined): string {
   align-items: center;
   gap: 5px;
   font-size: 11px;
-  color: #9B87F5;
+  color: var(--color-cctl);
   background: rgba(155,135,245,.08);
   padding: 4px 10px;
   border-radius: 6px;
@@ -935,7 +935,7 @@ function gradeColor(note: string | null | undefined): string {
   cursor: pointer;
   transition: all .15s;
 }
-.spf-toggle-btn.active { border-color: #9B87F5; background: rgba(155,135,245,.12); color: #9B87F5; }
+.spf-toggle-btn.active { border-color: var(--color-cctl); background: rgba(155,135,245,.12); color: var(--color-cctl); }
 
 .spf-file-zone {
   border: 2px dashed var(--border-input);
@@ -950,9 +950,9 @@ function gradeColor(note: string | null | undefined): string {
   font-size: 12px;
   transition: border-color var(--t-fast), background var(--t-fast);
 }
-.spf-file-zone:hover   { border-color: #9B87F5; background: rgba(155,135,245,.05); }
-.spf-file-zone--drag   { border-color: #9B87F5; background: rgba(155,135,245,.10); border-style: solid; }
-.spf-file-zone--drag span { color: #9B87F5; font-weight: 600; }
+.spf-file-zone:hover   { border-color: var(--color-cctl); background: rgba(155,135,245,.05); }
+.spf-file-zone--drag   { border-color: var(--color-cctl); background: rgba(155,135,245,.10); border-style: solid; }
+.spf-file-zone--drag span { color: var(--color-cctl); font-weight: 600; }
 .spf-file-zone-icon { opacity: .5; }
 
 .spf-file-selected {
@@ -1075,7 +1075,7 @@ function gradeColor(note: string | null | undefined): string {
   padding: 1px 5px;
   border-radius: 8px;
   background: rgba(155,135,245,.15);
-  color: #9B87F5;
+  color: var(--color-cctl);
   flex-shrink: 0;
 }
 

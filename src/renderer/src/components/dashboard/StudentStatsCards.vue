@@ -67,7 +67,7 @@ defineProps<{
 .db-grade-badge.grade-a { background: rgba(39,174,96,.15); color: #27ae60; }
 .db-grade-badge.grade-b { background: rgba(39,174,96,.08); color: #2ecc71; }
 .db-grade-badge.grade-c { background: rgba(243,156,18,.12); color: #e67e22; }
-.db-grade-badge.grade-d { background: rgba(231,76,60,.12); color: #e74c3c; }
+.db-grade-badge.grade-d { background: rgba(231,76,60,.12); color: var(--color-danger); }
 
 /* ── Stats grid ── */
 .db-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }

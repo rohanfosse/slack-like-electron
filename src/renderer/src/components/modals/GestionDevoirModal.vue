@@ -671,7 +671,7 @@
 .type-soutenance    { background: rgba(232,137,26,.2);    color: var(--color-warning); }
 .type-cctl          { background: rgba(142,68,173,.2);    color: #a569bd; }
 .type-etude_de_cas  { background: rgba(39,174,96,.2);     color: var(--color-success); }
-.type-memoire       { background: rgba(231,76,60,.2);     color: #e74c3c; }
-.type-autre         { background: rgba(127,140,141,.2);   color: #95a5a6; }
+.type-memoire       { background: rgba(231,76,60,.2);     color: var(--color-danger); }
+.type-autre         { background: rgba(127,140,141,.2);   color: var(--color-autre); }
 .tag-badge          { font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 12px; background: rgba(255,255,255,.06); color: var(--text-secondary); }
 </style>

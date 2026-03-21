@@ -552,8 +552,8 @@
 .sidebar-all-docs-btn.section-messages .sidebar-all-docs-icon { color: var(--accent); }
 .sidebar-all-docs-btn.section-messages.active { color: var(--accent); background: rgba(74,144,217,.08); }
 
-.sidebar-all-docs-btn.section-devoirs .sidebar-all-docs-icon  { color: #9B87F5; }
-.sidebar-all-docs-btn.section-devoirs.active  { color: #9B87F5; background: rgba(155,135,245,.08); }
+.sidebar-all-docs-btn.section-devoirs .sidebar-all-docs-icon  { color: var(--color-cctl); }
+.sidebar-all-docs-btn.section-devoirs.active  { color: var(--color-cctl); background: rgba(155,135,245,.08); }
 
 .sidebar-all-docs-btn.section-documents .sidebar-all-docs-icon { color: #27AE60; }
 .sidebar-all-docs-btn.section-documents.active { color: #27AE60; background: rgba(39,174,96,.08); }
@@ -575,7 +575,7 @@
 .sidebar-section--documents::before { background: #27AE60; }
 .sidebar-section--dashboard::before { background: #E5A842; }
 .sidebar-section--messages  { color: var(--accent); }
-.sidebar-section--devoirs   { color: #9B87F5; }
+.sidebar-section--devoirs   { color: var(--color-cctl); }
 .sidebar-section--documents { color: #27AE60; }
 .sidebar-section--dashboard { color: #E5A842; }
 
@@ -691,7 +691,7 @@
   min-width: 0;
 }
 .project-add-input:focus-visible { outline: 2px solid var(--accent); outline-offset: -1px; }
-.project-add-input:focus { border-color: #9B87F5; box-shadow: 0 0 0 2px rgba(155,135,245,.2); }
+.project-add-input:focus { border-color: var(--color-cctl); box-shadow: 0 0 0 2px rgba(155,135,245,.2); }
 
 /* ── Badge DM non lus ── */
 .dm-unread-badge {
@@ -812,7 +812,7 @@
   padding: 1px 5px;
   border-radius: 8px;
   background: rgba(155,135,245,.12);
-  color: #9B87F5;
+  color: var(--color-cctl);
   flex-shrink: 0;
   margin-left: auto;
   opacity: .85;
@@ -875,7 +875,7 @@
   border: 1px solid rgba(155,135,245,.3);
   border-radius: 4px;
   background: transparent;
-  color: #9B87F5;
+  color: var(--color-cctl);
   cursor: pointer;
   font-family: var(--font);
   margin-right: 8px;

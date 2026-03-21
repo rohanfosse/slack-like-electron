@@ -379,7 +379,7 @@
   color: var(--accent-light);
 }
 .cc-pill-private.active {
-  border-color: #9b87f5;
+  border-color: var(--color-cctl);
   background: rgba(155,135,245,.12);
   color: #b8a8f7;
 }
@@ -395,7 +395,7 @@
   font-weight: 500;
   text-transform: none;
   letter-spacing: 0;
-  color: #9b87f5;
+  color: var(--color-cctl);
 }
 .cc-members-field { overflow: hidden; }
 .cc-members-list {

@@ -123,5 +123,5 @@ function isExpired(deadline: string | null | undefined): boolean {
 .group-header--warning { color: var(--color-warning); }
 .group-header--accent  { color: var(--accent-light); }
 .group-header--success { color: var(--color-success); }
-.group-header--purple  { color: #9b87f5; }
+.group-header--purple  { color: var(--color-cctl); }
 </style>

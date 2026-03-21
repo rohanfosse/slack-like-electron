@@ -183,8 +183,8 @@ const showDepositForm = props.variant !== 'overdue' && props.variant !== 'event'
 .devoir-card--pending:hover   { border-left-color: var(--accent); }
 .devoir-card--submitted { border-left-color: var(--color-success); }
 .devoir-card--submitted:hover { border-left-color: var(--color-success); border-color: rgba(39, 174, 96, 0.3); }
-.devoir-card--event     { border-left-color: #9b87f5; }
-.devoir-card--event:hover     { border-left-color: #9b87f5; border-color: rgba(155, 135, 245, 0.3); }
+.devoir-card--event     { border-left-color: var(--color-cctl); }
+.devoir-card--event:hover     { border-left-color: var(--color-cctl); border-color: rgba(155, 135, 245, 0.3); }
 
 .devoir-card-header {
   display: flex;
@@ -239,7 +239,7 @@ const showDepositForm = props.variant !== 'overdue' && props.variant !== 'event'
   gap: 7px;
   font-size: 12.5px;
   font-weight: 600;
-  color: #9b87f5;
+  color: var(--color-cctl);
   background: rgba(155, 135, 245, 0.1);
   border: 1px solid rgba(155, 135, 245, 0.25);
   padding: 6px 12px;
@@ -492,8 +492,8 @@ const showDepositForm = props.variant !== 'overdue' && props.variant !== 'event'
 
 .type-livrable     { background: rgba(74,144,217,.2);   color: var(--accent); }
 .type-soutenance   { background: rgba(243,156,18,.2);   color: var(--color-warning); }
-.type-cctl         { background: rgba(123,104,238,.2);  color: #9b87f5; }
+.type-cctl         { background: rgba(123,104,238,.2);  color: var(--color-cctl); }
 .type-etude_de_cas { background: rgba(39,174,96,.2);    color: var(--color-success); }
-.type-memoire      { background: rgba(231,76,60,.2);    color: #e74c3c; }
-.type-autre        { background: rgba(127,140,141,.2);  color: #95a5a6; }
+.type-memoire      { background: rgba(231,76,60,.2);    color: var(--color-danger); }
+.type-autre        { background: rgba(127,140,141,.2);  color: var(--color-autre); }
 </style>

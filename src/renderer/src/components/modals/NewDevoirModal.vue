@@ -15,6 +15,7 @@
   import Modal from '@/components/ui/Modal.vue'
   import { isoForDatetimeLocal } from '@/utils/date'
   import type { Component } from 'vue'
+  import { COLORS } from '@/constants'
 
   const props = defineProps<{ modelValue: boolean }>()
   const emit  = defineEmits<{ 'update:modelValue': [v: boolean] }>()
@@ -35,12 +36,12 @@
   }
 
   const TYPE_OPTIONS: TypeOption[] = [
-    { value: 'cctl',         label: 'CCTL',           icon: Award,    desc: 'Contrôle de connaissances en temps limité', color: '#9b87f5' },
-    { value: 'etude_de_cas', label: 'Étude de cas',   icon: BookOpen, desc: 'Analyse et résolution en conditions d\'examen', color: '#2ecc71' },
-    { value: 'soutenance',   label: 'Soutenance',     icon: Mic,      desc: 'Présentation orale devant un jury', color: '#f39c12' },
-    { value: 'livrable',     label: 'Livrable',       icon: FileText, desc: 'Rendu de fichier avec une date limite', color: '#4a90d9' },
-    { value: 'memoire',      label: 'Mémoire',        icon: File,     desc: 'Document long type rapport ou mémoire', color: '#e74c3c' },
-    { value: 'autre',        label: 'Autre',          icon: HelpCircle, desc: 'Autre type de devoir', color: '#95a5a6' },
+    { value: 'cctl',         label: 'CCTL',           icon: Award,    desc: 'Contrôle de connaissances en temps limité', color: COLORS.cctl },
+    { value: 'etude_de_cas', label: 'Étude de cas',   icon: BookOpen, desc: 'Analyse et résolution en conditions d\'examen', color: COLORS.etudeDeCas },
+    { value: 'soutenance',   label: 'Soutenance',     icon: Mic,      desc: 'Présentation orale devant un jury', color: COLORS.soutenance },
+    { value: 'livrable',     label: 'Livrable',       icon: FileText, desc: 'Rendu de fichier avec une date limite', color: COLORS.livrable },
+    { value: 'memoire',      label: 'Mémoire',        icon: File,     desc: 'Document long type rapport ou mémoire', color: COLORS.memoire },
+    { value: 'autre',        label: 'Autre',          icon: HelpCircle, desc: 'Autre type de devoir', color: COLORS.autre },
   ]
 
   // ── Formulaire ──────────────────────────────────────────────────────────

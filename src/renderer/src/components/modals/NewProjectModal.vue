@@ -781,7 +781,7 @@ async function save() {
 .np-shuffle-btn:hover:not(:disabled) {
   background: rgba(155,135,245,.1);
   border-color: rgba(155,135,245,.4);
-  color: #9B87F5;
+  color: var(--color-cctl);
 }
 .np-shuffle-btn:disabled { opacity: .4; cursor: not-allowed; }
 

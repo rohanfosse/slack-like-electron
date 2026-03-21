@@ -57,7 +57,7 @@ const appStore = useAppStore()
 }
 .student-proj-card:hover {
   background: var(--bg-hover);
-  border-color: #9B87F5;
+  border-color: var(--color-cctl);
 }
 
 .student-proj-label { font-size: 13px; font-weight: 700; color: var(--text-primary); }

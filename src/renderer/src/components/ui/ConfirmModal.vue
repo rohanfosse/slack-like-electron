@@ -76,7 +76,7 @@ useFocusTrap(cfmBoxRef, visible)
   justify-content: center;
   flex-shrink: 0;
 }
-.cfm-icon.danger  { background: rgba(231,76,60,.15);  color: #e74c3c; }
+.cfm-icon.danger  { background: rgba(231,76,60,.15);  color: var(--color-danger); }
 .cfm-icon.warning { background: rgba(241,196,15,.15); color: #f1c40f; }
 .cfm-icon.info    { background: rgba(74,144,217,.15); color: var(--accent); }
 

@@ -76,7 +76,7 @@ const modals   = useModalsStore()
 .header-project-ctx {
   font-size: 13px;
   font-weight: 600;
-  color: #9B87F5;
+  color: var(--color-cctl);
 }
 
 .header-project-clear {
@@ -93,7 +93,7 @@ const modals   = useModalsStore()
 }
 .header-project-clear:hover {
   background: rgba(155,135,245,.15);
-  color: #9B87F5;
+  color: var(--color-cctl);
   border-color: rgba(155,135,245,.6);
 }
 
