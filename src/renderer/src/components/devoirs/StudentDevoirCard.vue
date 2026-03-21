@@ -5,7 +5,7 @@
 <script setup lang="ts">
 import {
   CheckCircle2, Clock, Lock, Upload, Link2, X,
-  FileText, Calendar, LayoutList, Award,
+  FileText, Calendar, LayoutList, Award, Loader2,
 } from 'lucide-vue-next'
 import { deadlineClass, deadlineLabel, formatDate } from '@/utils/date'
 import { parseCategoryIcon } from '@/utils/categoryIcon'
@@ -23,6 +23,7 @@ const props = defineProps<{
   depositFile: string | null
   depositFileName: string | null
   depositing: boolean
+  depositFileSize?: number | null
   rubricPreview: Rubric | null
   // deposit actions
   startDeposit: (t: Devoir) => void
@@ -115,7 +116,7 @@ const showDepositForm = props.variant !== 'overdue' && props.variant !== 'event'
           <div v-if="depositMode === 'file'">
             <div v-if="depositFile" class="deposit-file-selected">
               <CheckCircle2 :size="15" class="deposit-file-selected-icon" />
-              <span class="deposit-file-selected-name">{{ depositFileName }}</span>
+              <span class="deposit-file-selected-name">{{ depositFileName }}<template v-if="depositFileSize"> · {{ (depositFileSize / 1_048_576).toFixed(1) }} Mo</template></span>
               <button class="deposit-file-selected-clear" type="button" @click.stop="clearDepositFile">
                 <X :size="12" />
               </button>
@@ -123,7 +124,7 @@ const showDepositForm = props.variant !== 'overdue' && props.variant !== 'event'
             <div v-else class="deposit-file-zone" @click="pickFile">
               <Upload :size="20" class="deposit-file-zone-icon" />
               <span class="deposit-file-zone-label">Cliquer pour choisir un fichier</span>
-              <span class="deposit-file-zone-hint">PDF, images, archives…</span>
+              <span class="deposit-file-zone-hint">PDF, images, archives… · Max 50 Mo</span>
             </div>
           </div>
           <input v-else :value="depositLink" class="form-input" placeholder="https://…" type="url" @input="$emit('update:depositLink', ($event.target as HTMLInputElement).value)" />
@@ -146,7 +147,8 @@ const showDepositForm = props.variant !== 'overdue' && props.variant !== 'event'
               :disabled="depositing || expired || (depositMode === 'file' ? !depositFile : !depositLink.trim())"
               @click="submitDeposit(devoir)"
             >
-              <Upload :size="12" />
+              <Loader2 v-if="depositing" :size="12" class="spin" />
+              <Upload v-else :size="12" />
               {{ depositing ? 'Dépôt…' : expired ? 'Délai expiré' : 'Déposer' }}
             </button>
           </div>
@@ -288,7 +290,9 @@ const showDepositForm = props.variant !== 'overdue' && props.variant !== 'event'
 }
 .devoir-grade-icon { color: var(--accent-light); flex-shrink: 0; }
 .devoir-grade-value { font-weight: 700; color: var(--accent-light); }
-.devoir-grade-feedback { color: var(--text-secondary); font-style: italic; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.devoir-grade-feedback { color: var(--text-secondary); font-style: italic; flex: 1; line-height: 1.4; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.spin { animation: spin .8s linear infinite; }
 
 .devoir-card-footer {
   display: flex;

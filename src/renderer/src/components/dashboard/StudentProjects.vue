@@ -4,7 +4,7 @@
  * with progress bars and deadline indicators.
  */
 <script setup lang="ts">
-import { FolderOpen, Clock } from 'lucide-vue-next'
+import { FolderOpen, Clock, CheckCircle2 } from 'lucide-vue-next'
 import { deadlineClass, deadlineLabel } from '@/utils/date'
 import type { StudentProjectCard } from '@/composables/useDashboardStudent'
 
@@ -37,13 +37,17 @@ const emit = defineEmits<{
           <FolderOpen v-else :size="18" />
         </div>
         <div class="db-project-info">
-          <span class="db-project-name">{{ p.label }}</span>
-          <span class="db-project-stats">
-            {{ p.submitted }}/{{ p.total }} rendus
-            <template v-if="p.overdue"> · <span style="color:var(--color-danger)">{{ p.overdue }} en retard</span></template>
+          <span class="db-project-name">
+            {{ p.label }}
+            <span v-if="p.pending > 0" class="project-status-badge project-status--active">En cours</span>
+            <span v-else class="project-status-badge project-status--done"><CheckCircle2 :size="9" /> Termine</span>
           </span>
-          <span v-if="p.nextDeadline" class="db-project-next" :class="deadlineClass(p.nextDeadline)">
+          <span v-if="p.nextDeadline" class="db-project-next db-project-next--header" :class="deadlineClass(p.nextDeadline)">
             <Clock :size="9" /> {{ deadlineLabel(p.nextDeadline) }}
+          </span>
+          <span class="db-project-stats">
+            {{ p.submitted }}/{{ p.total }} rendus · {{ p.graded }} notes
+            <template v-if="p.overdue"> · <span style="color:var(--color-danger)">{{ p.overdue }} en retard</span></template>
           </span>
         </div>
         <div class="db-student-bar">
@@ -107,4 +111,13 @@ const emit = defineEmits<{
 }
 .db-student-fill.fill-done { background: var(--color-success); }
 .db-student-fill.fill-overdue { background: var(--color-danger); }
+
+.project-status-badge {
+  display: inline-flex; align-items: center; gap: 3px;
+  font-size: 9px; font-weight: 700; text-transform: uppercase;
+  padding: 1px 6px; border-radius: 4px; vertical-align: middle; margin-left: 6px;
+}
+.project-status--active { background: rgba(39,174,96,.15); color: var(--color-success); }
+.project-status--done { background: rgba(255,255,255,.08); color: var(--text-muted); }
+.db-project-next--header { margin-top: -1px; }
 </style>

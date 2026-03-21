@@ -79,6 +79,7 @@ const emit = defineEmits<{
       :toggle-sidebar="props.toggleSidebar"
       :greeting-name="greetingName"
       :today="today"
+      :urgent-count="urgentActions.length"
       @open-student-timeline="emit('openStudentTimeline')"
       @navigate-devoirs="emit('navigateDevoirs')"
     />
@@ -96,6 +97,7 @@ const emit = defineEmits<{
       :urgent-actions="urgentActions"
       :has-devoirs-loaded="hasDevoirsLoaded"
       @go-to-project="(k) => emit('goToProject', k)"
+      @navigate-devoirs="emit('navigateDevoirs')"
     />
 
     <StudentStatsCards

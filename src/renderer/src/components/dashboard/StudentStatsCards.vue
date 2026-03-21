@@ -4,12 +4,24 @@
  * graded, and most frequent grade.
  */
 <script setup lang="ts">
-import { Clock, CheckCircle2, Award, TrendingUp } from 'lucide-vue-next'
+import { computed } from 'vue'
+import { Clock, CheckCircle2, Award, TrendingUp, TrendingDown, Minus } from 'lucide-vue-next'
 
-defineProps<{
+const props = defineProps<{
   studentStats: { pending: number; submitted: number; graded: number; modeGrade: string | null }
   recentGrades: { title: string; note: string }[]
 }>()
+
+const gradeTrend = computed(() => {
+  const grades = props.recentGrades.map(g => g.note.toUpperCase())
+  if (grades.length < 2) return 'neutral'
+  const rank: Record<string, number> = { A: 4, B: 3, C: 2, D: 1 }
+  const last = rank[grades[0]] ?? 0
+  const prev = rank[grades[1]] ?? 0
+  if (last > prev) return 'up'
+  if (last < prev) return 'down'
+  return 'neutral'
+})
 </script>
 
 <template>
@@ -41,8 +53,13 @@ defineProps<{
       <span class="db-stat-label">Devoirs notés</span>
       <Award :size="18" class="db-stat-icon" />
     </div>
-    <div class="db-stat-card db-stat-neutral">
-      <span class="db-stat-value">{{ studentStats.modeGrade ?? '-' }}</span>
+    <div class="db-stat-card db-stat-neutral" title="La note que vous obtenez le plus souvent parmi vos devoirs notés">
+      <span class="db-stat-value">
+        {{ studentStats.modeGrade ?? '-' }}
+        <TrendingUp v-if="gradeTrend === 'up'" :size="14" class="trend-arrow trend-up" />
+        <TrendingDown v-else-if="gradeTrend === 'down'" :size="14" class="trend-arrow trend-down" />
+        <Minus v-else :size="14" class="trend-arrow trend-neutral" />
+      </span>
       <span class="db-stat-label">Note fréquente</span>
       <TrendingUp :size="18" class="db-stat-icon" />
     </div>
@@ -72,6 +89,11 @@ defineProps<{
 /* ── Stats grid ── */
 .db-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
 @media (max-width: 900px) { .db-stats { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 480px) { .db-stats { grid-template-columns: repeat(2, 1fr); gap: 8px; } .db-stat-card { padding: 14px 14px; } }
+.trend-arrow { vertical-align: middle; margin-left: 4px; }
+.trend-up { color: var(--color-success); }
+.trend-down { color: var(--color-danger); }
+.trend-neutral { color: var(--text-muted); opacity: .5; }
 .db-stat-card {
   position: relative; border-radius: 10px; padding: 16px 18px;
   border: 1px solid var(--border); background: var(--bg-sidebar);

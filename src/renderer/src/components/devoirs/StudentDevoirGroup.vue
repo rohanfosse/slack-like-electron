@@ -2,7 +2,8 @@
  * Groupe de devoirs étudiant : header avec icône + compteur, puis liste de StudentDevoirCard.
  */
 <script setup lang="ts">
-import type { Component } from 'vue'
+import { ref, type Component } from 'vue'
+import { ChevronDown } from 'lucide-vue-next'
 import type { Devoir, Rubric } from '@/types'
 import { isExpired as _isExpired } from '@/utils/devoir'
 import StudentDevoirCard from './StudentDevoirCard.vue'
@@ -37,6 +38,8 @@ defineEmits<{
   (e: 'update:depositLink', v: string): void
 }>()
 
+const collapsed = ref(false)
+
 function isExpired(deadline: string | null | undefined): boolean {
   return _isExpired(deadline, props.now)
 }
@@ -44,12 +47,13 @@ function isExpired(deadline: string | null | undefined): boolean {
 
 <template>
   <template v-if="devoirs.length">
-    <div class="group-header" :class="headerClass" :title="title">
+    <div class="group-header" :class="[headerClass, { 'group-header--clickable': true }]" :title="title" @click="collapsed = !collapsed">
       <component :is="icon" :size="12" /> {{ label }}
       <span class="group-count">{{ count }}</span>
+      <ChevronDown :size="12" class="group-chevron" :class="{ 'group-chevron--collapsed': collapsed }" />
       <span v-if="subtitle" class="group-subtitle">{{ subtitle }}</span>
     </div>
-    <div class="devoirs-list">
+    <div v-show="!collapsed" class="devoirs-list">
       <StudentDevoirCard
         v-for="t in devoirs"
         :key="t.id"
@@ -119,6 +123,9 @@ function isExpired(deadline: string | null | undefined): boolean {
   color: inherit;
 }
 
+.group-header--clickable { cursor: pointer; user-select: none; }
+.group-chevron { transition: transform .2s ease; margin-left: auto; }
+.group-chevron--collapsed { transform: rotate(-90deg); }
 .group-header--danger  { color: var(--color-danger); }
 .group-header--warning { color: var(--color-warning); }
 .group-header--accent  { color: var(--accent-light); }

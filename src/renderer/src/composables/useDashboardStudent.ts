@@ -7,7 +7,7 @@ import type { Devoir }    from '@/types'
 
 export interface StudentProjectCard {
   key: string; label: string; icon: Component | null
-  total: number; submitted: number; pending: number; overdue: number
+  total: number; submitted: number; pending: number; overdue: number; graded: number
   nextDeadline: string | null; avgGrade: number | null
 }
 
@@ -52,7 +52,7 @@ export function useDashboardStudent() {
     const pending = travauxStore.devoirs.filter(t => t.depot_id == null && needsSub(t) && t.deadline)
     if (!pending.length) return []
     const sorted = [...pending].sort((a, b) => new Date(a.deadline).getTime() - new Date(b.deadline).getTime())
-    return sorted.slice(0, 3).map(t => {
+    return sorted.slice(0, 5).map(t => {
       const diffMs = new Date(t.deadline).getTime() - now
       const diffDays = Math.ceil(diffMs / 86_400_000)
       let urgency: string
@@ -89,7 +89,8 @@ export function useDashboardStudent() {
       const _projectMode = Object.entries(gradeCounts).sort((a, b) => b[1] - a[1])[0]
       const projectModeGrade = _projectMode?.[0] ?? null
       void projectModeGrade
-      cards.push({ key, label, icon, total: rows.length, submitted: submitted.length, pending: pending.length, overdue: overdue.length, nextDeadline: upcoming[0]?.deadline ?? null, avgGrade })
+      const graded = rows.filter(r => r.note != null && r.note !== 'NA')
+      cards.push({ key, label, icon, total: rows.length, submitted: submitted.length, pending: pending.length, overdue: overdue.length, graded: graded.length, nextDeadline: upcoming[0]?.deadline ?? null, avgGrade })
     }
     return cards.sort((a, b) => {
       if (a.overdue !== b.overdue) return b.overdue - a.overdue

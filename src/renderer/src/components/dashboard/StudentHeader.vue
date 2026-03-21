@@ -4,13 +4,22 @@
  * timeline and devoirs action buttons.
  */
 <script setup lang="ts">
+import { computed } from 'vue'
 import { LayoutDashboard, CalendarDays, BookOpen, Menu } from 'lucide-vue-next'
 
-defineProps<{
+const props = defineProps<{
   toggleSidebar?: () => void
   greetingName: string
   today: string
+  urgentCount?: number
 }>()
+
+const greeting = computed(() => {
+  const h = new Date().getHours()
+  if (h >= 6 && h <= 17) return 'Bonjour'
+  if (h >= 18 && h <= 21) return 'Bonsoir'
+  return 'Bonne nuit'
+})
 
 const emit = defineEmits<{
   openStudentTimeline: []
@@ -26,7 +35,7 @@ const emit = defineEmits<{
       </button>
       <LayoutDashboard :size="20" class="db-header-icon" />
       <div>
-        <h1 class="db-title">Bonjour, {{ greetingName }}</h1>
+        <h1 class="db-title">{{ greeting }}, {{ greetingName }}</h1>
         <p class="db-date">{{ today }}</p>
       </div>
     </div>
@@ -36,6 +45,7 @@ const emit = defineEmits<{
       </button>
       <button class="btn-ghost db-echeancier-btn" @click="emit('navigateDevoirs')">
         <BookOpen :size="14" /> Tous mes devoirs
+        <span v-if="props.urgentCount" class="header-badge">{{ props.urgentCount }}</span>
       </button>
     </div>
   </div>
@@ -47,6 +57,12 @@ const emit = defineEmits<{
 .db-header-icon { color: var(--accent); }
 .db-title { font-size: 20px; font-weight: 800; color: var(--text-primary); line-height: 1.2; }
 .db-date  { font-size: 12px; color: var(--text-muted); margin-top: 2px; text-transform: capitalize; }
-.db-echeancier-btn { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; padding: 6px 12px; flex-shrink: 0; }
+.db-echeancier-btn { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; padding: 8px 14px; flex-shrink: 0; min-height: 36px; }
+.header-badge {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 18px; height: 18px; padding: 0 5px;
+  border-radius: 10px; font-size: 10px; font-weight: 700;
+  background: var(--color-danger); color: #fff;
+}
 .db-header-actions { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
 </style>

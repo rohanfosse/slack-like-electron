@@ -4,16 +4,26 @@
  * when the student has no pending assignments.
  */
 <script setup lang="ts">
-import { Clock, AlertTriangle, ChevronRight, CheckCircle2 } from 'lucide-vue-next'
+import { Clock, AlertTriangle, ChevronRight, CheckCircle2, ArrowRight } from 'lucide-vue-next'
 
 defineProps<{
-  urgentActions: { id: number; title: string; isOverdue: boolean; urgency: string; category?: string | null }[]
+  urgentActions: { id: number; title: string; isOverdue: boolean; urgency: string; category?: string | null; deadline?: string }[]
   hasDevoirsLoaded: boolean
 }>()
 
 const emit = defineEmits<{
   goToProject: [key: string]
+  navigateDevoirs: []
 }>()
+
+function countdown(deadline?: string): string {
+  if (!deadline) return ''
+  const diff = new Date(deadline).getTime() - Date.now()
+  if (diff < 0) return ''
+  const hours = Math.floor(diff / 3_600_000)
+  if (hours < 24) return `${hours}h`
+  return `${Math.ceil(diff / 86_400_000)}j`
+}
 </script>
 
 <template>
@@ -23,13 +33,17 @@ const emit = defineEmits<{
       <AlertTriangle v-if="ua.isOverdue" :size="14" class="db-urgent-icon--danger" />
       <Clock v-else :size="14" style="opacity:.5" />
       <span class="db-urgent-item-title">{{ ua.title }}</span>
+      <span v-if="countdown(ua.deadline)" class="db-urgent-countdown">{{ countdown(ua.deadline) }}</span>
       <span class="db-urgent-item-urgency" :class="{ 'text-danger': ua.isOverdue }">{{ ua.urgency }}</span>
       <ChevronRight :size="12" style="opacity:.3" />
     </div>
+    <button class="btn-ghost db-voir-tous" @click="emit('navigateDevoirs')">
+      Voir tous les devoirs <ArrowRight :size="12" />
+    </button>
   </div>
   <div v-else-if="hasDevoirsLoaded" class="db-all-done">
-    <CheckCircle2 :size="18" style="color:var(--color-success)" />
-    <span>Tout est à jour ! Aucun devoir en attente.</span>
+    <CheckCircle2 :size="22" class="all-done-check" />
+    <span>Bravo, tout est a jour ! Aucun devoir en attente.</span>
   </div>
 </template>
 
@@ -59,4 +73,8 @@ const emit = defineEmits<{
   border: 1px solid rgba(46,204,113,.2); border-radius: var(--radius);
   margin-bottom: 16px; font-size: 14px; font-weight: 600; color: var(--text-secondary);
 }
+.all-done-check { color: var(--color-success); animation: pop .4s ease; }
+@keyframes pop { 0% { transform: scale(0); } 60% { transform: scale(1.2); } 100% { transform: scale(1); } }
+.db-urgent-countdown { font-size: 10px; font-weight: 700; color: var(--color-warning); background: rgba(243,156,18,.12); padding: 2px 6px; border-radius: 4px; flex-shrink: 0; }
+.db-voir-tous { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; margin-top: 6px; }
 </style>

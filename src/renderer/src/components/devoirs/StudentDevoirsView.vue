@@ -69,8 +69,8 @@ const depositProps = computed(() => ({
 </script>
 
 <template>
-  <!-- Stats bar -->
-  <StudentStatsBar v-if="filteredDevoirs.length > 0" :stats="studentStats" />
+  <!-- Stats bar (sticky) -->
+  <StudentStatsBar v-if="filteredDevoirs.length > 0" :stats="studentStats" class="sticky-stats" />
 
   <!-- Fiche projet étudiant (filtre projet actif) -->
   <template v-if="appStore.activeProject && appStore.activePromoId">
@@ -94,7 +94,7 @@ const depositProps = computed(() => ({
   <div v-else-if="filteredDevoirs.length === 0" class="empty-state-custom">
     <CheckCircle2 :size="48" class="empty-icon" />
     <h3>Aucun devoir assigné</h3>
-    <p>Vos devoirs apparaîtront ici dès qu'un enseignant en créera.</p>
+    <p>Vos devoirs apparaitront ici des qu'un enseignant en creera pour votre promotion.</p>
   </div>
 
   <!-- Aperçu par projet -->
@@ -228,7 +228,8 @@ const depositProps = computed(() => ({
 .empty-state-custom p {
   font-size: 13px;
   color: var(--text-muted);
-  max-width: 320px;
+  max-width: 360px;
   line-height: 1.5;
 }
+.sticky-stats { position: sticky; top: 0; z-index: 10; backdrop-filter: blur(8px); }
 </style>
