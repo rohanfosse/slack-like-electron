@@ -1,585 +1,65 @@
 <script setup lang="ts">
-  import { ref, watch, computed, onMounted, nextTick } from 'vue'
+  import { watch, onMounted } from 'vue'
   import { useRoute, useRouter } from 'vue-router'
-  import { Plus, ChevronDown, FolderOpen, Layers, PlusCircle, Pencil, Trash2, VolumeX, Volume2, MessageSquare, BookOpen, BarChart2, CalendarDays } from 'lucide-vue-next'
+  import { Plus, ChevronDown, FolderOpen, Layers, BookOpen, BarChart2, CalendarDays } from 'lucide-vue-next'
   import NewProjectModal from '@/components/modals/NewProjectModal.vue'
   import ContextMenu from '@/components/ui/ContextMenu.vue'
-  import type { ContextMenuItem } from '@/components/ui/ContextMenu.vue'
   import { parseCategoryIcon } from '@/utils/categoryIcon'
   import { useAppStore }    from '@/stores/app'
   import { useModalsStore } from '@/stores/modals'
-  import { useMessagesStore } from '@/stores/messages'
-  import { useTravauxStore } from '@/stores/travaux'
-  import { useToast }   from '@/composables/useToast'
-  import { useConfirm } from '@/composables/useConfirm'
   import PromoRail    from './PromoRail.vue'
   import ChannelItem  from './ChannelItem.vue'
   import { avatarColor }  from '@/utils/format'
-  import type { Channel, Student, Promotion } from '@/types'
-  import { STORAGE_KEYS, DM_RECENT_LIMIT } from '@/constants'
+
+  import { useSidebarData }     from '@/composables/useSidebarData'
+  import { useSidebarDm }       from '@/composables/useSidebarDm'
+  import { useSidebarProjects } from '@/composables/useSidebarProjects'
+  import { useSidebarActions }  from '@/composables/useSidebarActions'
+  import { useSidebarNav }      from '@/composables/useSidebarNav'
 
   const emit = defineEmits<{ navigate: [] }>()
 
-  const appStore      = useAppStore()
-  const modals        = useModalsStore()
-  const messagesStore = useMessagesStore()
-  const travauxStore  = useTravauxStore()
-  const route         = useRoute()
-  const router        = useRouter()
-  const { showToast } = useToast()
-  const { confirm }   = useConfirm()
+  const appStore = useAppStore()
+  const modals   = useModalsStore()
+  const route    = useRoute()
+  const router   = useRouter()
 
-  // ── État local ────────────────────────────────────────────────────────────
-  const promotions  = ref<Promotion[]>([])
-  const channels    = ref<Channel[]>([])
-  const students    = ref<Student[]>([])
-  const loading     = ref(false)
+  // ── Composables ───────────────────────────────────────────────────────────
+  const {
+    promotions, channels, students, loading, user, activePromoName,
+    loadTeacherChannels, load, visibleChannels, channelGroups, dmStudents,
+    selectPromo, setLoadRecentDmContacts,
+  } = useSidebarData()
 
-  const activePromoName = computed(() => {
-    const p = promotions.value.find(p => p.id === appStore.activePromoId)
-    return p?.name ?? null
-  })
-  // Set des catégories repliées
-  const collapsed          = ref<Set<string>>(new Set())
-  const collapsedDashboard = ref<Set<string>>(new Set())
-  // Sections principales repliables
-  const channelsCollapsed = ref(false)
-  const dmCollapsed       = ref(false)
+  const {
+    collapsed, collapsedDashboard, channelsCollapsed, dmCollapsed,
+    toggleCategory, toggleDashboardProject,
+    sectionShortcut, sectionLabel, channelSectionLabel, channelActionLabel,
+    selectChannel,
+  } = useSidebarNav(emit)
 
-  const user = computed(() => appStore.currentUser)
+  const {
+    ctx, openCtxCategory, openCtxChannel,
+    mutedIds, isMuted, toggleMute,
+    renamingChannelId, renamingCategory, renameValue, renameInputEl,
+    cancelRename, commitRenameChannel, commitRenameCategory,
+    draggingChannel, dragOverCategory,
+    onDragStart, onDragEnd, onDragOver, onDragLeave, onDrop,
+  } = useSidebarActions(loadTeacherChannels)
 
-  // ── Chargement ────────────────────────────────────────────────────────────
-  async function loadTeacherSidebar() {
-    loading.value = true
-    try {
-      const [promRes, stuRes] = await Promise.all([
-        window.api.getPromotions(),
-        window.api.getAllStudents(),
-      ])
-      promotions.value = promRes?.ok ? promRes.data : []
-      students.value   = stuRes?.ok ? stuRes.data : []
+  const {
+    recentDmContacts, showAllDmStudents,
+    loadRecentDmContacts, dmContactsToShow, getDmPreview,
+    selectDm, openDmContextMenu,
+  } = useSidebarDm(dmStudents, ctx, emit)
 
-      if (promotions.value.length && !appStore.activePromoId) {
-        appStore.activePromoId = promotions.value[0].id
-      }
-      await loadTeacherChannels()
-      await loadRecentDmContacts()
-    } finally {
-      loading.value = false
-    }
-  }
+  const {
+    allProjects, projectStats, loadCustomProjects, loadDbProjects,
+    onProjectCreated, selectProject, dashboardProjectGroups,
+  } = useSidebarProjects(visibleChannels)
 
-  async function loadTeacherChannels() {
-    if (!appStore.activePromoId) return
-    const res = await window.api.getChannels(appStore.activePromoId)
-    channels.value = res?.ok ? res.data : []
-  }
-
-  async function loadStudentSidebar() {
-    if (!user.value?.promo_id) return
-    loading.value = true
-    try {
-      const [chRes, stuRes, teachRes] = await Promise.all([
-        window.api.getChannels(user.value.promo_id),
-        window.api.getStudents(user.value.promo_id),
-        window.api.getTeachers(),
-      ])
-      channels.value = chRes?.ok ? chRes.data : []
-      const stuList  = stuRes?.ok ? stuRes.data : []
-      const teachers = teachRes?.ok ? teachRes.data : []
-      students.value = [...teachers, ...stuList]
-      await loadRecentDmContacts()
-    } finally {
-      loading.value = false
-    }
-  }
-
-  async function load() {
-    if (appStore.isStaff) await loadTeacherSidebar()
-    else await loadStudentSidebar()
-  }
-
-  // Filtrer les canaux visibles
-  const visibleChannels = computed(() => {
-    if (appStore.isTeacher) return channels.value
-    if (appStore.currentUser?.type === 'ta') {
-      // Intervenants : uniquement leurs canaux assignés (si assignés)
-      const ids = appStore.taChannelIds
-      if (ids.length > 0) return channels.value.filter((ch) => ids.includes(ch.id))
-      return channels.value // aucune restriction définie → tout voir
-    }
-    // Étudiant : exclure les canaux privés dont il n'est pas membre
-    return channels.value.filter((ch) => {
-      if (!ch.is_private) return true
-      try {
-        const members: number[] = Array.isArray(ch.members) ? ch.members : JSON.parse(ch.members as unknown as string ?? '[]')
-        return members.includes(user.value?.id ?? -1)
-      } catch { return false }
-    })
-  })
-
-  // Grouper les canaux par catégorie
-  // null/undefined category → groupe "Sans catégorie" mis en dernier
-  const NO_CAT = '__no_category__'
-
-  interface CategoryGroup {
-    label: string
-    key: string
-    channels: Channel[]
-  }
-
-  const channelGroups = computed((): CategoryGroup[] => {
-    const map = new Map<string, Channel[]>()
-    for (const ch of visibleChannels.value) {
-      const key = ch.category?.trim() || NO_CAT
-      if (!map.has(key)) map.set(key, [])
-      map.get(key)!.push(ch)
-    }
-
-    const groups: CategoryGroup[] = []
-    for (const [key, chs] of map) {
-      if (key !== NO_CAT) groups.push({ label: key, key, channels: chs })
-    }
-    // Sans catégorie toujours en dernier
-    if (map.has(NO_CAT)) {
-      const hasCats = groups.length > 0
-      groups.push({ label: hasCats ? 'Autres' : 'Canaux', key: NO_CAT, channels: map.get(NO_CAT)! })
-    }
-    return groups
-  })
-
-  function toggleDashboardProject(key: string) {
-    const next = new Set(collapsedDashboard.value)
-    if (next.has(key)) next.delete(key)
-    else next.add(key)
-    collapsedDashboard.value = next
-  }
-
-  function toggleCategory(key: string) {
-    const next = new Set(collapsed.value)
-    if (next.has(key)) next.delete(key)
-    else next.add(key)
-    collapsed.value = next
-  }
-
-  const dmStudents = computed(() => {
-    const promoId = appStore.isStaff ? appStore.activePromoId : user.value?.promo_id
-    return students.value.filter((s) => {
-      if (s.id === user.value?.id) return false
-      // Les enseignants (id négatif) sont toujours visibles dans les DMs
-      if (s.id < 0) return true
-      // Les étudiants sont filtrés par promo
-      return !promoId || s.promo_id === promoId
-    })
-  })
-
-  // ── Conversations DM récentes ──────────────────────────────────────────────
-  interface DmContact { name: string; last_message_at: string; last_message_preview: string }
-  const recentDmContacts = ref<DmContact[]>([])
-  const showAllDmStudents = ref(false)
-
-  async function loadRecentDmContacts() {
-    if (!user.value?.id) return
-    try {
-      const res = await window.api.getRecentDmContacts(user.value.id, DM_RECENT_LIMIT)
-      recentDmContacts.value = res?.ok ? res.data : []
-    } catch { recentDmContacts.value = [] }
-  }
-
-  // Les contacts récents + ceux avec unread, avec infos student pour pouvoir cliquer
-  const dmContactsToShow = computed(() => {
-    // Prof/TA : contacts récents en premier, puis compléter avec les étudiants de la promo
-    if (appStore.isStaff) {
-      const recentNames = new Set(recentDmContacts.value.map(c => c.name))
-      const recentStudents = dmStudents.value.filter(s => recentNames.has(s.name))
-      const orderMap = new Map(recentDmContacts.value.map((c, i) => [c.name, i]))
-      recentStudents.sort((a, b) => (orderMap.get(a.name) ?? 999) - (orderMap.get(b.name) ?? 999))
-      // Compléter avec les autres étudiants si la liste est courte
-      const remaining = dmStudents.value.filter(s => !recentNames.has(s.name))
-      return [...recentStudents, ...remaining].slice(0, DM_RECENT_LIMIT)
-    }
-
-    // Enseignants toujours visibles en premier pour les étudiants
-    const teachers = dmStudents.value.filter(s => s.id < 0)
-
-    const recentNames = new Set(recentDmContacts.value.map(c => c.name))
-    // Ajouter les noms avec unread
-    for (const name of Object.keys(appStore.unreadDms)) {
-      recentNames.add(name)
-    }
-    // Contacts récents (hors enseignants déjà inclus)
-    const teacherNames = new Set(teachers.map(t => t.name))
-    const recentStudents = dmStudents.value.filter(s => s.id > 0 && recentNames.has(s.name))
-    // Trier les étudiants par date de dernier message
-    const orderMap = new Map(recentDmContacts.value.map((c, i) => [c.name, i]))
-    recentStudents.sort((a, b) => {
-      const ai = orderMap.get(a.name) ?? 999
-      const bi = orderMap.get(b.name) ?? 999
-      return ai - bi
-    })
-    return [...teachers, ...recentStudents]
-  })
-
-  function getDmPreview(name: string) {
-    const c = recentDmContacts.value.find(c => c.name === name)
-    return c?.last_message_preview?.substring(0, 40) || ''
-  }
-
-  // ── Projets (section Devoirs) ─────────────────────────────────────────────
-  const dbProjects     = ref<string[]>([])
-  const customProjects = ref<string[]>([])
-
-  function loadCustomProjects() {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEYS.CUSTOM_PROJECTS)
-      customProjects.value = raw ? JSON.parse(raw) : []
-    } catch { customProjects.value = [] }
-  }
-
-  async function loadDbProjects() {
-    const promoId = appStore.activePromoId ?? user.value?.promo_id
-    if (!promoId) return
-    const res = await window.api.getTravailCategories(promoId)
-    dbProjects.value = res?.ok ? res.data : []
-  }
-
-  const allProjects = computed(() => {
-    const set = new Set([...dbProjects.value, ...customProjects.value])
-    return Array.from(set).sort((a, b) => a.localeCompare(b, 'fr'))
-  })
-
-  // ── Stats de rendus par projet (pour indicateurs sidebar) ─────────────────
-  const projectStats = computed((): Record<string, { depots: number; expected: number }> => {
-    const map: Record<string, { depots: number; expected: number }> = {}
-    for (const t of travauxStore.ganttData) {
-      const cat = t.category?.trim()
-      if (!cat || !t.published) continue
-      if (!map[cat]) map[cat] = { depots: 0, expected: 0 }
-      map[cat].depots   += t.depots_count  ?? 0
-      map[cat].expected += t.students_total ?? 0
-    }
-    return map
-  })
-
-  function onProjectCreated(name: string) {
-    loadCustomProjects()
-    appStore.activeProject = name
-    router.push('/devoirs')
-  }
-
-  function selectProject(name: string | null) {
-    appStore.activeProject = name
-    router.push('/devoirs')
-  }
-
-  // ── Arbre projets pour le dashboard ──────────────────────────────────────
-  interface DashboardProjectGroup {
-    key: string     // category raw value (e.g. "monitor Développement Web")
-    label: string   // parsed label
-    channels: Channel[]
-  }
-
-  const dashboardProjectGroups = computed((): DashboardProjectGroup[] => {
-    const all = [...allProjects.value]
-    const groups: DashboardProjectGroup[] = []
-
-    for (const proj of all) {
-      const chs = visibleChannels.value.filter(ch => ch.category?.trim() === proj)
-      if (chs.length) groups.push({ key: proj, label: parseCategoryIcon(proj).label, channels: chs })
-    }
-
-    // Canaux sans projet
-    const uncategorized = visibleChannels.value.filter(ch => !ch.category?.trim())
-    if (uncategorized.length) {
-      groups.push({ key: NO_CAT, label: 'Autres canaux', channels: uncategorized })
-    }
-    return groups
-  })
-
-  // ── Raccourci "Tout afficher" contextuel ──────────────────────────────────
-  const sectionShortcut = computed(() => {
-    switch (route.name) {
-      case 'messages':
-        return {
-          label:  'Tous les canaux',
-          icon:   MessageSquare,
-          active: !appStore.activeChannelId && !appStore.activeDmStudentId,
-          action: () => {
-            appStore.activeChannelId   = null
-            appStore.activeDmStudentId = null
-            router.push('/messages')
-          },
-        }
-      case 'devoirs':
-        return {
-          label:  'Tous les devoirs',
-          icon:   BookOpen,
-          active: !appStore.activeProject,
-          action: () => {
-            appStore.activeProject = null
-            router.push('/devoirs')
-          },
-        }
-      case 'documents':
-        return {
-          label:  'Tous les documents',
-          icon:   FolderOpen,
-          active: !appStore.activeChannelId && !appStore.activeProject,
-          action: () => {
-            appStore.activeChannelId = null
-            appStore.activeProject   = null
-            router.push('/documents')
-          },
-        }
-      default:
-        return null
-    }
-  })
-
-  // ── Contexte sidebar selon la route ───────────────────────────────────────
-  const sectionLabel = computed(() => {
-    if (route.name === 'dashboard') return 'Accueil'
-    if (route.name === 'devoirs')   return 'Devoirs'
-    if (route.name === 'documents') return 'Documents'
-    return 'Messages'
-  })
-
-  const channelSectionLabel = computed(() => {
-    if (route.name === 'devoirs')   return 'Devoirs par canal'
-    if (route.name === 'documents') return 'Docs par canal'
-    return 'Canaux'
-  })
-
-  const channelActionLabel = computed(() => {
-    if (route.name === 'devoirs')   return 'Voir les devoirs de ce canal'
-    if (route.name === 'documents') return 'Voir les docs de ce canal'
-    return undefined
-  })
-
-  // ── Interactions ──────────────────────────────────────────────────────────
-  function selectChannel(ch: Channel) {
-    appStore.openChannel(ch.id, ch.promo_id, ch.name, ch.type, ch.description ?? '')
-    // Naviguer vers la section active pour que la vue charge le bon contenu
-    if (route.name !== 'messages') {
-      router.push(`/${route.name as string}`)
-    }
-    // MessagesView, TravauxView, DocumentsView ont chacun leur watcher sur activeChannelId
-    emit('navigate')
-  }
-
-  function selectDm(s: Student) {
-    appStore.openDm(s.id, s.promo_id, s.name)
-    if (route.name !== 'messages') router.push('/messages')
-    emit('navigate')
-    setTimeout(() => loadRecentDmContacts(), 500)
-  }
-
-  function openDmContextMenu(e: MouseEvent, s: Student) {
-    const muted = appStore.isDmMuted(s.name)
-    ctx.value = {
-      x: e.clientX,
-      y: e.clientY,
-      items: [
-        {
-          label: muted ? 'Réactiver les notifications' : 'Couper les notifications',
-          action: () => { muted ? appStore.unmuteDm(s.name) : appStore.muteDm(s.name) },
-        },
-      ],
-    }
-  }
-
-  async function selectPromo(promoId: number) {
-    appStore.activePromoId = promoId
-    await loadTeacherChannels()
-  }
-
-  // ── Mute (localStorage) ───────────────────────────────────────────────────
-  const MUTE_KEY = computed(() => `cc_muted_${appStore.activePromoId ?? appStore.currentUser?.promo_id ?? 0}`)
-
-  function loadMuted(): Set<number> {
-    try { return new Set(JSON.parse(localStorage.getItem(MUTE_KEY.value) ?? '[]') as number[]) }
-    catch { return new Set() }
-  }
-  function saveMuted(s: Set<number>) {
-    localStorage.setItem(MUTE_KEY.value, JSON.stringify([...s]))
-  }
-
-  const mutedIds = ref<Set<number>>(loadMuted())
-  watch(MUTE_KEY, () => { mutedIds.value = loadMuted() })
-
-  function isMuted(id: number) { return mutedIds.value.has(id) }
-  function toggleMute(ch: Channel) {
-    const next = new Set(mutedIds.value)
-    if (next.has(ch.id)) { next.delete(ch.id); showToast(`"${ch.name}" retiré de la sourdine.`) }
-    else                  { next.add(ch.id);    showToast(`"${ch.name}" mis en sourdine.`) }
-    mutedIds.value = next
-    saveMuted(next)
-  }
-
-  // ── Renommage inline ──────────────────────────────────────────────────────
-  const renamingChannelId  = ref<number | null>(null)
-  const renamingCategory   = ref<string | null>(null)
-  const renameValue        = ref('')
-  const renameInputEl      = ref<HTMLInputElement | null>(null)
-
-  async function startRenameChannel(ch: Channel) {
-    renamingCategory.value  = null
-    renamingChannelId.value = ch.id
-    renameValue.value       = ch.name
-    await nextTick(); renameInputEl.value?.select()
-  }
-  async function startRenameCategory(cat: string) {
-    renamingChannelId.value = null
-    renamingCategory.value  = cat
-    renameValue.value       = parseCategoryIcon(cat).label || cat
-    await nextTick(); renameInputEl.value?.select()
-  }
-  function cancelRename() {
-    renamingChannelId.value = null
-    renamingCategory.value  = null
-    renameValue.value       = ''
-  }
-
-  async function commitRenameChannel() {
-    const id   = renamingChannelId.value
-    const name = renameValue.value.trim()
-    cancelRename()
-    if (!id || !name) return
-    const res = await window.api.renameChannel(id, name)
-    if (res?.ok === false) { showToast('Erreur lors du renommage.', 'error'); return }
-    await loadTeacherChannels()
-    showToast('Canal renommé.', 'success')
-  }
-
-  async function commitRenameCategory() {
-    const old  = renamingCategory.value
-    const next = renameValue.value.trim()
-    cancelRename()
-    if (!old || !next || !appStore.activePromoId) return
-    // Reconstruire la clé catégorie : on conserve l'icône prefix si présente
-    const iconPrefix = old.includes(' ') ? old.split(' ')[0] + ' ' : ''
-    const newKey = iconPrefix + next
-    const res = await window.api.renameCategory(appStore.activePromoId, old, newKey)
-    if (res?.ok === false) { showToast('Erreur lors du renommage.', 'error'); return }
-    await loadTeacherChannels()
-    showToast('Catégorie renommée.', 'success')
-  }
-
-  // ── Menu contextuel ───────────────────────────────────────────────────────
-  interface CtxState { x: number; y: number; items: ContextMenuItem[] }
-  const ctx = ref<CtxState | null>(null)
-
-  function openCtxCategory(e: MouseEvent, group: { key: string; label: string }) {
-    if (!appStore.isStaff) return
-    ctx.value = {
-      x: e.clientX, y: e.clientY,
-      items: [
-        {
-          label: 'Ajouter un canal ici',
-          icon:  PlusCircle,
-          action: () => {
-            appStore.pendingChannelCategory = group.key
-            modals.createChannel = true
-          },
-        },
-        {
-          label: 'Renommer la catégorie',
-          icon:  Pencil,
-          action: () => startRenameCategory(group.key),
-        },
-        {
-          label: 'Dissoudre la catégorie',
-          icon:  Trash2,
-          danger: true,
-          separator: true,
-          action: async () => {
-            if (!appStore.activePromoId) return
-            if (!await confirm(`Dissoudre la catégorie « ${group.key} » ? Les canaux seront déplacés hors catégorie.`, 'warning', 'Dissoudre')) return
-            const res = await window.api.deleteCategory(appStore.activePromoId, group.key)
-            if (res?.ok === false) { showToast('Erreur.', 'error'); return }
-            await loadTeacherChannels()
-            showToast('Catégorie dissoute.', 'success')
-          },
-        },
-      ],
-    }
-  }
-
-  function openCtxChannel(e: MouseEvent, ch: Channel) {
-    if (!appStore.isStaff) return
-    ctx.value = {
-      x: e.clientX, y: e.clientY,
-      items: [
-        {
-          label: 'Renommer',
-          icon:  Pencil,
-          action: () => startRenameChannel(ch),
-        },
-        {
-          label:  isMuted(ch.id) ? 'Retirer la sourdine' : 'Mettre en sourdine',
-          icon:   isMuted(ch.id) ? Volume2 : VolumeX,
-          action: () => toggleMute(ch),
-        },
-        {
-          label: 'Supprimer le canal',
-          icon:  Trash2,
-          danger: true,
-          separator: true,
-          action: async () => {
-            if (!await confirm(`Supprimer le canal « #${ch.name} » et tous ses messages ? Cette action est irréversible.`, 'danger', 'Supprimer')) return
-            const res = await window.api.deleteChannel(ch.id)
-            if (res?.ok === false) { showToast('Erreur.', 'error'); return }
-            if (appStore.activeChannelId === ch.id) appStore.activeChannelId = null
-            await loadTeacherChannels()
-            showToast('Canal supprimé.', 'success')
-          },
-        },
-      ],
-    }
-  }
-
-  // ── Drag & drop canaux entre catégories ──────────────────────────────────
-  const draggingChannel  = ref<Channel | null>(null)
-  const dragOverCategory = ref<string | null>(null)
-
-  function onDragStart(e: DragEvent, ch: Channel) {
-    draggingChannel.value = ch
-    e.dataTransfer!.effectAllowed = 'move'
-    e.dataTransfer!.setData('text/plain', String(ch.id))
-  }
-
-  function onDragEnd() {
-    draggingChannel.value  = null
-    dragOverCategory.value = null
-  }
-
-  function onDragOver(e: DragEvent, groupKey: string) {
-    e.preventDefault()
-    e.dataTransfer!.dropEffect = 'move'
-    dragOverCategory.value = groupKey
-  }
-
-  function onDragLeave(e: DragEvent, groupKey: string) {
-    // Only clear if leaving to outside the group element
-    const related = e.relatedTarget as Node | null
-    const target  = e.currentTarget as HTMLElement
-    if (!related || !target.contains(related)) {
-      if (dragOverCategory.value === groupKey) dragOverCategory.value = null
-    }
-  }
-
-  async function onDrop(e: DragEvent, groupKey: string) {
-    e.preventDefault()
-    const ch = draggingChannel.value
-    draggingChannel.value  = null
-    dragOverCategory.value = null
-    if (!ch) return
-    const newCategory = groupKey === NO_CAT ? null : groupKey
-    if ((ch.category ?? null) === newCategory) return  // no change
-    const res = await window.api.updateChannelCategory(ch.id, newCategory)
-    if (res?.ok === false) { showToast('Erreur lors du déplacement.', 'error'); return }
-    await loadTeacherChannels()
-  }
+  // Wire up DM loading into data composable so load*Sidebar calls it
+  setLoadRecentDmContacts(loadRecentDmContacts)
 
   // ── Réactivité ────────────────────────────────────────────────────────────
   onMounted(() => {
@@ -589,10 +69,9 @@
 
   watch(() => route.name, (n) => {
     if (n === 'messages' || n === 'dashboard') load()
-    if (n === 'devoirs' || n === 'dashboard' || n === 'documents')  loadDbProjects()
+    if (n === 'devoirs' || n === 'dashboard' || n === 'documents') loadDbProjects()
   })
   watch(() => modals.createChannel, (open) => { if (!open) load() })
-  // Recharger quand l'utilisateur change (simulation étudiant)
   watch(() => appStore.currentUser?.id, () => load())
   watch(() => appStore.activePromoId, () => { if (route.name === 'devoirs') loadDbProjects() })
 </script>
