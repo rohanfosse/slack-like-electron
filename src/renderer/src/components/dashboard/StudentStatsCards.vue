@@ -5,12 +5,15 @@
  */
 <script setup lang="ts">
 import { computed } from 'vue'
-import { Clock, CheckCircle2, Award, TrendingUp, TrendingDown, Minus } from 'lucide-vue-next'
+import { Clock, CheckCircle2, Award, TrendingUp, TrendingDown, Minus, MessageSquare } from 'lucide-vue-next'
 
 const props = defineProps<{
   studentStats: { pending: number; submitted: number; graded: number; modeGrade: string | null }
   recentGrades: { title: string; note: string }[]
+  recentFeedback?: { title: string; feedback: string; note: string | null; category: string | null }[]
 }>()
+
+const emit = defineEmits<{ 'navigate-project': [category: string] }>()
 
 const gradeTrend = computed(() => {
   const grades = props.recentGrades.map(g => g.note.toUpperCase())
@@ -32,6 +35,26 @@ const gradeTrend = computed(() => {
       <div v-for="g in recentGrades" :key="g.title" class="db-recent-grade-item">
         <span class="db-grade-badge" :class="'grade-' + g.note.toLowerCase()">{{ g.note }}</span>
         <span class="db-recent-grade-title">{{ g.title }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Dernier feedback -->
+  <div v-if="recentFeedback?.length" class="db-recent-feedback">
+    <h4 class="db-urgent-title"><MessageSquare :size="14" /> Dernier feedback</h4>
+    <div class="db-feedback-list">
+      <div
+        v-for="f in recentFeedback"
+        :key="f.title"
+        class="db-feedback-card"
+        :class="{ 'db-feedback-clickable': !!f.category }"
+        @click="f.category && emit('navigate-project', f.category)"
+      >
+        <div class="db-feedback-top">
+          <span class="db-feedback-title">{{ f.title }}</span>
+          <span v-if="f.note" class="db-grade-badge" :class="'grade-' + f.note.toLowerCase()">{{ f.note }}</span>
+        </div>
+        <p class="db-feedback-text">{{ f.feedback }}</p>
       </div>
     </div>
   </div>
@@ -85,6 +108,28 @@ const gradeTrend = computed(() => {
 .db-grade-badge.grade-b { background: rgba(39,174,96,.08); color: #2ecc71; }
 .db-grade-badge.grade-c { background: rgba(243,156,18,.12); color: #e67e22; }
 .db-grade-badge.grade-d { background: rgba(231,76,60,.12); color: var(--color-danger); }
+
+/* ── Feedback cards ── */
+.db-recent-feedback { margin-bottom: 16px; }
+.db-feedback-list { display: flex; gap: 8px; flex-wrap: wrap; }
+.db-feedback-card {
+  display: flex; flex-direction: column; gap: 4px;
+  padding: 8px 10px; border-radius: 8px;
+  background: rgba(255,255,255,.03); border: 1px solid var(--border);
+  min-width: 180px; max-width: 280px; flex: 1;
+}
+.db-feedback-clickable { cursor: pointer; transition: background var(--t-fast); }
+.db-feedback-clickable:hover { background: var(--bg-hover); }
+.db-feedback-top { display: flex; align-items: center; gap: 6px; }
+.db-feedback-title {
+  flex: 1; font-size: 12px; font-weight: 600; color: var(--text-primary);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.db-feedback-text {
+  font-size: 11.5px; color: var(--text-secondary); font-style: italic;
+  margin: 0; line-height: 1.4;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
 
 /* ── Stats grid ── */
 .db-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }

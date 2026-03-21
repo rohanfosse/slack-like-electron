@@ -32,6 +32,9 @@ const props = defineProps<{
   // Recent grades
   recentGrades: { title: string; note: string }[]
 
+  // Recent feedback
+  recentFeedback?: { title: string; feedback: string; note: string | null; category: string | null }[]
+
   // Projects
   studentProjectCards: StudentProjectCard[]
 
@@ -103,6 +106,8 @@ const emit = defineEmits<{
     <StudentStatsCards
       :student-stats="studentStats"
       :recent-grades="recentGrades"
+      :recent-feedback="recentFeedback"
+      @navigate-project="(k) => emit('goToProject', k)"
     />
 
     <!-- Tabs -->

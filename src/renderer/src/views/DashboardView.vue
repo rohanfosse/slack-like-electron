@@ -68,7 +68,7 @@ const {
 
 const {
   loadingStudent,
-  studentStats, recentGrades, urgentActions, studentProjectCards,
+  studentStats, recentGrades, recentFeedback, urgentActions, studentProjectCards,
   loadStudentData, cleanupTimers,
 } = useDashboardStudent()
 
@@ -247,6 +247,7 @@ onUnmounted(() => {
       :student-stats="studentStats"
       :urgent-actions="urgentActions"
       :recent-grades="recentGrades"
+      :recent-feedback="recentFeedback"
       :student-project-cards="studentProjectCards"
       :dash-tab="dashTab"
       :frise-dragging="friseDragging"

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import {
-  Clock, CheckCircle2, CalendarDays, Award, AlertTriangle, Upload,
+  Clock, CheckCircle2, CalendarDays, Award, AlertTriangle, Upload, Search,
 } from 'lucide-vue-next'
 import { useTravauxStore } from '@/stores/travaux'
 import { useAppStore }     from '@/stores/app'
@@ -26,12 +26,44 @@ const TYPE_LABELS: Record<string, string> = {
   etude_de_cas: 'Étude de cas', memoire: 'Mémoire', autre: 'Autre',
 }
 
+// ── Filters & search ────────────────────────────────────────────────────────
+type FilterTab = 'all' | 'pending' | 'done' | 'event'
+const activeFilter = ref<FilterTab>('all')
+const searchQuery  = ref('')
+
+// Legend toggle filters
+const legendFilters = ref<Record<string, boolean>>({
+  done: true, urgent: true, overdue: true, event: true, pending: true,
+})
+function toggleLegend(key: string) { legendFilters.value[key] = !legendFilters.value[key] }
+
+// Countdown helper
+function countdownLabel(deadline: string): string | null {
+  const diff = new Date(deadline).getTime() - now.value
+  if (diff <= 0) return null
+  const days = Math.ceil(diff / 86_400_000)
+  if (days <= 0) return "aujourd'hui"
+  return `dans ${days}j`
+}
+
 // Tous les devoirs triés chronologiquement
-const sorted = computed(() =>
-  travauxStore.devoirs
-    .slice()
-    .sort((a, b) => new Date(a.deadline).getTime() - new Date(b.deadline).getTime())
-)
+const sorted = computed(() => {
+  let list = travauxStore.devoirs.slice()
+
+  // Tab filter
+  if (activeFilter.value === 'pending') list = list.filter(t => t.depot_id == null && !isEventType(t))
+  else if (activeFilter.value === 'done') list = list.filter(t => t.depot_id != null)
+  else if (activeFilter.value === 'event') list = list.filter(t => isEventType(t))
+
+  // Search filter
+  const q = searchQuery.value.trim().toLowerCase()
+  if (q) list = list.filter(t => t.title.toLowerCase().includes(q))
+
+  // Legend filter
+  list = list.filter(t => legendFilters.value[statusIcon(t)])
+
+  return list.sort((a, b) => new Date(a.deadline).getTime() - new Date(b.deadline).getTime())
+})
 
 // Grouper par mois
 const byMonth = computed(() => {
@@ -79,6 +111,20 @@ function gradeColor(note: string | null | undefined): string {
   >
     <div class="stl-shell">
 
+      <!-- Filter bar -->
+      <div class="stl-filter-bar">
+        <div class="stl-tabs">
+          <button class="stl-tab" :class="{ active: activeFilter === 'all' }" @click="activeFilter = 'all'">Tous</button>
+          <button class="stl-tab" :class="{ active: activeFilter === 'pending' }" @click="activeFilter = 'pending'">A rendre</button>
+          <button class="stl-tab" :class="{ active: activeFilter === 'done' }" @click="activeFilter = 'done'">Rendus</button>
+          <button class="stl-tab" :class="{ active: activeFilter === 'event' }" @click="activeFilter = 'event'">Evenements</button>
+        </div>
+        <div class="stl-search-wrap">
+          <Search :size="12" class="stl-search-icon" />
+          <input v-model="searchQuery" class="stl-search" placeholder="Rechercher un devoir..." type="text" />
+        </div>
+      </div>
+
       <div v-if="travauxStore.loading" class="stl-loading">
         <div v-for="i in 5" :key="i" class="skel-card">
           <div class="skel skel-line skel-w30" style="height:10px" />
@@ -92,13 +138,13 @@ function gradeColor(note: string | null | undefined): string {
       </div>
 
       <template v-else>
-        <!-- Légende -->
+        <!-- Légende (clickable to toggle) -->
         <div class="stl-legend">
-          <span class="stl-leg-item stl-leg-done"><CheckCircle2 :size="11" /> Rendu</span>
-          <span class="stl-leg-item stl-leg-urgent"><AlertTriangle :size="11" /> Urgent</span>
-          <span class="stl-leg-item stl-leg-overdue"><Clock :size="11" /> En retard</span>
-          <span class="stl-leg-item stl-leg-event"><CalendarDays :size="11" /> Événement</span>
-          <span class="stl-leg-item stl-leg-pending"><Upload :size="11" /> À rendre</span>
+          <span class="stl-leg-item stl-leg-done" :class="{ 'stl-leg-off': !legendFilters.done }" @click="toggleLegend('done')"><CheckCircle2 :size="11" /> Rendu</span>
+          <span class="stl-leg-item stl-leg-urgent" :class="{ 'stl-leg-off': !legendFilters.urgent }" @click="toggleLegend('urgent')"><AlertTriangle :size="11" /> Urgent</span>
+          <span class="stl-leg-item stl-leg-overdue" :class="{ 'stl-leg-off': !legendFilters.overdue }" @click="toggleLegend('overdue')"><Clock :size="11" /> En retard</span>
+          <span class="stl-leg-item stl-leg-event" :class="{ 'stl-leg-off': !legendFilters.event }" @click="toggleLegend('event')"><CalendarDays :size="11" /> Evenement</span>
+          <span class="stl-leg-item stl-leg-pending" :class="{ 'stl-leg-off': !legendFilters.pending }" @click="toggleLegend('pending')"><Upload :size="11" /> A rendre</span>
         </div>
 
         <!-- Mois groupés -->
@@ -153,6 +199,11 @@ function gradeColor(note: string | null | undefined): string {
                     </span>
 
                     <span class="stl-date">{{ formatDate(t.deadline) }}</span>
+                    <span
+                      v-if="countdownLabel(t.deadline)"
+                      class="countdown-badge"
+                      :class="new Date(t.deadline).getTime() - now < 3 * 86_400_000 ? 'countdown-urgent' : new Date(t.deadline).getTime() - now < 7 * 86_400_000 ? 'countdown-soon' : 'countdown-ok'"
+                    >{{ countdownLabel(t.deadline) }}</span>
 
                     <!-- Note -->
                     <span v-if="t.note" class="stl-grade-badge" :class="gradeColor(t.note)">
@@ -184,6 +235,53 @@ function gradeColor(note: string | null | undefined): string {
   padding-right: 4px;
 }
 
+/* Filter bar */
+.stl-filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  padding-bottom: 10px;
+}
+.stl-tabs { display: flex; gap: 4px; }
+.stl-tab {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-family: var(--font);
+  transition: all .15s;
+}
+.stl-tab:hover { color: var(--text-primary); background: var(--bg-hover); }
+.stl-tab.active { border-color: var(--color-cctl); background: rgba(155,135,245,.12); color: var(--color-cctl); }
+
+.stl-search-wrap {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex: 1;
+  min-width: 140px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,.02);
+}
+.stl-search-icon { color: var(--text-muted); flex-shrink: 0; }
+.stl-search {
+  flex: 1;
+  border: none;
+  background: transparent;
+  color: var(--text-primary);
+  font-size: 11.5px;
+  font-family: var(--font);
+  outline: none;
+}
+.stl-search::placeholder { color: var(--text-muted); }
+
 /* Légende */
 .stl-legend {
   display: flex;
@@ -200,7 +298,11 @@ function gradeColor(note: string | null | undefined): string {
   padding: 2px 8px;
   border-radius: 10px;
   font-weight: 500;
+  cursor: pointer;
+  user-select: none;
+  transition: opacity .15s;
 }
+.stl-leg-off { opacity: .35; text-decoration: line-through; }
 .stl-leg-done    { background: rgba(39,174,96,.1);   color: var(--color-success); }
 .stl-leg-urgent  { background: rgba(243,156,18,.1);  color: var(--color-warning); }
 .stl-leg-overdue { background: rgba(231,76,60,.1);   color: var(--color-danger);  }

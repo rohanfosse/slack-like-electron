@@ -2,9 +2,10 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import {
-  FileText, Link2, Hash, Megaphone, ChevronLeft, ExternalLink,
+  FileText, Link2, Hash, Megaphone, ChevronLeft, ChevronDown, ChevronRight, ExternalLink,
   Layers, CalendarDays, FolderOpen, Upload, X, CheckCircle2,
   Clock, Lock, Award, Users, BookOpen, AlertTriangle,
+  Image, FileSpreadsheet, FileArchive, Film, FileCode, File,
 } from 'lucide-vue-next'
 import { useAppStore }          from '@/stores/app'
 import { useTravauxStore }      from '@/stores/travaux'
@@ -249,6 +250,40 @@ function gradeColor(note: string | null | undefined): string {
   if (n >= 8)  return 'grade-c'
   return 'grade-d'
 }
+
+// ── Collapsible sections ──────────────────────────────────────────────────────
+const collapsedSections = ref<Record<string, boolean>>({})
+function toggleSection(key: string) { collapsedSections.value[key] = !collapsedSections.value[key] }
+
+// ── Prochaine échéance (< 3 jours) ───────────────────────────────────────────
+const nextDeadlineSoon = computed(() => {
+  const upcoming = devoirsPending.value.filter(t => !isExpired(t.deadline))
+    .sort((a, b) => new Date(a.deadline).getTime() - new Date(b.deadline).getTime())
+  if (!upcoming.length) return null
+  const first = upcoming[0]
+  const diff = new Date(first.deadline).getTime() - now.value
+  if (diff > 3 * 86_400_000) return null
+  const days = Math.ceil(diff / 86_400_000)
+  const label = days <= 0 ? "aujourd'hui" : days === 1 ? 'demain' : `dans ${days} jours`
+  return { title: first.title, deadline: first.deadline, label }
+})
+
+// ── New feedback check ───────────────────────────────────────────────────────
+function hasFeedback(t: Devoir): boolean {
+  return t.feedback != null && t.feedback.trim() !== ''
+}
+
+// ── File type icon helper ────────────────────────────────────────────────────
+function fileTypeIcon(name: string): typeof FileText {
+  const ext = name.split('.').pop()?.toLowerCase() ?? ''
+  if (['png','jpg','jpeg','gif','svg','webp','bmp'].includes(ext)) return Image
+  if (['xls','xlsx','csv','ods'].includes(ext)) return FileSpreadsheet
+  if (['zip','rar','7z','tar','gz'].includes(ext)) return FileArchive
+  if (['mp4','avi','mkv','mov','webm'].includes(ext)) return Film
+  if (['js','ts','py','java','html','css','json','xml','vue'].includes(ext)) return FileCode
+  if (['pdf','doc','docx','odt','txt','rtf','ppt','pptx'].includes(ext)) return FileText
+  return File
+}
 </script>
 
 <template>
@@ -256,11 +291,14 @@ function gradeColor(note: string | null | undefined): string {
 
     <!-- ── En-tête ──────────────────────────────────────────────────────── -->
     <header class="spf-header">
-      <div class="spf-header-top">
+      <nav class="spf-breadcrumb">
         <button class="spf-back-btn" @click="appStore.activeProject = null">
-          <ChevronLeft :size="14" /> Tous mes projets
+          <ChevronLeft :size="14" />
         </button>
-      </div>
+        <span class="spf-bread-link" @click="appStore.activeProject = null">Devoirs</span>
+        <span class="spf-bread-sep">/</span>
+        <span class="spf-bread-current">{{ parseCategoryIcon(projectKey).label }}</span>
+      </nav>
 
       <div class="spf-header-identity">
         <div class="spf-icon-wrap">
@@ -318,6 +356,12 @@ function gradeColor(note: string | null | undefined): string {
           />
         </div>
       </div>
+
+      <!-- Prochaine échéance banner -->
+      <div v-if="nextDeadlineSoon" class="spf-deadline-banner">
+        <AlertTriangle :size="14" />
+        <span><strong>Prochaine echeance :</strong> {{ nextDeadlineSoon.title }} &mdash; {{ nextDeadlineSoon.label }}</span>
+      </div>
     </header>
 
     <!-- ── Corps ────────────────────────────────────────────────────────── -->
@@ -343,11 +387,12 @@ function gradeColor(note: string | null | undefined): string {
 
           <!-- ▸ À rendre (overdue + urgent + pending) -->
           <template v-if="devoirsPending.length">
-            <div class="spf-section-label">
-              <Clock :size="12" /> À rendre
+            <div class="spf-section-label spf-section-toggle" @click="toggleSection('pending')">
+              <component :is="collapsedSections.pending ? ChevronRight : ChevronDown" :size="12" />
+              <Clock :size="12" /> A rendre
               <span class="spf-section-count">{{ devoirsPending.length }}</span>
             </div>
-            <div class="spf-devoir-list">
+            <div v-show="!collapsedSections.pending" class="spf-devoir-list">
               <div
                 v-for="t in devoirsPending"
                 :key="t.id"
@@ -426,11 +471,12 @@ function gradeColor(note: string | null | undefined): string {
 
           <!-- ▸ Événements (soutenance / CCTL) -->
           <template v-if="devoirsEvent.length">
-            <div class="spf-section-label" style="margin-top:16px">
-              <CalendarDays :size="12" /> Événements
+            <div class="spf-section-label spf-section-toggle" style="margin-top:16px" @click="toggleSection('events')">
+              <component :is="collapsedSections.events ? ChevronRight : ChevronDown" :size="12" />
+              <CalendarDays :size="12" /> Evenements
               <span class="spf-section-count">{{ devoirsEvent.length }}</span>
             </div>
-            <div class="spf-devoir-list">
+            <div v-show="!collapsedSections.events" class="spf-devoir-list">
               <div v-for="t in devoirsEvent" :key="t.id" class="spf-devoir-card spf-card--event">
                 <div class="spf-card-top">
                   <span class="spf-type-badge" :class="`type-${t.type}`">{{ TYPE_LABELS[t.type] ?? t.type }}</span>
@@ -452,24 +498,26 @@ function gradeColor(note: string | null | undefined): string {
 
           <!-- ▸ Rendus -->
           <template v-if="devoirsSubmitted.length">
-            <div class="spf-section-label" style="margin-top:16px">
+            <div class="spf-section-label spf-section-toggle" style="margin-top:16px" @click="toggleSection('submitted')">
+              <component :is="collapsedSections.submitted ? ChevronRight : ChevronDown" :size="12" />
               <CheckCircle2 :size="12" /> Rendus
               <span class="spf-section-count">{{ devoirsSubmitted.length }}</span>
             </div>
-            <div class="spf-devoir-list">
+            <div v-show="!collapsedSections.submitted" class="spf-devoir-list">
               <div v-for="t in devoirsSubmitted" :key="t.id" class="spf-devoir-card spf-card--done">
                 <div class="spf-card-top">
                   <span class="spf-type-badge" :class="`type-${t.type}`">{{ TYPE_LABELS[t.type] ?? t.type }}</span>
                   <span class="spf-card-title">{{ t.title }}</span>
+                  <span v-if="hasFeedback(t)" class="badge-new">Nouveau feedback</span>
                   <CheckCircle2 :size="14" class="spf-done-check" />
                 </div>
                 <div class="spf-card-sub">
-                  <span class="spf-card-date">Échéance : {{ formatDate(t.deadline) }}</span>
+                  <span class="spf-card-date">Echeance : {{ formatDate(t.deadline) }}</span>
                 </div>
                 <!-- Note + feedback -->
                 <div v-if="t.note" class="spf-grade-row">
                   <span class="spf-grade-badge" :class="gradeColor(t.note)">{{ t.note }}</span>
-                  <span v-if="t.feedback" class="spf-feedback-text">« {{ t.feedback }} »</span>
+                  <span v-if="t.feedback" class="spf-feedback-text">{{ t.feedback }}</span>
                 </div>
                 <div v-else class="spf-grade-pending">
                   <Award :size="12" /> En attente de notation
@@ -503,7 +551,7 @@ function gradeColor(note: string | null | undefined): string {
             <li v-for="doc in documents" :key="doc.id" class="spf-doc-item" @click="openDoc(doc)">
               <span class="spf-doc-icon">
                 <Link2 v-if="doc.type === 'link'" :size="12" />
-                <FileText v-else :size="12" />
+                <component v-else :is="fileTypeIcon(doc.name)" :size="12" />
               </span>
               <span class="spf-doc-name">{{ doc.name }}</span>
               <ExternalLink :size="11" class="spf-doc-open" />
@@ -611,6 +659,23 @@ function gradeColor(note: string | null | undefined): string {
   flex-direction: column;
   gap: 10px;
 }
+
+/* Breadcrumb */
+.spf-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+.spf-bread-link {
+  cursor: pointer;
+  color: var(--accent);
+  transition: color var(--t-fast);
+}
+.spf-bread-link:hover { color: var(--accent-hover); text-decoration: underline; }
+.spf-bread-sep { color: var(--text-muted); opacity: .5; }
+.spf-bread-current { color: var(--text-primary); font-weight: 600; }
 
 .spf-back-btn {
   display: inline-flex;
@@ -725,6 +790,20 @@ function gradeColor(note: string | null | undefined): string {
 .spf-global-fill.fill-good     { opacity: 1; }
 .spf-global-fill.fill-complete { background: var(--color-success); opacity: 1; }
 
+/* Deadline banner */
+.spf-deadline-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: rgba(243,156,18,.1);
+  border: 1px solid rgba(243,156,18,.25);
+  color: var(--color-warning);
+  font-size: 12px;
+  font-weight: 500;
+}
+
 /* ── Corps ── */
 .spf-body {
   display: flex;
@@ -765,6 +844,8 @@ function gradeColor(note: string | null | undefined): string {
   color: var(--text-muted);
   margin-bottom: 8px;
 }
+.spf-section-toggle { cursor: pointer; user-select: none; }
+.spf-section-toggle:hover { color: var(--text-secondary); }
 .spf-section-count {
   font-size: 10px;
   font-weight: 600;

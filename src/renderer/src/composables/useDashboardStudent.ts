@@ -46,6 +46,15 @@ export function useDashboardStudent() {
       .map(t => ({ title: t.title, note: t.note!, category: t.category }))
   })
 
+  // ── Derniers feedbacks (3 max) ──────────────────────────────────────────────
+  const recentFeedback = computed(() => {
+    return travauxStore.devoirs
+      .filter(t => t.feedback != null && t.feedback.trim() !== '')
+      .sort((a, b) => (b.depot_id ?? 0) - (a.depot_id ?? 0))
+      .slice(0, 3)
+      .map(t => ({ title: t.title, feedback: t.feedback!, note: t.note ?? null, category: t.category }))
+  })
+
   // ── Top 3 devoirs urgents ──────────────────────────────────────────────────
   const urgentActions = computed(() => {
     const now = studentNow.value
@@ -116,7 +125,7 @@ export function useDashboardStudent() {
 
   return {
     loadingStudent, studentNow,
-    studentStats, recentGrades, urgentActions, studentProjectCards,
+    studentStats, recentGrades, recentFeedback, urgentActions, studentProjectCards,
     loadStudentData, cleanupTimers,
   }
 }
