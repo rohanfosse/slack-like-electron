@@ -182,6 +182,7 @@ function setTab(tab: DashTabType) {
     />
 
     <TeacherWidgets
+      v-if="dashTab === 'accueil'"
       :unread-dm-entries="unreadDmEntries"
       :total-unread-dms="totalUnreadDms"
       :saved-messages="savedMessages"
@@ -200,6 +201,7 @@ function setTab(tab: DashTabType) {
     />
 
     <TeacherReminders
+      v-if="dashTab === 'accueil'"
       :this-week-reminders="thisWeekReminders"
       :done-this-week="doneThisWeek"
       :total-this-week="totalThisWeek"
