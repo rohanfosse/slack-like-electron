@@ -39,6 +39,8 @@ const {
 const {
   studentGroups, filteredDevoirs, submittedDevoirs, pendingDeposit,
   eventDevoirs, studentStats, studentProjectOverview,
+  nextExams, nextLivrables, nextSoutenances,
+  studentCategories, studentProjectTypeCounts, studentProjectStats,
   error: studentError,
   loadView: loadStudentView,
 } = useDevoirsStudent(now)
@@ -100,6 +102,12 @@ watch(() => appStore.activeChannelId, () => {
         :submitted-devoirs="submittedDevoirs"
         :student-stats="studentStats"
         :student-project-overview="studentProjectOverview"
+        :next-exams="nextExams"
+        :next-livrables="nextLivrables"
+        :next-soutenances="nextSoutenances"
+        :student-categories="studentCategories"
+        :student-project-type-counts="studentProjectTypeCounts"
+        :student-project-stats="studentProjectStats"
         :error="studentError"
         :retry="loadStudentView"
         :depositing-devoir-id="depositingDevoirId"

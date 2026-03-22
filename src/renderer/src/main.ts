@@ -7,6 +7,7 @@ import App from './App.vue'
 import '@css/base.css'
 import '@css/layout.css'
 import '@css/components.css'
+import '@css/devoirs-shared.css'
 import 'highlight.js/styles/atom-one-dark.css'
 
 const app = createApp(App)

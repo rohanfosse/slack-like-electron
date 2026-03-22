@@ -7,6 +7,7 @@ import { useAppStore }     from '@/stores/app'
 import { useTravauxStore } from '@/stores/travaux'
 import { needsSubmission, isExpired, isEventType } from '@/utils/devoir'
 import { parseCategoryIcon } from '@/utils/categoryIcon'
+import type { Devoir } from '@/types'
 
 export function useDevoirsStudent(now: Ref<number>) {
   const appStore     = useAppStore()
@@ -77,6 +78,64 @@ export function useDevoirsStudent(now: Ref<number>) {
       .sort((a, b) => a.label.localeCompare(b.label, 'fr'))
   })
 
+  // ── Accueil étudiant : prochains événements par type ─────────────────────────
+  const nextExams = computed(() =>
+    travauxStore.devoirs
+      .filter(t => (t.type === 'cctl' || t.type === 'etude_de_cas') && new Date(t.deadline).getTime() > now.value)
+      .sort((a, b) => new Date(a.deadline).getTime() - new Date(b.deadline).getTime())
+      .slice(0, 3),
+  )
+
+  const nextLivrables = computed(() =>
+    travauxStore.devoirs
+      .filter(t => t.type === 'livrable' && new Date(t.deadline).getTime() > now.value)
+      .sort((a, b) => new Date(a.deadline).getTime() - new Date(b.deadline).getTime())
+      .slice(0, 3),
+  )
+
+  const nextSoutenances = computed(() =>
+    travauxStore.devoirs
+      .filter(t => t.type === 'soutenance' && new Date(t.deadline).getTime() > now.value)
+      .sort((a, b) => new Date(a.deadline).getTime() - new Date(b.deadline).getTime())
+      .slice(0, 3),
+  )
+
+  // ── Accueil étudiant : catégories (pour la grille de projets) ──────────────
+  const studentCategories = computed(() => {
+    const cats = new Set<string>()
+    for (const t of travauxStore.devoirs) {
+      const cat = t.category?.trim()
+      if (cat) cats.add(cat)
+    }
+    return [...cats].sort((a, b) => a.localeCompare(b, 'fr'))
+  })
+
+  /** Type counts per project category */
+  function studentProjectTypeCounts(cat: string): { type: string; count: number }[] {
+    const map = new Map<string, number>()
+    for (const t of travauxStore.devoirs) {
+      if (t.category?.trim() !== cat) continue
+      map.set(t.type, (map.get(t.type) ?? 0) + 1)
+    }
+    return [...map.entries()].map(([type, count]) => ({ type, count }))
+  }
+
+  /** Stats per project category */
+  function studentProjectStats(cat: string): { submitted: number; total: number; pct: number; devoirCount: number; nextDeadline: string | null } {
+    const devs = travauxStore.devoirs.filter(t => t.category?.trim() === cat)
+    const submittable = devs.filter(t => needsSubmission(t))
+    const submitted = submittable.filter(t => t.depot_id != null).length
+    const total = submittable.length
+    const pct = total > 0 ? Math.round(submitted / total * 100) : 0
+
+    const upcoming = devs
+      .filter(t => new Date(t.deadline).getTime() > now.value)
+      .sort((a, b) => new Date(a.deadline).getTime() - new Date(b.deadline).getTime())
+    const nextDeadline = upcoming.length > 0 ? upcoming[0].deadline : null
+
+    return { submitted, total, pct, devoirCount: devs.length, nextDeadline }
+  }
+
   const error = ref(false)
 
   // ── Chargement des données (branche étudiant) ────────────────────────────────
@@ -99,6 +158,13 @@ export function useDevoirsStudent(now: Ref<number>) {
     eventDevoirs,
     studentStats,
     studentProjectOverview,
+    // Accueil
+    nextExams,
+    nextLivrables,
+    nextSoutenances,
+    studentCategories,
+    studentProjectTypeCounts,
+    studentProjectStats,
     error,
 
     // Functions
