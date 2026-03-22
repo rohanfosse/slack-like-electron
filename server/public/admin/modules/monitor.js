@@ -90,7 +90,7 @@ function renderServer(d) {
   }
 
   // ── Services (bare-metal uniquement) ──
-  if (d.services) {
+  if (d.services && typeof d.services === 'object') {
     html += `
     <div class="card">
       <div class="card-title">Services</div>
@@ -100,19 +100,22 @@ function renderServer(d) {
         <div class="svc"><div class="dot ${d.services.fail2ban === 'active' ? 'ok' : 'ko'}"></div>Fail2ban</div>
         <div class="svc"><div class="dot ${d.services.ufw?.includes('active') ? 'ok' : 'ko'}"></div>UFW</div>
       </div>
-      <div class="card-sub" style="margin-top:.75rem">IPs bannies: <strong>${d.security.bannedIPs}</strong></div>
-    </div>
+      ${d.security ? `<div class="card-sub" style="margin-top:.75rem">IPs bannies: <strong>${d.security.bannedIPs ?? 0}</strong></div>` : ''}
+    </div>`
+    if (d.security?.certs?.length) {
+      html += `
     <div class="card">
       <div class="card-title">Certificats SSL</div>
-      ${d.security.certs.length ? d.security.certs.map(c => `
+      ${d.security.certs.map(c => `
         <div class="cert">
           <span class="cert-name">${escHtml(c.name)}</span>
           <span style="color:${c.valid ? 'var(--green)' : 'var(--red)'}">
             ${c.valid ? '\u2713' : '\u2717'} ${escHtml(c.expiry || '\u2014')}
           </span>
         </div>
-      `).join('') : '<div class="card-sub">Aucun certificat d\u00e9tect\u00e9</div>'}
+      `).join('')}
     </div>`
+    }
   }
 
   // ── Docker / PM2 (bare-metal : containers détectés, Docker : non disponible) ──

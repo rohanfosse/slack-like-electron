@@ -1,4 +1,4 @@
-import { apiFetch, escHtml } from '../app.js'
+import { apiFetch, escHtml, toast, confirmAction } from '../app.js'
 
 export async function loadDeploy() {
   const el = document.getElementById('deploy-content')
@@ -130,7 +130,8 @@ export async function gitPull() {
 }
 
 export async function dockerRebuild() {
-  if (!confirm('Rebuilder l\'image Docker et relancer le container ?')) return
+  const ok = await confirmAction('Rebuilder l\'image Docker et relancer le container ?', { title: 'Docker Rebuild', confirmText: 'Rebuild' })
+  if (!ok) return
   const out = document.getElementById('docker-output')
   out.style.display = 'block'
   out.innerHTML = '<div class="alert alert-info">Rebuild en cours... (peut prendre 1-2 min)</div>'
@@ -153,7 +154,8 @@ export async function dockerRebuild() {
 }
 
 export async function nginxApply() {
-  if (!confirm('Appliquer nginx.conf et recharger Nginx ?')) return
+  const ok = await confirmAction('Appliquer nginx.conf et recharger Nginx ?', { title: 'Nginx', confirmText: 'Appliquer' })
+  if (!ok) return
   const out = document.getElementById('nginx-output')
   out.style.display = 'block'
   out.innerHTML = '<div class="alert alert-info">Application en cours...</div>'
