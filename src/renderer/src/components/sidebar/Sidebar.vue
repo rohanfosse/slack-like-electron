@@ -498,6 +498,7 @@
                   :type="ch.type"
                   :muted="isMuted(ch.id)"
                   :is-private="!!ch.is_private"
+                  :description="ch.description"
                   @click="selectChannel(ch)"
                   @contextmenu="openCtxChannel($event, ch)"
                 />

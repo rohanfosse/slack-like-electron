@@ -80,8 +80,9 @@
 /* ── Wrapper racine ── */
 .pinned-wrap {
   flex-shrink: 0;
-  background: rgba(232,137,26,.055);
-  border-bottom: 1px solid rgba(232,137,26,.16);
+  background: linear-gradient(135deg, rgba(232,137,26,.06) 0%, rgba(232,137,26,.03) 100%);
+  border-bottom: 1px solid rgba(232,137,26,.18);
+  border-left: 3px solid rgba(232,137,26,.5);
 }
 
 /* ── Barre d'aperçu ── */
@@ -114,7 +115,7 @@
   border-radius: 4px;
   transition: opacity .12s;
 }
-.pinned-bar-preview:hover { opacity: .8; }
+.pinned-bar-preview:hover { opacity: .8; background: rgba(232,137,26,.06); }
 
 .pinned-bar-author {
   font-size: 12px;

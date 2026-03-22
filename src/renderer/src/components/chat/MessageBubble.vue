@@ -632,11 +632,11 @@ function closeAll() { _closeAll(showPicker, confirmingDelete) }
 .msg-reaction-pill {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  min-width: 46px;
-  height: 26px;
-  padding: 0 8px;
-  border-radius: 13px;
+  gap: 5px;
+  min-width: 48px;
+  min-height: 32px;
+  padding: 2px 10px;
+  border-radius: 16px;
   border: 1px solid var(--border);
   background: rgba(255, 255, 255, .04);
   color: var(--text-secondary);
@@ -673,8 +673,8 @@ function closeAll() { _closeAll(showPicker, confirmingDelete) }
   box-shadow: 0 0 0 1px rgba(74, 144, 217, .5), 0 4px 14px rgba(74, 144, 217, .2);
 }
 
-.reaction-emoji { font-size: 14px; line-height: 1; }
-.reaction-count { font-size: 11.5px; font-weight: 600; }
+.reaction-emoji { font-size: 16px; line-height: 1; }
+.reaction-count { font-size: 12.5px; font-weight: 700; }
 
 /* ════════════════════════════════════════════
    ÉDITION INLINE

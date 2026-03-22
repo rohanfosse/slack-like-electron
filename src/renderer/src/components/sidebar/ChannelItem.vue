@@ -10,9 +10,10 @@
     type?:      'chat' | 'annonce' | 'dm'
     muted?:     boolean
     isPrivate?: boolean
+    description?: string | null
   }
 
-  const props  = withDefaults(defineProps<Props>(), { prefix: '#', type: 'chat', muted: false, isPrivate: false })
+  const props  = withDefaults(defineProps<Props>(), { prefix: '#', type: 'chat', muted: false, isPrivate: false, description: null })
   const emit   = defineEmits<{ click: []; contextmenu: [e: MouseEvent] }>()
   const appStore = useAppStore()
 
@@ -30,6 +31,7 @@
       'has-mention': mentionPing > 0,
       'is-muted': muted,
     }"
+    :title="description || undefined"
     @click="emit('click')"
     @contextmenu.prevent="emit('contextmenu', $event)"
   >

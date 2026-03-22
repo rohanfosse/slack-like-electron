@@ -319,10 +319,12 @@ const dateGroups = computed<DateGroup[]>(() => {
 }
 .date-separator span {
   font-size: 11px; font-weight: 700; color: var(--text-muted);
-  white-space: nowrap; padding: 3px 10px; border-radius: 20px;
+  white-space: nowrap; padding: 4px 14px; border-radius: 20px;
   background: color-mix(in srgb, var(--bg-main) 88%, transparent);
   backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
   border: 1px solid var(--border);
+  letter-spacing: .3px;
+  text-transform: capitalize;
 }
 
 /* ── Séparateur non-lus ── */

@@ -325,6 +325,24 @@
   background: var(--accent, #4a90d9);
 }
 
+/* ── Active indicator (animated bar) ── */
+.nav-btn.active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 20px;
+  border-radius: 0 3px 3px 0;
+  background: var(--accent, #4a90d9);
+  animation: rail-indicator-in .2s cubic-bezier(.34,1.56,.64,1);
+}
+@keyframes rail-indicator-in {
+  from { height: 0; opacity: 0; }
+  to   { height: 20px; opacity: 1; }
+}
+
 /* Transition panneau */
 .notif-panel-fade-enter-active { transition: opacity .12s ease, transform .12s ease; }
 .notif-panel-fade-leave-active { transition: opacity .09s ease, transform .09s ease; }

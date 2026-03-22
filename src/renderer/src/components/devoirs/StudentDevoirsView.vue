@@ -3,8 +3,8 @@
  * formulaires de dépôt, devoirs rendus.
  */
 <script setup lang="ts">
-import { computed } from 'vue'
-import { CheckCircle2, Clock, Lock, AlertTriangle, Calendar, AlertCircle, RefreshCw } from 'lucide-vue-next'
+import { computed, ref, onMounted, onBeforeUnmount } from 'vue'
+import { CheckCircle2, Clock, Lock, AlertTriangle, Calendar, AlertCircle, RefreshCw, ArrowUp } from 'lucide-vue-next'
 import { useAppStore }     from '@/stores/app'
 import { useTravauxStore } from '@/stores/travaux'
 import type { Devoir, Rubric } from '@/types'
@@ -52,6 +52,25 @@ defineEmits<{
 
 const appStore     = useAppStore()
 const travauxStore = useTravauxStore()
+
+// ── Scroll to top button ──────────────────────────────────────────────────
+const showScrollTop = ref(false)
+function onDevoirsScroll() {
+  const el = document.querySelector('.devoirs-scroll-area') as HTMLElement | null
+  showScrollTop.value = !!el && el.scrollTop > 200
+}
+function scrollToTop() {
+  const el = document.querySelector('.devoirs-scroll-area') as HTMLElement | null
+  el?.scrollTo({ top: 0, behavior: 'smooth' })
+}
+onMounted(() => {
+  const el = document.querySelector('.devoirs-scroll-area')
+  el?.addEventListener('scroll', onDevoirsScroll, { passive: true })
+})
+onBeforeUnmount(() => {
+  const el = document.querySelector('.devoirs-scroll-area')
+  el?.removeEventListener('scroll', onDevoirsScroll)
+})
 
 /** Shared deposit props forwarded to every group */
 const depositProps = computed(() => ({
@@ -183,6 +202,13 @@ const depositProps = computed(() => ({
       @update:deposit-link="$emit('update:depositLink', $event)"
     />
   </div>
+
+  <!-- Scroll to top -->
+  <Transition name="scroll-btn-fade">
+    <button v-if="showScrollTop" class="devoirs-scroll-top" aria-label="Remonter en haut" @click="scrollToTop">
+      <ArrowUp :size="18" />
+    </button>
+  </Transition>
 </template>
 
 <style scoped>
@@ -243,4 +269,31 @@ const depositProps = computed(() => ({
   line-height: 1.5;
 }
 .sticky-stats { position: sticky; top: 0; z-index: 10; backdrop-filter: blur(8px); }
+
+/* ── Scroll to top button ── */
+.devoirs-scroll-top {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--bg-modal);
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 16px rgba(0,0,0,.35);
+  z-index: 20;
+  transition: background .15s, color .15s, transform .15s;
+}
+.devoirs-scroll-top:hover {
+  background: var(--accent);
+  color: #fff;
+  transform: translateY(-2px);
+}
+.scroll-btn-fade-enter-active, .scroll-btn-fade-leave-active { transition: opacity .2s, transform .2s; }
+.scroll-btn-fade-enter-from, .scroll-btn-fade-leave-to { opacity: 0; transform: translateY(8px); }
 </style>

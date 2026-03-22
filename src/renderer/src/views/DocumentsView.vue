@@ -601,6 +601,11 @@
 .doc-card--skel {
   cursor: default;
   min-height: 140px;
+  animation: skel-pulse 1.8s ease-in-out infinite;
+}
+@keyframes skel-pulse {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: .45; }
 }
 
 .doc-card-icon-skel {
