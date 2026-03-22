@@ -168,13 +168,6 @@ function setTab(tab: DashTabType) {
       :today="today"
       :promos="promos"
       :active-promo-id="activePromoId"
-      :a-noter-count="aNoterCount"
-      :urgents-count="urgentsCount"
-      :brouillons-count="brouillonsCount"
-      :total-students="totalStudents"
-      :submission-rate="submissionRate"
-      :next-deadline="nextDeadline"
-      :online-students="onlineStudents"
       @update:active-promo-id="id => emit('update:activePromoId', id)"
     />
 

@@ -9,8 +9,7 @@ import type { StudentProjectCard } from '@/composables/useDashboardStudent'
 import type { FriseMilestone, FrisePromo } from '@/composables/useFrise'
 
 import StudentHeader from './StudentHeader.vue'
-import StudentUrgentActions from './StudentUrgentActions.vue'
-import StudentStatsCards from './StudentStatsCards.vue'
+import StudentBento from './StudentBento.vue'
 import StudentProjects from './StudentProjects.vue'
 import StudentFrise from './StudentFrise.vue'
 
@@ -117,35 +116,27 @@ const emit = defineEmits<{
       </div>
     </div>
 
-    <StudentUrgentActions
-      :urgent-actions="urgentActions"
-      :has-devoirs-loaded="hasDevoirsLoaded"
-      @go-to-project="(k) => emit('goToProject', k)"
-      @navigate-devoirs="emit('navigateDevoirs')"
-    />
-
-    <StudentStatsCards
-      :student-stats="studentStats"
-      :recent-grades="recentGrades"
-      :recent-feedback="recentFeedback"
-      @navigate-project="(k) => emit('goToProject', k)"
-    />
-
     <!-- Tabs -->
     <div class="db-tabs">
       <button class="db-tab" :class="{ active: dashTab === 'accueil' }" @click="emit('update:dashTab', 'accueil')">
-        <FolderOpen :size="13" /> Mes projets
+        <FolderOpen :size="13" /> Accueil
       </button>
       <button class="db-tab" :class="{ active: dashTab === 'frise' }" @click="emit('update:dashTab', 'frise')">
         <BarChart2 :size="13" /> Frise
       </button>
     </div>
 
-    <StudentProjects
+    <StudentBento
       v-if="dashTab === 'accueil'"
+      :student-stats="studentStats"
+      :urgent-actions="urgentActions"
+      :recent-grades="recentGrades"
+      :recent-feedback="recentFeedback"
       :student-project-cards="studentProjectCards"
-      @go-to-project="(k) => emit('goToProject', k)"
+      :has-devoirs-loaded="hasDevoirsLoaded"
       @navigate-devoirs="emit('navigateDevoirs')"
+      @open-student-timeline="emit('openStudentTimeline')"
+      @go-to-project="(k) => emit('goToProject', k)"
     />
 
     <StudentFrise

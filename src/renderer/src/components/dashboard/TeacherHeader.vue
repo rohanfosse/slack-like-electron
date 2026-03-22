@@ -1,43 +1,20 @@
 /**
  * TeacherHeader.vue
  * ---------------------------------------------------------------------------
- * Header section of the teacher dashboard: greeting, date, hamburger menu,
- * promo selection chips, and stats pills row.
+ * Compact header: greeting + date on the left, promo chips on the right.
+ * Stats are displayed in the Bento TabAccueil tiles instead.
  */
 <script setup lang="ts">
-import { computed } from 'vue'
-import {
-  Menu, Edit3, AlertTriangle, FileText, Users,
-  Percent, Clock, Wifi,
-} from 'lucide-vue-next'
+import { Menu } from 'lucide-vue-next'
 import type { Promotion } from '@/types'
 
-const props = defineProps<{
+defineProps<{
   toggleSidebar?: () => void
   greetingName: string
   today: string
   promos: Promotion[]
   activePromoId: number | null
-  aNoterCount: number
-  urgentsCount: number
-  brouillonsCount: number
-  totalStudents: number
-  submissionRate: number
-  nextDeadline: string | null
-  onlineStudents: number
 }>()
-
-const deadlineLabel = computed(() => {
-  if (!props.nextDeadline) return null
-  const now = Date.now()
-  const dl = new Date(props.nextDeadline).getTime()
-  const diff = dl - now
-  if (diff < 0) return 'Passée'
-  const hours = Math.floor(diff / 3_600_000)
-  if (hours < 24) return `dans ${hours}h`
-  const days = Math.ceil(diff / 86_400_000)
-  return `dans ${days}j`
-})
 
 const emit = defineEmits<{
   'update:activePromoId': [id: number]
@@ -45,7 +22,6 @@ const emit = defineEmits<{
 </script>
 
 <template>
-  <!-- En-tête compact -->
   <div class="db-header">
     <div class="db-header-left">
       <button v-if="toggleSidebar" class="mobile-hamburger" aria-label="Ouvrir le menu" @click="toggleSidebar">
@@ -56,7 +32,6 @@ const emit = defineEmits<{
         <p class="db-date">{{ today }}</p>
       </div>
     </div>
-    <!-- Sélecteur de promo inline dans le header -->
     <div class="db-header-promos">
       <button
         v-for="p in promos"
@@ -72,65 +47,17 @@ const emit = defineEmits<{
       </button>
     </div>
   </div>
-
-  <!-- Stats compactes — ligne 1 -->
-  <div class="db-stats-row">
-    <div class="db-stat-pill db-stat-pill--lg" :class="{ 'db-stat-pill--alert': aNoterCount > 0 }">
-      <Edit3 :size="15" />
-      <strong>{{ aNoterCount }}</strong> à noter
-    </div>
-    <div class="db-stat-pill db-stat-pill--lg" :class="{ 'db-stat-pill--warn': urgentsCount > 0 }">
-      <AlertTriangle :size="15" />
-      <strong>{{ urgentsCount }}</strong> cette semaine
-    </div>
-    <div v-if="brouillonsCount > 0" class="db-stat-pill db-stat-pill--lg db-stat-pill--muted">
-      <FileText :size="15" />
-      <strong>{{ brouillonsCount }}</strong> brouillon{{ brouillonsCount > 1 ? 's' : '' }}
-    </div>
-    <div class="db-stat-pill db-stat-pill--lg">
-      <Users :size="15" />
-      <strong>{{ totalStudents }}</strong> étudiant{{ totalStudents > 1 ? 's' : '' }}
-    </div>
-  </div>
-
-  <!-- Stats compactes — ligne 2 -->
-  <div class="db-stats-row db-stats-row--secondary">
-    <div class="db-stat-pill db-stat-pill--lg">
-      <Percent :size="15" />
-      <div class="db-stat-pill-arc">
-        <svg viewBox="0 0 24 24" width="20" height="20">
-          <circle cx="12" cy="12" r="10" fill="none" stroke="var(--border)" stroke-width="3" />
-          <circle
-            cx="12" cy="12" r="10" fill="none"
-            stroke="var(--accent)" stroke-width="3"
-            stroke-linecap="round"
-            :stroke-dasharray="`${submissionRate * 0.628} 62.8`"
-            transform="rotate(-90 12 12)"
-          />
-        </svg>
-      </div>
-      <strong>{{ Math.round(submissionRate) }}%</strong> soumis
-    </div>
-    <div v-if="deadlineLabel" class="db-stat-pill db-stat-pill--lg">
-      <Clock :size="15" />
-      Prochaine échéance : <strong>{{ deadlineLabel }}</strong>
-    </div>
-    <div class="db-stat-pill db-stat-pill--lg">
-      <span class="db-online-dot" />
-      <Wifi :size="15" />
-      <strong>{{ onlineStudents }}</strong> en ligne
-    </div>
-  </div>
 </template>
 
 <style scoped>
-/* ── En-tête ── */
-.db-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.db-header {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 16px; padding: 4px 0;
+}
 .db-header-left { display: flex; align-items: center; gap: 12px; }
 .db-title { font-size: 20px; font-weight: 800; color: var(--text-primary); line-height: 1.2; }
 .db-date  { font-size: 12px; color: var(--text-muted); margin-top: 2px; text-transform: capitalize; }
 
-/* ── Header promos inline ── */
 .db-header-promos { display: flex; gap: 6px; flex-wrap: wrap; }
 .db-promo-chip {
   display: inline-flex; align-items: center; gap: 4px;
@@ -142,33 +69,4 @@ const emit = defineEmits<{
 .db-promo-chip:hover { background: rgba(255,255,255,.08); }
 .db-promo-chip.active { font-weight: 700; }
 .db-promo-chip-dot { width: 7px; height: 7px; border-radius: 50%; }
-
-/* ── Stats compactes en ligne ── */
-.db-stats-row {
-  display: flex; gap: 8px; padding: 0 0 4px; flex-wrap: wrap;
-}
-.db-stats-row--secondary { padding-bottom: 12px; }
-.db-stat-pill {
-  display: inline-flex; align-items: center; gap: 5px;
-  padding: 6px 12px; border-radius: 8px; font-size: 12px;
-  background: rgba(255,255,255,.03); color: var(--text-secondary);
-  border: 1px solid var(--border);
-}
-.db-stat-pill--lg {
-  padding: 7px 14px; font-size: 12.5px; border-radius: 9px;
-}
-.db-stat-pill strong { color: var(--text-primary); font-weight: 700; }
-.db-stat-pill--alert { background: rgba(231,76,60,.08); border-color: rgba(231,76,60,.2); color: var(--color-danger); }
-.db-stat-pill--alert strong { color: var(--color-danger); }
-.db-stat-pill--warn { background: rgba(243,156,18,.08); border-color: rgba(243,156,18,.2); color: var(--color-warning); }
-.db-stat-pill--warn strong { color: var(--color-warning); }
-.db-stat-pill--muted { opacity: .6; }
-
-/* ── Mini arc / online dot ── */
-.db-stat-pill-arc { display: inline-flex; align-items: center; }
-.db-online-dot {
-  width: 7px; height: 7px; border-radius: 50%;
-  background: #2ecc71; flex-shrink: 0;
-  box-shadow: 0 0 4px rgba(46,204,113,.5);
-}
 </style>
