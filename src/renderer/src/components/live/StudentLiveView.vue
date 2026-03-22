@@ -1,9 +1,11 @@
 <!-- StudentLiveView.vue - Vue étudiant pour le Live Quiz interactif -->
 <script setup lang="ts">
   import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
-  import { Radio, CheckCircle2, Send, LogOut } from 'lucide-vue-next'
+  import { Radio, CheckCircle2, Send, LogOut, XCircle } from 'lucide-vue-next'
   import { useAppStore }  from '@/stores/app'
   import { useLiveStore } from '@/stores/live'
+  import type { LiveScoreResult } from '@/types'
+  import CountdownTimer from './CountdownTimer.vue'
   import QcmResults  from './QcmResults.vue'
   import PollResults from './PollResults.vue'
   import WordCloud   from './WordCloud.vue'
@@ -22,6 +24,12 @@
   const promoId = computed(() => appStore.currentUser?.promo_id ?? 0)
   const session = computed(() => liveStore.currentSession)
   const activity = computed(() => liveStore.currentActivity)
+  const scoreResult = ref<LiveScoreResult | null>(null)
+  const timerExpired = ref(false)
+
+  // Kahoot colors & shapes
+  const KAHOOT_COLORS = ['#E21B3C', '#1368CE', '#26890C', '#D89E00', '#9b59b6', '#1abc9c']
+  const KAHOOT_SHAPES = ['\u25B2', '\u25C6', '\u25CF', '\u25A0', '\u2605', '\u2B22'] // triangle, diamond, circle, square, star, hex
 
   // Initialize word inputs when activity changes
   watch(activity, (act) => {
@@ -31,6 +39,8 @@
     selectedAnswers.value = []
     textInput.value = ''
     liveStore.hasResponded = false
+    scoreResult.value = null
+    timerExpired.value = false
   })
 
   onMounted(async () => {
@@ -63,7 +73,16 @@
 
   async function submitQcm() {
     if (!activity.value || selectedAnswers.value.length === 0) return
-    await liveStore.submitResponse(activity.value.id, { answers: selectedAnswers.value })
+    const result = await liveStore.submitResponse(activity.value.id, { answers: selectedAnswers.value })
+    if (result) scoreResult.value = result
+  }
+
+  function onTimerExpired() {
+    timerExpired.value = true
+    // Auto-submit if answers selected but not yet submitted
+    if (!liveStore.hasResponded && selectedAnswers.value.length > 0) {
+      submitQcm()
+    }
   }
 
   async function submitText() {
@@ -133,36 +152,48 @@
 
       <!-- Activity live + not responded yet -->
       <div v-else-if="activity.status === 'live' && !liveStore.hasResponded" class="response-area">
+        <!-- Countdown timer -->
+        <div class="timer-bar">
+          <CountdownTimer
+            v-if="liveStore.timerStartedAt"
+            :total-seconds="activity.timer_seconds ?? 30"
+            :started-at="liveStore.timerStartedAt"
+            @expired="onTimerExpired"
+          />
+        </div>
+
         <h2 class="question-title">{{ activity.title }}</h2>
 
-        <!-- QCM response -->
-        <div v-if="activity.type === 'qcm' && activity.options" class="qcm-options">
+        <!-- QCM Kahoot-style buttons -->
+        <div v-if="activity.type === 'qcm' && activity.options" class="kahoot-grid">
           <button
             v-for="(opt, i) in activity.options"
             :key="i"
-            class="qcm-option-btn"
+            class="kahoot-btn"
             :class="{ selected: selectedAnswers.includes(i) }"
+            :style="{ '--kahoot-color': KAHOOT_COLORS[i % KAHOOT_COLORS.length] }"
             @click="toggleAnswer(i)"
           >
-            <span class="qcm-option-letter">{{ String.fromCharCode(65 + i) }}</span>
-            <span class="qcm-option-text">{{ opt }}</span>
-          </button>
-          <button
-            class="submit-btn"
-            :disabled="selectedAnswers.length === 0"
-            @click="submitQcm"
-          >
-            <Send :size="16" />
-            Envoyer
+            <span class="kahoot-shape">{{ KAHOOT_SHAPES[i % KAHOOT_SHAPES.length] }}</span>
+            <span class="kahoot-text">{{ opt }}</span>
           </button>
         </div>
+        <button
+          v-if="activity.type === 'qcm'"
+          class="submit-btn kahoot-submit"
+          :disabled="selectedAnswers.length === 0"
+          @click="submitQcm"
+        >
+          <Send :size="16" />
+          Envoyer
+        </button>
 
         <!-- Sondage response -->
         <div v-else-if="activity.type === 'sondage'" class="text-response">
           <textarea
             v-model="textInput"
             class="text-input"
-            placeholder="Votre réponse..."
+            placeholder="Votre reponse..."
             rows="3"
             maxlength="500"
           />
@@ -199,19 +230,42 @@
         </div>
       </div>
 
-      <!-- Responded -->
+      <!-- Responded - waiting for results -->
       <div v-else-if="liveStore.hasResponded && activity.status === 'live'" class="responded-state">
-        <CheckCircle2 :size="48" class="responded-icon" />
-        <span class="responded-text">Réponse envoyée</span>
-        <span class="responded-sub">Les résultats apparaîtront bientôt</span>
+        <div v-if="scoreResult && scoreResult.isCorrect !== null" class="score-feedback">
+          <div v-if="scoreResult.isCorrect" class="feedback-correct">
+            <CheckCircle2 :size="56" />
+            <span class="feedback-label">Correct !</span>
+            <span class="feedback-points">+{{ scoreResult.points }} pts</span>
+            <span v-if="scoreResult.rank" class="feedback-rank">{{ scoreResult.rank }}{{ scoreResult.rank === 1 ? 'er' : 'e' }} place</span>
+          </div>
+          <div v-else class="feedback-wrong">
+            <XCircle :size="56" />
+            <span class="feedback-label">Raté</span>
+            <span class="feedback-points">+0 pts</span>
+          </div>
+        </div>
+        <div v-else class="waiting-response">
+          <CheckCircle2 :size="48" class="responded-icon" />
+          <span class="responded-text">Reponse envoyee</span>
+          <span class="responded-sub">Les resultats apparaitront bientot</span>
+        </div>
       </div>
 
-      <!-- Activity closed - show results -->
-      <div v-else-if="activity.status === 'closed' && liveStore.results" class="results-student">
-        <h3 class="results-label">Résultats</h3>
-        <QcmResults v-if="activity.type === 'qcm'" :results="liveStore.results" />
-        <PollResults v-else-if="activity.type === 'sondage'" :results="liveStore.results" />
-        <WordCloud v-else-if="activity.type === 'nuage'" :results="liveStore.results" />
+      <!-- Activity closed - show results + score -->
+      <div v-else-if="activity.status === 'closed'" class="results-student">
+        <!-- Score feedback for this activity -->
+        <div v-if="scoreResult && scoreResult.isCorrect !== null" class="score-feedback-closed">
+          <div class="feedback-inline" :class="scoreResult.isCorrect ? 'correct' : 'wrong'">
+            <component :is="scoreResult.isCorrect ? CheckCircle2 : XCircle" :size="24" />
+            <span>{{ scoreResult.isCorrect ? 'Correct' : 'Incorrect' }}</span>
+            <span class="feedback-points-inline">+{{ scoreResult.points }} pts</span>
+          </div>
+        </div>
+        <h3 class="results-label">Resultats</h3>
+        <QcmResults v-if="activity.type === 'qcm' && liveStore.results" :results="liveStore.results" />
+        <PollResults v-else-if="activity.type === 'sondage' && liveStore.results" :results="liveStore.results" />
+        <WordCloud v-else-if="activity.type === 'nuage' && liveStore.results" :results="liveStore.results" />
       </div>
     </div>
   </div>
@@ -369,54 +423,130 @@
   text-align: center;
 }
 
-/* QCM */
-.qcm-options {
+/* Timer bar */
+.timer-bar {
   display: flex;
-  flex-direction: column;
-  gap: 10px;
+  justify-content: center;
+  margin-bottom: 8px;
 }
-.qcm-option-btn {
+
+/* Kahoot QCM grid */
+.kahoot-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.kahoot-btn {
   display: flex;
   align-items: center;
-  gap: 14px;
-  padding: 16px 20px;
-  border-radius: 12px;
-  background: var(--bg-elevated, #1e1f21);
-  border: 2px solid var(--border);
-  color: var(--text-primary, #fff);
+  gap: 12px;
+  padding: 20px 16px;
+  border-radius: 14px;
+  background: var(--kahoot-color);
+  border: 3px solid transparent;
+  color: #fff;
   font-size: 16px;
-  font-weight: 500;
+  font-weight: 700;
   cursor: pointer;
   transition: all .15s;
   text-align: left;
-  min-height: 56px;
+  min-height: 72px;
+  position: relative;
+  overflow: hidden;
 }
-.qcm-option-btn:hover {
-  border-color: var(--border-input);
-  background: var(--bg-hover);
+.kahoot-btn::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0);
+  transition: background .15s;
 }
-.qcm-option-btn.selected {
-  border-color: var(--accent, #4a90d9);
-  background: var(--accent-subtle, rgba(74,144,217,.12));
+.kahoot-btn:hover::after {
+  background: rgba(255,255,255,.1);
 }
-.qcm-option-letter {
-  width: 32px;
-  height: 32px;
-  border-radius: 8px;
-  background: var(--bg-active);
+.kahoot-btn.selected {
+  border-color: #fff;
+  transform: scale(1.03);
+  box-shadow: 0 4px 20px rgba(0,0,0,.3);
+}
+.kahoot-shape {
+  font-size: 24px;
+  flex-shrink: 0;
+  opacity: .8;
+}
+.kahoot-text {
+  flex: 1;
+  line-height: 1.3;
+}
+.kahoot-submit {
+  margin-top: 8px;
+}
+
+/* Score feedback */
+.score-feedback {
+  display: flex;
+  justify-content: center;
+  padding: 20px 0;
+}
+.feedback-correct, .feedback-wrong {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  animation: feedback-pop .4s cubic-bezier(.34,1.56,.64,1);
+}
+.feedback-correct { color: #22c55e; }
+.feedback-wrong   { color: #ef4444; }
+.feedback-label {
+  font-size: 24px;
+  font-weight: 800;
+}
+.feedback-points {
+  font-size: 28px;
+  font-weight: 900;
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+}
+.feedback-rank {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-muted, #888);
+}
+@keyframes feedback-pop {
+  from { transform: scale(.5); opacity: 0; }
+  to   { transform: scale(1); opacity: 1; }
+}
+
+.score-feedback-closed {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 8px;
+}
+.feedback-inline {
   display: flex;
   align-items: center;
-  justify-content: center;
+  gap: 8px;
+  padding: 10px 20px;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 700;
+}
+.feedback-inline.correct {
+  background: rgba(34,197,94,.12);
+  color: #22c55e;
+}
+.feedback-inline.wrong {
+  background: rgba(239,68,68,.12);
+  color: #ef4444;
+}
+.feedback-points-inline {
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
   font-weight: 800;
-  font-size: 14px;
-  flex-shrink: 0;
 }
-.qcm-option-btn.selected .qcm-option-letter {
-  background: var(--accent, #4a90d9);
-  color: #fff;
-}
-.qcm-option-text {
-  flex: 1;
+.waiting-response {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
 }
 
 /* Text input */

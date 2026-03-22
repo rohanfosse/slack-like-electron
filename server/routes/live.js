@@ -20,6 +20,17 @@ function throttledResultsEmit(io, activityId, promoId) {
   io.to(`live:${promoId}`).emit('live:results-update', { activityId, data })
 }
 
+// ─── Throttle helper pour scores-update ──────────────────────────────────────
+const _lastScoresEmit = new Map() // sessionId → timestamp
+function throttledScoresEmit(io, sessionId, activityId, promoId) {
+  const now = Date.now()
+  const last = _lastScoresEmit.get(sessionId) || 0
+  if (now - last < 500) return
+  _lastScoresEmit.set(sessionId, now)
+  const leaderboard = queries.getLeaderboardWithRound(sessionId, activityId)
+  io.to(`live:${promoId}`).emit('live:scores-update', { sessionId, activityId, leaderboard })
+}
+
 // ─── Sessions ────────────────────────────────────────────────────────────────
 
 // POST /sessions - créer une session
@@ -84,10 +95,12 @@ router.delete('/sessions/:id', wrap((req) => {
 
 // POST /sessions/:id/activities - ajouter une activité
 router.post('/sessions/:id/activities', wrap((req) => {
-  const { type, title, options, multi, maxWords, position } = req.body
+  const { type, title, options, multi, maxWords, position, timer_seconds, correct_answers } = req.body
   if (!type || !title) throw new Error('type et title requis')
   return queries.addActivity({
     sessionId: Number(req.params.id), type, title, options, multi, maxWords, position,
+    timerSeconds: timer_seconds ?? 30,
+    correctAnswers: correct_answers ? JSON.stringify(correct_answers) : null,
   })
 }))
 
@@ -116,9 +129,20 @@ router.patch('/activities/:id/status', (req, res) => {
     const session = queries.getSession(activity.session_id)
     if (session) {
       if (status === 'live') {
-        io.to(`live:${session.promo_id}`).emit('live:activity-pushed', { activity })
+        io.to(`live:${session.promo_id}`).emit('live:activity-pushed', {
+          activity: {
+            ...activity,
+            timer_seconds: activity.timer_seconds ?? 30,
+            started_at: activity.started_at,
+          },
+        })
       } else if (status === 'closed') {
-        io.to(`live:${session.promo_id}`).emit('live:activity-closed', { activityId: activity.id })
+        // Emit final leaderboard along with close event
+        const leaderboard = queries.getLeaderboardWithRound(session.id, activity.id)
+        io.to(`live:${session.promo_id}`).emit('live:activity-closed', {
+          activityId: activity.id,
+          leaderboard,
+        })
       }
     }
     res.json({ ok: true, data: activity })
@@ -130,30 +154,64 @@ router.patch('/activities/:id/status', (req, res) => {
 // POST /activities/:id/respond - soumettre une réponse
 router.post('/activities/:id/respond', (req, res) => {
   try {
-    const { studentId, answer } = req.body
+    // Support both: explicit studentId in body OR extracted from JWT token
+    const studentId = req.body.studentId ?? req.user?.id
+    const studentName = req.body.studentName ?? req.user?.name ?? ''
+    // Support multiple answer formats: { answer } or { answers } or { text } or { words }
+    let answer = req.body.answer
+    if (answer === undefined && req.body.answers) answer = req.body.answers.join(',')
+    if (answer === undefined && req.body.text) answer = req.body.text
+    if (answer === undefined && req.body.words) answer = req.body.words.join(',')
     if (!studentId || answer === undefined) throw new Error('studentId et answer requis')
+    const activityId = Number(req.params.id)
     const response = queries.submitResponse({
-      activityId: Number(req.params.id), studentId, answer: String(answer),
+      activityId, studentId, answer: String(answer),
     })
     const io = req.app.get('io')
 
-    // Retrouver la session pour le promoId
-    const activity = require('../db/connection').getDb()
-      .prepare('SELECT session_id FROM live_activities WHERE id = ?')
-      .get(Number(req.params.id))
-    if (activity) {
-      const session = queries.getSession(activity.session_id)
+    // Retrouver l'activité complète pour le scoring
+    const db = require('../db/connection').getDb()
+    const activityRow = db.prepare('SELECT * FROM live_activities WHERE id = ?').get(activityId)
+
+    let scoreResult = { isCorrect: null, points: 0, rank: null }
+
+    if (activityRow) {
+      const session = queries.getSession(activityRow.session_id)
+
+      // Calculate correctness and score for QCM with correct_answers
+      const isCorrect = queries.checkCorrectness(activityId, answer)
+      if (isCorrect !== null) {
+        // Compute answer time (ms since activity started)
+        let answerTimeMs = 0
+        if (activityRow.started_at) {
+          answerTimeMs = Math.max(0, Date.now() - new Date(activityRow.started_at + 'Z').getTime())
+        }
+        const name = studentName || `Etudiant ${studentId}`
+        const points = queries.calculateScore(activityId, studentId, name, answerTimeMs, isCorrect)
+        const rank = queries.getStudentRank(activityRow.session_id, studentId)
+        scoreResult = { isCorrect, points, rank }
+      }
+
       if (session) {
-        throttledResultsEmit(io, Number(req.params.id), session.promo_id)
+        throttledResultsEmit(io, activityId, session.promo_id)
+        // Emit scores update if scoring is active
+        if (isCorrect !== null) {
+          throttledScoresEmit(io, session.id, activityId, session.promo_id)
+        }
       }
     }
-    res.json({ ok: true, data: response })
+    res.json({ ok: true, data: { ...response, ...scoreResult } })
   } catch (err) { res.status(400).json({ ok: false, error: err.message }) }
 })
 
 // GET /activities/:id/results - résultats agrégés
 router.get('/activities/:id/results', wrap((req) => {
   return queries.getActivityResultsAggregated(Number(req.params.id))
+}))
+
+// GET /sessions/:id/leaderboard - classement complet
+router.get('/sessions/:id/leaderboard', wrap((req) => {
+  return queries.getLeaderboard(Number(req.params.id))
 }))
 
 module.exports = router

@@ -214,10 +214,17 @@ export interface LiveActivity {
   title: string; options: string[] | null; multi: number
   max_words: number; position: number; status: 'pending' | 'live' | 'closed'
   started_at: string | null; closed_at: string | null
+  timer_seconds: number; correct_answers: string | null
 }
 export interface LiveResults {
   activityId: number; type: string; totalResponses: number
   data: { option?: string; text?: string; word?: string; index?: number; count: number; percent?: number; size?: number }[]
+}
+export interface LeaderboardEntry {
+  rank: number; studentId: number; name: string; points: number; pointsThisRound?: number
+}
+export interface LiveScoreResult {
+  isCorrect: boolean | null; points: number; rank: number | null
 }
 
 // ─── Payloads IPC ────────────────────────────────────────────────────────────

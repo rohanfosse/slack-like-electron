@@ -3,7 +3,7 @@ import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
 import { useAppStore } from './app'
 import { useApi } from '@/composables/useApi'
-import type { LiveSession, LiveActivity, LiveResults } from '@/types'
+import type { LiveSession, LiveActivity, LiveResults, LeaderboardEntry, LiveScoreResult } from '@/types'
 
 export const useLiveStore = defineStore('live', () => {
   const appStore = useAppStore()
@@ -17,6 +17,9 @@ export const useLiveStore = defineStore('live', () => {
   const hasResponded     = ref(false)
   const loading          = ref(false)
   const pastSessions     = ref<LiveSession[]>([])
+  const leaderboard      = ref<LeaderboardEntry[]>([])
+  const myScore          = ref<LiveScoreResult | null>(null)
+  const timerStartedAt   = ref<string | null>(null)
 
   // ── Computed ─────────────────────────────────────────────────────────────
   const sessionActivities = computed<LiveActivity[]>(() =>
@@ -73,6 +76,9 @@ export const useLiveStore = defineStore('live', () => {
     results.value = null
     hasResponded.value = false
     participantCount.value = 0
+    leaderboard.value = []
+    myScore.value = null
+    timerStartedAt.value = null
   }
 
   async function fetchSession(id: number): Promise<void> {
@@ -116,6 +122,7 @@ export const useLiveStore = defineStore('live', () => {
   async function pushActivity(sessionId: number, payload: {
     type: 'qcm' | 'sondage' | 'nuage'; title: string
     options?: string[] | null; multi?: number; max_words?: number
+    timer_seconds?: number; correct_answers?: number[]
   }): Promise<boolean> {
     const data = await api<LiveActivity>(
       () => window.api.addLiveActivity(sessionId, payload),
@@ -135,6 +142,8 @@ export const useLiveStore = defineStore('live', () => {
     if (data) {
       currentActivity.value = data
       results.value = null
+      myScore.value = null
+      timerStartedAt.value = data.started_at ?? null
       // Update in session activities list
       if (currentSession.value?.activities) {
         currentSession.value = {
@@ -182,15 +191,27 @@ export const useLiveStore = defineStore('live', () => {
     return false
   }
 
-  async function submitResponse(activityId: number, payload: { answers?: number[]; text?: string; words?: string[] }): Promise<boolean> {
+  async function submitResponse(activityId: number, payload: { answers?: number[]; text?: string; words?: string[] }): Promise<LiveScoreResult | null> {
     const data = await api(
       () => window.api.submitLiveResponse(activityId, payload),
-    )
+    ) as { isCorrect: boolean | null; points: number; rank: number | null } | null
     if (data !== null) {
       hasResponded.value = true
-      return true
+      if (data && typeof data === 'object' && 'isCorrect' in data) {
+        myScore.value = data as LiveScoreResult
+      }
+      return data as LiveScoreResult
     }
-    return false
+    return null
+  }
+
+  async function fetchLeaderboard(sessionId: number): Promise<void> {
+    const data = await api(
+      () => window.api.getLiveLeaderboard(sessionId),
+    ) as LeaderboardEntry[] | null
+    if (data && Array.isArray(data)) {
+      leaderboard.value = data
+    }
   }
 
   async function fetchResults(activityId: number): Promise<void> {
@@ -235,11 +256,18 @@ export const useLiveStore = defineStore('live', () => {
           const acts = currentSession.value.activities ?? []
           currentSession.value = { ...currentSession.value, activities: [...acts, act] }
         }
+        // Set timer info for students
+        if (act.status === 'live') {
+          currentActivity.value = act
+          timerStartedAt.value = act.started_at ?? null
+          hasResponded.value = false
+          myScore.value = null
+        }
       }),
     )
 
     _cleanups.push(
-      window.api.onLiveActivityClosed(({ activityId }: { activityId: number }) => {
+      window.api.onLiveActivityClosed(({ activityId, leaderboard: lb }: { activityId: number; leaderboard?: unknown[] }) => {
         if (currentActivity.value && currentActivity.value.id === activityId) {
           currentActivity.value = Object.assign({}, currentActivity.value, { status: 'closed' as const })
           fetchResults(activityId)
@@ -251,6 +279,10 @@ export const useLiveStore = defineStore('live', () => {
             ),
           })
         }
+        if (lb && Array.isArray(lb)) {
+          leaderboard.value = lb as LeaderboardEntry[]
+        }
+        timerStartedAt.value = null
       }),
     )
 
@@ -258,6 +290,14 @@ export const useLiveStore = defineStore('live', () => {
       window.api.onLiveResultsUpdate(({ activityId, data }: { activityId: number; data: unknown }) => {
         if (results.value?.activityId === activityId || currentActivity.value?.id === activityId) {
           results.value = data as LiveResults
+        }
+      }),
+    )
+
+    _cleanups.push(
+      window.api.onLiveScoresUpdate(({ leaderboard: lb }: { sessionId: number; activityId: number; leaderboard: unknown[] }) => {
+        if (lb && Array.isArray(lb)) {
+          leaderboard.value = lb as LeaderboardEntry[]
         }
       }),
     )
@@ -289,12 +329,13 @@ export const useLiveStore = defineStore('live', () => {
     // state
     currentSession, currentActivity, results, participantCount,
     hasResponded, loading, pastSessions,
+    leaderboard, myScore, timerStartedAt,
     // computed
     sessionActivities, liveActivity,
     // actions
     createSession, joinByCode, leaveSession, fetchSession, fetchActiveForPromo,
     pushActivity, launchActivity, closeActivity, deleteActivity,
-    submitResponse, fetchResults, endSession, startSession,
+    submitResponse, fetchResults, fetchLeaderboard, endSession, startSession,
     initSocketListeners, disposeSocketListeners,
   }
 })

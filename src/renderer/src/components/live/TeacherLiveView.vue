@@ -3,13 +3,16 @@
   import { ref, computed, onMounted, onUnmounted } from 'vue'
   import {
     Plus, Play, Square, ChevronRight, Trash2, Users, Radio,
-    ListChecks, MessageCircle, Cloud, X, LogOut,
+    ListChecks, MessageCircle, Cloud, X, LogOut, Trophy,
   } from 'lucide-vue-next'
   import { useAppStore }  from '@/stores/app'
   import { useLiveStore } from '@/stores/live'
   import type { LiveActivity } from '@/types'
   import JoinCodeDisplay from './JoinCodeDisplay.vue'
   import ActivityForm    from './ActivityForm.vue'
+  import CountdownTimer  from './CountdownTimer.vue'
+  import Leaderboard     from './Leaderboard.vue'
+  import Podium          from './Podium.vue'
   import QcmResults      from './QcmResults.vue'
   import PollResults     from './PollResults.vue'
   import WordCloud       from './WordCloud.vue'
@@ -19,7 +22,9 @@
 
   const newTitle = ref('')
   const showActivityForm = ref(false)
+  const showLeaderboard = ref(false)
   const promoId = computed(() => appStore.activePromoId ?? appStore.currentUser?.promo_id ?? 0)
+  const showPodium = ref(false)
 
   onMounted(() => {
     liveStore.initSocketListeners()
@@ -36,7 +41,10 @@
   }
 
   // ── Activity management ──────────────────────────────────────────────────
-  async function onAddActivity(payload: { type: 'qcm' | 'sondage' | 'nuage'; title: string; options?: string[]; max_words?: number }) {
+  async function onAddActivity(payload: {
+    type: 'qcm' | 'sondage' | 'nuage'; title: string; options?: string[]
+    max_words?: number; timer_seconds?: number; correct_answers?: number[]
+  }) {
     if (!liveStore.currentSession) return
     await liveStore.pushActivity(liveStore.currentSession.id, payload)
     showActivityForm.value = false
@@ -49,6 +57,15 @@
   async function closeCurrentActivity() {
     if (!liveStore.currentActivity) return
     await liveStore.closeActivity(liveStore.currentActivity.id)
+    // Show leaderboard after closing
+    if (liveStore.currentSession) {
+      await liveStore.fetchLeaderboard(liveStore.currentSession.id)
+      showLeaderboard.value = true
+    }
+  }
+
+  function dismissLeaderboard() {
+    showLeaderboard.value = false
   }
 
   async function removeActivity(activity: LiveActivity) {
@@ -62,8 +79,15 @@
 
   async function endSession() {
     if (!liveStore.currentSession) return
+    // Fetch final leaderboard before ending
+    await liveStore.fetchLeaderboard(liveStore.currentSession.id)
+    showPodium.value = true
     await liveStore.endSession(liveStore.currentSession.id)
   }
+
+  const podiumTop3 = computed(() => {
+    return liveStore.leaderboard.slice(0, 3).map(e => ({ name: e.name, points: e.points }))
+  })
 
   function activityIcon(type: string) {
     if (type === 'qcm') return ListChecks
@@ -108,8 +132,16 @@
       </div>
     </div>
 
+    <!-- ══════════ Podium final ══════════ -->
+    <div v-else-if="showPodium && podiumTop3.length > 0" class="live-podium-view">
+      <Podium :top3="podiumTop3" />
+      <button class="btn-dismiss-podium" @click="showPodium = false">
+        Fermer
+      </button>
+    </div>
+
     <!-- ══════════ Session en attente ══════════ -->
-    <div v-else-if="!liveStore.currentActivity" class="live-session">
+    <div v-else-if="!liveStore.currentActivity && !showLeaderboard" class="live-session">
       <div class="session-header">
         <div class="session-info">
           <h1 class="session-title">{{ liveStore.currentSession.title }}</h1>
@@ -200,8 +232,17 @@
       </div>
     </div>
 
-    <!-- ══════════ Activité en cours (presentation mode) ══════════ -->
-    <div v-else class="live-activity-view">
+    <!-- ══════════ Leaderboard apres fermeture activite ══════════ -->
+    <div v-else-if="showLeaderboard && !liveStore.currentActivity" class="live-leaderboard-view">
+      <Leaderboard :entries="liveStore.leaderboard" />
+      <button class="btn-dismiss-lb" @click="dismissLeaderboard">
+        <ChevronRight :size="16" />
+        Continuer
+      </button>
+    </div>
+
+    <!-- ══════════ Activite en cours (presentation mode) ══════════ -->
+    <div v-else-if="liveStore.currentActivity" class="live-activity-view">
       <div class="activity-topbar">
         <div class="activity-topbar-info">
           <component :is="activityIcon(liveStore.currentActivity.type)" :size="20" />
@@ -211,12 +252,26 @@
         <div class="activity-topbar-actions">
           <button class="btn-close-activity" @click="closeCurrentActivity">
             <Square :size="16" />
-            Fermer l'activité
+            Fermer l'activite
           </button>
           <button class="btn-next" @click="closeCurrentActivity">
             <ChevronRight :size="16" />
             Suivante
           </button>
+        </div>
+      </div>
+
+      <!-- Timer + response count -->
+      <div class="activity-live-bar">
+        <CountdownTimer
+          v-if="liveStore.timerStartedAt"
+          :total-seconds="liveStore.currentActivity.timer_seconds ?? 30"
+          :started-at="liveStore.timerStartedAt"
+          @expired="() => {}"
+        />
+        <div class="response-count" v-if="liveStore.results">
+          <Users :size="18" />
+          <span>{{ liveStore.results.totalResponses }} ont repondu</span>
         </div>
       </div>
 
@@ -226,7 +281,7 @@
         <WordCloud v-else-if="liveStore.currentActivity.type === 'nuage' && liveStore.results" :results="liveStore.results" />
         <div v-else class="results-waiting">
           <Radio :size="32" class="results-waiting-icon" />
-          <span>En attente des réponses...</span>
+          <span>En attente des reponses...</span>
         </div>
       </div>
     </div>
@@ -548,4 +603,71 @@
   opacity: .4;
   animation: pulse-dot 2s infinite;
 }
+
+/* ── Activity live bar (timer + response count) ── */
+.activity-live-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 32px;
+  padding: 12px 0;
+}
+.response-count {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-secondary, #aaa);
+}
+
+/* ── Leaderboard view ── */
+.live-leaderboard-view {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+  max-width: 560px;
+  width: 100%;
+  margin-top: 40px;
+}
+.btn-dismiss-lb {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 24px;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 700;
+  background: var(--accent, #4a90d9);
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  transition: all .15s;
+}
+.btn-dismiss-lb:hover { filter: brightness(1.1); }
+
+/* ── Podium view ── */
+.live-podium-view {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 32px;
+  width: 100%;
+  max-width: 560px;
+  margin-top: 20px;
+}
+.btn-dismiss-podium {
+  padding: 10px 32px;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 700;
+  background: var(--bg-elevated, #1e1f21);
+  border: 1px solid var(--border, rgba(255,255,255,.08));
+  color: var(--text-primary, #fff);
+  cursor: pointer;
+  transition: all .15s;
+  z-index: 1;
+}
+.btn-dismiss-podium:hover { background: var(--bg-hover); }
 </style>

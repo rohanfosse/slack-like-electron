@@ -203,16 +203,18 @@ declare global {
       addLiveActivity(sessionId: number, payload: unknown): Promise<IpcResponse<LiveActivity>>
       deleteLiveActivity(id: number): Promise<IpcResponse<null>>
       setLiveActivityStatus(id: number, status: string): Promise<IpcResponse<LiveActivity>>
-      submitLiveResponse(activityId: number, payload: unknown): Promise<IpcResponse<null>>
+      submitLiveResponse(activityId: number, payload: unknown): Promise<IpcResponse<unknown>>
       getLiveActivityResults(activityId: number): Promise<IpcResponse<LiveResults>>
+      getLiveLeaderboard(sessionId: number): Promise<IpcResponse<unknown>>
       emitLiveJoin(promoId: number): void
       emitLiveLeave(promoId: number): void
       onLiveActivityPushed(cb: (data: { activity: unknown }) => void): () => void
-      onLiveActivityClosed(cb: (data: { activityId: number }) => void): () => void
+      onLiveActivityClosed(cb: (data: { activityId: number; leaderboard?: unknown[] }) => void): () => void
       onLiveResultsUpdate(cb: (data: { activityId: number; data: unknown }) => void): () => void
       onLiveSessionStarted(cb: (data: { sessionId: number }) => void): () => void
       onLiveSessionEnded(cb: (data: { sessionId: number }) => void): () => void
       onLiveInvite(cb: (data: { sessionId: number; title: string; joinCode: string; teacherName: string }) => void): () => void
+      onLiveScoresUpdate(cb: (data: { sessionId: number; activityId: number; leaderboard: unknown[] }) => void): () => void
 
       // Grade notifications
       onGradeNew(cb: (data: { devoirTitle: string; note: string | null; feedback: string | null; devoirId: number; category: string | null }) => void): () => void

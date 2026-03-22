@@ -42,12 +42,14 @@ type LiveResultsUpdatePayload  = { activityId: number; data: unknown }
 type LiveSessionStartedPayload = { sessionId: number }
 type LiveSessionEndedPayload   = { sessionId: number }
 type LiveInvitePayload         = { sessionId: number; title: string; joinCode: string; teacherName: string }
+type LiveScoresUpdatePayload   = { sessionId: number; activityId: number; leaderboard: unknown[] }
 const liveActivityPushedCallbacks: Array<(data: LiveActivityPushedPayload) => void> = []
 const liveActivityClosedCallbacks: Array<(data: LiveActivityClosedPayload) => void> = []
 const liveResultsUpdateCallbacks:  Array<(data: LiveResultsUpdatePayload) => void> = []
 const liveSessionStartedCallbacks: Array<(data: LiveSessionStartedPayload) => void> = []
 const liveSessionEndedCallbacks:   Array<(data: LiveSessionEndedPayload) => void> = []
 const liveInviteCallbacks:         Array<(data: LiveInvitePayload) => void> = []
+const liveScoresUpdateCallbacks:   Array<(data: LiveScoresUpdatePayload) => void> = []
 
 // Grade notification callbacks
 type GradeNewPayload = { devoirTitle: string; note: string | null; feedback: string | null; devoirId: number; category: string | null }
@@ -78,6 +80,7 @@ function connectSocket(token: string): void {
   socket.on('live:session-started', (data: LiveSessionStartedPayload) => liveSessionStartedCallbacks.forEach(cb => cb(data)))
   socket.on('live:session-ended',   (data: LiveSessionEndedPayload) => liveSessionEndedCallbacks.forEach(cb => cb(data)))
   socket.on('live:invite',          (data: LiveInvitePayload) => liveInviteCallbacks.forEach(cb => cb(data)))
+  socket.on('live:scores-update',   (data: LiveScoresUpdatePayload) => liveScoresUpdateCallbacks.forEach(cb => cb(data)))
   socket.on('grade:new',           (data: GradeNewPayload) => gradeNewCallbacks.forEach(cb => cb(data)))
   socket.on('connect', () => {
     socketStateCallbacks.forEach((cb) => cb(true))
@@ -342,6 +345,7 @@ contextBridge.exposeInMainWorld('api', {
   setLiveActivityStatus:   (id: number, status: string) => patch(`/api/live/activities/${id}/status`, { status }),
   submitLiveResponse:      (activityId: number, payload: unknown) => post(`/api/live/activities/${activityId}/respond`, payload),
   getLiveActivityResults:   (activityId: number) => get(`/api/live/activities/${activityId}/results`),
+  getLiveLeaderboard:       (sessionId: number)  => get(`/api/live/sessions/${sessionId}/leaderboard`),
 
   emitLiveJoin:  (promoId: number) => { socket?.emit('live:join', { promoId }) },
   emitLiveLeave: (promoId: number) => { socket?.emit('live:leave', { promoId }) },
@@ -369,6 +373,10 @@ contextBridge.exposeInMainWorld('api', {
   onLiveInvite: (cb: (data: LiveInvitePayload) => void) => {
     liveInviteCallbacks.push(cb)
     return () => { const i = liveInviteCallbacks.indexOf(cb); if (i !== -1) liveInviteCallbacks.splice(i, 1) }
+  },
+  onLiveScoresUpdate: (cb: (data: LiveScoresUpdatePayload) => void) => {
+    liveScoresUpdateCallbacks.push(cb)
+    return () => { const i = liveScoresUpdateCallbacks.indexOf(cb); if (i !== -1) liveScoresUpdateCallbacks.splice(i, 1) }
   },
 
   // ── Grade notifications ─────────────────────────────────────────────────────

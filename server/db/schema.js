@@ -1,6 +1,6 @@
 const { getDb } = require('./connection');
 
-const CURRENT_VERSION = 24;
+const CURRENT_VERSION = 25;
 
 // ─── Schema initial ───────────────────────────────────────────────────────────
 // Crée toutes les tables avec leur schéma complet (colonnes UTC, toutes colonnes incluses).
@@ -595,6 +595,26 @@ function runMigrations(db) {
         );
         CREATE INDEX IF NOT EXISTS idx_visits_created ON page_visits(created_at);
         CREATE INDEX IF NOT EXISTS idx_visits_user ON page_visits(user_id);
+      `);
+    },
+
+    // v25 : Kahoot-style scoring (timer, correct answers, leaderboard)
+    (db) => {
+      tryAlter(db, 'ALTER TABLE live_activities ADD COLUMN timer_seconds INTEGER NOT NULL DEFAULT 30');
+      tryAlter(db, 'ALTER TABLE live_activities ADD COLUMN correct_answers TEXT DEFAULT NULL');
+      db.exec(`
+        CREATE TABLE IF NOT EXISTS live_scores (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          session_id INTEGER NOT NULL REFERENCES live_sessions(id) ON DELETE CASCADE,
+          student_id INTEGER NOT NULL,
+          student_name TEXT NOT NULL,
+          activity_id INTEGER NOT NULL REFERENCES live_activities(id) ON DELETE CASCADE,
+          points INTEGER NOT NULL DEFAULT 0,
+          answer_time_ms INTEGER NOT NULL DEFAULT 0,
+          is_correct INTEGER NOT NULL DEFAULT 0,
+          UNIQUE(activity_id, student_id)
+        );
+        CREATE INDEX IF NOT EXISTS idx_live_scores_session ON live_scores(session_id);
       `);
     },
   ];
