@@ -289,7 +289,7 @@ const dateGroups = computed<DateGroup[]>(() => {
 }
 .conversation-start-line {
   flex: 1; height: 1px;
-  background: var(--border, rgba(255,255,255,.06));
+  background: var(--border, var(--border));
 }
 
 /* ── Indicateur chargement anciens messages ── */

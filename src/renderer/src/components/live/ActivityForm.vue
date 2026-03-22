@@ -173,8 +173,8 @@
   width: 100%;
   padding: 10px 14px;
   border-radius: 8px;
-  background: var(--bg-input, rgba(255,255,255,.06));
-  border: 1px solid var(--border-input, rgba(255,255,255,.1));
+  background: var(--bg-input, var(--border));
+  border: 1px solid var(--border-input, var(--bg-hover));
   color: var(--text-primary, #fff);
   font-size: 14px;
   font-family: inherit;

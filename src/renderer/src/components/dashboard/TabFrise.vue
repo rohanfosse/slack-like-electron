@@ -377,7 +377,7 @@ function dotClassForGroup(group: DayGroup) {
 }
 .tf-milestone:hover .tf-dot {
   transform: scale(1.3);
-  box-shadow: 0 0 0 4px rgba(255,255,255,.1);
+  box-shadow: 0 0 0 4px var(--bg-hover);
 }
 .tf-dot--diamond { border-radius: 2px; transform: rotate(45deg); }
 .tf-milestone:hover .tf-dot--diamond { transform: rotate(45deg) scale(1.3); }

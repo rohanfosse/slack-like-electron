@@ -294,8 +294,8 @@
   width: 100%;
   padding: 12px 16px;
   border-radius: 10px;
-  background: var(--bg-input, rgba(255,255,255,.06));
-  border: 1px solid var(--border-input, rgba(255,255,255,.1));
+  background: var(--bg-input, var(--border));
+  border: 1px solid var(--border-input, var(--bg-hover));
   color: var(--text-primary, #fff);
   font-size: 15px;
   font-family: inherit;

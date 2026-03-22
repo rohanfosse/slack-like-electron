@@ -146,7 +146,7 @@ function pick(emoji: string) {
   max-height: 200px;
   overflow-y: auto;
   scrollbar-width: thin;
-  scrollbar-color: rgba(255,255,255,.1) transparent;
+  scrollbar-color: var(--bg-hover) transparent;
 }
 .ep-emoji {
   aspect-ratio: 1;

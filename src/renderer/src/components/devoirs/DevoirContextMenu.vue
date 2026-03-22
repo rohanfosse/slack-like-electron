@@ -75,7 +75,7 @@ const menuStyle = computed(() => {
   background: none; border: none; color: var(--text-primary, #cdd6f4);
   font-size: 13px; cursor: pointer; text-align: left;
 }
-.ctx-item:hover { background: var(--bg-hover, rgba(255,255,255,.12)); }
+.ctx-item:hover { background: var(--bg-hover, var(--border-input)); }
 .ctx-item--danger { color: var(--color-error, #f38ba8); }
 .ctx-item--danger:hover { background: rgba(243,139,168,.12); }
 .ctx-divider { height: 1px; margin: 4px 8px; background: var(--border-color, #333); }

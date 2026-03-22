@@ -88,7 +88,7 @@ function run(item: ContextMenuItem) {
   z-index: 9999;
   min-width: 180px;
   background: var(--bg-secondary, #1e2025);
-  border: 1px solid var(--border, rgba(255,255,255,.1));
+  border: 1px solid var(--border, var(--bg-hover));
   border-radius: 8px;
   padding: 4px;
   box-shadow: 0 8px 24px rgba(0,0,0,.4), 0 2px 8px rgba(0,0,0,.3);

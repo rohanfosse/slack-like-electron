@@ -486,7 +486,7 @@
   width: 80px;
   padding: 4px 8px;
   font-size: 12px;
-  background: var(--bg-input, rgba(255,255,255,.06));
+  background: var(--bg-input, var(--border));
   border: 1px solid var(--border-input);
   border-radius: var(--radius-sm);
   color: var(--text-primary);

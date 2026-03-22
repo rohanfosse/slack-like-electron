@@ -57,6 +57,26 @@ body.light {
   --deadline-over-text: #dc2626;
 }
 
+/* Cards need stronger contrast on light background */
+body.light .dv-proj-card,
+body.light .dashboard-card,
+body.light .sa-card,
+body.light .bento-tile {
+  box-shadow: 0 1px 3px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.03);
+  border-color: rgba(120,80,40,.15);
+}
+body.light .dv-proj-card:hover,
+body.light .dashboard-card:hover {
+  box-shadow: 0 4px 12px rgba(0,0,0,.08);
+  border-color: var(--accent);
+}
+body.light .sidebar-item:hover { background: rgba(120,80,40,.06); }
+body.light .sidebar-item.active { background: rgba(160,100,40,.12); }
+body.light .db-tabs { border-bottom-color: rgba(120,80,40,.12); }
+body.light .dv-progress { background: rgba(120,80,40,.08); }
+body.light .modal-overlay { background: rgba(0,0,0,.25); }
+body.light .modal-box { box-shadow: 0 12px 40px rgba(0,0,0,.12); border-color: rgba(120,80,40,.15); }
+
 /* Scrollbars crème */
 body.light ::-webkit-scrollbar-thumb       { background: rgba(120, 80, 40, .22); }
 body.light ::-webkit-scrollbar-thumb:hover { background: rgba(120, 80, 40, .38); }

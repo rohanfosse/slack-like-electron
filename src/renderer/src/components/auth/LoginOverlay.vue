@@ -483,7 +483,7 @@
   width: 100%;
   padding: 10px 13px;
   border-radius: 8px;
-  border: 1.5px solid var(--border-input, rgba(255,255,255,.12));
+  border: 1.5px solid var(--border-input, var(--border-input));
   background: var(--bg-input, rgba(255,255,255,.05));
   color: var(--text-primary);
   font-size: 14px;
@@ -623,7 +623,7 @@
   width: 100%;
   padding: 10px;
   border-radius: 8px;
-  border: 1.5px solid var(--border-input, rgba(255,255,255,.12));
+  border: 1.5px solid var(--border-input, var(--border-input));
   background: transparent;
   color: var(--text-secondary);
   font-size: 13.5px;
@@ -708,7 +708,7 @@
 .auth-back-btn {
   padding: 11px 16px;
   border-radius: 8px;
-  border: 1.5px solid var(--border-input, rgba(255,255,255,.12));
+  border: 1.5px solid var(--border-input, var(--border-input));
   background: transparent;
   color: var(--text-secondary);
   font-size: 13px;
