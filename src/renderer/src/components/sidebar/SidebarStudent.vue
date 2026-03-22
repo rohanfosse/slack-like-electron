@@ -468,9 +468,10 @@ watch(() => appStore.currentUser?.id, () => load())
   font-size: 10px;
   font-weight: 700;
   color: var(--text-muted);
-  padding: 8px 14px 4px;
+  padding: 8px 14px 4px 14px;
   cursor: pointer;
   user-select: none;
+  justify-content: flex-start;
 }
 .sidebar-collapsible-header:hover { color: var(--text-secondary); }
 
@@ -568,6 +569,25 @@ watch(() => appStore.currentUser?.id, () => load())
   min-width: 18px;
   text-align: center;
 }
+/* Unread DM state */
+.dm-has-unread .channel-name {
+  font-weight: 700;
+  color: var(--text-primary);
+}
+.dm-unread-badge {
+  font-family: 'JetBrains Mono', 'SF Mono', monospace;
+  font-size: 10px;
+  font-weight: 700;
+  background: var(--accent);
+  color: #fff;
+  border-radius: 10px;
+  padding: 1px 6px;
+  min-width: 20px;
+  text-align: center;
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
 .dm-empty {
   font-size: 11px;
   color: var(--text-muted);
