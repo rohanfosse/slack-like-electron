@@ -64,17 +64,17 @@ function deleteSession(id) {
 
 // ─── Activities ──────────────────────────────────────────────────────────────
 
-function addActivity({ sessionId, type, title, options, multi, maxWords, position }) {
+function addActivity({ sessionId, type, title, options, multi, maxWords, position, timerSeconds, correctAnswers }) {
   const db = getDb();
   const res = db.prepare(
-    'INSERT INTO live_activities (session_id, type, title, options, multi, max_words, position) VALUES (?, ?, ?, ?, ?, ?, ?)'
-  ).run(sessionId, type, title, options ?? null, multi ?? 0, maxWords ?? 3, position ?? 0);
+    'INSERT INTO live_activities (session_id, type, title, options, multi, max_words, position, timer_seconds, correct_answers) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
+  ).run(sessionId, type, title, options ?? null, multi ?? 0, maxWords ?? 3, position ?? 0, timerSeconds ?? 30, correctAnswers ?? null);
   return db.prepare('SELECT * FROM live_activities WHERE id = ?').get(res.lastInsertRowid);
 }
 
 function updateActivity(id, fields) {
   const db = getDb();
-  const allowed = ['title', 'type', 'options', 'multi', 'max_words', 'position'];
+  const allowed = ['title', 'type', 'options', 'multi', 'max_words', 'position', 'timer_seconds', 'correct_answers'];
   const sets = [];
   const vals = [];
   for (const key of allowed) {
@@ -183,6 +183,100 @@ function hasStudentResponded(activityId, studentId) {
   return !!row;
 }
 
+// ─── Scoring (Kahoot-style) ─────────────────────────────────────────────────
+
+function calculateScore(activityId, studentId, studentName, answerTimeMs, isCorrect) {
+  const db = getDb();
+  const activity = db.prepare('SELECT * FROM live_activities WHERE id = ?').get(activityId);
+  if (!activity) return 0;
+
+  const timerMs = (activity.timer_seconds || 30) * 1000;
+  const points = isCorrect ? Math.round(1000 * (1 - (answerTimeMs / timerMs) * 0.5)) : 0;
+
+  db.prepare(`
+    INSERT INTO live_scores (session_id, student_id, student_name, activity_id, points, answer_time_ms, is_correct)
+    VALUES (?, ?, ?, ?, ?, ?, ?)
+    ON CONFLICT(activity_id, student_id) DO UPDATE SET
+      points = excluded.points, answer_time_ms = excluded.answer_time_ms,
+      is_correct = excluded.is_correct, student_name = excluded.student_name
+  `).run(activity.session_id, studentId, studentName, activityId, points, answerTimeMs, isCorrect ? 1 : 0);
+
+  return points;
+}
+
+function checkCorrectness(activityId, answer) {
+  const db = getDb();
+  const activity = db.prepare('SELECT * FROM live_activities WHERE id = ?').get(activityId);
+  if (!activity || !activity.correct_answers) return null; // no correct answers defined
+
+  let correctIndices;
+  try { correctIndices = JSON.parse(activity.correct_answers); } catch { return null; }
+  if (!Array.isArray(correctIndices) || correctIndices.length === 0) return null;
+
+  // answer is a comma-separated list of indices (e.g. "0,2")
+  const studentIndices = String(answer).split(',').map(s => Number(s.trim())).filter(n => !isNaN(n));
+  if (studentIndices.length === 0) return false;
+
+  // Must match exactly
+  const sortedCorrect = [...correctIndices].sort((a, b) => a - b);
+  const sortedStudent = [...studentIndices].sort((a, b) => a - b);
+  if (sortedCorrect.length !== sortedStudent.length) return false;
+  return sortedCorrect.every((v, i) => v === sortedStudent[i]);
+}
+
+function getLeaderboard(sessionId) {
+  const db = getDb();
+  const rows = db.prepare(`
+    SELECT student_id, student_name, SUM(points) as total_points
+    FROM live_scores
+    WHERE session_id = ?
+    GROUP BY student_id
+    ORDER BY total_points DESC
+  `).all(sessionId);
+
+  return rows.map((r, i) => ({
+    rank: i + 1,
+    studentId: r.student_id,
+    name: r.student_name,
+    points: r.total_points,
+  }));
+}
+
+function getLeaderboardWithRound(sessionId, activityId) {
+  const db = getDb();
+  const rows = db.prepare(`
+    SELECT
+      s.student_id,
+      s.student_name,
+      SUM(s.points) as total_points,
+      COALESCE((SELECT points FROM live_scores WHERE activity_id = ? AND student_id = s.student_id), 0) as points_this_round
+    FROM live_scores s
+    WHERE s.session_id = ?
+    GROUP BY s.student_id
+    ORDER BY total_points DESC
+  `).all(activityId, sessionId);
+
+  return rows.map((r, i) => ({
+    rank: i + 1,
+    studentId: r.student_id,
+    name: r.student_name,
+    points: r.total_points,
+    pointsThisRound: r.points_this_round,
+  }));
+}
+
+function getActivityScores(activityId) {
+  return getDb().prepare(
+    'SELECT * FROM live_scores WHERE activity_id = ? ORDER BY points DESC'
+  ).all(activityId);
+}
+
+function getStudentRank(sessionId, studentId) {
+  const board = getLeaderboard(sessionId);
+  const entry = board.find(e => e.studentId === studentId);
+  return entry ? entry.rank : board.length + 1;
+}
+
 module.exports = {
   createSession,
   getSession,
@@ -198,4 +292,10 @@ module.exports = {
   getActivityResults,
   getActivityResultsAggregated,
   hasStudentResponded,
+  calculateScore,
+  checkCorrectness,
+  getLeaderboard,
+  getLeaderboardWithRound,
+  getActivityScores,
+  getStudentRank,
 };

@@ -1,31 +1,24 @@
-// ─── Store Pinia - Live Quiz (sessions interactives en temps réel) ───────────
+/** Store REX — sessions de retour d'experience anonymes. */
 import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
-import { useAppStore } from './app'
 import { useApi } from '@/composables/useApi'
-import type { LiveSession, LiveActivity, LiveResults, LeaderboardEntry, LiveScoreResult } from '@/types'
+import type { RexSession, RexActivity, RexResults } from '@/types'
 
-export const useLiveStore = defineStore('live', () => {
-  const appStore = useAppStore()
+export const useRexStore = defineStore('rex', () => {
   const { api } = useApi()
 
-  // ── État ──────────────────────────────────────────────────────────────────
-  const currentSession   = ref<LiveSession | null>(null)
-  const currentActivity  = ref<LiveActivity | null>(null)
-  const results          = ref<LiveResults | null>(null)
-  const participantCount = ref(0)
-  const hasResponded     = ref(false)
-  const loading          = ref(false)
-  const pastSessions     = ref<LiveSession[]>([])
-  const leaderboard      = ref<LeaderboardEntry[]>([])
-  const myScore          = ref<LiveScoreResult | null>(null)
-  const timerStartedAt   = ref<string | null>(null)
+  // ── Etat ──────────────────────────────────────────────────────────────────
+  const currentSession  = ref<RexSession | null>(null)
+  const currentActivity = ref<RexActivity | null>(null)
+  const results         = ref<RexResults | null>(null)
+  const hasResponded    = ref(false)
+  const loading         = ref(false)
 
   // ── Computed ─────────────────────────────────────────────────────────────
-  const sessionActivities = computed<LiveActivity[]>(() =>
+  const sessionActivities = computed<RexActivity[]>(() =>
     currentSession.value?.activities ?? [],
   )
-  const liveActivity = computed<LiveActivity | null>(() =>
+  const liveActivity = computed<RexActivity | null>(() =>
     sessionActivities.value.find(a => a.status === 'live') ?? null,
   )
 
@@ -34,12 +27,12 @@ export const useLiveStore = defineStore('live', () => {
   async function createSession(title: string, promoId: number): Promise<boolean> {
     loading.value = true
     try {
-      const data = await api<LiveSession>(
-        () => window.api.createLiveSession({ title, promoId }),
+      const data = await api<RexSession>(
+        () => window.api.createRexSession({ title, promoId }),
       )
       if (data) {
         currentSession.value = data
-        window.api.emitLiveJoin(promoId)
+        window.api.emitRexJoin(promoId)
         return true
       }
       return false
@@ -51,14 +44,14 @@ export const useLiveStore = defineStore('live', () => {
   async function joinByCode(code: string): Promise<boolean> {
     loading.value = true
     try {
-      const data = await api<LiveSession>(
-        () => window.api.getLiveSessionByCode(code),
+      const data = await api<RexSession>(
+        () => window.api.getRexSessionByCode(code),
       )
       if (data) {
         currentSession.value = data
         currentActivity.value = data.activities?.find(a => a.status === 'live') ?? null
         hasResponded.value = false
-        window.api.emitLiveJoin(data.promo_id)
+        window.api.emitRexJoin(data.promo_id)
         return true
       }
       return false
@@ -69,23 +62,19 @@ export const useLiveStore = defineStore('live', () => {
 
   function leaveSession() {
     if (currentSession.value) {
-      window.api.emitLiveLeave(currentSession.value.promo_id)
+      window.api.emitRexLeave(currentSession.value.promo_id)
     }
     currentSession.value = null
     currentActivity.value = null
     results.value = null
     hasResponded.value = false
-    participantCount.value = 0
-    leaderboard.value = []
-    myScore.value = null
-    timerStartedAt.value = null
   }
 
   async function fetchSession(id: number): Promise<void> {
     loading.value = true
     try {
-      const data = await api<LiveSession>(
-        () => window.api.getLiveSession(id),
+      const data = await api<RexSession>(
+        () => window.api.getRexSession(id),
       )
       if (data) {
         currentSession.value = data
@@ -103,14 +92,14 @@ export const useLiveStore = defineStore('live', () => {
   async function fetchActiveForPromo(promoId: number): Promise<boolean> {
     loading.value = true
     try {
-      const data = await api<LiveSession>(
-        () => window.api.getActiveLiveSession(promoId),
+      const data = await api<RexSession>(
+        () => window.api.getActiveRexSession(promoId),
       )
       if (data && data.id) {
         currentSession.value = data
         currentActivity.value = data.activities?.find(a => a.status === 'live') ?? null
         hasResponded.value = false
-        window.api.emitLiveJoin(data.promo_id)
+        window.api.emitRexJoin(data.promo_id)
         return true
       }
       return false
@@ -120,12 +109,11 @@ export const useLiveStore = defineStore('live', () => {
   }
 
   async function pushActivity(sessionId: number, payload: {
-    type: 'qcm' | 'sondage' | 'nuage'; title: string
-    options?: string[] | null; multi?: number; max_words?: number
-    timer_seconds?: number; correct_answers?: number[]
+    type: 'sondage_libre' | 'nuage' | 'echelle' | 'question_ouverte'; title: string
+    max_words?: number; max_rating?: number
   }): Promise<boolean> {
-    const data = await api<LiveActivity>(
-      () => window.api.addLiveActivity(sessionId, payload),
+    const data = await api<RexActivity>(
+      () => window.api.addRexActivity(sessionId, payload),
     )
     if (data && currentSession.value) {
       const acts = currentSession.value.activities ?? []
@@ -136,15 +124,12 @@ export const useLiveStore = defineStore('live', () => {
   }
 
   async function launchActivity(activityId: number): Promise<boolean> {
-    const data = await api<LiveActivity>(
-      () => window.api.setLiveActivityStatus(activityId, 'live'),
+    const data = await api<RexActivity>(
+      () => window.api.setRexActivityStatus(activityId, 'live'),
     )
     if (data) {
       currentActivity.value = data
       results.value = null
-      myScore.value = null
-      timerStartedAt.value = data.started_at ?? null
-      // Update in session activities list
       if (currentSession.value?.activities) {
         currentSession.value = {
           ...currentSession.value,
@@ -159,8 +144,8 @@ export const useLiveStore = defineStore('live', () => {
   }
 
   async function closeActivity(activityId: number): Promise<boolean> {
-    const data = await api<LiveActivity>(
-      () => window.api.setLiveActivityStatus(activityId, 'closed'),
+    const data = await api<RexActivity>(
+      () => window.api.setRexActivityStatus(activityId, 'closed'),
     )
     if (data) {
       currentActivity.value = null
@@ -179,7 +164,7 @@ export const useLiveStore = defineStore('live', () => {
 
   async function deleteActivity(activityId: number): Promise<boolean> {
     const data = await api(
-      () => window.api.deleteLiveActivity(activityId),
+      () => window.api.deleteRexActivity(activityId),
     )
     if (data !== null && currentSession.value?.activities) {
       currentSession.value = {
@@ -191,39 +176,38 @@ export const useLiveStore = defineStore('live', () => {
     return false
   }
 
-  async function submitResponse(activityId: number, payload: { answers?: number[]; text?: string; words?: string[] }): Promise<LiveScoreResult | null> {
+  async function submitResponse(activityId: number, payload: { text?: string; words?: string[]; rating?: number }): Promise<boolean> {
     const data = await api(
-      () => window.api.submitLiveResponse(activityId, payload),
-    ) as { isCorrect: boolean | null; points: number; rank: number | null } | null
+      () => window.api.submitRexResponse(activityId, payload),
+    )
     if (data !== null) {
       hasResponded.value = true
-      if (data && typeof data === 'object' && 'isCorrect' in data) {
-        myScore.value = data as LiveScoreResult
-      }
-      return data as LiveScoreResult
+      return true
     }
-    return null
-  }
-
-  async function fetchLeaderboard(sessionId: number): Promise<void> {
-    const data = await api(
-      () => window.api.getLiveLeaderboard(sessionId),
-    ) as LeaderboardEntry[] | null
-    if (data && Array.isArray(data)) {
-      leaderboard.value = data
-    }
+    return false
   }
 
   async function fetchResults(activityId: number): Promise<void> {
-    const data = await api<LiveResults>(
-      () => window.api.getLiveActivityResults(activityId),
+    const data = await api<RexResults>(
+      () => window.api.getRexActivityResults(activityId),
     )
     if (data) results.value = data
   }
 
+  async function startSession(sessionId: number): Promise<boolean> {
+    const data = await api<RexSession>(
+      () => window.api.updateRexSessionStatus(sessionId, 'active'),
+    )
+    if (data) {
+      currentSession.value = { ...currentSession.value!, status: 'active' }
+      return true
+    }
+    return false
+  }
+
   async function endSession(sessionId: number): Promise<boolean> {
     const data = await api(
-      () => window.api.updateLiveSessionStatus(sessionId, 'ended'),
+      () => window.api.updateRexSessionStatus(sessionId, 'ended'),
     )
     if (data !== null) {
       leaveSession()
@@ -232,15 +216,17 @@ export const useLiveStore = defineStore('live', () => {
     return false
   }
 
-  async function startSession(sessionId: number): Promise<boolean> {
-    const data = await api<LiveSession>(
-      () => window.api.updateLiveSessionStatus(sessionId, 'active'),
+  async function togglePin(responseId: number, pinned: boolean): Promise<boolean> {
+    const data = await api(
+      () => window.api.toggleRexPin(responseId, pinned),
     )
-    if (data) {
-      currentSession.value = { ...currentSession.value!, status: 'active' }
-      return true
-    }
-    return false
+    return data !== null
+  }
+
+  async function exportSession(sessionId: number, format = 'json'): Promise<unknown> {
+    return api(
+      () => window.api.exportRexSession(sessionId, format),
+    )
   }
 
   // ── Socket listeners ─────────────────────────────────────────────────────
@@ -250,24 +236,21 @@ export const useLiveStore = defineStore('live', () => {
     disposeSocketListeners()
 
     _cleanups.push(
-      window.api.onLiveActivityPushed(({ activity }) => {
-        const act = activity as LiveActivity
+      window.api.onRexActivityPushed(({ activity }) => {
+        const act = activity as RexActivity
         if (currentSession.value && act.session_id === currentSession.value.id) {
           const acts = currentSession.value.activities ?? []
           currentSession.value = { ...currentSession.value, activities: [...acts, act] }
         }
-        // Set timer info for students
         if (act.status === 'live') {
           currentActivity.value = act
-          timerStartedAt.value = act.started_at ?? null
           hasResponded.value = false
-          myScore.value = null
         }
       }),
     )
 
     _cleanups.push(
-      window.api.onLiveActivityClosed(({ activityId, leaderboard: lb }: { activityId: number; leaderboard?: unknown[] }) => {
+      window.api.onRexActivityClosed(({ activityId }) => {
         if (currentActivity.value && currentActivity.value.id === activityId) {
           currentActivity.value = Object.assign({}, currentActivity.value, { status: 'closed' as const })
           fetchResults(activityId)
@@ -279,31 +262,19 @@ export const useLiveStore = defineStore('live', () => {
             ),
           })
         }
-        if (lb && Array.isArray(lb)) {
-          leaderboard.value = lb as LeaderboardEntry[]
-        }
-        timerStartedAt.value = null
       }),
     )
 
     _cleanups.push(
-      window.api.onLiveResultsUpdate(({ activityId, data }: { activityId: number; data: unknown }) => {
-        if (results.value?.activityId === activityId || currentActivity.value?.id === activityId) {
-          results.value = data as LiveResults
+      window.api.onRexResultsUpdate(({ activityId, data }: { activityId: number; data: unknown }) => {
+        if (results.value?.type || currentActivity.value?.id === activityId) {
+          results.value = data as RexResults
         }
       }),
     )
 
     _cleanups.push(
-      window.api.onLiveScoresUpdate(({ leaderboard: lb }: { sessionId: number; activityId: number; leaderboard: unknown[] }) => {
-        if (lb && Array.isArray(lb)) {
-          leaderboard.value = lb as LeaderboardEntry[]
-        }
-      }),
-    )
-
-    _cleanups.push(
-      window.api.onLiveSessionStarted(({ sessionId }: { sessionId: number }) => {
+      window.api.onRexSessionStarted(({ sessionId }: { sessionId: number }) => {
         if (currentSession.value && currentSession.value.id === sessionId) {
           currentSession.value = Object.assign({}, currentSession.value, { status: 'active' as const })
         }
@@ -311,7 +282,7 @@ export const useLiveStore = defineStore('live', () => {
     )
 
     _cleanups.push(
-      window.api.onLiveSessionEnded(({ sessionId }: { sessionId: number }) => {
+      window.api.onRexSessionEnded(({ sessionId }: { sessionId: number }) => {
         if (currentSession.value && currentSession.value.id === sessionId) {
           currentSession.value = Object.assign({}, currentSession.value, { status: 'ended' as const })
           currentActivity.value = null
@@ -327,15 +298,15 @@ export const useLiveStore = defineStore('live', () => {
 
   return {
     // state
-    currentSession, currentActivity, results, participantCount,
-    hasResponded, loading, pastSessions,
-    leaderboard, myScore, timerStartedAt,
+    currentSession, currentActivity, results,
+    hasResponded, loading,
     // computed
     sessionActivities, liveActivity,
     // actions
     createSession, joinByCode, leaveSession, fetchSession, fetchActiveForPromo,
     pushActivity, launchActivity, closeActivity, deleteActivity,
-    submitResponse, fetchResults, fetchLeaderboard, endSession, startSession,
+    submitResponse, fetchResults, startSession, endSession,
+    togglePin, exportSession,
     initSocketListeners, disposeSocketListeners,
   }
 })

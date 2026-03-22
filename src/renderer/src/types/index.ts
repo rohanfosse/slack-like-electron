@@ -214,10 +214,41 @@ export interface LiveActivity {
   title: string; options: string[] | null; multi: number
   max_words: number; position: number; status: 'pending' | 'live' | 'closed'
   started_at: string | null; closed_at: string | null
+  timer_seconds: number; correct_answers: string | null
 }
 export interface LiveResults {
   activityId: number; type: string; totalResponses: number
   data: { option?: string; text?: string; word?: string; index?: number; count: number; percent?: number; size?: number }[]
+}
+export interface LeaderboardEntry {
+  rank: number; studentId: number; name: string; points: number; pointsThisRound?: number
+}
+export interface LiveScoreResult {
+  isCorrect: boolean | null; points: number; rank: number | null
+}
+
+// ─── REX (Retour d'Experience) ──────────────────────────────────────────────
+
+export interface RexSession {
+  id: number; teacher_id: number; promo_id: number; title: string
+  join_code: string; status: 'waiting' | 'active' | 'ended'
+  created_at: string; ended_at: string | null; activities?: RexActivity[]
+}
+
+export interface RexActivity {
+  id: number; session_id: number
+  type: 'sondage_libre' | 'nuage' | 'echelle' | 'question_ouverte'
+  title: string; max_words: number; max_rating: number
+  position: number; status: 'pending' | 'live' | 'closed'
+  started_at: string | null; closed_at: string | null
+}
+
+export interface RexResults {
+  type: string; total: number
+  counts?: { text: string; count: number }[]
+  freq?: { word: string; count: number }[]
+  average?: number; distribution?: { rating: number; count: number }[]
+  answers?: { id: number; answer: string; pinned: boolean; created_at: string }[]
 }
 
 // ─── Payloads IPC ────────────────────────────────────────────────────────────

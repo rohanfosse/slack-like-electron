@@ -4,7 +4,11 @@
   import { ListChecks, MessageCircle, Cloud, Plus, X } from 'lucide-vue-next'
 
   const emit = defineEmits<{
-    save: [payload: { type: 'qcm' | 'sondage' | 'nuage'; title: string; options?: string[]; max_words?: number }]
+    save: [payload: {
+      type: 'qcm' | 'sondage' | 'nuage'; title: string
+      options?: string[]; max_words?: number
+      timer_seconds?: number; correct_answers?: number[]
+    }]
     cancel: []
   }>()
 
@@ -12,6 +16,9 @@
   const title = ref('')
   const options = ref<string[]>(['', ''])
   const maxWords = ref(2)
+  const timerSeconds = ref(30)
+  const correctAnswers = ref<number[]>([])
+  const timerOptions = [10, 20, 30, 60]
 
   const typeCards = [
     { id: 'qcm' as const,     label: 'QCM',     icon: ListChecks,   desc: 'Choix multiple' },
@@ -24,19 +31,40 @@
   }
 
   function removeOption(i: number) {
-    if (options.value.length > 2) options.value.splice(i, 1)
+    if (options.value.length > 2) {
+      options.value.splice(i, 1)
+      // Adjust correctAnswers indices
+      correctAnswers.value = correctAnswers.value
+        .filter(idx => idx !== i)
+        .map(idx => idx > i ? idx - 1 : idx)
+    }
+  }
+
+  function toggleCorrect(i: number) {
+    const idx = correctAnswers.value.indexOf(i)
+    if (idx >= 0) correctAnswers.value.splice(idx, 1)
+    else correctAnswers.value.push(i)
   }
 
   function save() {
     if (!title.value.trim()) return
-    const payload: { type: 'qcm' | 'sondage' | 'nuage'; title: string; options?: string[]; max_words?: number } = {
+    const payload: {
+      type: 'qcm' | 'sondage' | 'nuage'; title: string
+      options?: string[]; max_words?: number
+      timer_seconds?: number; correct_answers?: number[]
+    } = {
       type: activityType.value,
       title: title.value.trim(),
+      timer_seconds: timerSeconds.value,
     }
     if (activityType.value === 'qcm') {
       const filtered = options.value.map(o => o.trim()).filter(Boolean)
       if (filtered.length < 2) return
       payload.options = filtered
+      if (correctAnswers.value.length > 0) {
+        // Only include indices that still exist after filtering
+        payload.correct_answers = correctAnswers.value.filter(i => i < filtered.length)
+      }
     }
     if (activityType.value === 'nuage') {
       payload.max_words = maxWords.value
@@ -72,9 +100,34 @@
       maxlength="200"
     />
 
+    <!-- Timer selector -->
+    <div class="timer-section">
+      <label class="timer-label">Chronometre</label>
+      <div class="timer-btns">
+        <button
+          v-for="t in timerOptions"
+          :key="t"
+          class="timer-btn"
+          :class="{ active: timerSeconds === t }"
+          @click="timerSeconds = t"
+        >
+          {{ t }}s
+        </button>
+      </div>
+    </div>
+
     <!-- QCM options -->
     <div v-if="activityType === 'qcm'" class="options-section">
+      <label class="correct-label">Options (cochez les bonnes reponses)</label>
       <div v-for="(opt, i) in options" :key="i" class="option-row">
+        <button
+          class="correct-toggle"
+          :class="{ checked: correctAnswers.includes(i) }"
+          title="Marquer comme bonne reponse"
+          @click="toggleCorrect(i)"
+        >
+          <span class="correct-check">&#x2713;</span>
+        </button>
         <input
           v-model="options[i]"
           class="form-input option-input"
@@ -183,6 +236,70 @@
 }
 .form-input:focus {
   border-color: var(--accent, #4a90d9);
+}
+.timer-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.timer-label {
+  font-size: 13px;
+  color: var(--text-secondary, #aaa);
+  font-weight: 600;
+}
+.timer-btns {
+  display: flex;
+  gap: 8px;
+}
+.timer-btn {
+  flex: 1;
+  height: 44px;
+  border-radius: 10px;
+  font-size: 16px;
+  font-weight: 700;
+  background: var(--bg-hover);
+  border: 2px solid var(--border);
+  color: var(--text-secondary, #aaa);
+  cursor: pointer;
+  transition: all .15s;
+}
+.timer-btn.active {
+  background: var(--accent-subtle, rgba(74,144,217,.12));
+  border-color: var(--accent, #4a90d9);
+  color: var(--accent, #4a90d9);
+}
+.correct-label {
+  font-size: 13px;
+  color: var(--text-secondary, #aaa);
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+.correct-toggle {
+  width: 30px;
+  height: 30px;
+  border-radius: 6px;
+  background: var(--bg-hover);
+  border: 2px solid var(--border);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all .15s;
+}
+.correct-toggle .correct-check {
+  opacity: 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: #fff;
+  transition: opacity .15s;
+}
+.correct-toggle.checked {
+  background: #22c55e;
+  border-color: #16a34a;
+}
+.correct-toggle.checked .correct-check {
+  opacity: 1;
 }
 .options-section {
   display: flex;

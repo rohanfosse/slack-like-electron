@@ -1,6 +1,6 @@
 const { getDb } = require('./connection');
 
-const CURRENT_VERSION = 24;
+const CURRENT_VERSION = 26;
 
 // ─── Schema initial ───────────────────────────────────────────────────────────
 // Crée toutes les tables avec leur schéma complet (colonnes UTC, toutes colonnes incluses).
@@ -595,6 +595,68 @@ function runMigrations(db) {
         );
         CREATE INDEX IF NOT EXISTS idx_visits_created ON page_visits(created_at);
         CREATE INDEX IF NOT EXISTS idx_visits_user ON page_visits(user_id);
+      `);
+    },
+
+    // v25 : Kahoot-style scoring (timer, correct answers, leaderboard)
+    (db) => {
+      tryAlter(db, 'ALTER TABLE live_activities ADD COLUMN timer_seconds INTEGER NOT NULL DEFAULT 30');
+      tryAlter(db, 'ALTER TABLE live_activities ADD COLUMN correct_answers TEXT DEFAULT NULL');
+      db.exec(`
+        CREATE TABLE IF NOT EXISTS live_scores (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          session_id INTEGER NOT NULL REFERENCES live_sessions(id) ON DELETE CASCADE,
+          student_id INTEGER NOT NULL,
+          student_name TEXT NOT NULL,
+          activity_id INTEGER NOT NULL REFERENCES live_activities(id) ON DELETE CASCADE,
+          points INTEGER NOT NULL DEFAULT 0,
+          answer_time_ms INTEGER NOT NULL DEFAULT 0,
+          is_correct INTEGER NOT NULL DEFAULT 0,
+          UNIQUE(activity_id, student_id)
+        );
+        CREATE INDEX IF NOT EXISTS idx_live_scores_session ON live_scores(session_id);
+      `);
+    },
+
+    // v26 : REX (Retour d'Experience) - sessions, activites, reponses anonymes
+    (db) => {
+      db.exec(`
+        CREATE TABLE IF NOT EXISTS rex_sessions (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          teacher_id INTEGER NOT NULL,
+          promo_id INTEGER NOT NULL REFERENCES promotions(id) ON DELETE CASCADE,
+          title TEXT NOT NULL,
+          join_code TEXT NOT NULL UNIQUE,
+          status TEXT NOT NULL DEFAULT 'waiting' CHECK(status IN ('waiting','active','ended')),
+          created_at TEXT NOT NULL DEFAULT (datetime('now')),
+          ended_at TEXT
+        );
+        CREATE INDEX IF NOT EXISTS idx_rex_sessions_code ON rex_sessions(join_code);
+
+        CREATE TABLE IF NOT EXISTS rex_activities (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          session_id INTEGER NOT NULL REFERENCES rex_sessions(id) ON DELETE CASCADE,
+          type TEXT NOT NULL CHECK(type IN ('sondage_libre','nuage','echelle','question_ouverte')),
+          title TEXT NOT NULL,
+          max_words INTEGER NOT NULL DEFAULT 3,
+          max_rating INTEGER NOT NULL DEFAULT 5,
+          position INTEGER NOT NULL DEFAULT 0,
+          status TEXT NOT NULL DEFAULT 'pending' CHECK(status IN ('pending','live','closed')),
+          started_at TEXT,
+          closed_at TEXT
+        );
+        CREATE INDEX IF NOT EXISTS idx_rex_activities_session ON rex_activities(session_id);
+
+        CREATE TABLE IF NOT EXISTS rex_responses (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          activity_id INTEGER NOT NULL REFERENCES rex_activities(id) ON DELETE CASCADE,
+          student_id INTEGER NOT NULL,
+          answer TEXT NOT NULL,
+          pinned INTEGER NOT NULL DEFAULT 0,
+          created_at TEXT NOT NULL DEFAULT (datetime('now')),
+          UNIQUE(activity_id, student_id)
+        );
+        CREATE INDEX IF NOT EXISTS idx_rex_responses_activity ON rex_responses(activity_id);
       `);
     },
   ];

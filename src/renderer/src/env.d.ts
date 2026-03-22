@@ -4,6 +4,7 @@ import type {
   User, Promotion, Channel, Message, Devoir, Depot,
   AppDocument, Ressource, Group, Student, SendMessagePayload,
   Rubric, RubricScore, LiveSession, LiveActivity, LiveResults,
+  RexSession, RexActivity, RexResults,
 } from './types'
 
 // ─── Typage du pont IPC (window.api exposé par preload.ts) ──────────────────
@@ -203,16 +204,40 @@ declare global {
       addLiveActivity(sessionId: number, payload: unknown): Promise<IpcResponse<LiveActivity>>
       deleteLiveActivity(id: number): Promise<IpcResponse<null>>
       setLiveActivityStatus(id: number, status: string): Promise<IpcResponse<LiveActivity>>
-      submitLiveResponse(activityId: number, payload: unknown): Promise<IpcResponse<null>>
+      submitLiveResponse(activityId: number, payload: unknown): Promise<IpcResponse<unknown>>
       getLiveActivityResults(activityId: number): Promise<IpcResponse<LiveResults>>
+      getLiveLeaderboard(sessionId: number): Promise<IpcResponse<unknown>>
       emitLiveJoin(promoId: number): void
       emitLiveLeave(promoId: number): void
       onLiveActivityPushed(cb: (data: { activity: unknown }) => void): () => void
-      onLiveActivityClosed(cb: (data: { activityId: number }) => void): () => void
+      onLiveActivityClosed(cb: (data: { activityId: number; leaderboard?: unknown[] }) => void): () => void
       onLiveResultsUpdate(cb: (data: { activityId: number; data: unknown }) => void): () => void
       onLiveSessionStarted(cb: (data: { sessionId: number }) => void): () => void
       onLiveSessionEnded(cb: (data: { sessionId: number }) => void): () => void
       onLiveInvite(cb: (data: { sessionId: number; title: string; joinCode: string; teacherName: string }) => void): () => void
+      onLiveScoresUpdate(cb: (data: { sessionId: number; activityId: number; leaderboard: unknown[] }) => void): () => void
+
+      // REX (Retour d'Experience)
+      createRexSession(payload: unknown): Promise<IpcResponse<RexSession>>
+      getRexSession(id: number): Promise<IpcResponse<RexSession>>
+      getRexSessionByCode(code: string): Promise<IpcResponse<RexSession>>
+      getActiveRexSession(promoId: number): Promise<IpcResponse<RexSession>>
+      updateRexSessionStatus(id: number, status: string): Promise<IpcResponse<RexSession>>
+      addRexActivity(sessionId: number, payload: unknown): Promise<IpcResponse<RexActivity>>
+      deleteRexActivity(id: number): Promise<IpcResponse<null>>
+      setRexActivityStatus(id: number, status: string): Promise<IpcResponse<RexActivity>>
+      submitRexResponse(activityId: number, payload: unknown): Promise<IpcResponse<unknown>>
+      getRexActivityResults(activityId: number): Promise<IpcResponse<RexResults>>
+      toggleRexPin(responseId: number, pinned: boolean): Promise<IpcResponse<null>>
+      exportRexSession(sessionId: number, format: string): Promise<IpcResponse<unknown>>
+      emitRexJoin(promoId: number): void
+      emitRexLeave(promoId: number): void
+      onRexActivityPushed(cb: (data: { activity: unknown }) => void): () => void
+      onRexActivityClosed(cb: (data: { activityId: number }) => void): () => void
+      onRexResultsUpdate(cb: (data: { activityId: number; data: unknown }) => void): () => void
+      onRexSessionStarted(cb: (data: { sessionId: number }) => void): () => void
+      onRexSessionEnded(cb: (data: { sessionId: number }) => void): () => void
+      onRexInvite(cb: (data: { sessionId: number; title: string; joinCode: string; teacherName: string }) => void): () => void
 
       // Grade notifications
       onGradeNew(cb: (data: { devoirTitle: string; note: string | null; feedback: string | null; devoirId: number; category: string | null }) => void): () => void
