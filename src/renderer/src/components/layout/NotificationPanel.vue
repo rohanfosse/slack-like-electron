@@ -191,7 +191,7 @@ function formatTime(ts: number): string {
   display: flex;
   transition: color .1s, background .1s;
 }
-.notif-close-btn:hover { color: var(--text-primary); background: rgba(255,255,255,.07); }
+.notif-close-btn:hover { color: var(--text-primary); background: var(--bg-hover); }
 
 /* ── Vide ── */
 .notif-empty {
@@ -243,7 +243,7 @@ function formatTime(ts: number): string {
   text-align: left;
   transition: background .08s;
 }
-.notif-item:hover { background: rgba(255,255,255,.05); }
+.notif-item:hover { background: var(--bg-hover); }
 .notif-item.unread { background: rgba(74, 144, 217, .05); }
 .notif-item.unread:hover { background: rgba(74, 144, 217, .1); }
 

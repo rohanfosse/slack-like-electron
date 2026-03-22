@@ -454,8 +454,8 @@ function closeAll() { _closeAll(showPicker, confirmingDelete) }
 :deep(.msg-text code) {
   font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
   font-size: .85em;
-  background: rgba(255, 255, 255, .07);
-  border: 1px solid rgba(255, 255, 255, .1);
+  background: var(--bg-hover);
+  border: 1px solid var(--border);
   border-radius: 4px;
   padding: 1px 5px;
   color: #e8a87c;
@@ -467,7 +467,7 @@ function closeAll() { _closeAll(showPicker, confirmingDelete) }
   margin: 8px 0;
   border-radius: 8px;
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, .08);
+  border: 1px solid var(--border);
   background: rgba(0, 0, 0, .3);
 }
 :deep(.code-lang) {
@@ -478,8 +478,8 @@ function closeAll() { _closeAll(showPicker, confirmingDelete) }
   text-transform: uppercase;
   letter-spacing: .05em;
   color: var(--text-muted);
-  background: rgba(255, 255, 255, .04);
-  border-bottom: 1px solid rgba(255, 255, 255, .06);
+  background: var(--bg-elevated);
+  border-bottom: 1px solid var(--border);
 }
 :deep(.code-block pre) {
   margin: 0;
@@ -554,14 +554,14 @@ function closeAll() { _closeAll(showPicker, confirmingDelete) }
   padding: 0;
 }
 .pill-btn:hover:not(:disabled) {
-  background: rgba(255,255,255,.09);
+  background: var(--bg-active);
   color: var(--text-primary);
   transform: scale(1.1);
 }
 .pill-btn:disabled { opacity: .35; cursor: default; }
 
 .pill-emoji-btn { width: 32px; font-size: 16px; }
-.pill-emoji-btn:hover:not(:disabled) { transform: scale(1.25); background: rgba(255,255,255,.07); }
+.pill-emoji-btn:hover:not(:disabled) { transform: scale(1.25); background: var(--bg-hover); }
 
 .pill-sep {
   display: block;
@@ -614,7 +614,7 @@ function closeAll() { _closeAll(showPicker, confirmingDelete) }
   text-align: left;
   transition: background .1s, color .1s;
 }
-.msg-menu-item:hover { background: rgba(255,255,255,.07); color: var(--text-primary); }
+.msg-menu-item:hover { background: var(--bg-hover); color: var(--text-primary); }
 .msg-menu-danger       { color: var(--color-danger); }
 .msg-menu-danger:hover { background: rgba(231,76,60,.12); color: #ff8070; }
 
@@ -638,7 +638,7 @@ function closeAll() { _closeAll(showPicker, confirmingDelete) }
   padding: 2px 10px;
   border-radius: 16px;
   border: 1px solid var(--border);
-  background: rgba(255, 255, 255, .04);
+  background: var(--bg-elevated);
   color: var(--text-secondary);
   font-size: 12px;
   cursor: pointer;
@@ -654,7 +654,7 @@ function closeAll() { _closeAll(showPicker, confirmingDelete) }
 
 /* Survol rebondissant */
 .msg-reaction-pill:hover {
-  background: rgba(255, 255, 255, .1);
+  background: var(--bg-elevated);
   transform: translateY(-2px) scale(1.06);
   box-shadow: 0 4px 12px rgba(0,0,0,.25);
 }
@@ -682,7 +682,7 @@ function closeAll() { _closeAll(showPicker, confirmingDelete) }
 .msg-edit-box { margin-top: 2px; }
 .msg-edit-input {
   width: 100%;
-  background: rgba(255,255,255,.05);
+  background: var(--bg-hover);
   border: 1.5px solid var(--accent);
   border-radius: 8px;
   color: var(--text-primary);
@@ -749,11 +749,11 @@ function closeAll() { _closeAll(showPicker, confirmingDelete) }
 }
 
 .del-btn-cancel {
-  background: rgba(255,255,255,.07);
+  background: var(--bg-hover);
   color: var(--text-secondary);
   border: 1px solid var(--border-input);
 }
-.del-btn-cancel:hover { color: var(--text-primary); background: rgba(255,255,255,.11); }
+.del-btn-cancel:hover { color: var(--text-primary); background: var(--bg-active); }
 
 .del-confirm-fade-enter-active { transition: opacity .14s ease, transform .14s ease; }
 .del-confirm-fade-leave-active { transition: opacity .10s ease, transform .10s ease; }
@@ -785,7 +785,7 @@ function closeAll() { _closeAll(showPicker, confirmingDelete) }
 }
 .lightbox-btn {
   width: 36px; height: 36px; border-radius: 8px;
-  background: rgba(255,255,255,.12); border: none;
+  background: var(--bg-active); border: none;
   color: #fff; cursor: pointer; display: flex;
   align-items: center; justify-content: center;
   transition: background .15s; text-decoration: none;
@@ -807,21 +807,21 @@ function closeAll() { _closeAll(showPicker, confirmingDelete) }
 }
 .report-preview {
   font-size: 12px; color: var(--text-muted); font-style: italic;
-  padding: 8px; background: rgba(255,255,255,.04); border-radius: 6px; margin-bottom: 12px;
+  padding: 8px; background: var(--bg-elevated); border-radius: 6px; margin-bottom: 12px;
   word-break: break-word;
 }
 .report-hint { font-size: 12px; color: var(--text-secondary); margin-bottom: 8px; }
 .report-quick-reasons { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
 .report-reason-btn {
   padding: 4px 10px; border-radius: 14px; font-size: 11px;
-  background: rgba(255,255,255,.06); color: var(--text-secondary);
-  border: 1px solid rgba(255,255,255,.1); cursor: pointer; transition: all .15s;
+  background: var(--bg-hover); color: var(--text-secondary);
+  border: 1px solid var(--border); cursor: pointer; transition: all .15s;
 }
 .report-reason-btn.active, .report-reason-btn:hover {
   background: rgba(248,113,113,.15); color: #f87171; border-color: rgba(248,113,113,.3);
 }
 .report-textarea {
-  width: 100%; background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.1);
+  width: 100%; background: var(--bg-hover); border: 1px solid var(--border);
   border-radius: 6px; padding: 8px; color: var(--text-primary); font-size: 12px;
   resize: vertical; margin-bottom: 12px;
 }

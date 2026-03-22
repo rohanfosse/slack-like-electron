@@ -590,13 +590,13 @@
   justify-content: space-between;
   gap: 16px;
   padding: 12px 16px;
-  background: rgba(255,255,255,.025);
+  background: var(--bg-elevated);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   transition: border-color .15s;
 }
 .stg-action-row:hover,
-.stg-toggle-row:hover { border-color: rgba(255,255,255,.1); }
+.stg-toggle-row:hover { border-color: var(--bg-elevated); }
 
 .stg-action-danger {
   border-color: rgba(231,76,60,.15);
@@ -626,13 +626,13 @@
 .stg-btn:disabled { opacity: .5; cursor: default; }
 
 .stg-btn-ghost {
-  background: rgba(255,255,255,.05);
+  background: var(--bg-hover);
   color: var(--text-secondary);
   border: 1px solid var(--border);
 }
 .stg-btn-ghost:hover:not(:disabled) {
-  background: rgba(255,255,255,.08);
-  border-color: rgba(255,255,255,.15);
+  background: var(--bg-active);
+  border-color: var(--border-input);
   color: var(--text-primary);
 }
 
@@ -658,7 +658,7 @@
 /* ── Switch ── */
 .stg-switch {
   width: 38px; height: 22px; border-radius: 11px;
-  background: rgba(255,255,255,.12);
+  background: var(--bg-active);
   flex-shrink: 0; position: relative; cursor: pointer;
   transition: background .2s;
 }
@@ -677,7 +677,7 @@
   align-items: center;
   justify-content: space-between;
   padding: 10px 16px;
-  background: rgba(255,255,255,.025);
+  background: var(--bg-elevated);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   font-size: 13px;
@@ -688,7 +688,7 @@
   font-size: 10.5px;
   font-weight: 600;
   color: var(--text-muted);
-  background: rgba(255,255,255,.05);
+  background: var(--bg-hover);
   padding: 3px 10px;
   border-radius: 100px;
 }
@@ -705,15 +705,15 @@
   gap: 0;
   border: 1.5px solid var(--border);
   border-radius: 12px;
-  background: rgba(255,255,255,.02);
+  background: var(--bg-elevated);
   cursor: pointer;
   font-family: var(--font);
   transition: border-color .15s, background .15s, box-shadow .15s;
   overflow: hidden;
 }
 .stg-theme-card:hover {
-  border-color: rgba(255,255,255,.15);
-  background: rgba(255,255,255,.04);
+  border-color: var(--border-input);
+  background: var(--bg-elevated);
 }
 .stg-theme-card.active {
   border-color: var(--accent);
@@ -748,7 +748,7 @@
 
 /* ── Profile card ── */
 .stg-profile-card {
-  background: rgba(255,255,255,.025);
+  background: var(--bg-elevated);
   border: 1px solid var(--border);
   border-radius: var(--radius);
   padding: 20px;
@@ -813,7 +813,7 @@
   flex-direction: column;
   gap: 3px;
   padding: 10px 14px;
-  background: rgba(255,255,255,.025);
+  background: var(--bg-elevated);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
 }
@@ -826,7 +826,7 @@
   align-items: center;
   gap: 14px;
   padding: 14px 16px;
-  background: rgba(255,255,255,.025);
+  background: var(--bg-elevated);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
 }
@@ -853,7 +853,7 @@
 /* ── About description ── */
 .stg-about-desc {
   padding: 14px 16px;
-  background: rgba(255,255,255,.02);
+  background: var(--bg-elevated);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
 }
@@ -874,7 +874,7 @@
   flex: 1;
   padding: 9px 0;
   border: none;
-  background: rgba(255,255,255,.02);
+  background: var(--bg-elevated);
   color: var(--text-secondary);
   font-size: 12.5px;
   font-weight: 600;

@@ -142,15 +142,15 @@
   gap: 6px;
   padding: 16px 12px;
   border-radius: 12px;
-  background: rgba(255,255,255,.04);
-  border: 2px solid rgba(255,255,255,.08);
+  background: var(--bg-elevated);
+  border: 2px solid var(--border);
   color: var(--text-secondary, #aaa);
   cursor: pointer;
   transition: all .15s;
 }
 .type-card:hover {
-  background: rgba(255,255,255,.07);
-  border-color: rgba(255,255,255,.15);
+  background: var(--bg-hover);
+  border-color: var(--border-input);
 }
 .type-card.active {
   background: var(--accent-subtle, rgba(74,144,217,.12));
@@ -220,15 +220,15 @@
   gap: 6px;
   padding: 8px 12px;
   border-radius: 8px;
-  background: rgba(255,255,255,.04);
-  border: 1px dashed rgba(255,255,255,.15);
+  background: var(--bg-elevated);
+  border: 1px dashed var(--border-input);
   color: var(--text-muted, #888);
   font-size: 13px;
   cursor: pointer;
   transition: all .15s;
 }
 .add-option-btn:hover {
-  background: rgba(255,255,255,.07);
+  background: var(--bg-hover);
   color: var(--text-secondary, #aaa);
 }
 .max-words-section {
@@ -251,8 +251,8 @@
   border-radius: 8px;
   font-size: 16px;
   font-weight: 700;
-  background: rgba(255,255,255,.05);
-  border: 2px solid rgba(255,255,255,.08);
+  background: var(--bg-hover);
+  border: 2px solid var(--border);
   color: var(--text-secondary, #aaa);
   cursor: pointer;
   transition: all .15s;
@@ -272,14 +272,14 @@
   border-radius: 8px;
   font-size: 13px;
   font-weight: 600;
-  background: rgba(255,255,255,.06);
-  border: 1px solid rgba(255,255,255,.1);
+  background: var(--bg-hover);
+  border: 1px solid var(--border);
   color: var(--text-secondary, #aaa);
   cursor: pointer;
   transition: all .15s;
 }
 .btn-cancel:hover {
-  background: rgba(255,255,255,.1);
+  background: var(--bg-elevated);
 }
 .btn-save {
   padding: 8px 20px;

@@ -194,7 +194,7 @@ const emit = defineEmits<{
 /* ── Footer ── */
 .tr-card-footer {
   display: flex; gap: 6px; flex-wrap: wrap; align-items: center;
-  padding-top: 4px; border-top: 1px solid rgba(255,255,255,.04);
+  padding-top: 4px; border-top: 1px solid var(--border);
 }
 .tr-card-update {
   font-size: 11px; color: var(--text-muted); font-style: italic;
@@ -204,9 +204,9 @@ const emit = defineEmits<{
 .tr-btn {
   display: inline-flex; align-items: center; gap: 5px;
   font-size: 11px; font-weight: 600; padding: 5px 12px; border-radius: 6px;
-  background: rgba(255,255,255,.06); color: var(--text-secondary);
+  background: var(--bg-hover); color: var(--text-secondary);
   border: 1px solid var(--border-input); cursor: pointer; font-family: var(--font);
   transition: all var(--t-fast); white-space: nowrap;
 }
-.tr-btn:hover { background: rgba(255,255,255,.1); color: var(--text-primary); }
+.tr-btn:hover { background: var(--bg-elevated); color: var(--text-primary); }
 </style>

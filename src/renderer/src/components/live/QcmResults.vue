@@ -59,7 +59,7 @@
 }
 .qcm-bar-track {
   height: 36px;
-  background: rgba(255,255,255,.06);
+  background: var(--bg-hover);
   border-radius: 8px;
   overflow: hidden;
 }

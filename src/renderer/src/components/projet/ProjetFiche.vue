@@ -437,7 +437,7 @@ function formatDateRange(start?: string, end?: string): string {
 .pf-chip-blue   { background: rgba(74,144,217,.12);  color: var(--accent);        border-color: rgba(74,144,217,.25); }
 .pf-chip-green  { background: rgba(39,174,96,.12);   color: var(--color-success); border-color: rgba(39,174,96,.25); }
 .pf-chip-orange { background: rgba(243,156,18,.12);  color: var(--color-warning); border-color: rgba(243,156,18,.25); }
-.pf-chip-muted  { background: rgba(255,255,255,.04); color: var(--text-muted);    border-color: var(--border); }
+.pf-chip-muted  { background: var(--bg-elevated); color: var(--text-muted);    border-color: var(--border); }
 .pf-chip-pct    { opacity: .7; font-size: 10.5px; }
 
 /* ── Corps ── */
@@ -470,7 +470,7 @@ function formatDateRange(start?: string, end?: string): string {
 .pf-section-header--draft { color: var(--color-autre); }
 
 .pf-count {
-  background: rgba(255,255,255,.06);
+  background: var(--bg-hover);
   color: var(--text-muted);
   font-size: 10px;
   font-weight: 600;
@@ -494,7 +494,7 @@ function formatDateRange(start?: string, end?: string): string {
 .pf-travail-card {
   width: 100%;
   text-align: left;
-  background: rgba(255,255,255,.03);
+  background: var(--bg-elevated);
   border: 1px solid var(--border);
   border-radius: 8px;
   padding: 12px 14px;
@@ -505,7 +505,7 @@ function formatDateRange(start?: string, end?: string): string {
   gap: 6px;
   font-family: var(--font);
 }
-.pf-travail-card:hover { background: rgba(255,255,255,.06); border-color: rgba(255,255,255,.12); }
+.pf-travail-card:hover { background: var(--bg-hover); border-color: var(--border-input); }
 .pf-travail-card--draft { opacity: .65; }
 
 .pf-travail-top {
@@ -542,7 +542,7 @@ function formatDateRange(start?: string, end?: string): string {
   font-size: 10px;
   padding: 1px 6px;
   border-radius: 3px;
-  background: rgba(255,255,255,.06);
+  background: var(--bg-hover);
   color: var(--text-muted);
   border: 1px solid var(--border);
 }
@@ -564,7 +564,7 @@ function formatDateRange(start?: string, end?: string): string {
   flex: 1;
   height: 4px;
   border-radius: 2px;
-  background: rgba(255,255,255,.08);
+  background: var(--bg-active);
   overflow: hidden;
 }
 .pf-progress-fill {

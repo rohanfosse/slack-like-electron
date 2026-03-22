@@ -368,7 +368,7 @@
   padding: 9px 12px;
   border: 1.5px solid var(--border-input);
   border-radius: var(--radius);
-  background: rgba(255,255,255,.03);
+  background: var(--bg-elevated);
   color: var(--text-secondary);
   font-family: var(--font);
   font-size: 13px;
@@ -380,8 +380,8 @@
 }
 .cc-pill > svg { flex-shrink: 0; }
 .cc-pill:hover {
-  background: rgba(255,255,255,.07);
-  border-color: rgba(255,255,255,.2);
+  background: var(--bg-hover);
+  border-color: var(--border);
   color: var(--text-primary);
 }
 .cc-pill.active {
@@ -428,7 +428,7 @@
   cursor: pointer;
   transition: background .1s;
 }
-.cc-member-row:hover { background: rgba(255,255,255,.05); }
+.cc-member-row:hover { background: var(--bg-hover); }
 .cc-member-row.checked { background: rgba(155,135,245,.08); }
 
 .cc-checkbox { display: none; }
@@ -436,7 +436,7 @@
   width: 26px;
   height: 26px;
   border-radius: 6px;
-  background: rgba(255,255,255,.08);
+  background: var(--bg-active);
   color: var(--text-secondary);
   font-size: 10px;
   font-weight: 700;
@@ -506,7 +506,7 @@
   justify-content: center;
   border: 1.5px solid transparent;
   border-radius: 5px;
-  background: rgba(255,255,255,.04);
+  background: var(--bg-elevated);
   color: var(--text-muted);
   cursor: pointer;
   transition: all .1s;
@@ -529,7 +529,7 @@
 /* ── Sidebar preview ── */
 .cc-preview {
   margin: 0 20px; padding: 10px 14px;
-  background: rgba(255,255,255,.03); border: 1px dashed var(--border);
+  background: var(--bg-elevated); border: 1px dashed var(--border);
   border-radius: var(--radius-sm);
 }
 .cc-preview-label {
@@ -538,7 +538,7 @@
 }
 .cc-preview-item {
   display: flex; align-items: center; gap: 6px;
-  padding: 5px 8px; border-radius: 5px; background: rgba(255,255,255,.04);
+  padding: 5px 8px; border-radius: 5px; background: var(--bg-elevated);
 }
 .cc-preview-prefix { font-size: 12px; color: var(--text-muted); flex-shrink: 0; }
 .cc-preview-name { font-size: 13px; font-weight: 500; color: var(--text-primary); }

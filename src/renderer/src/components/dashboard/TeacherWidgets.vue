@@ -237,7 +237,7 @@ const emit = defineEmits<{
   border-radius: 8px; cursor: pointer; transition: all .15s ease;
   width: 100%; text-align: left; font-family: var(--font);
 }
-.db-unread-item:hover { background: rgba(255,255,255,.07); }
+.db-unread-item:hover { background: var(--bg-hover); }
 .db-unread-avatar {
   width: 28px; height: 28px; border-radius: 50%;
   display: flex; align-items: center; justify-content: center;
@@ -258,7 +258,7 @@ const emit = defineEmits<{
   border: 1px solid var(--border); border-radius: 8px;
   cursor: pointer; transition: all .15s ease;
 }
-.db-saved-item:hover { background: rgba(255,255,255,.07); }
+.db-saved-item:hover { background: var(--bg-hover); }
 .db-saved-avatar {
   width: 28px; height: 28px; border-radius: 50%;
   display: flex; align-items: center; justify-content: center;
@@ -297,7 +297,7 @@ const emit = defineEmits<{
   background: none; border: none; width: 100%;
   text-align: left; font-family: var(--font); color: var(--text-primary);
 }
-.db-widget-item:hover { background: rgba(255,255,255,.06); }
+.db-widget-item:hover { background: var(--bg-hover); }
 .db-widget-item--mention { border-left: 2px solid var(--accent); }
 .db-widget-item--draft { border-left: 2px solid var(--color-warning); }
 .db-widget-avatar {

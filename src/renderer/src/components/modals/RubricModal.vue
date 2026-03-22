@@ -498,7 +498,7 @@
 /* Weight bar */
 .rubric-weight-bar-wrap {
   width: 32px; height: 6px; border-radius: 3px;
-  background: rgba(255,255,255,.08); flex-shrink: 0;
+  background: var(--bg-active); flex-shrink: 0;
   overflow: hidden;
 }
 .rubric-weight-bar-fill {

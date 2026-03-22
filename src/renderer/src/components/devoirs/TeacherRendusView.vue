@@ -359,7 +359,7 @@ const travauxStore = useTravauxStore()
 }
 .rendus-progress-mini {
   position: relative; width: 50px; height: 4px;
-  border-radius: 2px; background: rgba(255,255,255,.08); overflow: visible;
+  border-radius: 2px; background: var(--bg-active); overflow: visible;
 }
 .rendus-progress-mini-fill {
   height: 100%; border-radius: 2px; background: var(--color-success); transition: width .3s;

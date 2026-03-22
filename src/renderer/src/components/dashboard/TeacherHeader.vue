@@ -56,11 +56,11 @@ const emit = defineEmits<{
 .db-promo-chip {
   display: inline-flex; align-items: center; gap: 4px;
   padding: 4px 10px; border-radius: 14px; font-size: 11px; font-weight: 600;
-  background: rgba(255,255,255,.04); color: var(--text-secondary);
-  border: 1.5px solid rgba(255,255,255,.08); cursor: pointer;
+  background: var(--bg-elevated); color: var(--text-secondary);
+  border: 1.5px solid var(--border); cursor: pointer;
   font-family: var(--font); transition: all .15s;
 }
-.db-promo-chip:hover { background: rgba(255,255,255,.08); }
+.db-promo-chip:hover { background: var(--bg-active); }
 .db-promo-chip.active { font-weight: 700; }
 .db-promo-chip-dot { width: 7px; height: 7px; border-radius: 50%; }
 </style>

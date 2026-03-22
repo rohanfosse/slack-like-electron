@@ -59,8 +59,8 @@
   font-size: 48px;
   font-weight: 800;
   color: var(--text-primary, #fff);
-  background: rgba(255,255,255,.06);
-  border: 1px solid rgba(255,255,255,.1);
+  background: var(--bg-hover);
+  border: 1px solid var(--border);
   border-radius: 10px;
   width: 60px;
   height: 72px;
@@ -81,14 +81,14 @@
   border-radius: 8px;
   font-size: 13px;
   font-weight: 600;
-  background: rgba(255,255,255,.06);
+  background: var(--bg-hover);
   color: var(--text-secondary, #aaa);
-  border: 1px solid rgba(255,255,255,.1);
+  border: 1px solid var(--border);
   cursor: pointer;
   transition: all .15s;
 }
 .join-code-copy:hover {
-  background: rgba(255,255,255,.1);
+  background: var(--bg-elevated);
   color: var(--text-primary, #fff);
 }
 .join-code-copy.copied {

@@ -464,7 +464,7 @@
 }
 
 .docs-search-input {
-  background: rgba(255,255,255,.06);
+  background: var(--bg-hover);
   border: 1px solid var(--border-input);
   border-radius: var(--radius-sm);
   color: var(--text-primary);
@@ -538,7 +538,7 @@
 .docs-cat-pill:hover {
   background: var(--bg-hover);
   color: var(--text-primary);
-  border-color: rgba(255,255,255,.2);
+  border-color: var(--border);
 }
 
 .docs-cat-pill.active {
@@ -548,7 +548,7 @@
 }
 
 .docs-cat-count {
-  background: rgba(255,255,255,.1);
+  background: var(--bg-elevated);
   border-radius: 8px;
   padding: 1px 6px;
   font-size: 10px;
@@ -704,7 +704,7 @@
   height: 34px;
   border-radius: 8px;
   border: none;
-  background: rgba(255,255,255,.12);
+  background: var(--bg-active);
   color: var(--text-primary);
   cursor: pointer;
   display: flex;
@@ -713,7 +713,7 @@
   transition: background .12s;
 }
 
-.doc-card-action-btn:hover { background: rgba(255,255,255,.2); }
+.doc-card-action-btn:hover { background: var(--bg-elevated); }
 .doc-card-action-btn--danger:hover { background: rgba(231,76,60,.3); color: #ff6b6b; }
 
 /* ── Empty state ── */
@@ -806,7 +806,7 @@
   padding: 20px 14px;
   border: 1.5px dashed var(--border-input);
   border-radius: var(--radius-sm);
-  background: rgba(255,255,255,.02);
+  background: var(--bg-elevated);
   color: var(--text-muted);
   font-family: var(--font);
   cursor: pointer;
@@ -986,7 +986,7 @@
 
 /* ── File size badge ── */
 .doc-card-size {
-  background: rgba(255,255,255,.08);
+  background: var(--bg-active);
   border-radius: 6px;
   padding: 1px 5px;
   font-size: 10px;

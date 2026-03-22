@@ -49,7 +49,7 @@ defineProps<{
       <h4 class="db-section-title"><TrendingUp :size="14" /> Santé de la classe</h4>
       <div class="db-health-ring-wrap">
         <svg class="db-health-ring" viewBox="0 0 80 80" role="img" :aria-label="`Santé de la classe : ${classHealth.score}%`">
-          <circle cx="40" cy="40" r="34" fill="none" stroke="rgba(255,255,255,.08)" stroke-width="6" />
+          <circle cx="40" cy="40" r="34" fill="none" stroke="var(--bg-active)" stroke-width="6" />
           <circle
             cx="40" cy="40" r="34"
             fill="none"
@@ -109,7 +109,7 @@ defineProps<{
   border: 1px solid var(--border); border-radius: 10px;
   cursor: pointer; transition: all .15s ease; text-align: left; width: 100%;
 }
-.db-action-item:hover { background: rgba(255,255,255,.07); border-color: var(--accent); }
+.db-action-item:hover { background: var(--bg-hover); border-color: var(--accent); }
 .db-action-critical { border-left: 3px solid #ef4444; }
 .db-action-warning  { border-left: 3px solid #f59e0b; }
 .db-action-info     { border-left: 3px solid var(--accent); }
@@ -153,7 +153,7 @@ defineProps<{
 .db-trend-col { display: flex; flex-direction: column; align-items: center; gap: 3px; flex: 1; min-width: 0; }
 .db-trend-bar-bg {
   width: 100%; max-width: 22px; height: 32px;
-  background: rgba(255,255,255,.05); border-radius: 3px;
+  background: var(--bg-hover); border-radius: 3px;
   display: flex; align-items: flex-end; overflow: hidden;
 }
 .db-trend-bar-fill { width: 100%; background: var(--accent); border-radius: 3px; min-height: 2px; transition: height .3s ease; }

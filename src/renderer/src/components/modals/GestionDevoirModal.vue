@@ -666,7 +666,7 @@
   text-align: center; font-size: 11px; font-weight: 700; text-transform: uppercase;
   letter-spacing: .5px; padding: 4px 0;
 }
-.status-draft     { background: rgba(255,255,255,.05); color: var(--text-muted); border-bottom: 1px dashed var(--border); }
+.status-draft     { background: var(--bg-hover); color: var(--text-muted); border-bottom: 1px dashed var(--border); }
 .status-published { background: rgba(34,197,94,.08); color: #22c55e; }
 .status-expired   { background: rgba(239,68,68,.08); color: #f87171; }
 .status-complete  { background: rgba(59,130,246,.08); color: #60a5fa; }
@@ -678,24 +678,24 @@
 }
 .gd-tab-pill {
   padding: 5px 14px; font-size: 12px; font-weight: 600; color: var(--text-muted);
-  background: rgba(255,255,255,.04); border: 1px solid transparent;
+  background: var(--bg-elevated); border: 1px solid transparent;
   border-radius: 20px; cursor: pointer; font-family: var(--font);
   transition: all var(--t-fast);
 }
-.gd-tab-pill:hover { background: rgba(255,255,255,.08); color: var(--text-secondary); }
+.gd-tab-pill:hover { background: var(--bg-active); color: var(--text-secondary); }
 .gd-tab-pill.active {
   background: rgba(var(--accent-rgb, 74,144,217), .15); color: var(--accent);
   border-color: rgba(var(--accent-rgb, 74,144,217), .3);
 }
 .gd-tab-pill-badge {
   font-size: 10px; font-weight: 700; padding: 1px 5px; border-radius: 8px;
-  background: rgba(255,255,255,.1); margin-left: 4px;
+  background: var(--bg-elevated); margin-left: 4px;
 }
 
 /* Barre de progression soumissions (onglet Aperçu) */
 .gd-submit-progress {
   margin-bottom: 12px; padding: 10px 12px; border-radius: 8px;
-  background: rgba(255,255,255,.02); border: 1px solid var(--border);
+  background: var(--bg-elevated); border: 1px solid var(--border);
 }
 .gd-submit-progress-header {
   display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 4px;
@@ -720,7 +720,7 @@
 }
 .gd-kbd-hints kbd {
   display: inline-block; padding: 1px 4px; border-radius: 3px; font-size: 9px;
-  background: rgba(255,255,255,.06); border: 1px solid var(--border);
+  background: var(--bg-hover); border: 1px solid var(--border);
   font-family: var(--font); margin-right: 2px;
 }
 
@@ -730,7 +730,7 @@
 /* Meta */
 /* Cartes dans l'aperçu */
 .gd-card {
-  background: rgba(255,255,255,.02); border: 1px solid var(--border);
+  background: var(--bg-elevated); border: 1px solid var(--border);
   border-radius: 8px; padding: 12px; margin-bottom: 10px;
 }
 .gd-card-label {
@@ -751,7 +751,7 @@
 .gd-parsed-field {
   display: flex; align-items: center; gap: 6px;
   padding: 6px 10px; border-radius: 6px;
-  background: rgba(255,255,255,.03); font-size: 13px;
+  background: var(--bg-elevated); font-size: 13px;
 }
 .gd-parsed-icon { font-size: 14px; flex-shrink: 0; }
 .gd-parsed-label { font-size: 10px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: .3px; min-width: 55px; }
@@ -763,10 +763,10 @@
 .gd-extend-btns { display: inline-flex; gap: 3px; margin-left: 4px; }
 .gd-extend-btn {
   font-size: 10px; font-weight: 600; padding: 1px 5px; border-radius: 4px;
-  background: rgba(255,255,255,.06); color: var(--accent); border: 1px solid var(--border-input);
+  background: var(--bg-hover); color: var(--accent); border: 1px solid var(--border-input);
   cursor: pointer; font-family: var(--font);
 }
-.gd-extend-btn:hover { background: rgba(255,255,255,.12); }
+.gd-extend-btn:hover { background: var(--bg-active); }
 .gd-link-btn {
   font-size: 12px; color: var(--accent); background: none; border: none;
   cursor: pointer; display: inline-flex; align-items: center; gap: 3px;
@@ -776,11 +776,11 @@
 
 .gd-description {
   font-size: 13px; color: var(--text-secondary); line-height: 1.5;
-  padding: 8px 12px; background: rgba(255,255,255,.03); border-radius: 6px;
+  padding: 8px 12px; background: var(--bg-elevated); border-radius: 6px;
   border-left: 3px solid var(--border-input); margin-bottom: 10px;
   cursor: pointer; transition: background var(--t-fast);
 }
-.gd-description:hover { background: rgba(255,255,255,.06); }
+.gd-description:hover { background: var(--bg-hover); }
 .gd-desc-edit { margin-bottom: 10px; }
 .gd-desc-textarea {
   width: 100%; background: var(--bg-input); border: 1px solid var(--border-input);
@@ -798,7 +798,7 @@
 }
 .gd-aavs {
   font-size: 13px; color: var(--text-secondary); line-height: 1.5;
-  padding: 6px 10px; background: rgba(255,255,255,.03); border-radius: 6px;
+  padding: 6px 10px; background: var(--bg-elevated); border-radius: 6px;
   white-space: pre-wrap;
 }
 .gd-resource-item {
@@ -814,11 +814,11 @@
 .gd-action-btn {
   display: inline-flex; align-items: center; gap: 4px;
   font-size: 12px; font-weight: 500; padding: 5px 10px; border-radius: 6px;
-  background: rgba(255,255,255,.05); color: var(--text-secondary);
+  background: var(--bg-hover); color: var(--text-secondary);
   border: 1px solid var(--border-input); cursor: pointer; font-family: var(--font);
   transition: all var(--t-fast);
 }
-.gd-action-btn:hover { background: rgba(255,255,255,.1); color: var(--text-primary); }
+.gd-action-btn:hover { background: var(--bg-elevated); color: var(--text-primary); }
 .gd-action-btn--primary { background: rgba(46,204,113,.1); color: var(--color-success); border-color: rgba(46,204,113,.25); }
 .gd-action-btn--primary:hover { background: rgba(46,204,113,.2); }
 .gd-action-btn--danger { color: var(--color-danger); }
@@ -847,7 +847,7 @@
 .grade-dist-pill.grade-b  { background: rgba(39,174,96,.07); color: #27ae60; }
 .grade-dist-pill.grade-c  { background: rgba(243,156,18,.12); color: var(--color-warning); }
 .grade-dist-pill.grade-d  { background: rgba(231,76,60,.12); color: var(--color-danger); }
-.grade-dist-pill.grade-na { background: rgba(255,255,255,.05); color: var(--text-muted); }
+.grade-dist-pill.grade-na { background: var(--bg-hover); color: var(--text-muted); }
 .grade-dist-pill strong { font-weight: 800; }
 
 /* Colonnes rendus/en attente */
@@ -858,7 +858,7 @@
 .gd-column-header { display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: .4px; margin-bottom: 4px; }
 .gd-column-body { display: flex; flex-direction: column; gap: 3px; overflow-y: auto; flex: 1; }
 .gd-student-row { display: flex; align-items: center; gap: 6px; padding: 3px 6px; border-radius: 5px; }
-.gd-student-row:hover { background: rgba(255,255,255,.04); }
+.gd-student-row:hover { background: var(--bg-elevated); }
 .gd-student-row--rich { align-items: flex-start; }
 .gd-student-info { flex: 1; min-width: 0; }
 .gd-student-name { font-size: 12px; font-weight: 500; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: block; }
@@ -882,7 +882,7 @@
   text-transform: uppercase; letter-spacing: .3px; padding: 6px 8px;
   border-bottom: 1px solid var(--border);
 }
-.gd-rubric-table td { padding: 6px 8px; color: var(--text-secondary); border-bottom: 1px solid rgba(255,255,255,.03); }
+.gd-rubric-table td { padding: 6px 8px; color: var(--text-secondary); border-bottom: 1px solid var(--border); }
 .gd-rubric-num { text-align: center; font-weight: 600; color: var(--text-primary); }
 
 .gd-rubric-empty {
@@ -901,12 +901,12 @@
 .type-etude_de_cas  { background: rgba(39,174,96,.2);     color: var(--color-success); }
 .type-memoire       { background: rgba(231,76,60,.2);     color: var(--color-danger); }
 .type-autre         { background: rgba(127,140,141,.2);   color: var(--color-autre); }
-.tag-badge          { font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 12px; background: rgba(255,255,255,.06); color: var(--text-secondary); }
+.tag-badge          { font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 12px; background: var(--bg-hover); color: var(--text-secondary); }
 
 /* ── Constructeur de rappel ─────────────────────────────────────────────── */
 .gd-reminder-builder {
   margin-top: 14px; padding: 14px; border-radius: 10px;
-  background: rgba(255,255,255,.03); border: 1px solid var(--border);
+  background: var(--bg-elevated); border: 1px solid var(--border);
 }
 .gd-reminder-header {
   display: flex; align-items: center; gap: 6px;
@@ -932,7 +932,7 @@
 .gd-reminder-custom { margin-bottom: 12px; }
 .gd-reminder-preview {
   padding: 10px; border-radius: 8px;
-  background: rgba(255,255,255,.02); border: 1px solid var(--border);
+  background: var(--bg-elevated); border: 1px solid var(--border);
   margin-bottom: 12px;
 }
 .gd-reminder-preview-label {

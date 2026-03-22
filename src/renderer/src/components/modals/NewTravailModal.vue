@@ -305,7 +305,7 @@
 
 <style scoped>
 .group-builder {
-  background: rgba(255,255,255,.04);
+  background: var(--bg-elevated);
   border: 1px solid var(--border);
   border-radius: 8px;
   padding: 12px;

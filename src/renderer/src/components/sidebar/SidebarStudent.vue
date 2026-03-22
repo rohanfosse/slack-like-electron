@@ -480,7 +480,7 @@ watch(() => appStore.currentUser?.id, () => load())
 }
 .sidebar-collapsible-header:hover {
   color: var(--text-secondary);
-  background: rgba(255,255,255,.04);
+  background: var(--bg-elevated);
 }
 
 /* ── Category groups (Projet Web, Maths, etc.) ── */
@@ -493,9 +493,9 @@ watch(() => appStore.currentUser?.id, () => load())
   gap: 6px;
   width: calc(100% - 16px);
   margin: 0 8px;
-  background: rgba(255,255,255,.02);
+  background: var(--bg-elevated);
   border: none;
-  border-left: 2px solid rgba(255,255,255,.06);
+  border-left: 2px solid var(--border);
   padding: 5px 10px;
   cursor: pointer;
   color: var(--text-muted);
@@ -509,7 +509,7 @@ watch(() => appStore.currentUser?.id, () => load())
 }
 .sidebar-category-header:hover {
   color: var(--text-secondary);
-  background: rgba(255,255,255,.04);
+  background: var(--bg-elevated);
   border-left-color: var(--accent);
 }
 
@@ -552,7 +552,7 @@ watch(() => appStore.currentUser?.id, () => load())
   text-align: left;
   position: relative;
 }
-.dm-item:hover { background: rgba(255,255,255,.05); }
+.dm-item:hover { background: var(--bg-hover); }
 .dm-item.active {
   background: rgba(74,144,217,.14);
   color: var(--text-primary);

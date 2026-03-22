@@ -176,7 +176,7 @@ async function handlePublishAll() {
   font-size: 12px; color: var(--text-secondary);
 }
 .proj-summary-progress { display: flex; align-items: center; gap: 6px; }
-.proj-summary-progress-bar { width: 80px; height: 5px; border-radius: 3px; background: rgba(255,255,255,.08); overflow: hidden; }
+.proj-summary-progress-bar { width: 80px; height: 5px; border-radius: 3px; background: var(--bg-active); overflow: hidden; }
 .proj-summary-progress-fill { height: 100%; background: var(--color-success); border-radius: 3px; }
 .proj-summary-pct { font-weight: 600; }
 .proj-summary-publish-btn {
@@ -199,14 +199,14 @@ async function handlePublishAll() {
 .dc-section {
   margin-bottom: 20px;
   border: 1px solid var(--border); border-radius: 10px;
-  padding: 14px; background: rgba(255,255,255,.015);
+  padding: 14px; background: var(--bg-active);
 }
 .dc-section-header {
   display: flex; align-items: center; gap: 8px; margin-bottom: 10px;
 }
 .dc-section-count {
   font-size: 11px; font-weight: 600; color: var(--text-muted);
-  background: rgba(255,255,255,.06); padding: 1px 6px; border-radius: 8px;
+  background: var(--bg-hover); padding: 1px 6px; border-radius: 8px;
 }
 
 .dc-cards {
@@ -217,10 +217,10 @@ async function handlePublishAll() {
 
 .dc-card {
   padding: 10px 12px; border-radius: 8px; cursor: pointer;
-  border: 1px solid var(--border); background: rgba(255,255,255,.02);
+  border: 1px solid var(--border); background: var(--bg-elevated);
   transition: all var(--t-fast); position: relative;
 }
-.dc-card:hover { background: rgba(255,255,255,.06); border-color: rgba(255,255,255,.15); }
+.dc-card:hover { background: var(--bg-hover); border-color: var(--border-input); }
 .dc-card--draft { border-style: dashed; opacity: .7; }
 .dc-card--cctl { border-left: 3px solid #a569bd; }
 .dc-card--soutenance { border-left: 3px solid var(--color-warning); }
@@ -233,9 +233,9 @@ async function handlePublishAll() {
 .dc-card-title { font-size: 12px; font-weight: 600; color: var(--text-primary); flex: 1; line-height: 1.3; }
 .dc-card-meta { display: flex; align-items: center; gap: 5px; margin-top: 6px; }
 .dc-card-date { font-size: 10px; }
-.dc-card-duration { font-size: 10px; color: var(--text-muted); background: rgba(255,255,255,.05); padding: 1px 5px; border-radius: 6px; }
+.dc-card-duration { font-size: 10px; color: var(--text-muted); background: var(--bg-hover); padding: 1px 5px; border-radius: 6px; }
 .dc-card-progress {
-  height: 2px; border-radius: 1px; background: rgba(255,255,255,.06);
+  height: 2px; border-radius: 1px; background: var(--bg-hover);
   margin-top: 6px; overflow: hidden;
 }
 .dc-card-progress-fill { height: 100%; background: var(--color-success); border-radius: 1px; }
@@ -244,7 +244,7 @@ async function handlePublishAll() {
   position: absolute; top: 4px; right: 4px;
   font-size: 8px; font-weight: 700; text-transform: uppercase;
   padding: 1px 4px; border-radius: 3px;
-  background: rgba(255,255,255,.06); color: var(--text-muted); border: 1px dashed var(--border-input);
+  background: var(--bg-hover); color: var(--text-muted); border: 1px dashed var(--border-input);
 }
 
 .dc-publish-btn {

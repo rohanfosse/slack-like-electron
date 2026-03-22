@@ -268,7 +268,7 @@ function gradeColor(note: string | null | undefined): string {
   padding: 4px 8px;
   border-radius: 6px;
   border: 1px solid var(--border);
-  background: rgba(255,255,255,.02);
+  background: var(--bg-elevated);
 }
 .stl-search-icon { color: var(--text-muted); flex-shrink: 0; }
 .stl-search {
@@ -307,7 +307,7 @@ function gradeColor(note: string | null | undefined): string {
 .stl-leg-urgent  { background: rgba(243,156,18,.1);  color: var(--color-warning); }
 .stl-leg-overdue { background: rgba(231,76,60,.1);   color: var(--color-danger);  }
 .stl-leg-event   { background: rgba(155,135,245,.1); color: var(--color-cctl); }
-.stl-leg-pending { background: rgba(255,255,255,.04); color: var(--text-muted); border: 1px solid var(--border); }
+.stl-leg-pending { background: var(--bg-elevated); color: var(--text-muted); border: 1px solid var(--border); }
 
 /* Groupes mois */
 .stl-months { display: flex; flex-direction: column; gap: 20px; }
@@ -370,7 +370,7 @@ function gradeColor(note: string | null | undefined): string {
   padding: 8px 12px 10px;
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
-  background: rgba(255,255,255,.02);
+  background: var(--bg-elevated);
   margin-bottom: 8px;
   display: flex;
   flex-direction: column;

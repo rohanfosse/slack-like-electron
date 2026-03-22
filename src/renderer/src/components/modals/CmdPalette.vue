@@ -368,7 +368,7 @@
   font-size: 11px;
   font-family: var(--font);
   color: var(--text-muted);
-  background: rgba(255, 255, 255, .07);
+  background: var(--bg-hover);
   border: 1px solid var(--border);
   border-radius: 4px;
   padding: 2px 6px;
@@ -480,7 +480,7 @@
 .cmd-empty-hint kbd {
   font-size: 10px;
   font-family: var(--font);
-  background: rgba(255, 255, 255, .08);
+  background: var(--bg-active);
   border: 1px solid var(--border);
   border-radius: 3px;
   padding: 1px 5px;

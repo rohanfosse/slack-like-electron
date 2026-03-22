@@ -523,12 +523,12 @@
 
   .simulation-stop-btn {
     color: #fff !important;
-    border: 1px solid rgba(255,255,255,.4) !important;
+    border: 1px solid var(--border) !important;
     padding: 3px 10px !important;
     font-size: 12px !important;
     border-radius: var(--radius-sm) !important;
   }
-  .simulation-stop-btn:hover { background: rgba(255,255,255,.15) !important; }
+  .simulation-stop-btn:hover { background: var(--bg-active) !important; }
 
   /* Bandeau hors-ligne */
   .offline-banner {
@@ -546,7 +546,7 @@
     padding: 0 16px;
     font-size: 12.5px;
     font-weight: 500;
-    border-bottom: 1px solid rgba(255,255,255,.07);
+    border-bottom: 1px solid var(--border);
   }
 
   .offline-banner-red  { background: #991b1b; color: #fecaca; }
@@ -571,7 +571,7 @@
     border: none; cursor: pointer;
   }
   .notif-req-accept { background: var(--accent); color: #fff; }
-  .notif-req-dismiss { background: rgba(255,255,255,.08); color: var(--text-muted); }
+  .notif-req-dismiss { background: var(--bg-active); color: var(--text-muted); }
   .simulation-banner.banner-shift { top: calc(var(--titlebar-height, 32px) + 36px); }
 
   /* Bandeau reconnexion socket */
@@ -591,13 +591,13 @@
     padding: 0 16px;
     font-size: 12.5px;
     font-weight: 500;
-    border-bottom: 1px solid rgba(255,255,255,.07);
+    border-bottom: 1px solid var(--border);
   }
 
   .socket-spinner {
     width: 12px;
     height: 12px;
-    border: 2px solid rgba(255,255,255,.3);
+    border: 2px solid var(--border);
     border-top-color: #fff;
     border-radius: 50%;
     animation: spin .8s linear infinite;
@@ -661,7 +661,7 @@
 
   .privacy-item {
     display: flex; align-items: flex-start; gap: 10px;
-    padding: 10px 12px; background: rgba(255,255,255,.03);
+    padding: 10px 12px; background: var(--bg-elevated);
     border: 1px solid var(--border); border-radius: 10px;
   }
 
@@ -675,7 +675,7 @@
 
   .privacy-right {
     display: flex; align-items: center; gap: 8px; font-size: 12.5px;
-    color: var(--text-secondary); padding: 8px 12px; background: rgba(255,255,255,.02);
+    color: var(--text-secondary); padding: 8px 12px; background: var(--bg-elevated);
     border-radius: 8px; border: 1px solid var(--border);
   }
 
@@ -711,7 +711,7 @@
   .offline-banner-yellow {
     background: #78350f;
     color: #fef3c7;
-    border-bottom: 1px solid rgba(255,255,255,.07);
+    border-bottom: 1px solid var(--border);
   }
 
   /* ── Bouton flottant feedback ── */
@@ -756,8 +756,8 @@
   .fab-fb-types { display: flex; gap: 4px; margin-bottom: 8px; }
   .fab-fb-type {
     flex: 1; padding: 5px; border-radius: 6px; font-size: 11px; font-weight: 600;
-    background: rgba(255,255,255,.05); color: var(--text-secondary);
-    border: 1px solid rgba(255,255,255,.08); cursor: pointer; transition: all .12s;
+    background: var(--bg-hover); color: var(--text-secondary);
+    border: 1px solid var(--border); cursor: pointer; transition: all .12s;
   }
   .fab-fb-type.active { background: var(--accent-subtle); color: var(--accent); border-color: var(--accent); }
   .fab-fb-textarea {
@@ -844,11 +844,11 @@
     transform: translateY(-1px);
   }
   .live-invite-dismiss {
-    background: rgba(255,255,255,.08);
+    background: var(--bg-active);
     color: var(--text-muted);
   }
   .live-invite-dismiss:hover {
-    background: rgba(255,255,255,.14);
+    background: var(--bg-active);
     color: var(--text-primary);
   }
 

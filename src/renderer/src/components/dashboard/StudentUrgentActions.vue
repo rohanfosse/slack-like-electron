@@ -57,11 +57,11 @@ function countdown(deadline?: string): string {
 .db-urgent-item {
   display: flex; align-items: center; gap: 8px; width: 100%;
   padding: 8px 12px; border-radius: 8px; cursor: pointer;
-  background: rgba(255,255,255,.02); transition: background .15s;
+  background: var(--bg-elevated); transition: background .15s;
   margin-bottom: 4px; font-size: 13px; color: var(--text-primary);
   border: none; font-family: var(--font); text-align: left;
 }
-.db-urgent-item:hover { background: rgba(255,255,255,.06); }
+.db-urgent-item:hover { background: var(--bg-hover); }
 .db-urgent-item--overdue { background: rgba(231,76,60,.06); }
 .db-urgent-item-title { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .db-urgent-item-urgency { font-size: 11px; font-weight: 600; color: var(--text-muted); flex-shrink: 0; }

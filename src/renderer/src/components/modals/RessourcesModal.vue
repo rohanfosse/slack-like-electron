@@ -240,11 +240,11 @@
   gap: 8px;
   padding: 8px 10px;
   border-radius: var(--radius-sm);
-  background: rgba(255,255,255,.03);
+  background: var(--bg-elevated);
   border: 1px solid var(--border);
   transition: background var(--t-fast);
 }
-.ress-item:hover { background: rgba(255,255,255,.06); }
+.ress-item:hover { background: var(--bg-hover); }
 
 .ress-item-icon {
   display: flex;
@@ -279,7 +279,7 @@
 
 /* Formulaire */
 .ress-form {
-  background: rgba(255,255,255,.03);
+  background: var(--bg-elevated);
   border: 1px solid var(--border-input);
   border-radius: var(--radius);
   padding: 14px;

@@ -382,7 +382,7 @@
   padding: 16px 20px;
   border-radius: 12px;
   background: var(--bg-elevated, #1e1f21);
-  border: 2px solid rgba(255,255,255,.08);
+  border: 2px solid var(--border);
   color: var(--text-primary, #fff);
   font-size: 16px;
   font-weight: 500;
@@ -392,8 +392,8 @@
   min-height: 56px;
 }
 .qcm-option-btn:hover {
-  border-color: rgba(255,255,255,.15);
-  background: rgba(255,255,255,.06);
+  border-color: var(--border-input);
+  background: var(--bg-hover);
 }
 .qcm-option-btn.selected {
   border-color: var(--accent, #4a90d9);
@@ -403,7 +403,7 @@
   width: 32px;
   height: 32px;
   border-radius: 8px;
-  background: rgba(255,255,255,.08);
+  background: var(--bg-active);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -430,7 +430,7 @@
   padding: 14px 16px;
   border-radius: 12px;
   background: var(--bg-elevated, #1e1f21);
-  border: 2px solid rgba(255,255,255,.08);
+  border: 2px solid var(--border);
   color: var(--text-primary, #fff);
   font-size: 15px;
   font-family: inherit;
@@ -455,7 +455,7 @@
   padding: 14px 16px;
   border-radius: 12px;
   background: var(--bg-elevated, #1e1f21);
-  border: 2px solid rgba(255,255,255,.08);
+  border: 2px solid var(--border);
   color: var(--text-primary, #fff);
   font-size: 16px;
   font-weight: 600;

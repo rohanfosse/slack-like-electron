@@ -105,7 +105,7 @@ const emit = defineEmits<{
 }
 .db-student-bar {
   width: 100%; height: 3px; border-radius: 2px;
-  background: rgba(255,255,255,.06); overflow: hidden;
+  background: var(--bg-hover); overflow: hidden;
 }
 .db-student-fill {
   height: 100%; border-radius: 2px; background: var(--color-cctl); transition: width .3s ease;
@@ -119,6 +119,6 @@ const emit = defineEmits<{
   padding: 1px 6px; border-radius: 4px; vertical-align: middle; margin-left: 6px;
 }
 .project-status--active { background: rgba(39,174,96,.15); color: var(--color-success); }
-.project-status--done { background: rgba(255,255,255,.08); color: var(--text-muted); }
+.project-status--done { background: var(--bg-active); color: var(--text-muted); }
 .db-project-next--header { margin-top: -1px; }
 </style>

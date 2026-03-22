@@ -605,7 +605,7 @@
   width: calc(100% - 20px);
   margin: 8px 10px 4px;
   padding: 6px 10px;
-  background: rgba(255, 255, 255, .05);
+  background: var(--bg-hover);
   border: 1px solid var(--border);
   border-radius: 7px;
   cursor: pointer;
@@ -616,8 +616,8 @@
   text-align: left;
 }
 .sidebar-search-bar:hover {
-  background: rgba(255, 255, 255, .09);
-  border-color: rgba(255, 255, 255, .18);
+  background: var(--bg-active);
+  border-color: var(--border-input);
   color: var(--text-secondary);
 }
 
@@ -633,7 +633,7 @@
 .sidebar-search-kbd {
   font-size: 9.5px;
   font-family: var(--font);
-  background: rgba(255, 255, 255, .07);
+  background: var(--bg-hover);
   border: 1px solid var(--border);
   border-radius: 4px;
   padding: 1px 5px;
@@ -878,7 +878,7 @@
 .sidebar-section-count {
   font-size: 10px;
   color: var(--text-muted);
-  background: rgba(255,255,255,.06);
+  background: var(--bg-hover);
   padding: 1px 6px;
   border-radius: 8px;
   font-weight: 600;
@@ -891,7 +891,7 @@
   opacity: 0; transition: opacity .15s;
 }
 .sidebar-section-header:hover .dm-toggle-btn { opacity: 1; }
-.dm-toggle-btn:hover { color: var(--accent, #4a90d9); background: rgba(255,255,255,.06); }
+.dm-toggle-btn:hover { color: var(--accent, #4a90d9); background: var(--bg-hover); }
 
 .dm-item {
   display: flex !important; align-items: center; gap: 6px; padding: 4px 10px 4px 14px !important;
@@ -1060,7 +1060,7 @@
   margin: 6px 10px 4px;
   padding: 8px 10px;
   border-radius: 8px;
-  background: rgba(255,255,255,.04);
+  background: var(--bg-elevated);
   border: 1px solid var(--border);
 }
 .sb-promo-card-header {
@@ -1097,7 +1097,7 @@
 }
 .sb-project-rich-bar {
   flex: 1; height: 3px; border-radius: 2px;
-  background: rgba(255,255,255,.08); overflow: hidden;
+  background: var(--bg-active); overflow: hidden;
 }
 .sb-project-rich-bar-fill {
   height: 100%; border-radius: 2px;
@@ -1112,7 +1112,7 @@
 .sb-recent-item {
   display: flex; justify-content: space-between; align-items: baseline;
   gap: 6px; padding: 3px 0;
-  border-bottom: 1px solid rgba(255,255,255,.04);
+  border-bottom: 1px solid var(--border);
 }
 .sb-recent-item:last-child { border-bottom: none; }
 .sb-recent-text {

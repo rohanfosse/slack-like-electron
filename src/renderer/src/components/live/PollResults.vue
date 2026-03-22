@@ -40,9 +40,9 @@
   align-items: center;
   justify-content: space-between;
   padding: 12px 16px;
-  background: rgba(255,255,255,.04);
+  background: var(--bg-elevated);
   border-radius: 10px;
-  border: 1px solid rgba(255,255,255,.06);
+  border: 1px solid var(--border);
 }
 .poll-text {
   font-size: 17px;

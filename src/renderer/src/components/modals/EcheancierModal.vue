@@ -288,13 +288,13 @@
   font-weight: 700;
   padding: 1px 6px;
   border-radius: 10px;
-  background: rgba(255,255,255,.1);
+  background: var(--bg-elevated);
   color: var(--text-secondary);
 }
 .badge-aNoter   { background: rgba(74,144,217,.2);  color: var(--accent-light); }
 .badge-urgents  { background: rgba(231,76,60,.2);    color: #ff7b6b; }
 .badge-jalons   { background: rgba(243,156,18,.2);   color: var(--color-warning); }
-.badge-brouillons { background: rgba(255,255,255,.1); }
+.badge-brouillons { background: var(--bg-elevated); }
 
 /* ── Contenu ── */
 .ech-content {
@@ -333,7 +333,7 @@
   transition: background var(--t-fast);
 }
 .ech-row:last-child { border-bottom: none; }
-.ech-row:hover { background: rgba(255,255,255,.03); }
+.ech-row:hover { background: var(--bg-elevated); }
 
 .ech-avatar {
   width: 30px;

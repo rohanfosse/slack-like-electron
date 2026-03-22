@@ -584,7 +584,7 @@
   padding: 12px;
   border: 1px solid var(--border);
   border-radius: 8px;
-  background: rgba(255,255,255,.03);
+  background: var(--bg-elevated);
   transition: border-color .12s;
 }
 .depot-card.has-note { border-color: rgba(74,144,217,.25); }
@@ -795,7 +795,7 @@
 .grade-dist-pill.grade-b  { background: rgba(39,174,96,.07);   color: #27ae60;              border-color: rgba(39,174,96,.15); }
 .grade-dist-pill.grade-c  { background: rgba(243,156,18,.12);  color: var(--color-warning); border-color: rgba(243,156,18,.25); }
 .grade-dist-pill.grade-d  { background: rgba(231,76,60,.12);   color: var(--color-danger);  border-color: rgba(231,76,60,.25); }
-.grade-dist-pill.grade-na { background: rgba(255,255,255,.05); color: var(--text-muted);    border-color: var(--border); }
+.grade-dist-pill.grade-na { background: var(--bg-hover); color: var(--text-muted);    border-color: var(--border); }
 .grade-dist-pill strong { font-weight: 800; }
 
 .depots-quick-stats {
@@ -809,7 +809,7 @@
 .stat-total   { background: rgba(74,144,217,.12); color: var(--accent); border-color: rgba(74,144,217,.25); }
 .stat-noted   { background: rgba(39,174,96,.12);  color: var(--color-success); border-color: rgba(39,174,96,.25); }
 .stat-waiting { background: rgba(243,156,18,.12); color: var(--color-warning); border-color: rgba(243,156,18,.25); }
-.stat-submitted { background: rgba(255,255,255,.06); color: var(--text-muted); border-color: var(--border); }
+.stat-submitted { background: var(--bg-hover); color: var(--text-muted); border-color: var(--border); }
 .stat-mode    { background: rgba(123,104,238,.12); color: var(--color-cctl); border-color: rgba(123,104,238,.25); }
 .stat-badge strong { font-weight: 800; }
 

@@ -274,7 +274,7 @@
   border-radius: 6px;
   transition: background .1s;
 }
-.ch-member-row:hover { background: rgba(255,255,255,.05); }
+.ch-member-row:hover { background: var(--bg-hover); }
 
 .ch-avatar {
   width: 30px;
@@ -293,7 +293,7 @@
   overflow: hidden;
 }
 .ch-avatar-muted {
-  background: rgba(255,255,255,.06);
+  background: var(--bg-hover);
   color: var(--text-muted);
 }
 
@@ -331,7 +331,7 @@
 .ch-search-input {
   width: 100%;
   padding: 6px 8px 6px 28px;
-  background: rgba(255,255,255,.05);
+  background: var(--bg-hover);
   border: 1px solid var(--border-input);
   border-radius: 6px;
   color: var(--text-primary);

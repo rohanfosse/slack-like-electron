@@ -590,7 +590,7 @@
 .auth-spinner {
   width: 14px;
   height: 14px;
-  border: 2px solid rgba(255,255,255,.3);
+  border: 2px solid var(--border);
   border-top-color: #fff;
   border-radius: 50%;
   animation: spin .7s linear infinite;
@@ -633,8 +633,8 @@
   transition: background .12s, border-color .12s, color .12s;
 }
 .auth-secondary-btn:hover {
-  background: rgba(255,255,255,.05);
-  border-color: rgba(255,255,255,.2);
+  background: var(--bg-hover);
+  border-color: var(--border);
   color: var(--text-primary);
 }
 
@@ -678,7 +678,7 @@
   cursor: pointer;
   transition: background .1s, color .1s;
 }
-.auth-outline-btn:hover { background: rgba(255,255,255,.06); color: var(--text-primary); }
+.auth-outline-btn:hover { background: var(--bg-hover); color: var(--text-primary); }
 
 .auth-link-btn {
   background: transparent;
@@ -717,7 +717,7 @@
   white-space: nowrap;
   transition: background .1s, color .1s;
 }
-.auth-back-btn:hover { background: rgba(255,255,255,.05); color: var(--text-primary); }
+.auth-back-btn:hover { background: var(--bg-hover); color: var(--text-primary); }
 
 /* ── Transitions ── */
 .auth-slide-enter-active { transition: opacity .2s ease, transform .2s ease; }

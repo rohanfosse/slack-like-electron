@@ -232,7 +232,7 @@ const averageGrade = computed(() => props.globalModeGrade ?? '--')
     <div class="dashboard-card bento-tile bento-stat">
       <div class="stat-ring">
         <svg viewBox="0 0 36 36" class="stat-ring-svg">
-          <circle cx="18" cy="18" r="15" fill="none" stroke="rgba(255,255,255,.08)" stroke-width="3" />
+          <circle cx="18" cy="18" r="15" fill="none" stroke="var(--bg-active)" stroke-width="3" />
           <circle
             cx="18" cy="18" r="15" fill="none"
             stroke="var(--accent)" stroke-width="3"
@@ -533,7 +533,7 @@ const averageGrade = computed(() => props.globalModeGrade ?? '--')
   align-items: center;
   gap: 6px;
   padding: 6px 12px;
-  background: rgba(255,255,255,.03);
+  background: var(--bg-elevated);
   border: 1px solid var(--border);
   border-radius: 8px;
   flex-shrink: 0;
@@ -608,7 +608,7 @@ const averageGrade = computed(() => props.globalModeGrade ?? '--')
   color: var(--text-primary);
   transition: background .12s;
 }
-.messages-item:hover { background: rgba(255,255,255,.06); }
+.messages-item:hover { background: var(--bg-hover); }
 .messages-avatar {
   width: 24px;
   height: 24px;
@@ -672,11 +672,11 @@ const averageGrade = computed(() => props.globalModeGrade ?? '--')
   transform: translateY(-1px);
 }
 .action-btn--secondary {
-  background: rgba(255,255,255,.04);
+  background: var(--bg-elevated);
   color: var(--text-secondary);
 }
 .action-btn--secondary:hover {
-  background: rgba(255,255,255,.08);
+  background: var(--bg-active);
   color: var(--text-primary);
   border-color: var(--accent);
 }
@@ -703,7 +703,7 @@ const averageGrade = computed(() => props.globalModeGrade ?? '--')
   border-radius: 6px;
   transition: background .12s;
 }
-.activity-item:hover { background: rgba(255,255,255,.04); }
+.activity-item:hover { background: var(--bg-elevated); }
 .activity-icon {
   width: 24px;
   height: 24px;

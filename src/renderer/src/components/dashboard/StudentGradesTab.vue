@@ -167,7 +167,7 @@ function toggleExpand(id: number) {
 }
 .sgt-bar-track {
   flex: 1; height: 8px; border-radius: 4px;
-  background: rgba(255,255,255,.05);
+  background: var(--bg-hover);
 }
 .sgt-bar-fill {
   height: 100%; border-radius: 4px;
@@ -188,11 +188,11 @@ function toggleExpand(id: number) {
 /* ── Card list ── */
 .sgt-list { display: flex; flex-direction: column; gap: 8px; }
 .sgt-card {
-  background: rgba(255,255,255,.02); border: 1px solid var(--border);
+  background: var(--bg-elevated); border: 1px solid var(--border);
   border-radius: 10px; padding: 12px 14px;
   transition: background .15s cubic-bezier(.4, 0, .2, 1), border-color .15s cubic-bezier(.4, 0, .2, 1);
 }
-.sgt-card:hover { background: rgba(255,255,255,.04); }
+.sgt-card:hover { background: var(--bg-elevated); }
 .sgt-card--expanded { border-color: rgba(74,144,217,.25); }
 
 .sgt-card-top {
@@ -204,7 +204,7 @@ function toggleExpand(id: number) {
 .sgt-card-cat {
   font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: .4px;
   padding: 2px 7px; border-radius: 4px;
-  background: rgba(255,255,255,.06); color: var(--text-muted);
+  background: var(--bg-hover); color: var(--text-muted);
   white-space: nowrap; flex-shrink: 0;
 }
 .sgt-card-title {

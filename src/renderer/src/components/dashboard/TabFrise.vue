@@ -277,17 +277,17 @@ function dotClassForGroup(group: DayGroup) {
   border: none; cursor: pointer; font-family: var(--font);
   transition: all .15s;
 }
-.tf-zoom-btn:hover { background: rgba(255,255,255,.05); color: var(--text-primary); }
+.tf-zoom-btn:hover { background: var(--bg-hover); color: var(--text-primary); }
 .tf-zoom-btn.active { background: var(--accent); color: #fff; }
 .tf-count { font-size: 12px; color: var(--text-muted); font-weight: 500; }
 .tf-nav { display: flex; align-items: center; gap: 4px; }
 .tf-nav-btn {
   display: flex; align-items: center; justify-content: center;
   width: 30px; height: 30px; border-radius: 8px;
-  background: rgba(255,255,255,.04); border: 1px solid var(--border);
+  background: var(--bg-elevated); border: 1px solid var(--border);
   color: var(--text-secondary); cursor: pointer; transition: all .15s;
 }
-.tf-nav-btn:hover { background: rgba(255,255,255,.08); color: var(--text-primary); }
+.tf-nav-btn:hover { background: var(--bg-active); color: var(--text-primary); }
 .tf-nav-center {
   font-size: 12px; font-weight: 600; padding: 5px 12px; border-radius: 8px;
   background: rgba(74,144,217,.12); color: var(--accent);
@@ -321,7 +321,7 @@ function dotClassForGroup(group: DayGroup) {
   pointer-events: none; letter-spacing: .3px;
 }
 .tf-month-bg { position: absolute; top: 0; bottom: 0; }
-.tf-month-bg.even { background: rgba(255,255,255,.018); }
+.tf-month-bg.even { background: var(--bg-active); }
 .tf-today {
   position: absolute; top: 0; bottom: -120px; width: 2px;
   background: rgba(74,144,217,.4); z-index: 3; pointer-events: none;
@@ -340,7 +340,7 @@ function dotClassForGroup(group: DayGroup) {
 }
 .tf-lane-line {
   position: absolute; left: 2%; right: 2%; top: 50%;
-  height: 2px; background: rgba(255,255,255,.08); border-radius: 1px;
+  height: 2px; background: var(--bg-active); border-radius: 1px;
   transform: translateY(-50%);
 }
 
@@ -406,7 +406,7 @@ function dotClassForGroup(group: DayGroup) {
   color: var(--text-primary); text-align: left;
   transition: background .12s;
 }
-.tf-group-item:hover { background: rgba(255,255,255,.06); }
+.tf-group-item:hover { background: var(--bg-hover); }
 .tf-group-item-dot {
   width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
 }
@@ -431,10 +431,10 @@ function dotClassForGroup(group: DayGroup) {
 .tf-legend-item {
   display: flex; align-items: center; gap: 6px;
   padding: 4px 10px; border-radius: 16px;
-  background: rgba(255,255,255,.03); border: 1px solid var(--border);
+  background: var(--bg-elevated); border: 1px solid var(--border);
   cursor: pointer; font-family: var(--font); transition: all .15s;
 }
-.tf-legend-item:hover { background: rgba(255,255,255,.06); border-color: var(--text-muted); }
+.tf-legend-item:hover { background: var(--bg-hover); border-color: var(--text-muted); }
 .tf-legend-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
 .tf-legend-label { font-size: 12px; font-weight: 500; color: var(--text-secondary); }
 .tf-legend-count { font-size: 11px; color: var(--text-muted); }

@@ -280,7 +280,7 @@ async function save() {
   width: 22px; height: 22px; border-radius: 50%;
   display: flex; align-items: center; justify-content: center;
   font-size: 11px; font-weight: 800;
-  background: rgba(255,255,255,.06); border: 1.5px solid var(--border);
+  background: var(--bg-hover); border: 1.5px solid var(--border);
   transition: all .2s;
 }
 .np-step.active .np-step-num { background: var(--accent); border-color: var(--accent); color: #fff; }
@@ -337,14 +337,14 @@ async function save() {
   color: var(--text-muted); cursor: pointer; font-family: var(--font);
   transition: all .12s;
 }
-.np-icon-btn:hover { background: rgba(255,255,255,.06); color: var(--text-primary); }
+.np-icon-btn:hover { background: var(--bg-hover); color: var(--text-primary); }
 .np-icon-btn.active { border-color: var(--accent); background: rgba(74,144,217,.1); color: var(--accent); }
 
 /* ── Preview ─────────────────────────────────────────────────────────── */
 .np-preview {
   display: flex; align-items: center; gap: 12px;
   padding: 14px 16px; border-radius: 10px;
-  background: rgba(255,255,255,.03); border: 1px solid var(--border);
+  background: var(--bg-elevated); border: 1px solid var(--border);
 }
 .np-preview-icon {
   width: 40px; height: 40px; border-radius: 10px;

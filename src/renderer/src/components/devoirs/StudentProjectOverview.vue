@@ -68,7 +68,7 @@ const appStore = useAppStore()
 .student-proj-bar {
   height: 3px;
   border-radius: 2px;
-  background: rgba(255,255,255,.06);
+  background: var(--bg-hover);
   overflow: hidden;
 }
 .student-proj-bar-fill {

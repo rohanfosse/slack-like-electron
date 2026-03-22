@@ -19,7 +19,7 @@
   display: inline-flex; align-items: center; gap: 6px;
   padding: 8px 16px; border-radius: 20px;
   font-size: 13px; font-weight: 600;
-  background: rgba(255,255,255,.04);
+  background: var(--bg-elevated);
   border: 1px solid var(--border);
   color: var(--text-primary);
 }
@@ -30,7 +30,7 @@
 
 /* ── Project cards ────────────────────────────────────────────────────────── */
 .dv-proj-card {
-  background: rgba(255,255,255,.03);
+  background: var(--bg-elevated);
   border: 1px solid var(--border);
   border-radius: 12px; padding: 18px; cursor: pointer;
   box-shadow: var(--shadow-card), inset 0 1px 0 rgba(255,255,255,.03);
@@ -50,7 +50,7 @@
 }
 
 /* ── Progress bar ─────────────────────────────────────────────────────────── */
-.dv-progress { height: 4px; border-radius: 2px; background: rgba(255,255,255,.06); overflow: hidden; }
+.dv-progress { height: 4px; border-radius: 2px; background: var(--bg-hover); overflow: hidden; }
 .dv-progress-fill {
   height: 100%;
   background: linear-gradient(90deg, var(--accent), #6db3f2);
@@ -78,7 +78,7 @@
 .dv-next-card {
   border-radius: 12px; padding: 16px;
   border: 1px solid var(--border);
-  background: rgba(255,255,255,.03);
+  background: var(--bg-elevated);
 }
 .dv-next-card--exam      { border-left: 3px solid #9b87f5; }
 .dv-next-card--livrable  { border-left: 3px solid var(--accent); }
@@ -91,10 +91,10 @@
 .dv-next-item {
   display: flex; align-items: center; justify-content: space-between; gap: 8px;
   padding: 8px 10px; border-radius: 8px;
-  background: rgba(255,255,255,.02); cursor: pointer;
+  background: var(--bg-elevated); cursor: pointer;
   transition: background .15s;
 }
-.dv-next-item:hover { background: rgba(255,255,255,.06); }
+.dv-next-item:hover { background: var(--bg-hover); }
 .dv-next-item-title {
   font-size: 13px; font-weight: 500; color: var(--text-primary);
   flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
@@ -111,13 +111,13 @@
 
 /* ── Widget card base (shared across WidgetExams, WidgetLivrables, WidgetSoutenances) ── */
 .sa-card {
-  background: rgba(255,255,255,.03); border: 1px solid var(--border);
+  background: var(--bg-elevated); border: 1px solid var(--border);
   border-radius: 12px; padding: 16px 18px;
   box-shadow: var(--shadow-card), inset 0 1px 0 rgba(255,255,255,.03);
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 .sa-card:hover {
-  background: rgba(255,255,255,.045);
+  background: var(--bg-hover);
   transform: translateY(-3px);
   box-shadow: var(--shadow-card-hover), inset 0 1px 0 rgba(255,255,255,.04);
 }
@@ -131,10 +131,10 @@
 .sa-next-item {
   display: flex; align-items: center; gap: 8px;
   padding: 8px 10px; border-radius: 8px;
-  background: rgba(255,255,255,.02); cursor: pointer;
+  background: var(--bg-elevated); cursor: pointer;
   transition: background .15s cubic-bezier(0.4, 0, 0.2, 1);
 }
-.sa-next-item:hover { background: rgba(255,255,255,.06); }
+.sa-next-item:hover { background: var(--bg-hover); }
 .sa-next-title {
   flex: 1; font-size: 13px; font-weight: 500; color: var(--text-primary);
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;

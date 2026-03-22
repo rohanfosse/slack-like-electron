@@ -83,7 +83,7 @@ onUnmounted(() => { unsubMaximize?.() })
       var(--bg-sidebar) calc(var(--rail-width) + var(--sidebar-width)),
       var(--bg-main)    calc(var(--rail-width) + var(--sidebar-width))
     );
-  border-bottom: 1px solid rgba(255, 255, 255, .04);
+  border-bottom: 1px solid var(--border);
   /* Zone de déplacement Electron sur toute la barre */
   -webkit-app-region: drag;
   user-select: none;
@@ -132,7 +132,7 @@ onUnmounted(() => { unsubMaximize?.() })
 /* Hover neutre pour min/max */
 .wctrl-min:hover,
 .wctrl-max:hover {
-  background: rgba(255, 255, 255, .1);
+  background: var(--bg-elevated);
   color: var(--text-primary);
 }
 
@@ -145,7 +145,7 @@ onUnmounted(() => { unsubMaximize?.() })
 
 /* Active pour min/max */
 .wctrl-min:active,
-.wctrl-max:active { background: rgba(255, 255, 255, .06); }
+.wctrl-max:active { background: var(--bg-hover); }
 
 /* Thème clair */
 body.light .titlebar {

@@ -112,14 +112,14 @@ const TYPE_ICONS: Record<string, object> = {
 .side-panel-title { flex: 1; }
 .side-panel-count {
   font-size: 11px; font-weight: 600; color: var(--text-muted);
-  background: rgba(255,255,255,.06); padding: 1px 7px; border-radius: 10px;
+  background: var(--bg-hover); padding: 1px 7px; border-radius: 10px;
 }
 .side-panel-close {
   background: none; border: none; color: var(--text-muted);
   cursor: pointer; padding: 4px; border-radius: 6px;
   transition: all .12s;
 }
-.side-panel-close:hover { background: rgba(255,255,255,.08); color: var(--text-primary); }
+.side-panel-close:hover { background: var(--bg-active); color: var(--text-primary); }
 
 .side-panel-body { flex: 1; overflow-y: auto; padding: 12px; }
 
@@ -138,7 +138,7 @@ const TYPE_ICONS: Record<string, object> = {
   color: var(--text-primary); text-align: left; width: 100%;
   transition: background .12s;
 }
-.sp-travail-item:hover { background: rgba(255,255,255,.05); }
+.sp-travail-item:hover { background: var(--bg-hover); }
 
 .sp-travail-icon {
   width: 28px; height: 28px; border-radius: 7px;
@@ -164,6 +164,6 @@ const TYPE_ICONS: Record<string, object> = {
 }
 .sp-travail-progress {
   font-size: 11px; font-weight: 600; color: var(--text-muted);
-  background: rgba(255,255,255,.06); padding: 2px 6px; border-radius: 6px;
+  background: var(--bg-hover); padding: 2px 6px; border-radius: 6px;
 }
 </style>

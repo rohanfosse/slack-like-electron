@@ -562,7 +562,7 @@ function fileTypeIcon(name: string): typeof FileText {
 .spf-chip-orange { background: rgba(243,156,18,.12);  color: var(--color-warning); border-color: rgba(243,156,18,.25); }
 .spf-chip-red    { background: rgba(231,76,60,.12);   color: var(--color-danger);  border-color: rgba(231,76,60,.25); }
 .spf-chip-blue   { background: rgba(74,144,217,.12);  color: var(--accent);        border-color: rgba(74,144,217,.25); }
-.spf-chip-muted  { background: rgba(255,255,255,.04); color: var(--text-muted);    border-color: var(--border); }
+.spf-chip-muted  { background: var(--bg-elevated); color: var(--text-muted);    border-color: var(--border); }
 .spf-chip-pct    { font-size: 10px; opacity: .7; }
 
 /* Barre de progression globale */
@@ -570,7 +570,7 @@ function fileTypeIcon(name: string): typeof FileText {
 .spf-global-bar {
   height: 5px;
   border-radius: 3px;
-  background: rgba(255,255,255,.07);
+  background: var(--bg-hover);
   overflow: hidden;
 }
 .spf-global-fill {
@@ -642,7 +642,7 @@ function fileTypeIcon(name: string): typeof FileText {
 .spf-section-count {
   font-size: 10px;
   font-weight: 600;
-  background: rgba(255,255,255,.06);
+  background: var(--bg-hover);
   padding: 1px 5px;
   border-radius: 8px;
   color: var(--text-muted);
@@ -655,7 +655,7 @@ function fileTypeIcon(name: string): typeof FileText {
   border: 1px solid var(--border);
   border-radius: 8px;
   padding: 12px 14px;
-  background: rgba(255,255,255,.02);
+  background: var(--bg-elevated);
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -790,7 +790,7 @@ function fileTypeIcon(name: string): typeof FileText {
   flex-direction: column;
   gap: 10px;
   padding: 12px;
-  background: rgba(255,255,255,.03);
+  background: var(--bg-elevated);
   border-radius: 8px;
   border: 1px solid var(--border-input);
 }
@@ -876,7 +876,7 @@ function fileTypeIcon(name: string): typeof FileText {
 }
 .spf-aside-count {
   font-size: 10px;
-  background: rgba(255,255,255,.06);
+  background: var(--bg-hover);
   padding: 1px 5px;
   border-radius: 8px;
   color: var(--text-muted);
@@ -962,7 +962,7 @@ function fileTypeIcon(name: string): typeof FileText {
   padding: 7px 9px;
   border: 1px solid var(--border);
   border-radius: 6px;
-  background: rgba(255,255,255,.02);
+  background: var(--bg-elevated);
 }
 .spf-result-top {
   display: flex;

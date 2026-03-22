@@ -215,7 +215,7 @@
 .tl-filter-count {
   font-size: 10px;
   font-weight: 700;
-  background: rgba(255,255,255,.1);
+  background: var(--bg-elevated);
   padding: 1px 5px;
   border-radius: 8px;
 }
@@ -291,7 +291,7 @@
   gap: 0;
   cursor: pointer;
 }
-.tl-item:hover .tl-item-card { background: rgba(255,255,255,.04); }
+.tl-item:hover .tl-item-card { background: var(--bg-elevated); }
 
 /* Date */
 .tl-item-date {
@@ -433,7 +433,7 @@
   font-weight: 700;
   padding: 2px 6px;
   border-radius: 8px;
-  background: rgba(255,255,255,.08);
+  background: var(--bg-active);
   color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: .3px;

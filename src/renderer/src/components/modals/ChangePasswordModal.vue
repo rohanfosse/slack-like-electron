@@ -340,7 +340,7 @@ function tryClose() {
 .cpw-strength-bar {
   flex: 1;
   height: 4px;
-  background: rgba(255,255,255,.1);
+  background: var(--bg-elevated);
   border-radius: 2px;
   overflow: hidden;
 }

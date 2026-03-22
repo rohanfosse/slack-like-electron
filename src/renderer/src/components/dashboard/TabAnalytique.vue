@@ -150,7 +150,7 @@ function setRange(range: '7d' | '30d' | 'all') {
 .analytics-bar-row { display: flex; align-items: center; gap: 8px; }
 .analytics-bar-label { width: 40px; flex-shrink: 0; font-size: 11px; color: var(--text-muted); text-align: right; }
 .analytics-bar-label-wide { width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.analytics-bar-track { flex: 1; height: 18px; background: rgba(255,255,255,.05); border-radius: 4px; overflow: hidden; }
+.analytics-bar-track { flex: 1; height: 18px; background: var(--bg-hover); border-radius: 4px; overflow: hidden; }
 .analytics-bar-fill { height: 100%; border-radius: 4px; transition: width .4s ease; }
 .analytics-bar-count { width: 32px; flex-shrink: 0; font-size: 11px; color: var(--text-secondary); text-align: right; font-variant-numeric: tabular-nums; }
 .analytics-trend-chart { display: flex; gap: 8px; align-items: flex-end; padding: 12px 4px 0; height: 120px; }
@@ -158,7 +158,7 @@ function setRange(range: '7d' | '30d' | 'all') {
 .analytics-trend-count { font-size: 11px; font-weight: 600; color: var(--text-secondary); min-height: 16px; }
 .analytics-trend-bar-bg {
   flex: 1; width: 100%; max-width: 32px;
-  background: rgba(255,255,255,.05); border-radius: 4px;
+  background: var(--bg-hover); border-radius: 4px;
   display: flex; align-items: flex-end; overflow: hidden;
 }
 .analytics-trend-bar-fill {
@@ -172,10 +172,10 @@ function setRange(range: '7d' | '30d' | 'all') {
 .analytics-range-row { display: flex; gap: 4px; }
 .analytics-range-btn {
   font-size: 12px; font-weight: 600; padding: 5px 14px; border-radius: 6px;
-  background: rgba(255,255,255,.04); color: var(--text-secondary);
+  background: var(--bg-elevated); color: var(--text-secondary);
   border: 1px solid var(--border); cursor: pointer; font-family: var(--font);
   transition: all .15s;
 }
-.analytics-range-btn:hover { background: rgba(255,255,255,.08); color: var(--text-primary); }
+.analytics-range-btn:hover { background: var(--bg-active); color: var(--text-primary); }
 .analytics-range-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
 </style>

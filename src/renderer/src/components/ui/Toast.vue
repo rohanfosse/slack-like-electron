@@ -45,7 +45,7 @@
     font-family: var(--font, sans-serif);
     color: #fff;
     background: #2a2b2d;
-    border: 1px solid rgba(255,255,255,.1);
+    border: 1px solid var(--border);
     box-shadow: 0 6px 20px rgba(0,0,0,.35);
     max-width: 380px;
     backdrop-filter: blur(8px);
@@ -82,16 +82,16 @@
     font-size: 12px;
     font-weight: 700;
     padding: 4px 10px;
-    border: 1px solid rgba(255,255,255,.2);
+    border: 1px solid var(--border);
     border-radius: 6px;
-    background: rgba(255,255,255,.08);
+    background: var(--bg-active);
     color: #fff;
     cursor: pointer;
     font-family: var(--font, sans-serif);
     transition: background .15s;
   }
   .toast-undo-btn:hover {
-    background: rgba(255,255,255,.15);
+    background: var(--bg-active);
   }
 
   .toast-enter-active {

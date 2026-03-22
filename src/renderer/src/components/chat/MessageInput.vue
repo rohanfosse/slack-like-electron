@@ -534,8 +534,8 @@ function onKeydown(e: KeyboardEvent) {
   padding: 4px 12px; border: none; border-radius: 6px; font-size: 12px;
   font-weight: 600; cursor: pointer; font-family: var(--font);
 }
-.mi-everyone-cancel { background: rgba(255,255,255,.08); color: var(--text-secondary); }
-.mi-everyone-cancel:hover { background: rgba(255,255,255,.12); }
+.mi-everyone-cancel { background: var(--bg-active); color: var(--text-secondary); }
+.mi-everyone-cancel:hover { background: var(--bg-active); }
 .mi-everyone-confirm { background: var(--color-warning); color: #fff; }
 .mi-everyone-confirm:hover { filter: brightness(1.1); }
 
@@ -579,7 +579,7 @@ function onKeydown(e: KeyboardEvent) {
 }
 .mi-mention-item:hover,
 .mi-mention-item.mi-mention-selected {
-  background: rgba(255, 255, 255, .07);
+  background: var(--bg-hover);
   color: var(--text-primary);
 }
 
@@ -676,7 +676,7 @@ function onKeydown(e: KeyboardEvent) {
   flex-shrink: 0;
 }
 .mi-fmt-btn:hover {
-  background: rgba(255, 255, 255, .08);
+  background: var(--bg-active);
   color: var(--text-secondary);
 }
 
@@ -767,7 +767,7 @@ function onKeydown(e: KeyboardEvent) {
   transition: background .1s, color .1s;
 }
 .mi-icon-btn:hover:not(:disabled) {
-  background: rgba(255, 255, 255, .08);
+  background: var(--bg-active);
   color: var(--text-secondary);
 }
 .mi-icon-btn:disabled { opacity: .4; cursor: not-allowed; }
@@ -818,7 +818,7 @@ function onKeydown(e: KeyboardEvent) {
 .mi-hint kbd {
   font-family: var(--font);
   font-size: 10.5px;
-  background: rgba(255, 255, 255, .07);
+  background: var(--bg-hover);
   border: 1px solid var(--border);
   border-radius: 3px;
   padding: 1px 4px;
@@ -861,11 +861,11 @@ function onKeydown(e: KeyboardEvent) {
 }
 .mi-cmd-shortcut {
   font-size: 10px; color: var(--text-muted); opacity: .4;
-  background: rgba(255,255,255,.06); padding: 2px 6px;
+  background: var(--bg-hover); padding: 2px 6px;
   border-radius: 4px; flex-shrink: 0;
 }
 .mi-mention-selected .mi-cmd-name { color: #fff; }
 .mi-mention-selected .mi-cmd-desc { color: rgba(255,255,255,.6); }
-.mi-mention-selected .mi-cmd-icon { background: rgba(255,255,255,.15) !important; color: #fff !important; }
-.mi-mention-selected .mi-cmd-shortcut { background: rgba(255,255,255,.15); color: rgba(255,255,255,.7); opacity: 1; }
+.mi-mention-selected .mi-cmd-icon { background: var(--bg-active) !important; color: #fff !important; }
+.mi-mention-selected .mi-cmd-shortcut { background: var(--bg-active); color: rgba(255,255,255,.7); opacity: 1; }
 </style>

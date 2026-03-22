@@ -74,7 +74,7 @@ const emit = defineEmits<{
 
 <style scoped>
 .bc-panel {
-  background: rgba(255,255,255,.03);
+  background: var(--bg-elevated);
   border: 1px solid var(--border);
   border-radius: 14px;
   padding: 16px;
@@ -101,10 +101,10 @@ const emit = defineEmits<{
 .bc-item {
   display: flex; align-items: center; gap: 10px;
   padding: 10px 12px; border-radius: 8px;
-  background: rgba(255,255,255,.02);
+  background: var(--bg-elevated);
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
-.bc-item:hover { background: rgba(255,255,255,.05); }
+.bc-item:hover { background: var(--bg-hover); }
 .bc-item--hidden { opacity: .45; }
 .bc-item-icon { color: var(--text-muted); flex-shrink: 0; }
 .bc-item-info { flex: 1; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
@@ -119,7 +119,7 @@ const emit = defineEmits<{
   color: var(--text-muted); cursor: pointer;
   transition: all .15s cubic-bezier(0.4, 0, 0.2, 1);
 }
-.bc-arrow:hover:not(:disabled) { background: rgba(255,255,255,.06); color: var(--text-primary); }
+.bc-arrow:hover:not(:disabled) { background: var(--bg-hover); color: var(--text-primary); }
 .bc-arrow:disabled { opacity: .25; cursor: default; }
 
 /* Toggle switch */
@@ -127,7 +127,7 @@ const emit = defineEmits<{
 .bc-toggle input { position: absolute; opacity: 0; width: 0; height: 0; }
 .bc-toggle-track {
   width: 32px; height: 18px; border-radius: 9px;
-  background: rgba(255,255,255,.08);
+  background: var(--bg-active);
   transition: background .2s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
 }

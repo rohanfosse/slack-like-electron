@@ -105,8 +105,8 @@ watch(() => props.pendingFile, (f) => {
 .drop-bar-ok { background: var(--accent); color: #fff; }
 .drop-bar-ok:hover { opacity: .9; }
 .drop-bar-ok:disabled { opacity: .5; cursor: not-allowed; }
-.drop-bar-cancel { background: rgba(255,255,255,.06); color: var(--text-muted); }
-.drop-bar-cancel:hover { background: rgba(255,255,255,.1); }
+.drop-bar-cancel { background: var(--bg-hover); color: var(--text-muted); }
+.drop-bar-cancel:hover { background: var(--bg-elevated); }
 
 .drop-fade-enter-active, .drop-fade-leave-active { transition: opacity .2s; }
 .drop-fade-enter-from, .drop-fade-leave-to { opacity: 0; }

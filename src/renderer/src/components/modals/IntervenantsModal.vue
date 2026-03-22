@@ -339,7 +339,7 @@ function assignedSummary(taId: number): string {
 .iv-form {
   padding: 12px 14px 14px;
   border-top: 1px solid var(--border);
-  background: rgba(255,255,255,.02);
+  background: var(--bg-elevated);
 }
 
 .iv-form-row {
@@ -502,7 +502,7 @@ function assignedSummary(taId: number): string {
 .iv-channels-panel {
   border-top: 1px solid var(--border);
   padding: 12px 14px;
-  background: rgba(255,255,255,.02);
+  background: var(--bg-elevated);
 }
 
 .iv-channels-hint {
@@ -545,7 +545,7 @@ function assignedSummary(taId: number): string {
   transition: background .08s, border-color .08s, color .08s;
   user-select: none;
 }
-.iv-ch-item:hover { background: rgba(255,255,255,.06); }
+.iv-ch-item:hover { background: var(--bg-hover); }
 .iv-ch-item.checked {
   background: rgba(74,144,217,.12);
   border-color: rgba(74,144,217,.4);

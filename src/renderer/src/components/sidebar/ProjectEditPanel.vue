@@ -216,7 +216,7 @@ function save() {
   padding: 0;
   transition: background .12s, color .12s, border-color .12s;
 }
-.pep-icon-btn:hover { background: rgba(255,255,255,.07); color: var(--text-primary); }
+.pep-icon-btn:hover { background: var(--bg-hover); color: var(--text-primary); }
 .pep-icon-btn.active {
   background: rgba(155,135,245,.15);
   color: var(--color-cctl, #9B87F5);
@@ -281,7 +281,7 @@ function save() {
   background: transparent;
   color: var(--text-muted);
 }
-.pep-btn-cancel:hover { color: var(--text-primary); background: rgba(255,255,255,.05); }
+.pep-btn-cancel:hover { color: var(--text-primary); background: var(--bg-hover); }
 
 .pep-btn-save {
   background: var(--color-cctl, #9B87F5);

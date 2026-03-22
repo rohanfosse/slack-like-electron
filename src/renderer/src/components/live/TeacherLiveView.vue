@@ -379,7 +379,7 @@
 .participant-bar {
   display: flex; align-items: center; gap: 8px;
   padding: 12px 16px; border-radius: 10px;
-  background: rgba(255,255,255,.04); color: var(--text-muted, #888);
+  background: var(--bg-elevated); color: var(--text-muted, #888);
   font-size: 14px; font-weight: 600;
 }
 

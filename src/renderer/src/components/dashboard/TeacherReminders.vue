@@ -60,14 +60,14 @@ const emit = defineEmits<{
 .db-week-title { display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 700; color: var(--text-primary); }
 .db-week-progress {
   font-size: 12px; font-weight: 600; color: var(--text-muted);
-  background: rgba(255,255,255,.05); padding: 2px 8px; border-radius: 10px;
+  background: var(--bg-hover); padding: 2px 8px; border-radius: 10px;
 }
 .db-week-list { display: flex; flex-direction: column; gap: 2px; }
 .db-week-item {
   display: flex; align-items: center; gap: 10px;
   padding: 8px 12px; border-radius: 8px; cursor: pointer; transition: background var(--t-fast);
 }
-.db-week-item:hover { background: rgba(255,255,255,.04); }
+.db-week-item:hover { background: var(--bg-elevated); }
 .db-week-item.done { opacity: .45; }
 .db-week-item.overdue:not(.done) { background: rgba(239,68,68,.06); }
 .db-week-item.today:not(.done) { background: rgba(74,144,217,.06); }

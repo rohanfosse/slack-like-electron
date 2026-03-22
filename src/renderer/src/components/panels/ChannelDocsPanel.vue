@@ -252,7 +252,7 @@
   font-size: 10px;
   font-weight: 700;
   color: var(--text-muted);
-  background: rgba(255,255,255,.06);
+  background: var(--bg-hover);
   border-radius: 8px;
   padding: 1px 6px;
 }
@@ -274,7 +274,7 @@
   border-radius: 6px;
   transition: background .1s;
 }
-.dp-doc-row:hover { background: rgba(255,255,255,.05); }
+.dp-doc-row:hover { background: var(--bg-hover); }
 
 .dp-doc-icon {
   width: 28px;

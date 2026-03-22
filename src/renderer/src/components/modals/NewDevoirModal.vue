@@ -405,7 +405,7 @@
 .nd-advanced {
   display: flex; flex-direction: column; gap: 12px;
   padding: 14px; border-radius: 10px;
-  background: rgba(255,255,255,.02); border: 1px solid var(--border);
+  background: var(--bg-elevated); border: 1px solid var(--border);
 }
 
 /* ── Footer ────────────────────────────────────────────────────────────── */

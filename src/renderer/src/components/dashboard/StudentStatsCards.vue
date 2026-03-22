@@ -100,7 +100,7 @@ const gradeTrend = computed(() => {
 .db-recent-grade-item {
   display: flex; align-items: center; gap: 6px;
   padding: 6px 10px; border-radius: 8px;
-  background: rgba(255,255,255,.03); font-size: 13px;
+  background: var(--bg-elevated); font-size: 13px;
 }
 .db-recent-grade-title { color: var(--text-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 160px; }
 .db-grade-badge { font-size: 12px; font-weight: 800; padding: 2px 8px; border-radius: 6px; }
@@ -115,7 +115,7 @@ const gradeTrend = computed(() => {
 .db-feedback-card {
   display: flex; flex-direction: column; gap: 4px;
   padding: 8px 10px; border-radius: 8px;
-  background: rgba(255,255,255,.03); border: 1px solid var(--border);
+  background: var(--bg-elevated); border: 1px solid var(--border);
   min-width: 180px; max-width: 280px; flex: 1;
 }
 .db-feedback-clickable { cursor: pointer; transition: background var(--t-fast); }

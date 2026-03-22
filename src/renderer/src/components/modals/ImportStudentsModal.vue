@@ -230,7 +230,7 @@ Marie Martin;marie@viacesi.fr;</pre>
   background: transparent; color: var(--text-muted); border: none;
   cursor: pointer; font-family: var(--font); transition: all .15s;
 }
-.is-mode-btn:hover { background: rgba(255,255,255,.04); color: var(--text-primary); }
+.is-mode-btn:hover { background: var(--bg-elevated); color: var(--text-primary); }
 .is-mode-btn.active { background: var(--accent); color: #fff; }
 
 /* Fields */
@@ -238,7 +238,7 @@ Marie Martin;marie@viacesi.fr;</pre>
 .is-label { font-size: 12px; font-weight: 600; color: var(--text-secondary); }
 .is-hint { font-weight: 400; opacity: .6; }
 .is-hint-block { font-size: 11px; color: var(--text-muted); margin-top: 4px; line-height: 1.4; }
-.is-hint-block code { background: rgba(255,255,255,.07); border-radius: 3px; padding: 1px 4px; font-size: 11px; }
+.is-hint-block code { background: var(--bg-hover); border-radius: 3px; padding: 1px 4px; font-size: 11px; }
 .is-input {
   padding: 9px 12px; border-radius: 8px; font-size: 13px;
   border: 1px solid var(--border-input); background: var(--bg-input);
@@ -258,7 +258,7 @@ Marie Martin;marie@viacesi.fr;</pre>
 }
 .is-preview-header {
   display: flex; align-items: center; justify-content: space-between;
-  padding: 8px 12px; background: rgba(255,255,255,.03);
+  padding: 8px 12px; background: var(--bg-elevated);
   font-size: 12px; font-weight: 600; color: var(--text-secondary);
   border-bottom: 1px solid var(--border);
 }
@@ -267,7 +267,7 @@ Marie Martin;marie@viacesi.fr;</pre>
 .is-preview-row {
   display: flex; align-items: center; gap: 8px;
   padding: 6px 12px; font-size: 12px;
-  border-bottom: 1px solid rgba(255,255,255,.03);
+  border-bottom: 1px solid var(--border);
 }
 .is-preview-row.invalid { opacity: .4; }
 .is-preview-name { font-weight: 600; color: var(--text-primary); min-width: 120px; }
@@ -278,7 +278,7 @@ Marie Martin;marie@viacesi.fr;</pre>
 
 /* Format box (CSV) */
 .is-format-box {
-  background: rgba(255,255,255,.03); border: 1px solid var(--border);
+  background: var(--bg-elevated); border: 1px solid var(--border);
   border-radius: 8px; padding: 12px 14px;
 }
 .is-format-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; color: var(--text-muted); margin-bottom: 8px; }

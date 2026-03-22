@@ -428,7 +428,7 @@
   gap: 5px;
   font-size: 12px;
   color: var(--text-secondary);
-  background: rgba(255,255,255,.04);
+  background: var(--bg-elevated);
   border: 1px solid var(--border);
   border-radius: 6px;
   padding: 4px 10px;
@@ -463,7 +463,7 @@
   align-items: center;
   gap: 7px;
   flex: 1;
-  background: rgba(255,255,255,.05);
+  background: var(--bg-hover);
   border: 1px solid var(--border);
   border-radius: 7px;
   padding: 5px 10px;
@@ -495,7 +495,7 @@
   transition: background .1s, color .1s, border-color .1s;
   white-space: nowrap;
 }
-.sort-btn:hover { background: rgba(255,255,255,.06); color: var(--text-secondary); }
+.sort-btn:hover { background: var(--bg-hover); color: var(--text-secondary); }
 .sort-btn.active {
   background: rgba(74,144,217,.12);
   border-color: rgba(74,144,217,.35);
@@ -556,7 +556,7 @@
   border: 1px solid transparent;
   transition: background .1s, border-color .1s;
 }
-.classe-row:hover { background: rgba(255,255,255,.04); }
+.classe-row:hover { background: var(--bg-elevated); }
 .classe-row.selected {
   background: rgba(74,144,217,.08);
   border-color: rgba(74,144,217,.25);
@@ -592,7 +592,7 @@
 .classe-progress-col { display: flex; flex-direction: column; gap: 4px; }
 .classe-bar-wrap {
   height: 5px;
-  background: rgba(255,255,255,.07);
+  background: var(--bg-hover);
   border-radius: 3px;
   overflow: hidden;
 }
@@ -716,7 +716,7 @@
 }
 
 .profile-travail {
-  background: rgba(255,255,255,.03);
+  background: var(--bg-elevated);
   border: 1px solid var(--border);
   border-radius: 8px;
   padding: 9px 12px;

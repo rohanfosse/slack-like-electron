@@ -181,7 +181,7 @@
 
 .cp-input {
   width: 100%;
-  background: rgba(255,255,255,.05);
+  background: var(--bg-hover);
   border: 1.5px solid var(--border-input);
   border-radius: 8px;
   color: var(--text-primary);
@@ -219,7 +219,7 @@
 }
 .cp-color-btn:hover { transform: scale(1.12); }
 .cp-color-btn.selected {
-  border-color: rgba(255,255,255,.8);
+  border-color: var(--border);
   box-shadow: 0 0 0 3px rgba(255,255,255,.2);
   transform: scale(1.1);
 }

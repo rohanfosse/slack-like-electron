@@ -34,7 +34,7 @@
   gap: 1px;
   flex-shrink: 0;
   overflow: visible;
-  border-right: 1px solid rgba(255,255,255,.04);
+  border-right: 1px solid var(--border);
   /* Zone de déplacement de fenêtre Electron (sous titleBarOverlay) */
   -webkit-app-region: drag;
 }
@@ -65,7 +65,7 @@
 .nav-divider {
   width: 32px;
   height: 1px;
-  background: rgba(255,255,255,.08);
+  background: var(--bg-active);
   margin: 6px 0;
   flex-shrink: 0;
 }
@@ -111,7 +111,7 @@
 }
 
 .nav-btn-icon:hover {
-  background: rgba(255,255,255,.09);
+  background: var(--bg-active);
   color: var(--text-primary);
 }
 
@@ -144,7 +144,7 @@
 }
 
 .nav-btn:hover {
-  background: rgba(255,255,255,.08);
+  background: var(--bg-active);
   color: var(--text-primary);
 }
 
@@ -202,7 +202,7 @@
   flex-shrink: 0;
   background: var(--bg-sidebar);
   background-image: linear-gradient(180deg, rgba(28,38,72,.28) 0%, transparent 45%);
-  border-right: 1px solid rgba(255,255,255,.06);
+  border-right: 1px solid var(--border);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -447,8 +447,8 @@ nav[aria-label="Messages directs"] {
   gap: 5px;
   padding: 4px 10px;
   border-radius: 14px;
-  border: 1.5px solid rgba(255,255,255,.08);
-  background: rgba(255,255,255,.04);
+  border: 1.5px solid var(--border);
+  background: var(--bg-elevated);
   color: var(--text-secondary);
   font-family: var(--font);
   font-size: 11px;
@@ -459,9 +459,9 @@ nav[aria-label="Messages directs"] {
 }
 
 .nav-promo-btn:hover {
-  background: rgba(255,255,255,.08);
+  background: var(--bg-active);
   color: var(--text-primary);
-  border-color: rgba(255,255,255,.15);
+  border-color: var(--border-input);
 }
 
 .nav-promo-btn.active {
@@ -591,7 +591,7 @@ nav[aria-label="Messages directs"] {
 .search-wrapper {
   display: flex;
   align-items: center;
-  background: rgba(255,255,255,.07);
+  background: var(--bg-hover);
   border: 1px solid var(--border-input);
   border-radius: var(--radius-sm);
   overflow: hidden;
@@ -600,7 +600,7 @@ nav[aria-label="Messages directs"] {
 
 .search-wrapper:focus-within {
   border-color: var(--accent);
-  background: rgba(255,255,255,.05);
+  background: var(--bg-hover);
   box-shadow: 0 0 0 2px rgba(74,144,217,.15);
 }
 
@@ -727,7 +727,7 @@ nav[aria-label="Messages directs"] {
   display: flex; align-items: flex-start; gap: 8px;
   font-size: 13px; color: var(--text-secondary);
   padding: 8px 12px; border-radius: 8px;
-  background: rgba(255,255,255,.03);
+  background: var(--bg-elevated);
 }
 .welcome-tip-icon { flex-shrink: 0; color: var(--accent); opacity: .7; }
 .welcome-tip strong { color: var(--text-primary); }
@@ -758,7 +758,7 @@ nav[aria-label="Messages directs"] {
 .message-input-wrapper {
   display: flex;
   flex-direction: column;
-  background: rgba(255,255,255,.055);
+  background: var(--bg-hover);
   border: 1.5px solid var(--border-input);
   border-radius: 12px;
   overflow: hidden;
@@ -767,7 +767,7 @@ nav[aria-label="Messages directs"] {
 
 .message-input-wrapper:focus-within {
   border-color: rgba(74,144,217,.55);
-  background: rgba(255,255,255,.07);
+  background: var(--bg-hover);
   box-shadow: 0 0 0 3px rgba(74,144,217,.09), 0 2px 12px rgba(0,0,0,.2);
 }
 
@@ -830,13 +830,13 @@ nav[aria-label="Messages directs"] {
 .empty-hint {
   display: inline-flex; align-items: center; gap: 6px;
   margin-top: 16px; padding: 8px 16px; border-radius: 8px;
-  background: rgba(255,255,255,.04); border: 1px solid var(--border);
+  background: var(--bg-elevated); border: 1px solid var(--border);
   font-size: 12px; color: var(--text-secondary);
 }
 
 /* ── Squelettes de chargement ────────────────────────────────────────────── */
 .skel {
-  background: rgba(255,255,255,.07);
+  background: var(--bg-hover);
   border-radius: 4px;
   animation: skel-pulse 1.5s ease-in-out infinite;
 }

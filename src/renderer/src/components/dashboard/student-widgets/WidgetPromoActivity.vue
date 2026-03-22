@@ -51,7 +51,7 @@ const hasData = computed(() => onlineCount.value > 0 || rendusToday.value > 0)
   align-items: center;
   gap: 8px;
   padding: 10px 14px;
-  background: rgba(255,255,255,.03);
+  background: var(--bg-elevated);
   border: 1px solid var(--border);
   border-radius: 10px;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);

@@ -317,7 +317,7 @@
 
 .suivi-progress-track {
   height: 6px;
-  background: rgba(255,255,255,.08);
+  background: var(--bg-active);
   border-radius: 4px;
   overflow: hidden;
 }
@@ -362,7 +362,7 @@
   transition: background var(--t-fast);
   min-height: 52px;
 }
-.suivi-row:hover { background: rgba(255,255,255,.02); }
+.suivi-row:hover { background: var(--bg-elevated); }
 .suivi-row--submitted { /* no special bg needed */ }
 
 .suivi-avatar {
@@ -402,7 +402,7 @@
 .suivi-group-tag {
   font-size: 10px;
   color: var(--text-muted);
-  background: rgba(255,255,255,.07);
+  background: var(--bg-hover);
   padding: 1px 6px;
   border-radius: 4px;
   white-space: nowrap;
@@ -476,10 +476,10 @@
 .suivi-note-badge.has-note:hover { background: rgba(74,144,217,.28); }
 
 .suivi-note-badge.no-note {
-  background: rgba(255,255,255,.06);
+  background: var(--bg-hover);
   color: var(--text-muted);
 }
-.suivi-note-badge.no-note:hover { background: rgba(255,255,255,.12); color: var(--text-secondary); }
+.suivi-note-badge.no-note:hover { background: var(--bg-active); color: var(--text-secondary); }
 
 .suivi-note-input,
 .suivi-feedback-input {
@@ -521,7 +521,7 @@
   border-radius: 4px;
   transition: color var(--t-fast), background var(--t-fast);
 }
-.suivi-feedback-btn:hover { color: var(--text-secondary); background: rgba(255,255,255,.06); }
+.suivi-feedback-btn:hover { color: var(--text-secondary); background: var(--bg-hover); }
 
 /* ── Empty ── */
 .suivi-empty {

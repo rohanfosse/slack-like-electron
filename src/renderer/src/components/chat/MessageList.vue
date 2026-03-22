@@ -358,7 +358,7 @@ const dateGroups = computed<DateGroup[]>(() => {
   font-size: 12px; color: var(--text-muted); padding: 8px 0;
 }
 .skel-spinner {
-  width: 14px; height: 14px; border: 2px solid rgba(255,255,255,.15);
+  width: 14px; height: 14px; border: 2px solid var(--border-input);
   border-top-color: var(--accent, #4a90d9); border-radius: 50%;
   animation: spin .7s linear infinite;
 }

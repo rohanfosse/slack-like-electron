@@ -174,7 +174,7 @@ const emit = defineEmits<{
           <!-- Mini ring chart -->
           <div class="tp-ring-wrap" :title="`${promoStats.get(p.id)?.avgSubmission ?? 0}% soumission`">
             <svg viewBox="0 0 40 40" class="tp-ring-svg">
-              <circle cx="20" cy="20" r="18" fill="none" stroke="rgba(255,255,255,.06)" stroke-width="3" />
+              <circle cx="20" cy="20" r="18" fill="none" stroke="var(--bg-hover)" stroke-width="3" />
               <circle
                 cx="20" cy="20" r="18" fill="none"
                 :stroke="p.color"
@@ -299,7 +299,7 @@ const emit = defineEmits<{
   display: flex; align-items: center; gap: 8px;
   font-size: 13px; font-weight: 600; color: var(--text-secondary);
   padding: 8px 12px; border-radius: 8px;
-  background: rgba(255,255,255,.03);
+  background: var(--bg-elevated);
 }
 .tp-summary-pill { color: var(--text-primary); }
 .tp-summary-sep { color: var(--text-muted); }
@@ -325,7 +325,7 @@ const emit = defineEmits<{
 
 /* ── Card ── */
 .tp-card {
-  background: rgba(255,255,255,.02); border: 1px solid var(--border);
+  background: var(--bg-elevated); border: 1px solid var(--border);
   border-radius: 12px; padding: 16px; transition: border-color var(--t-fast), box-shadow var(--t-fast);
   border-left: 3px solid var(--promo-color, var(--border));
 }
@@ -364,7 +364,7 @@ const emit = defineEmits<{
 .tp-pill {
   display: inline-flex; align-items: center; gap: 4px;
   font-size: 11px; font-weight: 600; padding: 3px 8px;
-  border-radius: 12px; background: rgba(255,255,255,.05);
+  border-radius: 12px; background: var(--bg-hover);
   color: var(--text-secondary); white-space: nowrap;
 }
 .tp-pill--accent { background: rgba(74,144,217,.1); color: var(--accent); }
@@ -387,7 +387,7 @@ const emit = defineEmits<{
 .tp-grade-bar-wrap { margin-bottom: 10px; }
 .tp-grade-bar {
   display: flex; height: 6px; border-radius: 3px; overflow: hidden;
-  background: rgba(255,255,255,.04);
+  background: var(--bg-elevated);
 }
 .tp-grade-seg { min-width: 2px; transition: width .3s ease; }
 .tp-grade-a { background: #4ade80; }
@@ -414,11 +414,11 @@ const emit = defineEmits<{
 .tp-btn {
   display: inline-flex; align-items: center; gap: 4px;
   font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 6px;
-  background: rgba(255,255,255,.06); color: var(--text-secondary);
+  background: var(--bg-hover); color: var(--text-secondary);
   border: 1px solid var(--border-input); cursor: pointer; font-family: var(--font);
   transition: all var(--t-fast); white-space: nowrap;
 }
-.tp-btn:hover { background: rgba(255,255,255,.1); color: var(--text-primary); }
+.tp-btn:hover { background: var(--bg-elevated); color: var(--text-primary); }
 .tp-btn--sm { font-size: 10px; padding: 2px 7px; border-radius: 4px; }
 .tp-btn--accent { background: var(--accent); color: #fff; border-color: var(--accent); }
 .tp-btn--accent:hover { opacity: .9; }
@@ -450,7 +450,7 @@ const emit = defineEmits<{
 /* ── Comparison table ── */
 .tp-compare {
   margin-top: 4px; padding: 16px; border-radius: 12px;
-  background: rgba(255,255,255,.02); border: 1px solid var(--border);
+  background: var(--bg-elevated); border: 1px solid var(--border);
 }
 .tp-compare-title {
   display: flex; align-items: center; gap: 6px;
@@ -467,7 +467,7 @@ const emit = defineEmits<{
 }
 .tp-compare-table td {
   padding: 8px 10px; color: var(--text-secondary);
-  border-bottom: 1px solid rgba(255,255,255,.03);
+  border-bottom: 1px solid var(--border);
   white-space: nowrap;
 }
 .tp-compare-pct { font-weight: 700; color: var(--accent); }

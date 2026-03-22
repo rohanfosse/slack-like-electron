@@ -202,7 +202,7 @@ const emit = defineEmits<{
   padding: 4px 14px;
   border: 1px solid var(--border);
   border-radius: 6px;
-  background: rgba(255,255,255,.04);
+  background: var(--bg-elevated);
   color: var(--text-secondary);
   font-size: 12px;
   font-weight: 600;
@@ -211,7 +211,7 @@ const emit = defineEmits<{
   transition: background var(--t-fast), color var(--t-fast);
 }
 .db-welcome-dismiss:hover {
-  background: rgba(255,255,255,.08);
+  background: var(--bg-active);
   color: var(--text-primary);
 }
 

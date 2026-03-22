@@ -45,7 +45,7 @@ button { font-family: var(--font); }
   white-space: nowrap;
   transition: background .15s, color .15s, border-color .15s;
 }
-.btn-ghost:hover          { background: var(--bg-hover); color: var(--text-primary); border-color: rgba(255,255,255,.2); }
+.btn-ghost:hover          { background: var(--bg-hover); color: var(--text-primary); border-color: var(--border); }
 .btn-ghost:active         { background: var(--bg-active); }
 .btn-ghost:focus-visible  { outline: 2px solid var(--border-input); outline-offset: 2px; }
 
@@ -256,8 +256,8 @@ button { font-family: var(--font); }
 .msg-text strong, .msg-text b { font-weight: 700; }
 .msg-text em, .msg-text i     { font-style: italic; }
 .msg-text code {
-  background: rgba(255,255,255,.1);
-  border: 1px solid rgba(255,255,255,.12);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-input);
   border-radius: 3px;
   padding: 1px 5px;
   font-size: 12.5px;
@@ -269,13 +269,13 @@ button { font-family: var(--font); }
   margin: 6px 0;
   border-radius: 6px;
   overflow: hidden;
-  border: 1px solid rgba(255,255,255,.1);
+  border: 1px solid var(--border);
   font-size: 13px;
 }
 
 .msg-text .code-lang {
   display: block;
-  background: rgba(255,255,255,.07);
+  background: var(--bg-hover);
   color: var(--text-muted);
   font-size: 11px;
   font-family: 'Menlo', 'Monaco', 'Consolas', monospace;
@@ -411,8 +411,8 @@ button { font-family: var(--font); }
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  background: rgba(255,255,255,.08);
-  border: 1px solid rgba(255,255,255,.1);
+  background: var(--bg-active);
+  border: 1px solid var(--border);
   border-radius: 12px;
   padding: 2px 8px;
   font-size: 12px;
@@ -422,7 +422,7 @@ button { font-family: var(--font); }
   font-family: var(--font);
 }
 
-.msg-reaction-pill:hover      { background: rgba(255,255,255,.14); color: var(--text-primary); }
+.msg-reaction-pill:hover      { background: var(--bg-active); color: var(--text-primary); }
 .msg-reaction-pill.mine       { background: rgba(74,144,217,.2); border-color: rgba(74,144,217,.4); color: var(--accent); }
 .msg-reaction-pill.mine:hover { background: rgba(74,144,217,.3); }
 
@@ -538,7 +538,7 @@ button { font-family: var(--font); }
   cursor: pointer;
   transition: border-color .15s, background .15s;
 }
-.travail-card:hover { border-color: rgba(74,144,217,.4); background: rgba(255,255,255,.03); }
+.travail-card:hover { border-color: rgba(74,144,217,.4); background: var(--bg-elevated); }
 
 .travail-title {
   font-weight: 700;
@@ -572,7 +572,7 @@ button { font-family: var(--font); }
 /* Barre de progression */
 .progress-bar-track {
   height: 4px;
-  background: rgba(255,255,255,.1);
+  background: var(--bg-elevated);
   border-radius: 2px;
   margin-top: 6px;
   overflow: hidden;
@@ -601,7 +601,7 @@ button { font-family: var(--font); }
 .form-textarea,
 .form-select {
   width: 100%;
-  background: rgba(255,255,255,.06);
+  background: var(--bg-hover);
   border: 1px solid var(--border-input);
   border-radius: var(--radius-sm);
   color: var(--text-primary);
@@ -615,7 +615,7 @@ button { font-family: var(--font); }
 .form-textarea:focus,
 .form-select:focus {
   border-color: var(--accent);
-  background: rgba(255,255,255,.08);
+  background: var(--bg-active);
   box-shadow: 0 0 0 2px rgba(74,144,217,.15);
 }
 .form-input::placeholder,
@@ -667,7 +667,7 @@ button { font-family: var(--font); }
 
 .modal {
   background: var(--bg-modal);
-  border: 1px solid rgba(255,255,255,.09);
+  border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   max-width: 95vw;
   max-height: 88vh;
@@ -735,7 +735,7 @@ button { font-family: var(--font); }
 
 .login-panel {
   background: var(--bg-modal);
-  border: 1px solid rgba(255,255,255,.1);
+  border: 1px solid var(--border);
   border-radius: 16px;
   width: 100%;
   max-width: 440px;
@@ -829,14 +829,14 @@ button { font-family: var(--font); }
   align-items: center;
   gap: 6px;
   padding: 12px 8px;
-  background: rgba(255,255,255,.05);
+  background: var(--bg-hover);
   border: 2px solid transparent;
   border-radius: var(--radius);
   cursor: pointer;
   transition: border-color .15s, background .15s;
   text-align: center;
 }
-.identity-card:hover          { background: rgba(255,255,255,.08); border-color: rgba(255,255,255,.15); }
+.identity-card:hover          { background: var(--bg-active); border-color: var(--border-input); }
 .identity-card.selected       { border-color: var(--accent); background: rgba(74,144,217,.12); }
 .identity-card-name  { font-size: 13px; font-weight: 600; color: var(--text-primary); }
 .identity-card-promo { font-size: 11px; color: var(--text-muted); }
@@ -859,7 +859,7 @@ button { font-family: var(--font); }
   width: 560px;
   max-width: calc(100vw - 32px);
   background: var(--bg-modal);
-  border: 1px solid rgba(255,255,255,.12);
+  border: 1px solid var(--border-input);
   border-radius: var(--radius-lg);
   overflow: hidden;
   box-shadow: var(--shadow-lg);
@@ -926,7 +926,7 @@ button { font-family: var(--font); }
   align-items: flex-start;
   gap: 10px;
   padding: 12px 14px;
-  background: rgba(255,255,255,.04);
+  background: var(--bg-elevated);
   border-radius: var(--radius);
   border: 1px solid var(--border);
 }
@@ -967,7 +967,7 @@ button { font-family: var(--font); }
 .feedback-form { margin-top: 6px; display: flex; flex-direction: column; gap: 6px; }
 .feedback-form textarea {
   width: 100%;
-  background: rgba(255,255,255,.06);
+  background: var(--bg-hover);
   border: 1px solid var(--accent);
   border-radius: var(--radius-sm);
   color: var(--text-primary);
@@ -1005,7 +1005,7 @@ button { font-family: var(--font); }
   padding: 10px 12px;
   border-radius: var(--radius);
   border: 1px solid var(--border);
-  background: rgba(255,255,255,.03);
+  background: var(--bg-elevated);
 }
 .suivi-row.non-rendu { opacity: .65; }
 
@@ -1023,7 +1023,7 @@ button { font-family: var(--font); }
    NOTE
 ════════════════════════════════════════════ */
 .note-big-input {
-  background: rgba(255,255,255,.06);
+  background: var(--bg-hover);
   border: 1px solid var(--border-input);
   border-radius: var(--radius-sm);
   color: var(--text-primary);
@@ -1064,13 +1064,13 @@ button { font-family: var(--font); }
   align-items: center;
   gap: 14px;
   padding: 12px 16px;
-  background: rgba(255,255,255,.04);
+  background: var(--bg-elevated);
   border: 1px solid var(--border);
   border-radius: var(--radius);
   transition: border-color .15s, background .15s;
   cursor: default;
 }
-.doc-card:hover { border-color: rgba(74,144,217,.3); background: rgba(255,255,255,.06); }
+.doc-card:hover { border-color: rgba(74,144,217,.3); background: var(--bg-hover); }
 
 .doc-icon {
   width: 40px;
@@ -1265,7 +1265,7 @@ button { font-family: var(--font); }
 /* Barre de progression linéaire */
 .linear-progress {
   height: 6px;
-  background: rgba(255,255,255,.1);
+  background: var(--bg-elevated);
   border-radius: 3px;
   overflow: hidden;
 }
@@ -1282,7 +1282,7 @@ button { font-family: var(--font); }
   align-items: center;
   gap: 10px;
   padding: 10px 12px;
-  background: rgba(255,255,255,.04);
+  background: var(--bg-elevated);
   border: 1px solid var(--border);
   border-radius: var(--radius);
   transition: border-color .15s;
@@ -1378,7 +1378,7 @@ button { font-family: var(--font); }
   color: #fff;
   flex-shrink: 0;
   overflow: hidden;
-  border: 2.5px solid rgba(255,255,255,.18);
+  border: 2.5px solid var(--border-input);
   box-shadow: 0 0 0 4px rgba(74,144,217,.12);
   transition: box-shadow var(--t-base);
 }
@@ -1477,7 +1477,7 @@ button { font-family: var(--font); }
 ════════════════════════════════════════════ */
 .modal-box {
   background: var(--bg-modal);
-  border: 1px solid rgba(255,255,255,.1);
+  border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   width: 100%;
   max-height: 88vh;

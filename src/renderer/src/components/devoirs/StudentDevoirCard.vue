@@ -242,7 +242,7 @@ const showDepositForm = props.variant !== 'overdue' && props.variant !== 'event'
   font-weight: 700;
   padding: 2px 8px;
   border-radius: 10px;
-  background: rgba(255,255,255,.08);
+  background: var(--bg-active);
   color: var(--text-muted);
   margin-left: 4px;
 }

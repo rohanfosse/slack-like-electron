@@ -340,7 +340,7 @@ function setTab(tab: DashTabType) {
 }
 .db-fab:hover { filter: brightness(1.1); transform: translateY(-1px); }
 .db-fab-ghost { background: transparent; color: var(--text-secondary); padding: 7px 10px; }
-.db-fab-ghost:hover { background: rgba(255,255,255,.08); color: var(--text-primary); filter: none; }
+.db-fab-ghost:hover { background: var(--bg-active); color: var(--text-primary); filter: none; }
 
 /* ── Live tab indicator ── */
 .db-tab-live { position: relative; }

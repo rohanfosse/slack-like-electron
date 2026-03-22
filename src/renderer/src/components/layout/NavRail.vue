@@ -369,8 +369,8 @@
   font-family: var(--font);
   font-weight: 600;
   color: var(--text-muted);
-  background: rgba(255,255,255,.08);
-  border: 1px solid rgba(255,255,255,.1);
+  background: var(--bg-active);
+  border: 1px solid var(--border);
   border-radius: 3px;
   padding: 0 3px;
   line-height: 14px;
@@ -493,7 +493,7 @@
 }
 
 .nav-avatar-btn:hover::after {
-  background: rgba(255,255,255,.15);
+  background: var(--bg-active);
 }
 
 .nav-avatar-btn:hover {
@@ -537,8 +537,8 @@
 .feedback-type-row { display: flex; gap: 6px; margin-bottom: 10px; }
 .feedback-type-btn {
   flex: 1; padding: 6px; border-radius: 8px; font-size: 12px; font-weight: 600;
-  background: rgba(255,255,255,.05); color: var(--text-secondary);
-  border: 1px solid rgba(255,255,255,.08); cursor: pointer; transition: all .15s;
+  background: var(--bg-hover); color: var(--text-secondary);
+  border: 1px solid var(--border); cursor: pointer; transition: all .15s;
 }
 .feedback-type-btn.active { background: var(--accent-subtle); color: var(--accent); border-color: var(--accent); }
 .feedback-input, .feedback-textarea {
@@ -555,7 +555,7 @@
 .feedback-history { margin-top: 16px; border-top: 1px solid var(--border); padding-top: 12px; }
 .feedback-history-title { font-size: 12px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 8px; }
 .feedback-item {
-  padding: 8px; background: rgba(255,255,255,.03); border-radius: 8px; margin-bottom: 6px;
+  padding: 8px; background: var(--bg-elevated); border-radius: 8px; margin-bottom: 6px;
 }
 .feedback-item-header { display: flex; gap: 6px; margin-bottom: 4px; }
 .feedback-item-type, .feedback-item-status {
@@ -572,7 +572,7 @@
 .feedback-item-title { font-size: 13px; color: var(--text-primary); display: block; }
 .feedback-item-reply {
   font-size: 12px; color: var(--text-secondary); margin-top: 4px;
-  padding: 6px 8px; background: rgba(255,255,255,.04); border-radius: 6px;
+  padding: 6px 8px; background: var(--bg-elevated); border-radius: 6px;
   border-left: 2px solid var(--accent);
 }
 </style>

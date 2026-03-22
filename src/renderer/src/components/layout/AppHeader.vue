@@ -151,7 +151,7 @@ const initials = computed(() => {
   padding: 2px 5px;
   border-radius: 3px;
   border: 1px solid var(--border);
-  background: rgba(255,255,255,.04);
+  background: var(--bg-elevated);
   color: var(--text-muted);
 }
 
