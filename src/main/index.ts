@@ -1,4 +1,4 @@
-import { app, BrowserWindow, dialog } from 'electron'
+import { app, BrowserWindow, dialog, ipcMain, nativeImage } from 'electron'
 import { join } from 'path'
 import { autoUpdater } from 'electron-updater'
 
@@ -99,6 +99,22 @@ function createWindow(): void {
   // Push événements maximize/unmaximize vers le renderer
   win.on('maximize',   () => win.webContents.send('window:maximizeState', true))
   win.on('unmaximize', () => win.webContents.send('window:maximizeState', false))
+
+  // Badge notification sur l'icone de la barre des taches (Windows)
+  const badgePath = join(__dirname, '../../resources/badge-notif.png')
+  const badgeIcon = nativeImage.createFromPath(badgePath)
+
+  ipcMain.on('badge:set', () => {
+    if (!win.isDestroyed()) {
+      win.setOverlayIcon(badgeIcon, 'Nouvelles notifications')
+      win.flashFrame(true)
+    }
+  })
+  ipcMain.on('badge:clear', () => {
+    if (!win.isDestroyed()) {
+      win.setOverlayIcon(null, '')
+    }
+  })
 
   // En développement, electron-vite fournit l'URL du serveur Vite (HMR)
   if (process.env['ELECTRON_RENDERER_URL']) {

@@ -148,8 +148,14 @@ function invoke(channel: string, ...args: unknown[]): Promise<unknown> {
   return ipcRenderer.invoke(channel, ...args)
 }
 
+// ─── Badge barre des taches ──────────────────────────────────────────────────
+function setBadge()   { ipcRenderer.send('badge:set') }
+function clearBadge() { ipcRenderer.send('badge:clear') }
+
 // ─── Exposition à la page renderer ───────────────────────────────────────────
 contextBridge.exposeInMainWorld('api', {
+  setBadge,
+  clearBadge,
 
   // ── Auth / session ──────────────────────────────────────────────────────────
   setToken: (token: string) => {

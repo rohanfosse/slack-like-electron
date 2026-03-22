@@ -17,6 +17,10 @@ interface IpcResponse<T> {
 declare global {
   interface Window {
     api: {
+      // Badge barre des taches (Windows)
+      setBadge(): void
+      clearBadge(): void
+
       // Auth / session
       setToken(token: string): void
 

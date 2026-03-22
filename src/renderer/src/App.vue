@@ -181,6 +181,15 @@
     return dmCount + mentionCount
   })
 
+  // Badge barre des taches Windows
+  watchEffect(() => {
+    if (totalUnreadBadge.value > 0) {
+      window.api?.setBadge?.()
+    } else {
+      window.api?.clearBadge?.()
+    }
+  })
+
   watchEffect(() => {
     const section = ROUTE_LABELS[route.name as string] ?? 'Cursus'
     const count = totalUnreadBadge.value
@@ -293,7 +302,8 @@
       appStore.notificationHistory.unshift(entry)
       if (appStore.notificationHistory.length > 50) appStore.notificationHistory.length = 50
 
-      // Notification navigateur si app en arrière-plan
+      // Badge barre des taches + notification navigateur
+      window.api?.setBadge?.()
       if (document.hidden && 'Notification' in window && Notification.permission === 'granted') {
         new Notification('Cursus - Nouvelle note', { body: label, icon: '/assets/icon-192.png' })
       }

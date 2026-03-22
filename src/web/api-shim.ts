@@ -218,6 +218,10 @@ async function importStudentsBrowser(promoId: number): Promise<unknown> {
 // ─── Exposition de window.api ─────────────────────────────────────────────────
 ;(window as unknown as { api: unknown }).api = {
 
+  // ── Badge (no-op en web) ────────────────────────────────────────────────────
+  setBadge() {},
+  clearBadge() {},
+
   // ── Auth / session ──────────────────────────────────────────────────────────
   setToken(token: string) { jwtToken = token; connectSocket(token) },
 
