@@ -284,9 +284,7 @@
     <main class="main-wrapper" :class="{ 'main-with-banner': appStore.isSimulating || !appStore.isOnline }">
       <!-- Vue active (messages / travaux / documents) -->
       <RouterView v-slot="{ Component }">
-        <Transition name="route-fade" mode="out-in">
-          <component :is="Component" :key="$route.path" :toggle-sidebar="toggleSidebar" />
-        </Transition>
+        <component :is="Component" :key="$route.path" :toggle-sidebar="toggleSidebar" />
       </RouterView>
     </main>
     </div><!-- /.app-columns -->
