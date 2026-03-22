@@ -35,6 +35,63 @@
     right: 16px;
     z-index: 10000;
     overflow: hidden;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 16px;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 600;
+    font-family: var(--font, sans-serif);
+    color: #fff;
+    background: #2a2b2d;
+    border: 1px solid rgba(255,255,255,.1);
+    box-shadow: 0 6px 20px rgba(0,0,0,.35);
+    max-width: 380px;
+    backdrop-filter: blur(8px);
+  }
+
+  /* Type variants */
+  [class~="toast-success"] {
+    background: rgba(46,204,113,.15);
+    border-color: rgba(46,204,113,.3);
+    color: #6fcf97;
+  }
+  [class~="toast-error"] {
+    background: rgba(231,76,60,.15);
+    border-color: rgba(231,76,60,.3);
+    color: #eb5757;
+  }
+  [class~="toast-warning"] {
+    background: rgba(243,156,18,.15);
+    border-color: rgba(243,156,18,.3);
+    color: #f2c94c;
+  }
+  [class~="toast-info"] {
+    background: rgba(74,144,217,.15);
+    border-color: rgba(74,144,217,.3);
+    color: #7eb8ff;
+  }
+
+  .toast-msg {
+    flex: 1;
+    line-height: 1.35;
+  }
+
+  .toast-undo-btn {
+    font-size: 12px;
+    font-weight: 700;
+    padding: 4px 10px;
+    border: 1px solid rgba(255,255,255,.2);
+    border-radius: 6px;
+    background: rgba(255,255,255,.08);
+    color: #fff;
+    cursor: pointer;
+    font-family: var(--font, sans-serif);
+    transition: background .15s;
+  }
+  .toast-undo-btn:hover {
+    background: rgba(255,255,255,.15);
   }
 
   .toast-enter-active {
