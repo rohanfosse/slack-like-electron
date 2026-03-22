@@ -39,6 +39,11 @@
     Object.values(appStore.mentionChannels).reduce((a, b) => a + b, 0),
   )
 
+  const msgBadgeCount = computed(() => {
+    const dmCount = Object.values(appStore.unreadDms ?? {}).reduce((a: number, b) => a + (b as number), 0)
+    return dmCount + mentionCount.value
+  })
+
   // ── Feedback ────────────────────────────────────────────────────────────────
   const feedbackTypes = [
     { id: 'bug',         label: 'Bug' },
@@ -132,7 +137,10 @@
       aria-label="Section Messages"
       @click="router.push('/messages')"
     >
-      <MessageSquare :size="20" />
+      <span class="nav-icon-wrap">
+        <MessageSquare :size="20" />
+        <span v-if="msgBadgeCount > 0" class="nav-msg-badge">{{ msgBadgeCount > 9 ? '9+' : msgBadgeCount }}</span>
+      </span>
       <span class="nav-label">Messages</span>
     </button>
 
@@ -320,6 +328,33 @@
   background: #ef4444;
   border: 2px solid var(--bg-primary, #111214);
   animation: pulse-dot 2s infinite;
+}
+
+/* ── Message badge (DMs + mentions) ── */
+.nav-icon-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.nav-msg-badge {
+  position: absolute;
+  top: -6px;
+  right: -8px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  font-size: 9px;
+  font-weight: 700;
+  font-family: 'JetBrains Mono', 'SF Mono', monospace;
+  background: #ef4444;
+  color: #fff;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--bg-rail, #161819);
+  line-height: 1;
 }
 
 /* ── Bouton recherche rapide ── */
