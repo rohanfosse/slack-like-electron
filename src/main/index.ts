@@ -51,7 +51,7 @@ function createWindow(): void {
       contextIsolation: true,
       nodeIntegration: false,
       sandbox: true,
-      devTools: !app.isPackaged,
+      devTools: true,
     },
   })
 
