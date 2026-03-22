@@ -18,11 +18,15 @@
 .db-tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--border); padding-bottom: 0; }
 .db-tab {
   display: inline-flex; align-items: center; gap: 6px;
-  padding: 8px 14px; border: none; background: transparent;
+  padding: 8px 14px;
+  border: none; border-top: none; border-left: none; border-right: none;
+  border-bottom: 2px solid transparent;
+  background: transparent; outline: none;
   color: var(--text-secondary); font-family: var(--font);
   font-size: 13px; font-weight: 600; cursor: pointer;
-  border-bottom: 2px solid transparent; margin-bottom: -1px; border-radius: 0;
+  margin-bottom: -1px; border-radius: 0;
   transition: color var(--t-fast), border-color var(--t-fast);
+  -webkit-appearance: none; appearance: none;
 }
 .db-tab:hover { color: var(--text-primary); }
 .db-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
