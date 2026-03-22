@@ -14,7 +14,7 @@ export const THEMES: { id: ThemeId; label: string; icon: typeof Moon; colors: st
   { id: 'light',  label: 'Cr\u00e8me',   icon: Sun,      colors: ['#e4ddd2', '#ede7dc', '#f8f5f0'], accent: '#b06820' },
   { id: 'night',  label: 'Nuit',    icon: Moon,     colors: ['#050710', '#08091a', '#0a0c18'], accent: '#7B8CDE' },
   { id: 'marine', label: 'Marine',  icon: Waves,    colors: ['#0a1420', '#0f1d35', '#152540'], accent: '#64B5F6' },
-  { id: 'cursus', label: 'Cursus',  icon: Sparkles, colors: ['#e3e8f0', '#edf1f7', '#f7f8fb'], accent: '#3b82f6' },
+  { id: 'cursus', label: 'Cursus',  icon: Sparkles, colors: ['#d0d8e8', '#e2e8f2', '#f5f7fb'], accent: '#3b82f6' },
 ]
 
 function applyTheme(theme: string) {

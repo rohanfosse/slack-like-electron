@@ -3,27 +3,27 @@
    Clair moderne, bleu vif, inspiration landing page
 ════════════════════════════════════════════ */
 body.cursus {
-  /* Fonds - tons frais bleu-gris */
-  --bg-rail:     #e3e8f0;
-  --bg-sidebar:  #edf1f7;
-  --bg-main:     #f7f8fb;
+  /* Fonds - hiérarchie visuelle marquée */
+  --bg-rail:     #d0d8e8;
+  --bg-sidebar:  #e2e8f2;
+  --bg-main:     #f5f7fb;
   --bg-input:    #ffffff;
-  --bg-hover:    rgba(59, 130, 246, .07);
-  --bg-active:   rgba(59, 130, 246, .14);
+  --bg-hover:    rgba(59, 130, 246, .08);
+  --bg-active:   rgba(59, 130, 246, .16);
   --bg-modal:    #ffffff;
   --bg-elevated: #ffffff;
 
   /* Alias legacy */
-  --bg-darkest:  #d4dae6;
-  --bg-dark:     #edf1f7;
-  --bg-medium:   #f7f8fb;
-  --bg-light:    #e3e8f0;
-  --bg-primary:  #d4dae6;
+  --bg-darkest:  #bcc6da;
+  --bg-dark:     #e2e8f2;
+  --bg-medium:   #f5f7fb;
+  --bg-light:    #d0d8e8;
+  --bg-primary:  #bcc6da;
 
   /* Texte */
-  --text-primary:   #111827;
-  --text-secondary: #4b5563;
-  --text-muted:     #9ca3af;
+  --text-primary:   #0f172a;
+  --text-secondary: #475569;
+  --text-muted:     #94a3b8;
 
   /* Accent - bleu landing */
   --accent:        #3b82f6;
@@ -32,16 +32,16 @@ body.cursus {
   --accent-light:  #60a5fa;
   --accent-subtle: rgba(59, 130, 246, .10);
 
-  /* Bordures */
-  --border:       rgba(0, 0, 0, .08);
-  --border-input: rgba(0, 0, 0, .15);
+  /* Bordures - plus visibles */
+  --border:       rgba(59, 130, 246, .12);
+  --border-input: rgba(59, 130, 246, .22);
 
-  /* Ombres - douces */
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, .04);
-  --shadow-md: 0 4px 12px rgba(0, 0, 0, .06);
-  --shadow-lg: 0 8px 30px rgba(0, 0, 0, .10);
-  --shadow-card: 0 1px 3px rgba(0, 0, 0, .06), 0 1px 2px rgba(0, 0, 0, .04);
-  --shadow-card-hover: 0 8px 25px rgba(0, 0, 0, .10), 0 3px 10px rgba(0, 0, 0, .06);
+  /* Ombres - légèrement teintées bleu */
+  --shadow-sm: 0 1px 2px rgba(15, 23, 42, .06);
+  --shadow-md: 0 4px 12px rgba(15, 23, 42, .08);
+  --shadow-lg: 0 8px 30px rgba(15, 23, 42, .12);
+  --shadow-card: 0 1px 3px rgba(15, 23, 42, .08), 0 1px 2px rgba(15, 23, 42, .05);
+  --shadow-card-hover: 0 8px 25px rgba(15, 23, 42, .12), 0 3px 10px rgba(15, 23, 42, .08);
 
   /* Deadlines */
   --deadline-ok-bg:     rgba(5, 150, 105, .10);
@@ -67,6 +67,6 @@ body.cursus {
 }
 
 /* Scrollbars cursus */
-body.cursus ::-webkit-scrollbar-thumb       { background: rgba(0, 0, 0, .15); }
-body.cursus ::-webkit-scrollbar-thumb:hover { background: rgba(0, 0, 0, .25); }
-body.cursus * { scrollbar-color: rgba(0, 0, 0, .15) transparent; }
+body.cursus ::-webkit-scrollbar-thumb       { background: rgba(59, 130, 246, .18); }
+body.cursus ::-webkit-scrollbar-thumb:hover { background: rgba(59, 130, 246, .30); }
+body.cursus * { scrollbar-color: rgba(59, 130, 246, .18) transparent; }
