@@ -1,5 +1,5 @@
 /**
- * Routes admin — Maintenance (nettoyage, backups, purge, seed reset, infos DB)
+ * Routes admin - Maintenance (nettoyage, backups, purge, seed reset, infos DB)
  */
 const router  = require('express').Router()
 const queries = require('../../db/index')

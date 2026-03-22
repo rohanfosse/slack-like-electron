@@ -1,4 +1,4 @@
-/** StudentDepositForm.vue — Inline deposit form: file/link toggle, picker, submit */
+/** StudentDepositForm.vue - Inline deposit form: file/link toggle, picker, submit */
 <script setup lang="ts">
 import {
   CheckCircle2, Upload, Link2, X, FileText, LayoutList, Loader2,

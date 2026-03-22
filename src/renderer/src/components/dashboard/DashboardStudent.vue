@@ -1,6 +1,6 @@
 /**
  * DashboardStudent.vue
- * Orchestrator for the student dashboard — composes header, urgent actions,
+ * Orchestrator for the student dashboard - composes header, urgent actions,
  * stats, projects grid, and frise sub-components.
  */
 <script setup lang="ts">
@@ -84,7 +84,7 @@ const emit = defineEmits<{
     <!-- Compact welcome banner -->
     <div v-if="showOnboarding" class="db-welcome-banner">
       <div class="db-welcome-text">
-        <strong>Bienvenue sur Cursus</strong> — Retrouvez vos devoirs, messages et documents au même endroit.
+        <strong>Bienvenue sur Cursus</strong> - Retrouvez vos devoirs, messages et documents au même endroit.
       </div>
       <button class="db-welcome-dismiss" @click="emit('dismissOnboarding')">OK</button>
     </div>

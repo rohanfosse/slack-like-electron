@@ -138,7 +138,7 @@ const cachedProjectStats = computed(() => {
     <p>Vos devoirs apparaîtront ici dès qu'un enseignant en créera pour votre promotion.</p>
   </div>
 
-  <!-- ══ ACCUEIL étudiant (aucun projet sélectionné) — même layout que prof ══ -->
+  <!-- ══ ACCUEIL étudiant (aucun projet sélectionné) - même layout que prof ══ -->
   <div v-else-if="isAccueil" class="dv-page">
 
     <!-- ── Stat pills ──────────────────────────────────────────────── -->
@@ -232,7 +232,7 @@ const cachedProjectStats = computed(() => {
     </div>
   </div>
 
-  <!-- ══ VUE PROJET (un projet sélectionné) — groupes urgence + dépôt ══ -->
+  <!-- ══ VUE PROJET (un projet sélectionné) - groupes urgence + dépôt ══ -->
   <template v-else>
     <!-- Stats bar (sticky) -->
     <StudentStatsBar v-if="filteredDevoirs.length > 0" :stats="studentStats" class="sticky-stats" />

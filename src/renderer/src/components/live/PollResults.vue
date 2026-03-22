@@ -1,4 +1,4 @@
-<!-- PollResults.vue — Liste des réponses textuelles groupées par fréquence -->
+<!-- PollResults.vue - Liste des réponses textuelles groupées par fréquence -->
 <script setup lang="ts">
   import type { LiveResults } from '@/types'
 
@@ -10,7 +10,7 @@
     <div class="poll-total">{{ results.totalResponses }} réponse{{ results.totalResponses > 1 ? 's' : '' }}</div>
     <TransitionGroup name="poll-item" tag="div" class="poll-list">
       <div v-for="(row, i) in results.data" :key="row.text ?? row.option ?? i" class="poll-row">
-        <span class="poll-text">{{ row.text ?? row.option ?? '—' }}</span>
+        <span class="poll-text">{{ row.text ?? row.option ?? '-' }}</span>
         <span class="poll-badge">{{ row.count }}</span>
       </div>
     </TransitionGroup>

@@ -114,7 +114,7 @@ describe('useBentoPrefs', () => {
     const { prefs } = useBentoPrefs()
     expect(prefs.value.order).toContain('w3')
     expect(prefs.value.order).toContain('w1')
-    // w4 was missing from stored prefs — should be added according to defaultEnabled (false → hidden)
+    // w4 was missing from stored prefs - should be added according to defaultEnabled (false → hidden)
     expect(prefs.value.hidden).toContain('w4')
   })
 

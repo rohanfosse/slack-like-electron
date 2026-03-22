@@ -1,5 +1,5 @@
 /**
- * BentoCustomizer.vue — Panneau de personnalisation du bento étudiant.
+ * BentoCustomizer.vue - Panneau de personnalisation du bento étudiant.
  * Permet d'activer/désactiver et réordonner les widgets.
  */
 <script setup lang="ts">

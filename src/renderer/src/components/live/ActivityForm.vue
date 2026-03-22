@@ -1,4 +1,4 @@
-<!-- ActivityForm.vue — Formulaire de création d'activité Live (QCM / Sondage / Nuage) -->
+<!-- ActivityForm.vue - Formulaire de création d'activité Live (QCM / Sondage / Nuage) -->
 <script setup lang="ts">
   import { ref } from 'vue'
   import { ListChecks, MessageCircle, Cloud, Plus, X } from 'lucide-vue-next'

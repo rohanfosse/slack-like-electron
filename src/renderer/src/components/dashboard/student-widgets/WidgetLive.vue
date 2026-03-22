@@ -1,5 +1,5 @@
 /**
- * WidgetLive.vue — Bannière de session live en cours.
+ * WidgetLive.vue - Bannière de session live en cours.
  */
 <script setup lang="ts">
 import { computed, onMounted } from 'vue'

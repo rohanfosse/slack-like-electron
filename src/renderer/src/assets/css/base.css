@@ -337,7 +337,7 @@ html, body {
   outline-offset: 2px;
 }
 
-/* Scrollbars — transparent by default, visible on hover */
+/* Scrollbars - transparent by default, visible on hover */
 ::-webkit-scrollbar         { width: 5px; height: 5px; }
 ::-webkit-scrollbar-track   { background: transparent; }
 ::-webkit-scrollbar-thumb   { background: transparent; border-radius: 3px; transition: background .2s; }

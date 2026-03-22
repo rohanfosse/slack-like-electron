@@ -1,5 +1,5 @@
 /**
- * useSwipeNav — composable pour navigation par swipe (mobile drawer sidebar).
+ * useSwipeNav - composable pour navigation par swipe (mobile drawer sidebar).
  * Swipe droite = ouvrir la sidebar, swipe gauche = fermer.
  * Actif uniquement sur les écrans tactiles < 768px.
  */
@@ -37,10 +37,10 @@ export function useSwipeNav(
     if (Math.abs(dy) > Math.abs(dx)) return
 
     if (dx > SWIPE_THRESHOLD && !sidebarOpen.value && startX < EDGE_ZONE) {
-      // Swipe droite depuis le bord — ouvrir
+      // Swipe droite depuis le bord - ouvrir
       toggleSidebar()
     } else if (dx < -SWIPE_THRESHOLD && sidebarOpen.value) {
-      // Swipe gauche — fermer
+      // Swipe gauche - fermer
       toggleSidebar()
     }
   }

@@ -1,5 +1,5 @@
 /**
- * Routes admin — Journal d'audit
+ * Routes admin - Journal d'audit
  */
 const router = require('express').Router()
 

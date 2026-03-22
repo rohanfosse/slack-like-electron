@@ -1,5 +1,5 @@
 /**
- * Routes admin — Import de données (examens, rappels, seed promos)
+ * Routes admin - Import de données (examens, rappels, seed promos)
  */
 const router = require('express').Router()
 const fs     = require('fs')

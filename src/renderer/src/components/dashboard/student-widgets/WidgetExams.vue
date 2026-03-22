@@ -1,5 +1,5 @@
 /**
- * WidgetExams.vue — Liste des prochains CCTLs et études de cas.
+ * WidgetExams.vue - Liste des prochains CCTLs et études de cas.
  */
 <script setup lang="ts">
 import { Award } from 'lucide-vue-next'

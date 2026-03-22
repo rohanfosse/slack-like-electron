@@ -165,7 +165,7 @@
       <span class="nav-label">Documents</span>
     </button>
 
-    <!-- Live indicator pour étudiants — visible uniquement quand invitation active -->
+    <!-- Live indicator pour étudiants - visible uniquement quand invitation active -->
     <button
       v-if="!appStore.isStaff && liveStore.currentSession && liveStore.currentSession.status !== 'ended'"
       class="nav-btn"

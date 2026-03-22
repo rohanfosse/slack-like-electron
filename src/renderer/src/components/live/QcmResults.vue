@@ -1,4 +1,4 @@
-<!-- QcmResults.vue — Barres horizontales animées pour les résultats QCM -->
+<!-- QcmResults.vue - Barres horizontales animées pour les résultats QCM -->
 <script setup lang="ts">
   import { computed } from 'vue'
   import type { LiveResults } from '@/types'

@@ -1,5 +1,5 @@
 /**
- * WidgetPromoActivity.vue — Ligne compacte d'activite de la promo.
+ * WidgetPromoActivity.vue - Ligne compacte d'activite de la promo.
  * Affiche le nombre d'utilisateurs en ligne et de rendus aujourd'hui.
  */
 <script setup lang="ts">
@@ -18,7 +18,7 @@ const rendusToday = computed(() => {
   const todayMs = today.getTime()
   return travauxStore.devoirs.filter((d) => {
     if (!d.depot_id) return false
-    // If the devoir has a depot_id, it was submitted — we count as today's activity
+    // If the devoir has a depot_id, it was submitted - we count as today's activity
     // We don't have submitted_at on Devoir, so approximate via deadline proximity
     return true
   }).length

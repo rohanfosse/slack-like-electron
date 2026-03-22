@@ -1,4 +1,4 @@
-<!-- StudentLiveView.vue — Vue étudiant pour le Live Quiz interactif -->
+<!-- StudentLiveView.vue - Vue étudiant pour le Live Quiz interactif -->
 <script setup lang="ts">
   import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
   import { Radio, CheckCircle2, Send, LogOut } from 'lucide-vue-next'
@@ -206,7 +206,7 @@
         <span class="responded-sub">Les résultats apparaîtront bientôt</span>
       </div>
 
-      <!-- Activity closed — show results -->
+      <!-- Activity closed - show results -->
       <div v-else-if="activity.status === 'closed' && liveStore.results" class="results-student">
         <h3 class="results-label">Résultats</h3>
         <QcmResults v-if="activity.type === 'qcm'" :results="liveStore.results" />

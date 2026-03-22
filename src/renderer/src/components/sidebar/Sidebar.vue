@@ -121,7 +121,7 @@
         const ago = Date.now() - new Date(r.submitted_at).getTime()
         const mins = Math.floor(ago / 60_000)
         const label = mins < 60 ? `il y a ${mins}min` : mins < 1440 ? `il y a ${Math.floor(mins / 60)}h` : `il y a ${Math.floor(mins / 1440)}j`
-        return { id: r.id, text: `${r.student_name} — ${r.travail_title ?? 'devoir'}`, time: label }
+        return { id: r.id, text: `${r.student_name} - ${r.travail_title ?? 'devoir'}`, time: label }
       })
   })
 

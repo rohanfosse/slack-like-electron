@@ -1,4 +1,4 @@
-/** StudentProjetDevoirsList.vue — Grouped devoirs list (a rendre, evenements, rendus) */
+/** StudentProjetDevoirsList.vue - Grouped devoirs list (a rendre, evenements, rendus) */
 <script setup lang="ts">
 import { ref } from 'vue'
 import {

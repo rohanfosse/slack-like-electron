@@ -1,5 +1,5 @@
 /**
- * WidgetProject.vue — Carte du projet actif avec progression MicroRing.
+ * WidgetProject.vue - Carte du projet actif avec progression MicroRing.
  */
 <script setup lang="ts">
 import { FolderOpen, ChevronRight, Clock } from 'lucide-vue-next'

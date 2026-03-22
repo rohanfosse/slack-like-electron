@@ -1,5 +1,5 @@
 /**
- * CountdownArc.vue — SVG arc showing elapsed time toward a deadline.
+ * CountdownArc.vue - SVG arc showing elapsed time toward a deadline.
  * Color: green <50%, orange 50-75%, red >75%.
  * Label inside: "2j" or "14h" in monospace.
  */

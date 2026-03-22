@@ -1,4 +1,4 @@
-/** StudentProjetStats.vue — Stats chips, progress bar, and deadline banner */
+/** StudentProjetStats.vue - Stats chips, progress bar, and deadline banner */
 <script setup lang="ts">
 import { CheckCircle2, AlertTriangle, Award, FolderOpen, Hash } from 'lucide-vue-next'
 

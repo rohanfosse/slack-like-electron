@@ -1,5 +1,5 @@
 /**
- * WidgetSoutenances.vue — Liste des prochaines soutenances.
+ * WidgetSoutenances.vue - Liste des prochaines soutenances.
  */
 <script setup lang="ts">
 import { Mic } from 'lucide-vue-next'

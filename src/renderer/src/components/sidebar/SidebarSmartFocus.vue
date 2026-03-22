@@ -1,5 +1,5 @@
 /**
- * SidebarSmartFocus — "À LA UNE" section showing urgent/unread channels.
+ * SidebarSmartFocus - "À LA UNE" section showing urgent/unread channels.
  * Hidden when empty. Flame icon in header.
  */
 <script setup lang="ts">

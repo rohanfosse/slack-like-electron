@@ -1,5 +1,5 @@
 /**
- * Routes admin — Modération de contenu (messages, canaux, signalements)
+ * Routes admin - Modération de contenu (messages, canaux, signalements)
  */
 const router  = require('express').Router()
 const queries = require('../../db/index')

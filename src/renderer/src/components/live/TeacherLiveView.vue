@@ -1,4 +1,4 @@
-<!-- TeacherLiveView.vue — Vue enseignant pour le Live Quiz interactif -->
+<!-- TeacherLiveView.vue - Vue enseignant pour le Live Quiz interactif -->
 <script setup lang="ts">
   import { ref, computed, onMounted, onUnmounted } from 'vue'
   import {

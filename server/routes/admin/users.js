@@ -1,5 +1,5 @@
 /**
- * Routes admin — Gestion des utilisateurs (CRUD, reset mot de passe)
+ * Routes admin - Gestion des utilisateurs (CRUD, reset mot de passe)
  */
 const router  = require('express').Router()
 const queries = require('../../db/index')

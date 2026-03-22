@@ -274,7 +274,7 @@
 
       // Notification navigateur si app en arrière-plan
       if (document.hidden && 'Notification' in window && Notification.permission === 'granted') {
-        new Notification('Cursus — Nouvelle note', { body: label, icon: '/assets/icon-192.png' })
+        new Notification('Cursus - Nouvelle note', { body: label, icon: '/assets/icon-192.png' })
       }
     })
   })
@@ -295,7 +295,7 @@
   <!-- Modal de confirmation global -->
   <ConfirmModal />
 
-  <!-- Invitation Live (étudiants) — flottante en haut à droite -->
+  <!-- Invitation Live (étudiants) - flottante en haut à droite -->
   <Transition name="live-invite-slide">
     <div v-if="liveInvite" class="live-invite-popup">
       <div class="live-invite-content">
@@ -329,7 +329,7 @@
 
     <!-- Bandeau hors-ligne -->
     <div v-if="!appStore.isOnline || isOffline" class="offline-banner offline-banner-yellow">
-      <span>Connexion perdue — vos modifications seront envoyées à la reconnexion</span>
+      <span>Connexion perdue - vos modifications seront envoyées à la reconnexion</span>
     </div>
 
     <!-- Bandeau reconnexion socket -->

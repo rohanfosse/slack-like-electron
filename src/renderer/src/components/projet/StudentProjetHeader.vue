@@ -1,4 +1,4 @@
-/** StudentProjetHeader.vue — Breadcrumb, back button, and project identity */
+/** StudentProjetHeader.vue - Breadcrumb, back button, and project identity */
 <script setup lang="ts">
 import { computed } from 'vue'
 import { ChevronLeft, Layers, CalendarDays, Users } from 'lucide-vue-next'

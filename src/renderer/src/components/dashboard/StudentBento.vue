@@ -1,5 +1,5 @@
 /**
- * StudentBento.vue — Accueil personnalisable du dashboard étudiant.
+ * StudentBento.vue - Accueil personnalisable du dashboard étudiant.
  * Orchestre les widgets via useBentoPrefs : l'étudiant choisit
  * quels widgets afficher et dans quel ordre.
  */
@@ -153,7 +153,7 @@ const showAllClear = computed(() =>
     <!-- All clear -->
     <div v-if="showAllClear" class="sa-card sa-ok">
       <Smile :size="20" class="sa-ok-icon" />
-      <span class="sa-ok-text">Aucune échéance à venir — tout est à jour</span>
+      <span class="sa-ok-text">Aucune échéance à venir - tout est à jour</span>
     </div>
 
   </div>

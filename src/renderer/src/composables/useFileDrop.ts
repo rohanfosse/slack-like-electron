@@ -1,5 +1,5 @@
 /**
- * Composable drag & drop de fichiers — fonctionne sur Electron et Web.
+ * Composable drag & drop de fichiers - fonctionne sur Electron et Web.
  * Utilisable dans n'importe quelle vue pour déposer un document.
  */
 import { ref } from 'vue'

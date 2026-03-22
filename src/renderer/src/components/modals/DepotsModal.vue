@@ -294,7 +294,7 @@
         </span>
       </div>
 
-      <!-- Stats rapides — badges colorés -->
+      <!-- Stats rapides - badges colorés -->
       <div class="depots-quick-stats">
         <span class="stat-badge stat-total">{{ totalStudents }} rendus</span>
         <span class="stat-badge stat-noted">{{ notedCount }} notés</span>

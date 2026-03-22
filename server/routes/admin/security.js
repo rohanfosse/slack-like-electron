@@ -1,5 +1,5 @@
 /**
- * Routes admin — Sécurité (tentatives de connexion, brute force)
+ * Routes admin - Sécurité (tentatives de connexion, brute force)
  */
 const router = require('express').Router()
 

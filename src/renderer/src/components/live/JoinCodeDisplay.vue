@@ -1,4 +1,4 @@
-<!-- JoinCodeDisplay.vue — Affichage grand format du code de session Live -->
+<!-- JoinCodeDisplay.vue - Affichage grand format du code de session Live -->
 <script setup lang="ts">
   import { ref } from 'vue'
   import { Copy, Check } from 'lucide-vue-next'

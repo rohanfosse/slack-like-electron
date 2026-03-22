@@ -256,7 +256,7 @@
           <!-- Résultats -->
           <ul ref="listEl" class="cmd-results">
             <li v-if="results.length" class="cmd-results-count">
-              <span v-if="results.length >= 10">10+ résultats — affinez votre recherche</span>
+              <span v-if="results.length >= 10">10+ résultats - affinez votre recherche</span>
               <span v-else>{{ results.length }} résultat{{ results.length > 1 ? 's' : '' }}</span>
             </li>
             <template v-if="results.length">

@@ -1,5 +1,5 @@
 /**
- * Routes admin — Statistiques applicatives et heatmap
+ * Routes admin - Statistiques applicatives et heatmap
  */
 const router  = require('express').Router()
 const queries = require('../../db/index')

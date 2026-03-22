@@ -1,5 +1,5 @@
 /**
- * SidebarStudent — Full student sidebar with smart focus, next action,
+ * SidebarStudent - Full student sidebar with smart focus, next action,
  * contextual channel/DM/project lists, and focus mode toggle.
  */
 <script setup lang="ts">
@@ -458,7 +458,7 @@ watch(() => appStore.currentUser?.id, () => load())
   white-space: nowrap;
 }
 
-/* ── Channel categories (scoped — not inherited from Sidebar.vue) ── */
+/* ── Channel categories (scoped - not inherited from Sidebar.vue) ── */
 .sidebar-section-header {
   display: flex;
   align-items: center;

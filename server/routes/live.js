@@ -1,4 +1,4 @@
-/** Routes Live Quiz — sessions interactives en direct */
+/** Routes Live Quiz - sessions interactives en direct */
 const router  = require('express').Router()
 const queries = require('../db/index')
 
@@ -22,7 +22,7 @@ function throttledResultsEmit(io, activityId, promoId) {
 
 // ─── Sessions ────────────────────────────────────────────────────────────────
 
-// POST /sessions — créer une session
+// POST /sessions - créer une session
 router.post('/sessions', wrap((req) => {
   const { promoId, title } = req.body
   const teacherId = req.user?.id
@@ -30,26 +30,26 @@ router.post('/sessions', wrap((req) => {
   return queries.createSession({ teacherId, promoId, title })
 }))
 
-// GET /sessions/:id — récupérer une session + activités
+// GET /sessions/:id - récupérer une session + activités
 router.get('/sessions/:id', wrap((req) => {
   const session = queries.getSession(Number(req.params.id))
   if (!session) throw new Error('Session introuvable')
   return session
 }))
 
-// GET /sessions/code/:code — lookup par code
+// GET /sessions/code/:code - lookup par code
 router.get('/sessions/code/:code', wrap((req) => {
   const session = queries.getSessionByCode(req.params.code)
   if (!session) throw new Error('Session introuvable')
   return session
 }))
 
-// GET /sessions/promo/:promoId/active — session active pour une promo
+// GET /sessions/promo/:promoId/active - session active pour une promo
 router.get('/sessions/promo/:promoId/active', wrap((req) => {
   return queries.getActiveSessionForPromo(Number(req.params.promoId))
 }))
 
-// PATCH /sessions/:id/status — mettre à jour le statut
+// PATCH /sessions/:id/status - mettre à jour le statut
 router.patch('/sessions/:id/status', (req, res) => {
   try {
     const { status } = req.body
@@ -82,7 +82,7 @@ router.delete('/sessions/:id', wrap((req) => {
 
 // ─── Activities ──────────────────────────────────────────────────────────────
 
-// POST /sessions/:id/activities — ajouter une activité
+// POST /sessions/:id/activities - ajouter une activité
 router.post('/sessions/:id/activities', wrap((req) => {
   const { type, title, options, multi, maxWords, position } = req.body
   if (!type || !title) throw new Error('type et title requis')
@@ -91,7 +91,7 @@ router.post('/sessions/:id/activities', wrap((req) => {
   })
 }))
 
-// PATCH /activities/:id — modifier une activité
+// PATCH /activities/:id - modifier une activité
 router.patch('/activities/:id', wrap((req) => {
   return queries.updateActivity(Number(req.params.id), req.body)
 }))
@@ -102,7 +102,7 @@ router.delete('/activities/:id', wrap((req) => {
   return null
 }))
 
-// PATCH /activities/:id/status — push/close une activité
+// PATCH /activities/:id/status - push/close une activité
 router.patch('/activities/:id/status', (req, res) => {
   try {
     const { status } = req.body
@@ -127,7 +127,7 @@ router.patch('/activities/:id/status', (req, res) => {
 
 // ─── Responses ───────────────────────────────────────────────────────────────
 
-// POST /activities/:id/respond — soumettre une réponse
+// POST /activities/:id/respond - soumettre une réponse
 router.post('/activities/:id/respond', (req, res) => {
   try {
     const { studentId, answer } = req.body
@@ -151,7 +151,7 @@ router.post('/activities/:id/respond', (req, res) => {
   } catch (err) { res.status(400).json({ ok: false, error: err.message }) }
 })
 
-// GET /activities/:id/results — résultats agrégés
+// GET /activities/:id/results - résultats agrégés
 router.get('/activities/:id/results', wrap((req) => {
   return queries.getActivityResultsAggregated(Number(req.params.id))
 }))

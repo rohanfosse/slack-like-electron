@@ -1,4 +1,4 @@
-/** Modèle Live Quiz — sessions interactives en direct (QCM, sondages, nuages de mots) */
+/** Modèle Live Quiz - sessions interactives en direct (QCM, sondages, nuages de mots) */
 const { getDb } = require('../connection');
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────

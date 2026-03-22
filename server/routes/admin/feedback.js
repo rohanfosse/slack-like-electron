@@ -1,5 +1,5 @@
 /**
- * Routes admin — Feedback utilisateurs (CRUD, stats)
+ * Routes admin - Feedback utilisateurs (CRUD, stats)
  */
 const router  = require('express').Router()
 const queries = require('../../db/index')

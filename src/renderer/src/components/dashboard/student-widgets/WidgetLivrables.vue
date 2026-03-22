@@ -1,5 +1,5 @@
 /**
- * WidgetLivrables.vue — Liste des prochains livrables à rendre.
+ * WidgetLivrables.vue - Liste des prochains livrables à rendre.
  */
 <script setup lang="ts">
 import { FileText } from 'lucide-vue-next'

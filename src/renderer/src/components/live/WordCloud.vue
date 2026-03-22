@@ -1,4 +1,4 @@
-<!-- WordCloud.vue — Nuage de mots CSS avec tailles proportionnelles et couleurs -->
+<!-- WordCloud.vue - Nuage de mots CSS avec tailles proportionnelles et couleurs -->
 <script setup lang="ts">
   import { computed } from 'vue'
   import type { LiveResults } from '@/types'
@@ -15,7 +15,7 @@
 
   const words = computed(() =>
     props.results.data.map((d, i) => ({
-      text: d.word ?? d.text ?? d.option ?? '—',
+      text: d.word ?? d.text ?? d.option ?? '-',
       count: d.count,
       size: MIN_SIZE + ((d.count / maxCount.value) * (MAX_SIZE - MIN_SIZE)),
       color: COLORS[i % COLORS.length],

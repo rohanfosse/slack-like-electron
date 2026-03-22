@@ -1,5 +1,5 @@
 /**
- * Routes admin — Annonces planifiées (CRUD)
+ * Routes admin - Annonces planifiées (CRUD)
  */
 const router  = require('express').Router()
 const queries = require('../../db/index')

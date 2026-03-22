@@ -1,5 +1,5 @@
 /**
- * Modale de création de devoir — formulaire adaptatif selon le type choisi.
+ * Modale de création de devoir - formulaire adaptatif selon le type choisi.
  * Champs simplifiés avec smart defaults et descriptions contextuelles.
  */
 <script setup lang="ts">
@@ -208,7 +208,7 @@
         <label class="nd-label">Titre</label>
         <input
           v-model="title" type="text" class="nd-input" required autofocus
-          :placeholder="isEventType ? `ex : ${activeType.label} — Module X` : 'ex : Rapport final — Module X'"
+          :placeholder="isEventType ? `ex : ${activeType.label} - Module X` : 'ex : Rapport final - Module X'"
         />
       </div>
 

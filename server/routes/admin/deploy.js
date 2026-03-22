@@ -1,5 +1,5 @@
 /**
- * Routes admin — Déploiement (git status, git pull, docker rebuild, nginx)
+ * Routes admin - Déploiement (git status, git pull, docker rebuild, nginx)
  */
 const router = require('express').Router()
 const os     = require('os')

@@ -1,5 +1,5 @@
 /**
- * Routes admin — Paramètres (mode lecture seule, archivage promos, config app)
+ * Routes admin - Paramètres (mode lecture seule, archivage promos, config app)
  */
 const router  = require('express').Router()
 const queries = require('../../db/index')

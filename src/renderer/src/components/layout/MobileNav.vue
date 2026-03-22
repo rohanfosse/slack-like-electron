@@ -1,5 +1,5 @@
 /**
- * MobileNav — barre de navigation fixe en bas pour les écrans < 768px.
+ * MobileNav - barre de navigation fixe en bas pour les écrans < 768px.
  * Reprend les mêmes destinations que NavRail en format horizontal.
  */
 <script setup lang="ts">

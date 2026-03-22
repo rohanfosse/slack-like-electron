@@ -1,5 +1,5 @@
 /**
- * WidgetRecentDoc.vue — Affiche le document le plus récent de la promo.
+ * WidgetRecentDoc.vue - Affiche le document le plus récent de la promo.
  */
 <script setup lang="ts">
 import { computed, onMounted } from 'vue'

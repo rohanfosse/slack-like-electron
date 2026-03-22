@@ -142,7 +142,7 @@ describe('submitResponse', () => {
     expect(response.answer).toBe('A')
   })
 
-  it('handles duplicate (REPLACE) — updates answer', () => {
+  it('handles duplicate (REPLACE) - updates answer', () => {
     const session = queries.createSession({ teacherId: 1, promoId: 1, title: 'Dup Response' })
     const activity = queries.addActivity({ sessionId: session.id, type: 'qcm', title: 'Q', position: 0 })
     queries.submitResponse({ activityId: activity.id, studentId: 1, answer: 'A' })

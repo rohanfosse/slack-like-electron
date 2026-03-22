@@ -1,5 +1,5 @@
 /**
- * Frise chronologique unifiée — tous les devoirs sur une seule ligne temporelle.
+ * Frise chronologique unifiée - tous les devoirs sur une seule ligne temporelle.
  * Couleur par projet, vue semaine/mois/trimestre/année, drag & zoom.
  */
 <script setup lang="ts">

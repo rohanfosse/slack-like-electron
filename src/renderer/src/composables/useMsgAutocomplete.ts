@@ -364,11 +364,11 @@ export function useMsgAutocomplete(
         loadDevoirs()
       },
       annonce() {
-        content.value = before + '**Annonce** — ' + after
+        content.value = before + '**Annonce** - ' + after
         activeRef.value = null
       },
       sondage() {
-        content.value = before + '**Sondage** — Votre question ?\n\n1. Option A\n2. Option B\n3. Option C\n\n*Répondez en réaction avec 1️⃣ 2️⃣ 3️⃣*' + after
+        content.value = before + '**Sondage** - Votre question ?\n\n1. Option A\n2. Option B\n3. Option C\n\n*Répondez en réaction avec 1️⃣ 2️⃣ 3️⃣*' + after
         activeRef.value = null
       },
       tableau() {

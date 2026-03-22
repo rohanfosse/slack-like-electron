@@ -1,5 +1,5 @@
 /**
- * Modale de création de projet — wizard en 2 étapes.
+ * Modale de création de projet - wizard en 2 étapes.
  * Étape 1 : Identité (nom, icône, couleur)
  * Étape 2 : Planification (dates, description, canal auto)
  */

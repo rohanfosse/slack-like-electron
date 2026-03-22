@@ -19,7 +19,7 @@ beforeAll(() => {
   const ioMock = { to: () => ({ emit: () => {} }) }
   app.set('io', ioMock)
 
-  // Auth middleware mock — teacher by default
+  // Auth middleware mock - teacher by default
   app.use((req, _res, next) => {
     req.user = { id: 1, type: 'teacher', name: 'Prof Test' }
     next()

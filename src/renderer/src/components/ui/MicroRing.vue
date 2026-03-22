@@ -1,5 +1,5 @@
 /**
- * MicroRing — SVG progress ring with value/total label in monospace.
+ * MicroRing - SVG progress ring with value/total label in monospace.
  * Color: green >=75%, accent >=40%, orange >=25%, red <25%.
  */
 <script setup lang="ts">

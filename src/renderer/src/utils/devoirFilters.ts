@@ -1,4 +1,4 @@
-/** Shared devoir filtering and sorting — eliminates duplication across 6+ files */
+/** Shared devoir filtering and sorting - eliminates duplication across 6+ files */
 
 interface WithDeadline { deadline?: string; type?: string }
 

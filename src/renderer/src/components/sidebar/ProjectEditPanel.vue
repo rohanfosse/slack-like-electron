@@ -1,5 +1,5 @@
 /**
- * ProjectEditPanel — inline expandable panel for editing a project's metadata
+ * ProjectEditPanel - inline expandable panel for editing a project's metadata
  * (color, icon, name, date range). Appears below a project item in the sidebar.
  */
 <script setup lang="ts">

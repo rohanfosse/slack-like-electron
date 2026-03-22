@@ -1,5 +1,5 @@
 /**
- * Service Worker — Cursus PWA
+ * Service Worker - Cursus PWA
  * Stratégies : stale-while-revalidate pour API, cache-first pour assets statiques.
  */
 
@@ -90,7 +90,7 @@ self.addEventListener('fetch', (event) => {
         if (cached) return cached
 
         // Aucune donnée disponible
-        return new Response(JSON.stringify({ ok: false, error: 'Hors ligne — données non disponibles.' }), {
+        return new Response(JSON.stringify({ ok: false, error: 'Hors ligne - données non disponibles.' }), {
           status: 503,
           headers: { 'Content-Type': 'application/json' },
         })

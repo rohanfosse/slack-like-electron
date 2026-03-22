@@ -1,5 +1,5 @@
 /**
- * Routes admin — Monitoring système (CPU, RAM, disque, Docker, Git, services)
+ * Routes admin - Monitoring système (CPU, RAM, disque, Docker, Git, services)
  * Compatible bare-metal et Docker
  */
 const router = require('express').Router()

@@ -1,4 +1,4 @@
-// ─── Store Pinia — Live Quiz (sessions interactives en temps réel) ───────────
+// ─── Store Pinia - Live Quiz (sessions interactives en temps réel) ───────────
 import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
 import { useAppStore } from './app'

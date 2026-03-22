@@ -1,5 +1,5 @@
 /**
- * Routes admin — Point d'entrée, monte tous les sous-routeurs sous /api/admin
+ * Routes admin - Point d'entrée, monte tous les sous-routeurs sous /api/admin
  */
 const router = require('express').Router()
 

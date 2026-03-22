@@ -1,5 +1,5 @@
 /**
- * Routes admin — Sessions actives (liste, révocation)
+ * Routes admin - Sessions actives (liste, révocation)
  */
 const router  = require('express').Router()
 const queries = require('../../db/index')

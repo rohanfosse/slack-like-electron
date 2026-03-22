@@ -1,5 +1,5 @@
 /**
- * WidgetLastFeedback.vue — Dernier retour d'un devoir avec note colorée.
+ * WidgetLastFeedback.vue - Dernier retour d'un devoir avec note colorée.
  */
 <script setup lang="ts">
 import { computed } from 'vue'

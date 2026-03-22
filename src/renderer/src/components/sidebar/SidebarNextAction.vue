@@ -1,5 +1,5 @@
 /**
- * SidebarNextAction — Shows the single most urgent devoir or a "tout est à jour" card.
+ * SidebarNextAction - Shows the single most urgent devoir or a "tout est à jour" card.
  */
 <script setup lang="ts">
 import { computed } from 'vue'

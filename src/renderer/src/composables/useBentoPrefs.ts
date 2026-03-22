@@ -1,5 +1,5 @@
 /**
- * useBentoPrefs — Composable de préférences du bento étudiant.
+ * useBentoPrefs - Composable de préférences du bento étudiant.
  * Gère l'ordre et la visibilité des widgets, persistés en localStorage.
  */
 import { ref, computed, watch } from 'vue'

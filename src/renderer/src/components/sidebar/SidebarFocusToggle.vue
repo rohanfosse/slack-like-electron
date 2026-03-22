@@ -1,5 +1,5 @@
 /**
- * SidebarFocusToggle — Bottom bar with Target icon + "Mode Focus" + toggle switch.
+ * SidebarFocusToggle - Bottom bar with Target icon + "Mode Focus" + toggle switch.
  */
 <script setup lang="ts">
 import { Target } from 'lucide-vue-next'

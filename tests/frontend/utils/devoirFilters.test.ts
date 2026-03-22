@@ -84,7 +84,7 @@ describe('nextUpcoming', () => {
   it('combines filter, sort, and limit', () => {
     const result = nextUpcoming(items, ['livrable', 'cctl', 'soutenance'], NOW, 2)
     expect(result).toHaveLength(2)
-    // Should be sorted ascending — closest first
+    // Should be sorted ascending - closest first
     expect(new Date(result[0].deadline!).getTime())
       .toBeLessThanOrEqual(new Date(result[1].deadline!).getTime())
   })

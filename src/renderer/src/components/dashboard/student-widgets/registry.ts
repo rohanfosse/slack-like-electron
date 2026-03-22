@@ -1,5 +1,5 @@
 /**
- * registry.ts — Registre des widgets du bento étudiant.
+ * registry.ts - Registre des widgets du bento étudiant.
  * Chaque widget est décrit par un id unique, un label, une icône,
  * une description et un état par défaut.
  */

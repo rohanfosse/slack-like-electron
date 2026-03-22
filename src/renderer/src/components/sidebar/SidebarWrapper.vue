@@ -1,5 +1,5 @@
 /**
- * SidebarWrapper — Routes between teacher Sidebar and student SidebarStudent
+ * SidebarWrapper - Routes between teacher Sidebar and student SidebarStudent
  * based on appStore.isStaff.
  */
 <script setup lang="ts">

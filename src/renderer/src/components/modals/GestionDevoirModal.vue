@@ -146,7 +146,7 @@
           authorName: appStore.currentUser?.name ?? 'Système',
           authorType: appStore.currentUser?.type ?? 'teacher',
           promoId: appStore.activePromoId ?? undefined,
-          content: `@everyone Bonjour,\n\n\\[${travail.value.title}](devoir:${travail.value.id}) — ${devoirMeta.value.isEvent ? `le **${formatDate(travail.value.deadline)}**` : `à rendre avant le **${formatDate(travail.value.deadline)}**`}${devoirMeta.value.salle ? ` — Salle : **${devoirMeta.value.salle}**` : ''}`,
+          content: `@everyone Bonjour,\n\n\\[${travail.value.title}](devoir:${travail.value.id}) - ${devoirMeta.value.isEvent ? `le **${formatDate(travail.value.deadline)}**` : `à rendre avant le **${formatDate(travail.value.deadline)}**`}${devoirMeta.value.salle ? ` - Salle : **${devoirMeta.value.salle}**` : ''}`,
         })
       }
       showToast('Publié et notifié.', 'success')
@@ -671,7 +671,7 @@
 .status-expired   { background: rgba(239,68,68,.08); color: #f87171; }
 .status-complete  { background: rgba(59,130,246,.08); color: #60a5fa; }
 
-/* Onglets — style pills */
+/* Onglets - style pills */
 .gd-tabs {
   display: flex; gap: 6px; padding: 8px 20px;
   border-bottom: 1px solid var(--border);

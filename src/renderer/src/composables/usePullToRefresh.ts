@@ -1,5 +1,5 @@
 /**
- * usePullToRefresh — composable pour le geste pull-to-refresh (mobile)
+ * usePullToRefresh - composable pour le geste pull-to-refresh (mobile)
  * Détecte le glissement vertical sur un élément scrollable et déclenche un callback.
  */
 import { ref, onMounted, onUnmounted, type Ref } from 'vue'

@@ -1,5 +1,5 @@
 /**
- * Modale d'import d'étudiants — deux modes : saisie directe (textarea) et fichier CSV.
+ * Modale d'import d'étudiants - deux modes : saisie directe (textarea) et fichier CSV.
  * La saisie directe permet d'ajouter rapidement des étudiants ligne par ligne.
  */
 <script setup lang="ts">
@@ -152,7 +152,7 @@ prenom.nom@viacesi.fr"
           </div>
           <div class="is-preview-list">
             <div v-for="r in parsedRows.slice(0, 10)" :key="r.line" class="is-preview-row" :class="{ invalid: !r.valid || !r.name }">
-              <span class="is-preview-name">{{ r.name || '—' }}</span>
+              <span class="is-preview-name">{{ r.name || '-' }}</span>
               <span class="is-preview-email">{{ r.email || `${r.name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, '.')}@viacesi.fr` }}</span>
               <CheckCircle2 v-if="r.valid && r.name" :size="12" class="is-preview-ok" />
               <X v-else :size="12" class="is-preview-ko" />

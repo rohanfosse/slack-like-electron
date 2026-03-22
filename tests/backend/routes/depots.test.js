@@ -24,7 +24,7 @@ beforeAll(() => {
   app = express()
   app.use(express.json())
 
-  // Auth middleware mock — sets req.user for teacher by default
+  // Auth middleware mock - sets req.user for teacher by default
   app.use((req, _res, next) => {
     // Allow overriding via custom header for 401 tests
     if (req.headers['x-no-auth'] === 'true') {
