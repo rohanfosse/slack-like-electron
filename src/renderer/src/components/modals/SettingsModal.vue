@@ -5,26 +5,28 @@
     Download, Palette, Monitor, Moon, Sunset, Waves, Sparkles, Globe, Lock,
     FileText, ChevronRight, Github, Heart, Shield, Mail, BookOpen,
     ExternalLink, Type, BellRing, Maximize2, Sun, MessageSquare,
-    Volume2, Clock, MousePointer,
+    Volume2, Clock, MousePointer, Home, AlignJustify,
   } from 'lucide-vue-next'
   import ChangePasswordModal from '@/components/modals/ChangePasswordModal.vue'
   import { useAppStore } from '@/stores/app'
   import Modal from '@/components/ui/Modal.vue'
-  import logoUrl from '@/assets/logo.svg'
+  import logoUrl from '@/assets/logo.png'
   import { useSettingsAppearance } from '@/composables/useSettingsAppearance'
   import { useSettingsAccount }    from '@/composables/useSettingsAccount'
   import { useSettingsPreferences } from '@/composables/useSettingsPreferences'
+  import { usePrefs } from '@/composables/usePrefs'
 
   const props = defineProps<{ modelValue: boolean }>()
   const emit  = defineEmits<{ 'update:modelValue': [v: boolean] }>()
 
-  type Section = 'apparence' | 'preferences' | 'compte' | 'apropos'
+  type Section = 'general' | 'apparence' | 'preferences' | 'compte' | 'apropos'
 
   const appStore = useAppStore()
+  const { getPref, setPref } = usePrefs()
 
   // ── Composables ────────────────────────────────────────────────────────────
   const {
-    currentTheme, fontSize, density, showTimestamps, compactImages,
+    currentTheme, fontSize, density, msgSpacing, showTimestamps, compactImages,
     THEMES, setTheme, resetAppearance,
   } = useSettingsAppearance()
 
@@ -38,22 +40,37 @@
     docsDefault, notifSound, notifDesktop, enterToSend,
   } = useSettingsPreferences()
 
+  // ── General tab state ───────────────────────────────────────────────────────
+  const rememberMe = ref(getPref('rememberMe') ?? false)
+  watch(rememberMe, (v) => {
+    setPref('rememberMe', v)
+    if (!v) localStorage.removeItem('cc_remember_token')
+  })
+
+  const roleLabels: Record<string, string> = {
+    teacher: 'Enseignant',
+    ta: 'Intervenant',
+    student: 'Etudiant',
+  }
+
   // ── Tabs ───────────────────────────────────────────────────────────────────
-  const activeSection = ref<Section>('apparence')
+  const activeSection = ref<Section>('general')
 
   const navItems: { key: Section; label: string; icon: typeof Settings }[] = [
-    { key: 'apparence',   label: 'Apparence',   icon: Palette },
-    { key: 'preferences', label: 'Préférences', icon: Settings },
-    { key: 'compte',      label: 'Mon compte',  icon: User },
-    { key: 'apropos',     label: 'À propos',    icon: Info },
+    { key: 'general',      label: 'General',      icon: Home },
+    { key: 'apparence',    label: 'Apparence',    icon: Palette },
+    { key: 'preferences',  label: 'Preferences',  icon: Settings },
+    { key: 'compte',       label: 'Mon compte',   icon: User },
+    { key: 'apropos',      label: 'A propos',     icon: Info },
   ]
 
   // ── Reset state when modal opens ──────────────────────────────────────────
   watch(() => props.modelValue, (open) => {
     if (open) {
-      activeSection.value = 'apparence'
+      activeSection.value = 'general'
       resetAppearance()
       resetPhoto()
+      rememberMe.value = getPref('rememberMe') ?? false
     }
   })
 </script>
@@ -66,7 +83,7 @@
   >
     <div class="stg-layout">
 
-      <!-- ── Navigation latérale ── -->
+      <!-- ── Navigation laterale ── -->
       <nav class="stg-nav">
         <div class="stg-nav-header">
           <img :src="logoUrl" class="stg-nav-logo" alt="Cursus" />
@@ -91,25 +108,84 @@
 
         <button class="stg-nav-item stg-nav-danger" @click="handleLogout">
           <LogOut :size="15" class="stg-nav-icon" />
-          Se déconnecter
+          Se deconnecter
         </button>
       </nav>
 
       <!-- ── Contenu ── -->
       <div class="stg-body">
 
+        <!-- ════ General ════ -->
+        <section v-if="activeSection === 'general'" class="stg-section">
+          <div class="stg-section-header">
+            <Home :size="18" />
+            <h3 class="stg-section-title">General</h3>
+          </div>
+
+          <!-- Informations utilisateur -->
+          <div class="stg-group">
+            <div class="stg-group-header">
+              <User :size="13" class="stg-group-icon" />
+              <h4 class="stg-group-title">Informations</h4>
+            </div>
+            <div class="stg-info-grid">
+              <div class="stg-info-cell">
+                <span class="stg-info-label">Nom</span>
+                <span class="stg-info-value">{{ appStore.currentUser?.name ?? '-' }}</span>
+              </div>
+              <div class="stg-info-cell">
+                <span class="stg-info-label">Role</span>
+                <span class="stg-info-value">{{ roleLabels[appStore.currentUser?.type ?? ''] ?? '-' }}</span>
+              </div>
+              <div class="stg-info-cell">
+                <span class="stg-info-label">Promotion</span>
+                <span class="stg-info-value">{{ appStore.currentUser?.promo_name ?? 'Aucune' }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Langue -->
+          <div class="stg-group">
+            <div class="stg-group-header">
+              <Globe :size="13" class="stg-group-icon" />
+              <h4 class="stg-group-title">Langue</h4>
+            </div>
+            <div class="stg-info-chip">
+              <span>Francais</span>
+              <span class="stg-chip-badge">Seule langue disponible</span>
+            </div>
+          </div>
+
+          <!-- Se souvenir de moi -->
+          <div class="stg-group">
+            <div class="stg-group-header">
+              <Lock :size="13" class="stg-group-icon" />
+              <h4 class="stg-group-title">Connexion</h4>
+            </div>
+            <label class="stg-toggle-row">
+              <div class="stg-toggle-info">
+                <span class="stg-toggle-label">Se souvenir de moi</span>
+                <span class="stg-toggle-desc">Remplir automatiquement l'adresse e-mail lors de la prochaine connexion.</span>
+              </div>
+              <div class="stg-switch" :class="{ on: rememberMe }" @click="rememberMe = !rememberMe">
+                <div class="stg-switch-thumb" />
+              </div>
+            </label>
+          </div>
+        </section>
+
         <!-- ════ Apparence ════ -->
-        <section v-if="activeSection === 'apparence'" class="stg-section">
+        <section v-else-if="activeSection === 'apparence'" class="stg-section">
           <div class="stg-section-header">
             <Palette :size="18" />
             <h3 class="stg-section-title">Apparence</h3>
           </div>
 
-          <!-- Thèmes -->
+          <!-- Themes -->
           <div class="stg-group">
             <div class="stg-group-header">
               <Palette :size="13" class="stg-group-icon" />
-              <h4 class="stg-group-title">Thème</h4>
+              <h4 class="stg-group-title">Theme</h4>
             </div>
             <div class="stg-theme-grid">
               <button
@@ -154,11 +230,11 @@
             </div>
           </div>
 
-          <!-- Densité d'affichage -->
+          <!-- Densite d'affichage -->
           <div class="stg-group">
             <div class="stg-group-header">
               <Maximize2 :size="13" class="stg-group-icon" />
-              <h4 class="stg-group-title">Densité d'affichage</h4>
+              <h4 class="stg-group-title">Densite d'affichage</h4>
             </div>
             <div class="stg-segmented">
               <button
@@ -169,6 +245,25 @@
                 @click="density = d.id"
               >
                 {{ d.label }}
+              </button>
+            </div>
+          </div>
+
+          <!-- Messages aeres -->
+          <div class="stg-group">
+            <div class="stg-group-header">
+              <AlignJustify :size="13" class="stg-group-icon" />
+              <h4 class="stg-group-title">Messages aeres</h4>
+            </div>
+            <div class="stg-segmented">
+              <button
+                v-for="ms in [{ id: 'compact', label: 'Compact' }, { id: 'normal', label: 'Normal' }, { id: 'aere', label: 'Aere' }]"
+                :key="ms.id"
+                class="stg-segmented-btn"
+                :class="{ active: msgSpacing === ms.id }"
+                @click="msgSpacing = ms.id"
+              >
+                {{ ms.label }}
               </button>
             </div>
           </div>
@@ -191,7 +286,7 @@
             <label class="stg-toggle-row">
               <div class="stg-toggle-info">
                 <span class="stg-toggle-label">Images compactes</span>
-                <span class="stg-toggle-desc">Réduire la taille des aperçus d'images dans les messages.</span>
+                <span class="stg-toggle-desc">Reduire la taille des apercus d'images dans les messages.</span>
               </div>
               <div class="stg-switch" :class="{ on: compactImages }" @click="compactImages = !compactImages">
                 <div class="stg-switch-thumb" />
@@ -200,11 +295,11 @@
           </div>
         </section>
 
-        <!-- ════ Préférences ════ -->
+        <!-- ════ Preferences ════ -->
         <section v-else-if="activeSection === 'preferences'" class="stg-section">
           <div class="stg-section-header">
             <Settings :size="18" />
-            <h3 class="stg-section-title">Préférences</h3>
+            <h3 class="stg-section-title">Preferences</h3>
           </div>
 
           <!-- Notifications -->
@@ -216,7 +311,7 @@
             <label class="stg-toggle-row">
               <div class="stg-toggle-info">
                 <span class="stg-toggle-label">Notifications bureau</span>
-                <span class="stg-toggle-desc">Afficher les notifications système pour les nouveaux messages.</span>
+                <span class="stg-toggle-desc">Afficher les notifications systeme pour les nouveaux messages.</span>
               </div>
               <div class="stg-switch" :class="{ on: notifDesktop }" @click="notifDesktop = !notifDesktop">
                 <div class="stg-switch-thumb" />
@@ -225,7 +320,7 @@
             <label class="stg-toggle-row">
               <div class="stg-toggle-info">
                 <span class="stg-toggle-label">Son de notification</span>
-                <span class="stg-toggle-desc">Jouer un son lors de la réception d'un message.</span>
+                <span class="stg-toggle-desc">Jouer un son lors de la reception d'un message.</span>
               </div>
               <div class="stg-switch" :class="{ on: notifSound }" @click="notifSound = !notifSound">
                 <div class="stg-switch-thumb" />
@@ -241,8 +336,8 @@
             </div>
             <label class="stg-toggle-row">
               <div class="stg-toggle-info">
-                <span class="stg-toggle-label">Entrée pour envoyer</span>
-                <span class="stg-toggle-desc">Appuyer sur Entrée envoie le message. Désactivé : Ctrl+Entrée pour envoyer.</span>
+                <span class="stg-toggle-label">Entree pour envoyer</span>
+                <span class="stg-toggle-desc">Appuyer sur Entree envoie le message. Desactive : Ctrl+Entree pour envoyer.</span>
               </div>
               <div class="stg-switch" :class="{ on: enterToSend }" @click="enterToSend = !enterToSend">
                 <div class="stg-switch-thumb" />
@@ -258,8 +353,8 @@
             </div>
             <label class="stg-toggle-row">
               <div class="stg-toggle-info">
-                <span class="stg-toggle-label">Ouvrir dans l'explorateur par défaut</span>
-                <span class="stg-toggle-desc">Double-clic sur un fichier l'ouvre directement avec l'application système.</span>
+                <span class="stg-toggle-label">Ouvrir dans l'explorateur par defaut</span>
+                <span class="stg-toggle-desc">Double-clic sur un fichier l'ouvre directement avec l'application systeme.</span>
               </div>
               <div class="stg-switch" :class="{ on: docsDefault }" @click="docsDefault = !docsDefault">
                 <div class="stg-switch-thumb" />
@@ -267,32 +362,20 @@
             </label>
           </div>
 
-          <!-- Langue -->
-          <div class="stg-group">
-            <div class="stg-group-header">
-              <Globe :size="13" class="stg-group-icon" />
-              <h4 class="stg-group-title">Langue</h4>
-            </div>
-            <div class="stg-info-chip">
-              <span>Français</span>
-              <span class="stg-chip-badge">Seule langue disponible</span>
-            </div>
-          </div>
-
-          <!-- Démo (profs) -->
+          <!-- Demo (profs) -->
           <div v-if="appStore.isTeacher" class="stg-group">
             <div class="stg-group-header">
               <RotateCcw :size="13" class="stg-group-icon" />
-              <h4 class="stg-group-title">Données de démonstration</h4>
+              <h4 class="stg-group-title">Donnees de demonstration</h4>
             </div>
             <div class="stg-action-row stg-action-danger">
               <div class="stg-toggle-info">
-                <span class="stg-toggle-label">Réinitialiser les données</span>
-                <span class="stg-toggle-desc">Recharge les promotions d'exemple avec devoirs, dépôts et documents de test.</span>
+                <span class="stg-toggle-label">Reinitialiser les donnees</span>
+                <span class="stg-toggle-desc">Recharge les promotions d'exemple avec devoirs, depots et documents de test.</span>
               </div>
               <button class="stg-btn stg-btn-danger" :disabled="resetting" @click="resetDemoData">
                 <RotateCcw :size="13" />
-                {{ resetting ? 'En cours…' : 'Réinitialiser' }}
+                {{ resetting ? 'En cours...' : 'Reinitialiser' }}
               </button>
             </div>
           </div>
@@ -336,11 +419,11 @@
             </div>
           </div>
 
-          <!-- Sécurité -->
+          <!-- Securite -->
           <div class="stg-group">
             <div class="stg-group-header">
               <Shield :size="13" class="stg-group-icon" />
-              <h4 class="stg-group-title">Sécurité</h4>
+              <h4 class="stg-group-title">Securite</h4>
             </div>
             <div class="stg-action-row">
               <div class="stg-toggle-info">
@@ -353,16 +436,16 @@
             </div>
           </div>
 
-          <!-- Confidentialité -->
+          <!-- Confidentialite -->
           <div class="stg-group">
             <div class="stg-group-header">
               <Lock :size="13" class="stg-group-icon" />
-              <h4 class="stg-group-title">Confidentialité</h4>
+              <h4 class="stg-group-title">Confidentialite</h4>
             </div>
             <div class="stg-action-row">
               <div class="stg-toggle-info">
-                <span class="stg-toggle-label">Politique de confidentialité</span>
-                <span class="stg-toggle-desc">Consultez comment vos données sont protégées et vos droits RGPD.</span>
+                <span class="stg-toggle-label">Politique de confidentialite</span>
+                <span class="stg-toggle-desc">Consultez comment vos donnees sont protegees et vos droits RGPD.</span>
               </div>
               <button class="stg-btn stg-btn-ghost" @click="openPrivacyFromSettings">
                 <Shield :size="13" /> Consulter
@@ -370,20 +453,20 @@
             </div>
           </div>
 
-          <!-- Données personnelles (étudiants) -->
+          <!-- Donnees personnelles (etudiants) -->
           <div v-if="appStore.isStudent" class="stg-group">
             <div class="stg-group-header">
               <Download :size="13" class="stg-group-icon" />
-              <h4 class="stg-group-title">Données personnelles</h4>
+              <h4 class="stg-group-title">Donnees personnelles</h4>
             </div>
             <div class="stg-action-row">
               <div class="stg-toggle-info">
-                <span class="stg-toggle-label">Exporter mes données</span>
+                <span class="stg-toggle-label">Exporter mes donnees</span>
                 <span class="stg-toggle-desc">Fichier JSON avec vos messages, rendus et profil (Art. 20 RGPD).</span>
               </div>
               <button class="stg-btn stg-btn-ghost" :disabled="exporting" @click="exportData">
                 <Download :size="13" />
-                {{ exporting ? 'Export…' : 'Exporter' }}
+                {{ exporting ? 'Export...' : 'Exporter' }}
               </button>
             </div>
           </div>
@@ -397,14 +480,14 @@
           </div>
         </section>
 
-        <!-- ════ À propos ════ -->
+        <!-- ════ A propos ════ -->
         <section v-else class="stg-section">
           <div class="stg-section-header">
             <Info :size="18" />
-            <h3 class="stg-section-title">À propos</h3>
+            <h3 class="stg-section-title">A propos</h3>
           </div>
 
-          <!-- Hero à propos -->
+          <!-- Hero a propos -->
           <div class="stg-about-hero">
             <img :src="logoUrl" class="stg-about-logo" alt="Cursus" />
             <div class="stg-about-hero-text">
@@ -412,6 +495,24 @@
               <span class="stg-about-version">v2.0.0</span>
             </div>
             <p class="stg-about-tagline">Suivez votre parcours de formation</p>
+          </div>
+
+          <!-- Liens -->
+          <div class="stg-group">
+            <div class="stg-group-header">
+              <Globe :size="13" class="stg-group-icon" />
+              <h4 class="stg-group-title">Liens</h4>
+            </div>
+            <div class="stg-info-grid">
+              <a href="https://app.cursus.school" target="_blank" rel="noopener" class="stg-info-cell stg-info-link">
+                <span class="stg-info-label">Application</span>
+                <span class="stg-info-value">app.cursus.school <ExternalLink :size="10" /></span>
+              </a>
+              <a href="https://cursus.school" target="_blank" rel="noopener" class="stg-info-cell stg-info-link">
+                <span class="stg-info-label">Site web</span>
+                <span class="stg-info-value">cursus.school <ExternalLink :size="10" /></span>
+              </a>
+            </div>
           </div>
 
           <!-- Infos techniques -->
@@ -426,11 +527,11 @@
                 <span class="stg-info-value">Electron + Vue 3</span>
               </div>
               <div class="stg-info-cell">
-                <span class="stg-info-label">Base de données</span>
+                <span class="stg-info-label">Base de donnees</span>
                 <span class="stg-info-value">SQLite (local)</span>
               </div>
               <div class="stg-info-cell">
-                <span class="stg-info-label">Temps réel</span>
+                <span class="stg-info-label">Temps reel</span>
                 <span class="stg-info-value">Socket.io</span>
               </div>
               <div class="stg-info-cell">
@@ -444,12 +545,12 @@
           <div class="stg-group">
             <div class="stg-group-header">
               <Heart :size="13" class="stg-group-icon" />
-              <h4 class="stg-group-title">Créé par</h4>
+              <h4 class="stg-group-title">Cree par</h4>
             </div>
             <div class="stg-author-card">
               <div class="stg-author-avatar">RF</div>
               <div class="stg-author-info">
-                <span class="stg-author-name">Rohan Fossé</span>
+                <span class="stg-author-name">Rohan Fosse</span>
                 <a
                   href="https://github.com/rohanfosse/slack-like-electron"
                   target="_blank"
@@ -467,9 +568,9 @@
           <!-- Description -->
           <div class="stg-about-desc">
             <p>
-              Plateforme pédagogique open-source combinant messagerie en temps réel,
-              suivi des devoirs et rendus, gestion documentaire et planification Gantt
-              - tout en un seul endroit.
+              Plateforme pedagogique open-source combinant messagerie en temps reel,
+              suivi des devoirs et rendus, gestion documentaire et planification Gantt.
+              Tout en un seul endroit.
             </p>
           </div>
         </section>
@@ -817,8 +918,15 @@
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
 }
+.stg-info-link {
+  text-decoration: none;
+  transition: border-color .15s;
+}
+.stg-info-link:hover {
+  border-color: var(--accent);
+}
 .stg-info-label { font-size: 10.5px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: .5px; }
-.stg-info-value { font-size: 13px; font-weight: 600; color: var(--text-secondary); }
+.stg-info-value { font-size: 13px; font-weight: 600; color: var(--text-secondary); display: inline-flex; align-items: center; gap: 4px; }
 
 /* ── Author card ── */
 .stg-author-card {
@@ -863,7 +971,7 @@
   line-height: 1.65;
 }
 
-/* ── Segmented control (taille texte, densité) ── */
+/* ── Segmented control (taille texte, densite) ── */
 .stg-segmented {
   display: flex;
   border: 1px solid var(--border);

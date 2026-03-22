@@ -1,13 +1,13 @@
 <p align="center">
-  <img src="src/web/public/assets/icon-512.png" alt="Cursus" width="80" />
+  <img src="src/renderer/src/assets/logo.png" alt="Cursus" width="80" />
   <br />
   <strong style="font-size: 2em;">Cursus</strong>
 </p>
 
 <p align="center">
-  <strong>La plateforme de communication pensée pour l'enseignement.</strong>
+  <strong>La plateforme de communication pensee pour l'enseignement.</strong>
   <br />
-  Messagerie, travaux, documents - tout au même endroit.
+  Messagerie, travaux, documents, quiz en direct. Tout au meme endroit.
 </p>
 
 <p align="center">
@@ -18,73 +18,89 @@
 </p>
 
 <p align="center">
+  <a href="https://app.cursus.school"><img src="https://img.shields.io/badge/Application-app.cursus.school-4f46e5?style=for-the-badge&logo=google-chrome&logoColor=white" alt="App" /></a>
+  &nbsp;
   <a href="https://cursus.school"><img src="https://img.shields.io/badge/Site_web-cursus.school-4f46e5?style=for-the-badge&logo=google-chrome&logoColor=white" alt="Site web" /></a>
   &nbsp;
   <a href="https://github.com/rohanfosse/slack-like-electron/issues"><img src="https://img.shields.io/badge/Issues-GitHub-24292e?style=for-the-badge&logo=github&logoColor=white" alt="Issues" /></a>
   &nbsp;
-  <a href="https://github.com/rohanfosse/slack-like-electron/releases"><img src="https://img.shields.io/badge/Releases-Télécharger-22c55e?style=for-the-badge&logo=windows&logoColor=white" alt="Releases" /></a>
+  <a href="https://github.com/rohanfosse/slack-like-electron/releases"><img src="https://img.shields.io/badge/Releases-Telecharger-22c55e?style=for-the-badge&logo=windows&logoColor=white" alt="Releases" /></a>
 </p>
 
 <br />
 
 ## Pourquoi Cursus ?
 
-Les formations s'appuient sur un patchwork d'outils : mails institutionnels, groupes WhatsApp, Moodle, dossiers partagés sur Teams ou Drive. Chaque outil couvre un besoin, mais aucun ne couvre le quotidien. Les étudiants ratent des annonces parce qu'elles sont sur le mauvais canal. Les enseignants passent plus de temps à relancer qu'à accompagner. Les deadlines se perdent entre trois plateformes.
+Les formations s'appuient sur un patchwork d'outils : mails institutionnels, groupes WhatsApp, Moodle, dossiers partages sur Teams ou Drive. Chaque outil couvre un besoin, mais aucun ne couvre le quotidien. Les etudiants ratent des annonces parce qu'elles sont sur le mauvais canal. Les enseignants passent plus de temps a relancer qu'a accompagner. Les deadlines se perdent entre trois plateformes.
 
-Cursus part d'un constat simple : **une promo a besoin d'un seul endroit pour communiquer, déposer du travail et accéder à ses ressources**. L'application remplace la dispersion par un espace unifié, accessible en version desktop (Electron) et en version web (PWA).
+Cursus part d'un constat simple : **une promo a besoin d'un seul endroit pour communiquer, deposer du travail et acceder a ses ressources**. L'application remplace la dispersion par un espace unifie, accessible en version desktop (Electron), en version web (PWA) et sur mobile.
 
 <table>
   <tr>
     <td width="33%" valign="top">
       <strong>Moins de friction</strong><br />
-      L'interface est construite pour que chaque action soit à un ou deux clics. Un étudiant qui ouvre l'application voit directement ses canaux, ses devoirs en cours et ses documents.
+      L'interface est construite pour que chaque action soit a un ou deux clics. Un etudiant qui ouvre l'application voit directement ses canaux, ses devoirs en cours et ses documents.
     </td>
     <td width="33%" valign="top">
-      <strong>Droit à l'erreur</strong><br />
-      Un étudiant peut remplacer son rendu avant l'échéance sans demander à l'enseignant. Après la deadline, les dépôts se verrouillent automatiquement.
+      <strong>Droit a l'erreur</strong><br />
+      Un etudiant peut remplacer son rendu avant l'echeance sans demander a l'enseignant. Apres la deadline, les depots se verrouillent automatiquement.
     </td>
     <td width="33%" valign="top">
       <strong>Plus de temps pour l'humain</strong><br />
-      Grilles d'évaluation par critères, notation par lettres, export CSV. L'enseignant passe moins de temps sur la logistique et plus sur les retours qualitatifs.
+      Grilles d'evaluation par criteres, notation par lettres, export CSV. L'enseignant passe moins de temps sur la logistique et plus sur les retours qualitatifs.
     </td>
   </tr>
 </table>
 
 <br />
 
-## Fonctionnalités
+## Fonctionnalites
 
 ### Messagerie
 
-Canaux publics organisés par promotion ou par thématique. Canaux d'annonce en lecture seule pour les communications officielles. Messages privés entre étudiants ou avec les enseignants. Chaque message supporte les réponses avec citation du message d'origine, les réactions par emoji, l'épinglage (jusqu'à 5 par canal) et les mentions `@nom` ou `@everyone` avec compteur de non-lus. La recherche plein texte permet de retrouver n'importe quel message dans un canal. Les notifications de bureau signalent les mentions et les messages directs.
+Canaux publics organises par promotion ou par thematique. Canaux d'annonce en lecture seule pour les communications officielles. Messages prives entre etudiants ou avec les enseignants. Chaque message supporte les reponses avec citation du message d'origine, les reactions par emoji, l'epinglage (jusqu'a 5 par canal) et les mentions `@nom` ou `@everyone` avec compteur de non-lus. La recherche plein texte permet de retrouver n'importe quel message dans un canal. Les notifications de bureau signalent les mentions et les messages directs.
 
-### Travaux et évaluation
+Des commandes slash sont disponibles directement dans la zone de saisie : `/devoir`, `/doc`, `/annonce`, `/sondage` et d'autres raccourcis pour creer du contenu sans quitter la conversation.
 
-L'enseignant crée un devoir en choisissant son type (livrable, soutenance, CCTL, étude de cas, mémoire) et sa date limite. Un mode brouillon permet de préparer un devoir sans le rendre visible. Une fois publié, les étudiants déposent leur travail depuis l'application. Les dépôts sont automatiquement bloqués après l'échéance, sauf pour les soutenances et CCTL qui suivent un calendrier différent.
+### Travaux et evaluation
 
-Chaque devoir peut avoir sa propre grille d'évaluation multicritères avec pondération. La notation se fait par lettres (A à F) directement depuis la liste des rendus, avec possibilité d'ajouter un commentaire de retour individuel. Les notes sont exportables en CSV pour intégration dans les outils de scolarité.
+L'enseignant cree un devoir en choisissant son type (livrable, soutenance, CCTL, etude de cas, memoire) et sa date limite. Un mode brouillon permet de preparer un devoir sans le rendre visible. Une fois publie, les etudiants deposent leur travail depuis l'application. Les depots sont automatiquement bloques apres l'echeance, sauf pour les soutenances et CCTL qui suivent un calendrier different.
+
+Chaque devoir peut avoir sa propre grille d'evaluation multicriteres avec ponderation. La notation se fait par lettres (A a F) directement depuis la liste des rendus, avec possibilite d'ajouter un commentaire de retour individuel. Les notes sont exportables en CSV pour integration dans les outils de scolarite. Les etudiants recoivent une notification en temps reel via Socket.IO des qu'une note est attribuee.
+
+### Quiz en direct (Live)
+
+L'enseignant peut lancer une session interactive en direct avec ses etudiants. Trois formats sont disponibles : QCM (questions a choix multiples avec correction instantanee), sondages (vote anonyme ou nominatif) et nuage de mots (les reponses apparaissent en direct a l'ecran). Les resultats s'affichent en temps reel pour le professeur et peuvent etre partages avec la classe.
 
 ### Documents et ressources
 
-Fichiers et liens externes attachés à un canal ou à un projet entier. Les documents peuvent être catégorisés et décrits. La visionneuse intégrée ouvre les PDF, les images, les documents Word (.docx) et les tableurs Excel (.xlsx) sans quitter l'application.
+Fichiers et liens externes attaches a un canal ou a un projet entier. Les documents peuvent etre categorises et decrits. La visionneuse integree ouvre les PDF, les images, les documents Word (.docx) et les tableurs Excel (.xlsx) sans quitter l'application.
 
 ### Promotions et groupes
 
-Chaque promotion dispose de sa couleur et de ses canaux dédiés. Les groupes de travail sont créés par l'enseignant avec des membres assignés, un canal privé automatique et des devoirs ciblés. L'import en masse des étudiants se fait par fichier CSV.
+Chaque promotion dispose de sa couleur et de ses canaux dedies. Les groupes de travail sont crees par l'enseignant avec des membres assignes, un canal prive automatique et des devoirs cibles. L'import en masse des etudiants se fait par fichier CSV.
 
 ### Dashboard enseignant
 
-Vue d'ensemble de l'avancement des dépôts par promotion avec indicateurs visuels. Frise chronologique des jalons (deadlines, soutenances, examens). Rappels automatiques envoyés la veille de chaque échéance. Analytique par promotion : répartition des notes, taux de dépôt, activité récente.
+Vue d'ensemble de l'avancement des depots par promotion avec indicateurs visuels. Frise chronologique des jalons (deadlines, soutenances, examens). Rappels automatiques envoyes la veille de chaque echeance. Analytique par promotion : repartition des notes, taux de depot, activite recente.
 
-### Dashboard étudiant
+### Dashboard etudiant
 
-Vue personnalisée avec les devoirs à rendre classés par urgence, les notes reçues (système A/B/C/D), les annonces récentes et l'accès rapide aux canaux et documents de sa promotion.
+Vue personnalisee avec les devoirs a rendre classes par urgence, les notes recues (systeme A/B/C/D), les annonces recentes et l'acces rapide aux canaux et documents de sa promotion. Le dashboard est personnalisable avec des widgets que l'etudiant peut reorganiser selon ses besoins.
+
+### Smart Focus et notifications
+
+La sidebar Smart Focus regroupe les informations proactives : devoirs a rendre bientot, annonces non lues, notes recemment publiees. Un mode Focus (zen) permet de masquer temporairement toutes les notifications et distractions pour se concentrer sur une tache.
+
+### Mobile PWA
+
+L'application est accessible sur mobile via une Progressive Web App. La navigation utilise une barre inferieure adaptee au tactile, le pull-to-refresh recharge les donnees et le swipe permet de naviguer entre les vues. L'experience est optimisee pour les ecrans de petite taille.
 
 <br />
 
-## Démarrage rapide
+## Demarrage rapide
 
-**Prérequis** : Node.js 18+ et npm.
+**Prerequis** : Node.js 18+ et npm.
 
 ```bash
 git clone https://github.com/rohanfosse/slack-like-electron.git
@@ -92,31 +108,45 @@ cd slack-like-electron
 npm install
 ```
 
-Lancer en développement :
+Lancer en developpement :
 
 ```bash
 npm run dev
 ```
 
-Construire l'exécutable :
+Construire l'executable :
 
 ```bash
 npm run build
 ```
 
-La base de données SQLite est créée automatiquement au premier lancement dans le répertoire utilisateur. Pour charger des données de démonstration, ouvrir le panneau d'administration et utiliser **Réinitialiser et peupler**.
+La base de donnees SQLite est creee automatiquement au premier lancement dans le repertoire utilisateur. Pour charger des donnees de demonstration, ouvrir le panneau d'administration et utiliser **Reinitialiser et peupler**.
 
 <br />
 
 ## Version web
 
-L'application est aussi disponible en version web (PWA), déployée automatiquement à chaque push sur `main`. Le build web utilise un shim qui remplace les appels IPC Electron par des requêtes HTTP vers le serveur Node.js.
+L'application est aussi disponible en version web (PWA), deployee automatiquement a chaque push sur `main`. Le build web utilise un shim qui remplace les appels IPC Electron par des requetes HTTP vers le serveur Node.js.
 
 ```bash
 npm run build:web
 ```
 
-Les fichiers sont générés dans `dist-web/` et servis par le serveur Express intégré.
+Les fichiers sont generes dans `dist-web/` et servis par le serveur Express integre.
+
+<br />
+
+## Deploiement Docker
+
+Un Dockerfile multi-stage est fourni pour deployer le serveur web en production. Le premier stage compile le frontend, le second ne contient que les fichiers de production et le serveur Node.js.
+
+Les deux domaines principaux sont `app.cursus.school` (application) et `admin.cursus.school` (administration). La configuration Nginx correspondante se trouve dans le dossier `config/`.
+
+<br />
+
+## Mise a jour automatique
+
+La version desktop pour Windows integre electron-updater. Lorsqu'une nouvelle version est publiee sur GitHub Releases, l'application propose automatiquement le telechargement et l'installation de la mise a jour au demarrage.
 
 <br />
 
@@ -124,16 +154,19 @@ Les fichiers sont générés dans `dist-web/` et servis par le serveur Express i
 
 | Couche | Technologie |
 |--------|------------|
-| Desktop | Electron 29, context isolation, Node integration désactivé côté renderer |
+| Desktop | Electron 29, context isolation, Node integration desactive cote renderer, auto-update via electron-updater |
 | Frontend | Vue 3 (Composition API), TypeScript, Pinia, Vue Router |
-| Base de données | SQLite via Better-SQLite3, schéma versionné avec migrations |
+| Base de donnees | SQLite via Better-SQLite3, schema versionne avec migrations |
 | Build | electron-vite + Vite, packaging via electron-builder |
-| Serveur web | Express, Socket.IO pour le temps réel, déployé derrière Nginx |
+| Serveur web | Express, Socket.IO pour le temps reel, deploye derriere Nginx |
+| Mobile | PWA avec barre de navigation inferieure, pull-to-refresh, swipe |
+| Deploiement | Docker multi-stage, Nginx, domaines app.cursus.school et admin.cursus.school |
+| Tests | Vitest, coverage v8, supertest |
 
 <br />
 
 ## Licence
 
-MIT - voir le fichier [LICENSE](LICENSE) pour les détails.
+MIT. Voir le fichier [LICENSE](LICENSE) pour les details.
 
-Projet développé par [Rohan Fossé](https://github.com/rohanfosse)
+Projet developpe par [Rohan Fosse](https://github.com/rohanfosse)

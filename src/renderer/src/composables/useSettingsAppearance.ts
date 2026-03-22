@@ -28,6 +28,7 @@ export function useSettingsAppearance() {
   const currentTheme   = ref(getPref('theme') ?? 'dark')
   const fontSize       = ref<string>(getPref('fontSize') ?? 'default')
   const density        = ref<string>(getPref('density') ?? 'default')
+  const msgSpacing     = ref<string>(getPref('msgSpacing') ?? 'normal')
   const showTimestamps = ref(getPref('showTimestamps') ?? true)
   const compactImages  = ref(getPref('compactImages') ?? false)
 
@@ -40,6 +41,12 @@ export function useSettingsAppearance() {
   watch(density, (v) => {
     setPref('density', v as 'compact' | 'default' | 'cozy')
     const spacings: Record<string, string> = { compact: '2px', default: '6px', cozy: '10px' }
+    document.documentElement.style.setProperty('--msg-spacing', spacings[v])
+  })
+
+  watch(msgSpacing, (v) => {
+    setPref('msgSpacing', v as 'compact' | 'normal' | 'aere')
+    const spacings: Record<string, string> = { compact: '2px', normal: '6px', aere: '12px' }
     document.documentElement.style.setProperty('--msg-spacing', spacings[v])
   })
 
@@ -61,6 +68,7 @@ export function useSettingsAppearance() {
     currentTheme,
     fontSize,
     density,
+    msgSpacing,
     showTimestamps,
     compactImages,
     THEMES,

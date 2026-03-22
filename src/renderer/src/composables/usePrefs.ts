@@ -6,11 +6,13 @@ interface Prefs {
   theme: 'dark' | 'light' | 'night' | 'marine' | 'cursus'
   fontSize: 'small' | 'default' | 'large'
   density: 'compact' | 'default' | 'cozy'
+  msgSpacing: 'compact' | 'normal' | 'aere'
   notifSound: boolean
   notifDesktop: boolean
   enterToSend: boolean
   showTimestamps: boolean
   compactImages: boolean
+  rememberMe: boolean
 }
 
 const DEFAULTS: Prefs = {
@@ -18,11 +20,13 @@ const DEFAULTS: Prefs = {
   theme: 'dark',
   fontSize: 'default',
   density: 'default',
+  msgSpacing: 'normal',
   notifSound: true,
   notifDesktop: true,
   enterToSend: true,
   showTimestamps: true,
   compactImages: false,
+  rememberMe: false,
 }
 
 function loadPrefs(): Prefs {
