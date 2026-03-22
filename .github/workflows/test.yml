@@ -27,17 +27,17 @@ jobs:
         run: npm run typecheck
 
       - name: Run tests with coverage
-        run: npx vitest run --coverage --reporter=json-summary --outputFile=coverage-summary.json
+        run: npx vitest run --coverage --coverage.reporter=json-summary --coverage.reportsDirectory=coverage
 
       - name: Generate coverage badge
-        if: github.ref == 'refs/heads/main'
+        if: github.ref == 'refs/heads/main' && hashFiles('coverage/coverage-summary.json') != ''
         uses: jaywcjlove/coverage-badges-cli@main
         with:
-          source: coverage-summary.json
+          source: coverage/coverage-summary.json
           output: coverage/badge.svg
 
       - name: Deploy coverage badge
-        if: github.ref == 'refs/heads/main'
+        if: github.ref == 'refs/heads/main' && hashFiles('coverage/badge.svg') != ''
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
