@@ -379,8 +379,9 @@
             :disabled="!addName.trim() || (addType === 'file' && !addFile) || (addType === 'link' && !addLink.trim()) || adding"
           >
             {{ adding ? 'Envoi en cours...' : 'Ajouter' }}
-        </button>
-      </div>
+          </button>
+        </div>
+      </form>
     </Modal>
 
     <!-- Drag & drop overlay -->
