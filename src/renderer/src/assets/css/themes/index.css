@@ -1,0 +1,10 @@
+/* ════════════════════════════════════════════
+   THÈMES — barrel file
+   Import de toutes les définitions de thème
+════════════════════════════════════════════ */
+@import './_variables.css';
+@import './dark.css';
+@import './light.css';
+@import './night.css';
+@import './marine.css';
+@import './cursus.css';

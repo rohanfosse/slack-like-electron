@@ -74,7 +74,7 @@ export const URGENCY_ORDER = { critical: 0, warning: 1, info: 2 } as const
 // (props dynamiques, canvas, etc.). Garder synchronisé avec base.css :root.
 
 export const COLORS = {
-  accent:      '#4A90D9',
+  accent:      '#4dd0e1',
   danger:      '#E74C3C',
   warning:     '#F39C12',
   success:     '#2ECC71',
