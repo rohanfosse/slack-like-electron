@@ -1,6 +1,6 @@
 <script setup lang="ts">
-  import { onMounted, onUnmounted, ref, computed, watch, onErrorCaptured } from 'vue'
-  import { useRouter } from 'vue-router'
+  import { onMounted, onUnmounted, ref, computed, watch, watchEffect, onErrorCaptured } from 'vue'
+  import { useRouter, useRoute } from 'vue-router'
   import { useAppStore }      from '@/stores/app'
   import { useModalsStore }   from '@/stores/modals'
   import { useMessagesStore } from '@/stores/messages'
@@ -163,6 +163,32 @@
       return
     }
     next()
+  })
+
+  // ── Titre dynamique de l'onglet navigateur ────────────────────────────────
+  const route = useRoute()
+  const ROUTE_LABELS: Record<string, string> = {
+    dashboard: 'Accueil',
+    messages: 'Messages',
+    devoirs: 'Devoirs',
+    documents: 'Documents',
+    live: 'Live',
+  }
+
+  const totalUnreadBadge = computed(() => {
+    const dmCount = Object.values(appStore.unreadDms ?? {}).reduce((a: number, b) => a + (b as number), 0)
+    const mentionCount = Object.values(appStore.mentionChannels ?? {}).reduce((a: number, b) => a + (b as number), 0)
+    return dmCount + mentionCount
+  })
+
+  watchEffect(() => {
+    const section = ROUTE_LABELS[route.name as string] ?? 'Cursus'
+    const count = totalUnreadBadge.value
+    if (count > 0) {
+      document.title = `(${count}) ${section} - Cursus`
+    } else {
+      document.title = `${section} - Cursus`
+    }
   })
 
   let unsubUnread:   (() => void) | null = null
