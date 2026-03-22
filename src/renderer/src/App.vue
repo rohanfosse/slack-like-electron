@@ -7,9 +7,11 @@
   import { useLiveStore }     from '@/stores/live'
   import { usePrefs }       from '@/composables/usePrefs'
   import { useToast }       from '@/composables/useToast'
+  import { useSwipeNav }    from '@/composables/useSwipeNav'
   import Toast        from '@/components/ui/Toast.vue'
   import ConfirmModal from '@/components/ui/ConfirmModal.vue'
   import NavRail    from '@/components/layout/NavRail.vue'
+  import MobileNav  from '@/components/layout/MobileNav.vue'
   import TitleBar   from '@/components/layout/TitleBar.vue'
   import AppHeader  from '@/components/layout/AppHeader.vue'
   import SidebarWrapper from '@/components/sidebar/SidebarWrapper.vue'
@@ -94,6 +96,9 @@
   function toggleSidebar() { sidebarOpen.value = !sidebarOpen.value }
   function closeSidebar()  { sidebarOpen.value = false }
 
+  // ── Mobile swipe navigation (ouvre/ferme la sidebar par glissement) ───────
+  useSwipeNav(sidebarOpen, toggleSidebar)
+
   // ── Changement de mot de passe forcé (première connexion) ─────────────────
   const showForcedPasswordChange = computed(() =>
     !!appStore.currentUser && appStore.currentUser.must_change_password === 1,
@@ -166,6 +171,7 @@
   let unsubTyping:   (() => void) | null = null
   let unsubPresence:    (() => void) | null = null
   let unsubAuthExpired: (() => void) | null = null
+  let unsubGradeNew:    (() => void) | null = null
 
   onMounted(() => {
     // Appliquer le thème sauvegardé (ou suivre le thème système si pas de préférence)
@@ -241,11 +247,42 @@
       if (_liveInviteTimer) clearTimeout(_liveInviteTimer)
       _liveInviteTimer = setTimeout(() => { liveInvite.value = null }, 30_000)
     })
+
+    // Écouter les notifications de notes (étudiants uniquement)
+    unsubGradeNew = window.api.onGradeNew((data) => {
+      if (appStore.isStaff) return
+      // Toast in-app
+      const label = data.note
+        ? `Nouvelle note : ${data.note} sur ${data.devoirTitle}`
+        : `Nouveau feedback sur ${data.devoirTitle}`
+      showToast(label, 'info')
+
+      // Ajouter à l'historique de notifications
+      const entry = {
+        id:          `grade-${Date.now()}`,
+        channelId:   null,
+        channelName: data.devoirTitle,
+        dmStudentId: null,
+        promoId:     null,
+        authorName:  data.note ? `Note : ${data.note}` : 'Feedback',
+        isMention:   true,
+        timestamp:   Date.now(),
+        read:        false,
+      }
+      appStore.notificationHistory.unshift(entry)
+      if (appStore.notificationHistory.length > 50) appStore.notificationHistory.length = 50
+
+      // Notification navigateur si app en arrière-plan
+      if (document.hidden && 'Notification' in window && Notification.permission === 'granted') {
+        new Notification('Cursus — Nouvelle note', { body: label, icon: '/assets/icon-192.png' })
+      }
+    })
   })
 
   onUnmounted(() => {
     unsubUnread?.(); unsubOnline?.(); unsubSocket?.(); unsubTyping?.(); unsubPresence?.(); unsubAuthExpired?.()
     _unsubLiveInvite?.()
+    unsubGradeNew?.()
     dismissLiveInvite()
     window.removeEventListener('online', onOnline)
     window.removeEventListener('offline', onOffline)
@@ -339,6 +376,9 @@
       </RouterView>
     </main>
     </div><!-- /.app-columns -->
+
+    <!-- Navigation mobile (bottom bar, < 768px) -->
+    <MobileNav />
 
     <!-- Bouton flottant feedback (étudiants uniquement) -->
     <button

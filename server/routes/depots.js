@@ -54,14 +54,62 @@ router.post('/note', validate(noteSchema), (req, res) => {
   if (req.user.type === 'student') {
     return res.status(403).json({ ok: false, error: 'Seuls les enseignants peuvent attribuer des notes.' })
   }
-  try { res.json({ ok: true, data: queries.setNote(req.body) }) }
+  try {
+    const result = queries.setNote(req.body)
+    // Émettre une notification grade:new à l'étudiant concerné
+    try {
+      const io = req.app.get('io')
+      if (io) {
+        const { getDb } = require('../db/connection')
+        const depot = getDb().prepare(`
+          SELECT d.student_id, d.travail_id, t.title AS devoir_title, t.category, t.type AS devoir_type
+          FROM depots d JOIN travaux t ON d.travail_id = t.id
+          WHERE d.id = ?
+        `).get(req.body.depot_id)
+        if (depot) {
+          io.to(`user:${depot.student_id}`).emit('grade:new', {
+            devoirTitle: depot.devoir_title,
+            note: req.body.note,
+            feedback: null,
+            devoirId: depot.travail_id,
+            category: depot.category || depot.devoir_type,
+          })
+        }
+      }
+    } catch (emitErr) { console.warn('[grade:new] Erreur émission socket:', emitErr.message) }
+    res.json({ ok: true, data: result })
+  }
   catch (err) { res.status(400).json({ ok: false, error: err.message }) }
 })
 router.post('/feedback', validate(feedbackSchema), (req, res) => {
   if (req.user.type === 'student') {
     return res.status(403).json({ ok: false, error: 'Seuls les enseignants peuvent donner un feedback.' })
   }
-  try { res.json({ ok: true, data: queries.setFeedback(req.body) }) }
+  try {
+    const result = queries.setFeedback(req.body)
+    // Émettre une notification grade:new à l'étudiant concerné
+    try {
+      const io = req.app.get('io')
+      if (io) {
+        const { getDb } = require('../db/connection')
+        const depot = getDb().prepare(`
+          SELECT d.student_id, d.travail_id, t.title AS devoir_title, t.category, t.type AS devoir_type
+          FROM depots d JOIN travaux t ON d.travail_id = t.id
+          WHERE d.id = ?
+        `).get(req.body.depot_id)
+        if (depot) {
+          io.to(`user:${depot.student_id}`).emit('grade:new', {
+            devoirTitle: depot.devoir_title,
+            note: null,
+            feedback: req.body.feedback,
+            devoirId: depot.travail_id,
+            category: depot.category || depot.devoir_type,
+          })
+        }
+      }
+    } catch (emitErr) { console.warn('[grade:new] Erreur émission socket:', emitErr.message) }
+    res.json({ ok: true, data: result })
+  }
   catch (err) { res.status(400).json({ ok: false, error: err.message }) }
 })
 

@@ -38,6 +38,10 @@ const liveSessionStartedCallbacks: Array<(data: LiveSessionStartedPayload) => vo
 const liveSessionEndedCallbacks:   Array<(data: LiveSessionEndedPayload) => void> = []
 const liveInviteCallbacks:         Array<(data: LiveInvitePayload) => void> = []
 
+// Grade notification callbacks
+type GradeNewPayload = { devoirTitle: string; note: string | null; feedback: string | null; devoirId: number; category: string | null }
+const gradeNewCallbacks: Array<(data: GradeNewPayload) => void> = []
+
 // Cache pour les fichiers ouverts via <input type="file">
 // Clé : pseudo-path "__web__<timestamp>", valeur : données du fichier
 const fileCache = new Map<string, { mime: string; b64: string; ext: string; name: string }>()
@@ -61,6 +65,7 @@ function connectSocket(token: string): void {
   socket.on('live:session-started', (data: LiveSessionStartedPayload) => liveSessionStartedCallbacks.forEach(cb => cb(data)))
   socket.on('live:session-ended',   (data: LiveSessionEndedPayload) => liveSessionEndedCallbacks.forEach(cb => cb(data)))
   socket.on('live:invite',          (data: LiveInvitePayload) => liveInviteCallbacks.forEach(cb => cb(data)))
+  socket.on('grade:new',           (data: GradeNewPayload) => gradeNewCallbacks.forEach(cb => cb(data)))
   socket.on('connect', () => socketStateCallbacks.forEach(cb => cb(true)))
   socket.on('disconnect', () => socketStateCallbacks.forEach(cb => cb(false)))
   socket.on('connect_error', (err) => {
@@ -408,6 +413,12 @@ async function importStudentsBrowser(promoId: number): Promise<unknown> {
   onLiveInvite(cb: (data: LiveInvitePayload) => void) {
     liveInviteCallbacks.push(cb)
     return () => { const i = liveInviteCallbacks.indexOf(cb); if (i !== -1) liveInviteCallbacks.splice(i, 1) }
+  },
+
+  // ── Grade notifications ─────────────────────────────────────────────────────
+  onGradeNew(cb: (data: GradeNewPayload) => void) {
+    gradeNewCallbacks.push(cb)
+    return () => { const i = gradeNewCallbacks.indexOf(cb); if (i !== -1) gradeNewCallbacks.splice(i, 1) }
   },
 
   // ── Admin ────────────────────────────────────────────────────────────────────

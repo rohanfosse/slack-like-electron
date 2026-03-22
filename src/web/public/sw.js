@@ -1,7 +1,13 @@
-// ─── Service Worker - Cursus PWA ─────────────────────────────────────────────
-// Stratégie : Network-First pour HTML/navigation, Cache-First pour assets statiques
+/**
+ * Service Worker — Cursus PWA
+ * Stratégies : stale-while-revalidate pour API, cache-first pour assets statiques.
+ */
 
-const CACHE_NAME = 'cursus-v3'
+const CACHE_STATIC = 'cursus-static-v4'
+const CACHE_API    = 'cursus-api-v4'
+
+const API_CACHE_MAX_AGE = 5 * 60 * 1000       // 5 minutes
+const STATIC_CACHE_MAX_AGE = 30 * 24 * 3600e3 // 30 jours
 
 // Assets à précacher lors de l'installation
 const PRECACHE_URLS = [
@@ -12,24 +18,23 @@ const PRECACHE_URLS = [
 // ── Installation : précache des assets essentiels ────────────────────────────
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(PRECACHE_URLS))
+    caches.open(CACHE_STATIC).then((cache) => cache.addAll(PRECACHE_URLS))
   )
-  // Activer immédiatement sans attendre la fermeture des anciens onglets
   self.skipWaiting()
 })
 
 // ── Activation : nettoyage des anciens caches ────────────────────────────────
 self.addEventListener('activate', (event) => {
+  const keepCaches = [CACHE_STATIC, CACHE_API]
   event.waitUntil(
     caches.keys().then((keys) =>
       Promise.all(
         keys
-          .filter((key) => key !== CACHE_NAME)
+          .filter((key) => !keepCaches.includes(key))
           .map((key) => caches.delete(key))
       )
     )
   )
-  // Prendre le contrôle de tous les onglets ouverts
   self.clients.claim()
 })
 
@@ -44,31 +49,64 @@ self.addEventListener('fetch', (event) => {
   // Ignorer les WebSockets et extensions Chrome
   if (url.protocol === 'ws:' || url.protocol === 'wss:' || url.protocol === 'chrome-extension:') return
 
-  // API calls → Network-First (essayer le réseau, fallback cache)
-  if (url.pathname.startsWith('/api/') || url.pathname.startsWith('/socket.io/')) {
+  // API calls → Stale-While-Revalidate (servir le cache, revalider en arrière-plan)
+  if (url.pathname.startsWith('/api/')) {
+    // Ne pas cacher socket.io
+    if (url.pathname.startsWith('/socket.io/')) return
+
     event.respondWith(
-      fetch(request)
-        .then((response) => {
-          // Cacher les GET API réussis pour le mode offline
-          if (response.ok) {
-            const clone = response.clone()
-            caches.open(CACHE_NAME).then((cache) => cache.put(request, clone))
+      caches.open(CACHE_API).then(async (cache) => {
+        const cached = await cache.match(request)
+
+        // Lancer la revalidation réseau en arrière-plan
+        const networkPromise = fetch(request)
+          .then((response) => {
+            if (response.ok) {
+              // Stocker avec un timestamp pour l'expiration
+              const cloned = response.clone()
+              const headers = new Headers(cloned.headers)
+              headers.set('sw-cached-at', String(Date.now()))
+              cache.put(request, new Response(cloned.body, {
+                status: cloned.status,
+                statusText: cloned.statusText,
+                headers,
+              }))
+            }
+            return response
+          })
+          .catch(() => null)
+
+        // Si on a une version en cache récente (< 5 min), la servir immédiatement
+        if (cached) {
+          const cachedAt = Number(cached.headers.get('sw-cached-at') || 0)
+          if (Date.now() - cachedAt < API_CACHE_MAX_AGE) {
+            return cached
           }
-          return response
+        }
+
+        // Sinon, attendre le réseau (ou fallback sur le cache périmé)
+        const networkResponse = await networkPromise
+        if (networkResponse) return networkResponse
+        if (cached) return cached
+
+        // Aucune donnée disponible
+        return new Response(JSON.stringify({ ok: false, error: 'Hors ligne — données non disponibles.' }), {
+          status: 503,
+          headers: { 'Content-Type': 'application/json' },
         })
-        .catch(() => caches.match(request))
+      })
     )
     return
   }
 
-  // Pages HTML (navigation) → Network-First (toujours chercher la dernière version)
+  // Pages HTML (navigation) → Network-First
   if (request.mode === 'navigate' || url.pathname === '/' || url.pathname.endsWith('.html')) {
     event.respondWith(
       fetch(request)
         .then((response) => {
           if (response.ok) {
             const clone = response.clone()
-            caches.open(CACHE_NAME).then((cache) => cache.put(request, clone))
+            caches.open(CACHE_STATIC).then((cache) => cache.put(request, clone))
           }
           return response
         })
@@ -77,19 +115,27 @@ self.addEventListener('fetch', (event) => {
     return
   }
 
-  // Assets statiques (JS/CSS/images) → Cache-First (cache, sinon réseau)
+  // Assets statiques (JS/CSS/fonts/images) → Cache-First, longue durée
   event.respondWith(
-    caches.match(request).then((cached) => {
+    caches.open(CACHE_STATIC).then(async (cache) => {
+      const cached = await cache.match(request)
       if (cached) return cached
 
-      return fetch(request).then((response) => {
-        // Ne cacher que les réponses réussies et same-origin
-        if (response.ok && url.origin === self.location.origin) {
-          const clone = response.clone()
-          caches.open(CACHE_NAME).then((cache) => cache.put(request, clone))
-        }
-        return response
-      })
+      const response = await fetch(request)
+      if (response.ok && url.origin === self.location.origin) {
+        cache.put(request, response.clone())
+      }
+      return response
     })
   )
+})
+
+// ── Message de l'app pour vider le cache (optionnel) ────────────────────────
+self.addEventListener('message', (event) => {
+  if (event.data === 'SKIP_WAITING') {
+    self.skipWaiting()
+  }
+  if (event.data === 'CLEAR_API_CACHE') {
+    caches.delete(CACHE_API)
+  }
 })

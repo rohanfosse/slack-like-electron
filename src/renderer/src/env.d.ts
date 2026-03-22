@@ -223,6 +223,9 @@ declare global {
       onLiveSessionStarted(cb: (data: { sessionId: number }) => void): () => void
       onLiveSessionEnded(cb: (data: { sessionId: number }) => void): () => void
       onLiveInvite(cb: (data: { sessionId: number; title: string; joinCode: string; teacherName: string }) => void): () => void
+
+      // Grade notifications
+      onGradeNew(cb: (data: { devoirTitle: string; note: string | null; feedback: string | null; devoirId: number; category: string | null }) => void): () => void
     }
   }
 }

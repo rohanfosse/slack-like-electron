@@ -364,3 +364,61 @@ body.light * { scrollbar-color: rgba(120,80,40,.2) transparent; }
 body.cursus ::-webkit-scrollbar-thumb       { background: rgba(0,0,0,.15); }
 body.cursus ::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,.25); }
 body.cursus * { scrollbar-color: rgba(0,0,0,.15) transparent; }
+
+/* ════════════════════════════════════════════
+   MOBILE RESPONSIVE (< 768px)
+════════════════════════════════════════════ */
+@media (max-width: 768px) {
+  /* Réduire le padding des cartes */
+  .sa-card, .dv-proj-card, .bento-tile { padding: 12px; }
+
+  /* Empiler les layouts horizontaux */
+  .dv-stats-row, .sa-actions { flex-direction: column; }
+
+  /* Masquer sidebar et rail, afficher mobile-nav */
+  .sidebar-wrapper { display: none !important; }
+  .nav-rail { display: none !important; }
+
+  /* Contenu principal en pleine largeur */
+  .main-wrapper { margin-left: 0 !important; }
+  .app-columns { padding-left: 0 !important; }
+
+  /* Réduire les titres */
+  .hero-title, .db-title { font-size: 20px; }
+
+  /* Espace pour la barre de navigation mobile en bas */
+  .main-wrapper { padding-bottom: 64px; }
+
+  /* Overscroll contenu (empêcher le scroll parent pendant pull-to-refresh) */
+  .main-wrapper { overscroll-behavior: contain; }
+
+  /* Sidebar mobile drawer (quand ouvert via swipe/bouton) */
+  .sidebar-wrapper.mobile-open {
+    display: flex !important;
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    z-index: var(--z-sidebar);
+    width: 280px;
+    box-shadow: var(--shadow-lg);
+  }
+
+  /* Pull-to-refresh indicator */
+  .ptr-indicator {
+    display: flex;
+    justify-content: center;
+    padding: 8px 0;
+    color: var(--text-secondary);
+    font-size: 12px;
+  }
+  .ptr-spinner {
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: ptr-spin .6s linear infinite;
+  }
+  @keyframes ptr-spin { to { transform: rotate(360deg); } }
+}

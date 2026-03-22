@@ -3,10 +3,11 @@
   "short_name": "Cursus",
   "description": "Application de communication et de gestion pédagogique",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
   "orientation": "any",
-  "background_color": "#1a1d21",
-  "theme_color": "#4A90D9",
+  "background_color": "#161819",
+  "theme_color": "#161819",
   "lang": "fr",
   "icons": [
     {

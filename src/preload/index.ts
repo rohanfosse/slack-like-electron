@@ -46,6 +46,10 @@ const liveSessionStartedCallbacks: Array<(data: LiveSessionStartedPayload) => vo
 const liveSessionEndedCallbacks:   Array<(data: LiveSessionEndedPayload) => void> = []
 const liveInviteCallbacks:         Array<(data: LiveInvitePayload) => void> = []
 
+// Grade notification callbacks
+type GradeNewPayload = { devoirTitle: string; note: string | null; feedback: string | null; devoirId: number; category: string | null }
+const gradeNewCallbacks: Array<(data: GradeNewPayload) => void> = []
+
 // ─── Socket.io ────────────────────────────────────────────────────────────────
 function connectSocket(token: string): void {
   socket?.disconnect()
@@ -68,6 +72,7 @@ function connectSocket(token: string): void {
   socket.on('live:session-started', (data: LiveSessionStartedPayload) => liveSessionStartedCallbacks.forEach(cb => cb(data)))
   socket.on('live:session-ended',   (data: LiveSessionEndedPayload) => liveSessionEndedCallbacks.forEach(cb => cb(data)))
   socket.on('live:invite',          (data: LiveInvitePayload) => liveInviteCallbacks.forEach(cb => cb(data)))
+  socket.on('grade:new',           (data: GradeNewPayload) => gradeNewCallbacks.forEach(cb => cb(data)))
   socket.on('connect', () => {
     socketStateCallbacks.forEach((cb) => cb(true))
   })
@@ -359,6 +364,12 @@ contextBridge.exposeInMainWorld('api', {
   onLiveInvite: (cb: (data: LiveInvitePayload) => void) => {
     liveInviteCallbacks.push(cb)
     return () => { const i = liveInviteCallbacks.indexOf(cb); if (i !== -1) liveInviteCallbacks.splice(i, 1) }
+  },
+
+  // ── Grade notifications ─────────────────────────────────────────────────────
+  onGradeNew: (cb: (data: GradeNewPayload) => void) => {
+    gradeNewCallbacks.push(cb)
+    return () => { const i = gradeNewCallbacks.indexOf(cb); if (i !== -1) gradeNewCallbacks.splice(i, 1) }
   },
 
   // ── Admin ────────────────────────────────────────────────────────────────────
