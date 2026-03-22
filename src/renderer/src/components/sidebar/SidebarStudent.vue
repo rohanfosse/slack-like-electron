@@ -477,6 +477,146 @@ watch(() => appStore.currentUser?.id, () => load())
   white-space: nowrap;
 }
 
+/* ── Channel categories (scoped — not inherited from Sidebar.vue) ── */
+.sidebar-section-header {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-muted);
+  padding: 8px 14px 4px;
+  cursor: pointer;
+  user-select: none;
+}
+.sidebar-collapsible-header:hover { color: var(--text-secondary); }
+
+.sidebar-category { margin-bottom: 2px; }
+
+.sidebar-category-header-wrap { position: relative; }
+
+.sidebar-category-header {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  width: 100%;
+  background: transparent;
+  border: none;
+  padding: 4px 12px 4px 10px;
+  cursor: pointer;
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  font-family: var(--font);
+  transition: color 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.sidebar-category-header:hover { color: var(--text-secondary); }
+
+.sidebar-category-icon { flex-shrink: 0; opacity: .85; }
+
+.sidebar-category-chevron {
+  flex-shrink: 0;
+  transition: transform .18s ease;
+}
+.sidebar-category-chevron.rotated { transform: rotate(-90deg); }
+
+.sidebar-category-label {
+  flex: 1;
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── Sidebar items ── */
+.sidebar-scroll-list { padding: 0 4px; }
+
+/* ── DM section ── */
+.dm-list { padding: 0 4px; }
+.dm-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: calc(100% - 8px);
+  margin: 0 4px;
+  padding: 5px 10px 5px 14px;
+  border-radius: 5px;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  font-family: var(--font);
+  font-size: 13.5px;
+  cursor: pointer;
+  transition: background 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  text-align: left;
+}
+.dm-item:hover { background: rgba(255,255,255,.05); }
+.dm-item.active { background: rgba(74,144,217,.18); color: #fff; font-weight: 700; }
+
+.dm-avatar {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 9px;
+  font-weight: 700;
+  color: #fff;
+  flex-shrink: 0;
+}
+.dm-name {
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.dm-badge {
+  font-family: 'JetBrains Mono', 'SF Mono', monospace;
+  font-size: 10px;
+  font-weight: 700;
+  background: var(--accent);
+  color: #fff;
+  border-radius: 8px;
+  padding: 0 5px;
+  min-width: 18px;
+  text-align: center;
+}
+.dm-empty {
+  font-size: 11px;
+  color: var(--text-muted);
+  padding: 6px 16px;
+  font-style: italic;
+}
+
+/* ── Project items ── */
+.project-icon { flex-shrink: 0; color: var(--accent); }
+.project-bullet {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--text-muted);
+  flex-shrink: 0;
+}
+.project-color-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.channel-name {
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 /* Focus mode transitions */
 .sb-focus-list-enter-active,
 .sb-focus-list-leave-active {
