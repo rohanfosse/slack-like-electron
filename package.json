@@ -135,7 +135,13 @@
       "shortcutName": "Cursus",
       "menuCategory": "Cursus",
       "deleteAppDataOnUninstall": false,
-      "perMachine": false
+      "perMachine": false,
+      "license": "LICENSE",
+      "installerLanguages": ["French"],
+      "displayLanguageSelector": false,
+      "artifactName": "Cursus-Setup-${version}.${ext}",
+      "uninstallDisplayName": "Cursus ${version}",
+      "unicode": true
     }
   }
 }
