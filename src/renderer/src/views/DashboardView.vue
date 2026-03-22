@@ -242,10 +242,7 @@ onUnmounted(() => {
     <!-- ════════════════════ VUE ÉTUDIANT ════════════════════ -->
     <DashboardStudent
       v-else
-      :toggle-sidebar="props.toggleSidebar"
       :loading-student="loadingStudent"
-      :greeting-name="greetingName"
-      :today="today"
       :show-onboarding="showOnboarding"
       :has-devoirs-loaded="travauxStore.devoirs.length > 0"
       :student-stats="studentStats"

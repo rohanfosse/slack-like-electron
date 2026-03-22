@@ -5,14 +5,12 @@
 <script setup lang="ts">
 import { watch, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { ChevronDown, FolderOpen, CalendarDays, BookOpen, Layers } from 'lucide-vue-next'
+import { ChevronDown, FolderOpen, Layers } from 'lucide-vue-next'
 import { useAppStore } from '@/stores/app'
-import { useModalsStore } from '@/stores/modals'
 import { useTravauxStore } from '@/stores/travaux'
 import { parseCategoryIcon } from '@/utils/categoryIcon'
 import { avatarColor } from '@/utils/format'
 import ChannelItem from './ChannelItem.vue'
-import SidebarSearch from './SidebarSearch.vue'
 import SidebarSmartFocus from './SidebarSmartFocus.vue'
 import SidebarNextAction from './SidebarNextAction.vue'
 import SidebarFocusToggle from './SidebarFocusToggle.vue'
@@ -30,7 +28,6 @@ import { ref } from 'vue'
 const emit = defineEmits<{ navigate: [] }>()
 
 const appStore = useAppStore()
-const modals = useModalsStore()
 const travauxStore = useTravauxStore()
 const route = useRoute()
 const router = useRouter()
@@ -114,8 +111,6 @@ watch(() => appStore.currentUser?.id, () => load())
 <template>
   <div id="sidebar" class="sidebar sb-student">
     <div style="height:14px" />
-
-    <SidebarSearch />
 
     <!-- Smart Focus -->
     <SidebarSmartFocus
@@ -280,20 +275,6 @@ watch(() => appStore.currentUser?.id, () => load())
 
       <!-- ═══ /dashboard: shortcuts + projects with MicroRing ═══ -->
       <template v-else-if="route.name === 'dashboard'">
-        <div class="sb-section-title sb-pad">
-          <span>RACCOURCIS</span>
-        </div>
-        <nav aria-label="Raccourcis" class="sb-pad-nav">
-          <button class="sidebar-item" @click="modals.studentTimeline = true">
-            <CalendarDays :size="13" class="project-icon" />
-            <span class="channel-name">Ma timeline</span>
-          </button>
-          <button class="sidebar-item" @click="router.push('/devoirs')">
-            <BookOpen :size="13" class="project-icon" />
-            <span class="channel-name">Mes devoirs</span>
-          </button>
-        </nav>
-
         <template v-if="allProjects.length">
           <div class="sb-section-title sb-pad" style="margin-top:8px">
             <span>PROJETS</span>

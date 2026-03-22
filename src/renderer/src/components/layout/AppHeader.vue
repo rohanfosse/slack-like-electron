@@ -1,6 +1,7 @@
 /**
  * AppHeader.vue
  * Top bar: logo breadcrumb, centred search trigger, notifications + user pill.
+ * On student dashboard, shows time-based greeting + date instead of breadcrumb.
  */
 <script setup lang="ts">
 import { computed } from 'vue'
@@ -12,6 +13,21 @@ import { useModalsStore } from '@/stores/modals'
 const route   = useRoute()
 const appStore = useAppStore()
 const modals   = useModalsStore()
+
+const isStudentDashboard = computed(() => route.name === 'dashboard' && !appStore.isStaff)
+
+const greeting = computed(() => {
+  const h = new Date().getHours()
+  if (h >= 12 && h < 18) return 'Bon après-midi'
+  if (h >= 18 || h < 6) return 'Bonsoir'
+  return 'Bonjour'
+})
+
+const greetingName = computed(() => appStore.currentUser?.name?.split(' ')[0] ?? '')
+
+const todayDate = computed(() =>
+  new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' }),
+)
 
 const routeLabel = computed(() => {
   const labels: Record<string, string> = {
@@ -36,12 +52,21 @@ const initials = computed(() => {
 
 <template>
   <header class="app-header">
-    <!-- Left: logo + breadcrumb -->
+    <!-- Left: logo + breadcrumb (or student greeting on dashboard) -->
     <div class="ah-left">
       <GraduationCap :size="18" class="ah-logo-icon" />
       <span class="ah-logo-text">Cursus</span>
-      <span v-if="routeLabel" class="ah-sep">/</span>
-      <span v-if="routeLabel" class="ah-route">{{ routeLabel }}</span>
+      <template v-if="isStudentDashboard">
+        <span class="ah-sep">/</span>
+        <div class="ah-greeting-wrap">
+          <span class="ah-greeting">{{ greeting }}, {{ greetingName }}</span>
+          <span class="ah-date">{{ todayDate }}</span>
+        </div>
+      </template>
+      <template v-else>
+        <span v-if="routeLabel" class="ah-sep">/</span>
+        <span v-if="routeLabel" class="ah-route">{{ routeLabel }}</span>
+      </template>
     </div>
 
     <!-- Centre: search bar trigger -->
@@ -88,6 +113,15 @@ const initials = computed(() => {
 .ah-logo-text { font-size: 15px; font-weight: 800; color: var(--text-primary); }
 .ah-sep { color: var(--text-muted); font-size: 14px; }
 .ah-route { font-size: 13px; font-weight: 500; color: var(--text-secondary); }
+.ah-greeting-wrap { display: flex; flex-direction: column; gap: 0; line-height: 1.2; }
+.ah-greeting {
+  font-size: 14px; font-weight: 800;
+  background: linear-gradient(135deg, var(--text-primary) 0%, var(--text-secondary) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.ah-date { font-size: 11px; color: var(--text-muted); text-transform: capitalize; }
 
 /* ── Search bar trigger ── */
 .ah-search {

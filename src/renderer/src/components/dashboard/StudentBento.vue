@@ -15,8 +15,6 @@ import WidgetProject from './student-widgets/WidgetProject.vue'
 import WidgetExams from './student-widgets/WidgetExams.vue'
 import WidgetLivrables from './student-widgets/WidgetLivrables.vue'
 import WidgetSoutenances from './student-widgets/WidgetSoutenances.vue'
-import WidgetShortcuts from './student-widgets/WidgetShortcuts.vue'
-import WidgetActions from './student-widgets/WidgetActions.vue'
 import WidgetLastFeedback from './student-widgets/WidgetLastFeedback.vue'
 import WidgetRecentDoc from './student-widgets/WidgetRecentDoc.vue'
 import WidgetPromoActivity from './student-widgets/WidgetPromoActivity.vue'
@@ -32,8 +30,6 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  navigateDevoirs: []
-  openStudentTimeline: []
   goToProject: [key: string]
 }>()
 
@@ -81,8 +77,6 @@ const widgetComponents: Record<string, Component> = {
   exams: WidgetExams,
   livrables: WidgetLivrables,
   soutenances: WidgetSoutenances,
-  shortcuts: WidgetShortcuts,
-  actions: WidgetActions,
   feedback: WidgetLastFeedback,
   recentDoc: WidgetRecentDoc,
   promoActivity: WidgetPromoActivity,
@@ -99,8 +93,6 @@ const widgetProps = computed<Record<string, Record<string, unknown>>>(() => ({
   exams: { exams: nextExams.value },
   livrables: { livrables: nextLivrables.value },
   soutenances: { soutenances: nextSoutenances.value },
-  shortcuts: {},
-  actions: {},
   feedback: { feedback: latestFeedback.value },
   recentDoc: {},
   promoActivity: {},
@@ -112,10 +104,6 @@ const widgetEvents: Record<string, Record<string, (...args: unknown[]) => void>>
   livrables: { goToProject: (key: unknown) => emit('goToProject', key as string) },
   soutenances: { goToProject: (key: unknown) => emit('goToProject', key as string) },
   feedback: { goToProject: (key: unknown) => emit('goToProject', key as string) },
-  actions: {
-    navigateDevoirs: () => emit('navigateDevoirs'),
-    openStudentTimeline: () => emit('openStudentTimeline'),
-  },
 }
 
 const showAllClear = computed(() =>
