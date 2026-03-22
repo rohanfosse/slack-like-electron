@@ -7,8 +7,12 @@
 <script setup lang="ts">
 import {
   PlusCircle, CalendarDays, GraduationCap, Settings,
-  LayoutDashboard, Users, BarChart2, TrendingUp,
+  LayoutDashboard, Users, BarChart2, TrendingUp, Radio,
 } from 'lucide-vue-next'
+import { useLiveStore } from '@/stores/live'
+import TeacherLiveView from '@/components/live/TeacherLiveView.vue'
+
+const liveStore = useLiveStore()
 import type { Promotion, Depot } from '@/types'
 import type { GanttRow, ProjectCard, Reminder } from '@/composables/useDashboardTeacher'
 import type { SavedMessage, AgendaItem } from '@/composables/useDashboardWidgets'
@@ -84,7 +88,7 @@ const props = defineProps<{
   totalThisWeek: number
 
   // Tabs
-  dashTab: 'accueil' | 'promotions' | 'frise' | 'analytique' | 'reglages'
+  dashTab: 'accueil' | 'promotions' | 'frise' | 'analytique' | 'reglages' | 'live'
 
   // Analytics
   analyticsStats: { total: number; graded: number; notGraded: number }
@@ -113,7 +117,7 @@ const props = defineProps<{
 // ── Emits ────────────────────────────────────────────────────────────────────
 const emit = defineEmits<{
   'update:activePromoId': [id: number]
-  'update:dashTab': [tab: 'accueil' | 'promotions' | 'frise' | 'analytique' | 'reglages']
+  'update:dashTab': [tab: 'accueil' | 'promotions' | 'frise' | 'analytique' | 'reglages' | 'live']
   'update:renamingPromoId': [id: number | null]
   'update:renamingPromoValue': [val: string]
   'update:friseOffset': [val: number]
@@ -146,7 +150,7 @@ const emit = defineEmits<{
   'update:analyticsRange': [range: '7d' | '30d' | 'all']
 }>()
 
-type DashTabType = 'accueil' | 'promotions' | 'frise' | 'analytique' | 'reglages'
+type DashTabType = 'accueil' | 'promotions' | 'frise' | 'analytique' | 'reglages' | 'live'
 
 function setTab(tab: DashTabType) {
   emit('update:dashTab', tab)
@@ -219,6 +223,13 @@ function setTab(tab: DashTabType) {
       <button class="db-tab" :class="{ active: dashTab === 'reglages' }" @click="setTab('reglages')">
         <Settings :size="13" /> Administration
       </button>
+      <button class="db-tab db-tab-live" :class="{ active: dashTab === 'live' }" @click="setTab('live')">
+        <Radio :size="13" /> Live
+        <span
+          v-if="liveStore.currentSession && liveStore.currentSession.status !== 'ended'"
+          class="db-tab-live-dot"
+        />
+      </button>
     </div>
 
     <!-- Tab content -->
@@ -285,6 +296,10 @@ function setTab(tab: DashTabType) {
       @navigate-devoirs="emit('navigateDevoirs')"
       @navigate-messages="emit('navigateMessages')"
       @open-settings="emit('openSettings')"
+    />
+
+    <TeacherLiveView
+      v-else-if="dashTab === 'live'"
     />
 
     <TabFrise
@@ -365,4 +380,20 @@ function setTab(tab: DashTabType) {
 .db-fab:hover { filter: brightness(1.1); transform: translateY(-1px); }
 .db-fab-ghost { background: transparent; color: var(--text-secondary); padding: 7px 10px; }
 .db-fab-ghost:hover { background: rgba(255,255,255,.08); color: var(--text-primary); filter: none; }
+
+/* ── Live tab indicator ── */
+.db-tab-live { position: relative; }
+.db-tab-live-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #ef4444;
+  display: inline-block;
+  margin-left: 4px;
+  animation: pulse-live-dot 2s infinite;
+}
+@keyframes pulse-live-dot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: .4; }
+}
 </style>

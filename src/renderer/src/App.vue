@@ -4,6 +4,7 @@
   import { useAppStore }      from '@/stores/app'
   import { useModalsStore }   from '@/stores/modals'
   import { useMessagesStore } from '@/stores/messages'
+  import { useLiveStore }     from '@/stores/live'
   import { usePrefs }       from '@/composables/usePrefs'
   import { useToast }       from '@/composables/useToast'
   import Toast        from '@/components/ui/Toast.vue'
@@ -35,9 +36,28 @@
 
   const appStore = useAppStore()
   const modals   = useModalsStore()
+  const liveStore = useLiveStore()
   const router   = useRouter()
   const { getPref } = usePrefs()
   const { showToast } = useToast()
+
+  // ── Live invitation popup ─────────────────────────────────────────────────
+  const liveInvite = ref<{ sessionId: number; title: string; joinCode: string; teacherName: string } | null>(null)
+  let _liveInviteTimer: ReturnType<typeof setTimeout> | null = null
+  let _unsubLiveInvite: (() => void) | null = null
+
+  function dismissLiveInvite() {
+    liveInvite.value = null
+    if (_liveInviteTimer) { clearTimeout(_liveInviteTimer); _liveInviteTimer = null }
+  }
+
+  async function acceptLiveInvite() {
+    if (!liveInvite.value) return
+    const code = liveInvite.value.joinCode
+    dismissLiveInvite()
+    await liveStore.joinByCode(code)
+    router.push('/live')
+  }
 
   const promoCreatedKey = ref(0)
   function onPromoCreated() { promoCreatedKey.value++ }
@@ -212,10 +232,20 @@
     // Écouter les indicateurs de frappe
     const messagesStore = useMessagesStore()
     unsubTyping = messagesStore.initTypingListener()
+
+    // Écouter les invitations live (étudiants uniquement)
+    _unsubLiveInvite = window.api.onLiveInvite((data) => {
+      if (appStore.isStaff) return // Les profs n'ont pas besoin de l'invitation
+      liveInvite.value = data
+      if (_liveInviteTimer) clearTimeout(_liveInviteTimer)
+      _liveInviteTimer = setTimeout(() => { liveInvite.value = null }, 30_000)
+    })
   })
 
   onUnmounted(() => {
     unsubUnread?.(); unsubOnline?.(); unsubSocket?.(); unsubTyping?.(); unsubPresence?.(); unsubAuthExpired?.()
+    _unsubLiveInvite?.()
+    dismissLiveInvite()
     window.removeEventListener('online', onOnline)
     window.removeEventListener('offline', onOffline)
   })
@@ -226,6 +256,23 @@
   <Toast />
   <!-- Modal de confirmation global -->
   <ConfirmModal />
+
+  <!-- Invitation Live (étudiants) — flottante en haut à droite -->
+  <Transition name="live-invite-slide">
+    <div v-if="liveInvite" class="live-invite-popup">
+      <div class="live-invite-content">
+        <div class="live-invite-header">
+          <span class="live-invite-dot" />
+          <strong>{{ liveInvite.teacherName }}</strong> vous invite à une session live
+        </div>
+        <div class="live-invite-title">{{ liveInvite.title }}</div>
+        <div class="live-invite-actions">
+          <button class="live-invite-btn live-invite-join" @click="acceptLiveInvite">Rejoindre</button>
+          <button class="live-invite-btn live-invite-dismiss" @click="dismissLiveInvite">Ignorer</button>
+        </div>
+      </div>
+    </div>
+  </Transition>
 
   <!-- Écran de connexion -->
   <LoginOverlay v-if="!appStore.currentUser" />
@@ -685,4 +732,86 @@
   .fab-modal-fade-leave-active { transition: opacity .1s ease, transform .1s ease; }
   .fab-modal-fade-enter-from { opacity: 0; transform: translateY(8px); }
   .fab-modal-fade-leave-to   { opacity: 0; transform: translateY(8px); }
+
+  /* ── Live Invite Popup ── */
+  .live-invite-popup {
+    position: fixed;
+    top: calc(var(--titlebar-height, 32px) + 12px);
+    right: 16px;
+    z-index: calc(var(--z-overlay, 9999) + 1);
+    width: 340px;
+    max-width: calc(100vw - 32px);
+  }
+  .live-invite-content {
+    background: var(--bg-modal, #1e1f21);
+    border: 2px solid var(--accent, #4a90d9);
+    border-radius: 14px;
+    padding: 16px;
+    box-shadow: 0 12px 40px rgba(0,0,0,.5), 0 0 0 1px rgba(74,144,217,.15);
+  }
+  .live-invite-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: var(--text-primary);
+    margin-bottom: 8px;
+    line-height: 1.4;
+  }
+  .live-invite-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #ef4444;
+    flex-shrink: 0;
+    animation: live-invite-pulse 2s infinite;
+  }
+  @keyframes live-invite-pulse {
+    0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(239,68,68,.4); }
+    50% { opacity: .7; box-shadow: 0 0 0 4px rgba(239,68,68,0); }
+  }
+  .live-invite-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 12px;
+    padding-left: 16px;
+  }
+  .live-invite-actions {
+    display: flex;
+    gap: 8px;
+  }
+  .live-invite-btn {
+    flex: 1;
+    padding: 8px 14px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    transition: all .15s;
+    font-family: var(--font);
+  }
+  .live-invite-join {
+    background: var(--accent, #4a90d9);
+    color: #fff;
+  }
+  .live-invite-join:hover {
+    filter: brightness(1.1);
+    transform: translateY(-1px);
+  }
+  .live-invite-dismiss {
+    background: rgba(255,255,255,.08);
+    color: var(--text-muted);
+  }
+  .live-invite-dismiss:hover {
+    background: rgba(255,255,255,.14);
+    color: var(--text-primary);
+  }
+
+  /* Slide-in from right */
+  .live-invite-slide-enter-active { transition: opacity .25s ease, transform .25s cubic-bezier(.34,1.56,.64,1); }
+  .live-invite-slide-leave-active { transition: opacity .15s ease, transform .15s ease; }
+  .live-invite-slide-enter-from { opacity: 0; transform: translateX(60px); }
+  .live-invite-slide-leave-to   { opacity: 0; transform: translateX(60px); }
 </style>

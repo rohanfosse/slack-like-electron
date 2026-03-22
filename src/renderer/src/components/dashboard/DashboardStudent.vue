@@ -38,7 +38,7 @@ const props = defineProps<{
   studentProjectCards: StudentProjectCard[]
 
   // Tabs
-  dashTab: 'accueil' | 'promotions' | 'frise' | 'analytique' | 'reglages'
+  dashTab: 'accueil' | 'promotions' | 'frise' | 'analytique' | 'reglages' | 'live'
 
   // Frise
   friseDragging: boolean

@@ -24,8 +24,9 @@ function throttledResultsEmit(io, activityId, promoId) {
 
 // POST /sessions — créer une session
 router.post('/sessions', wrap((req) => {
-  const { teacherId, promoId, title } = req.body
-  if (!teacherId || !promoId || !title) throw new Error('teacherId, promoId et title requis')
+  const { promoId, title } = req.body
+  const teacherId = req.user?.id
+  if (!teacherId || !promoId || !title) throw new Error('promoId et title requis (teacherId extrait du token)')
   return queries.createSession({ teacherId, promoId, title })
 }))
 
@@ -59,6 +60,13 @@ router.patch('/sessions/:id/status', (req, res) => {
     const io = req.app.get('io')
     if (status === 'active') {
       io.to(`live:${session.promo_id}`).emit('live:session-started', { sessionId: session.id })
+      // Envoyer une invitation aux étudiants de la promo
+      io.to(`live:${session.promo_id}`).emit('live:invite', {
+        sessionId: session.id,
+        title: session.title,
+        joinCode: session.join_code,
+        teacherName: req.user?.name ?? 'Enseignant',
+      })
     } else if (status === 'ended') {
       io.to(`live:${session.promo_id}`).emit('live:session-ended', { sessionId: session.id })
     }

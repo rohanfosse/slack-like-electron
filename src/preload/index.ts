@@ -38,11 +38,13 @@ type LiveActivityClosedPayload = { activityId: number }
 type LiveResultsUpdatePayload  = { activityId: number; data: unknown }
 type LiveSessionStartedPayload = { sessionId: number }
 type LiveSessionEndedPayload   = { sessionId: number }
+type LiveInvitePayload         = { sessionId: number; title: string; joinCode: string; teacherName: string }
 const liveActivityPushedCallbacks: Array<(data: LiveActivityPushedPayload) => void> = []
 const liveActivityClosedCallbacks: Array<(data: LiveActivityClosedPayload) => void> = []
 const liveResultsUpdateCallbacks:  Array<(data: LiveResultsUpdatePayload) => void> = []
 const liveSessionStartedCallbacks: Array<(data: LiveSessionStartedPayload) => void> = []
 const liveSessionEndedCallbacks:   Array<(data: LiveSessionEndedPayload) => void> = []
+const liveInviteCallbacks:         Array<(data: LiveInvitePayload) => void> = []
 
 // ─── Socket.io ────────────────────────────────────────────────────────────────
 function connectSocket(token: string): void {
@@ -65,6 +67,7 @@ function connectSocket(token: string): void {
   socket.on('live:results-update',  (data: LiveResultsUpdatePayload) => liveResultsUpdateCallbacks.forEach(cb => cb(data)))
   socket.on('live:session-started', (data: LiveSessionStartedPayload) => liveSessionStartedCallbacks.forEach(cb => cb(data)))
   socket.on('live:session-ended',   (data: LiveSessionEndedPayload) => liveSessionEndedCallbacks.forEach(cb => cb(data)))
+  socket.on('live:invite',          (data: LiveInvitePayload) => liveInviteCallbacks.forEach(cb => cb(data)))
   socket.on('connect', () => {
     socketStateCallbacks.forEach((cb) => cb(true))
   })
@@ -352,6 +355,10 @@ contextBridge.exposeInMainWorld('api', {
   onLiveSessionEnded: (cb: (data: LiveSessionEndedPayload) => void) => {
     liveSessionEndedCallbacks.push(cb)
     return () => { const i = liveSessionEndedCallbacks.indexOf(cb); if (i !== -1) liveSessionEndedCallbacks.splice(i, 1) }
+  },
+  onLiveInvite: (cb: (data: LiveInvitePayload) => void) => {
+    liveInviteCallbacks.push(cb)
+    return () => { const i = liveInviteCallbacks.indexOf(cb); if (i !== -1) liveInviteCallbacks.splice(i, 1) }
   },
 
   // ── Admin ────────────────────────────────────────────────────────────────────

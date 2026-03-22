@@ -222,6 +222,7 @@ declare global {
       onLiveResultsUpdate(cb: (data: { activityId: number; data: unknown }) => void): () => void
       onLiveSessionStarted(cb: (data: { sessionId: number }) => void): () => void
       onLiveSessionEnded(cb: (data: { sessionId: number }) => void): () => void
+      onLiveInvite(cb: (data: { sessionId: number; title: string; joinCode: string; teacherName: string }) => void): () => void
     }
   }
 }
