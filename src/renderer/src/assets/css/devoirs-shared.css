@@ -150,17 +150,3 @@
   .dv-proj-grid { grid-template-columns: 1fr; }
 }
 
-/* ── Bento stagger animation ────────────────────────────────────────────── */
-@keyframes fadeInUp {
-  from { opacity: 0; transform: translateY(12px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-.bento-animate { animation: fadeInUp 0.4s ease backwards; }
-.bento-animate:nth-child(1) { animation-delay: 0.05s; }
-.bento-animate:nth-child(2) { animation-delay: 0.1s; }
-.bento-animate:nth-child(3) { animation-delay: 0.15s; }
-.bento-animate:nth-child(4) { animation-delay: 0.2s; }
-.bento-animate:nth-child(5) { animation-delay: 0.25s; }
-.bento-animate:nth-child(6) { animation-delay: 0.3s; }
-.bento-animate:nth-child(7) { animation-delay: 0.35s; }
-.bento-animate:nth-child(8) { animation-delay: 0.4s; }

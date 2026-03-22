@@ -341,8 +341,6 @@
     <!-- Barre de titre custom (fenêtre sans chrome natif) -->
     <TitleBar />
 
-    <!-- AppHeader retire pour tous les utilisateurs -->
-
     <!-- Colonnes nav + sidebar + main -->
     <div class="app-columns">
     <NavRail />

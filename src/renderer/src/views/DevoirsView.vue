@@ -27,18 +27,16 @@ const modals       = useModalsStore()
 const { now } = useRealtimeClock()
 
 const {
-  teacherView, filterCategory, filterRendusStatus, sortRendus, teacherSearch,
-  filterStatus, collapsedProjects, toggleProjectCollapse,
-  unifiedGrouped, unifiedFlat, globalDrafts, globalToGrade,
-  upcomingDevoirs, devoirsByType, teacherCategories, ganttItems, rendusByDevoir,
+  unifiedFlat, globalDrafts, globalToGrade,
+  upcomingDevoirs, devoirsByType, teacherCategories, rendusByDevoir,
   publishDevoir, publishAllDrafts, addDevoirOfType,
   projectDevoirCount, projectNextDeadline, projectTypeCounts, projectStats,
-  loadView, setTeacherView, openDevoir,
+  loadView, openDevoir,
 } = useDevoirsTeacher()
 
 const {
-  studentGroups, filteredDevoirs, submittedDevoirs, pendingDeposit,
-  eventDevoirs, studentStats, studentProjectOverview,
+  studentGroups, filteredDevoirs, submittedDevoirs,
+  studentStats, studentProjectOverview,
   nextExams, nextLivrables, nextSoutenances,
   studentCategories, studentProjectTypeCounts, studentProjectStats,
   error: studentError,
