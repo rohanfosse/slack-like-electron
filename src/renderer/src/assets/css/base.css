@@ -43,8 +43,6 @@ button { border: none; background: transparent; font-family: inherit; cursor: po
   --shadow-lg: 0 8px 30px rgba(0,0,0,.35);
   --shadow-card: 0 1px 3px rgba(0,0,0,.3), 0 1px 2px rgba(0,0,0,.2);
   --shadow-card-hover: 0 8px 25px rgba(0,0,0,.4), 0 3px 10px rgba(0,0,0,.3);
-  --shadow-card: 0 1px 3px rgba(0,0,0,.3), 0 1px 2px rgba(0,0,0,.2);
-  --shadow-card-hover: 0 8px 25px rgba(0,0,0,.4), 0 3px 10px rgba(0,0,0,.3);
 
   /* Timings de transition */
   --t-fast: .12s;
@@ -165,6 +163,8 @@ body.light {
   --shadow-sm: 0 1px 2px rgba(80,50,10,.06);
   --shadow-md: 0 4px 12px rgba(80,50,10,.1);
   --shadow-lg: 0 8px 30px rgba(80,50,10,.14);
+  --shadow-card: 0 1px 3px rgba(80,50,10,.08), 0 1px 2px rgba(80,50,10,.06);
+  --shadow-card-hover: 0 8px 25px rgba(80,50,10,.12), 0 3px 10px rgba(80,50,10,.08);
 
   /* Sémantique */
   --color-danger:  #c0392b;
@@ -191,6 +191,7 @@ body.night {
   --bg-hover:   rgba(255,255,255,.05);
   --bg-active:  rgba(74,144,217,.13);
   --bg-modal:   #0b0d11;
+  --bg-elevated: #15181e;
 
   --bg-darkest: #040506;
   --bg-dark:    #0b0d11;
@@ -208,6 +209,8 @@ body.night {
   --shadow-sm: 0 1px 3px rgba(0,0,0,.4);
   --shadow-md: 0 4px 14px rgba(0,0,0,.5);
   --shadow-lg: 0 8px 36px rgba(0,0,0,.65);
+  --shadow-card: 0 1px 3px rgba(0,0,0,.5), 0 1px 2px rgba(0,0,0,.4);
+  --shadow-card-hover: 0 8px 25px rgba(0,0,0,.6), 0 3px 10px rgba(0,0,0,.5);
 }
 
 /* ════════════════════════════════════════════
@@ -221,6 +224,7 @@ body.marine {
   --bg-hover:   rgba(100,170,240,.08);
   --bg-active:  rgba(74,144,217,.22);
   --bg-modal:   #132036;
+  --bg-elevated: #1f3050;
 
   --bg-darkest: #090f1c;
   --bg-dark:    #132036;
@@ -244,6 +248,8 @@ body.marine {
   --shadow-sm: 0 1px 3px rgba(0,0,0,.3);
   --shadow-md: 0 4px 14px rgba(0,0,0,.4);
   --shadow-lg: 0 8px 36px rgba(0,0,0,.55);
+  --shadow-card: 0 1px 3px rgba(0,0,0,.35), 0 1px 2px rgba(0,0,0,.25);
+  --shadow-card-hover: 0 8px 25px rgba(0,0,0,.45), 0 3px 10px rgba(0,0,0,.35);
 }
 
 /* ════════════════════════════════════════════
@@ -288,6 +294,8 @@ body.cursus {
   --shadow-sm: 0 1px 2px rgba(0,0,0,.04);
   --shadow-md: 0 4px 12px rgba(0,0,0,.06);
   --shadow-lg: 0 8px 30px rgba(0,0,0,.1);
+  --shadow-card: 0 1px 3px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.04);
+  --shadow-card-hover: 0 8px 25px rgba(0,0,0,.1), 0 3px 10px rgba(0,0,0,.06);
 
   /* Deadlines */
   --deadline-ok-bg:     rgba(5, 150, 105, .1);

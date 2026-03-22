@@ -28,5 +28,9 @@
       "Bash(docker:*)",
       "Bash(rm:*)"
     ]
+  },
+  "attribution": {
+    "commit": "",
+    "pr": ""
   }
 }
