@@ -75,6 +75,8 @@
     addLink,
     addFile,
     addFileName,
+    addProject,
+    projectList,
     adding,
     openAddModal,
     pickFile,
@@ -289,96 +291,94 @@
     </div>
 
     <!-- ── Modal ajout ─────────────────────────────────────────────────── -->
-    <Modal v-model="showAddModal" title="Ajouter un document" max-width="480px">
-      <div class="docs-add-form">
-
-        <!-- Nom -->
-        <div class="form-group">
-          <label class="form-label">Nom du document</label>
-          <input
-            v-model="addName"
-            type="text"
-            class="form-input"
-            placeholder="ex : Cours réseaux - chapitre 3"
-            autofocus
-          />
-        </div>
-
-        <!-- Catégorie -->
-        <div class="form-group">
-          <label class="form-label">
-            Catégorie
-            <span class="form-label-hint">(optionnelle)</span>
-          </label>
-          <input
-            v-model="addCategory"
-            type="text"
-            class="form-input"
-            placeholder="ex : Cours, TP, Exercices…"
-          />
-        </div>
-
-        <!-- Description -->
-        <div class="form-group">
-          <label class="form-label">
-            Description
-            <span class="form-label-hint">(optionnelle)</span>
-          </label>
-          <input
-            v-model="addDescription"
-            type="text"
-            class="form-input"
-            placeholder="Brève description du document…"
-          />
-        </div>
+    <Modal v-model="showAddModal" title="Ajouter un document" max-width="520px">
+      <form class="da" @submit.prevent="submitAdd">
 
         <!-- Toggle fichier / lien -->
-        <div class="form-group">
-          <label class="form-label">Type</label>
-          <div class="docs-type-toggle">
-            <button class="docs-type-btn" :class="{ active: addType === 'file' }" type="button" @click="addType = 'file'">
-              <Upload :size="14" /> Fichier
-            </button>
-            <button class="docs-type-btn" :class="{ active: addType === 'link' }" type="button" @click="addType = 'link'">
-              <Link2 :size="14" /> Lien URL
-            </button>
-          </div>
+        <div class="da-type-row">
+          <button class="da-type-btn" :class="{ active: addType === 'file' }" type="button" @click="addType = 'file'">
+            <Upload :size="15" /> Fichier
+          </button>
+          <button class="da-type-btn" :class="{ active: addType === 'link' }" type="button" @click="addType = 'link'">
+            <Link2 :size="15" /> Lien URL
+          </button>
         </div>
 
-        <!-- Zone de dépôt fichier -->
-        <div v-if="addType === 'file'" class="form-group">
-          <!-- Fichier sélectionné -->
-          <div v-if="addFile" class="docs-file-selected">
-            <CheckCircle2 :size="18" class="docs-file-selected-icon" />
-            <span class="docs-file-selected-name">{{ addFileName }}</span>
-            <button class="docs-file-selected-clear" type="button" title="Changer de fichier" @click="clearFile">
-              <X :size="13" />
+        <!-- Zone de depot fichier (en haut, bien visible) -->
+        <div v-if="addType === 'file'" class="da-drop-zone">
+          <div v-if="addFile" class="da-file-selected">
+            <CheckCircle2 :size="20" class="da-file-icon" />
+            <div class="da-file-info">
+              <span class="da-file-name">{{ addFileName }}</span>
+              <span class="da-file-hint">Fichier pret a etre envoye</span>
+            </div>
+            <button class="da-file-clear" type="button" title="Changer de fichier" @click="clearFile">
+              <X :size="14" />
             </button>
           </div>
-          <!-- Pas encore de fichier -->
-          <button v-else class="docs-file-picker" type="button" @click="pickFile">
-            <Upload :size="20" class="docs-file-picker-icon" />
-            <span class="docs-file-picker-label">Cliquer pour choisir un fichier</span>
-            <span class="docs-file-picker-hint">PDF, images, vidéos, archives…</span>
+          <button v-else class="da-file-picker" type="button" @click="pickFile">
+            <Upload :size="24" class="da-picker-icon" />
+            <span class="da-picker-label">Cliquer ou glisser un fichier ici</span>
+            <span class="da-picker-hint">PDF, Word, Excel, images, videos, archives</span>
           </button>
         </div>
 
         <!-- URL -->
-        <div v-else class="form-group">
-          <label class="form-label">URL</label>
-          <input v-model="addLink" type="url" class="form-input" placeholder="https://…" />
+        <div v-else class="da-field">
+          <label class="da-label">Adresse URL</label>
+          <input v-model="addLink" type="url" class="da-input" placeholder="https://drive.google.com/..." />
         </div>
 
-      </div>
+        <!-- Nom -->
+        <div class="da-field">
+          <label class="da-label">Nom du document</label>
+          <input v-model="addName" type="text" class="da-input" placeholder="ex : Cours reseaux - chapitre 3" autofocus />
+        </div>
 
-      <div class="modal-footer docs-modal-footer">
-        <button class="btn-ghost" @click="showAddModal = false">Annuler</button>
-        <button
-          class="btn-primary"
-          :disabled="!addName.trim() || (addType === 'file' && !addFile) || (addType === 'link' && !addLink.trim()) || adding"
-          @click="submitAdd"
-        >
-          {{ adding ? 'Ajout en cours…' : 'Ajouter' }}
+        <!-- Categorie (dropdown des existantes + saisie libre) -->
+        <div class="da-row">
+          <div class="da-field da-flex1">
+            <label class="da-label">Categorie</label>
+            <div class="da-cat-wrap">
+              <select v-if="categories.length" v-model="addCategory" class="da-input">
+                <option value="">Sans categorie</option>
+                <option v-for="cat in categories" :key="cat" :value="cat">{{ cat }}</option>
+                <option value="__new__">+ Nouvelle categorie...</option>
+              </select>
+              <input
+                v-if="!categories.length || addCategory === '__new__'"
+                v-model="addCategory === '__new__' ? '' : addCategory"
+                type="text"
+                class="da-input"
+                :class="{ 'da-input--new': addCategory === '__new__' }"
+                placeholder="Nom de la categorie"
+                @input="(e) => { if (addCategory === '__new__') addCategory = (e.target as HTMLInputElement).value }"
+              />
+            </div>
+          </div>
+          <div class="da-field da-flex1">
+            <label class="da-label">Projet</label>
+            <select v-model="addProject" class="da-input">
+              <option value="">Aucun projet</option>
+              <option v-for="p in projectList" :key="p" :value="p">{{ p }}</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Description -->
+        <div class="da-field">
+          <label class="da-label">Description <span class="da-hint">(optionnelle)</span></label>
+          <textarea v-model="addDescription" class="da-input da-textarea" rows="2" placeholder="Breve description, consignes, contexte..." />
+        </div>
+
+        <!-- Footer -->
+        <div class="da-footer">
+          <button type="button" class="btn-ghost" @click="showAddModal = false">Annuler</button>
+          <button
+            type="submit" class="btn-primary da-submit"
+            :disabled="!addName.trim() || (addType === 'file' && !addFile) || (addType === 'link' && !addLink.trim()) || adding"
+          >
+            {{ adding ? 'Envoi en cours...' : 'Ajouter' }}
         </button>
       </div>
     </Modal>
@@ -738,6 +738,70 @@
   display: flex;
   flex-direction: column;
   gap: 14px;
+}
+
+/* ── Modale ajout document (nouveau design) ── */
+.da { display: flex; flex-direction: column; gap: 14px; padding: 16px 20px 4px; }
+.da-field { display: flex; flex-direction: column; gap: 4px; }
+.da-label { font-size: 12px; font-weight: 600; color: var(--text-secondary); display: flex; align-items: center; gap: 4px; }
+.da-hint { font-weight: 400; opacity: .6; }
+.da-input {
+  padding: 9px 12px; border-radius: 8px; font-size: 13px;
+  border: 1px solid var(--border-input); background: var(--bg-input);
+  color: var(--text-primary); font-family: var(--font); transition: border-color .15s;
+}
+.da-input:focus { border-color: var(--accent); outline: none; box-shadow: 0 0 0 3px rgba(74,144,217,.12); }
+.da-textarea { resize: vertical; min-height: 50px; }
+.da-row { display: flex; gap: 10px; }
+.da-flex1 { flex: 1; }
+.da-cat-wrap { display: flex; flex-direction: column; gap: 6px; }
+
+.da-type-row { display: flex; gap: 0; border-radius: 8px; overflow: hidden; border: 1px solid var(--border); }
+.da-type-btn {
+  flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px;
+  padding: 10px; background: transparent; border: none;
+  color: var(--text-muted); font-family: var(--font); font-size: 13px; font-weight: 600;
+  cursor: pointer; transition: all .15s;
+}
+.da-type-btn:hover { background: var(--bg-hover); color: var(--text-primary); }
+.da-type-btn.active { background: var(--accent); color: #fff; }
+
+.da-drop-zone { margin: 0; }
+.da-file-picker {
+  width: 100%; display: flex; flex-direction: column; align-items: center; gap: 8px;
+  padding: 28px 16px; border: 2px dashed var(--border-input); border-radius: 12px;
+  background: var(--bg-elevated); color: var(--text-muted);
+  font-family: var(--font); cursor: pointer; transition: all .2s; text-align: center;
+}
+.da-file-picker:hover { border-color: var(--accent); color: var(--accent); background: rgba(74,144,217,.04); }
+.da-picker-icon { opacity: .5; margin-bottom: 2px; }
+.da-picker-label { font-size: 13px; font-weight: 600; }
+.da-picker-hint { font-size: 11px; opacity: .5; }
+
+.da-file-selected {
+  display: flex; align-items: center; gap: 10px;
+  padding: 12px 14px; border: 1.5px solid var(--color-success); border-radius: 10px;
+  background: rgba(39,174,96,.06);
+}
+.da-file-icon { color: var(--color-success); flex-shrink: 0; }
+.da-file-info { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.da-file-name { font-size: 13px; font-weight: 600; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.da-file-hint { font-size: 11px; color: var(--color-success); }
+.da-file-clear {
+  width: 28px; height: 28px; display: flex; align-items: center; justify-content: center;
+  border-radius: 6px; background: transparent; border: none; color: var(--text-muted);
+  cursor: pointer; transition: all .15s; flex-shrink: 0;
+}
+.da-file-clear:hover { background: rgba(231,76,60,.1); color: var(--color-danger); }
+
+.da-footer {
+  display: flex; align-items: center; justify-content: flex-end; gap: 8px;
+  padding: 14px 0 4px; border-top: 1px solid var(--border);
+}
+.da-submit { min-width: 100px; }
+
+@media (max-width: 500px) {
+  .da-row { flex-direction: column; }
 }
 
 .form-label-hint {

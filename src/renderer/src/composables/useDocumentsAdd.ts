@@ -2,15 +2,17 @@
  * Add-document modal: form state, file picker, and submit logic.
  * Used by DocumentsView.vue
  */
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { useAppStore }       from '@/stores/app'
 import { useDocumentsStore } from '@/stores/documents'
+import { useTravauxStore }   from '@/stores/travaux'
 import { useToast }          from '@/composables/useToast'
 
 export function useDocumentsAdd() {
   const api      = window.api
   const appStore = useAppStore()
   const docStore = useDocumentsStore()
+  const travauxStore = useTravauxStore()
   const { showToast } = useToast()
 
   const showAddModal   = ref(false)
@@ -21,7 +23,17 @@ export function useDocumentsAdd() {
   const addLink        = ref('')
   const addFile        = ref<string | null>(null)
   const addFileName    = ref<string | null>(null)
+  const addProject     = ref('')
   const adding         = ref(false)
+
+  // Liste des projets disponibles (depuis les devoirs)
+  const projectList = computed(() => {
+    const cats = new Set<string>()
+    for (const t of travauxStore.ganttData) {
+      if (t.category?.trim()) cats.add(t.category.trim())
+    }
+    return Array.from(cats).sort((a, b) => a.localeCompare(b, 'fr'))
+  })
 
   function openAddModal() {
     addName.value        = ''
@@ -31,6 +43,7 @@ export function useDocumentsAdd() {
     addLink.value        = ''
     addFile.value        = null
     addFileName.value    = null
+    addProject.value     = appStore.activeProject ?? ''
     showAddModal.value   = true
   }
 
@@ -62,7 +75,7 @@ export function useDocumentsAdd() {
       }
       const ok = await docStore.addDocument({
         promoId:     appStore.activePromoId ?? appStore.currentUser?.promo_id,
-        project:     appStore.activeProject ?? null,
+        project:     addProject.value.trim() || appStore.activeProject || null,
         name:        addName.value.trim(),
         type:        addType.value,
         pathOrUrl,
@@ -91,6 +104,8 @@ export function useDocumentsAdd() {
     addLink,
     addFile,
     addFileName,
+    addProject,
+    projectList,
     adding,
     openAddModal,
     pickFile,
