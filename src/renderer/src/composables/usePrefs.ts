@@ -11,6 +11,9 @@ interface Prefs {
   enterToSend: boolean
   showTimestamps: boolean
   compactImages: boolean
+  reduceMotion: boolean
+  autoMarkRead: boolean
+  spellCheck: boolean
 }
 
 const DEFAULTS: Prefs = {
@@ -23,6 +26,9 @@ const DEFAULTS: Prefs = {
   enterToSend: true,
   showTimestamps: true,
   compactImages: false,
+  reduceMotion: false,
+  autoMarkRead: true,
+  spellCheck: true,
 }
 
 function loadPrefs(): Prefs {

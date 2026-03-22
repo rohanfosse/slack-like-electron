@@ -195,6 +195,9 @@
     const spacings: Record<string, string> = { compact: '2px', default: '6px', cozy: '10px' }
     document.documentElement.style.setProperty('--msg-spacing', spacings[dens])
 
+    // Appliquer le mode réduction de mouvement
+    if (getPref('reduceMotion')) document.documentElement.classList.add('reduce-motion')
+
     // Demander la permission notifications APRÈS un délai (pas au premier chargement)
     // pour laisser l'utilisateur voir l'app d'abord
     if ('Notification' in window && Notification.permission === 'default') {
