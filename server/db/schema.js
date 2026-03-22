@@ -1,6 +1,6 @@
 const { getDb } = require('./connection');
 
-const CURRENT_VERSION = 22;
+const CURRENT_VERSION = 23;
 
 // ─── Schema initial ───────────────────────────────────────────────────────────
 // Crée toutes les tables avec leur schéma complet (colonnes UTC, toutes colonnes incluses).
@@ -540,6 +540,46 @@ function runMigrations(db) {
         );
         CREATE INDEX IF NOT EXISTS idx_reminders_date ON teacher_reminders(date);
         CREATE INDEX IF NOT EXISTS idx_reminders_promo ON teacher_reminders(promo_tag);
+      `);
+    },
+
+    // v23 : live quiz (sessions interactives en direct)
+    (db) => {
+      db.exec(`
+        CREATE TABLE IF NOT EXISTS live_sessions (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          teacher_id INTEGER NOT NULL,
+          promo_id INTEGER NOT NULL REFERENCES promotions(id) ON DELETE CASCADE,
+          title TEXT NOT NULL,
+          join_code TEXT NOT NULL UNIQUE,
+          status TEXT NOT NULL DEFAULT 'waiting' CHECK(status IN ('waiting','active','ended')),
+          created_at TEXT NOT NULL DEFAULT (datetime('now')),
+          ended_at TEXT
+        );
+        CREATE INDEX IF NOT EXISTS idx_live_sessions_code ON live_sessions(join_code);
+
+        CREATE TABLE IF NOT EXISTS live_activities (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          session_id INTEGER NOT NULL REFERENCES live_sessions(id) ON DELETE CASCADE,
+          type TEXT NOT NULL CHECK(type IN ('qcm','sondage','nuage')),
+          title TEXT NOT NULL,
+          options TEXT DEFAULT NULL,
+          multi INTEGER NOT NULL DEFAULT 0,
+          max_words INTEGER NOT NULL DEFAULT 3,
+          position INTEGER NOT NULL DEFAULT 0,
+          status TEXT NOT NULL DEFAULT 'pending' CHECK(status IN ('pending','live','closed')),
+          started_at TEXT,
+          closed_at TEXT
+        );
+
+        CREATE TABLE IF NOT EXISTS live_responses (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          activity_id INTEGER NOT NULL REFERENCES live_activities(id) ON DELETE CASCADE,
+          student_id INTEGER NOT NULL,
+          answer TEXT NOT NULL,
+          created_at TEXT NOT NULL DEFAULT (datetime('now')),
+          UNIQUE(activity_id, student_id)
+        );
       `);
     },
   ];

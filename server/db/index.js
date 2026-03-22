@@ -12,6 +12,7 @@ const documents   = require('./models/documents');
 const rubrics     = require('./models/rubrics');
 const teachers    = require('./models/teachers');
 const admin       = require('./models/admin');
+const live        = require('./models/live');
 
 // Initialisation complète : schema + migrations + seed
 function init() {
@@ -33,4 +34,5 @@ module.exports = {
   ...rubrics,
   ...teachers,
   ...admin,
+  ...live,
 };

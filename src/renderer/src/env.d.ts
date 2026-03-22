@@ -3,7 +3,7 @@
 import type {
   User, Promotion, Channel, Message, Devoir, Depot,
   AppDocument, Ressource, Group, Student, SendMessagePayload,
-  Rubric, RubricScore,
+  Rubric, RubricScore, LiveSession, LiveActivity, LiveResults,
 } from './types'
 
 // ─── Typage du pont IPC (window.api exposé par preload.ts) ──────────────────
@@ -201,6 +201,27 @@ declare global {
       }[]>>
       updateStudentPhoto(payload: { studentId: number; photoData: string | null }): Promise<IpcResponse<number>>
       updateTeacherPhoto(payload: { teacherId: number; photoData: string | null }): Promise<IpcResponse<number>>
+
+      // Live Quiz
+      createLiveSession(payload: unknown): Promise<IpcResponse<LiveSession>>
+      getLiveSession(id: number): Promise<IpcResponse<LiveSession>>
+      getLiveSessionByCode(code: string): Promise<IpcResponse<LiveSession>>
+      getActiveLiveSession(promoId: number): Promise<IpcResponse<LiveSession>>
+      updateLiveSessionStatus(id: number, status: string): Promise<IpcResponse<LiveSession>>
+      deleteLiveSession(id: number): Promise<IpcResponse<null>>
+      addLiveActivity(sessionId: number, payload: unknown): Promise<IpcResponse<LiveActivity>>
+      updateLiveActivity(id: number, fields: unknown): Promise<IpcResponse<LiveActivity>>
+      deleteLiveActivity(id: number): Promise<IpcResponse<null>>
+      setLiveActivityStatus(id: number, status: string): Promise<IpcResponse<LiveActivity>>
+      submitLiveResponse(activityId: number, payload: unknown): Promise<IpcResponse<null>>
+      getLiveActivityResults(activityId: number): Promise<IpcResponse<LiveResults>>
+      emitLiveJoin(promoId: number): void
+      emitLiveLeave(promoId: number): void
+      onLiveActivityPushed(cb: (data: { activity: unknown }) => void): () => void
+      onLiveActivityClosed(cb: (data: { activityId: number }) => void): () => void
+      onLiveResultsUpdate(cb: (data: { activityId: number; data: unknown }) => void): () => void
+      onLiveSessionStarted(cb: (data: { sessionId: number }) => void): () => void
+      onLiveSessionEnded(cb: (data: { sessionId: number }) => void): () => void
     }
   }
 }

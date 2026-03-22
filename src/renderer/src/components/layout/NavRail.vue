@@ -1,17 +1,19 @@
 <script setup lang="ts">
   import { computed, ref, watch } from 'vue'
   import { useRouter, useRoute } from 'vue-router'
-  import { MessageSquare, BookOpen, FileText, LayoutDashboard, Bell, Flame, Search, Shield, Bug } from 'lucide-vue-next'
+  import { MessageSquare, BookOpen, FileText, LayoutDashboard, Bell, Flame, Search, Shield, Bug, Radio } from 'lucide-vue-next'
   import logoUrl from '@/assets/logo.svg'
   import { useAppStore }    from '@/stores/app'
   import { useModalsStore } from '@/stores/modals'
   import { useTravauxStore } from '@/stores/travaux'
+  import { useLiveStore }   from '@/stores/live'
   import { avatarColor }    from '@/utils/format'
   import NotificationPanel from './NotificationPanel.vue'
 
   const appStore    = useAppStore()
   const modals      = useModalsStore()
   const travauxStore = useTravauxStore()
+  const liveStore    = useLiveStore()
   const router      = useRouter()
   const route       = useRoute()
 
@@ -158,6 +160,21 @@
       <span class="nav-label">Documents</span>
     </button>
 
+    <button
+      class="nav-btn"
+      :class="{ active: route.name === 'live' }"
+      title="Live Quiz"
+      aria-label="Section Live Quiz"
+      @click="router.push('/live')"
+    >
+      <Radio :size="20" />
+      <span class="nav-label">Live</span>
+      <span
+        v-if="liveStore.currentSession && liveStore.currentSession.status !== 'ended'"
+        class="nav-live-dot"
+      />
+    </button>
+
     <!-- ── Cloche de notifications ── -->
     <div class="nav-notif-wrapper">
       <button
@@ -288,6 +305,19 @@
 </template>
 
 <style scoped>
+/* ── Live dot pulsing indicator ── */
+.nav-live-dot {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #ef4444;
+  border: 2px solid var(--bg-primary, #111214);
+  animation: pulse-dot 2s infinite;
+}
+
 /* ── Bouton recherche rapide ── */
 .nav-search-hint {
   position: relative;

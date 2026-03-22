@@ -202,6 +202,26 @@ export interface LoginResponse {
 
 // ─── Payloads IPC ────────────────────────────────────────────────────────────
 
+// ─── Live Quiz ──────────────────────────────────────────────────────────────
+
+export interface LiveSession {
+  id: number; teacher_id: number; promo_id: number; title: string
+  join_code: string; status: 'waiting' | 'active' | 'ended'
+  created_at: string; ended_at: string | null; activities?: LiveActivity[]
+}
+export interface LiveActivity {
+  id: number; session_id: number; type: 'qcm' | 'sondage' | 'nuage'
+  title: string; options: string[] | null; multi: number
+  max_words: number; position: number; status: 'pending' | 'live' | 'closed'
+  started_at: string | null; closed_at: string | null
+}
+export interface LiveResults {
+  activityId: number; type: string; totalResponses: number
+  data: { option?: string; text?: string; word?: string; index?: number; count: number; percent?: number; size?: number }[]
+}
+
+// ─── Payloads IPC ────────────────────────────────────────────────────────────
+
 export interface SendMessagePayload {
   channelId?: number | null
   dmStudentId?: number | null

@@ -15,6 +15,7 @@ const router = createRouter({
     { path: '/devoirs',    component: DevoirsView,    name: 'devoirs'    },
     { path: '/travaux',    redirect: '/devoirs' },
     { path: '/documents',  component: DocumentsView,  name: 'documents'  },
+    { path: '/live',       component: () => import('@/views/LiveView.vue'), name: 'live' },
   ],
 })
 

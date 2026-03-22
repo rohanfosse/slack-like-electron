@@ -84,6 +84,7 @@ app.use('/api/documents',   require('./routes/documents'))
 app.use('/api/teachers',    require('./routes/teachers'))
 app.use('/api/rubrics',     require('./routes/rubrics'))
 app.use('/api/admin',       require('./routes/admin/index'))
+app.use('/api/live',        require('./routes/live'))
 
 // ── Fichiers statiques & SPA ──────────────────────────────────────────────────
 const path = require('path')
@@ -221,6 +222,14 @@ io.on('connection', (socket) => {
   socket.emit('presence:update', [...onlineUsers.entries()].map(([id, info]) => ({
     id, name: info.name, role: info.role,
   })))
+
+  // Live quiz : rejoindre/quitter une salle de session
+  socket.on('live:join', ({ promoId }) => {
+    if (promoId) socket.join(`live:${promoId}`)
+  })
+  socket.on('live:leave', ({ promoId }) => {
+    if (promoId) socket.leave(`live:${promoId}`)
+  })
 
   // Indicateur de frappe
   socket.on('typing', ({ channelId, dmStudentId }) => {

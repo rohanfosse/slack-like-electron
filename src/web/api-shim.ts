@@ -24,6 +24,18 @@ const typingCallbacks: Array<(data: { channelId: number; userName: string }) => 
 type PresenceEntry = { id: number; name: string; role: string }
 const presenceCallbacks: Array<(data: PresenceEntry[]) => void> = []
 
+// Live quiz callbacks
+type LiveActivityPushedPayload = { activity: unknown }
+type LiveActivityClosedPayload = { activityId: number }
+type LiveResultsUpdatePayload  = { activityId: number; data: unknown }
+type LiveSessionStartedPayload = { sessionId: number }
+type LiveSessionEndedPayload   = { sessionId: number }
+const liveActivityPushedCallbacks: Array<(data: LiveActivityPushedPayload) => void> = []
+const liveActivityClosedCallbacks: Array<(data: LiveActivityClosedPayload) => void> = []
+const liveResultsUpdateCallbacks:  Array<(data: LiveResultsUpdatePayload) => void> = []
+const liveSessionStartedCallbacks: Array<(data: LiveSessionStartedPayload) => void> = []
+const liveSessionEndedCallbacks:   Array<(data: LiveSessionEndedPayload) => void> = []
+
 // Cache pour les fichiers ouverts via <input type="file">
 // Clé : pseudo-path "__web__<timestamp>", valeur : données du fichier
 const fileCache = new Map<string, { mime: string; b64: string; ext: string; name: string }>()
@@ -41,6 +53,11 @@ function connectSocket(token: string): void {
   socket.on('msg:new', (data: MsgNewPayload) => msgCallbacks.forEach(cb => cb(data)))
   socket.on('typing', (data: { channelId: number; userName: string }) => typingCallbacks.forEach(cb => cb(data)))
   socket.on('presence:update', (data: PresenceEntry[]) => presenceCallbacks.forEach(cb => cb(data)))
+  socket.on('live:activity-pushed', (data: LiveActivityPushedPayload) => liveActivityPushedCallbacks.forEach(cb => cb(data)))
+  socket.on('live:activity-closed', (data: LiveActivityClosedPayload) => liveActivityClosedCallbacks.forEach(cb => cb(data)))
+  socket.on('live:results-update',  (data: LiveResultsUpdatePayload) => liveResultsUpdateCallbacks.forEach(cb => cb(data)))
+  socket.on('live:session-started', (data: LiveSessionStartedPayload) => liveSessionStartedCallbacks.forEach(cb => cb(data)))
+  socket.on('live:session-ended',   (data: LiveSessionEndedPayload) => liveSessionEndedCallbacks.forEach(cb => cb(data)))
   socket.on('connect', () => socketStateCallbacks.forEach(cb => cb(true)))
   socket.on('disconnect', () => socketStateCallbacks.forEach(cb => cb(false)))
   socket.on('connect_error', (err) => {
@@ -347,6 +364,44 @@ async function importStudentsBrowser(promoId: number): Promise<unknown> {
   deleteRubric:   (travailId: number) => del(`/api/rubrics/${travailId}`),
   getDepotScores: (depotId: number)   => get(`/api/rubrics/scores/${depotId}`),
   setDepotScores: (payload: unknown)  => post('/api/rubrics/scores', payload),
+
+  // ── Live Quiz ──────────────────────────────────────────────────────────────
+  createLiveSession:       (payload: unknown)  => post('/api/live/sessions', payload),
+  getLiveSession:          (id: number)         => get(`/api/live/sessions/${id}`),
+  getLiveSessionByCode:    (code: string)       => get(`/api/live/sessions/code/${code}`),
+  getActiveLiveSession:    (promoId: number)    => get(`/api/live/sessions/promo/${promoId}/active`),
+  updateLiveSessionStatus: (id: number, status: string) => patch(`/api/live/sessions/${id}/status`, { status }),
+  deleteLiveSession:       (id: number)         => del(`/api/live/sessions/${id}`),
+  addLiveActivity:         (sessionId: number, payload: unknown) => post(`/api/live/sessions/${sessionId}/activities`, payload),
+  updateLiveActivity:      (id: number, fields: unknown) => patch(`/api/live/activities/${id}`, fields),
+  deleteLiveActivity:      (id: number)         => del(`/api/live/activities/${id}`),
+  setLiveActivityStatus:   (id: number, status: string) => patch(`/api/live/activities/${id}/status`, { status }),
+  submitLiveResponse:      (activityId: number, payload: unknown) => post(`/api/live/activities/${activityId}/respond`, payload),
+  getLiveActivityResults:   (activityId: number) => get(`/api/live/activities/${activityId}/results`),
+
+  emitLiveJoin(promoId: number)  { socket?.emit('live:join', { promoId }) },
+  emitLiveLeave(promoId: number) { socket?.emit('live:leave', { promoId }) },
+
+  onLiveActivityPushed(cb: (data: LiveActivityPushedPayload) => void) {
+    liveActivityPushedCallbacks.push(cb)
+    return () => { const i = liveActivityPushedCallbacks.indexOf(cb); if (i !== -1) liveActivityPushedCallbacks.splice(i, 1) }
+  },
+  onLiveActivityClosed(cb: (data: LiveActivityClosedPayload) => void) {
+    liveActivityClosedCallbacks.push(cb)
+    return () => { const i = liveActivityClosedCallbacks.indexOf(cb); if (i !== -1) liveActivityClosedCallbacks.splice(i, 1) }
+  },
+  onLiveResultsUpdate(cb: (data: LiveResultsUpdatePayload) => void) {
+    liveResultsUpdateCallbacks.push(cb)
+    return () => { const i = liveResultsUpdateCallbacks.indexOf(cb); if (i !== -1) liveResultsUpdateCallbacks.splice(i, 1) }
+  },
+  onLiveSessionStarted(cb: (data: LiveSessionStartedPayload) => void) {
+    liveSessionStartedCallbacks.push(cb)
+    return () => { const i = liveSessionStartedCallbacks.indexOf(cb); if (i !== -1) liveSessionStartedCallbacks.splice(i, 1) }
+  },
+  onLiveSessionEnded(cb: (data: LiveSessionEndedPayload) => void) {
+    liveSessionEndedCallbacks.push(cb)
+    return () => { const i = liveSessionEndedCallbacks.indexOf(cb); if (i !== -1) liveSessionEndedCallbacks.splice(i, 1) }
+  },
 
   // ── Admin ────────────────────────────────────────────────────────────────────
   resetAndSeed: () => post('/api/admin/reset-seed', {}),
