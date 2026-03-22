@@ -1,6 +1,6 @@
 {
   "name": "cursus",
-  "version": "3.0.0-beta.2",
+  "version": "3.0.0-beta.3",
   "description": "Cursus - Suivez votre parcours de formation",
   "main": "out/main/index.js",
   "scripts": {
@@ -137,7 +137,6 @@
       "deleteAppDataOnUninstall": false,
       "perMachine": false,
       "license": "LICENSE",
-      "installerLanguages": ["French"],
       "displayLanguageSelector": false,
       "artifactName": "Cursus-Setup-${version}.${ext}",
       "uninstallDisplayName": "Cursus ${version}",
