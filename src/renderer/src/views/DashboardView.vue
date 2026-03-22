@@ -103,6 +103,16 @@ const {
 
 const { actionItems, classHealth, submissionTrend } = useActionCenter(ganttFiltered)
 
+// ── Change promo color ──────────────────────────────────────────────────────
+async function changePromoColor(promoId: number, color: string) {
+  const promo = promos.value.find(p => p.id === promoId)
+  if (!promo) return
+  try {
+    await window.api.renamePromotion(promoId, promo.name, color)
+    promo.color = color
+  } catch { /* silently fail */ }
+}
+
 // ── Computed props for TeacherHeader second row ──────────────────────────────
 const globalSubmissionRate = computed(() => {
   let depots = 0, expected = 0
@@ -219,6 +229,7 @@ onUnmounted(() => {
       @publish-draft="publishDraft"
       @go-to-project="goToProject"
       @confirm-rename-promo="confirmRenamePromo"
+      @change-promo-color="(id, color) => changePromoColor(id, color)"
       @delete-promo="(id, name) => deletePromo(id, name)"
       @on-frise-wheel="onFriseWheel"
       @on-frise-drag-start="onFriseDragStart"

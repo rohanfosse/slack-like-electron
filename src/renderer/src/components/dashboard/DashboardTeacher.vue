@@ -130,6 +130,7 @@ const emit = defineEmits<{
   publishDraft: [id: number]
   goToProject: [key: string]
   confirmRenamePromo: [promo: Promotion]
+  changePromoColor: [id: number, color: string]
   deletePromo: [id: number, name: string]
   onFriseWheel: [e: WheelEvent]
   onFriseDragStart: [e: MouseEvent]
@@ -235,6 +236,7 @@ function setTab(tab: DashTabType) {
       @update:renaming-promo-id="id => emit('update:renamingPromoId', id)"
       @update:renaming-promo-value="val => emit('update:renamingPromoValue', val)"
       @confirm-rename-promo="p => emit('confirmRenamePromo', p)"
+      @change-promo-color="(id, color) => emit('changePromoColor', id, color)"
       @delete-promo="(id, name) => emit('deletePromo', id, name)"
       @open-classe="emit('openClasse')"
       @open-import-students="id => emit('openImportStudents', id)"

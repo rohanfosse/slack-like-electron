@@ -1,14 +1,14 @@
 /**
  * TabPromotions.vue
  * ---------------------------------------------------------------------------
- * Promotions tab: rich promo cards with ring chart, stat pills, top students,
- * grade distribution, search, summary stats, and comparison table.
+ * Promotions tab: shows the active promo card with ring chart, stat pills,
+ * rename, class, import, color picker, and delete actions.
  */
 <script setup lang="ts">
 import {
   Users, BookOpen, TrendingUp, Edit3,
   GraduationCap, FileText, PlusCircle,
-  Search, Trash2, Palette, BarChart2,
+  Trash2, Palette,
 } from 'lucide-vue-next'
 import type { Promotion } from '@/types'
 import type { GanttRow } from '@/composables/useDashboardTeacher'
@@ -26,14 +26,26 @@ const props = defineProps<{
   ganttAll: GanttRow[]
 }>()
 
-const searchQuery = ref('')
+/* ── Color picker state ── */
+const colorPickerOpenId = ref<number | null>(null)
+const COLOR_OPTIONS = [
+  '#4A90D9', '#2ECC71', '#9B87F5', '#F39C12', '#E74C3C',
+  '#1ABC9C', '#E67E22', '#8E44AD', '#27AE60', '#3498DB',
+]
+
+function toggleColorPicker(promoId: number) {
+  colorPickerOpenId.value = colorPickerOpenId.value === promoId ? null : promoId
+}
+
+async function selectColor(promoId: number, color: string) {
+  colorPickerOpenId.value = null
+  emit('changePromoColor', promoId, color)
+}
 
 /* ── Stats per promo ── */
 const promoStats = computed(() => {
   const map = new Map<number, {
     students: number; published: number; drafts: number; avgSubmission: number
-    topStudents: { name: string; initials: string }[]
-    gradeDistribution: { a: number; b: number; c: number; d: number }
   }>()
   for (const p of props.promos) {
     const studs = props.allStudents.filter(s => s.promo_id === p.id)
@@ -46,49 +58,16 @@ const promoStats = computed(() => {
       ? Math.round(withStudents.reduce((s, t) => s + t.depots_count / t.students_total, 0) / withStudents.length * 100)
       : 0
 
-    // Top 3 students (by name, as proxy for recent submitters)
-    const topStudents = studs.slice(0, 3).map(s => ({
-      name: s.name || `Etudiant #${s.id}`,
-      initials: (s.name || `E${s.id}`).split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase(),
-    }))
-
-    // Simulated grade distribution based on submission rate bands
-    const total = withStudents.length || 1
-    const highSub = withStudents.filter(t => t.depots_count / t.students_total >= 0.75).length
-    const midSub = withStudents.filter(t => {
-      const r = t.depots_count / t.students_total
-      return r >= 0.5 && r < 0.75
-    }).length
-    const lowSub = withStudents.filter(t => {
-      const r = t.depots_count / t.students_total
-      return r >= 0.25 && r < 0.5
-    }).length
-    const veryLow = total - highSub - midSub - lowSub
-    const gradeDistribution = {
-      a: Math.round(highSub / total * 100),
-      b: Math.round(midSub / total * 100),
-      c: Math.round(lowSub / total * 100),
-      d: Math.round(veryLow / total * 100),
-    }
-
-    map.set(p.id, { students, published, drafts, avgSubmission, topStudents, gradeDistribution })
+    map.set(p.id, { students, published, drafts, avgSubmission })
   }
   return map
 })
 
-/* ── Filtered promos ── */
+/* ── Filtered promos: only the active one ── */
 const filteredPromos = computed(() => {
-  const q = searchQuery.value.toLowerCase().trim()
-  if (!q) return props.promos
-  return props.promos.filter(p => p.name.toLowerCase().includes(q))
+  if (props.activePromoId == null) return props.promos
+  return props.promos.filter(p => p.id === props.activePromoId)
 })
-
-/* ── Summary across all promos ── */
-const summary = computed(() => ({
-  promos: props.promos.length,
-  students: props.allStudents.length,
-  devoirs: props.ganttAll.length,
-}))
 
 /* ── Ring chart helpers ── */
 function ringDash(pct: number): string {
@@ -104,6 +83,7 @@ const emit = defineEmits<{
   'update:renamingPromoValue': [val: string]
   confirmRenamePromo: [promo: Promotion]
   deletePromo: [id: number, name: string]
+  changePromoColor: [id: number, color: string]
   openClasse: []
   openImportStudents: [promoId: number]
   openCreatePromo: []
@@ -112,28 +92,6 @@ const emit = defineEmits<{
 
 <template>
   <div class="db-tab-content">
-    <!-- Summary bar -->
-    <div class="tp-summary-bar">
-      <span class="tp-summary-pill">{{ summary.promos }} promo{{ summary.promos > 1 ? 's' : '' }}</span>
-      <span class="tp-summary-sep">&middot;</span>
-      <span class="tp-summary-pill">{{ summary.students }} etudiants</span>
-      <span class="tp-summary-sep">&middot;</span>
-      <span class="tp-summary-pill">{{ summary.devoirs }} devoirs</span>
-    </div>
-
-    <!-- Search -->
-    <div class="tp-search-wrap">
-      <Search :size="14" class="tp-search-icon" />
-      <label for="tp-search" class="sr-only">Rechercher une promotion</label>
-      <input
-        id="tp-search"
-        v-model="searchQuery"
-        class="tp-search-input"
-        placeholder="Rechercher une promotion..."
-        type="text"
-      />
-    </div>
-
     <!-- Promo cards -->
     <div class="tp-promo-list">
       <div
@@ -197,36 +155,6 @@ const emit = defineEmits<{
           <span class="tp-pill tp-pill--accent"><TrendingUp :size="11" /> {{ promoStats.get(p.id)?.avgSubmission ?? 0 }}%</span>
         </div>
 
-        <!-- Top 3 students -->
-        <div v-if="(promoStats.get(p.id)?.topStudents?.length ?? 0) > 0" class="tp-top-students">
-          <span class="tp-top-label">Derniers actifs :</span>
-          <div class="tp-avatar-row">
-            <span
-              v-for="(stu, idx) in promoStats.get(p.id)?.topStudents"
-              :key="idx"
-              class="tp-avatar"
-              :title="stu.name"
-              :style="{ background: p.color }"
-            >{{ stu.initials }}</span>
-          </div>
-        </div>
-
-        <!-- Grade distribution bar -->
-        <div class="tp-grade-bar-wrap">
-          <div class="tp-grade-bar">
-            <div class="tp-grade-seg tp-grade-a" :style="{ width: (promoStats.get(p.id)?.gradeDistribution.a ?? 0) + '%' }" />
-            <div class="tp-grade-seg tp-grade-b" :style="{ width: (promoStats.get(p.id)?.gradeDistribution.b ?? 0) + '%' }" />
-            <div class="tp-grade-seg tp-grade-c" :style="{ width: (promoStats.get(p.id)?.gradeDistribution.c ?? 0) + '%' }" />
-            <div class="tp-grade-seg tp-grade-d" :style="{ width: (promoStats.get(p.id)?.gradeDistribution.d ?? 0) + '%' }" />
-          </div>
-          <div class="tp-grade-legend">
-            <span class="tp-grade-legend-item"><span class="tp-legend-dot tp-grade-a" />A</span>
-            <span class="tp-grade-legend-item"><span class="tp-legend-dot tp-grade-b" />B</span>
-            <span class="tp-grade-legend-item"><span class="tp-legend-dot tp-grade-c" />C</span>
-            <span class="tp-grade-legend-item"><span class="tp-legend-dot tp-grade-d" />D</span>
-          </div>
-        </div>
-
         <!-- Actions row -->
         <div class="tp-actions">
           <button class="tp-btn" @click="emit('update:renamingPromoId', p.id); emit('update:renamingPromoValue', p.name)">
@@ -238,9 +166,22 @@ const emit = defineEmits<{
           <button class="tp-btn" @click="emit('openImportStudents', p.id)">
             <FileText :size="11" /> Importer
           </button>
-          <button class="tp-btn tp-btn--icon" title="Couleur">
-            <Palette :size="11" />
-          </button>
+          <div class="tp-color-picker-wrap">
+            <button class="tp-btn tp-btn--icon" title="Couleur" @click="toggleColorPicker(p.id)">
+              <Palette :size="11" />
+            </button>
+            <div v-if="colorPickerOpenId === p.id" class="tp-color-dropdown">
+              <button
+                v-for="c in COLOR_OPTIONS"
+                :key="c"
+                class="tp-color-swatch"
+                :class="{ 'tp-color-swatch--active': p.color === c }"
+                :style="{ background: c }"
+                :title="c"
+                @click.stop="selectColor(p.id, c)"
+              />
+            </div>
+          </div>
           <button
             class="tp-btn tp-btn--danger"
             :disabled="deletingPromoId === p.id"
@@ -251,7 +192,7 @@ const emit = defineEmits<{
         </div>
       </div>
 
-      <p v-if="filteredPromos.length === 0" class="tp-empty">Aucune promotion ne correspond a la recherche.</p>
+      <p v-if="filteredPromos.length === 0" class="tp-empty">Aucune promotion active.</p>
     </div>
 
     <!-- New promo button -->
@@ -259,66 +200,13 @@ const emit = defineEmits<{
       <PlusCircle :size="13" /> Nouvelle promotion
     </button>
 
-    <!-- Comparison table -->
-    <div v-if="promos.length > 1" class="tp-compare">
-      <h4 class="tp-compare-title"><BarChart2 :size="13" /> Comparer les promotions</h4>
-      <div class="tp-compare-table-wrap">
-        <table class="tp-compare-table">
-          <thead>
-            <tr>
-              <th>Promotion</th>
-              <th>Etudiants</th>
-              <th>Devoirs</th>
-              <th>Soumission moy.</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="p in promos" :key="p.id">
-              <td>
-                <span class="tp-card-dot tp-dot-inline" :style="{ background: p.color }" />
-                {{ p.name }}
-              </td>
-              <td>{{ promoStats.get(p.id)?.students ?? 0 }}</td>
-              <td>{{ (promoStats.get(p.id)?.published ?? 0) + (promoStats.get(p.id)?.drafts ?? 0) }}</td>
-              <td>
-                <span class="tp-compare-pct">{{ promoStats.get(p.id)?.avgSubmission ?? 0 }}%</span>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
+    <!-- Click outside to close color picker -->
+    <div v-if="colorPickerOpenId !== null" class="tp-backdrop" @click="colorPickerOpenId = null" />
   </div>
 </template>
 
 <style scoped>
 .db-tab-content { display: flex; flex-direction: column; gap: 14px; }
-
-/* ── Summary bar ── */
-.tp-summary-bar {
-  display: flex; align-items: center; gap: 8px;
-  font-size: 13px; font-weight: 600; color: var(--text-secondary);
-  padding: 8px 12px; border-radius: 8px;
-  background: var(--bg-elevated);
-}
-.tp-summary-pill { color: var(--text-primary); }
-.tp-summary-sep { color: var(--text-muted); }
-
-/* ── Search ── */
-.tp-search-wrap {
-  position: relative; display: flex; align-items: center;
-}
-.tp-search-icon {
-  position: absolute; left: 10px; color: var(--text-muted); pointer-events: none;
-}
-.tp-search-input {
-  width: 100%; padding: 7px 10px 7px 30px; font-size: 13px;
-  background: var(--bg-input, rgba(255,255,255,.04)); border: 1px solid var(--border-input);
-  border-radius: 8px; color: var(--text-primary); font-family: var(--font);
-  outline: none; transition: border-color var(--t-fast);
-}
-.tp-search-input:focus { border-color: var(--accent); }
-.tp-search-input::placeholder { color: var(--text-muted); }
 
 /* ── Promo list ── */
 .tp-promo-list { display: flex; flex-direction: column; gap: 10px; }
@@ -341,7 +229,6 @@ const emit = defineEmits<{
 }
 .tp-card-identity { display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0; }
 .tp-card-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
-.tp-dot-inline { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 6px; }
 .tp-card-name { font-size: 15px; font-weight: 700; color: var(--text-primary); flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .tp-badge-active {
   font-size: 10px; font-weight: 700; text-transform: uppercase;
@@ -369,46 +256,28 @@ const emit = defineEmits<{
 }
 .tp-pill--accent { background: rgba(74,144,217,.1); color: var(--accent); }
 
-/* ── Top students ── */
-.tp-top-students {
-  display: flex; align-items: center; gap: 8px;
-  margin-bottom: 8px; font-size: 11px; color: var(--text-muted);
-}
-.tp-top-label { white-space: nowrap; }
-.tp-avatar-row { display: flex; gap: 4px; }
-.tp-avatar {
-  width: 24px; height: 24px; border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 9px; font-weight: 700; color: #fff;
-  opacity: .85;
-}
-
-/* ── Grade distribution ── */
-.tp-grade-bar-wrap { margin-bottom: 10px; }
-.tp-grade-bar {
-  display: flex; height: 6px; border-radius: 3px; overflow: hidden;
-  background: var(--bg-elevated);
-}
-.tp-grade-seg { min-width: 2px; transition: width .3s ease; }
-.tp-grade-a { background: #4ade80; }
-.tp-grade-b { background: #60a5fa; }
-.tp-grade-c { background: #fbbf24; }
-.tp-grade-d { background: #f87171; }
-.tp-grade-legend {
-  display: flex; gap: 10px; margin-top: 4px;
-  font-size: 10px; color: var(--text-muted);
-}
-.tp-grade-legend-item { display: flex; align-items: center; gap: 3px; }
-.tp-legend-dot {
-  width: 6px; height: 6px; border-radius: 50%; display: inline-block;
-}
-.tp-legend-dot.tp-grade-a { background: #4ade80; }
-.tp-legend-dot.tp-grade-b { background: #60a5fa; }
-.tp-legend-dot.tp-grade-c { background: #fbbf24; }
-.tp-legend-dot.tp-grade-d { background: #f87171; }
-
 /* ── Actions ── */
-.tp-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+.tp-actions { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+
+/* ── Color picker ── */
+.tp-color-picker-wrap { position: relative; }
+.tp-color-dropdown {
+  position: absolute; bottom: calc(100% + 6px); left: 50%; transform: translateX(-50%);
+  display: flex; gap: 4px; flex-wrap: wrap; padding: 8px;
+  background: var(--bg-modal, var(--bg-elevated)); border: 1px solid var(--border);
+  border-radius: 10px; box-shadow: var(--shadow-lg, 0 4px 20px rgba(0,0,0,.25));
+  z-index: 20; width: 140px;
+}
+.tp-color-swatch {
+  width: 22px; height: 22px; border-radius: 50%; border: 2px solid transparent;
+  cursor: pointer; transition: transform .12s, border-color .12s;
+  flex-shrink: 0;
+}
+.tp-color-swatch:hover { transform: scale(1.2); }
+.tp-color-swatch--active { border-color: var(--text-primary); }
+
+/* ── Backdrop for closing color picker ── */
+.tp-backdrop { position: fixed; inset: 0; z-index: 15; }
 
 /* ── Buttons ── */
 .tp-btn {
@@ -446,31 +315,6 @@ const emit = defineEmits<{
 
 /* ── Empty state ── */
 .tp-empty { font-size: 13px; color: var(--text-muted); text-align: center; padding: 24px 0; }
-
-/* ── Comparison table ── */
-.tp-compare {
-  margin-top: 4px; padding: 16px; border-radius: 12px;
-  background: var(--bg-elevated); border: 1px solid var(--border);
-}
-.tp-compare-title {
-  display: flex; align-items: center; gap: 6px;
-  font-size: 13px; font-weight: 700; color: var(--text-primary); margin-bottom: 12px;
-}
-.tp-compare-table-wrap { overflow-x: auto; }
-.tp-compare-table {
-  width: 100%; border-collapse: collapse; font-size: 12px;
-}
-.tp-compare-table th {
-  text-align: left; padding: 6px 10px; font-weight: 600;
-  color: var(--text-muted); border-bottom: 1px solid var(--border);
-  white-space: nowrap;
-}
-.tp-compare-table td {
-  padding: 8px 10px; color: var(--text-secondary);
-  border-bottom: 1px solid var(--border);
-  white-space: nowrap;
-}
-.tp-compare-pct { font-weight: 700; color: var(--accent); }
 
 /* Screen reader only */
 .sr-only {

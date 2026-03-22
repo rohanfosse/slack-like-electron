@@ -111,6 +111,24 @@ const groupedByDay = computed((): DayGroup[] => {
     .sort((a, b) => a.deadline.localeCompare(b.deadline))
 })
 
+// After groupedByDay, compute visual offsets to avoid overlap
+const positionedGroups = computed(() => {
+  const groups = groupedByDay.value.map(g => ({
+    ...g,
+    pct: parseFloat(props.milestoneLeft(g.deadline)) || 0,
+    offsetY: 0,
+  }))
+  // Sort by position
+  groups.sort((a, b) => a.pct - b.pct)
+  // Push close groups apart vertically
+  for (let i = 1; i < groups.length; i++) {
+    if (Math.abs(groups[i].pct - groups[i - 1].pct) < 4) {
+      groups[i].offsetY = groups[i - 1].offsetY === 0 ? 20 : -20
+    }
+  }
+  return groups
+})
+
 // ── Légende projets ──────────────────────────────────────────────────────
 const projectLegend = computed(() => {
   const seen = new Map<string, { label: string; color: string; count: number }>()
@@ -128,6 +146,11 @@ const expandedGroup = ref<string | null>(null)
 
 function toggleGroup(dateKey: string) {
   expandedGroup.value = expandedGroup.value === dateKey ? null : dateKey
+}
+
+// ── Truncate label ──────────────────────────────────────────────────────
+function truncateLabel(text: string, max = 12): string {
+  return text.length > max ? text.slice(0, max) + '...' : text
 }
 
 // ── Dot shape ────────────────────────────────────────────────────────────
@@ -193,19 +216,19 @@ function dotClassForGroup(group: DayGroup) {
         </div>
       </div>
 
-      <!-- Single lane: grouped by day -->
+      <!-- Single lane: grouped by day, with vertical offset for close milestones -->
       <div class="tf-lane">
         <div class="tf-lane-line" />
         <div
-          v-for="(group, gi) in groupedByDay" :key="group.dateKey"
+          v-for="(group, gi) in positionedGroups" :key="group.dateKey"
           class="tf-milestone" :class="{ 'tf-milestone--above': gi % 2 === 0, 'tf-milestone--expanded': expandedGroup === group.dateKey }"
-          :style="{ left: milestoneLeft(group.deadline) }"
+          :style="{ left: milestoneLeft(group.deadline), transform: `translate(-50%, -50%) translateY(${group.offsetY}px)` }"
           @click.stop="group.items.length > 1 ? toggleGroup(group.dateKey) : emit('onMilestoneClick', group.items[0])"
         >
           <!-- Label au-dessus (index pair) -->
           <div v-if="gi % 2 === 0" class="tf-ms-labels">
             <template v-if="group.items.length === 1">
-              <span class="tf-ms-label" :style="{ color: group.mainColor }">{{ typeLabel(group.items[0].type) }}</span>
+              <span class="tf-ms-label" :style="{ color: group.mainColor }">{{ truncateLabel(typeLabel(group.items[0].type)) }}</span>
             </template>
             <template v-else>
               <span class="tf-ms-label tf-ms-label--count" :style="{ color: group.mainColor }">{{ group.items.length }} devoirs</span>
@@ -220,7 +243,7 @@ function dotClassForGroup(group: DayGroup) {
           <!-- Label en dessous (index impair) -->
           <div v-if="gi % 2 !== 0" class="tf-ms-labels">
             <template v-if="group.items.length === 1">
-              <span class="tf-ms-label" :style="{ color: group.mainColor }">{{ typeLabel(group.items[0].type) }}</span>
+              <span class="tf-ms-label" :style="{ color: group.mainColor }">{{ truncateLabel(typeLabel(group.items[0].type)) }}</span>
             </template>
             <template v-else>
               <span class="tf-ms-label tf-ms-label--count" :style="{ color: group.mainColor }">{{ group.items.length }} devoirs</span>
@@ -346,9 +369,10 @@ function dotClassForGroup(group: DayGroup) {
 
 /* Milestone container (dot + labels) */
 .tf-milestone {
-  position: absolute; top: 50%; transform: translate(-50%, -50%);
+  position: absolute; top: 50%;
   display: flex; flex-direction: column; align-items: center; gap: 3px;
   cursor: pointer; z-index: 2;
+  transition: transform .15s ease;
 }
 .tf-milestone--expanded { z-index: 10; }
 .tf-ms-labels { display: flex; flex-direction: column; align-items: center; gap: 1px; pointer-events: none; }
