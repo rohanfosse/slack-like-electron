@@ -152,11 +152,14 @@ app.get('/admin-monitor', (_req, res) => {
 const LANDING = path.join(__dirname, '../src/landing/index.html')
 if (fs.existsSync(LANDING)) {
   app.get('/', (req, res, next) => {
-    const host = req.hostname || req.headers.host || ''
-    // Ne servir la landing que si le hostname est cursus.school (pas app.cursus.school)
-    if (host.startsWith('app.') || host.includes('localhost')) return next()
-    res.set('Cache-Control', 'no-cache, no-store, must-revalidate')
-    res.sendFile(LANDING)
+    const host = (req.get('host') || req.headers.host || '').split(':')[0]
+    // Servir la landing SEULEMENT pour cursus.school ou www.cursus.school
+    // Tout autre hostname (app.cursus.school, localhost, IP) sert le SPA
+    if (host === 'cursus.school' || host === 'www.cursus.school') {
+      res.set('Cache-Control', 'no-cache, no-store, must-revalidate')
+      return res.sendFile(LANDING)
+    }
+    next()
   })
 }
 
