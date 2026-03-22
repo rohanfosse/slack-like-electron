@@ -38,7 +38,7 @@ declare global {
       searchMessages(channelId: number, q: string): Promise<IpcResponse<Message[]>>
       searchDmMessages(studentId: number, q: string, peer?: number): Promise<IpcResponse<Message[]>>
       searchAllMessages(args: { promoId: number | null; query: string; limit?: number }): Promise<IpcResponse<{ id: number; content: string; author_name: string; created_at: string; channel_id: number; channel_name: string; promo_id: number }[]>>
-      sendMessage(payload: SendMessagePayload): Promise<IpcResponse<{ id: number }>>
+      sendMessage(payload: SendMessagePayload): Promise<IpcResponse<Message>>
       updateReactions(msgId: number, reactionsJson: string): Promise<IpcResponse<number>>
 
       // Travaux / Devoirs
@@ -137,7 +137,7 @@ declare global {
 
       // Messages épinglés
       getPinnedMessages(channelId: number): Promise<IpcResponse<Message[]>>
-      togglePinMessage(payload: { messageId: number; pinned: boolean }): Promise<IpcResponse<null>>
+      togglePinMessage(payload: { messageId: number; pinned: boolean }): Promise<IpcResponse<number>>
       deleteMessage(id: number): Promise<IpcResponse<number>>
       reportMessage(messageId: number, reason: string): Promise<IpcResponse<null>>
       getTeacherReminders(): Promise<IpcResponse<{ id: number; promo_tag: string; date: string; title: string; description: string; bloc: string | null; done: number }[]>>

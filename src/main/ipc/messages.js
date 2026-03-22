@@ -24,6 +24,10 @@ function register() {
       }
       payload = parsed.data
       const result = queries.sendMessage(payload)
+      const message = queries.getMessageById(Number(result.lastInsertRowid))
+      if (!message) {
+        throw new Error('Le message a été inséré mais n’a pas pu être relu.')
+      }
 
       // Parsing des mentions
       const rawContent      = payload.content ?? ''
@@ -49,7 +53,7 @@ function register() {
       for (const win of BrowserWindow.getAllWindows()) {
         if (!win.isDestroyed()) win.webContents.send('msg:new', push)
       }
-      return { ok: true, data: result }
+      return { ok: true, data: message }
     } catch (err) {
       console.error('[IPC db:sendMessage]', err.message)
       return { ok: false, error: err.message }

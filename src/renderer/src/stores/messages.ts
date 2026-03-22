@@ -79,6 +79,45 @@ export const useMessagesStore = defineStore('messages', () => {
     return null
   }
 
+  function markLatestAsRead(messageId: number) {
+    const lrKey = _lrKey()
+    if (lrKey) localStorage.setItem(lrKey, String(messageId))
+  }
+
+  function upsertMessage(message: Message) {
+    const existingIndex = messages.value.findIndex((item) => item.id === message.id)
+    if (existingIndex >= 0) {
+      messages.value = messages.value.map((item) => item.id === message.id ? message : item)
+    } else {
+      messages.value = [...messages.value, message]
+    }
+    initReactions(message.id, message.reactions)
+    firstUnreadId.value = null
+    markLatestAsRead(message.id)
+  }
+
+  function setPinnedState(messageId: number, isPinned: boolean) {
+    messages.value = messages.value.map((message) =>
+      message.id === messageId
+        ? { ...message, is_pinned: isPinned ? 1 : 0 }
+        : message,
+    )
+  }
+
+  function syncPinnedCache(messageId: number, isPinned: boolean) {
+    const message = messages.value.find((item) => item.id === messageId)
+    if (!message) return
+
+    const nextPinned = isPinned
+      ? [message, ...pinned.value.filter((item) => item.id !== messageId)]
+      : pinned.value.filter((item) => item.id !== messageId)
+
+    pinned.value = nextPinned
+      .slice()
+      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+      .slice(0, 5)
+  }
+
   // ── Fetch initial ──────────────────────────────────────────────────────────
   async function fetchMessages() {
     loading.value    = true
@@ -118,9 +157,7 @@ export const useMessagesStore = defineStore('messages', () => {
         firstUnreadId.value = first?.id ?? null
       }
 
-      if (lrKey && fetched.length) {
-        localStorage.setItem(lrKey, String(fetched[fetched.length - 1].id))
-      }
+      if (lrKey && fetched.length) markLatestAsRead(fetched[fetched.length - 1].id)
     } finally {
       loading.value = false
     }
@@ -167,7 +204,7 @@ export const useMessagesStore = defineStore('messages', () => {
       return false
     }
     const quote = quotedMessage.value
-    const result = await api(
+    const result = await api<Message>(
       () => window.api.sendMessage({
         channelId:   appStore.activeChannelId   ?? undefined,
         dmStudentId: appStore.activeDmStudentId ?? undefined,
@@ -188,16 +225,21 @@ export const useMessagesStore = defineStore('messages', () => {
     }
     sendError.value = false
     clearQuote()
-    await fetchMessages()
+    if (searchTerm.value) {
+      await fetchMessages()
+    } else {
+      upsertMessage(result)
+    }
     return true
   }
 
   // ── Épinglage ──────────────────────────────────────────────────────────────
   async function togglePin(messageId: number, pinned_: boolean) {
     if (!appStore.activeChannelId) return
-    await api(() => window.api.togglePinMessage({ messageId, pinned: pinned_ }), 'pin')
-    await fetchPinned(appStore.activeChannelId)
-    await fetchMessages()
+    const updated = await api<number>(() => window.api.togglePinMessage({ messageId, pinned: pinned_ }), 'pin')
+    if (updated === null) return
+    setPinnedState(messageId, pinned_)
+    syncPinnedCache(messageId, pinned_)
   }
 
   // ── Réactions ──────────────────────────────────────────────────────────────

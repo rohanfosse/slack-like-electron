@@ -29,6 +29,17 @@ describe('messages model', () => {
     expect(msgs[0].author_name).toBe('Jean Dupont')
   })
 
+  it('getMessageById returns enriched message data', () => {
+    const msgs = queries.getChannelMessages(1)
+    const message = queries.getMessageById(msgs[0].id)
+    expect(message).toMatchObject({
+      id: msgs[0].id,
+      author_name: 'Jean Dupont',
+      author_initials: 'JD',
+      is_pinned: 0,
+    })
+  })
+
   it('editMessage updates content and sets edited flag', () => {
     const msgs = queries.getChannelMessages(1)
     const msgId = msgs[0].id
@@ -56,6 +67,7 @@ describe('messages model', () => {
     const pinned = queries.getPinnedMessages(1)
     expect(pinned.length).toBe(1)
     expect(pinned[0].id).toBe(msgId)
+    expect(queries.getMessageById(msgId).is_pinned).toBe(1)
   })
 
   it('togglePinMessage unpins a message', () => {
