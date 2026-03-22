@@ -40,7 +40,7 @@ const emit = defineEmits<{
           <span class="db-project-name">
             {{ p.label }}
             <span v-if="p.pending > 0" class="project-status-badge project-status--active">En cours</span>
-            <span v-else class="project-status-badge project-status--done"><CheckCircle2 :size="9" /> Termine</span>
+            <span v-else class="project-status-badge project-status--done"><CheckCircle2 :size="9" /> Terminé</span>
           </span>
           <span v-if="p.nextDeadline" class="db-project-next db-project-next--header" :class="deadlineClass(p.nextDeadline)">
             <Clock :size="9" /> {{ deadlineLabel(p.nextDeadline) }}

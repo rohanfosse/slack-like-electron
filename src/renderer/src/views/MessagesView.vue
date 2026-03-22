@@ -361,7 +361,7 @@
         Bienvenue{{ appStore.currentUser ? ', ' + appStore.currentUser.name.split(' ')[0] : '' }} !
       </h3>
       <p class="welcome-sub">
-        Selectionnez un canal dans la barre laterale pour commencer a echanger.
+        Sélectionnez un canal dans la barre latérale pour commencer à échanger.
       </p>
       <div v-if="appStore.isStudent" class="welcome-tips">
         <div class="welcome-tip">

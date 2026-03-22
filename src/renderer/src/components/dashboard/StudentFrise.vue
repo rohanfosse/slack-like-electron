@@ -202,4 +202,12 @@ const emit = defineEmits<{
 .frise-ms-date { font-size: 8.5px; color: var(--text-muted); font-weight: 500; }
 .frise-interactive { cursor: grab; user-select: none; }
 .frise-grabbing    { cursor: grabbing; }
+
+@media (max-width: 600px) {
+  .frise-label-col { width: 120px; min-width: 120px; font-size: 10px; }
+  .frise-row { height: 72px; }
+  .frise-project-label { padding: 0 6px 0 8px; font-size: 11px; }
+  .frise-ms-title { font-size: 8px; max-width: 60px; }
+  .frise-ms-date { font-size: 7.5px; }
+}
 </style>
