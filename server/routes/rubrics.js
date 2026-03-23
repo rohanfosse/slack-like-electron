@@ -1,13 +1,7 @@
 // ─── Routes rubriques ────────────────────────────────────────────────────────
 const router  = require('express').Router()
 const queries = require('../db/index')
-
-function wrap(fn) {
-  return (req, res) => {
-    try { res.json({ ok: true, data: fn(req) }) }
-    catch (err) { res.status(400).json({ ok: false, error: err.message }) }
-  }
-}
+const wrap    = require('../utils/wrap')
 
 router.get('/scores/:depotId', wrap((req) => queries.getDepotScores(Number(req.params.depotId))))
 router.post('/scores',         wrap((req) => queries.setDepotScores(req.body)))

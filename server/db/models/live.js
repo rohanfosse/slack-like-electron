@@ -1,15 +1,6 @@
 /** Modèle Live Quiz - sessions interactives en direct (QCM, sondages, nuages de mots) */
-const { getDb } = require('../connection');
-
-// ─── Helpers ─────────────────────────────────────────────────────────────────
-
-/** Génère un code aléatoire de 6 caractères alphanumériques majuscules. */
-function generateJoinCode() {
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // sans I/O/0/1 pour éviter confusion
-  let code = '';
-  for (let i = 0; i < 6; i++) code += chars[Math.floor(Math.random() * chars.length)];
-  return code;
-}
+const { getDb }          = require('../connection');
+const generateJoinCode   = require('../../utils/joinCode');
 
 // ─── Sessions ────────────────────────────────────────────────────────────────
 

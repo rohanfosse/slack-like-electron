@@ -1,13 +1,7 @@
 /** Routes API REX — sessions, activites, reponses anonymes, export. */
 const router  = require('express').Router()
 const queries = require('../db/index')
-
-function wrap(fn) {
-  return (req, res) => {
-    try { res.json({ ok: true, data: fn(req) }) }
-    catch (err) { res.status(400).json({ ok: false, error: err.message }) }
-  }
-}
+const wrap    = require('../utils/wrap')
 
 // ─── Throttle helper pour results-update ─────────────────────────────────────
 const _lastEmit = new Map() // activityId → timestamp
@@ -94,6 +88,7 @@ router.delete('/sessions/:id', wrap((req) => {
   return null
 }))
 
+
 // ─── Activities ──────────────────────────────────────────────────────────────
 
 // POST /sessions/:id/activities - ajouter une activite
@@ -112,7 +107,9 @@ router.patch('/activities/:id', wrap((req) => {
 
 // DELETE /activities/:id
 router.delete('/activities/:id', wrap((req) => {
-  queries.deleteRexActivity(Number(req.params.id))
+  const id = Number(req.params.id)
+  _lastEmit.delete(id)
+  queries.deleteRexActivity(id)
   return null
 }))
 

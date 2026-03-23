@@ -13,6 +13,7 @@ export const useRexStore = defineStore('rex', () => {
   const results         = ref<RexResults | null>(null)
   const hasResponded    = ref(false)
   const loading         = ref(false)
+  const error           = ref<string | null>(null)
   const draftSessions   = ref<RexSession[]>([])
 
   // ── Computed ─────────────────────────────────────────────────────────────
@@ -27,6 +28,7 @@ export const useRexStore = defineStore('rex', () => {
 
   async function createSession(title: string, promoId: number): Promise<boolean> {
     loading.value = true
+    error.value = null
     try {
       const data = await api<RexSession>(
         () => window.api.createRexSession({ title, promoId }),
@@ -36,6 +38,7 @@ export const useRexStore = defineStore('rex', () => {
         window.api.emitRexJoin(promoId)
         return true
       }
+      error.value = 'Impossible de créer la session REX'
       return false
     } finally {
       loading.value = false
@@ -44,6 +47,7 @@ export const useRexStore = defineStore('rex', () => {
 
   async function joinByCode(code: string): Promise<boolean> {
     loading.value = true
+    error.value = null
     try {
       const data = await api<RexSession>(
         () => window.api.getRexSessionByCode(code),
@@ -55,6 +59,7 @@ export const useRexStore = defineStore('rex', () => {
         window.api.emitRexJoin(data.promo_id)
         return true
       }
+      error.value = 'Code de session invalide ou session introuvable'
       return false
     } finally {
       loading.value = false
@@ -364,7 +369,7 @@ export const useRexStore = defineStore('rex', () => {
   return {
     // state
     currentSession, currentActivity, results,
-    hasResponded, loading, draftSessions,
+    hasResponded, loading, error, draftSessions,
     // computed
     sessionActivities, liveActivity,
     // actions

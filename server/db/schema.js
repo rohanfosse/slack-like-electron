@@ -1,6 +1,6 @@
 const { getDb } = require('./connection');
 
-const CURRENT_VERSION = 26;
+const CURRENT_VERSION = 27;
 
 // ─── Schema initial ───────────────────────────────────────────────────────────
 // Crée toutes les tables avec leur schéma complet (colonnes UTC, toutes colonnes incluses).
@@ -657,6 +657,17 @@ function runMigrations(db) {
           UNIQUE(activity_id, student_id)
         );
         CREATE INDEX IF NOT EXISTS idx_rex_responses_activity ON rex_responses(activity_id);
+      `);
+    },
+    // v27 : indexes de performance sur colonnes fréquemment filtrées
+    (db) => {
+      db.exec(`
+        CREATE INDEX IF NOT EXISTS idx_live_sessions_promo  ON live_sessions(promo_id);
+        CREATE INDEX IF NOT EXISTS idx_live_sessions_status ON live_sessions(status);
+        CREATE INDEX IF NOT EXISTS idx_rex_sessions_promo   ON rex_sessions(promo_id);
+        CREATE INDEX IF NOT EXISTS idx_rex_sessions_status  ON rex_sessions(status);
+        CREATE INDEX IF NOT EXISTS idx_travaux_promo        ON travaux(promo_id);
+        CREATE INDEX IF NOT EXISTS idx_depots_student       ON depots(student_id);
       `);
     },
   ];

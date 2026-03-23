@@ -1,15 +1,6 @@
 /** REX (Retour d'Experience) — CRUD sessions, activites, reponses anonymes. */
-const { getDb } = require('../connection');
-
-// ─── Helpers ─────────────────────────────────────────────────────────────────
-
-/** Genere un code aleatoire de 6 caracteres alphanumeriques majuscules. */
-function generateJoinCode() {
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // sans I/O/0/1 pour eviter confusion
-  let code = '';
-  for (let i = 0; i < 6; i++) code += chars[Math.floor(Math.random() * chars.length)];
-  return code;
-}
+const { getDb }          = require('../connection');
+const generateJoinCode   = require('../../utils/joinCode');
 
 // ─── Sessions ────────────────────────────────────────────────────────────────
 
@@ -114,8 +105,7 @@ function cloneRexSession(sourceId, { teacherId, promoId, title }) {
 
   let code;
   for (let i = 0; i < 10; i++) {
-    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-    code = Array.from({ length: 6 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+    code = generateJoinCode();
     const exists = db.prepare('SELECT 1 FROM rex_sessions WHERE join_code = ?').get(code);
     if (!exists) break;
   }
