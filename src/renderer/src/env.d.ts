@@ -251,6 +251,23 @@ declare global {
 
       // Grade notifications
       onGradeNew(cb: (data: { devoirTitle: string; note: string | null; feedback: string | null; devoirId: number; category: string | null }) => void): () => void
+
+      // Kanban
+      getKanbanCards(travailId: number, groupId: number): Promise<IpcResponse<import('./types').KanbanCard[]>>
+      createKanbanCard(travailId: number, groupId: number, payload: unknown): Promise<IpcResponse<import('./types').KanbanCard>>
+      updateKanbanCard(id: number, payload: unknown): Promise<IpcResponse<import('./types').KanbanCard>>
+      deleteKanbanCard(id: number): Promise<IpcResponse<null>>
+
+      // Reminders / Agenda
+      getReminders(promoTag?: string | null): Promise<IpcResponse<import('./types').Reminder[]>>
+      createReminder(payload: unknown): Promise<IpcResponse<import('./types').Reminder>>
+      updateReminder(id: number, payload: unknown): Promise<IpcResponse<import('./types').Reminder>>
+      deleteReminder(id: number): Promise<IpcResponse<null>>
+
+      // Auto-update
+      onUpdaterAvailable(cb: (version: string) => void): () => void
+      onUpdaterDownloaded(cb: (version: string) => void): () => void
+      updaterQuitAndInstall(): void
     }
   }
 }

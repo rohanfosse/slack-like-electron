@@ -556,6 +556,19 @@ contextBridge.exposeInMainWorld('api', {
 
   platform: process.platform,
 
+  // ── Auto-update ──────────────────────────────────────────────────────────────
+  onUpdaterAvailable: (cb: (version: string) => void) => {
+    const listener = (_event: Electron.IpcRendererEvent, version: string) => cb(version)
+    ipcRenderer.on('updater:available', listener)
+    return () => ipcRenderer.removeListener('updater:available', listener)
+  },
+  onUpdaterDownloaded: (cb: (version: string) => void) => {
+    const listener = (_event: Electron.IpcRendererEvent, version: string) => cb(version)
+    ipcRenderer.on('updater:downloaded', listener)
+    return () => ipcRenderer.removeListener('updater:downloaded', listener)
+  },
+  updaterQuitAndInstall: () => ipcRenderer.send('updater:quitAndInstall'),
+
   // ── Temps réel (Socket.io) ───────────────────────────────────────────────────
   onNewMessage: (cb: (data: MsgNewPayload) => void) => {
     msgCallbacks.push(cb)

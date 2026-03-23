@@ -8,7 +8,7 @@
   import { usePrefs }       from '@/composables/usePrefs'
   import { useToast }       from '@/composables/useToast'
   import { useSwipeNav }    from '@/composables/useSwipeNav'
-  import { MessageSquare, FileText, Camera, Lock, Trash2, Download, UserX } from 'lucide-vue-next'
+  import { MessageSquare, FileText, Camera, Lock, Trash2, Download, UserX, Download as DownloadIcon, RefreshCw } from 'lucide-vue-next'
   import Toast        from '@/components/ui/Toast.vue'
   import ConfirmModal from '@/components/ui/ConfirmModal.vue'
   import NavRail    from '@/components/layout/NavRail.vue'
@@ -200,6 +200,15 @@
     }
   })
 
+  // ── Bannière de mise à jour ───────────────────────────────────────────────
+  type UpdateState = 'idle' | 'downloading' | 'ready'
+  const updateState   = ref<UpdateState>('idle')
+  const updateVersion = ref('')
+  let _unsubUpdaterAvailable:  (() => void) | null = null
+  let _unsubUpdaterDownloaded: (() => void) | null = null
+
+  function dismissUpdate() { updateState.value = 'idle' }
+
   let unsubUnread:   (() => void) | null = null
   let unsubOnline:   (() => void) | null = null
   let unsubSocket:   (() => void) | null = null
@@ -278,6 +287,16 @@
       _liveInviteTimer = setTimeout(() => { liveInvite.value = null }, 30_000)
     })
 
+    // Écouter les événements de mise à jour
+    _unsubUpdaterAvailable = window.api.onUpdaterAvailable((version: string) => {
+      updateVersion.value = version
+      updateState.value = 'downloading'
+    })
+    _unsubUpdaterDownloaded = window.api.onUpdaterDownloaded((version: string) => {
+      updateVersion.value = version
+      updateState.value = 'ready'
+    })
+
     // Écouter les notifications de notes (étudiants uniquement)
     unsubGradeNew = window.api.onGradeNew((data) => {
       if (appStore.isStaff) return
@@ -314,6 +333,8 @@
     unsubUnread?.(); unsubOnline?.(); unsubSocket?.(); unsubTyping?.(); unsubPresence?.(); unsubAuthExpired?.()
     _unsubLiveInvite?.()
     unsubGradeNew?.()
+    _unsubUpdaterAvailable?.()
+    _unsubUpdaterDownloaded?.()
     dismissLiveInvite()
     window.removeEventListener('online', onOnline)
     window.removeEventListener('offline', onOffline)
@@ -367,6 +388,24 @@
     <div v-if="appStore.sessionExpiredMessage" class="offline-banner offline-banner-red">
       <span>{{ appStore.sessionExpiredMessage }}</span>
     </div>
+
+    <!-- Bandeau mise à jour -->
+    <Transition name="reconnected-fade">
+      <div v-if="updateState !== 'idle'" class="update-banner" :class="updateState === 'ready' ? 'update-banner--ready' : 'update-banner--downloading'">
+        <div class="update-banner-left">
+          <RefreshCw v-if="updateState === 'downloading'" :size="14" class="update-spin" />
+          <DownloadIcon v-else :size="14" />
+          <span v-if="updateState === 'downloading'">Mise à jour {{ updateVersion }} en cours de téléchargement…</span>
+          <span v-else>Mise à jour {{ updateVersion }} prête à installer</span>
+        </div>
+        <div class="update-banner-actions">
+          <button v-if="updateState === 'ready'" class="update-btn-restart" @click="() => window.api.updaterQuitAndInstall()">
+            Redémarrer maintenant
+          </button>
+          <button class="update-btn-dismiss" @click="dismissUpdate">&times;</button>
+        </div>
+      </div>
+    </Transition>
 
     <!-- Bandeau demande de notifications -->
     <Transition name="reconnected-fade">
@@ -593,6 +632,51 @@
   .notif-req-accept { background: var(--accent); color: #fff; }
   .notif-req-dismiss { background: var(--bg-active); color: var(--text-muted); }
   .simulation-banner.banner-shift { top: calc(var(--titlebar-height, 32px) + 36px); }
+
+  /* ── Bannière mise à jour ── */
+  .update-banner {
+    position: fixed;
+    bottom: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: var(--z-modal-bg);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 10px 14px;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 500;
+    box-shadow: 0 8px 30px rgba(0,0,0,.4);
+    white-space: nowrap;
+    border: 1px solid transparent;
+  }
+  .update-banner--downloading {
+    background: var(--bg-elevated, #272829);
+    border-color: var(--border, rgba(255,255,255,.08));
+    color: var(--text-primary);
+  }
+  .update-banner--ready {
+    background: #0f4c3a;
+    border-color: #22c55e44;
+    color: #bbf7d0;
+  }
+  .update-banner-left { display: flex; align-items: center; gap: 8px; }
+  .update-banner-actions { display: flex; align-items: center; gap: 6px; }
+  .update-btn-restart {
+    padding: 5px 12px; border-radius: 6px; border: none; cursor: pointer;
+    background: #22c55e; color: #0a2e1f; font-size: 12px; font-weight: 700;
+    font-family: var(--font);
+  }
+  .update-btn-restart:hover { background: #4ade80; }
+  .update-btn-dismiss {
+    background: transparent; border: none; cursor: pointer;
+    color: inherit; opacity: .6; font-size: 16px; line-height: 1; padding: 2px 4px;
+  }
+  .update-btn-dismiss:hover { opacity: 1; }
+  @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+  .update-spin { animation: spin 1.4s linear infinite; }
 
   /* Bandeau reconnexion socket */
   .socket-banner {
