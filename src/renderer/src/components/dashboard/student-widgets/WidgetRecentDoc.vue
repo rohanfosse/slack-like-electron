@@ -70,6 +70,7 @@ function navigateToDocuments() {
       <ChevronRight :size="13" class="sa-chevron" />
     </div>
     <div class="sa-doc-row">
+      <span class="sa-doc-type-pill">{{ recentDoc.type === 'link' ? 'Lien' : (recentDoc.name?.split('.').pop()?.toUpperCase() ?? 'Fichier') }}</span>
       <span class="sa-doc-name">{{ recentDoc.name }}</span>
       <span class="sa-doc-date sa-mono">{{ relativeDate }}</span>
     </div>
@@ -106,6 +107,17 @@ function navigateToDocuments() {
   overflow: hidden;
   text-overflow: ellipsis;
   flex: 1;
+}
+
+.sa-doc-type-pill {
+  font-size: 9px;
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: rgba(74, 144, 217, .12);
+  color: var(--accent);
+  text-transform: uppercase;
+  flex-shrink: 0;
 }
 
 .sa-doc-date {
