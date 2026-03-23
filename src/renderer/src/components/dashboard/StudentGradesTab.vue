@@ -48,6 +48,19 @@ const distribution = computed(() => {
   }))
 })
 
+// ── Grade timeline (for progression chart) ──────────────────────────────────
+const GRADE_HEIGHT: Record<string, number> = { A: 100, B: 75, C: 50, D: 25 }
+
+const timeline = computed(() =>
+  [...props.gradedDevoirs]
+    .sort((a, b) => new Date(a.deadline).getTime() - new Date(b.deadline).getTime())
+    .map(d => ({
+      ...d,
+      height: GRADE_HEIGHT[d.note.toUpperCase()] ?? 50,
+      color: GRADE_META[d.note.toUpperCase()]?.color ?? 'var(--text-muted)',
+    })),
+)
+
 // ── Expanded feedback ────────────────────────────────────────────────────────
 const expandedId = ref<number | null>(null)
 function toggleExpand(id: number) {
@@ -88,6 +101,27 @@ function toggleExpand(id: number) {
           <div class="sgt-bar-fill" :style="{ width: g.pct + '%', background: g.color }" />
         </div>
         <span class="sgt-bar-count">{{ g.count }}</span>
+      </div>
+    </div>
+
+    <!-- Progression chart -->
+    <div v-if="timeline.length >= 2" class="sgt-chart">
+      <h4 class="sgt-chart-title">Progression</h4>
+      <div class="sgt-chart-area">
+        <div class="sgt-chart-y">
+          <span>A</span><span>B</span><span>C</span><span>D</span>
+        </div>
+        <div class="sgt-chart-bars">
+          <div
+            v-for="(t, idx) in timeline"
+            :key="t.id"
+            class="sgt-chart-col"
+            :title="`${t.title}: ${t.note}`"
+          >
+            <div class="sgt-chart-bar" :style="{ height: t.height + '%', background: t.color }" />
+            <span class="sgt-chart-label">{{ idx + 1 }}</span>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -245,5 +279,47 @@ function toggleExpand(id: number) {
 @media (max-width: 600px) {
   .sgt-pills { flex-wrap: wrap; }
   .sgt-card-left { flex-direction: column; align-items: flex-start; gap: 2px; }
+}
+
+/* ── Progression chart ── */
+.sgt-chart {
+  margin-top: 16px;
+  padding: 14px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+.sgt-chart-title {
+  font-size: 12px; font-weight: 700; color: var(--text-muted);
+  text-transform: uppercase; letter-spacing: .04em;
+  margin: 0 0 10px;
+}
+.sgt-chart-area {
+  display: flex; gap: 8px; height: 100px;
+}
+.sgt-chart-y {
+  display: flex; flex-direction: column;
+  justify-content: space-between;
+  font-size: 9px; font-weight: 700; color: var(--text-muted);
+  padding: 0 2px;
+  width: 14px; flex-shrink: 0;
+}
+.sgt-chart-bars {
+  flex: 1; display: flex; gap: 3px;
+  align-items: flex-end;
+}
+.sgt-chart-col {
+  flex: 1; min-width: 8px; max-width: 40px;
+  display: flex; flex-direction: column; align-items: center;
+  gap: 2px; height: 100%;
+  justify-content: flex-end;
+}
+.sgt-chart-bar {
+  width: 100%; border-radius: 3px 3px 0 0;
+  transition: height .4s ease;
+  min-height: 2px;
+}
+.sgt-chart-label {
+  font-size: 8px; color: var(--text-muted);
 }
 </style>
