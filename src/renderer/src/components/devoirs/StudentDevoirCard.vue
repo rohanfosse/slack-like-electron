@@ -5,11 +5,12 @@
 <script setup lang="ts">
 import {
   CheckCircle2, Clock, Lock, Upload,
-  Calendar, Award,
+  Calendar, Award, Bell, BellOff,
 } from 'lucide-vue-next'
 import { deadlineClass, deadlineLabel, formatDate } from '@/utils/date'
 import { parseCategoryIcon } from '@/utils/categoryIcon'
 import { typeLabel }         from '@/utils/devoir'
+import { useStudentReminders } from '@/composables/useStudentReminders'
 import StudentDepositForm    from './StudentDepositForm.vue'
 import type { Devoir, Rubric } from '@/types'
 
@@ -41,6 +42,7 @@ defineEmits<{
 
 const t = props.devoir
 const showDepositForm = props.variant !== 'overdue' && props.variant !== 'event' && props.variant !== 'submitted'
+const { addReminder, removeReminder, hasReminder } = useStudentReminders()
 
 /** Minimal markdown : **bold**, newlines → <br> */
 function formatDesc(text: string): string {
@@ -60,6 +62,16 @@ function formatDesc(text: string): string {
         <span v-if="devoir.category" class="tag-badge">{{ parseCategoryIcon(devoir.category).label || devoir.category }}</span>
         <span v-if="devoir.channel_name" class="devoir-channel"># {{ devoir.channel_name }}</span>
       </div>
+      <button
+        v-if="variant === 'pending' || variant === 'urgent'"
+        class="devoir-reminder-btn"
+        :class="{ active: hasReminder(devoir.id) }"
+        :title="hasReminder(devoir.id) ? 'Annuler le rappel' : 'Me rappeler 24h avant'"
+        @click.stop="hasReminder(devoir.id) ? removeReminder(devoir.id) : addReminder(devoir.id, devoir.title, devoir.deadline)"
+      >
+        <BellOff v-if="hasReminder(devoir.id)" :size="12" />
+        <Bell v-else :size="12" />
+      </button>
       <span class="deadline-badge" :class="deadlineClass(devoir.deadline)">
         <Clock :size="10" />{{ deadlineLabel(devoir.deadline) }}
       </span>
@@ -179,6 +191,16 @@ function formatDesc(text: string): string {
 }
 
 .devoir-channel { font-size: 11px; color: var(--text-muted); }
+
+.devoir-reminder-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 24px; height: 24px; border-radius: 6px;
+  border: 1px solid var(--border); background: transparent;
+  color: var(--text-muted); cursor: pointer;
+  transition: all .15s; flex-shrink: 0;
+}
+.devoir-reminder-btn:hover { background: var(--bg-hover); color: var(--accent); border-color: var(--accent); }
+.devoir-reminder-btn.active { color: var(--accent); border-color: var(--accent); background: rgba(74,144,217,.08); }
 
 .devoir-card-title {
   font-size: 15px;
