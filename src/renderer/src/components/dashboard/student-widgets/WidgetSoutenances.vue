@@ -22,7 +22,7 @@ const emit = defineEmits<{ goToProject: [key: string] }>()
     <div class="sa-next-list">
       <div v-for="s in soutenances" :key="s.id" class="sa-next-item" role="button" tabindex="0" :aria-label="'Voir la soutenance ' + s.title" @click="emit('goToProject', s.category ?? '')" @keydown.enter="emit('goToProject', s.category ?? '')">
         <span class="sa-next-title">{{ s.title }}</span>
-        <span class="deadline-badge" :class="deadlineClass(s.deadline!)">{{ deadlineLabel(s.deadline!) }}</span>
+        <span v-if="s.deadline" class="deadline-badge" :class="deadlineClass(s.deadline)">{{ deadlineLabel(s.deadline) }}</span>
       </div>
     </div>
   </div>

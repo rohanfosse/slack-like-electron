@@ -57,7 +57,7 @@ const emit = defineEmits<{
           >
             <Clock :size="10" /> {{ deadlineLabel(p.nextDeadline) }}
           </span>
-          <span v-else class="spt-card-deadline spt-card-deadline--none">Aucune echeance</span>
+          <span v-else class="spt-card-deadline spt-card-deadline--none">Aucune échéance</span>
 
           <span v-if="p.overdue > 0" class="spt-card-overdue">
             <AlertTriangle :size="10" /> {{ p.overdue }} en retard

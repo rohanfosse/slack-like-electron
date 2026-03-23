@@ -16,7 +16,7 @@ const liveStore    = useLiveStore()
 const router       = useRouter()
 const route        = useRoute()
 
-const pendingCount = computed(() => travauxStore.pendingDevoirs.length)
+const pendingCount = computed(() => travauxStore.urgentPendingCount)
 const showLive     = computed(() =>
   !appStore.isStaff && liveStore.currentSession && liveStore.currentSession.status !== 'ended',
 )

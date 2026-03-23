@@ -119,21 +119,21 @@ const focusState = computed((): FocusState => {
       type: 'overdue',
       urgency: 'critical',
       title: `${overdueCount.value} devoir${overdueCount.value > 1 ? 's' : ''} en retard`,
-      subtitle: 'Des travaux depassent la date limite',
+      subtitle: 'Des travaux dépassent la date limite',
     }
   }
   if (props.studentStats.pending > 0) {
     return {
       type: 'pending',
       urgency: 'warning',
-      title: `${props.studentStats.pending} devoir${props.studentStats.pending > 1 ? 's' : ''} a rendre`,
+      title: `${props.studentStats.pending} devoir${props.studentStats.pending > 1 ? 's' : ''} à rendre`,
       subtitle: 'Des travaux attendent votre soumission',
     }
   }
   return {
     type: 'clear',
     urgency: 'clear',
-    title: 'Tout est a jour',
+    title: 'Tout est à jour',
     subtitle: 'Aucune action urgente requise',
   }
 })

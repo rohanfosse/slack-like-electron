@@ -66,7 +66,7 @@ function navigateToDocuments() {
   >
     <div class="sa-card-header">
       <component :is="typeIcon" :size="14" class="sa-card-icon" />
-      <span class="sa-section-label">Document recent</span>
+      <span class="sa-section-label">Document récent</span>
       <ChevronRight :size="13" class="sa-chevron" />
     </div>
     <div class="sa-doc-row">
@@ -78,9 +78,9 @@ function navigateToDocuments() {
   <div v-else class="dashboard-card sa-card sa-recent-doc sa-recent-doc--empty">
     <div class="sa-card-header">
       <FileText :size="14" class="sa-card-icon" />
-      <span class="sa-section-label">Document recent</span>
+      <span class="sa-section-label">Document récent</span>
     </div>
-    <p class="sa-doc-empty">Aucun document partage</p>
+    <p class="sa-doc-empty">Aucun document partagé</p>
   </div>
 </template>
 

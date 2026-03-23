@@ -40,7 +40,7 @@ const hasData = computed(() => onlineCount.value > 0 || rendusToday.value > 0)
       </span>
     </template>
     <template v-else>
-      <span class="sa-promo-text sa-promo-text--muted">Activite de la promo</span>
+      <span class="sa-promo-text sa-promo-text--muted">Activité de la promo</span>
     </template>
   </div>
 </template>

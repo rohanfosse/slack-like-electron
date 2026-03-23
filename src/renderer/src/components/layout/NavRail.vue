@@ -28,7 +28,7 @@
     return { background: avatarColor(user.value.name) }
   })
 
-  const pendingCount = computed(() => travauxStore.pendingDevoirs.length)
+  const pendingCount = computed(() => travauxStore.urgentPendingCount)
 
   function openAdmin() {
     window.open('https://admin.cursus.school', '_blank')
