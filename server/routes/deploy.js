@@ -16,9 +16,13 @@ router.post('/', (req, res) => {
   console.log('[Deploy] Déploiement déclenché par webhook...')
   res.json({ ok: true, message: 'Déploiement en cours...' })
 
-  // Pull la nouvelle image puis recrée les conteneurs en tâche de fond
+  // Pull le code + sync landing, puis recrée les conteneurs en tâche de fond
   exec(
-    'docker compose pull && docker compose up -d --force-recreate && docker image prune -f',
+    'git -C /opt/cursus/repo pull origin main' +
+    ' && cp -r /opt/cursus/repo/src/landing/. /opt/cursus/landing/' +
+    ' && docker compose pull' +
+    ' && docker compose up -d --force-recreate' +
+    ' && docker image prune -f',
     { cwd: COMPOSE_DIR, timeout: 300_000 },
   ).unref()
   console.log('[Deploy] docker compose pull + up planifié...')
