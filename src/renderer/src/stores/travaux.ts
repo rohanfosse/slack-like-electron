@@ -36,6 +36,16 @@ export const useTravauxStore = defineStore('travaux', () => {
     ).length,
   )
 
+  const submittedCount = computed(() =>
+    devoirs.value.filter((t) => t.depot_id != null).length,
+  )
+
+  const overdueCount = computed(() =>
+    pendingDevoirs.value.filter((t) =>
+      deadlineClass(t.deadline) === 'deadline-passed',
+    ).length,
+  )
+
   // ── Fetch ─────────────────────────────────────────────────────────────────
   async function fetchStudentDevoirs() {
     if (!appStore.currentUser) return
@@ -127,7 +137,7 @@ export const useTravauxStore = defineStore('travaux', () => {
     // unchanged
     depots, ressources,
     ganttData, allRendus, loading, view,
-    hasPendingUrgent, urgentPendingCount,
+    hasPendingUrgent, urgentPendingCount, submittedCount, overdueCount,
     fetchGantt, fetchRendus,
     fetchDepots, fetchRessources, openTravail,
     createTravail, addDepot, setNote, setFeedback,
