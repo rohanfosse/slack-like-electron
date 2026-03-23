@@ -74,7 +74,7 @@ defineEmits<{
       >
         <Loader2 v-if="depositing" :size="12" class="spin" />
         <Upload v-else :size="12" />
-        {{ depositing ? 'Depot...' : expired ? 'Delai expire' : 'Deposer' }}
+        {{ depositing ? 'Dépôt...' : expired ? 'Délai expiré' : 'Déposer' }}
       </button>
     </div>
   </div>

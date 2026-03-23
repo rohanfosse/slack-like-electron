@@ -131,7 +131,7 @@ function toggleSection(key: string) { collapsedSections.value[key] = !collapsedS
                 @drop="emit('drop', $event)"
               >
                 <Upload :size="18" class="spf-file-zone-icon" />
-                <span>{{ dragOver ? 'Relacher pour deposer' : 'Glisser un fichier ou cliquer' }}</span>
+                <span>{{ dragOver ? 'Relâcher pour déposer' : 'Glisser un fichier ou cliquer' }}</span>
               </div>
             </div>
             <input v-else :value="depositLink" class="form-input" placeholder="https://..." type="url" @input="emit('update:depositLink', ($event.target as HTMLInputElement).value)" />

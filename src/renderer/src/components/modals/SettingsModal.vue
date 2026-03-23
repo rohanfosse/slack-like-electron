@@ -50,7 +50,7 @@
   const roleLabels: Record<string, string> = {
     teacher: 'Enseignant',
     ta: 'Intervenant',
-    student: 'Etudiant',
+    student: 'Étudiant',
   }
 
   // ── Tabs ───────────────────────────────────────────────────────────────────
@@ -370,12 +370,12 @@
             </div>
             <div class="stg-action-row stg-action-danger">
               <div class="stg-toggle-info">
-                <span class="stg-toggle-label">Reinitialiser les donnees</span>
-                <span class="stg-toggle-desc">Recharge les promotions d'exemple avec devoirs, depots et documents de test.</span>
+                <span class="stg-toggle-label">Réinitialiser les données</span>
+                <span class="stg-toggle-desc">Recharge les promotions d'exemple avec devoirs, dépôts et documents de test.</span>
               </div>
               <button class="stg-btn stg-btn-danger" :disabled="resetting" @click="resetDemoData">
                 <RotateCcw :size="13" />
-                {{ resetting ? 'En cours...' : 'Reinitialiser' }}
+                {{ resetting ? 'En cours...' : 'Réinitialiser' }}
               </button>
             </div>
           </div>

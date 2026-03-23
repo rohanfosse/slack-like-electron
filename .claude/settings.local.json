@@ -4,37 +4,16 @@
     "pr": ""
   },
   "permissions": {
+    "defaultMode": "bypassPermissions",
     "allow": [
       "Edit",
       "Write",
+      "Read",
       "Glob",
       "Grep",
-      "Read",
       "Agent",
-      "Bash(git:*)",
-      "Bash(npm:*)",
-      "Bash(npx:*)",
-      "Bash(node:*)",
-      "Bash(ssh:*)",
-      "Bash(python3:*)",
-      "Bash(wc:*)",
-      "Bash(ls:*)",
-      "Bash(file:*)",
-      "Bash(find:*)",
-      "Bash(grep:*)",
-      "Bash(cat:*)",
-      "Bash(head:*)",
-      "Bash(tail:*)",
-      "Bash(sed:*)",
-      "Bash(cd:*)",
-      "Bash(curl:*)",
-      "Bash(gh:*)",
-      "Bash(docker:*)",
-      "Bash(rm:*)",
-      "Bash(for method:*)",
-      "Bash(do echo:*)",
-      "Bash(done)",
-      "WebFetch(domain:github.com)"
+      "Bash",
+      "WebFetch"
     ]
   }
 }
