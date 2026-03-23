@@ -16,6 +16,7 @@ export const useLiveStore = defineStore('live', () => {
   const participantCount = ref(0)
   const hasResponded     = ref(false)
   const loading          = ref(false)
+  const error            = ref<string | null>(null)
   const draftSessions    = ref<LiveSession[]>([])
   const pastSessions     = ref<LiveSession[]>([])
   const leaderboard      = ref<LeaderboardEntry[]>([])
@@ -34,6 +35,7 @@ export const useLiveStore = defineStore('live', () => {
 
   async function createSession(title: string, promoId: number): Promise<boolean> {
     loading.value = true
+    error.value = null
     try {
       const data = await api<LiveSession>(
         () => window.api.createLiveSession({ title, promoId }),
@@ -43,6 +45,7 @@ export const useLiveStore = defineStore('live', () => {
         window.api.emitLiveJoin(promoId)
         return true
       }
+      error.value = 'Impossible de créer la session'
       return false
     } finally {
       loading.value = false
@@ -51,6 +54,7 @@ export const useLiveStore = defineStore('live', () => {
 
   async function joinByCode(code: string): Promise<boolean> {
     loading.value = true
+    error.value = null
     try {
       const data = await api<LiveSession>(
         () => window.api.getLiveSessionByCode(code),
@@ -62,6 +66,7 @@ export const useLiveStore = defineStore('live', () => {
         window.api.emitLiveJoin(data.promo_id)
         return true
       }
+      error.value = 'Code de session invalide ou session introuvable'
       return false
     } finally {
       loading.value = false
@@ -394,7 +399,7 @@ export const useLiveStore = defineStore('live', () => {
   return {
     // state
     currentSession, currentActivity, results, participantCount,
-    hasResponded, loading, draftSessions, pastSessions,
+    hasResponded, loading, error, draftSessions, pastSessions,
     leaderboard, myScore, timerStartedAt,
     // computed
     sessionActivities, liveActivity,

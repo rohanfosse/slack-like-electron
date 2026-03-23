@@ -1,13 +1,7 @@
 /** Routes Live Quiz - sessions interactives en direct */
 const router  = require('express').Router()
 const queries = require('../db/index')
-
-function wrap(fn) {
-  return (req, res) => {
-    try { res.json({ ok: true, data: fn(req) }) }
-    catch (err) { res.status(400).json({ ok: false, error: err.message }) }
-  }
-}
+const wrap    = require('../utils/wrap')
 
 // ─── Throttle helper pour results-update ─────────────────────────────────────
 const _lastEmit = new Map() // activityId → timestamp
@@ -101,6 +95,7 @@ router.patch('/sessions/:id/status', (req, res) => {
       })
     } else if (status === 'ended') {
       io.to(`live:${session.promo_id}`).emit('live:session-ended', { sessionId: session.id })
+      _lastScoresEmit.delete(session.id)
     }
     res.json({ ok: true, data: session })
   } catch (err) { res.status(400).json({ ok: false, error: err.message }) }
@@ -108,7 +103,9 @@ router.patch('/sessions/:id/status', (req, res) => {
 
 // DELETE /sessions/:id
 router.delete('/sessions/:id', wrap((req) => {
-  queries.deleteSession(Number(req.params.id))
+  const id = Number(req.params.id)
+  _lastScoresEmit.delete(id)
+  queries.deleteSession(id)
   return null
 }))
 
@@ -132,7 +129,9 @@ router.patch('/activities/:id', wrap((req) => {
 
 // DELETE /activities/:id
 router.delete('/activities/:id', wrap((req) => {
-  queries.deleteActivity(Number(req.params.id))
+  const id = Number(req.params.id)
+  _lastEmit.delete(id)
+  queries.deleteActivity(id)
   return null
 }))
 

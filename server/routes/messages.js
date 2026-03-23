@@ -3,13 +3,7 @@ const router  = require('express').Router()
 const { z }   = require('zod')
 const queries = require('../db/index')
 const { validate } = require('../middleware/validate')
-
-function wrap(fn) {
-  return (req, res) => {
-    try { res.json({ ok: true, data: fn(req) }) }
-    catch (err) { res.status(400).json({ ok: false, error: err.message }) }
-  }
-}
+const wrap         = require('../utils/wrap')
 
 // ── Schémas de validation ─────────────────────────────────────────────────────
 const sendMessageSchema = z.object({

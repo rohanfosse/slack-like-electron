@@ -1,13 +1,7 @@
 // ─── Routes groupes ───────────────────────────────────────────────────────────
 const router  = require('express').Router()
 const queries = require('../db/index')
-
-function wrap(fn) {
-  return (req, res) => {
-    try { res.json({ ok: true, data: fn(req) }) }
-    catch (err) { res.status(400).json({ ok: false, error: err.message }) }
-  }
-}
+const wrap    = require('../utils/wrap')
 
 router.get('/',               wrap((req) => queries.getGroups(Number(req.query.promoId))))
 router.post('/',              wrap((req) => queries.createGroup(req.body)))

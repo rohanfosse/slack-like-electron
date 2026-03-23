@@ -1,13 +1,7 @@
 // ─── Routes étudiants ────────────────────────────────────────────────────────
 const router  = require('express').Router()
 const queries = require('../db/index')
-
-function wrap(fn) {
-  return (req, res) => {
-    try { res.json({ ok: true, data: fn(req) }) }
-    catch (err) { res.status(400).json({ ok: false, error: err.message }) }
-  }
-}
+const wrap    = require('../utils/wrap')
 
 router.get('/',                    wrap(() => queries.getAllStudents()))
 router.get('/stats',               wrap((req) => queries.getClasseStats(Number(req.query.promoId))))
