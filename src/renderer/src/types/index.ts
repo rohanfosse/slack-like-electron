@@ -228,6 +228,18 @@ export interface LiveScoreResult {
   isCorrect: boolean | null; points: number; rank: number | null
 }
 
+export interface LiveSessionWithStats extends LiveSession {
+  activity_count: number; participant_count: number
+}
+
+export interface LiveStats {
+  totalSessions: number
+  avgParticipationRate: number
+  enrolledStudents: number
+  activityTypeDistribution: { type: string; count: number }[]
+  participationTrend: { sessionId: number; title: string; endedAt: string; participants: number; enrolled: number }[]
+}
+
 // ─── REX (Retour d'Experience) ──────────────────────────────────────────────
 
 export interface RexSession {

@@ -4,6 +4,7 @@
   import {
     Plus, Play, Square, ChevronRight, Trash2, Users, Radio,
     ListChecks, MessageCircle, Cloud, LogOut, Pencil, GripVertical, Copy,
+    History, BarChart3,
   } from 'lucide-vue-next'
   import { useAppStore }  from '@/stores/app'
   import { useLiveStore } from '@/stores/live'
@@ -13,13 +14,16 @@
   import CountdownTimer  from './CountdownTimer.vue'
   import Leaderboard     from './Leaderboard.vue'
   import Podium          from './Podium.vue'
-  import QcmResults      from './QcmResults.vue'
-  import PollResults     from './PollResults.vue'
-  import WordCloud       from './WordCloud.vue'
+  import QcmResults        from './QcmResults.vue'
+  import PollResults       from './PollResults.vue'
+  import WordCloud         from './WordCloud.vue'
+  import QuizHistoryView   from './QuizHistoryView.vue'
+  import QuizStatsView     from './QuizStatsView.vue'
 
   const appStore  = useAppStore()
   const liveStore = useLiveStore()
 
+  const activeTab       = ref<'create' | 'history' | 'stats'>('create')
   const newTitle        = ref('')
   const showActivityForm = ref(false)
   const showLeaderboard  = ref(false)
@@ -171,56 +175,79 @@
     <div v-if="!liveStore.currentSession" class="live-empty">
       <div class="live-hero">
         <Radio :size="48" class="hero-icon" />
-        <h1 class="hero-title">Live Quiz</h1>
-        <p class="hero-desc">Préparez votre session à l'avance, puis diffusez-la quand vous êtes prêt</p>
+        <h1 class="hero-title">Quiz</h1>
       </div>
 
-      <!-- Brouillons existants -->
-      <div v-if="liveStore.draftSessions.length > 0" class="drafts-section">
-        <h3 class="drafts-title">Brouillons</h3>
-        <div class="draft-list">
-          <div
-            v-for="s in liveStore.draftSessions"
-            :key="s.id"
-            class="draft-card"
-          >
-            <div class="draft-card-body" @click="selectSession(s)">
-              <span class="draft-card-title">{{ s.title }}</span>
-              <span class="draft-card-meta">
-                {{ s.status === 'active' ? 'Active' : 'Brouillon' }}
-                · {{ (s as any).activities?.length ?? '?' }} activité(s)
-              </span>
-            </div>
-            <div class="draft-card-actions">
-              <button class="btn-draft-clone" title="Dupliquer" @click.stop="onCloneSession(s)">
-                <Copy :size="14" />
-              </button>
-              <button class="btn-draft-delete" title="Supprimer" @click.stop="onDeleteDraftSession(s)">
-                <Trash2 :size="14" />
-              </button>
+      <!-- Onglets -->
+      <div class="quiz-tabs">
+        <button class="quiz-tab" :class="{ active: activeTab === 'create' }" @click="activeTab = 'create'">
+          <Plus :size="14" /> Creer
+        </button>
+        <button class="quiz-tab" :class="{ active: activeTab === 'history' }" @click="activeTab = 'history'">
+          <History :size="14" /> Historique
+        </button>
+        <button class="quiz-tab" :class="{ active: activeTab === 'stats' }" @click="activeTab = 'stats'">
+          <BarChart3 :size="14" /> Statistiques
+        </button>
+      </div>
+
+      <!-- Tab: Creer -->
+      <template v-if="activeTab === 'create'">
+        <p class="hero-desc">Preparez votre session a l'avance, puis diffusez-la quand vous etes pret</p>
+
+        <!-- Brouillons existants -->
+        <div v-if="liveStore.draftSessions.length > 0" class="drafts-section">
+          <h3 class="drafts-title">Brouillons</h3>
+          <div class="draft-list">
+            <div
+              v-for="s in liveStore.draftSessions"
+              :key="s.id"
+              class="draft-card"
+            >
+              <div class="draft-card-body" @click="selectSession(s)">
+                <span class="draft-card-title">{{ s.title }}</span>
+                <span class="draft-card-meta">
+                  {{ s.status === 'active' ? 'Active' : 'Brouillon' }}
+                  · {{ (s as any).activities?.length ?? '?' }} activite(s)
+                </span>
+              </div>
+              <div class="draft-card-actions">
+                <button class="btn-draft-clone" title="Dupliquer" @click.stop="onCloneSession(s)">
+                  <Copy :size="14" />
+                </button>
+                <button class="btn-draft-delete" title="Supprimer" @click.stop="onDeleteDraftSession(s)">
+                  <Trash2 :size="14" />
+                </button>
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
-      <div class="create-card">
-        <h3 class="create-label">Nouvelle session</h3>
-        <input
-          v-model="newTitle"
-          class="create-input"
-          placeholder="Titre de la session (ex: Révision chapitre 3)"
-          maxlength="100"
-          @keydown.enter="createSession"
-        />
-        <button
-          class="create-btn"
-          :disabled="!newTitle.trim() || liveStore.loading"
-          @click="createSession"
-        >
-          <Plus :size="16" />
-          {{ liveStore.loading ? 'Création...' : 'Créer la session' }}
-        </button>
-      </div>
+        <div class="create-card">
+          <h3 class="create-label">Nouvelle session</h3>
+          <input
+            v-model="newTitle"
+            class="create-input"
+            placeholder="Titre de la session (ex: Revision chapitre 3)"
+            maxlength="100"
+            @keydown.enter="createSession"
+          />
+          <button
+            class="create-btn"
+            :disabled="!newTitle.trim() || liveStore.loading"
+            @click="createSession"
+          >
+            <Plus :size="16" />
+            {{ liveStore.loading ? 'Creation...' : 'Creer la session' }}
+          </button>
+        </div>
+      </template>
+
+      <!-- Tab: Historique -->
+      <QuizHistoryView v-else-if="activeTab === 'history'" :promo-id="promoId" />
+
+      <!-- Tab: Statistiques -->
+      <QuizStatsView v-else-if="activeTab === 'stats'" :promo-id="promoId" />
     </div>
 
     <!-- ══════════ Podium final ══════════ -->
@@ -410,6 +437,23 @@
   flex-direction: column;
   align-items: center;
 }
+
+/* ── Tabs ── */
+.quiz-tabs {
+  display: flex; gap: 4px;
+  padding: 3px; border-radius: 10px;
+  background: rgba(255,255,255,.04);
+  width: fit-content;
+}
+.quiz-tab {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 16px; border-radius: 8px; border: none;
+  background: transparent; color: var(--text-muted, #888);
+  font-size: 13px; font-weight: 600; cursor: pointer;
+  transition: all .2s; font-family: var(--font, inherit);
+}
+.quiz-tab:hover { color: var(--text-primary, #fff); background: rgba(255,255,255,.04); }
+.quiz-tab.active { background: var(--color-danger, #e74c3c); color: #fff; }
 
 /* ── Drafts section ── */
 .drafts-section {

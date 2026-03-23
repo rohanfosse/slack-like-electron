@@ -316,6 +316,68 @@ function getStudentRank(sessionId, studentId) {
   return entry ? entry.rank : board.length + 1;
 }
 
+// ─── Historique par promo ────────────────────────────────────────────────────
+
+function getEndedSessionsForPromo(promoId, { search, dateFrom, dateTo } = {}) {
+  const db = getDb();
+  let where = "ls.promo_id = ? AND ls.status = 'ended'";
+  const params = [promoId];
+  if (search) { where += " AND ls.title LIKE '%' || ? || '%'"; params.push(search); }
+  if (dateFrom) { where += ' AND ls.created_at >= ?'; params.push(dateFrom); }
+  if (dateTo) { where += ' AND ls.created_at <= ?'; params.push(dateTo); }
+  return db.prepare(`
+    SELECT ls.*,
+      (SELECT COUNT(*) FROM live_activities WHERE session_id = ls.id) AS activity_count,
+      (SELECT COUNT(DISTINCT lr.student_id)
+       FROM live_responses lr
+       JOIN live_activities la ON lr.activity_id = la.id
+       WHERE la.session_id = ls.id) AS participant_count
+    FROM live_sessions ls
+    WHERE ${where}
+    ORDER BY ls.ended_at DESC
+    LIMIT 50
+  `).all(...params);
+}
+
+// ─── Stats par promo ────────────────────────────────────────────────────────
+
+function getLiveStatsForPromo(promoId) {
+  const db = getDb();
+
+  const totalSessions = db.prepare(
+    "SELECT COUNT(*) as c FROM live_sessions WHERE promo_id = ? AND status = 'ended'"
+  ).get(promoId).c;
+
+  const enrolledStudents = db.prepare(
+    'SELECT COUNT(*) as c FROM students WHERE promo_id = ?'
+  ).get(promoId).c;
+
+  const activityTypeDistribution = db.prepare(`
+    SELECT la.type, COUNT(*) as count
+    FROM live_activities la
+    JOIN live_sessions ls ON la.session_id = ls.id
+    WHERE ls.promo_id = ? AND ls.status = 'ended'
+    GROUP BY la.type
+  `).all(promoId);
+
+  const participationTrend = db.prepare(`
+    SELECT ls.id as sessionId, ls.title, ls.ended_at as endedAt,
+      (SELECT COUNT(DISTINCT lr.student_id)
+       FROM live_responses lr
+       JOIN live_activities la ON lr.activity_id = la.id
+       WHERE la.session_id = ls.id) as participants
+    FROM live_sessions ls
+    WHERE ls.promo_id = ? AND ls.status = 'ended'
+    ORDER BY ls.ended_at ASC
+  `).all(promoId).map(r => ({ ...r, enrolled: enrolledStudents }));
+
+  const avgParticipationRate = totalSessions > 0 && enrolledStudents > 0
+    ? Math.round(participationTrend.reduce((s, r) => s + r.participants / r.enrolled, 0) / totalSessions * 100)
+    : 0;
+
+  return { totalSessions, avgParticipationRate, enrolledStudents, activityTypeDistribution, participationTrend };
+}
+
 module.exports = {
   createSession,
   getSession,
@@ -340,4 +402,6 @@ module.exports = {
   getLeaderboardWithRound,
   getActivityScores,
   getStudentRank,
+  getEndedSessionsForPromo,
+  getLiveStatsForPromo,
 };

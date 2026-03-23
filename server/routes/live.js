@@ -54,6 +54,17 @@ router.get('/sessions/promo/:promoId/active', wrap((req) => {
   return queries.getActiveSessionForPromo(Number(req.params.promoId))
 }))
 
+// GET /sessions/promo/:promoId/history - historique sessions terminées
+router.get('/sessions/promo/:promoId/history', wrap((req) => {
+  const { search, dateFrom, dateTo } = req.query
+  return queries.getEndedSessionsForPromo(Number(req.params.promoId), { search, dateFrom, dateTo })
+}))
+
+// GET /sessions/promo/:promoId/stats - statistiques quiz par promo
+router.get('/sessions/promo/:promoId/stats', wrap((req) => {
+  return queries.getLiveStatsForPromo(Number(req.params.promoId))
+}))
+
 // GET /sessions/promo/:promoId - toutes les sessions non terminées (brouillons + actives)
 router.get('/sessions/promo/:promoId', wrap((req) => {
   return queries.getSessionsForPromo(Number(req.params.promoId))

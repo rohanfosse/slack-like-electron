@@ -377,6 +377,15 @@ contextBridge.exposeInMainWorld('api', {
   submitLiveResponse:      (activityId: number, payload: unknown) => post(`/api/live/activities/${activityId}/respond`, payload),
   getLiveActivityResults:   (activityId: number) => get(`/api/live/activities/${activityId}/results`),
   getLiveLeaderboard:       (sessionId: number)  => get(`/api/live/sessions/${sessionId}/leaderboard`),
+  getLiveHistoryForPromo:   (promoId: number, params?: { search?: string; dateFrom?: string; dateTo?: string }) => {
+    const qs = new URLSearchParams()
+    if (params?.search)   qs.set('search', params.search)
+    if (params?.dateFrom) qs.set('dateFrom', params.dateFrom)
+    if (params?.dateTo)   qs.set('dateTo', params.dateTo)
+    const q = qs.toString()
+    return get(`/api/live/sessions/promo/${promoId}/history${q ? '?' + q : ''}`)
+  },
+  getLiveStatsForPromo:     (promoId: number) => get(`/api/live/sessions/promo/${promoId}/stats`),
 
   emitLiveJoin:  (promoId: number) => { socket?.emit('live:join', { promoId }) },
   emitLiveLeave: (promoId: number) => { socket?.emit('live:leave', { promoId }) },

@@ -108,7 +108,7 @@
     <div v-if="!session" class="live-join">
       <div class="join-hero">
         <Radio :size="44" class="hero-icon" />
-        <h1 class="hero-title">Live Quiz</h1>
+        <h1 class="hero-title">Quiz</h1>
         <p class="hero-desc">Rejoignez une session avec un code</p>
       </div>
 

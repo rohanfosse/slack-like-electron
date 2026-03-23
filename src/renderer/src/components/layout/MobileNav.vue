@@ -70,7 +70,7 @@ const showLive     = computed(() =>
       @click="router.push('/live')"
     >
       <Radio :size="20" />
-      <span>Live</span>
+      <span>Quiz</span>
       <span class="mobile-nav-live-dot" />
     </button>
   </nav>

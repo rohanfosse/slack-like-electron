@@ -207,6 +207,8 @@ declare global {
       submitLiveResponse(activityId: number, payload: unknown): Promise<IpcResponse<unknown>>
       getLiveActivityResults(activityId: number): Promise<IpcResponse<LiveResults>>
       getLiveLeaderboard(sessionId: number): Promise<IpcResponse<unknown>>
+      getLiveHistoryForPromo(promoId: number, params?: { search?: string; dateFrom?: string; dateTo?: string }): Promise<IpcResponse<import('./types').LiveSessionWithStats[]>>
+      getLiveStatsForPromo(promoId: number): Promise<IpcResponse<import('./types').LiveStats>>
       emitLiveJoin(promoId: number): void
       emitLiveLeave(promoId: number): void
       onLiveActivityPushed(cb: (data: { activity: unknown }) => void): () => void

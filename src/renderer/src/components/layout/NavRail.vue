@@ -175,17 +175,17 @@
       <span class="nav-label">Documents</span>
     </button>
 
-    <!-- Live indicator pour étudiants - visible uniquement quand invitation active -->
+    <!-- Quiz indicator pour étudiants - visible uniquement quand invitation active -->
     <button
       v-if="!appStore.isStaff && liveStore.currentSession && liveStore.currentSession.status !== 'ended'"
       class="nav-btn"
       :class="{ active: route.name === 'live' }"
-      title="Session Live en cours"
-      aria-label="Session Live en cours"
+      title="Quiz en cours"
+      aria-label="Quiz en cours"
       @click="router.push('/live')"
     >
       <Radio :size="20" />
-      <span class="nav-label">Live</span>
+      <span class="nav-label">Quiz</span>
       <span class="nav-live-dot" />
     </button>
 

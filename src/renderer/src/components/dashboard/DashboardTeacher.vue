@@ -205,7 +205,7 @@ function setTab(tab: DashTabType) {
         <Settings :size="13" /> Administration
       </button>
       <button class="db-tab db-tab-live" :class="{ active: dashTab === 'live' }" @click="setTab('live')">
-        <Radio :size="13" /> Live
+        <Radio :size="13" /> Quiz
         <span
           v-if="liveStore.currentSession && liveStore.currentSession.status !== 'ended'"
           class="db-tab-live-dot"

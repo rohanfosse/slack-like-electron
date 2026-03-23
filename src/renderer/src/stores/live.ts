@@ -3,7 +3,7 @@ import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
 import { useAppStore } from './app'
 import { useApi } from '@/composables/useApi'
-import type { LiveSession, LiveActivity, LiveResults, LeaderboardEntry, LiveScoreResult } from '@/types'
+import type { LiveSession, LiveActivity, LiveResults, LeaderboardEntry, LiveScoreResult, LiveSessionWithStats, LiveStats } from '@/types'
 
 export const useLiveStore = defineStore('live', () => {
   const appStore = useAppStore()
@@ -314,6 +314,34 @@ export const useLiveStore = defineStore('live', () => {
     return false
   }
 
+  // ── Historique & Stats ──────────────────────────────────────────────────
+  const historySessions = ref<LiveSessionWithStats[]>([])
+  const stats           = ref<LiveStats | null>(null)
+
+  async function fetchHistory(promoId: number, filters?: { search?: string; dateFrom?: string; dateTo?: string }): Promise<void> {
+    loading.value = true
+    try {
+      const data = await api<LiveSessionWithStats[]>(
+        () => window.api.getLiveHistoryForPromo(promoId, filters),
+      )
+      if (data) historySessions.value = data
+    } finally {
+      loading.value = false
+    }
+  }
+
+  async function fetchStats(promoId: number): Promise<void> {
+    loading.value = true
+    try {
+      const data = await api<LiveStats>(
+        () => window.api.getLiveStatsForPromo(promoId),
+      )
+      if (data) stats.value = data
+    } finally {
+      loading.value = false
+    }
+  }
+
   // ── Socket listeners ─────────────────────────────────────────────────────
   const _cleanups: (() => void)[] = []
 
@@ -401,6 +429,7 @@ export const useLiveStore = defineStore('live', () => {
     currentSession, currentActivity, results, participantCount,
     hasResponded, loading, error, draftSessions, pastSessions,
     leaderboard, myScore, timerStartedAt,
+    historySessions, stats,
     // computed
     sessionActivities, liveActivity,
     // actions
@@ -408,6 +437,7 @@ export const useLiveStore = defineStore('live', () => {
     fetchDraftSessions, updateActivity, reorderActivities, cloneSession, deleteSession,
     pushActivity, launchActivity, closeActivity, deleteActivity,
     submitResponse, fetchResults, fetchLeaderboard, endSession, startSession,
+    fetchHistory, fetchStats,
     initSocketListeners, disposeSocketListeners,
   }
 })
