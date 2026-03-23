@@ -15,24 +15,31 @@ export function useDevoirsStudent(now: Ref<number>) {
   const appStore     = useAppStore()
   const travauxStore = useTravauxStore()
 
-  // ── Groupes urgence étudiant ──────────────────────────────────────────────────
+  // ── Groupes urgence étudiant (single-pass) ────────────────────────────────────
   const studentGroups = computed(() => {
     const all = appStore.activeProject
       ? travauxStore.devoirs.filter(t => t.category === appStore.activeProject)
       : travauxStore.devoirs
-    return {
-      overdue:   all.filter(t => t.depot_id == null && needsSubmission(t) && isExpired(t.deadline, now.value)),
-      urgent:    all.filter(t => {
-        if (t.depot_id != null || isExpired(t.deadline, now.value) || !needsSubmission(t)) return false
-        return new Date(t.deadline).getTime() - now.value < 3 * 86_400_000
-      }),
-      pending:   all.filter(t => {
-        if (t.depot_id != null || isExpired(t.deadline, now.value) || !needsSubmission(t)) return false
-        return new Date(t.deadline).getTime() - now.value >= 3 * 86_400_000
-      }),
-      event:     all.filter(t => !needsSubmission(t) && t.depot_id == null),
-      submitted: all.filter(t => t.depot_id != null || (!needsSubmission(t) && isExpired(t.deadline, now.value))),
+    const overdue: typeof all = []
+    const urgent: typeof all = []
+    const pending: typeof all = []
+    const event: typeof all = []
+    const submitted: typeof all = []
+    const n = now.value
+    const THREE_DAYS = 3 * 86_400_000
+
+    for (const t of all) {
+      const needs = needsSubmission(t)
+      const expired = isExpired(t.deadline, n)
+      if (t.depot_id != null) { submitted.push(t); continue }
+      if (!needs && expired) { submitted.push(t); continue }
+      if (!needs) { event.push(t); continue }
+      if (expired) { overdue.push(t); continue }
+      const timeLeft = new Date(t.deadline).getTime() - n
+      if (timeLeft < THREE_DAYS) urgent.push(t)
+      else pending.push(t)
     }
+    return { overdue, urgent, pending, event, submitted }
   })
 
   // Simplification : submitted = ceux qui ont depot_id
