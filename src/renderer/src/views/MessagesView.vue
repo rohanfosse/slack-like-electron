@@ -387,7 +387,7 @@
       <div v-if="appStore.isStudent" class="welcome-tips">
         <div class="welcome-tip">
           <MessageSquare :size="16" class="welcome-tip-icon" />
-          <span><strong>Canaux</strong> - Échangez avec votre promo dans les canaux à gauche</span>
+          <span><strong>Salons</strong> - Échangez avec votre promo dans les salons à gauche</span>
         </div>
         <div class="welcome-tip">
           <ClipboardList :size="16" class="welcome-tip-icon" />
@@ -399,7 +399,7 @@
         </div>
         <div class="welcome-tip">
           <FileText :size="16" class="welcome-tip-icon" />
-          <span><strong>Feedback</strong> - Signalez un bug ou suggérez une amélioration via le bouton en bas à gauche</span>
+          <span><strong>Recherche</strong> - Utilisez <kbd style="font-size:10px;padding:1px 4px;border-radius:3px;background:var(--bg-active);border:1px solid var(--border)">Ctrl+K</kbd> pour rechercher partout</span>
         </div>
       </div>
     </div>
