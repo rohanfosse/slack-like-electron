@@ -29,16 +29,7 @@ const changePasswordSchema = z.object({
   newPwd:     z.string().min(8, 'Le nouveau mot de passe doit contenir au moins 8 caractères'),
 })
 
-function wrap(fn) {
-  return async (req, res) => {
-    try {
-      const data = await fn(req)
-      res.json({ ok: true, data })
-    } catch (err) {
-      res.status(400).json({ ok: false, error: err.message })
-    }
-  }
-}
+const wrap = require('../utils/wrap')
 
 // ── Rate-limiter pour le login (anti brute-force) ───────────────────────────
 const loginLimiter = rateLimit({
