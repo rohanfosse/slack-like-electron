@@ -154,6 +154,11 @@
         @select="selectPromo"
       />
 
+      <!-- En-tete etudiant -->
+      <div v-if="!appStore.isStaff && activePromoName" class="sb-student-header">
+        <div class="sb-student-promo">{{ activePromoName }}</div>
+      </div>
+
       <!-- Squelette de chargement -->
       <template v-if="loading">
         <div v-for="i in 5" :key="i" class="skel-list-row">
@@ -1064,6 +1069,19 @@
 }
 
 /* ── Résumé promo card ── */
+/* ── Student header ── */
+.sb-student-header {
+  margin: 0 10px 4px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+}
+.sb-student-promo {
+  font-size: 13px; font-weight: 700; color: var(--text-primary);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+
 .sb-promo-card {
   margin: 6px 10px 4px;
   padding: 8px 10px;
