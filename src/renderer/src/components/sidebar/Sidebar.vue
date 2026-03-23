@@ -411,7 +411,7 @@
 
       <!-- Canaux groupés par catégorie (autres sections) -->
       <template v-else>
-        <div id="sidebar-channels-header" class="sidebar-section-header sidebar-collapsible-header" :style="!appStore.isStaff ? 'padding-top: 16px; margin-top: 8px' : ''" @click="channelsCollapsed = !channelsCollapsed">
+        <div id="sidebar-channels-header" class="sidebar-section-header sidebar-collapsible-header" :style="!appStore.isStaff ? 'padding-top: 6px' : ''" @click="channelsCollapsed = !channelsCollapsed">
           <ChevronDown
             :size="12"
             class="sidebar-category-chevron"
@@ -465,14 +465,14 @@
               @contextmenu.prevent="openCtxCategory($event, group)"
             >
               <ChevronDown
-                :size="12"
+                :size="10"
                 class="sidebar-category-chevron"
                 :class="{ rotated: collapsed.has(group.key) }"
               />
               <component
                 v-if="parseCategoryIcon(group.label).icon"
                 :is="parseCategoryIcon(group.label).icon!"
-                :size="11"
+                :size="12"
                 class="sidebar-category-icon"
               />
               <span class="sidebar-category-label">{{ parseCategoryIcon(group.label).label }}</span>
@@ -762,21 +762,20 @@
 .sidebar-category-header {
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 4px;
   width: 100%;
   background: transparent;
   border: none;
-  padding: 5px 12px 4px 10px;
-  margin-top: 6px;
+  padding: 3px 12px 2px 8px;
+  margin-top: 2px;
   cursor: pointer;
   color: var(--text-muted);
-  font-size: 10px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: .06em;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: none;
+  letter-spacing: 0;
   font-family: var(--font);
   transition: color var(--t-fast);
-  border-top: 1px solid rgba(255,255,255,.04);
 }
 
 .sidebar-category-header:hover { color: var(--text-secondary); }
@@ -784,7 +783,8 @@
 
 .sidebar-category-icon {
   flex-shrink: 0;
-  opacity: .85;
+  opacity: .6;
+  color: var(--text-muted);
 }
 
 .sidebar-category-chevron {
@@ -795,7 +795,7 @@
 
 /* Canaux indentes sous la categorie */
 .sidebar-category-channels {
-  padding-left: 6px;
+  padding-left: 10px;
 }
 
 .sidebar-category-label {
