@@ -30,16 +30,18 @@ document.addEventListener('DOMContentLoaded', () => {
     .then(data => {
       if (!data?.version) return
       const v = data.version
-      const badge = document.getElementById('version-badge')
-      if (badge) badge.innerHTML = '<span class="hero-eyebrow-dot"></span>' + v + ' \u00B7 Disponible maintenant'
       ;['cl-version','footer-version','pill-version'].forEach(id => {
         const el = document.getElementById(id); if (el) el.textContent = v
       })
       const pillLabel = document.getElementById('pill-label')
-      if (pillLabel && data.published_at) {
-        const d = new Date(data.published_at)
-        const rel = Math.floor((Date.now() - d) / 86400000)
-        pillLabel.textContent = rel === 0 ? 'Publi\u00e9e aujourd\'hui' : rel === 1 ? 'Publi\u00e9e hier' : 'Publi\u00e9e il y a ' + rel + ' jours'
+      if (pillLabel) {
+        if (data.name) {
+          pillLabel.textContent = data.name
+        } else if (data.published_at) {
+          const d = new Date(data.published_at)
+          const rel = Math.floor((Date.now() - d) / 86400000)
+          pillLabel.textContent = rel === 0 ? 'Publi\u00e9e aujourd\'hui' : rel === 1 ? 'Publi\u00e9e hier' : 'Publi\u00e9e il y a ' + rel + ' jours'
+        }
       }
       if (data.published_at) {
         const label = new Date(data.published_at).toLocaleDateString('fr-FR', { month:'long', year:'numeric' })
