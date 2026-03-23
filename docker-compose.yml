@@ -11,7 +11,7 @@ services:
     volumes:
       - cursus-db:/data/db
       - cursus-uploads:/data/uploads
-      - /var/run/docker.sock:/var/run/docker.sock
+      - deploy-signal:/deploy-signal
     environment:
       - NODE_ENV=production
       - PORT=3001
@@ -30,3 +30,4 @@ services:
 volumes:
   cursus-db:
   cursus-uploads:
+  deploy-signal:

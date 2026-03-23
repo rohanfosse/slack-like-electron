@@ -1,9 +1,13 @@
 // ─── Webhook de deploiement - appele par GitHub Actions ──────────────────────
+// Ecrit un fichier signal dans un volume partage. Un service systemd sur l'hote
+// (cursus-deploy-watcher) detecte le fichier et lance le script de redeploy.
 const router = require('express').Router()
-const { exec } = require('child_process')
+const fs     = require('fs')
+const path   = require('path')
 
 const DEPLOY_SECRET = process.env.DEPLOY_SECRET
-const COMPOSE_DIR   = process.env.COMPOSE_DIR ?? '/opt/cursus'
+const SIGNAL_DIR    = '/deploy-signal'
+const SIGNAL_FILE   = path.join(SIGNAL_DIR, 'trigger')
 
 router.post('/', (req, res) => {
   const secret = req.headers['x-deploy-secret']
@@ -12,28 +16,18 @@ router.post('/', (req, res) => {
     return res.status(403).json({ ok: false, error: 'Unauthorized' })
   }
 
-  console.log('[Deploy] Deploiement declenche par webhook...')
-  res.json({ ok: true, message: 'Deploiement en cours...' })
-
-  const cmd = [
-    'git -C /opt/cursus/repo pull origin main',
-    'cp -r /opt/cursus/repo/src/landing/. /opt/cursus/landing/',
-    'docker compose -f /opt/cursus/docker-compose.yml build --no-cache',
-    'docker compose -f /opt/cursus/docker-compose.yml up -d --force-recreate',
-    'docker image prune -f',
-  ].join(' && ')
-
-  const child = exec(cmd, { cwd: COMPOSE_DIR, timeout: 600_000 })
-
-  child.stdout?.on('data', (data) => process.stdout.write(`[Deploy:out] ${data}`))
-  child.stderr?.on('data', (data) => process.stderr.write(`[Deploy:err] ${data}`))
-  child.on('close', (code) => {
-    if (code === 0) {
-      console.log('[Deploy] Deploiement termine avec succes')
-    } else {
-      console.error(`[Deploy] Deploiement echoue (code ${code})`)
-    }
-  })
+  try {
+    fs.mkdirSync(SIGNAL_DIR, { recursive: true })
+    fs.writeFileSync(SIGNAL_FILE, JSON.stringify({
+      timestamp: new Date().toISOString(),
+      triggered_by: 'webhook',
+    }) + '\n')
+    console.log('[Deploy] Signal ecrit, en attente du watcher hote...')
+    res.json({ ok: true, message: 'Deploiement declenche' })
+  } catch (err) {
+    console.error('[Deploy] Erreur ecriture signal:', err.message)
+    res.status(500).json({ ok: false, error: 'Impossible de declencher le deploiement' })
+  }
 })
 
 module.exports = router
