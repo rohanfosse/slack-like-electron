@@ -30,8 +30,8 @@ onUnmounted(() => { unsubMaximize?.() })
 </script>
 
 <template>
-  <!-- Masqué sur macOS (traffic lights natifs dans le coin) -->
-  <div v-if="!isMac" class="titlebar" :class="{ maximized: isMaximized, 'titlebar--web': isWeb }">
+  <!-- Toujours visible (topbar navigation + recherche) -->
+  <div class="titlebar" :class="{ maximized: isMaximized, 'titlebar--web': isWeb, 'titlebar--mac': isMac }">
     <!-- Zone rail + sidebar : draggable -->
     <div class="titlebar-side" aria-hidden="true" />
 
@@ -41,8 +41,8 @@ onUnmounted(() => { unsubMaximize?.() })
       <div v-else class="titlebar-drag" />
     </div>
 
-    <!-- Boutons de contrôle fenêtre (desktop Electron uniquement) -->
-    <div v-if="!isWeb" class="titlebar-controls">
+    <!-- Boutons de contrôle fenêtre (Windows Electron uniquement) -->
+    <div v-if="!isWeb && !isMac" class="titlebar-controls">
       <button
         class="wctrl-btn wctrl-min"
         title="Réduire"
@@ -199,6 +199,12 @@ body.light .wctrl-max:hover {
 }
 .titlebar--web .titlebar-side {
   -webkit-app-region: unset;
+}
+
+/* ── macOS (traffic lights natifs a gauche) ── */
+.titlebar--mac .titlebar-side {
+  /* Laisser de l'espace pour les traffic lights macOS */
+  padding-left: 72px;
 }
 
 /* ── Mobile : masquer la sidebar zone et réduire ── */
