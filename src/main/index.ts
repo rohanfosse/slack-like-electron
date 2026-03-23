@@ -155,18 +155,11 @@ app.whenReady().then(() => {
     autoUpdater.on('update-downloaded', (info) => {
       console.log('[Updater] Mise à jour téléchargée:', info.version)
       const win = BrowserWindow.getAllWindows()[0]
-      if (win) {
-        dialog.showMessageBox(win, {
-          type: 'info',
-          title: 'Mise à jour prête',
-          message: `La version ${info.version} a été téléchargée.`,
-          detail: 'L\'application va redémarrer pour appliquer la mise à jour.',
-          buttons: ['Redémarrer maintenant', 'Plus tard'],
-          defaultId: 0,
-        }).then(({ response }) => {
-          if (response === 0) autoUpdater.quitAndInstall()
-        })
-      }
+      if (win) win.webContents.send('updater:downloaded', info.version)
+    })
+
+    ipcMain.on('updater:quitAndInstall', () => {
+      autoUpdater.quitAndInstall()
     })
 
     autoUpdater.on('error', (err) => {
