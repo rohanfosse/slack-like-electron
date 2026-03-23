@@ -40,6 +40,19 @@
   // Fermer le panel quand on change de canal
   watch(() => appStore.activeChannelId, () => { rightPanel.value = null })
 
+  // Escape ferme le panneau lateral ou la recherche
+  function onEscapeKey(e: KeyboardEvent) {
+    if (e.key !== 'Escape') return
+    if (rightPanel.value) { rightPanel.value = null; return }
+    if (messagesStore.searchTerm) {
+      searchInput.value = ''
+      messagesStore.clearSearch()
+      messagesStore.fetchMessages()
+    }
+  }
+  onMounted(() => document.addEventListener('keydown', onEscapeKey))
+  onUnmounted(() => document.removeEventListener('keydown', onEscapeKey))
+
   // ── Drag & drop → Documents ───────────────────────────────────────────────
   const isDragOver    = ref(false)
   const pendingDoc    = ref<{ name: string; path: string } | null>(null)
