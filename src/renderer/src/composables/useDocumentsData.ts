@@ -66,19 +66,23 @@ export function useDocumentsData() {
   watch(() => appStore.activeProject, loadDocuments)
   watch(() => appStore.activePromoId, loadDocuments)
 
-  // ── Filtering ────────────────────────────────────────────────────────
+  // ── Filtering & Sorting ──────────────────────────────────────────────
   const activeTypeFilter = ref<DocIconType | null>(null)
+  const sortBy = ref<'date' | 'name' | 'type'>('date')
 
   const filtered = computed(() => {
     const q = docStore.searchQuery.trim().toLowerCase()
-    return docStore.documents
+    const list = docStore.documents
       .filter((d) => {
         if (q && !d.name.toLowerCase().includes(q) && !(d.description ?? '').toLowerCase().includes(q)) return false
         if (docStore.activeCategory && d.category !== docStore.activeCategory) return false
         if (activeTypeFilter.value && docIconType(d) !== activeTypeFilter.value) return false
         return true
       })
-      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+
+    if (sortBy.value === 'name') return list.sort((a, b) => a.name.localeCompare(b.name, 'fr'))
+    if (sortBy.value === 'type') return list.sort((a, b) => docIconType(a).localeCompare(docIconType(b)))
+    return list.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
   })
 
   const categories = computed(() => {
@@ -115,6 +119,7 @@ export function useDocumentsData() {
 
   return {
     activeTypeFilter,
+    sortBy,
     filtered,
     categories,
     byCategory,

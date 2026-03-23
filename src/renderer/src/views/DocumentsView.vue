@@ -52,6 +52,7 @@
   // ── Data: loading, filtering, categories, actions ───────────────────────
   const {
     activeTypeFilter,
+    sortBy,
     filtered,
     categories,
     byCategory,
@@ -142,6 +143,13 @@
             <List :size="15" />
           </button>
         </div>
+
+        <!-- Tri -->
+        <select v-model="sortBy" class="docs-sort-select">
+          <option value="date">Plus récents</option>
+          <option value="name">Nom A-Z</option>
+          <option value="type">Par type</option>
+        </select>
 
         <!-- Ajouter (prof) -->
         <button v-if="appStore.isTeacher" class="btn-primary docs-add-btn" @click="openAddModal">
@@ -950,6 +958,21 @@
 }
 
 /* ── View toggle ── */
+.docs-sort-select {
+  padding: 5px 10px;
+  border: 1px solid var(--border-input);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-family: var(--font);
+  cursor: pointer;
+  outline: none;
+  transition: border-color .15s;
+}
+.docs-sort-select:focus { border-color: var(--accent); }
+.docs-sort-select option { background: var(--bg-main); color: var(--text-primary); }
+
 .docs-view-toggle {
   display: flex;
   border: 1px solid var(--border-input);
