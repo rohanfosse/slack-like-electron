@@ -44,29 +44,19 @@ jobs:
             ghcr.io/rohanfosse/cursus:${{ github.sha }}
 
   deploy:
-    name: Deploy via SSH
+    name: Trigger deploy webhook
     runs-on: ubuntu-latest
     needs: publish
 
     steps:
-      - name: Deploy via SSH
-        uses: appleboy/ssh-action@v1
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_KEY }}
-          command_timeout: 10m
-          script: |
-            set -e
-
-            cd /opt/cursus/repo
-            git fetch origin main
-            git reset --hard origin/main
-
-            cd /opt/cursus
-            docker compose build
-            docker compose up -d --force-recreate
-            docker image prune -f
-            docker builder prune -af --keep-storage=500MB
-
-            echo "Deploy complete - $(docker ps --format '{{.Status}}' --filter name=cursus-server)"
+      - name: Call /deploy webhook
+        run: |
+          STATUS=$(curl -s -o /tmp/deploy_resp.json -w "%{http_code}" \
+            -X POST "${{ secrets.VITE_SERVER_URL }}/deploy" \
+            -H "x-deploy-secret: ${{ secrets.DEPLOY_SECRET }}" \
+            -H "Content-Type: application/json")
+          cat /tmp/deploy_resp.json
+          if [ "$STATUS" != "200" ]; then
+            echo "Deploy webhook returned HTTP $STATUS"
+            exit 1
+          fi
