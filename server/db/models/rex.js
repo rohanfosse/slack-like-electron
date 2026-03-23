@@ -241,6 +241,68 @@ function toggleRexPin(responseId, pinned) {
   return db.prepare('SELECT id, answer, pinned, created_at FROM rex_responses WHERE id = ?').get(responseId);
 }
 
+// ─── Historique par promo ────────────────────────────────────────────────────
+
+function getEndedRexSessionsForPromo(promoId, { search, dateFrom, dateTo } = {}) {
+  const db = getDb();
+  let where = "rs.promo_id = ? AND rs.status = 'ended'";
+  const params = [promoId];
+  if (search) { where += " AND rs.title LIKE '%' || ? || '%'"; params.push(search); }
+  if (dateFrom) { where += ' AND rs.created_at >= ?'; params.push(dateFrom); }
+  if (dateTo) { where += ' AND rs.created_at <= ?'; params.push(dateTo); }
+  return db.prepare(`
+    SELECT rs.*,
+      (SELECT COUNT(*) FROM rex_activities WHERE session_id = rs.id) AS activity_count,
+      (SELECT COUNT(DISTINCT rr.student_id)
+       FROM rex_responses rr
+       JOIN rex_activities ra ON rr.activity_id = ra.id
+       WHERE ra.session_id = rs.id) AS participant_count
+    FROM rex_sessions rs
+    WHERE ${where}
+    ORDER BY rs.ended_at DESC
+    LIMIT 50
+  `).all(...params);
+}
+
+// ─── Stats par promo ────────────────────────────────────────────────────────
+
+function getRexStatsForPromo(promoId) {
+  const db = getDb();
+
+  const totalSessions = db.prepare(
+    "SELECT COUNT(*) as c FROM rex_sessions WHERE promo_id = ? AND status = 'ended'"
+  ).get(promoId).c;
+
+  const enrolledStudents = db.prepare(
+    'SELECT COUNT(*) as c FROM students WHERE promo_id = ?'
+  ).get(promoId).c;
+
+  const activityTypeDistribution = db.prepare(`
+    SELECT ra.type, COUNT(*) as count
+    FROM rex_activities ra
+    JOIN rex_sessions rs ON ra.session_id = rs.id
+    WHERE rs.promo_id = ? AND rs.status = 'ended'
+    GROUP BY ra.type
+  `).all(promoId);
+
+  const participationTrend = db.prepare(`
+    SELECT rs.id as sessionId, rs.title, rs.ended_at as endedAt,
+      (SELECT COUNT(DISTINCT rr.student_id)
+       FROM rex_responses rr
+       JOIN rex_activities ra ON rr.activity_id = ra.id
+       WHERE ra.session_id = rs.id) as participants
+    FROM rex_sessions rs
+    WHERE rs.promo_id = ? AND rs.status = 'ended'
+    ORDER BY rs.ended_at ASC
+  `).all(promoId).map(r => ({ ...r, enrolled: enrolledStudents }));
+
+  const avgParticipationRate = totalSessions > 0 && enrolledStudents > 0
+    ? Math.round(participationTrend.reduce((s, r) => s + r.participants / r.enrolled, 0) / totalSessions * 100)
+    : 0;
+
+  return { totalSessions, avgParticipationRate, enrolledStudents, activityTypeDistribution, participationTrend };
+}
+
 // ─── Export ──────────────────────────────────────────────────────────────────
 
 function exportRexSession(sessionId) {
@@ -284,4 +346,6 @@ module.exports = {
   getRexActivityResultsAggregated,
   toggleRexPin,
   exportRexSession,
+  getEndedRexSessionsForPromo,
+  getRexStatsForPromo,
 };

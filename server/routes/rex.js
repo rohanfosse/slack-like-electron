@@ -43,6 +43,17 @@ router.get('/sessions/promo/:promoId/active', wrap((req) => {
   return queries.getActiveRexSession(Number(req.params.promoId))
 }))
 
+// GET /sessions/promo/:promoId/history - historique sessions terminées
+router.get('/sessions/promo/:promoId/history', wrap((req) => {
+  const { search, dateFrom, dateTo } = req.query
+  return queries.getEndedRexSessionsForPromo(Number(req.params.promoId), { search, dateFrom, dateTo })
+}))
+
+// GET /sessions/promo/:promoId/stats - statistiques REX par promo
+router.get('/sessions/promo/:promoId/stats', wrap((req) => {
+  return queries.getRexStatsForPromo(Number(req.params.promoId))
+}))
+
 // GET /sessions/promo/:promoId - toutes les sessions non terminées (brouillons + actives)
 router.get('/sessions/promo/:promoId', wrap((req) => {
   return queries.getRexSessionsForPromo(Number(req.params.promoId))

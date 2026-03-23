@@ -253,6 +253,18 @@ export interface RexResults {
   answers?: { id: number; answer: string; pinned: boolean; created_at: string }[]
 }
 
+export interface RexSessionWithStats extends RexSession {
+  activity_count: number; participant_count: number
+}
+
+export interface RexStats {
+  totalSessions: number
+  avgParticipationRate: number
+  enrolledStudents: number
+  activityTypeDistribution: { type: string; count: number }[]
+  participationTrend: { sessionId: number; title: string; endedAt: string; participants: number; enrolled: number }[]
+}
+
 // ─── Kanban ──────────────────────────────────────────────────────────────────
 
 export interface KanbanCard {

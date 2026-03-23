@@ -2,7 +2,7 @@
 import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
 import { useApi } from '@/composables/useApi'
-import type { RexSession, RexActivity, RexResults } from '@/types'
+import type { RexSession, RexActivity, RexResults, RexSessionWithStats, RexStats } from '@/types'
 
 export const useRexStore = defineStore('rex', () => {
   const { api } = useApi()
@@ -299,6 +299,40 @@ export const useRexStore = defineStore('rex', () => {
     return false
   }
 
+  // ── Historique & Stats ──────────────────────────────────────────────────
+  const historySessions = ref<RexSessionWithStats[]>([])
+  const stats           = ref<RexStats | null>(null)
+
+  async function fetchHistory(promoId: number, filters?: { search?: string; dateFrom?: string; dateTo?: string }): Promise<void> {
+    loading.value = true
+    try {
+      const data = await api<RexSessionWithStats[]>(
+        () => window.api.getRexHistoryForPromo(promoId, filters),
+      )
+      if (data) historySessions.value = data
+    } finally {
+      loading.value = false
+    }
+  }
+
+  async function fetchStats(promoId: number): Promise<void> {
+    loading.value = true
+    try {
+      const data = await api<RexStats>(
+        () => window.api.getRexStatsForPromo(promoId),
+      )
+      if (data) stats.value = data
+    } finally {
+      loading.value = false
+    }
+  }
+
+  async function advanceToNext(currentId: number, nextId: number | null): Promise<boolean> {
+    await closeActivity(currentId)
+    if (nextId) return launchActivity(nextId)
+    return true
+  }
+
   // ── Socket listeners ─────────────────────────────────────────────────────
   const _cleanups: (() => void)[] = []
 
@@ -370,6 +404,7 @@ export const useRexStore = defineStore('rex', () => {
     // state
     currentSession, currentActivity, results,
     hasResponded, loading, error, draftSessions,
+    historySessions, stats,
     // computed
     sessionActivities, liveActivity,
     // actions
@@ -377,7 +412,8 @@ export const useRexStore = defineStore('rex', () => {
     fetchDraftSessions, updateActivity, reorderActivities, cloneSession, deleteSession,
     pushActivity, launchActivity, closeActivity, deleteActivity,
     submitResponse, fetchResults, startSession, endSession,
-    togglePin, exportSession,
+    togglePin, exportSession, advanceToNext,
+    fetchHistory, fetchStats,
     initSocketListeners, disposeSocketListeners,
   }
 })

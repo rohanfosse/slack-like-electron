@@ -428,6 +428,15 @@ contextBridge.exposeInMainWorld('api', {
   getRexActivityResults:  (activityId: number) => get(`/api/rex/activities/${activityId}/results`),
   toggleRexPin:           (responseId: number, pinned: boolean) => post(`/api/rex/responses/${responseId}/pin`, { pinned }),
   exportRexSession:       (sessionId: number, format: string) => get(`/api/rex/sessions/${sessionId}/export?format=${format}`),
+  getRexHistoryForPromo:  (promoId: number, params?: { search?: string; dateFrom?: string; dateTo?: string }) => {
+    const qs = new URLSearchParams()
+    if (params?.search)   qs.set('search', params.search)
+    if (params?.dateFrom) qs.set('dateFrom', params.dateFrom)
+    if (params?.dateTo)   qs.set('dateTo', params.dateTo)
+    const q = qs.toString()
+    return get(`/api/rex/sessions/promo/${promoId}/history${q ? '?' + q : ''}`)
+  },
+  getRexStatsForPromo:    (promoId: number) => get(`/api/rex/sessions/promo/${promoId}/stats`),
 
   // ── Kanban ─────────────────────────────────────────────────────────────────
   getKanbanCards:   (travailId: number, groupId: number)                       => get(`/api/kanban/travaux/${travailId}/groups/${groupId}`),

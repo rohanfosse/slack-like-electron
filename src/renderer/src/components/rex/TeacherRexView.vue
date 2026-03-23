@@ -5,6 +5,7 @@
     Plus, Play, Square, Trash2, Users,
     MessageSquare, Cloud, Star, FileText, LogOut,
     ChevronDown, Download, Pencil, GripVertical, Copy, Clock,
+    History, BarChart3, Presentation,
   } from 'lucide-vue-next'
   import { useAppStore }  from '@/stores/app'
   import { useRexStore }  from '@/stores/rex'
@@ -16,10 +17,15 @@
   import RexWordCloud               from './RexWordCloud.vue'
   import RexEchelleResults          from './RexEchelleResults.vue'
   import RexQuestionOuverteResults  from './RexQuestionOuverteResults.vue'
+  import RexHistoryView             from './RexHistoryView.vue'
+  import RexStatsView               from './RexStatsView.vue'
+  import RexPresenterMode           from './RexPresenterMode.vue'
 
   const appStore = useAppStore()
   const rex      = useRexStore()
 
+  const activeTab       = ref<'create' | 'history' | 'stats'>('create')
+  const presenterMode   = ref(false)
   const newTitle        = ref('')
   const isAsync         = ref(false)
   const openUntil       = ref('')
@@ -190,69 +196,100 @@
     <!-- ═══ A) Pas de session ═══ -->
     <div v-if="!session" class="rex-create">
       <h2 class="rex-title">Retour d'Experience</h2>
-      <p class="rex-subtitle">Préparez votre session à l'avance, puis diffusez-la quand vous êtes prêt</p>
 
-      <!-- Brouillons existants -->
-      <div v-if="rex.draftSessions.length > 0" class="rex-drafts">
-        <h3 class="rex-drafts-title">Brouillons</h3>
-        <div
-          v-for="s in rex.draftSessions"
-          :key="s.id"
-          class="rex-draft-card"
-        >
-          <div class="rex-draft-body" @click="selectSession(s)">
-            <div class="rex-draft-title-row">
-              <span class="rex-draft-title">{{ s.title }}</span>
-              <span v-if="s.is_async" class="rex-async-badge">
-                <Clock :size="10" /> ASYNC
-                <template v-if="s.open_until"> · {{ formatOpenUntil(s.open_until) }}</template>
-              </span>
-            </div>
-            <span class="rex-draft-meta">{{ s.status === 'active' ? 'Active' : 'Brouillon' }}</span>
-          </div>
-          <div class="rex-draft-actions">
-            <button class="rex-btn-sm rex-btn-ghost" title="Dupliquer" @click.stop="onCloneSession(s)">
-              <Copy :size="13" />
-            </button>
-            <button class="rex-btn-sm rex-btn-ghost-danger" title="Supprimer" @click.stop="onDeleteDraftSession(s)">
-              <Trash2 :size="13" />
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <div class="rex-create-form">
-        <input
-          v-model="newTitle"
-          type="text"
-          class="rex-input"
-          placeholder="Titre de la session..."
-          @keydown.enter="createSession"
-        />
-        <select v-if="appStore.activePromoId === null" v-model="selectedPromoId" class="rex-select">
-          <option :value="null" disabled>Choisir une promotion</option>
-        </select>
-        <!-- Async toggle -->
-        <label class="rex-async-toggle">
-          <input v-model="isAsync" type="checkbox" />
-          <Clock :size="13" /> Asynchrone
-        </label>
-        <input
-          v-if="isAsync"
-          v-model="openUntil"
-          type="datetime-local"
-          class="rex-input rex-input-dt"
-          title="Ouvert jusqu'au..."
-        />
-        <button class="rex-btn-primary" :disabled="!newTitle.trim() || !promoId" @click="createSession">
-          Créer la session
+      <!-- Onglets -->
+      <div class="rex-tabs">
+        <button class="rex-tab" :class="{ active: activeTab === 'create' }" @click="activeTab = 'create'">
+          <Plus :size="14" /> Creer
+        </button>
+        <button class="rex-tab" :class="{ active: activeTab === 'history' }" @click="activeTab = 'history'">
+          <History :size="14" /> Historique
+        </button>
+        <button class="rex-tab" :class="{ active: activeTab === 'stats' }" @click="activeTab = 'stats'">
+          <BarChart3 :size="14" /> Statistiques
         </button>
       </div>
+
+      <!-- Tab: Creer -->
+      <template v-if="activeTab === 'create'">
+        <p class="rex-subtitle">Preparez votre session a l'avance, puis diffusez-la quand vous etes pret</p>
+
+        <!-- Brouillons existants -->
+        <div v-if="rex.draftSessions.length > 0" class="rex-drafts">
+          <h3 class="rex-drafts-title">Brouillons</h3>
+          <div
+            v-for="s in rex.draftSessions"
+            :key="s.id"
+            class="rex-draft-card"
+          >
+            <div class="rex-draft-body" @click="selectSession(s)">
+              <div class="rex-draft-title-row">
+                <span class="rex-draft-title">{{ s.title }}</span>
+                <span v-if="s.is_async" class="rex-async-badge">
+                  <Clock :size="10" /> ASYNC
+                  <template v-if="s.open_until"> · {{ formatOpenUntil(s.open_until) }}</template>
+                </span>
+              </div>
+              <span class="rex-draft-meta">{{ s.status === 'active' ? 'Active' : 'Brouillon' }}</span>
+            </div>
+            <div class="rex-draft-actions">
+              <button class="rex-btn-sm rex-btn-ghost" title="Dupliquer" @click.stop="onCloneSession(s)">
+                <Copy :size="13" />
+              </button>
+              <button class="rex-btn-sm rex-btn-ghost-danger" title="Supprimer" @click.stop="onDeleteDraftSession(s)">
+                <Trash2 :size="13" />
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="rex-create-form">
+          <input
+            v-model="newTitle"
+            type="text"
+            class="rex-input"
+            placeholder="Titre de la session..."
+            @keydown.enter="createSession"
+          />
+          <select v-if="appStore.activePromoId === null" v-model="selectedPromoId" class="rex-select">
+            <option :value="null" disabled>Choisir une promotion</option>
+          </select>
+          <!-- Async toggle -->
+          <label class="rex-async-toggle">
+            <input v-model="isAsync" type="checkbox" />
+            <Clock :size="13" /> Asynchrone
+          </label>
+          <input
+            v-if="isAsync"
+            v-model="openUntil"
+            type="datetime-local"
+            class="rex-input rex-input-dt"
+            title="Ouvert jusqu'au..."
+          />
+          <button class="rex-btn-primary" :disabled="!newTitle.trim() || !promoId" @click="createSession">
+            Creer la session
+          </button>
+        </div>
+      </template>
+
+      <!-- Tab: Historique -->
+      <RexHistoryView v-else-if="activeTab === 'history'" :promo-id="promoId" />
+
+      <!-- Tab: Statistiques -->
+      <RexStatsView v-else-if="activeTab === 'stats'" :promo-id="promoId" />
     </div>
 
     <!-- ═══ B) Session active ═══ -->
     <template v-else>
+      <!-- Mode presentation overlay -->
+      <RexPresenterMode
+        v-if="presenterMode && session.status === 'active'"
+        :session="session"
+        @close="presenterMode = false"
+      />
+
       <!-- Header -->
+      <template v-if="!presenterMode">
       <div class="rex-session-header">
         <div class="rex-session-info">
           <h2 class="rex-title">{{ session.title }}</h2>
@@ -276,6 +313,9 @@
           </div>
           <button v-if="session.status === 'waiting'" class="rex-btn-primary" @click="startSession">
             <Play :size="14" /> Diffuser aux étudiants
+          </button>
+          <button v-if="session.status === 'active'" class="rex-btn-teal" @click="presenterMode = true">
+            <Presentation :size="14" /> Presenter
           </button>
           <button v-if="session.status === 'active'" class="rex-btn-danger" @click="endSession">
             <Square :size="14" /> Terminer
@@ -403,6 +443,7 @@
         </button>
         <RexActivityForm v-else :initial-data="editingActivity" @add="onAddActivity" @cancel="cancelForm" />
       </div>
+      </template><!-- /!presenterMode -->
     </template>
   </div>
 </template>
@@ -413,6 +454,23 @@
   flex-direction: column;
   gap: 20px;
 }
+
+/* ── Tabs ── */
+.rex-tabs {
+  display: flex; gap: 4px;
+  padding: 3px; border-radius: 10px;
+  background: rgba(255,255,255,.04);
+  width: fit-content;
+}
+.rex-tab {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 16px; border-radius: 8px; border: none;
+  background: transparent; color: var(--text-muted, #888);
+  font-size: 13px; font-weight: 600; cursor: pointer;
+  transition: all .2s; font-family: var(--font, inherit);
+}
+.rex-tab:hover { color: var(--text-primary, #fff); background: rgba(255,255,255,.04); }
+.rex-tab.active { background: #0d9488; color: #fff; }
 
 /* ── Drafts ── */
 .rex-drafts { display: flex; flex-direction: column; gap: 8px; }

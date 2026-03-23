@@ -235,6 +235,8 @@ declare global {
       getRexActivityResults(activityId: number): Promise<IpcResponse<RexResults>>
       toggleRexPin(responseId: number, pinned: boolean): Promise<IpcResponse<null>>
       exportRexSession(sessionId: number, format: string): Promise<IpcResponse<unknown>>
+      getRexHistoryForPromo(promoId: number, params?: { search?: string; dateFrom?: string; dateTo?: string }): Promise<IpcResponse<import('./types').RexSessionWithStats[]>>
+      getRexStatsForPromo(promoId: number): Promise<IpcResponse<import('./types').RexStats>>
       emitRexJoin(promoId: number): void
       emitRexLeave(promoId: number): void
       onRexActivityPushed(cb: (data: { activity: unknown }) => void): () => void

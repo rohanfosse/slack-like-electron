@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
 import { Minus, X, Maximize2, Minimize2 } from 'lucide-vue-next'
+import TopBar from './TopBar.vue'
+import { useAppStore } from '@/stores/app'
 
+const appStore = useAppStore()
 const isMaximized = ref(false)
 
 // Sur macOS les boutons natifs (traffic lights) gèrent déjà la fenêtre
@@ -28,12 +31,18 @@ onUnmounted(() => { unsubMaximize?.() })
 
 <template>
   <!-- Masqué sur macOS (traffic lights natifs dans le coin) -->
-  <div v-if="!isMac && !isWeb" class="titlebar" :class="{ maximized: isMaximized }">
-    <!-- Zone draggable (toute la largeur sauf les boutons) -->
-    <div class="titlebar-drag" aria-hidden="true" />
+  <div v-if="!isMac" class="titlebar" :class="{ maximized: isMaximized, 'titlebar--web': isWeb }">
+    <!-- Zone rail + sidebar : draggable -->
+    <div class="titlebar-side" aria-hidden="true" />
 
-    <!-- Boutons de contrôle fenêtre -->
-    <div class="titlebar-controls">
+    <!-- Zone main : TopBar (navigation + recherche) si connecté -->
+    <div class="titlebar-main">
+      <TopBar v-if="appStore.currentUser" />
+      <div v-else class="titlebar-drag" />
+    </div>
+
+    <!-- Boutons de contrôle fenêtre (desktop Electron uniquement) -->
+    <div v-if="!isWeb" class="titlebar-controls">
       <button
         class="wctrl-btn wctrl-min"
         title="Réduire"
@@ -73,7 +82,6 @@ onUnmounted(() => { unsubMaximize?.() })
   display: flex;
   align-items: center;
   flex-shrink: 0;
-  /* Fond en dégradé hard-stop : chaque tranche matche la colonne du dessous */
   background:
     linear-gradient(
       to right,
@@ -84,14 +92,30 @@ onUnmounted(() => { unsubMaximize?.() })
       var(--bg-main)    calc(var(--rail-width) + var(--sidebar-width))
     );
   border-bottom: 1px solid var(--border);
-  /* Zone de déplacement Electron sur toute la barre */
   -webkit-app-region: drag;
   user-select: none;
   position: relative;
   z-index: 100;
 }
 
-/* Zone draggable - occupe l'espace restant */
+/* Zone rail + sidebar - occupe la largeur des colonnes gauche */
+.titlebar-side {
+  width: calc(var(--rail-width) + var(--sidebar-width));
+  flex-shrink: 0;
+  height: 100%;
+  -webkit-app-region: drag;
+}
+
+/* Zone main - prend l'espace restant */
+.titlebar-main {
+  flex: 1;
+  height: 100%;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+}
+
+/* Fallback draggable si pas connecté */
 .titlebar-drag {
   flex: 1;
   height: 100%;
@@ -167,5 +191,18 @@ body.light .wctrl-min:hover,
 body.light .wctrl-max:hover {
   background: rgba(0, 0, 0, .08);
   color: rgba(0, 0, 0, .8);
+}
+
+/* ── Version web (pas de app-region drag) ── */
+.titlebar--web {
+  -webkit-app-region: unset;
+}
+.titlebar--web .titlebar-side {
+  -webkit-app-region: unset;
+}
+
+/* ── Mobile : masquer la sidebar zone et réduire ── */
+@media (max-width: 768px) {
+  .titlebar-side { width: 0; }
 }
 </style>
