@@ -15,18 +15,19 @@ const emit = defineEmits<{ goToProject: [key: string] }>()
 </script>
 
 <template>
-  <div v-if="exams.length" class="dashboard-card sa-card sa-next sa-next--exam">
+  <div class="dashboard-card sa-card sa-next sa-next--exam">
     <div class="sa-card-header">
       <Award :size="14" class="sa-card-icon sa-icon--exam" />
-      <span class="sa-section-label">{{ exams.length > 1 ? 'Prochaines épreuves' : 'Prochaine épreuve' }}</span>
+      <span class="sa-section-label">{{ exams.length > 1 ? 'Prochaines épreuves' : 'Épreuves' }}</span>
     </div>
-    <div class="sa-next-list">
+    <div v-if="exams.length" class="sa-next-list">
       <div v-for="e in exams" :key="e.id" class="sa-next-item" role="button" tabindex="0" :aria-label="'Voir l\'épreuve ' + e.title" @click="emit('goToProject', e.category ?? '')" @keydown.enter="emit('goToProject', e.category ?? '')">
         <span class="sa-next-type devoir-type-badge" :class="`type-${e.type}`">{{ typeLabel(e.type ?? 'cctl') }}</span>
         <span class="sa-next-title">{{ e.title }}</span>
         <span v-if="e.deadline" class="deadline-badge" :class="deadlineClass(e.deadline)">{{ deadlineLabel(e.deadline) }}</span>
       </div>
     </div>
+    <p v-else class="sa-empty">Aucune épreuve à venir</p>
   </div>
 </template>
 
@@ -34,4 +35,5 @@ const emit = defineEmits<{ goToProject: [key: string] }>()
 /* Base .sa-card, .sa-card-header, .sa-section-label, .sa-next-* styles in devoirs-shared.css */
 .sa-next--exam { border-left: 3px solid var(--color-cctl, #9b87f5); }
 .sa-icon--exam { color: var(--color-cctl, #9b87f5); }
+.sa-empty { font-size: 12px; color: var(--text-muted); margin: 0; opacity: .6; }
 </style>

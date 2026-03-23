@@ -187,7 +187,7 @@
 
         <!-- Onglets de la vue dashboard -->
         <div class="sidebar-section-header">
-          <span>Vue</span>
+          <span>Tableau de bord</span>
         </div>
         <nav aria-label="Onglets du tableau de bord">
           <button
@@ -196,7 +196,7 @@
             @click="router.push('/dashboard')"
           >
             <FolderOpen :size="13" class="project-icon" />
-            <span class="channel-name">Projets</span>
+            <span class="channel-name">Accueil</span>
           </button>
           <button
             class="sidebar-item"
@@ -482,6 +482,7 @@
           <nav
             v-show="!collapsed.has(group.key)"
             :aria-label="group.label"
+            class="sidebar-category-channels"
           >
             <!-- Renommage inline canal -->
             <template v-for="ch in group.channels" :key="ch.id">
@@ -523,7 +524,8 @@
 
         <!-- Messages directs -->
         <template v-if="dmStudents.length">
-          <div class="sidebar-section-header sidebar-collapsible-header" style="margin-top:12px" @click="dmCollapsed = !dmCollapsed">
+          <div class="sidebar-separator" />
+          <div class="sidebar-section-header sidebar-collapsible-header" @click="dmCollapsed = !dmCollapsed">
             <ChevronDown
               :size="12"
               class="sidebar-category-chevron"
@@ -749,6 +751,14 @@
   margin-bottom: 2px;
 }
 
+/* ── Separateur entre sections ── */
+.sidebar-separator {
+  height: 1px;
+  background: var(--border);
+  margin: 10px 14px;
+  opacity: .5;
+}
+
 .sidebar-category-header {
   display: flex;
   align-items: center;
@@ -780,6 +790,11 @@
   transition: transform .18s ease;
 }
 .sidebar-category-chevron.rotated { transform: rotate(-90deg); }
+
+/* Canaux indentes sous la categorie */
+.sidebar-category-channels {
+  padding-left: 6px;
+}
 
 .sidebar-category-label {
   flex: 1;

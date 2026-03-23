@@ -102,6 +102,17 @@ export function useBentoPrefs() {
     prefs.value.order = arr
   }
 
+  function reorderWidgets(newOrder: WidgetDef[]) {
+    const hiddenSet = new Set(prefs.value.hidden)
+    const order: string[] = []
+    const hidden: string[] = []
+    for (const w of newOrder) {
+      if (hiddenSet.has(w.id)) hidden.push(w.id)
+      else order.push(w.id)
+    }
+    prefs.value = { order, hidden }
+  }
+
   function resetDefaults() {
     prefs.value = defaultPrefs()
   }
@@ -112,6 +123,7 @@ export function useBentoPrefs() {
     isVisible,
     toggleWidget,
     moveWidget,
+    reorderWidgets,
     resetDefaults,
     prefs,
   }

@@ -3,8 +3,9 @@
  */
 <script setup lang="ts">
 import { computed, ref, watch, nextTick, type Component } from 'vue'
-import { Settings, CheckCircle2, Clock, AlertTriangle, Award, BookOpen, Percent, FileText } from 'lucide-vue-next'
+import { Settings, CheckCircle2, Clock, AlertTriangle, Award, BookOpen, Percent, FileText, Wifi } from 'lucide-vue-next'
 import { useBentoPrefs } from '@/composables/useBentoPrefs'
+import { useAppStore } from '@/stores/app'
 import { nextUpcoming } from '@/utils/devoirFilters'
 import type { StudentProjectCard } from '@/composables/useDashboardStudent'
 
@@ -15,7 +16,6 @@ import WidgetLivrables from './student-widgets/WidgetLivrables.vue'
 import WidgetSoutenances from './student-widgets/WidgetSoutenances.vue'
 import WidgetLastFeedback from './student-widgets/WidgetLastFeedback.vue'
 import WidgetRecentDoc from './student-widgets/WidgetRecentDoc.vue'
-import WidgetPromoActivity from './student-widgets/WidgetPromoActivity.vue'
 import BentoCustomizer from './student-widgets/BentoCustomizer.vue'
 
 const props = defineProps<{
@@ -31,10 +31,11 @@ const emit = defineEmits<{
   goToProject: [key: string]
 }>()
 
+const appStore = useAppStore()
 const showCustomizer = ref(false)
 const gearBtnRef = ref<HTMLButtonElement | null>(null)
 const customizerRef = ref<InstanceType<typeof BentoCustomizer> | null>(null)
-const { visibleWidgets, allWidgets, isVisible, toggleWidget, moveWidget, resetDefaults } = useBentoPrefs()
+const { visibleWidgets, allWidgets, isVisible, toggleWidget, moveWidget, reorderWidgets, resetDefaults } = useBentoPrefs()
 
 watch(showCustomizer, (visible) => {
   nextTick(() => {
@@ -66,6 +67,7 @@ const nextSoutenances = computed(() =>
   nextUpcoming(props.urgentActions, ['soutenance'], Date.now(), 2),
 )
 
+// Widgets sans promoActivity (integre directement comme stat)
 const widgetComponents: Record<string, Component> = {
   live: WidgetLive,
   project: WidgetProject,
@@ -74,7 +76,6 @@ const widgetComponents: Record<string, Component> = {
   soutenances: WidgetSoutenances,
   feedback: WidgetLastFeedback,
   recentDoc: WidgetRecentDoc,
-  promoActivity: WidgetPromoActivity,
 }
 
 const latestFeedback = computed(() => {
@@ -90,7 +91,6 @@ const widgetProps = computed<Record<string, Record<string, unknown>>>(() => ({
   soutenances: { soutenances: nextSoutenances.value },
   feedback: { feedback: latestFeedback.value },
   recentDoc: {},
-  promoActivity: {},
 }))
 
 const widgetEvents: Record<string, Record<string, (...args: unknown[]) => void>> = {
@@ -152,9 +152,8 @@ const submissionRate = computed(() =>
     ? Math.round(((props.studentStats.submitted + props.studentStats.graded) / totalDevoirs.value) * 100)
     : 0,
 )
-
-// Rouge uniquement si devoirs en retard, pas juste "a rendre"
 const pendingIsAlert = computed(() => overdueCount.value > 0)
+const onlineCount = computed(() => appStore.onlineUsers?.length ?? 0)
 </script>
 
 <template>
@@ -182,18 +181,19 @@ const pendingIsAlert = computed(() => overdueCount.value > 0)
         :is-visible="isVisible"
         @toggle="toggleWidget"
         @move="moveWidget"
+        @reorder="reorderWidgets"
         @reset="resetDefaults"
         @close="showCustomizer = false"
       />
     </Transition>
 
-    <!-- Live alert (full-width above grid) -->
+    <!-- Live alert -->
     <WidgetLive v-if="isVisible('live')" />
 
     <!-- ═══ BENTO GRID ═══ -->
     <div class="bento-grid">
 
-      <!-- ROW 1: Focus (2 cols) + 2 stats -->
+      <!-- Focus (2 cols) -->
       <div class="dashboard-card bento-tile bento-focus" :class="focusBgClass">
         <div class="focus-row">
           <div class="focus-icon">
@@ -208,47 +208,51 @@ const pendingIsAlert = computed(() => overdueCount.value > 0)
         </div>
       </div>
 
-      <div class="dashboard-card bento-tile bento-stat">
+      <!-- Stat: Soumission % -->
+      <div class="dashboard-card bento-tile bento-stat bento-stat--accent">
         <div class="stat-ring">
           <svg viewBox="0 0 36 36" class="stat-ring-svg">
             <circle cx="18" cy="18" r="15" fill="none" stroke="var(--bg-active)" stroke-width="3" />
-            <circle
-              cx="18" cy="18" r="15" fill="none"
-              stroke="var(--accent)" stroke-width="3"
-              stroke-linecap="round"
-              :stroke-dasharray="`${submissionRate * 0.942} 94.2`"
-              transform="rotate(-90 18 18)"
-              style="transition: stroke-dasharray .6s ease"
-            />
+            <circle cx="18" cy="18" r="15" fill="none" stroke="var(--accent)" stroke-width="3" stroke-linecap="round"
+              :stroke-dasharray="`${submissionRate * 0.942} 94.2`" transform="rotate(-90 18 18)" style="transition: stroke-dasharray .6s ease" />
           </svg>
         </div>
         <span class="stat-number">{{ submissionRate }}%</span>
         <span class="stat-label">soumis</span>
-        <Percent :size="12" class="stat-icon" />
       </div>
 
-      <div class="dashboard-card bento-tile bento-stat" :class="{ 'stat--alert': pendingIsAlert }">
+      <!-- Stat: A rendre (ou check si 0) -->
+      <div v-if="studentStats.pending > 0" class="dashboard-card bento-tile bento-stat" :class="{ 'bento-stat--danger': pendingIsAlert, 'bento-stat--warning': !pendingIsAlert }">
         <span class="stat-number">{{ studentStats.pending }}</span>
         <span class="stat-label">à rendre</span>
-        <FileText :size="12" class="stat-icon" />
+      </div>
+      <div v-else class="dashboard-card bento-tile bento-stat bento-stat--success">
+        <CheckCircle2 :size="18" class="stat-check-icon" />
+        <span class="stat-label">rien à rendre</span>
       </div>
 
-      <!-- ROW 2: 2 more stats (take 1 col each) + promo activity (2 cols) -->
+      <!-- Stat: Moyenne -->
       <div class="dashboard-card bento-tile bento-stat">
         <span class="stat-number">{{ studentStats.modeGrade ?? '--' }}</span>
         <span class="stat-label">moyenne</span>
-        <Award :size="12" class="stat-icon" />
       </div>
 
+      <!-- Stat: Notes -->
       <div class="dashboard-card bento-tile bento-stat">
         <span class="stat-number">{{ studentStats.graded }}</span>
         <span class="stat-label">notes</span>
-        <BookOpen :size="12" class="stat-icon" />
       </div>
 
-      <!-- WIDGET AREA -->
-      <template v-for="w in visibleWidgets.filter(w => w.id !== 'live')" :key="w.id">
-        <div class="bento-tile bento-widget">
+      <!-- Stat: En ligne (integre, remplace WidgetPromoActivity) -->
+      <div class="dashboard-card bento-tile bento-stat bento-stat--online">
+        <span class="stat-online-dot" />
+        <span class="stat-number">{{ onlineCount }}</span>
+        <span class="stat-label">en ligne</span>
+      </div>
+
+      <!-- Widgets dynamiques -->
+      <template v-for="w in visibleWidgets.filter(w => w.id !== 'live' && w.id !== 'promoActivity')" :key="w.id">
+        <div class="bento-tile bento-widget" :style="{ animationDelay: '0.' + (visibleWidgets.indexOf(w) * 5) + 's' }">
           <component
             :is="widgetComponents[w.id]"
             v-bind="widgetProps[w.id]"
@@ -293,51 +297,64 @@ const pendingIsAlert = computed(() => overdueCount.value > 0)
   gap: 10px;
 }
 
-/* ── Focus tile (2x1 compact) ── */
+/* ── Tile base ── */
+.bento-tile {
+  border-radius: 12px;
+  transition: transform .2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow .2s;
+}
+.bento-tile:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0,0,0,.12);
+}
+
+/* ── Focus tile ── */
 .bento-focus {
   grid-column: span 2;
   padding: 16px 18px;
-  border-radius: 12px;
-  transition: all .3s;
 }
-.focus-row {
-  display: flex; align-items: center; gap: 12px;
-}
+.focus-row { display: flex; align-items: center; gap: 12px; }
 .focus-icon { flex-shrink: 0; }
 .focus-text { min-width: 0; }
 .focus-title {
   font-size: 15px; font-weight: 700; color: var(--text-primary);
   margin: 0; line-height: 1.3;
 }
-.focus-subtitle {
-  font-size: 12px; color: var(--text-muted); margin: 2px 0 0;
-}
+.focus-subtitle { font-size: 12px; color: var(--text-muted); margin: 2px 0 0; }
+
 .focus--critical {
-  background: rgba(231, 76, 60, 0.06);
-  border-color: rgba(231, 76, 60, 0.18);
+  background: linear-gradient(135deg, rgba(231,76,60,.08), rgba(231,76,60,.03));
+  border-color: rgba(231,76,60,.18);
 }
 .focus--critical .focus-icon { color: #e74c3c; }
 .focus--warning {
-  background: rgba(243, 156, 18, 0.06);
-  border-color: rgba(243, 156, 18, 0.18);
+  background: linear-gradient(135deg, rgba(243,156,18,.08), rgba(243,156,18,.03));
+  border-color: rgba(243,156,18,.18);
 }
 .focus--warning .focus-icon { color: #f39c12; }
 .focus--clear {
-  background: rgba(46, 204, 113, 0.05);
-  border-color: rgba(46, 204, 113, 0.15);
+  background: linear-gradient(135deg, rgba(46,204,113,.06), rgba(46,204,113,.02));
+  border-color: rgba(46,204,113,.15);
 }
 .focus--clear .focus-icon { color: var(--color-success); }
 
-/* ── Stat tiles (1x1 compact) ── */
+/* ── Stat tiles ── */
 .bento-stat {
   display: flex; flex-direction: column;
   align-items: center; justify-content: center;
   gap: 2px; text-align: center;
   padding: 14px 10px;
-  position: relative; border-radius: 12px;
+  position: relative;
+  border-top: 2px solid var(--border);
 }
+.bento-stat--accent  { border-top-color: var(--accent); }
+.bento-stat--danger  { border-top-color: #e74c3c; }
+.bento-stat--warning { border-top-color: #f39c12; }
+.bento-stat--success { border-top-color: var(--color-success); }
+.bento-stat--online  { border-top-color: #4ade80; }
+
 .stat-number {
   font-size: 22px; font-weight: 700;
+  font-family: 'JetBrains Mono', 'SF Mono', 'Cascadia Code', monospace;
   color: var(--text-primary); line-height: 1;
 }
 .stat-label {
@@ -345,22 +362,26 @@ const pendingIsAlert = computed(() => overdueCount.value > 0)
   text-transform: uppercase; letter-spacing: .04em;
   color: var(--text-muted);
 }
-.stat-icon {
-  position: absolute; top: 8px; right: 8px;
-  color: var(--text-muted); opacity: .3;
-}
 .stat-ring { position: relative; width: 32px; height: 32px; }
 .stat-ring-svg { width: 100%; height: 100%; }
 
-.stat--alert {
-  background: rgba(231, 76, 60, 0.05);
-  border-color: rgba(231, 76, 60, 0.18);
+.stat--danger .stat-number { color: #e74c3c; }
+.stat-check-icon { color: var(--color-success); margin-bottom: 2px; }
+.stat-online-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: #4ade80;
+  box-shadow: 0 0 6px rgba(74, 222, 128, .4);
 }
-.stat--alert .stat-number { color: #e74c3c; }
 
 /* ── Widget tiles ── */
 .bento-widget {
   grid-column: span 2;
+  animation: bento-fade-in .4s ease both;
+}
+
+@keyframes bento-fade-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
 /* ── Transitions ── */
