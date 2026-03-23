@@ -253,8 +253,8 @@ const kanbanExpanded = ref<Record<number, boolean>>({})
       />
     </template>
 
-    <!-- Groupes de devoirs -->
-    <div class="devoirs-grouped">
+    <!-- Groupes de devoirs (uniquement si PAS de projet selectionne) -->
+    <div v-if="!appStore.activeProject" class="devoirs-grouped">
       <StudentDevoirGroup
         :devoirs="studentGroups.overdue"
         variant="overdue"

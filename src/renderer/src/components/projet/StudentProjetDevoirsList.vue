@@ -10,7 +10,15 @@ import type { Devoir } from '@/types'
 
 const TYPE_LABELS: Record<string, string> = {
   livrable: 'Livrable', soutenance: 'Soutenance', cctl: 'CCTL',
-  etude_de_cas: 'Etude de cas', memoire: 'Memoire', autre: 'Autre',
+  etude_de_cas: 'Étude de cas', memoire: 'Mémoire', autre: 'Autre',
+}
+
+/** Minimal markdown : **bold** + newlines */
+function formatDesc(text: string): string {
+  return text
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\n/g, '<br>')
 }
 
 const props = defineProps<{
@@ -90,11 +98,11 @@ function toggleSection(key: string) { collapsedSections.value[key] = !collapsedS
         </div>
         <div class="spf-card-sub">
           <span class="spf-card-date">
-            {{ isOverdue(t) ? 'Delai expire' : 'Echeance : ' + formatDate(t.deadline) }}
+            {{ isOverdue(t) ? 'Délai expiré' : 'Échéance : ' + formatDate(t.deadline) }}
           </span>
           <span v-if="t.group_name" class="spf-card-group"><Users :size="10" /> {{ t.group_name }}</span>
         </div>
-        <p v-if="t.description" class="spf-card-desc">{{ t.description }}</p>
+        <p v-if="t.description" class="spf-card-desc" v-html="formatDesc(t.description)" />
 
         <!-- Formulaire de depot -->
         <template v-if="depositingDevoirId === t.id">
@@ -134,17 +142,17 @@ function toggleSection(key: string) { collapsedSections.value[key] = !collapsedS
                 :disabled="depositing || (depositMode === 'file' ? !depositFile : !depositLink.trim())"
                 @click="emit('submitDeposit', t)"
               >
-                <Upload :size="12" />{{ depositing ? 'Depot...' : 'Deposer' }}
+                <Upload :size="12" />{{ depositing ? 'Dépôt...' : 'Déposer' }}
               </button>
             </div>
           </div>
         </template>
         <div v-else class="spf-card-actions">
           <button v-if="isOverdue(t)" class="spf-btn-expired" disabled>
-            <Lock :size="12" /> Delai expire
+            <Lock :size="12" /> Délai expiré
           </button>
           <button v-else class="btn-primary spf-btn-deposit" @click="emit('startDeposit', t)">
-            <Upload :size="12" /> Deposer
+            <Upload :size="12" /> Déposer
           </button>
         </div>
       </div>
@@ -155,7 +163,7 @@ function toggleSection(key: string) { collapsedSections.value[key] = !collapsedS
   <template v-if="devoirsEvent.length">
     <div class="spf-section-label spf-section-toggle" style="margin-top:16px" @click="toggleSection('events')">
       <component :is="collapsedSections.events ? ChevronRight : ChevronDown" :size="12" />
-      <CalendarDays :size="12" /> Evenements
+      <CalendarDays :size="12" /> Événements
       <span class="spf-section-count">{{ devoirsEvent.length }}</span>
     </div>
     <div v-show="!collapsedSections.events" class="spf-devoir-list">
@@ -170,9 +178,9 @@ function toggleSection(key: string) { collapsedSections.value[key] = !collapsedS
         <div class="spf-card-sub">
           <span class="spf-card-date">{{ formatDate(t.deadline) }}</span>
         </div>
-        <p v-if="t.description" class="spf-card-desc">{{ t.description }}</p>
+        <p v-if="t.description" class="spf-card-desc" v-html="formatDesc(t.description)" />
         <div class="spf-event-notice">
-          <CalendarDays :size="13" /> Presence requise
+          <CalendarDays :size="13" /> Présence requise
         </div>
       </div>
     </div>
@@ -194,7 +202,7 @@ function toggleSection(key: string) { collapsedSections.value[key] = !collapsedS
           <CheckCircle2 :size="14" class="spf-done-check" />
         </div>
         <div class="spf-card-sub">
-          <span class="spf-card-date">Echeance : {{ formatDate(t.deadline) }}</span>
+          <span class="spf-card-date">Échéance : {{ formatDate(t.deadline) }}</span>
         </div>
         <!-- Note + feedback -->
         <div v-if="t.note" class="spf-grade-row">
