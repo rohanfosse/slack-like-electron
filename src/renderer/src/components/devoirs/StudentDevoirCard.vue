@@ -41,6 +41,14 @@ defineEmits<{
 
 const t = props.devoir
 const showDepositForm = props.variant !== 'overdue' && props.variant !== 'event' && props.variant !== 'submitted'
+
+/** Minimal markdown : **bold**, newlines → <br> */
+function formatDesc(text: string): string {
+  return text
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\n/g, '<br>')
+}
 </script>
 
 <template>
@@ -59,7 +67,7 @@ const showDepositForm = props.variant !== 'overdue' && props.variant !== 'event'
 
     <!-- Body -->
     <h3 class="devoir-card-title">{{ devoir.title }}</h3>
-    <p v-if="devoir.description" class="devoir-card-desc">{{ devoir.description }}</p>
+    <p v-if="devoir.description" class="devoir-card-desc" v-html="formatDesc(devoir.description)" />
     <p v-if="devoir.room" class="devoir-card-room">Salle {{ devoir.room }}</p>
     <div v-if="devoir.aavs" class="devoir-card-aavs">
       <span v-for="a in devoir.aavs.split('\n').filter(Boolean)" :key="a" class="aav-tag">{{ a.trim() }}</span>
@@ -176,18 +184,23 @@ const showDepositForm = props.variant !== 'overdue' && props.variant !== 'event'
   font-size: 15px;
   font-weight: 700;
   color: var(--text-primary);
-  margin-bottom: 4px;
+  margin: 0 0 6px;
+  line-height: 1.3;
 }
 
 .devoir-card-desc {
-  font-size: 13px;
-  color: var(--text-secondary);
-  line-height: 1.5;
-  margin-bottom: 12px;
+  font-size: 12.5px;
+  color: var(--text-muted);
+  line-height: 1.6;
+  margin: 0 0 10px;
   display: -webkit-box;
-  -webkit-line-clamp: 2;
+  -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+.devoir-card-desc :deep(strong) {
+  color: var(--text-secondary);
+  font-weight: 600;
 }
 .devoir-card-room { font-size: 12px; color: var(--text-secondary); margin-bottom: 8px; }
 .devoir-card-aavs { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 8px; }
