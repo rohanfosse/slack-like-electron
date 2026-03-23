@@ -171,82 +171,10 @@ export const useAppStore = defineStore('app', () => {
     activeChannelName.value = ''
   }
 
-  // ── Historique de navigation (back/forward) ────────────────────────────────
-  interface NavEntry {
-    channelId: number | null
-    dmStudentId: number | null
-    dmPeerId: number | null
-    promoId: number | null
-    channelName: string
-    channelType: 'chat' | 'annonce'
-    description: string
-  }
-  const navHistory    = ref<NavEntry[]>([])
-  const navFuture     = ref<NavEntry[]>([])
-  const _navNavigating = ref(false) // flag pour ne pas re-pusher pendant back/forward
-
-  function _currentNavEntry(): NavEntry {
-    return {
-      channelId: activeChannelId.value,
-      dmStudentId: activeDmStudentId.value,
-      dmPeerId: activeDmPeerId.value,
-      promoId: activePromoId.value,
-      channelName: activeChannelName.value,
-      channelType: activeChannelType.value,
-      description: activeChannelDescription.value,
-    }
-  }
-
-  function _pushNavHistory() {
-    if (_navNavigating.value) return
-    const current = _currentNavEntry()
-    // Ne pas pusher si rien n'est ouvert
-    if (!current.channelId && !current.dmStudentId) return
-    navHistory.value = [...navHistory.value, current].slice(-50)
-    navFuture.value = [] // on invalide le forward
-  }
-
-  function _applyNavEntry(entry: NavEntry) {
-    _navNavigating.value = true
-    activeChannelId.value   = entry.channelId
-    activeDmStudentId.value = entry.dmStudentId
-    activeDmPeerId.value    = entry.dmPeerId
-    activePromoId.value     = entry.promoId
-    activeChannelType.value = entry.channelType
-    activeChannelName.value = entry.channelName
-    activeChannelDescription.value = entry.description
-    if (entry.channelId) markRead(entry.channelId)
-    if (entry.dmStudentId) markDmRead(entry.channelName)
-    _saveNavState()
-    _navNavigating.value = false
-  }
-
-  const canGoBack    = computed(() => navHistory.value.length > 0)
-  const canGoForward = computed(() => navFuture.value.length > 0)
-
-  function goBack() {
-    if (!canGoBack.value) return
-    const history = [...navHistory.value]
-    const prev = history.pop()!
-    navHistory.value = history
-    navFuture.value = [...navFuture.value, _currentNavEntry()]
-    _applyNavEntry(prev)
-  }
-
-  function goForward() {
-    if (!canGoForward.value) return
-    const future = [...navFuture.value]
-    const next = future.pop()!
-    navFuture.value = future
-    navHistory.value = [...navHistory.value, _currentNavEntry()]
-    _applyNavEntry(next)
-  }
-
   // ── Navigation ────────────────────────────────────────────────────────────
   const activeChannelDescription = ref<string>('')
 
   function openChannel(id: number, promoId: number, name: string, type: 'chat' | 'annonce' = 'chat', description?: string) {
-    _pushNavHistory()
     activeChannelId.value   = id
     activeDmStudentId.value = null
     activeDmPeerId.value    = null
@@ -259,7 +187,6 @@ export const useAppStore = defineStore('app', () => {
   }
 
   function openDm(studentId: number, promoId: number, name: string) {
-    _pushNavHistory()
     const myId = currentUser.value?.id ?? 0
     const isStudentOpeningTeacherDm = myId > 0 && studentId < 0
 
@@ -534,7 +461,6 @@ export const useAppStore = defineStore('app', () => {
     restoreSession, login, logout, impersonate, clearMustChangePassword,
     startSimulation, stopSimulation,
     openChannel, openDm, markRead, markDmRead, markAllRead, loadTaChannels,
-    canGoBack, canGoForward, goBack, goForward,
     muteDm, unmuteDm, isDmMuted,
     onlineUsers, isUserOnline, sessionExpiredMessage,
     initUnreadListener, initOnlineListener, initSocketListener, initPresenceListener, initAuthExpiredListener,
