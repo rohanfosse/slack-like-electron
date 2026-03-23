@@ -29,6 +29,12 @@
   })
 
   const pendingCount = computed(() => travauxStore.urgentPendingCount)
+  const devoirProgress = computed(() => {
+    const total = travauxStore.devoirs.length
+    if (!total) return 0
+    const done = travauxStore.devoirs.filter(t => t.depot_id != null).length
+    return Math.round((done / total) * 100)
+  })
 
   function openAdmin() {
     window.open('https://admin.cursus.school', '_blank')
@@ -162,6 +168,10 @@
       >
         {{ pendingCount > 9 ? '9+' : pendingCount }}
       </span>
+      <!-- Mini progress bar for students -->
+      <div v-if="appStore.isStudent && travauxStore.devoirs.length > 0" class="nav-progress">
+        <div class="nav-progress-fill" :style="{ width: devoirProgress + '%' }" />
+      </div>
     </button>
 
     <button
@@ -421,6 +431,19 @@
 }
 .nav-badge-unread {
   background: var(--accent, #4a90d9);
+}
+
+/* ── Mini progress bar (devoirs) ── */
+.nav-progress {
+  width: 28px; height: 3px; border-radius: 2px;
+  background: rgba(255,255,255,.08);
+  overflow: hidden; margin-top: 2px;
+}
+.nav-progress-fill {
+  height: 100%; border-radius: 2px;
+  background: var(--color-success);
+  transition: width .5s ease;
+  min-width: 1px;
 }
 
 /* ── Active indicator (animated bar) ── */
