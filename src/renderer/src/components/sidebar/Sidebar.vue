@@ -326,26 +326,34 @@
             <span class="channel-name">Accueil</span>
           </button>
 
-          <!-- Projets avec déroulant -->
+          <!-- Projets avec barre de progression -->
           <div v-for="proj in allProjects" :key="proj" class="sidebar-project-group">
             <button
-              class="sidebar-item sidebar-project-item"
+              class="sidebar-item sb-project-rich"
               :class="{ active: appStore.activeProject === proj }"
               @click="selectProject(proj)"
               @contextmenu.prevent="openProjectCtx($event, proj)"
             >
-              <span
-                class="project-color-dot"
-                :style="{ background: getProjectColor(proj) }"
-              />
-              <component
-                v-if="parseCategoryIcon(proj).icon"
-                :is="parseCategoryIcon(proj).icon!"
-                :size="13"
-                class="project-icon"
-              />
-              <span v-else class="project-bullet" />
-              <span class="channel-name">{{ parseCategoryIcon(proj).label }}</span>
+              <div class="sb-project-rich-top">
+                <span class="project-color-dot" :style="{ background: getProjectColor(proj) }" />
+                <component
+                  v-if="parseCategoryIcon(proj).icon"
+                  :is="parseCategoryIcon(proj).icon!"
+                  :size="13"
+                  class="project-icon"
+                />
+                <span v-else class="project-bullet" />
+                <span class="channel-name">{{ parseCategoryIcon(proj).label }}</span>
+              </div>
+              <div v-if="projectStats[proj]" class="sb-project-rich-bar-wrap">
+                <div class="sb-project-rich-bar">
+                  <div
+                    class="sb-project-rich-bar-fill"
+                    :style="{ width: (projectStats[proj].expected > 0 ? Math.round(projectStats[proj].depots / projectStats[proj].expected * 100) : 0) + '%', background: getProjectColor(proj) }"
+                  />
+                </div>
+                <span class="sb-project-rich-sub">{{ projectStats[proj].depots }}/{{ projectStats[proj].expected }} soumis</span>
+              </div>
             </button>
 
             <!-- Inline edit panel -->
@@ -359,8 +367,9 @@
             />
           </div>
 
-          <!-- + Nouveau projet -->
+          <!-- + Nouveau projet (prof uniquement) -->
           <button
+            v-if="appStore.isTeacher"
             class="sidebar-item sidebar-add-project"
             @click="modals.newProject = true"
           >
@@ -369,7 +378,7 @@
           </button>
         </nav>
 
-        <NewProjectModal v-model="modals.newProject" @created="onProjectCreated" />
+        <NewProjectModal v-if="appStore.isTeacher" v-model="modals.newProject" @created="onProjectCreated" />
       </template>
 
       <!-- Liste des projets (section Documents) -->
