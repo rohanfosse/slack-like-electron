@@ -27,7 +27,13 @@
   })
 
   const memberObjects = computed(() =>
-    allStudents.value.filter(s => memberIds.value.includes(s.id)),
+    allStudents.value
+      .filter(s => memberIds.value.includes(s.id))
+      .sort((a, b) => {
+        const aOnline = appStore.isUserOnline(a.name) ? 0 : 1
+        const bOnline = appStore.isUserOnline(b.name) ? 0 : 1
+        return aOnline - bOnline || a.name.localeCompare(b.name, 'fr')
+      }),
   )
 
   const nonMemberObjects = computed(() => {
@@ -108,6 +114,10 @@
       <!-- Liste des membres -->
       <div class="ch-section-label">
         {{ channel?.is_private ? memberObjects.length + ' membre' + (memberObjects.length > 1 ? 's' : '') : 'Tous les étudiants' }}
+        <span class="ch-online-count">
+          <span class="ch-online-dot" />
+          {{ memberObjects.filter(s => appStore.isUserOnline(s.name)).length }} en ligne
+        </span>
       </div>
 
       <ul class="ch-member-list">
@@ -257,6 +267,17 @@
   text-transform: uppercase;
   letter-spacing: .04em;
   color: var(--text-muted);
+}
+.ch-online-count {
+  margin-left: auto;
+  display: flex; align-items: center; gap: 4px;
+  font-size: 10px; font-weight: 600;
+  text-transform: none; letter-spacing: 0;
+  color: #22c55e;
+}
+.ch-online-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: #22c55e;
 }
 .ch-add-label { margin-top: 10px; color: var(--accent); }
 
