@@ -80,9 +80,18 @@ export function useDocumentsData() {
         return true
       })
 
-    if (sortBy.value === 'name') return list.sort((a, b) => a.name.localeCompare(b.name, 'fr'))
-    if (sortBy.value === 'type') return list.sort((a, b) => docIconType(a).localeCompare(docIconType(b)))
-    return list.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+    // Favoris en premier, puis tri choisi
+    const favSet = docStore.favoriteIds
+    const favSort = (a: typeof list[0], b: typeof list[0]) => {
+      const af = favSet.has(a.id) ? 0 : 1
+      const bf = favSet.has(b.id) ? 0 : 1
+      if (af !== bf) return af - bf
+      return 0
+    }
+
+    if (sortBy.value === 'name') return list.sort((a, b) => favSort(a, b) || a.name.localeCompare(b.name, 'fr'))
+    if (sortBy.value === 'type') return list.sort((a, b) => favSort(a, b) || docIconType(a).localeCompare(docIconType(b)))
+    return list.sort((a, b) => favSort(a, b) || new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
   })
 
   const categories = computed(() => {

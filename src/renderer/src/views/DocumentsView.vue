@@ -3,7 +3,7 @@
   import {
     FileText, Image, Link2, Video, File, Plus, Trash2,
     ExternalLink, Download, Search, X, Upload, FolderOpen, Eye, CheckCircle2, Menu,
-    LayoutGrid, List,
+    LayoutGrid, List, Star,
   } from 'lucide-vue-next'
   import { useAppStore }       from '@/stores/app'
   import { useDocumentsStore } from '@/stores/documents'
@@ -246,6 +246,14 @@
               </p>
 
               <div class="doc-card-actions" @click.stop>
+                <button
+                  class="doc-card-action-btn"
+                  :class="{ 'doc-fav--active': docStore.isFavorite(doc.id) }"
+                  :title="docStore.isFavorite(doc.id) ? 'Retirer des favoris' : 'Ajouter aux favoris'"
+                  @click="docStore.toggleFavorite(doc.id)"
+                >
+                  <Star :size="14" />
+                </button>
                 <button
                   class="doc-card-action-btn"
                   :title="doc.type === 'link' ? 'Ouvrir le lien' : 'Prévisualiser'"
@@ -724,6 +732,7 @@
 
 .doc-card-action-btn:hover { background: var(--bg-elevated); }
 .doc-card-action-btn--danger:hover { background: rgba(231,76,60,.3); color: #ff6b6b; }
+.doc-fav--active { color: #f59e0b !important; background: rgba(245,158,11,.15); }
 
 /* ── Empty state ── */
 .docs-empty {

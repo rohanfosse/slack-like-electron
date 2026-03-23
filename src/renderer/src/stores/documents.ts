@@ -15,6 +15,23 @@ export const useDocumentsStore = defineStore('documents', () => {
   const activeCategory = ref<string>('')
   const previewDoc     = ref<AppDocument | null>(null)
 
+  // Favoris (localStorage)
+  const FAVS_KEY = 'cc_doc_favorites'
+  const favoriteIds = ref<Set<number>>(new Set(
+    (() => { try { return JSON.parse(localStorage.getItem(FAVS_KEY) ?? '[]') } catch { return [] } })(),
+  ))
+
+  function toggleFavorite(docId: number) {
+    if (favoriteIds.value.has(docId)) favoriteIds.value.delete(docId)
+    else favoriteIds.value.add(docId)
+    favoriteIds.value = new Set(favoriteIds.value) // trigger reactivity
+    localStorage.setItem(FAVS_KEY, JSON.stringify([...favoriteIds.value]))
+  }
+
+  function isFavorite(docId: number): boolean {
+    return favoriteIds.value.has(docId)
+  }
+
   async function fetchDocuments(promoId?: number, project?: string | null) {
     const pid = promoId ?? appStore.activePromoId ?? appStore.currentUser?.promo_id
     if (!pid) { documents.value = []; return }
@@ -53,8 +70,8 @@ export const useDocumentsStore = defineStore('documents', () => {
 
   return {
     documents, categories, loading, searchQuery,
-    activeCategory, previewDoc,
+    activeCategory, previewDoc, favoriteIds,
     fetchDocuments, addDocument, deleteDocument,
-    openPreview, closePreview,
+    openPreview, closePreview, toggleFavorite, isFavorite,
   }
 })
