@@ -3,7 +3,7 @@
  * Used by AppSidebar.vue
  */
 import { ref, computed, watch, nextTick, type Ref } from 'vue'
-import { PlusCircle, Pencil, Trash2, VolumeX, Volume2, Lock, Unlock } from 'lucide-vue-next'
+import { PlusCircle, Pencil, Trash2, VolumeX, Volume2, Lock, Unlock, CheckCheck } from 'lucide-vue-next'
 import { useAppStore } from '@/stores/app'
 import { useModalsStore } from '@/stores/modals'
 import { useToast } from '@/composables/useToast'
@@ -134,20 +134,30 @@ export function useSidebarActions(
   }
 
   function openCtxChannel(e: MouseEvent, ch: Channel) {
-    if (!appStore.isStaff) return
-    ctx.value = {
-      x: e.clientX, y: e.clientY,
-      items: [
-        {
-          label: 'Renommer',
-          icon:  Pencil,
-          action: () => startRenameChannel(ch),
-        },
-        {
-          label:  isMuted(ch.id) ? 'Retirer la sourdine' : 'Mettre en sourdine',
-          icon:   isMuted(ch.id) ? Volume2 : VolumeX,
-          action: () => toggleMute(ch),
-        },
+    const items: ContextMenuItem[] = [
+      {
+        label:  isMuted(ch.id) ? 'Retirer la sourdine' : 'Mettre en sourdine',
+        icon:   isMuted(ch.id) ? Volume2 : VolumeX,
+        action: () => toggleMute(ch),
+      },
+      {
+        label:  'Marquer comme lu',
+        icon:   CheckCheck,
+        action: () => appStore.markRead(ch.id),
+      },
+    ]
+
+    // Staff-only actions
+    if (appStore.isStaff) {
+      items.unshift({
+        label: 'Renommer',
+        icon:  Pencil,
+        action: () => startRenameChannel(ch),
+      })
+    }
+
+    if (appStore.isStaff) {
+      items.push(
         {
           label:  ch.is_private ? 'Rendre public' : 'Rendre privé',
           icon:   ch.is_private ? Unlock : Lock,
@@ -172,8 +182,10 @@ export function useSidebarActions(
             showToast('Canal supprimé.', 'success')
           },
         },
-      ],
+      )
     }
+
+    ctx.value = { x: e.clientX, y: e.clientY, items }
   }
 
   // ── Drag & drop ─────────────────────────────────────────────────────────
