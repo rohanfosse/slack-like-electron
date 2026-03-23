@@ -26,7 +26,7 @@ export function useSidebarData() {
 
   const activePromoName = computed(() => {
     const p = promotions.value.find(p => p.id === appStore.activePromoId)
-    return p?.name ?? null
+    return p?.name ?? appStore.currentUser?.promo_name ?? null
   })
 
   // ── Chargement ──────────────────────────────────────────────────────────
