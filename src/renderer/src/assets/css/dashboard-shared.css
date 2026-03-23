@@ -32,6 +32,14 @@
 .db-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
 .db-tab--coming { opacity: .5; cursor: default; }
 .db-tab--coming:hover { color: var(--text-secondary); }
+.db-tab--settings {
+  margin-left: auto;
+  padding: 6px 8px;
+  border-bottom: none;
+  color: var(--text-muted);
+  opacity: .6;
+}
+.db-tab--settings:hover { opacity: 1; color: var(--accent); }
 .db-tab-soon {
   font-size: 9px; font-weight: 700;
   padding: 1px 5px; border-radius: 8px;

@@ -4,8 +4,8 @@
  * stats, projects grid, and frise sub-components.
  */
 <script setup lang="ts">
-import { computed } from 'vue'
-import { FolderOpen, Award, CalendarDays, Home, Menu, Radio, ClipboardList } from 'lucide-vue-next'
+import { computed, ref } from 'vue'
+import { FolderOpen, Award, CalendarDays, Home, Menu, Radio, ClipboardList, Settings } from 'lucide-vue-next'
 import type { StudentProjectCard } from '@/composables/useDashboardStudent'
 import type { FriseMilestone, FrisePromo } from '@/composables/useFrise'
 import type { GradedDevoir } from './StudentGradesTab.vue'
@@ -57,6 +57,8 @@ const props = defineProps<{
   milestoneLeft: (deadline: string) => string
   projectLineStyle: (milestones: FriseMilestone[]) => Record<string, string>
 }>()
+
+const bentoRef = ref<InstanceType<typeof StudentBento> | null>(null)
 
 // ── Emits ────────────────────────────────────────────────────────────────────
 const emit = defineEmits<{
@@ -126,10 +128,19 @@ const emit = defineEmits<{
       <button class="db-tab db-tab--coming" disabled>
         <ClipboardList :size="13" /> REX <span class="db-tab-soon">Bientot</span>
       </button>
+      <button
+        v-if="dashTab === 'accueil'"
+        class="db-tab db-tab--settings"
+        title="Personnaliser le tableau de bord"
+        @click="bentoRef?.toggleCustomizer()"
+      >
+        <Settings :size="13" />
+      </button>
     </div>
 
     <!-- Tab: Accueil -->
     <StudentBento
+      ref="bentoRef"
       v-if="dashTab === 'accueil'"
       :student-stats="studentStats"
       :urgent-actions="urgentActions"

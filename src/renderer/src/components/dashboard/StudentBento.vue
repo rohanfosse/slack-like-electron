@@ -34,6 +34,9 @@ const emit = defineEmits<{
 const appStore = useAppStore()
 const showCustomizer = ref(false)
 const gearBtnRef = ref<HTMLButtonElement | null>(null)
+
+function toggleCustomizer() { showCustomizer.value = !showCustomizer.value }
+defineExpose({ toggleCustomizer })
 const customizerRef = ref<InstanceType<typeof BentoCustomizer> | null>(null)
 const { visibleWidgets, allWidgets, isVisible, toggleWidget, moveWidget, reorderWidgets, resetDefaults } = useBentoPrefs()
 
@@ -159,20 +162,6 @@ const onlineCount = computed(() => appStore.onlineUsers?.length ?? 0)
 <template>
   <div class="sb-bento">
 
-    <!-- Customizer -->
-    <div class="sb-header">
-      <button
-        ref="gearBtnRef"
-        class="sa-customize-btn"
-        :class="{ 'sa-customize-btn--active': showCustomizer }"
-        title="Personnaliser"
-        aria-label="Personnaliser le tableau de bord"
-        @click="showCustomizer = !showCustomizer"
-      >
-        <Settings :size="14" />
-      </button>
-    </div>
-
     <Transition name="sa-customizer">
       <BentoCustomizer
         ref="customizerRef"
@@ -190,10 +179,10 @@ const onlineCount = computed(() => appStore.onlineUsers?.length ?? 0)
     <!-- Live alert -->
     <WidgetLive v-if="isVisible('live')" />
 
-    <!-- ═══ BENTO GRID ═══ -->
+    <!-- ═══ BENTO GRID (3 colonnes) ═══ -->
     <div class="bento-grid">
 
-      <!-- Focus (2 cols) -->
+      <!-- ROW 1 : Focus (full width) -->
       <div class="dashboard-card bento-tile bento-focus" :class="focusBgClass">
         <div class="focus-row">
           <div class="focus-icon">
@@ -205,10 +194,16 @@ const onlineCount = computed(() => appStore.onlineUsers?.length ?? 0)
             <h2 class="focus-title">{{ focusState.title }}</h2>
             <p class="focus-subtitle">{{ focusState.subtitle }}</p>
           </div>
+          <!-- En ligne (compact, dans le focus) -->
+          <div class="focus-online">
+            <span class="stat-online-dot" />
+            <span class="focus-online-count">{{ onlineCount }}</span>
+            <span class="focus-online-label">en ligne</span>
+          </div>
         </div>
       </div>
 
-      <!-- Stat: Soumission % -->
+      <!-- ROW 2 : 3 stats (1 col each = row pleine) -->
       <div class="dashboard-card bento-tile bento-stat bento-stat--accent">
         <div class="stat-ring">
           <svg viewBox="0 0 36 36" class="stat-ring-svg">
@@ -221,7 +216,6 @@ const onlineCount = computed(() => appStore.onlineUsers?.length ?? 0)
         <span class="stat-label">soumis</span>
       </div>
 
-      <!-- Stat: A rendre (ou check si 0) -->
       <div v-if="studentStats.pending > 0" class="dashboard-card bento-tile bento-stat" :class="{ 'bento-stat--danger': pendingIsAlert, 'bento-stat--warning': !pendingIsAlert }">
         <span class="stat-number">{{ studentStats.pending }}</span>
         <span class="stat-label">à rendre</span>
@@ -231,28 +225,18 @@ const onlineCount = computed(() => appStore.onlineUsers?.length ?? 0)
         <span class="stat-label">rien à rendre</span>
       </div>
 
-      <!-- Stat: Moyenne -->
       <div class="dashboard-card bento-tile bento-stat">
         <span class="stat-number">{{ studentStats.modeGrade ?? '--' }}</span>
         <span class="stat-label">moyenne</span>
       </div>
 
-      <!-- Stat: Notes -->
-      <div class="dashboard-card bento-tile bento-stat">
-        <span class="stat-number">{{ studentStats.graded }}</span>
-        <span class="stat-label">notes</span>
-      </div>
-
-      <!-- Stat: En ligne (integre, remplace WidgetPromoActivity) -->
-      <div class="dashboard-card bento-tile bento-stat bento-stat--online">
-        <span class="stat-online-dot" />
-        <span class="stat-number">{{ onlineCount }}</span>
-        <span class="stat-label">en ligne</span>
-      </div>
-
-      <!-- Widgets dynamiques -->
-      <template v-for="w in visibleWidgets.filter(w => w.id !== 'live' && w.id !== 'promoActivity')" :key="w.id">
-        <div class="bento-tile bento-widget" :style="{ animationDelay: '0.' + (visibleWidgets.indexOf(w) * 5) + 's' }">
+      <!-- Widgets dynamiques (alternent entre span-2 et span-1 pour remplir) -->
+      <template v-for="(w, idx) in visibleWidgets.filter(w => w.id !== 'live' && w.id !== 'promoActivity')" :key="w.id">
+        <div
+          class="bento-tile bento-widget"
+          :class="{ 'bento-widget--wide': idx % 3 !== 2, 'bento-widget--narrow': idx % 3 === 2 }"
+          :style="{ animationDelay: (idx * 0.05) + 's' }"
+        >
           <component
             :is="widgetComponents[w.id]"
             v-bind="widgetProps[w.id]"
@@ -273,26 +257,10 @@ const onlineCount = computed(() => appStore.onlineUsers?.length ?? 0)
   padding-top: 10px;
 }
 
-/* ── Header ── */
-.sb-header { display: flex; justify-content: flex-end; }
-.sa-customize-btn {
-  display: inline-flex; align-items: center; justify-content: center;
-  width: 28px; height: 28px; border-radius: 8px;
-  background: var(--bg-elevated); border: 1px solid var(--border);
-  color: var(--text-muted); cursor: pointer;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-}
-.sa-customize-btn:hover,
-.sa-customize-btn--active {
-  background: rgba(74,144,217,.08);
-  border-color: rgba(74,144,217,.25);
-  color: var(--accent);
-}
-
-/* ── Bento Grid ── */
+/* ── Bento Grid (3 colonnes) ── */
 .bento-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   grid-auto-rows: minmax(auto, auto);
   gap: 10px;
 }
@@ -307,10 +275,10 @@ const onlineCount = computed(() => appStore.onlineUsers?.length ?? 0)
   box-shadow: 0 4px 12px rgba(0,0,0,.12);
 }
 
-/* ── Focus tile ── */
+/* ── Focus tile (full width) ── */
 .bento-focus {
-  grid-column: span 2;
-  padding: 16px 18px;
+  grid-column: span 3;
+  padding: 14px 18px;
 }
 .focus-row { display: flex; align-items: center; gap: 12px; }
 .focus-icon { flex-shrink: 0; }
@@ -320,6 +288,13 @@ const onlineCount = computed(() => appStore.onlineUsers?.length ?? 0)
   margin: 0; line-height: 1.3;
 }
 .focus-subtitle { font-size: 12px; color: var(--text-muted); margin: 2px 0 0; }
+
+.focus-online {
+  margin-left: auto; display: flex; align-items: center; gap: 6px;
+  font-size: 12px; color: var(--text-muted); flex-shrink: 0;
+}
+.focus-online-count { font-weight: 700; color: var(--text-primary); font-family: 'JetBrains Mono', monospace; }
+.focus-online-label { font-size: 10px; text-transform: uppercase; letter-spacing: .03em; }
 
 .focus--critical {
   background: linear-gradient(135deg, rgba(231,76,60,.08), rgba(231,76,60,.03));
@@ -350,7 +325,6 @@ const onlineCount = computed(() => appStore.onlineUsers?.length ?? 0)
 .bento-stat--danger  { border-top-color: #e74c3c; }
 .bento-stat--warning { border-top-color: #f39c12; }
 .bento-stat--success { border-top-color: var(--color-success); }
-.bento-stat--online  { border-top-color: #4ade80; }
 
 .stat-number {
   font-size: 22px; font-weight: 700;
@@ -375,9 +349,10 @@ const onlineCount = computed(() => appStore.onlineUsers?.length ?? 0)
 
 /* ── Widget tiles ── */
 .bento-widget {
-  grid-column: span 2;
   animation: bento-fade-in .4s ease both;
 }
+.bento-widget--wide  { grid-column: span 2; }
+.bento-widget--narrow { grid-column: span 1; }
 
 @keyframes bento-fade-in {
   from { opacity: 0; transform: translateY(8px); }
@@ -394,9 +369,11 @@ const onlineCount = computed(() => appStore.onlineUsers?.length ?? 0)
 @media (max-width: 768px) {
   .bento-grid { grid-template-columns: repeat(2, 1fr); }
   .bento-focus { grid-column: span 2; }
+  .bento-widget--wide, .bento-widget--narrow { grid-column: span 2; }
 }
 @media (max-width: 480px) {
   .bento-grid { grid-template-columns: 1fr; }
-  .bento-focus, .bento-widget { grid-column: span 1; }
+  .bento-focus, .bento-widget--wide, .bento-widget--narrow { grid-column: span 1; }
+  .focus-online { display: none; }
 }
 </style>
