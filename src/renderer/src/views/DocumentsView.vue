@@ -106,19 +106,27 @@
     addDescription,
     addType,
     addLink,
-    addFile,
-    addFileName,
+    addFiles,
     addProject,
     addTravailId,
     newCatName,
     projectList,
     travailList,
     adding,
+    uploadProgress,
+    uploadCurrentIndex,
+    uploadTotal,
+    modalDragOver,
     openAddModal,
     pickFile,
+    removeFile,
     clearFile,
     submitAdd,
     detectCategory,
+    onModalDragEnter,
+    onModalDragLeave,
+    onModalDragOver,
+    onModalDrop,
   } = useDocumentsAdd()
 
   // ── Edit modal ──────────────────────────────────────────────────────────
@@ -385,34 +393,57 @@
         <!-- Toggle fichier / lien -->
         <div class="da-type-row">
           <button class="da-type-btn" :class="{ active: addType === 'file' }" type="button" @click="addType = 'file'">
-            <Upload :size="15" /> Fichier
+            <Upload :size="15" /> Fichier{{ addFiles.length > 1 ? 's' : '' }}
           </button>
           <button class="da-type-btn" :class="{ active: addType === 'link' }" type="button" @click="addType = 'link'">
             <Link2 :size="15" /> Lien URL
           </button>
         </div>
 
-        <!-- Zone de dépôt fichier -->
-        <div v-if="addType === 'file'" class="da-drop-zone">
-          <div v-if="addFile" class="da-file-selected">
-            <CheckCircle2 :size="20" class="da-file-icon" />
-            <div class="da-file-info">
-              <span class="da-file-name">{{ addFileName }}</span>
-              <span class="da-file-hint">Fichier prêt à être envoyé</span>
+        <!-- Zone de dépôt fichier (drag & drop) -->
+        <div
+          v-if="addType === 'file'"
+          class="da-drop-zone"
+          :class="{ 'da-drop-zone--active': modalDragOver }"
+          @dragenter="onModalDragEnter"
+          @dragleave="onModalDragLeave"
+          @dragover="onModalDragOver"
+          @drop="onModalDrop"
+        >
+          <!-- Fichiers sélectionnés -->
+          <div v-if="addFiles.length" class="da-files-list">
+            <div v-for="(f, idx) in addFiles" :key="f.path" class="da-file-selected">
+              <CheckCircle2 :size="16" class="da-file-icon" />
+              <div class="da-file-info">
+                <span class="da-file-name">{{ f.name }}</span>
+              </div>
+              <button class="da-file-clear" type="button" title="Retirer" @click="removeFile(idx)">
+                <X :size="14" />
+              </button>
             </div>
-            <button class="da-file-clear" type="button" title="Changer de fichier" @click="clearFile">
-              <X :size="14" />
+            <button class="da-add-more" type="button" @click="pickFile">
+              <Plus :size="14" /> Ajouter d'autres fichiers
             </button>
           </div>
           <button v-else class="da-file-picker" type="button" @click="pickFile">
             <Upload :size="24" class="da-picker-icon" />
-            <span class="da-picker-label">Cliquer ou glisser un fichier ici</span>
-            <span class="da-picker-hint">PDF, Word, Excel, images, vidéos, archives</span>
+            <span class="da-picker-label">Cliquer ou glisser des fichiers ici</span>
+            <span class="da-picker-hint">PDF, Word, Excel, images, vidéos, archives — sélection multiple possible</span>
           </button>
         </div>
 
+        <!-- Barre de progression -->
+        <div v-if="adding && uploadTotal > 0" class="da-progress">
+          <div class="da-progress-bar">
+            <div class="da-progress-fill" :style="{ width: uploadProgress + '%' }" />
+          </div>
+          <span class="da-progress-text">
+            Fichier {{ uploadCurrentIndex }}/{{ uploadTotal }}… {{ uploadProgress }}%
+          </span>
+        </div>
+
         <!-- URL -->
-        <div v-else class="da-field">
+        <div v-if="addType === 'link'" class="da-field">
           <label class="da-label">Adresse URL</label>
           <input
             v-model="addLink"
@@ -423,8 +454,8 @@
           />
         </div>
 
-        <!-- Nom -->
-        <div class="da-field">
+        <!-- Nom (masqué si multi-fichiers, chaque fichier utilise son nom) -->
+        <div v-if="addType === 'link' || addFiles.length <= 1" class="da-field">
           <label class="da-label">Nom du document</label>
           <input v-model="addName" type="text" class="da-input" placeholder="ex : Cours réseaux - chapitre 3" autofocus />
         </div>
@@ -472,9 +503,12 @@
           <button type="button" class="btn-ghost" @click="showAddModal = false">Annuler</button>
           <button
             type="submit" class="btn-primary da-submit"
-            :disabled="!addName.trim() || (addType === 'file' && !addFile) || (addType === 'link' && !addLink.trim()) || adding"
+            :disabled="(addType === 'file' ? !addFiles.length : (!addName.trim() || !addLink.trim())) || (addType === 'file' && addFiles.length === 1 && !addName.trim()) || adding"
           >
-            {{ adding ? 'Envoi en cours…' : 'Ajouter' }}
+            {{ adding
+              ? (uploadTotal > 1 ? `Envoi ${uploadCurrentIndex}/${uploadTotal}…` : 'Envoi en cours…')
+              : (addFiles.length > 1 ? `Ajouter ${addFiles.length} fichiers` : 'Ajouter')
+            }}
           </button>
         </div>
       </form>
@@ -926,7 +960,8 @@
 .da-type-btn:hover { background: var(--bg-hover); color: var(--text-primary); }
 .da-type-btn.active { background: var(--accent); color: #fff; }
 
-.da-drop-zone { margin: 0; }
+.da-drop-zone { margin: 0; transition: border-color .2s, background .2s; border-radius: 12px; }
+.da-drop-zone--active { border-color: var(--accent) !important; background: rgba(74,144,217,.08) !important; }
 .da-file-picker {
   width: 100%; display: flex; flex-direction: column; align-items: center; gap: 8px;
   padding: 28px 16px; border: 2px dashed var(--border-input); border-radius: 12px;
@@ -938,21 +973,47 @@
 .da-picker-label { font-size: 13px; font-weight: 600; }
 .da-picker-hint { font-size: 11px; opacity: .5; }
 
+.da-files-list {
+  display: flex; flex-direction: column; gap: 6px;
+  border: 2px dashed var(--border-input); border-radius: 12px;
+  padding: 10px;
+}
 .da-file-selected {
-  display: flex; align-items: center; gap: 10px;
-  padding: 12px 14px; border: 1.5px solid var(--color-success); border-radius: 10px;
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 10px; border: 1px solid var(--color-success); border-radius: 8px;
   background: rgba(39,174,96,.06);
 }
 .da-file-icon { color: var(--color-success); flex-shrink: 0; }
 .da-file-info { flex: 1; min-width: 0; display: flex; flex-direction: column; }
-.da-file-name { font-size: 13px; font-weight: 600; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.da-file-name { font-size: 12px; font-weight: 600; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .da-file-hint { font-size: 11px; color: var(--color-success); }
 .da-file-clear {
-  width: 28px; height: 28px; display: flex; align-items: center; justify-content: center;
+  width: 24px; height: 24px; display: flex; align-items: center; justify-content: center;
   border-radius: 6px; background: transparent; border: none; color: var(--text-muted);
   cursor: pointer; transition: all .15s; flex-shrink: 0;
 }
 .da-file-clear:hover { background: rgba(231,76,60,.1); color: var(--color-danger); }
+.da-add-more {
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  padding: 6px 10px; border: 1px dashed var(--border-input); border-radius: 8px;
+  background: transparent; color: var(--text-muted);
+  font-family: var(--font); font-size: 12px; cursor: pointer; transition: all .15s;
+}
+.da-add-more:hover { border-color: var(--accent); color: var(--accent); background: rgba(74,144,217,.04); }
+
+/* ── Barre de progression upload ── */
+.da-progress { margin-top: 4px; }
+.da-progress-bar {
+  height: 6px; border-radius: 3px; background: var(--bg-hover); overflow: hidden;
+}
+.da-progress-fill {
+  height: 100%; background: var(--accent); border-radius: 3px;
+  transition: width .3s ease;
+}
+.da-progress-text {
+  display: block; margin-top: 4px;
+  font-size: 11px; color: var(--text-muted); text-align: center;
+}
 
 /* ── Pills catégorie ── */
 .da-cat-pills { display: flex; flex-wrap: wrap; gap: 6px; }
