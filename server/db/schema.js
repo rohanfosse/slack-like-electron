@@ -1,6 +1,6 @@
 const { getDb } = require('./connection');
 
-const CURRENT_VERSION = 31;
+const CURRENT_VERSION = 32;
 
 // ─── Schema initial ───────────────────────────────────────────────────────────
 // Crée toutes les tables avec leur schéma complet (colonnes UTC, toutes colonnes incluses).
@@ -714,13 +714,20 @@ function runMigrations(db) {
           promo_id    INTEGER NOT NULL REFERENCES promotions(id) ON DELETE CASCADE,
           content     TEXT    NOT NULL,
           tag         TEXT    NOT NULL DEFAULT 'observation' CHECK(tag IN ('progression','objectif','observation','alerte','autre')),
+          category    TEXT    NOT NULL DEFAULT 'generale',
           created_at  TEXT    NOT NULL DEFAULT (datetime('now')),
           updated_at  TEXT    NOT NULL DEFAULT (datetime('now'))
         );
-        CREATE INDEX IF NOT EXISTS idx_teacher_notes_student ON teacher_notes(student_id);
-        CREATE INDEX IF NOT EXISTS idx_teacher_notes_promo   ON teacher_notes(promo_id);
+        CREATE INDEX IF NOT EXISTS idx_teacher_notes_student  ON teacher_notes(student_id);
+        CREATE INDEX IF NOT EXISTS idx_teacher_notes_promo    ON teacher_notes(promo_id);
         CREATE INDEX IF NOT EXISTS idx_teacher_notes_teacher  ON teacher_notes(teacher_id);
+        CREATE INDEX IF NOT EXISTS idx_teacher_notes_category ON teacher_notes(category);
       `);
+    },
+    // v32 : carnet de suivi — ajout catégorie sur bases existantes
+    (db) => {
+      tryAlter(db, "ALTER TABLE teacher_notes ADD COLUMN category TEXT NOT NULL DEFAULT 'generale'");
+      db.exec(`CREATE INDEX IF NOT EXISTS idx_teacher_notes_category ON teacher_notes(category)`);
     },
   ];
 

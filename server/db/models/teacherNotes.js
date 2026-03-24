@@ -34,20 +34,24 @@ function getNotesCountByStudent(promoId, teacherId) {
   `).all(promoId, teacherId);
 }
 
-function createNote({ teacherId, studentId, promoId, content, tag }) {
+function createNote({ teacherId, studentId, promoId, content, tag, category }) {
   const db = getDb();
   const res = db.prepare(
-    'INSERT INTO teacher_notes (teacher_id, student_id, promo_id, content, tag) VALUES (?, ?, ?, ?, ?)'
-  ).run(teacherId, studentId, promoId, content, tag ?? 'observation');
-  return db.prepare('SELECT * FROM teacher_notes WHERE id = ?').get(res.lastInsertRowid);
+    'INSERT INTO teacher_notes (teacher_id, student_id, promo_id, content, tag, category) VALUES (?, ?, ?, ?, ?, ?)'
+  ).run(teacherId, studentId, promoId, content, tag ?? 'observation', category ?? 'generale');
+  return db.prepare(
+    'SELECT tn.*, s.name AS student_name FROM teacher_notes tn JOIN students s ON s.id = tn.student_id WHERE tn.id = ?'
+  ).get(res.lastInsertRowid);
 }
 
-function updateNote(id, { content, tag }) {
+function updateNote(id, { content, tag, category }) {
   const db = getDb();
   db.prepare(
-    "UPDATE teacher_notes SET content = ?, tag = ?, updated_at = datetime('now') WHERE id = ?"
-  ).run(content, tag, id);
-  return db.prepare('SELECT * FROM teacher_notes WHERE id = ?').get(id);
+    "UPDATE teacher_notes SET content = ?, tag = ?, category = ?, updated_at = datetime('now') WHERE id = ?"
+  ).run(content, tag, category ?? 'generale', id);
+  return db.prepare(
+    'SELECT tn.*, s.name AS student_name FROM teacher_notes tn JOIN students s ON s.id = tn.student_id WHERE tn.id = ?'
+  ).get(id);
 }
 
 function deleteNote(id) {

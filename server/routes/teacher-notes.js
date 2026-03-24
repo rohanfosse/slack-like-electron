@@ -28,16 +28,16 @@ router.get('/promo/:promoId/summary', wrap((req) => {
 router.post('/', wrap((req) => {
   const teacherId = req.user?.id
   if (!teacherId) throw new Error('Non authentifie')
-  const { studentId, promoId, content, tag } = req.body
+  const { studentId, promoId, content, tag, category } = req.body
   if (!studentId || !promoId || !content?.trim()) throw new Error('studentId, promoId et content requis')
-  return queries.createNote({ teacherId, studentId, promoId, content: content.trim(), tag })
+  return queries.createNote({ teacherId, studentId, promoId, content: content.trim(), tag, category })
 }))
 
 // PATCH /:id — modifier une note
 router.patch('/:id', wrap((req) => {
-  const { content, tag } = req.body
+  const { content, tag, category } = req.body
   if (!content?.trim()) throw new Error('content requis')
-  return queries.updateNote(Number(req.params.id), { content: content.trim(), tag })
+  return queries.updateNote(Number(req.params.id), { content: content.trim(), tag, category })
 }))
 
 // DELETE /:id — supprimer une note
