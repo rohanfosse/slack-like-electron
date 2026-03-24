@@ -5,13 +5,18 @@
  * Delegates rendering to focused sub-components and forwards all props/events.
  */
 <script setup lang="ts">
+import { ref } from 'vue'
 import {
   PlusCircle, CalendarDays, Settings,
   LayoutDashboard, Users, BarChart2, TrendingUp, Radio, MessageSquare,
-  Notebook, Activity,
+  Notebook, Activity, Pencil, RotateCcw, X,
 } from 'lucide-vue-next'
 import { useLiveStore } from '@/stores/live'
 import { useRexStore }  from '@/stores/rex'
+import { useTeacherBento } from '@/composables/useTeacherBento'
+
+const bento = useTeacherBento()
+const showBentoCustomizer = ref(false)
 import TeacherLiveView    from '@/components/live/TeacherLiveView.vue'
 import TeacherRexView     from '@/components/rex/TeacherRexView.vue'
 import TabSuiviEtudiants  from './TabSuiviEtudiants.vue'
@@ -227,7 +232,43 @@ function setTab(tab: DashTabType) {
       <button class="db-tab" :class="{ active: dashTab === 'engagement' }" @click="setTab('engagement')">
         <Activity :size="13" /> Engagement
       </button>
+      <!-- Bouton personnalisation bento (onglet Accueil uniquement) -->
+      <button
+        v-if="dashTab === 'accueil'"
+        class="db-tab-edit-btn"
+        :class="{ active: showBentoCustomizer }"
+        title="Personnaliser le tableau de bord"
+        @click="showBentoCustomizer = !showBentoCustomizer"
+      >
+        <Pencil :size="13" />
+      </button>
     </div>
+
+    <!-- Panneau de personnalisation du bento -->
+    <Transition name="bento-cust">
+      <div v-if="showBentoCustomizer && dashTab === 'accueil'" class="bento-cust-panel">
+        <div class="bento-cust-header">
+          <span class="bento-cust-title">Personnaliser l'accueil</span>
+          <div class="bento-cust-actions">
+            <button class="bento-cust-reset" @click="bento.resetTiles()"><RotateCcw :size="11" /> Réinitialiser</button>
+            <button class="bento-cust-close" @click="showBentoCustomizer = false"><X :size="13" /></button>
+          </div>
+        </div>
+        <div class="bento-cust-grid">
+          <button
+            v-for="tile in bento.allTiles"
+            :key="tile.id"
+            class="bento-cust-tile"
+            :class="{ hidden: !bento.isVisible(tile.id) }"
+            @click="bento.toggleTile(tile.id)"
+          >
+            <component :is="tile.icon" :size="13" />
+            <span>{{ tile.label }}</span>
+            <span class="bento-cust-badge">{{ bento.isVisible(tile.id) ? '✓' : '–' }}</span>
+          </button>
+        </div>
+      </div>
+    </Transition>
 
     <!-- Tab content -->
     <TabAnalytique
@@ -432,4 +473,72 @@ function setTab(tab: DashTabType) {
   margin-left: 4px;
   animation: pulse-live-dot 2s infinite;
 }
+
+/* ── Bouton édition bento ── */
+.db-tab-edit-btn {
+  margin-left: auto;
+  display: flex; align-items: center; justify-content: center;
+  width: 28px; height: 28px; border-radius: 7px;
+  border: 1px solid var(--border); background: transparent;
+  color: var(--text-muted); cursor: pointer; flex-shrink: 0;
+  transition: all .15s;
+}
+.db-tab-edit-btn:hover { background: var(--bg-hover); color: var(--text-primary); }
+.db-tab-edit-btn.active { background: var(--accent-subtle); color: var(--accent); border-color: var(--accent); }
+
+/* ── Panneau personnalisation bento ── */
+.bento-cust-panel {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px 14px;
+  margin-bottom: 8px;
+}
+.bento-cust-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 10px;
+}
+.bento-cust-title { font-size: 12px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: .4px; }
+.bento-cust-actions { display: flex; align-items: center; gap: 6px; }
+.bento-cust-reset {
+  display: flex; align-items: center; gap: 4px;
+  font-size: 11px; color: var(--text-muted); background: none; border: none;
+  cursor: pointer; padding: 3px 6px; border-radius: 5px;
+  transition: color .12s, background .12s;
+}
+.bento-cust-reset:hover { color: var(--text-primary); background: var(--bg-hover); }
+.bento-cust-close {
+  width: 22px; height: 22px; border-radius: 5px;
+  background: none; border: none; color: var(--text-muted);
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  transition: all .12s;
+}
+.bento-cust-close:hover { color: var(--text-primary); background: var(--bg-hover); }
+
+.bento-cust-grid {
+  display: flex; flex-wrap: wrap; gap: 6px;
+}
+.bento-cust-tile {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 5px 10px; border-radius: 20px;
+  border: 1px solid var(--border);
+  background: var(--bg-active); color: var(--text-primary);
+  font-family: var(--font); font-size: 11.5px; font-weight: 500;
+  cursor: pointer; transition: all .15s;
+}
+.bento-cust-tile:hover { border-color: var(--accent); }
+.bento-cust-tile.hidden {
+  opacity: .45; background: transparent; color: var(--text-muted);
+  text-decoration: line-through;
+}
+.bento-cust-badge {
+  font-size: 10px; font-weight: 700; margin-left: 2px;
+  color: var(--accent);
+}
+.bento-cust-tile.hidden .bento-cust-badge { color: var(--text-muted); }
+
+/* Animation panneau */
+.bento-cust-enter-active { transition: opacity .15s, transform .15s; }
+.bento-cust-leave-active { transition: opacity .1s, transform .1s; }
+.bento-cust-enter-from, .bento-cust-leave-to { opacity: 0; transform: translateY(-4px); }
 </style>

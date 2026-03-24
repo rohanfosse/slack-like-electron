@@ -9,6 +9,9 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import TeacherTodoWidget from './TeacherTodoWidget.vue'
+import { useTeacherBento } from '@/composables/useTeacherBento'
+
+const bento = useTeacherBento()
 import {
   Edit3, Clock, FileText, CheckCircle2,
   PlusCircle, Bell, BarChart2, MessageSquare, ChevronRight,
@@ -201,7 +204,7 @@ const averageGrade = computed(() => props.globalModeGrade ?? '--')
   <div class="bento-grid">
 
     <!-- ═══ FOCUS TILE (2x2) ═══ -->
-    <div class="dashboard-card bento-tile bento-focus" :class="focusBgClass">
+    <div v-if="bento.isVisible('focus')" class="dashboard-card bento-tile bento-focus" :class="focusBgClass">
       <div class="focus-icon">
         <Edit3 v-if="focusState.type === 'grade'" :size="28" />
         <Clock v-else-if="focusState.type === 'deadline'" :size="28" />
@@ -222,7 +225,7 @@ const averageGrade = computed(() => props.globalModeGrade ?? '--')
     <!-- ═══ STAT TILES (1x1 each) ═══ -->
 
     <!-- Soumission % -->
-    <div class="dashboard-card bento-tile bento-stat">
+    <div v-if="bento.isVisible('stat-soumis')" class="dashboard-card bento-tile bento-stat">
       <div class="stat-ring">
         <svg viewBox="0 0 36 36" class="stat-ring-svg">
           <circle cx="18" cy="18" r="15" fill="none" stroke="var(--bg-active)" stroke-width="3" />
@@ -242,21 +245,21 @@ const averageGrade = computed(() => props.globalModeGrade ?? '--')
     </div>
 
     <!-- A noter -->
-    <div class="dashboard-card bento-tile bento-stat" :class="{ 'stat--alert': aNoterCount > 0 }">
+    <div v-if="bento.isVisible('stat-noter')" class="dashboard-card bento-tile bento-stat" :class="{ 'stat--alert': aNoterCount > 0 }">
       <span class="stat-number">{{ aNoterCount }}</span>
       <span class="stat-label">a noter</span>
       <Edit3 :size="14" class="stat-icon" />
     </div>
 
     <!-- Moyenne -->
-    <div class="dashboard-card bento-tile bento-stat">
+    <div v-if="bento.isVisible('stat-moyenne')" class="dashboard-card bento-tile bento-stat">
       <span class="stat-number stat-grade" :class="gradeClass(averageGrade)">{{ averageGrade }}</span>
       <span class="stat-label">moyenne</span>
       <Award :size="14" class="stat-icon" />
     </div>
 
     <!-- En ligne -->
-    <div class="dashboard-card bento-tile bento-stat">
+    <div v-if="bento.isVisible('stat-online')" class="dashboard-card bento-tile bento-stat">
       <span class="stat-online-dot" />
       <span class="stat-number">{{ onlineStudents }}</span>
       <span class="stat-label">en ligne</span>
@@ -264,7 +267,7 @@ const averageGrade = computed(() => props.globalModeGrade ?? '--')
     </div>
 
     <!-- ═══ SCHEDULE STRIP (2x1) ═══ -->
-    <div class="dashboard-card bento-tile bento-schedule">
+    <div v-if="bento.isVisible('schedule')" class="dashboard-card bento-tile bento-schedule">
       <h3 class="tile-title"><Clock :size="14" /> Aujourd'hui</h3>
       <div v-if="!todayEvents.length" class="schedule-empty">
         Aucun evenement prevu aujourd'hui
@@ -293,7 +296,7 @@ const averageGrade = computed(() => props.globalModeGrade ?? '--')
     </div>
 
     <!-- ═══ MESSAGES TILE (1x1) ═══ -->
-    <div class="dashboard-card bento-tile bento-messages">
+    <div v-if="bento.isVisible('messages')" class="dashboard-card bento-tile bento-messages">
       <h3 class="tile-title"><MessageSquare :size="14" /> Messages</h3>
       <div v-if="!unreadDmEntries.length" class="messages-empty">
         Aucun message non lu
@@ -318,7 +321,7 @@ const averageGrade = computed(() => props.globalModeGrade ?? '--')
     </div>
 
     <!-- ═══ QUICK ACTIONS (2x1) ═══ -->
-    <div class="dashboard-card bento-tile bento-actions">
+    <div v-if="bento.isVisible('actions')" class="dashboard-card bento-tile bento-actions">
       <button class="action-btn action-btn--primary" @click="emit('openNewDevoir')">
         <PlusCircle :size="22" />
         <span class="action-label">Creer un devoir</span>
@@ -334,7 +337,7 @@ const averageGrade = computed(() => props.globalModeGrade ?? '--')
     </div>
 
     <!-- ═══ ACTIVITY FEED (2x1) ═══ -->
-    <div class="dashboard-card bento-tile bento-activity">
+    <div v-if="bento.isVisible('activity')" class="dashboard-card bento-tile bento-activity">
       <h3 class="tile-title"><Clock :size="14" /> Derniers rendus</h3>
       <div v-if="!activityFeed.length" class="activity-empty">
         Aucune activite recente
@@ -351,7 +354,7 @@ const averageGrade = computed(() => props.globalModeGrade ?? '--')
     </div>
 
     <!-- ═══ TODO WIDGET (2x1) ═══ -->
-    <div class="dashboard-card bento-tile bento-todo">
+    <div v-if="bento.isVisible('todo')" class="dashboard-card bento-tile bento-todo">
       <TeacherTodoWidget />
     </div>
 
