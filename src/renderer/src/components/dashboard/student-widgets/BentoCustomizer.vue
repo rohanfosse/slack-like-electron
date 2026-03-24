@@ -1,10 +1,10 @@
 /**
- * BentoCustomizer.vue - Panneau de personnalisation du bento etudiant.
- * Drag & drop pour reordonner, toggle pour activer/desactiver les widgets.
+ * BentoCustomizer.vue - Widget picker style Android.
+ * Grille de widgets avec drag & drop pour reordonner et toggle pour activer/desactiver.
  */
 <script setup lang="ts">
 import { ref, watch } from 'vue'
-import { GripVertical, RotateCcw } from 'lucide-vue-next'
+import { GripVertical, RotateCcw, Plus, Minus, X } from 'lucide-vue-next'
 import { useDraggable } from 'vue-draggable-plus'
 import type { WidgetDef } from './registry'
 
@@ -21,135 +21,166 @@ const emit = defineEmits<{
   close: []
 }>()
 
-// Local copy for drag reordering
 const localWidgets = ref([...props.allWidgets])
 watch(() => props.allWidgets, (v) => { localWidgets.value = [...v] }, { deep: true })
 
 const listRef = ref<HTMLElement | null>(null)
 
 useDraggable(listRef, localWidgets, {
-  handle: '.bc-drag-handle',
+  handle: '.wpc-drag-handle',
   animation: 200,
-  ghostClass: 'bc-ghost',
-  dragClass: 'bc-dragging',
-  onEnd: () => {
-    emit('reorder', [...localWidgets.value])
-  },
+  ghostClass: 'wpc-ghost',
+  onEnd: () => emit('reorder', [...localWidgets.value]),
 })
 </script>
 
 <template>
-  <div class="bc-panel" tabindex="-1">
-    <div class="bc-header">
-      <span class="bc-title">Personnaliser</span>
-      <button class="bc-reset" @click="emit('reset')">
-        <RotateCcw :size="11" />
-        Réinitialiser
-      </button>
+  <div class="wpc-panel" tabindex="-1">
+    <!-- Header -->
+    <div class="wpc-header">
+      <h3 class="wpc-title">Widgets</h3>
+      <div class="wpc-header-actions">
+        <button class="wpc-btn-reset" @click="emit('reset')">
+          <RotateCcw :size="11" /> Réinitialiser
+        </button>
+        <button class="wpc-btn-close" @click="emit('close')">
+          <X :size="14" />
+        </button>
+      </div>
     </div>
 
-    <div ref="listRef" class="bc-list">
+    <p class="wpc-hint">Glissez pour réordonner. Activez/désactivez les widgets.</p>
+
+    <!-- Widget grid -->
+    <div ref="listRef" class="wpc-grid">
       <div
         v-for="w in localWidgets"
         :key="w.id"
-        class="bc-item"
-        :class="{ 'bc-item--hidden': !isVisible(w.id) }"
+        class="wpc-card"
+        :class="{ 'wpc-card--disabled': !isVisible(w.id) }"
       >
-        <div class="bc-drag-handle" title="Glisser pour reordonner">
+        <div class="wpc-drag-handle" title="Glisser pour réordonner">
           <GripVertical :size="14" />
         </div>
-        <component :is="w.icon" :size="13" class="bc-item-icon" />
-        <div class="bc-item-info">
-          <span class="bc-item-label">{{ w.label }}</span>
+
+        <div class="wpc-card-icon">
+          <component :is="w.icon" :size="18" />
         </div>
-        <label class="bc-toggle">
-          <input
-            type="checkbox"
-            :checked="isVisible(w.id)"
-            @change="emit('toggle', w.id)"
-          />
-          <span class="bc-toggle-track" role="switch" :aria-checked="isVisible(w.id)" :aria-label="'Afficher ' + w.label" />
-        </label>
+
+        <div class="wpc-card-info">
+          <span class="wpc-card-label">{{ w.label }}</span>
+          <span class="wpc-card-desc">{{ w.description }}</span>
+        </div>
+
+        <button
+          class="wpc-toggle-btn"
+          :class="{ active: isVisible(w.id) }"
+          :title="isVisible(w.id) ? 'Masquer' : 'Afficher'"
+          @click="emit('toggle', w.id)"
+        >
+          <Minus v-if="isVisible(w.id)" :size="14" />
+          <Plus v-else :size="14" />
+        </button>
       </div>
     </div>
   </div>
 </template>
 
 <style scoped>
-.bc-panel {
+.wpc-panel {
   background: var(--bg-elevated);
   border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 14px;
+  border-radius: 14px;
+  padding: 16px;
+  box-shadow: 0 8px 32px rgba(0,0,0,.15);
 }
-.bc-header {
+
+/* Header */
+.wpc-header {
   display: flex; align-items: center; justify-content: space-between;
-  margin-bottom: 10px;
+  margin-bottom: 6px;
 }
-.bc-title {
-  font-size: 11px; font-weight: 700;
-  text-transform: uppercase; letter-spacing: .06em;
-  color: var(--text-muted);
+.wpc-title {
+  font-size: 14px; font-weight: 700; color: var(--text-primary); margin: 0;
 }
-.bc-reset {
+.wpc-header-actions { display: flex; gap: 6px; }
+.wpc-btn-reset {
   display: inline-flex; align-items: center; gap: 4px;
   font-size: 11px; font-weight: 600; color: var(--accent);
   background: none; border: none; cursor: pointer; font-family: var(--font);
-  padding: 3px 6px; border-radius: 5px;
-  transition: background .15s;
+  padding: 4px 8px; border-radius: 6px; transition: background .15s;
 }
-.bc-reset:hover { background: rgba(74,144,217,.08); }
+.wpc-btn-reset:hover { background: rgba(74,144,217,.08); }
+.wpc-btn-close {
+  display: flex; align-items: center; justify-content: center;
+  width: 28px; height: 28px; border-radius: 6px;
+  border: none; background: transparent; color: var(--text-muted);
+  cursor: pointer; transition: all .15s;
+}
+.wpc-btn-close:hover { background: var(--bg-hover); color: var(--text-primary); }
 
-.bc-list { display: flex; flex-direction: column; gap: 4px; }
-.bc-item {
+.wpc-hint {
+  font-size: 11px; color: var(--text-muted); margin: 0 0 10px;
+}
+
+/* Grid */
+.wpc-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+
+/* Card */
+.wpc-card {
   display: flex; align-items: center; gap: 8px;
-  padding: 8px 10px; border-radius: 8px;
-  background: var(--bg-elevated);
-  border: 1px solid transparent;
-  transition: all 0.15s;
-}
-.bc-item:hover { background: var(--bg-hover); }
-.bc-item--hidden { opacity: .4; }
-
-.bc-drag-handle {
-  color: var(--text-muted); cursor: grab;
-  display: flex; align-items: center;
-  opacity: .4; transition: opacity .15s;
-}
-.bc-drag-handle:active { cursor: grabbing; }
-.bc-item:hover .bc-drag-handle { opacity: .8; }
-
-.bc-item-icon { color: var(--text-muted); flex-shrink: 0; }
-.bc-item-info { flex: 1; min-width: 0; }
-.bc-item-label { font-size: 12px; font-weight: 600; color: var(--text-primary); }
-
-/* Ghost & drag states */
-.bc-ghost {
-  opacity: .3;
-  border: 1px dashed var(--accent);
-  border-radius: 8px;
-}
-.bc-dragging { opacity: .8; }
-
-/* Toggle switch */
-.bc-toggle { position: relative; display: inline-flex; cursor: pointer; flex-shrink: 0; }
-.bc-toggle input { position: absolute; opacity: 0; width: 0; height: 0; }
-.bc-toggle-track {
-  width: 28px; height: 16px; border-radius: 8px;
-  background: var(--bg-active);
-  transition: background .2s;
-  position: relative;
-}
-.bc-toggle-track::after {
-  content: '';
-  position: absolute; top: 2px; left: 2px;
-  width: 12px; height: 12px; border-radius: 50%;
-  background: var(--text-muted);
+  padding: 10px; border-radius: 10px;
+  background: var(--bg-main);
+  border: 1px solid var(--border);
   transition: all .2s;
 }
-.bc-toggle input:checked + .bc-toggle-track { background: var(--accent); }
-.bc-toggle input:checked + .bc-toggle-track::after {
-  transform: translateX(12px);
-  background: #fff;
+.wpc-card:hover { border-color: rgba(74,144,217,.2); }
+.wpc-card--disabled { opacity: .4; }
+
+.wpc-drag-handle {
+  color: var(--text-muted); cursor: grab;
+  display: flex; align-items: center;
+  opacity: .3; transition: opacity .15s;
+}
+.wpc-drag-handle:active { cursor: grabbing; }
+.wpc-card:hover .wpc-drag-handle { opacity: .7; }
+
+.wpc-card-icon {
+  display: flex; align-items: center; justify-content: center;
+  width: 32px; height: 32px; border-radius: 8px;
+  background: rgba(74,144,217,.08); color: var(--accent);
+  flex-shrink: 0;
+}
+.wpc-card--disabled .wpc-card-icon { background: rgba(255,255,255,.04); color: var(--text-muted); }
+
+.wpc-card-info { flex: 1; min-width: 0; }
+.wpc-card-label { display: block; font-size: 12px; font-weight: 600; color: var(--text-primary); line-height: 1.2; }
+.wpc-card-desc { display: block; font-size: 10px; color: var(--text-muted); line-height: 1.3; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.wpc-toggle-btn {
+  display: flex; align-items: center; justify-content: center;
+  width: 28px; height: 28px; border-radius: 50%;
+  border: 1px solid var(--border); background: transparent;
+  color: var(--text-muted); cursor: pointer;
+  transition: all .15s; flex-shrink: 0;
+}
+.wpc-toggle-btn.active {
+  background: rgba(239,68,68,.1); border-color: rgba(239,68,68,.2); color: #ef4444;
+}
+.wpc-toggle-btn:not(.active) {
+  background: rgba(74,144,217,.1); border-color: rgba(74,144,217,.2); color: var(--accent);
+}
+.wpc-toggle-btn:hover { transform: scale(1.1); }
+
+/* Ghost */
+.wpc-ghost { opacity: .3; border: 1px dashed var(--accent); }
+
+/* Mobile */
+@media (max-width: 600px) {
+  .wpc-grid { grid-template-columns: 1fr; }
 }
 </style>
