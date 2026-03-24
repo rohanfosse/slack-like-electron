@@ -225,6 +225,7 @@
       if (e.key === '2') { e.preventDefault(); router.push('/messages') }
       if (e.key === '3') { e.preventDefault(); router.push('/devoirs') }
       if (e.key === '4') { e.preventDefault(); router.push('/documents') }
+      if (e.key === 'n') { e.preventDefault(); modals.cmdPalette = true }
     }
   }
 
