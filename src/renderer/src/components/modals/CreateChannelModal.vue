@@ -199,6 +199,10 @@
             Membres autorisés
             <span class="cc-members-count">{{ members.length }} sélectionné{{ members.length > 1 ? 's' : '' }}</span>
           </label>
+          <div class="cc-members-actions">
+            <button class="cc-select-all-btn" @click="members = students.map(s => s.id)">Tout sélectionner</button>
+            <button class="cc-select-all-btn" @click="members = []">Tout désélectionner</button>
+          </div>
           <div class="cc-members-list">
             <label
               v-for="s in students"
@@ -392,6 +396,16 @@
 }
 
 /* ── Membres ── */
+.cc-members-actions {
+  display: flex; gap: 6px; margin-bottom: 6px;
+}
+.cc-select-all-btn {
+  font-size: 11px; font-weight: 600; color: var(--accent);
+  background: none; border: none; cursor: pointer;
+  padding: 2px 6px; border-radius: 4px;
+  transition: background .15s; font-family: var(--font);
+}
+.cc-select-all-btn:hover { background: rgba(74,144,217,.08); }
 .cc-members-count {
   font-size: 10px;
   font-weight: 500;
