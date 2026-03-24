@@ -5,8 +5,9 @@
  */
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { Award } from 'lucide-vue-next'
+import { Award, Trophy } from 'lucide-vue-next'
 import { formatDate } from '@/utils/date'
+import { useStudentBadges } from '@/composables/useStudentBadges'
 import { parseCategoryIcon } from '@/utils/categoryIcon'
 
 export interface GradedDevoir {
@@ -47,6 +48,8 @@ const distribution = computed(() => {
     ...GRADE_META[label],
   }))
 })
+
+const { badges, earnedCount, totalCount } = useStudentBadges()
 
 // ── Grade timeline (for progression chart) ──────────────────────────────────
 const GRADE_HEIGHT: Record<string, number> = { A: 100, B: 75, C: 50, D: 25 }
@@ -121,6 +124,25 @@ function toggleExpand(id: number) {
             <div class="sgt-chart-bar" :style="{ height: t.height + '%', background: t.color }" />
             <span class="sgt-chart-label">{{ idx + 1 }}</span>
           </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Badges -->
+    <div class="sgt-badges">
+      <div class="sgt-badges-header">
+        <Trophy :size="13" />
+        <span>Badges ({{ earnedCount }}/{{ totalCount }})</span>
+      </div>
+      <div class="sgt-badges-grid">
+        <div
+          v-for="b in badges" :key="b.id"
+          class="sgt-badge"
+          :class="{ 'sgt-badge--locked': !b.earned }"
+          :title="b.description"
+        >
+          <span class="sgt-badge-emoji">{{ b.emoji }}</span>
+          <span class="sgt-badge-label">{{ b.label }}</span>
         </div>
       </div>
     </div>
@@ -322,4 +344,29 @@ function toggleExpand(id: number) {
 .sgt-chart-label {
   font-size: 8px; color: var(--text-muted);
 }
+
+/* ── Badges ── */
+.sgt-badges { margin-top: 16px; }
+.sgt-badges-header {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 12px; font-weight: 700; color: var(--text-muted);
+  text-transform: uppercase; letter-spacing: .04em;
+  margin-bottom: 10px;
+}
+.sgt-badges-grid {
+  display: flex; flex-wrap: wrap; gap: 8px;
+}
+.sgt-badge {
+  display: flex; flex-direction: column;
+  align-items: center; gap: 4px;
+  padding: 10px 12px; border-radius: 10px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  min-width: 80px; text-align: center;
+  transition: all .2s;
+}
+.sgt-badge:hover { transform: translateY(-1px); box-shadow: 0 2px 8px rgba(0,0,0,.1); }
+.sgt-badge--locked { opacity: .3; filter: grayscale(1); }
+.sgt-badge-emoji { font-size: 22px; line-height: 1; }
+.sgt-badge-label { font-size: 10px; font-weight: 600; color: var(--text-secondary); }
 </style>
