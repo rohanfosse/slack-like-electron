@@ -434,7 +434,8 @@ function fileTypeIcon(name: string): typeof FileText {
   </div>
 </template>
 
-<style scoped>
+<style>
+/* Non-scoped pour que les sous-composants (StudentProjetDevoirsList, etc.) heritent des styles spf-* */
 /* ── Shell ── */
 .spf-shell {
   display: flex;

@@ -217,8 +217,9 @@ function toggleSection(key: string) { collapsedSections.value[key] = !collapsedS
   </template>
 </template>
 
-<style scoped>
-/* ── Section headers ── */
+<style>
+/* Styles spf-* herites du parent (StudentProjetFiche.vue, non-scoped) */
+/* Seuls les styles specifiques a ce composant restent ici */
 .spf-section-label {
   display: flex; align-items: center; gap: 6px;
   font-size: 11px; font-weight: 700;
