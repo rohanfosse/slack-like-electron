@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { watch, ref, computed, onBeforeUnmount } from 'vue'
-import { Download, ExternalLink, FileText, Image, Video, File, Table2, BookOpen } from 'lucide-vue-next'
+import { Download, ExternalLink, FileText, Image, Video, File, Table2, BookOpen, ZoomIn, ZoomOut } from 'lucide-vue-next'
 import { useDocumentsStore } from '@/stores/documents'
 import { useOpenExternal }   from '@/composables/useOpenExternal'
 import Modal from '@/components/ui/Modal.vue'
@@ -20,6 +20,11 @@ const textContent = ref('')
 const mime       = ref<string>('')
 const loading    = ref(false)
 const error      = ref<string | null>(null)
+const zoomLevel  = ref(100)
+
+function zoomIn()  { zoomLevel.value = Math.min(300, zoomLevel.value + 25) }
+function zoomOut() { zoomLevel.value = Math.max(50, zoomLevel.value - 25) }
+function zoomReset() { zoomLevel.value = 100 }
 
 const doc = computed(() => docStore.previewDoc)
 
@@ -161,7 +166,15 @@ function openWith() {
 
       <!-- Image -->
       <div v-else-if="previewType === 'image'" class="preview-image-wrap">
-        <img :src="blobUrl!" :alt="doc?.name" class="preview-image" />
+        <div class="preview-zoom-controls">
+          <button class="preview-zoom-btn" @click="zoomOut" title="Zoom -"><ZoomOut :size="14" /></button>
+          <span class="preview-zoom-level">{{ zoomLevel }}%</span>
+          <button class="preview-zoom-btn" @click="zoomIn" title="Zoom +"><ZoomIn :size="14" /></button>
+          <button class="preview-zoom-btn" @click="zoomReset" title="Réinitialiser">1:1</button>
+        </div>
+        <div class="preview-image-scroll">
+          <img :src="blobUrl!" :alt="doc?.name" class="preview-image" :style="{ transform: `scale(${zoomLevel / 100})` }" />
+        </div>
       </div>
 
       <!-- PDF → iframe avec blob URL -->
@@ -299,12 +312,32 @@ function openWith() {
 /* ── Image ── */
 .preview-image-wrap {
   width: 100%; height: 100%;
+  display: flex; flex-direction: column;
+  padding: 8px 16px 16px;
+}
+.preview-zoom-controls {
+  display: flex; align-items: center; gap: 6px;
+  padding: 4px 0 8px;
+  justify-content: center;
+}
+.preview-zoom-btn {
   display: flex; align-items: center; justify-content: center;
-  padding: 16px;
+  width: 28px; height: 28px; border-radius: 6px;
+  border: 1px solid var(--border); background: transparent;
+  color: var(--text-muted); cursor: pointer; font-size: 11px; font-weight: 600;
+  transition: all .15s; font-family: var(--font);
+}
+.preview-zoom-btn:hover { background: var(--bg-hover); color: var(--text-primary); }
+.preview-zoom-level { font-size: 11px; font-weight: 600; color: var(--text-muted); min-width: 36px; text-align: center; }
+.preview-image-scroll {
+  flex: 1; overflow: auto;
+  display: flex; align-items: center; justify-content: center;
 }
 .preview-image {
   max-width: 100%; max-height: 100%;
   object-fit: contain; border-radius: var(--radius-sm);
+  transition: transform .2s ease;
+  transform-origin: center center;
 }
 
 /* ── PDF ── */
