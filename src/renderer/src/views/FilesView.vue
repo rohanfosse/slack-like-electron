@@ -96,6 +96,10 @@ function open(f: DmFile) {
 function download(f: DmFile) {
   window.api.openPath(f.file_url)
 }
+
+function downloadLightbox() {
+  if (lightboxUrl.value) window.api.openPath(lightboxUrl.value)
+}
 </script>
 
 <template>
@@ -181,7 +185,7 @@ function download(f: DmFile) {
     <div v-if="lightboxUrl" class="fv-lightbox" @click="lightboxUrl = null">
       <img :src="lightboxUrl" class="fv-lightbox-img" @click.stop />
       <button class="fv-lightbox-close" @click="lightboxUrl = null"><X :size="18" /></button>
-      <button class="fv-lightbox-dl" @click.stop="window.api.openPath(lightboxUrl!)"><Download :size="16" /> Télécharger</button>
+      <button class="fv-lightbox-dl" @click.stop="downloadLightbox"><Download :size="16" /> Télécharger</button>
     </div>
   </div>
 </template>

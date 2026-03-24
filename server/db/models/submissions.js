@@ -66,10 +66,10 @@ function getRessources(travailId) {
   ).all(travailId);
 }
 
-function addRessource({ travailId, type, name, pathOrUrl }) {
+function addRessource({ travailId, type, name, pathOrUrl, category }) {
   return getDb().prepare(`
-    INSERT INTO ressources (travail_id, type, name, path_or_url) VALUES (?, ?, ?, ?)
-  `).run(travailId, type, name, pathOrUrl);
+    INSERT INTO ressources (travail_id, type, name, path_or_url, category) VALUES (?, ?, ?, ?, ?)
+  `).run(travailId, type, name, pathOrUrl, category ?? 'autre');
 }
 
 function deleteRessource(ressourceId) {

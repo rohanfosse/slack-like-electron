@@ -1,6 +1,6 @@
 const { getDb } = require('./connection');
 
-const CURRENT_VERSION = 32;
+const CURRENT_VERSION = 33;
 
 // ─── Schema initial ───────────────────────────────────────────────────────────
 // Crée toutes les tables avec leur schéma complet (colonnes UTC, toutes colonnes incluses).
@@ -95,6 +95,7 @@ function initSchema() {
       type        TEXT NOT NULL CHECK(type IN ('file', 'link')),
       name        TEXT NOT NULL,
       path_or_url TEXT NOT NULL,
+      category    TEXT NOT NULL DEFAULT 'autre',
       created_at  TEXT NOT NULL DEFAULT (datetime('now'))
     );
 
@@ -728,6 +729,10 @@ function runMigrations(db) {
     (db) => {
       tryAlter(db, "ALTER TABLE teacher_notes ADD COLUMN category TEXT NOT NULL DEFAULT 'generale'");
       db.exec(`CREATE INDEX IF NOT EXISTS idx_teacher_notes_category ON teacher_notes(category)`);
+    },
+    // v33 : ressources — ajout catégorie (Moodle, Github, LinkedIn, Site Web, Autre)
+    (db) => {
+      tryAlter(db, "ALTER TABLE ressources ADD COLUMN category TEXT NOT NULL DEFAULT 'autre'");
     },
   ];
 

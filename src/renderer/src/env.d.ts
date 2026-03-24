@@ -241,6 +241,9 @@ declare global {
       getRexHistoryForPromo(promoId: number, params?: { search?: string; dateFrom?: string; dateTo?: string }): Promise<IpcResponse<import('./types').RexSessionWithStats[]>>
       getRexStatsForPromo(promoId: number): Promise<IpcResponse<import('./types').RexStats>>
 
+      // Fichiers partagés en DM (prof uniquement)
+      getDmFiles(): Promise<IpcResponse<unknown[]>>
+
       // Carnet de suivi
       getTeacherNotes(studentId: number): Promise<IpcResponse<unknown[]>>
       getTeacherNotesByPromo(promoId: number): Promise<IpcResponse<unknown[]>>

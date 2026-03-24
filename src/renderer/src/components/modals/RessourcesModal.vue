@@ -1,6 +1,9 @@
 <script setup lang="ts">
-  import { ref, watch } from 'vue'
-  import { ExternalLink, FileText, Trash2, Upload, Link2, Plus, X, CheckCircle2 } from 'lucide-vue-next'
+  import { ref, computed, watch } from 'vue'
+  import {
+    ExternalLink, FileText, Trash2, Upload, Link2, Plus, X, CheckCircle2,
+    BookOpen, Github, Linkedin, Globe, Package, HelpCircle,
+  } from 'lucide-vue-next'
   import { useTravauxStore } from '@/stores/travaux'
   import { useAppStore }     from '@/stores/app'
   import { useToast }        from '@/composables/useToast'
@@ -17,6 +20,16 @@
   const { confirm }      = useConfirm()
   const { openExternal } = useOpenExternal()
 
+  // ── Catégories disponibles ─────────────────────────────────────────────────
+  const CATEGORIES = [
+    { id: 'moodle',   label: 'Moodle',    icon: BookOpen,     color: '#f59e0b' },
+    { id: 'github',   label: 'GitHub',    icon: Github,       color: '#24292e' },
+    { id: 'linkedin', label: 'LinkedIn',  icon: Linkedin,     color: '#0a66c2' },
+    { id: 'web',      label: 'Site Web',  icon: Globe,        color: '#22c55e' },
+    { id: 'package',  label: 'Package',   icon: Package,      color: '#8b5cf6' },
+    { id: 'autre',    label: 'Autre',     icon: HelpCircle,   color: '#8b8d91' },
+  ]
+
   // ── Formulaire d'ajout ────────────────────────────────────────────────────
   const showForm    = ref(false)
   const addType     = ref<'file' | 'link'>('link')
@@ -24,14 +37,47 @@
   const addLink     = ref('')
   const addFile     = ref<string | null>(null)
   const addFileName = ref<string | null>(null)
+  const addCategory = ref('autre')
   const adding      = ref(false)
 
+  // Travail sélectionné (défaut = currentTravailId du store)
+  const selectedTravailId = ref<number | null>(appStore.currentTravailId)
+
+  // Liste des travaux disponibles dans la promo active
+  const availableTravaux = computed(() =>
+    travauxStore.ganttData
+      .filter(t => t.published)
+      .sort((a, b) => a.title.localeCompare(b.title))
+  )
+
   watch(() => props.modelValue, async (open) => {
-    if (open && appStore.currentTravailId) {
-      await travauxStore.fetchRessources(appStore.currentTravailId)
+    if (open) {
+      // Initialiser le travail sélectionné
+      selectedTravailId.value = appStore.currentTravailId ?? availableTravaux.value[0]?.id ?? null
+      if (selectedTravailId.value) {
+        await travauxStore.fetchRessources(selectedTravailId.value)
+      }
       showForm.value = false
     }
   })
+
+  // Recharger les ressources quand on change de travail
+  watch(selectedTravailId, async (id) => {
+    if (id) await travauxStore.fetchRessources(id)
+  })
+
+  // Détecter automatiquement la catégorie depuis l'URL
+  function detectCategory(url: string) {
+    if (!url) return
+    const lower = url.toLowerCase()
+    if (lower.includes('moodle'))   { addCategory.value = 'moodle';   return }
+    if (lower.includes('github'))   { addCategory.value = 'github';   return }
+    if (lower.includes('linkedin')) { addCategory.value = 'linkedin'; return }
+    if (lower.includes('npm') || lower.includes('pypi') || lower.includes('packag')) {
+      addCategory.value = 'package'; return
+    }
+    addCategory.value = 'web'
+  }
 
   function openForm() {
     addType.value     = 'link'
@@ -39,13 +85,14 @@
     addLink.value     = ''
     addFile.value     = null
     addFileName.value = null
+    addCategory.value = 'autre'
     showForm.value    = true
   }
 
   async function pickFile() {
     const res = await window.api.openFileDialog()
     if (res?.ok && res.data) {
-      addFile.value     = res.data  // chemin local ou pseudo-path web (sera uploadé au submit)
+      addFile.value     = res.data
       addFileName.value = res.data.split(/[\\/]/).pop()?.replace(/^__web__\S+/, '') || res.data.split(/[\\/]/).pop() || res.data
       if (!addName.value) addName.value = addFileName.value ?? ''
     }
@@ -57,7 +104,7 @@
   }
 
   async function submitAdd() {
-    if (!addName.value.trim() || !appStore.currentTravailId) return
+    if (!addName.value.trim() || !selectedTravailId.value) return
     if (addType.value === 'file' && !addFile.value) return
     if (addType.value === 'link' && !addLink.value.trim()) return
     adding.value = true
@@ -69,17 +116,18 @@
         pathOrUrl = uploadRes.data as string
       }
       const res = await window.api.addRessource({
-        travailId:  appStore.currentTravailId,
+        travailId:  selectedTravailId.value,
         type:       addType.value,
         name:       addName.value.trim(),
         pathOrUrl,
+        category:   addCategory.value,
       })
       if (res?.ok) {
         showToast('Ressource ajoutée.', 'success')
         showForm.value = false
-        await travauxStore.fetchRessources(appStore.currentTravailId)
+        await travauxStore.fetchRessources(selectedTravailId.value)
       } else {
-        showToast('Erreur lors de l\'ajout.')
+        showToast('Erreur lors de l\'ajout.', 'error')
       }
     } finally {
       adding.value = false
@@ -94,115 +142,143 @@
   async function removeResource(id: number) {
     if (!await confirm('Supprimer cette ressource ?', 'danger', 'Supprimer')) return
     await window.api.deleteRessource(id)
-    if (appStore.currentTravailId) await travauxStore.fetchRessources(appStore.currentTravailId)
+    if (selectedTravailId.value) await travauxStore.fetchRessources(selectedTravailId.value)
+  }
+
+  function catInfo(catId: string) {
+    return CATEGORIES.find(c => c.id === catId) ?? CATEGORIES[CATEGORIES.length - 1]
   }
 </script>
 
 <template>
-  <Modal :model-value="modelValue" title="Ressources pédagogiques" max-width="520px" @update:model-value="emit('update:modelValue', $event)">
+  <Modal :model-value="modelValue" title="Ressources pédagogiques" max-width="560px" @update:model-value="emit('update:modelValue', $event)">
     <div class="ress-body">
 
-      <!-- Liste des ressources -->
-      <ul class="ress-list">
-        <li v-if="!travauxStore.ressources.length && !showForm" class="ress-empty">
-          Aucune ressource attachée à ce travail.
-        </li>
-
-        <li
-          v-for="r in travauxStore.ressources"
-          :key="r.id"
-          class="ress-item"
-        >
-          <div class="ress-item-icon" :class="r.type === 'link' ? 'icon-link' : 'icon-file'">
-            <ExternalLink v-if="r.type === 'link'" :size="14" />
-            <FileText     v-else :size="14" />
-          </div>
-          <button class="ress-item-name btn-ghost" @click="openResource(r.content, r.type)">
-            {{ r.name }}
-          </button>
-          <span class="ress-item-type">{{ r.type === 'link' ? 'Lien' : 'Fichier' }}</span>
-          <button
-            v-if="appStore.isTeacher"
-            class="btn-icon ress-item-delete"
-            title="Supprimer"
-            @click="removeResource(r.id)"
-          >
-            <Trash2 :size="13" />
-          </button>
-        </li>
-      </ul>
-
-      <!-- Formulaire d'ajout -->
-      <div v-if="showForm && appStore.isTeacher" class="ress-form">
-        <div class="ress-form-header">
-          <span class="ress-form-title">Nouvelle ressource</span>
-          <button class="btn-icon" aria-label="Fermer le formulaire" @click="showForm = false"><X :size="14" /></button>
-        </div>
-
-        <!-- Toggle type -->
-        <div class="ress-type-toggle">
-          <button class="ress-type-btn" :class="{ active: addType === 'link' }" type="button" @click="addType = 'link'">
-            <Link2 :size="13" /> Lien URL
-          </button>
-          <button class="ress-type-btn" :class="{ active: addType === 'file' }" type="button" @click="addType = 'file'">
-            <Upload :size="13" /> Fichier
-          </button>
-        </div>
-
-        <!-- Nom -->
-        <div class="form-group">
-          <label class="form-label">Nom affiché</label>
-          <input
-            v-model="addName"
-            type="text"
-            class="form-input"
-            placeholder="ex : Cours chapitre 3, Documentation…"
-            autofocus
-          />
-        </div>
-
-        <!-- URL ou fichier -->
-        <div class="form-group">
-          <template v-if="addType === 'link'">
-            <label class="form-label">URL</label>
-            <input v-model="addLink" type="url" class="form-input" placeholder="https://…" />
-          </template>
-          <template v-else>
-            <label class="form-label">Fichier</label>
-            <div v-if="addFile" class="ress-file-selected">
-              <CheckCircle2 :size="15" class="ress-file-selected-icon" />
-              <span class="ress-file-selected-name">{{ addFileName }}</span>
-              <button class="ress-file-clear" type="button" aria-label="Retirer le fichier" @click="clearFile"><X :size="12" /></button>
-            </div>
-            <button v-else class="ress-file-picker" type="button" @click="pickFile">
-              <Upload :size="16" />
-              <span>Cliquer pour choisir…</span>
-            </button>
-          </template>
-        </div>
-
-        <div class="ress-form-actions">
-          <button class="btn-ghost" type="button" @click="showForm = false">Annuler</button>
-          <button
-            class="btn-primary"
-            type="button"
-            :disabled="!addName.trim() || (addType === 'link' ? !addLink.trim() : !addFile) || adding"
-            @click="submitAdd"
-          >
-            {{ adding ? 'Ajout…' : 'Ajouter' }}
-          </button>
-        </div>
+      <!-- Sélecteur de travail -->
+      <div v-if="availableTravaux.length > 1" class="ress-travail-selector">
+        <label class="ress-travail-label">Travail associé</label>
+        <select v-model="selectedTravailId" class="ress-travail-select">
+          <option v-for="t in availableTravaux" :key="t.id" :value="t.id">{{ t.title }}</option>
+        </select>
       </div>
+
+      <!-- Aucun travail disponible -->
+      <div v-if="!selectedTravailId" class="ress-empty">
+        Aucun travail publié disponible dans cette promotion.
+      </div>
+
+      <template v-else>
+        <!-- Liste des ressources -->
+        <ul class="ress-list">
+          <li v-if="!travauxStore.ressources.length && !showForm" class="ress-empty">
+            Aucune ressource attachée à ce travail.
+          </li>
+
+          <li v-for="r in travauxStore.ressources" :key="r.id" class="ress-item">
+            <!-- Icône catégorie -->
+            <div class="ress-item-cat" :style="{ background: catInfo(r.category ?? 'autre').color + '22', color: catInfo(r.category ?? 'autre').color }">
+              <component :is="catInfo(r.category ?? 'autre').icon" :size="13" />
+            </div>
+            <button class="ress-item-name btn-ghost" @click="openResource(r.content, r.type)">
+              {{ r.name }}
+            </button>
+            <span class="ress-item-badge" :style="{ background: catInfo(r.category ?? 'autre').color + '22', color: catInfo(r.category ?? 'autre').color }">
+              {{ catInfo(r.category ?? 'autre').label }}
+            </span>
+            <span class="ress-item-type">{{ r.type === 'link' ? 'Lien' : 'Fichier' }}</span>
+            <button v-if="appStore.isTeacher" class="btn-icon ress-item-delete" title="Supprimer" @click="removeResource(r.id)">
+              <Trash2 :size="13" />
+            </button>
+          </li>
+        </ul>
+
+        <!-- Formulaire d'ajout -->
+        <div v-if="showForm && appStore.isTeacher" class="ress-form">
+          <div class="ress-form-header">
+            <span class="ress-form-title">Nouvelle ressource</span>
+            <button class="btn-icon" aria-label="Fermer le formulaire" @click="showForm = false"><X :size="14" /></button>
+          </div>
+
+          <!-- Toggle type -->
+          <div class="ress-type-toggle">
+            <button class="ress-type-btn" :class="{ active: addType === 'link' }" type="button" @click="addType = 'link'">
+              <Link2 :size="13" /> Lien URL
+            </button>
+            <button class="ress-type-btn" :class="{ active: addType === 'file' }" type="button" @click="addType = 'file'">
+              <Upload :size="13" /> Fichier
+            </button>
+          </div>
+
+          <!-- Catégorie -->
+          <div class="form-group">
+            <label class="form-label">Catégorie</label>
+            <div class="ress-cat-pills">
+              <button
+                v-for="cat in CATEGORIES"
+                :key="cat.id"
+                type="button"
+                class="ress-cat-pill"
+                :class="{ active: addCategory === cat.id }"
+                :style="addCategory === cat.id ? { background: cat.color + '22', color: cat.color, borderColor: cat.color } : {}"
+                @click="addCategory = cat.id"
+              >
+                <component :is="cat.icon" :size="12" />
+                {{ cat.label }}
+              </button>
+            </div>
+          </div>
+
+          <!-- Nom -->
+          <div class="form-group">
+            <label class="form-label">Nom affiché</label>
+            <input v-model="addName" type="text" class="form-input" placeholder="ex : Cours chapitre 3, Documentation…" autofocus />
+          </div>
+
+          <!-- URL ou fichier -->
+          <div class="form-group">
+            <template v-if="addType === 'link'">
+              <label class="form-label">URL</label>
+              <input
+                v-model="addLink"
+                type="url"
+                class="form-input"
+                placeholder="https://…"
+                @blur="detectCategory(addLink)"
+              />
+            </template>
+            <template v-else>
+              <label class="form-label">Fichier</label>
+              <div v-if="addFile" class="ress-file-selected">
+                <CheckCircle2 :size="15" class="ress-file-selected-icon" />
+                <span class="ress-file-selected-name">{{ addFileName }}</span>
+                <button class="ress-file-clear" type="button" aria-label="Retirer le fichier" @click="clearFile"><X :size="12" /></button>
+              </div>
+              <button v-else class="ress-file-picker" type="button" @click="pickFile">
+                <Upload :size="16" />
+                <span>Cliquer pour choisir…</span>
+              </button>
+            </template>
+          </div>
+
+          <div class="ress-form-actions">
+            <button class="btn-ghost" type="button" @click="showForm = false">Annuler</button>
+            <button
+              class="btn-primary"
+              type="button"
+              :disabled="!addName.trim() || !selectedTravailId || (addType === 'link' ? !addLink.trim() : !addFile) || adding"
+              @click="submitAdd"
+            >
+              {{ adding ? 'Ajout…' : 'Ajouter' }}
+            </button>
+          </div>
+        </div>
+      </template>
 
     </div>
 
     <!-- Footer -->
     <div class="modal-footer ress-footer">
-      <button
-        v-if="appStore.isTeacher && !showForm"
-        class="btn-ghost ress-add-btn"
-        @click="openForm"
-      >
+      <button v-if="appStore.isTeacher && !showForm && selectedTravailId" class="btn-ghost ress-add-btn" @click="openForm">
         <Plus :size="13" /> Ajouter une ressource
       </button>
       <button class="btn-ghost" style="margin-left:auto" @click="emit('update:modelValue', false)">Fermer</button>
@@ -219,6 +295,21 @@
   gap: 12px;
 }
 
+/* ── Sélecteur travail ── */
+.ress-travail-selector {
+  display: flex; align-items: center; gap: 10px;
+}
+.ress-travail-label {
+  font-size: 12px; font-weight: 600; color: var(--text-secondary); white-space: nowrap;
+}
+.ress-travail-select {
+  flex: 1; font-size: 12.5px; padding: 5px 8px;
+  border: 1px solid var(--border-input); border-radius: var(--radius-sm);
+  background: var(--bg-elevated); color: var(--text-primary);
+  cursor: pointer; outline: none;
+}
+
+/* ── Liste ── */
 .ress-list {
   list-style: none;
   display: flex;
@@ -246,13 +337,10 @@
 }
 .ress-item:hover { background: var(--bg-hover); }
 
-.ress-item-icon {
-  display: flex;
-  align-items: center;
-  flex-shrink: 0;
+.ress-item-cat {
+  display: flex; align-items: center; justify-content: center;
+  width: 24px; height: 24px; border-radius: 6px; flex-shrink: 0;
 }
-.icon-link { color: #27AE60; }
-.icon-file { color: var(--accent); }
 
 .ress-item-name {
   flex: 1;
@@ -260,6 +348,12 @@
   font-size: 13px;
   padding: 2px 4px;
   justify-content: flex-start;
+}
+
+.ress-item-badge {
+  font-size: 10px; font-weight: 600;
+  padding: 2px 7px; border-radius: 10px;
+  white-space: nowrap; flex-shrink: 0;
 }
 
 .ress-item-type {
@@ -277,7 +371,7 @@
 }
 .ress-item-delete:hover { color: var(--color-danger); }
 
-/* Formulaire */
+/* ── Formulaire ── */
 .ress-form {
   background: var(--bg-elevated);
   border: 1px solid var(--border-input);
@@ -322,6 +416,26 @@
 .ress-type-btn:hover { background: var(--bg-hover); color: var(--text-primary); }
 .ress-type-btn.active { background: var(--accent-subtle); color: var(--accent-light); border-color: var(--accent); }
 
+/* ── Pills catégories ── */
+.ress-cat-pills {
+  display: flex; flex-wrap: wrap; gap: 6px;
+}
+.ress-cat-pill {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 4px 10px;
+  border: 1.5px solid var(--border-input);
+  border-radius: 20px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-family: var(--font);
+  font-size: 11.5px;
+  cursor: pointer;
+  transition: all .15s;
+}
+.ress-cat-pill:hover { background: var(--bg-hover); }
+.ress-cat-pill.active { font-weight: 600; }
+
+/* ── Fichier ── */
 .ress-file-picker {
   display: inline-flex;
   align-items: center;
@@ -359,7 +473,7 @@
   gap: 8px;
 }
 
-/* Footer */
+/* ── Footer ── */
 .ress-footer {
   padding: 10px 16px;
   border-top: 1px solid var(--border);

@@ -140,6 +140,7 @@ export interface Ressource {
   name: string
   type: 'file' | 'link'
   content: string
+  category?: string
 }
 
 export interface Group {
