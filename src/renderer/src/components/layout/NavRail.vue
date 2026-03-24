@@ -1,7 +1,7 @@
 <script setup lang="ts">
   import { computed, ref, watch } from 'vue'
   import { useRouter, useRoute } from 'vue-router'
-  import { MessageSquare, BookOpen, FileText, LayoutDashboard, Bell, Flame, Search, Shield, Bug, Radio, ClipboardList } from 'lucide-vue-next'
+  import { MessageSquare, BookOpen, FileText, LayoutDashboard, Bell, Flame, Search, Shield, Bug, Radio, ClipboardList, Paperclip } from 'lucide-vue-next'
   import logoUrl from '@/assets/logo.png'
   import { useAppStore }    from '@/stores/app'
   import { useModalsStore } from '@/stores/modals'
@@ -183,6 +183,19 @@
     >
       <FileText :size="20" />
       <span class="nav-label">Documents</span>
+    </button>
+
+    <!-- Fichiers partagés (prof uniquement) -->
+    <button
+      v-if="appStore.isTeacher"
+      class="nav-btn"
+      :class="{ active: route.name === 'fichiers' }"
+      title="Fichiers partagés par les étudiants"
+      aria-label="Fichiers partagés"
+      @click="router.push('/fichiers')"
+    >
+      <Paperclip :size="20" />
+      <span class="nav-label">Fichiers</span>
     </button>
 
     <!-- Quiz indicator pour étudiants - visible uniquement quand invitation active -->
