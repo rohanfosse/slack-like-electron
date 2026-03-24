@@ -32,7 +32,7 @@ const lightboxUrl = ref<string | null>(null)
 
 onMounted(async () => {
   const res = await api(() => window.api.getDmFiles())
-  files.value = Array.isArray(res) ? res : []
+  files.value = Array.isArray(res) ? (res as DmFile[]) : []
   loading.value = false
 })
 
