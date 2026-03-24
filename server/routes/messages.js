@@ -52,6 +52,8 @@ router.get('/dm/:studentId/search', wrap((req) => {
   return queries.searchDmMessages(Number(req.params.studentId), req.query.q, peer)
 }))
 
+router.get('/dm-files', wrap(() => queries.getDmFiles()))
+
 // ── Écriture ──────────────────────────────────────────────────────────────────
 router.post('/', validate(sendMessageSchema), (req, res) => {
   try {

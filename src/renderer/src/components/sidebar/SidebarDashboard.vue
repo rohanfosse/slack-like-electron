@@ -2,7 +2,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { Plus, FolderOpen, Layers, BookOpen, BarChart2, CalendarDays, Calendar } from 'lucide-vue-next'
+import { Plus, FolderOpen, Layers, BookOpen, BarChart2, CalendarDays, Calendar, Paperclip } from 'lucide-vue-next'
 import { useAppStore }     from '@/stores/app'
 import { useModalsStore }  from '@/stores/modals'
 import { useTravauxStore } from '@/stores/travaux'
@@ -94,6 +94,10 @@ const promoSummary = computed(() => {
       <button class="sidebar-item" :class="{ active: (route.name as string) === 'agenda' }" @click="router.push('/agenda')">
         <Calendar :size="13" class="project-icon" />
         <span class="channel-name">Calendrier</span>
+      </button>
+      <button class="sidebar-item" :class="{ active: (route.name as string) === 'fichiers' }" @click="router.push('/fichiers')">
+        <Paperclip :size="13" class="project-icon" />
+        <span class="channel-name">Fichiers partagés</span>
       </button>
     </template>
     <template v-else-if="appStore.isStudent">

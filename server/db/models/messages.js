@@ -300,6 +300,48 @@ function getRecentDmContacts(studentId, limit = 15) {
   `).all(studentId, myName, studentId, myName, limit);
 }
 
+/**
+ * Retourne tous les fichiers (images + pièces jointes) envoyés par des étudiants
+ * dans les conversations DM privées avec le professeur.
+ * Parsé depuis le contenu markdown des messages.
+ */
+function getDmFiles() {
+  const rows = getDb().prepare(`
+    SELECT m.id AS message_id, m.content, m.created_at, m.author_name, m.dm_student_id,
+           s.id AS student_id, s.name AS student_name
+    FROM messages m
+    LEFT JOIN students s ON s.id = m.dm_student_id
+    WHERE m.dm_student_id IS NOT NULL
+      AND m.author_type = 'student'
+      AND (m.content LIKE '%📎%' OR m.content LIKE '![%')
+    ORDER BY m.created_at DESC
+    LIMIT 500
+  `).all();
+
+  const fileRe  = /\[📎\s*([^\]]+)\]\(([^)]+)\)/g;
+  const imageRe = /!\[([^\]]*)\]\(([^)]+)\)/g;
+  const result  = [];
+
+  for (const row of rows) {
+    const push = (name, url, isImage) => result.push({
+      message_id:   row.message_id,
+      student_id:   row.student_id,
+      student_name: row.student_name ?? row.author_name,
+      file_name:    name.trim() || url.split('/').pop(),
+      file_url:     url,
+      is_image:     isImage,
+      sent_at:      row.created_at,
+    });
+    let m;
+    fileRe.lastIndex  = 0;
+    imageRe.lastIndex = 0;
+    while ((m = fileRe.exec(row.content))  !== null) push(m[1], m[2], false);
+    while ((m = imageRe.exec(row.content)) !== null) push(m[1], m[2], true);
+  }
+
+  return result;
+}
+
 module.exports = {
   getMessageById,
   getChannelMessages, getChannelMessagesPage,
@@ -307,4 +349,5 @@ module.exports = {
   searchMessages, searchDmMessages, searchAllMessages, sendMessage,
   getPinnedMessages, togglePinMessage, updateReactions,
   deleteMessage, editMessage, getRecentDmContacts,
+  getDmFiles,
 };

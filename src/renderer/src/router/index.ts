@@ -18,6 +18,7 @@ const router = createRouter({
     { path: '/live',       component: () => import('@/views/LiveView.vue'),   name: 'live'   },
     { path: '/rex',        component: () => import('@/views/RexView.vue'),   name: 'rex'    },
     { path: '/agenda',     component: () => import('@/views/AgendaView.vue'), name: 'agenda' },
+    { path: '/fichiers',   component: () => import('@/views/FilesView.vue'),  name: 'fichiers' },
   ],
 })
 

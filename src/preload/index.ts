@@ -456,6 +456,8 @@ contextBridge.exposeInMainWorld('api', {
   deleteKanbanCard: (cardId: number)                                           => del(`/api/kanban/cards/${cardId}`),
 
   // ── Carnet de suivi ──────────────────────────────────────────────────────
+  getDmFiles: () => get('/api/messages/dm-files'),
+
   getTeacherNotes:        (studentId: number) => get(`/api/teacher-notes/student/${studentId}`),
   getTeacherNotesByPromo: (promoId: number)   => get(`/api/teacher-notes/promo/${promoId}`),
   getTeacherNotesSummary: (promoId: number)   => get(`/api/teacher-notes/promo/${promoId}/summary`),
