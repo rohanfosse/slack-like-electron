@@ -15,7 +15,7 @@ const bento = useTeacherBento()
 import {
   Edit3, Clock, FileText, CheckCircle2,
   PlusCircle, Bell, BarChart2, MessageSquare, ChevronRight,
-  X, Plus, Settings as SettingsIcon,
+  X, Plus,
   Percent, Wifi, Award,
   Mic,
 } from 'lucide-vue-next'
@@ -204,14 +204,15 @@ const averageGrade = computed(() => props.globalModeGrade ?? '--')
 const editMode = ref(false)
 const showTileDrawer = ref(false)
 const hiddenTileDefs = computed(() => bento.allTiles.filter(t => bento.hidden.value.has(t.id)))
+
+function toggleEditMode() {
+  editMode.value = !editMode.value
+  if (!editMode.value) showTileDrawer.value = false
+}
+defineExpose({ toggleEditMode, editMode })
 </script>
 
 <template>
-  <div class="bento-controls">
-    <button class="bento-edit-btn" :class="{ active: editMode }" @click="editMode = !editMode">
-      <SettingsIcon :size="13" /> {{ editMode ? 'Terminer' : 'Personnaliser' }}
-    </button>
-  </div>
   <div class="bento-grid" :class="{ 'bento-grid--editing': editMode }">
 
     <!-- ═══ FOCUS TILE (2x2) ═══ -->
@@ -405,20 +406,6 @@ const hiddenTileDefs = computed(() => bento.allTiles.filter(t => bento.hidden.va
 </template>
 
 <style scoped>
-/* ── Bento Controls ── */
-.bento-controls {
-  display: flex; justify-content: flex-end; margin-bottom: 8px;
-}
-.bento-edit-btn {
-  display: flex; align-items: center; gap: 6px;
-  padding: 6px 14px; border-radius: 8px;
-  border: 1px solid var(--border); background: var(--bg-main);
-  color: var(--text-muted); font-size: 12px; font-weight: 600;
-  cursor: pointer; transition: all .2s; font-family: var(--font);
-}
-.bento-edit-btn:hover { color: var(--text-primary); border-color: var(--accent); }
-.bento-edit-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
-
 /* ── Bento Grid ── */
 .bento-grid {
   display: grid;
