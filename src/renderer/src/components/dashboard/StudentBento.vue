@@ -24,6 +24,10 @@ import WidgetCalendar from './student-widgets/WidgetCalendar.vue'
 import WidgetProgress from './student-widgets/WidgetProgress.vue'
 import WidgetQuickLinks from './student-widgets/WidgetQuickLinks.vue'
 import WidgetPomodoro from './student-widgets/WidgetPomodoro.vue'
+import WidgetGrades from './student-widgets/WidgetGrades.vue'
+import WidgetBookmarks from './student-widgets/WidgetBookmarks.vue'
+import WidgetCountdown from './student-widgets/WidgetCountdown.vue'
+import WidgetGroupMembers from './student-widgets/WidgetGroupMembers.vue'
 import { STUDENT_WIDGETS } from './student-widgets/registry'
 
 const props = defineProps<{
@@ -70,6 +74,7 @@ const widgetComponents: Record<string, Component> = {
   feedback: WidgetLastFeedback, recentDoc: WidgetRecentDoc, promoActivity: WidgetPromoActivity,
   clock: WidgetClock, quote: WidgetQuote, calendar: WidgetCalendar,
   progress: WidgetProgress, quicklinks: WidgetQuickLinks, pomodoro: WidgetPomodoro,
+  grades: WidgetGrades, bookmarks: WidgetBookmarks, countdown: WidgetCountdown, group: WidgetGroupMembers,
 }
 
 const latestFeedback = computed(() => props.recentFeedback?.[0] ?? null)
@@ -87,6 +92,10 @@ const widgetProps = computed<Record<string, Record<string, unknown>>>(() => ({
   calendar: { deadlines: calendarDeadlines.value },
   progress: { submitted: props.studentStats.submitted, total: totalDevoirs.value, graded: props.studentStats.graded },
   quicklinks: {}, pomodoro: {},
+  grades: { grades: props.recentGrades },
+  bookmarks: {},
+  countdown: { nextDeadline: props.urgentActions.filter(a => a.deadline && !a.isOverdue).sort((a, b) => new Date(a.deadline!).getTime() - new Date(b.deadline!).getTime())[0] ?? null },
+  group: {},
 }))
 
 const widgetEvents: Record<string, Record<string, (...args: unknown[]) => void>> = {

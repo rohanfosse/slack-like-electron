@@ -8,6 +8,7 @@ import {
   Radio, FolderOpen, Award, FileText, Mic,
   MessageSquare, FileBox, Activity,
   Clock, Quote, CalendarDays, TrendingUp, Bookmark, Timer,
+  Hourglass, Users,
 } from 'lucide-vue-next'
 
 export interface WidgetDef {
@@ -34,4 +35,8 @@ export const STUDENT_WIDGETS: WidgetDef[] = [
   { id: 'progress',   label: 'Progression',      icon: TrendingUp,   description: 'Anneau de progression globale',     defaultEnabled: false },
   { id: 'quicklinks', label: 'Liens rapides',    icon: Bookmark,     description: 'Accès rapide à vos liens favoris', defaultEnabled: false },
   { id: 'pomodoro',   label: 'Pomodoro',         icon: Timer,        description: 'Minuteur de concentration 25/5',    defaultEnabled: false },
+  { id: 'grades',     label: 'Mes notes',        icon: Award,        description: 'Dernières notes reçues',             defaultEnabled: false },
+  { id: 'bookmarks',  label: 'Sauvegardés',      icon: Bookmark,     description: 'Messages sauvegardés',               defaultEnabled: false },
+  { id: 'countdown',  label: 'Compte à rebours', icon: Hourglass,    description: 'Temps restant avant la prochaine deadline', defaultEnabled: false },
+  { id: 'group',      label: 'Mon groupe',        icon: Users,        description: 'Membres de votre groupe de projet',  defaultEnabled: false },
 ]
