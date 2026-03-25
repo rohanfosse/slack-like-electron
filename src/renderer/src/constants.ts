@@ -50,7 +50,7 @@ export const DM_RECENT_LIMIT = 10
 export const AUDIO_IDLE_TIMEOUT_MS = 30_000
 
 /** Limite de l'historique de notifications */
-export const NOTIFICATION_HISTORY_LIMIT = 50
+export const NOTIFICATION_HISTORY_LIMIT = 100
 
 // ─── Constantes du dashboard enseignant ───────────────────────────────────────
 

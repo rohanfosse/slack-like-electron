@@ -708,6 +708,14 @@ async function importStudentsBrowser(promoId: number): Promise<unknown> {
     socket?.on('signature:update', cb)
     return () => { socket?.off('signature:update', cb) }
   },
+  onDocumentNew(cb: (data: { name: string; category?: string }) => void) {
+    socket?.on('document:new', cb)
+    return () => { socket?.off('document:new', cb) }
+  },
+  onAssignmentNew(cb: (data: { title: string; category?: string; deadline?: string }) => void) {
+    socket?.on('assignment:new', cb)
+    return () => { socket?.off('assignment:new', cb) }
+  },
 
   // ── Updater - no-ops en web ──────────────────────────────────────────────
   onUpdaterAvailable:  (_cb: unknown) => () => {},

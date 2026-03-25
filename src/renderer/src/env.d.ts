@@ -297,6 +297,8 @@ declare global {
 
       // Auto-update
       onSignatureUpdate(cb: (data: { id: number; status: string; signed_file_url?: string; signer_name?: string; rejection_reason?: string }) => void): () => void
+      onDocumentNew(cb: (data: { name: string; category?: string }) => void): () => void
+      onAssignmentNew(cb: (data: { title: string; category?: string; deadline?: string }) => void): () => void
       onUpdaterAvailable(cb: (version: string) => void): () => void
       onUpdaterDownloaded(cb: (version: string) => void): () => void
       updaterQuitAndInstall(): void

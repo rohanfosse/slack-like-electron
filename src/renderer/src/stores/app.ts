@@ -40,16 +40,71 @@ export const useAppStore = defineStore('app', () => {
   // ── Historique de notifications ────────────────────────────────────────────
   interface NotifEntry {
     id:          string
+    category:    'message' | 'mention' | 'dm' | 'grade' | 'deadline' | 'signature' | 'document' | 'assignment'
     channelId:   number | null
     channelName: string
     dmStudentId: number | null
     promoId:     number | null
     authorName:  string
+    title:       string
+    preview:     string
+    actionUrl:   string | null
     isMention:   boolean
     timestamp:   number
     read:        boolean
   }
-  const notificationHistory = ref<NotifEntry[]>([])
+
+  const NOTIF_STORAGE_KEY = 'cc_notifications'
+  const NOTIF_MAX = 100
+  const NOTIF_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000
+
+  function _loadNotifications(): NotifEntry[] {
+    try {
+      const saved = JSON.parse(localStorage.getItem(NOTIF_STORAGE_KEY) || '[]') as NotifEntry[]
+      return saved.filter(n => Date.now() - n.timestamp < NOTIF_MAX_AGE_MS)
+    } catch { return [] }
+  }
+  function _persistNotifications() {
+    localStorage.setItem(NOTIF_STORAGE_KEY, JSON.stringify(notificationHistory.value.slice(0, NOTIF_MAX)))
+  }
+
+  const notificationHistory = ref<NotifEntry[]>(_loadNotifications())
+
+  /** Ajouter une notification au centre unifie */
+  function addNotification(opts: {
+    category: NotifEntry['category']
+    title: string
+    preview?: string
+    authorName?: string
+    channelId?: number | null
+    channelName?: string
+    dmStudentId?: number | null
+    promoId?: number | null
+    actionUrl?: string | null
+    silent?: boolean
+  }) {
+    const entry: NotifEntry = {
+      id: `${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+      category: opts.category,
+      channelId: opts.channelId ?? null,
+      channelName: opts.channelName ?? '',
+      dmStudentId: opts.dmStudentId ?? null,
+      promoId: opts.promoId ?? null,
+      authorName: opts.authorName ?? '',
+      title: opts.title,
+      preview: opts.preview ?? '',
+      actionUrl: opts.actionUrl ?? null,
+      isMention: ['mention', 'dm', 'grade', 'deadline', 'signature'].includes(opts.category),
+      timestamp: Date.now(),
+      read: false,
+    }
+    notificationHistory.value = [entry, ...notificationHistory.value].slice(0, NOTIF_MAX)
+    _persistNotifications()
+    if (!opts.silent) {
+      const isDm = opts.category === 'dm'
+      _fireNotification(opts.title, opts.preview ?? '', isDm, opts.authorName ?? '', opts.preview ?? '')
+    }
+  }
 
   // ── Callback pour rafraîchir les DMs en temps réel ──────────────────────
   type DmRefreshCb = (message?: unknown) => void
@@ -372,27 +427,16 @@ export const useAppStore = defineStore('app', () => {
         } else {
           // Badge unread
           unreadDms.value = { ...unreadDms.value, [senderName]: (unreadDms.value[senderName] ?? 0) + 1 }
-          const dmEntry: NotifEntry = {
-            id:          `${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
-            channelId:   null,
-            channelName: senderName,
+          addNotification({
+            category: 'dm',
+            title: `\u2709\uFE0F Message de ${senderName}`,
+            preview: preview ?? '',
+            authorName: senderName,
             dmStudentId,
-            promoId:     promoId ?? null,
-            authorName:  senderName,
-            isMention:   true,
-            timestamp:   Date.now(),
-            read:        false,
-          }
-          notificationHistory.value = [dmEntry, ...notificationHistory.value].slice(0, NOTIFICATION_HISTORY_LIMIT)
-
-          // Notification (sauf si DM muté)
-          if (!isDmMuted(senderName)) {
-            _fireNotification(
-              `\u2709\uFE0F Message de ${senderName}`,
-              preview ?? '',
-              true, senderName, preview ?? '',
-            )
-          }
+            promoId: promoId ?? null,
+            channelName: senderName,
+            silent: isDmMuted(senderName),
+          })
         }
         return
       }
@@ -429,27 +473,16 @@ export const useAppStore = defineStore('app', () => {
 
       // Historique + notification (si pas dans le canal)
       if (channelId !== activeChannelId.value) {
-        const entry: NotifEntry = {
-          id:          `${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+        addNotification({
+          category: isMention ? 'mention' : 'message',
+          title: isMention ? `\uD83D\uDCE3 Mention dans #${channelName ?? 'canal'}` : `Message dans #${channelName ?? 'canal'}`,
+          preview: preview ? `${authorName ?? ''}: ${preview}` : '',
+          authorName: authorName ?? '',
           channelId,
           channelName: channelName ?? 'Inconnu',
-          dmStudentId: null,
-          promoId:     promoId ?? null,
-          authorName:  authorName ?? '',
-          isMention,
-          timestamp:   Date.now(),
-          read:        false,
-        }
-        notificationHistory.value = [entry, ...notificationHistory.value].slice(0, NOTIFICATION_HISTORY_LIMIT)
-
-        // Notification uniquement pour les mentions (pas les messages normaux de canal)
-        if (isMention) {
-          _fireNotification(
-            `\uD83D\uDCE3 Mention dans #${channelName ?? 'canal'}`,
-            preview ? `${authorName ?? ''}: ${preview}` : authorName ?? '',
-            false, authorName ?? '', preview ?? '',
-          )
-        }
+          promoId: promoId ?? null,
+          silent: !isMention, // Pas de son/notif pour les messages normaux
+        })
       }
     })
   }
@@ -465,7 +498,7 @@ export const useAppStore = defineStore('app', () => {
     restoreSession, login, logout, impersonate, clearMustChangePassword,
     startSimulation, stopSimulation,
     openChannel, openDm, markRead, markDmRead, markAllRead, loadTaChannels,
-    muteDm, unmuteDm, isDmMuted,
+    addNotification, muteDm, unmuteDm, isDmMuted,
     onlineUsers, isUserOnline, sessionExpiredMessage,
     initUnreadListener, initOnlineListener, initSocketListener, initPresenceListener, initAuthExpiredListener,
     onDmRefresh, offDmRefresh,

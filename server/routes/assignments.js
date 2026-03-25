@@ -35,7 +35,27 @@ router.get('/:id',                      wrap((req) => queries.getTravailById(Num
 router.get('/:id/suivi',                wrap((req) => queries.getTravauxSuivi(Number(req.params.id))))
 router.get('/:id/group-members',        wrap((req) => queries.getTravailGroupMembers(Number(req.params.id))))
 router.post('/', requireTeacher, validate(createAssignmentSchema), wrap((req) => queries.createTravail(req.body)))
-router.post('/publish',                 requireTeacher, wrap((req) => queries.updateTravailPublished(req.body)))
+router.post('/publish', requireTeacher, async (req, res) => {
+  try {
+    const result = queries.updateTravailPublished(req.body)
+    // Notifier les etudiants quand un devoir est publie
+    if (req.body.published && req.body.id) {
+      const io = req.app.get('io')
+      if (io) {
+        const travail = queries.getTravailById?.(req.body.id)
+        if (travail?.promo_id) {
+          io.to(`promo:${travail.promo_id}`).emit('assignment:new', {
+            title: travail.title,
+            category: travail.category || null,
+            deadline: travail.deadline || null,
+            promoId: travail.promo_id,
+          })
+        }
+      }
+    }
+    res.json({ ok: true, data: result })
+  } catch (err) { res.status(400).json({ ok: false, error: err.message }) }
+})
 router.post('/group-member',            requireTeacher, wrap((req) => queries.setTravailGroupMember(req.body)))
 router.post('/:id/mark-missing',        requireTeacher, wrap((req) => queries.markNonSubmittedAsD(Number(req.params.id))))
 router.delete('/:id',                   requireTeacher, wrap((req) => queries.deleteTravail(Number(req.params.id))))
