@@ -4,7 +4,7 @@ const { z }   = require('zod')
 const queries = require('../db/index')
 const { validate } = require('../middleware/validate')
 const wrap         = require('../utils/wrap')
-const { requireTeacher, requirePromo, promoFromChannel, requireMessageOwner } = require('../middleware/authorize')
+const { requireTeacher, requirePromo, promoFromChannel, requireMessageOwner, requireDmParticipant } = require('../middleware/authorize')
 
 // ── Schémas de validation ─────────────────────────────────────────────────────
 const sendMessageSchema = z.object({
@@ -32,12 +32,12 @@ const reportSchema = z.object({
 
 // ── Lecture ───────────────────────────────────────────────────────────────────
 router.get('/channel/:channelId',       requirePromo(promoFromChannel), wrap((req) => queries.getChannelMessages(Number(req.params.channelId))))
-router.get('/dm/:studentId',            wrap((req) => queries.getDmMessages(Number(req.params.studentId))))
+router.get('/dm/:studentId',            requireDmParticipant, wrap((req) => queries.getDmMessages(Number(req.params.studentId))))
 router.get('/channel/:channelId/page',  requirePromo(promoFromChannel), wrap((req) => {
   const before = req.query.before ? Number(req.query.before) : null
   return queries.getChannelMessagesPage(Number(req.params.channelId), before)
 }))
-router.get('/dm/:studentId/page', wrap((req) => {
+router.get('/dm/:studentId/page', requireDmParticipant, wrap((req) => {
   const before = req.query.before ? Number(req.query.before) : null
   const peer   = req.query.peer ? Number(req.query.peer) : null
   return queries.getDmMessagesPage(Number(req.params.studentId), before, peer)
@@ -48,8 +48,8 @@ router.post('/search-all', wrap((req) => {
   return queries.searchAllMessages(promoId ?? null, query, limit ?? 8, userId ?? null)
 }))
 router.get('/pinned/:channelId', requirePromo(promoFromChannel), wrap((req) => queries.getPinnedMessages(Number(req.params.channelId))))
-router.get('/dm-contacts/:studentId', wrap((req) => queries.getRecentDmContacts(Number(req.params.studentId), Number(req.query.limit) || 15)))
-router.get('/dm/:studentId/search', wrap((req) => {
+router.get('/dm-contacts/:studentId', requireDmParticipant, wrap((req) => queries.getRecentDmContacts(Number(req.params.studentId), Number(req.query.limit) || 15)))
+router.get('/dm/:studentId/search', requireDmParticipant, wrap((req) => {
   const peer = req.query.peer ? Number(req.query.peer) : null
   return queries.searchDmMessages(Number(req.params.studentId), req.query.q, peer)
 }))
@@ -67,6 +67,10 @@ router.post('/', validate(sendMessageSchema), (req, res) => {
 
     // ── Sécurité : valider le destinataire DM ────────────────────────────────
     if (payload.dmStudentId) {
+      // Un étudiant ne peut envoyer un DM que dans sa propre boîte
+      if (req.user.type === 'student' && payload.dmStudentId !== req.user.id) {
+        return res.status(403).json({ ok: false, error: 'Vous ne pouvez envoyer des messages que dans vos propres conversations.' })
+      }
       const { getDb } = require('../db/connection')
       const exists = getDb().prepare('SELECT id FROM students WHERE id = ?').get(payload.dmStudentId)
       if (!exists) {
