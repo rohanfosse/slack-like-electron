@@ -3,7 +3,7 @@
   import {
     FileText, Image, Link2, Video, File, Plus, Trash2,
     ExternalLink, Download, Search, X, Upload, FolderOpen, Eye, CheckCircle2, Menu,
-    LayoutGrid, List, Star, Copy, Pencil,
+    LayoutGrid, List, Grid3x3, Star, Copy, Pencil,
     BookOpen, Github, Linkedin, Globe, Package, HelpCircle, BookMarked, FileSpreadsheet,
   } from 'lucide-vue-next'
   import type { Component } from 'vue'
@@ -43,8 +43,8 @@
 
   // ── View mode: grid vs list (persisté en localStorage) ───────────────
   const VIEW_MODE_KEY = 'cc_docs_view_mode'
-  const viewMode = ref<'grid' | 'list'>(
-    (localStorage.getItem(VIEW_MODE_KEY) as 'grid' | 'list') ?? 'grid',
+  const viewMode = ref<'grid' | 'list' | 'dense'>(
+    (localStorage.getItem(VIEW_MODE_KEY) as 'grid' | 'list' | 'dense') ?? 'grid',
   )
   watch(viewMode, (v) => localStorage.setItem(VIEW_MODE_KEY, v))
 
@@ -106,19 +106,27 @@
     addDescription,
     addType,
     addLink,
-    addFile,
-    addFileName,
+    addFiles,
     addProject,
     addTravailId,
     newCatName,
     projectList,
     travailList,
     adding,
+    uploadProgress,
+    uploadCurrentIndex,
+    uploadTotal,
+    modalDragOver,
     openAddModal,
     pickFile,
+    removeFile,
     clearFile,
     submitAdd,
     detectCategory,
+    onModalDragEnter,
+    onModalDragLeave,
+    onModalDragOver,
+    onModalDrop,
   } = useDocumentsAdd()
 
   // ── Edit modal ──────────────────────────────────────────────────────────
@@ -179,20 +187,28 @@
         </div>
         <span v-if="searchResultsCount !== null" class="docs-results-count">{{ searchResultsCount }} résultat{{ searchResultsCount !== 1 ? 's' : '' }}</span>
 
-        <!-- Toggle grille / liste -->
+        <!-- Toggle grille / dense / liste -->
         <div class="docs-view-toggle">
           <button
             class="docs-view-btn"
             :class="{ active: viewMode === 'grid' }"
-            title="Affichage grille"
+            title="Grille"
             @click="viewMode = 'grid'"
           >
             <LayoutGrid :size="15" />
           </button>
           <button
             class="docs-view-btn"
+            :class="{ active: viewMode === 'dense' }"
+            title="Dense"
+            @click="viewMode = 'dense'"
+          >
+            <Grid3x3 :size="15" />
+          </button>
+          <button
+            class="docs-view-btn"
             :class="{ active: viewMode === 'list' }"
-            title="Affichage liste"
+            title="Liste"
             @click="viewMode = 'list'"
           >
             <List :size="15" />
@@ -248,6 +264,34 @@
       </button>
     </div>
 
+    <!-- ── Stats bar (prof only) ──────────────────────────────────────── -->
+    <div v-if="appStore.isTeacher && docStore.documents.length" class="docs-stats-bar">
+      <div class="docs-stat">
+        <span class="docs-stat-value">{{ docStore.documents.length }}</span>
+        <span class="docs-stat-label">documents</span>
+      </div>
+      <div class="docs-stat-sep" />
+      <div class="docs-stat">
+        <span class="docs-stat-value">{{ docStore.documents.filter(d => d.type === 'file').length }}</span>
+        <span class="docs-stat-label">fichiers</span>
+      </div>
+      <div class="docs-stat-sep" />
+      <div class="docs-stat">
+        <span class="docs-stat-value">{{ docStore.documents.filter(d => d.type === 'link').length }}</span>
+        <span class="docs-stat-label">liens</span>
+      </div>
+      <div class="docs-stat-sep" />
+      <div class="docs-stat">
+        <span class="docs-stat-value">{{ docStore.documents.filter(d => isRecent(d.created_at)).length }}</span>
+        <span class="docs-stat-label">cette semaine</span>
+      </div>
+      <div class="docs-stat-sep" />
+      <div class="docs-stat">
+        <span class="docs-stat-value">{{ categories.length }}</span>
+        <span class="docs-stat-label">catégories</span>
+      </div>
+    </div>
+
     <!-- ── Contenu ─────────────────────────────────────────────────────── -->
     <div class="docs-body">
 
@@ -260,7 +304,44 @@
         </div>
       </template>
 
-      <!-- Documents groupés par catégorie -->
+      <!-- ── Dense mode (flat grid, no categories) ── -->
+      <template v-else-if="filtered.length && viewMode === 'dense'">
+        <div class="docs-grid docs-grid--dense">
+          <div
+            v-for="doc in filtered"
+            :key="doc.id"
+            class="doc-card doc-card--dense"
+            :class="{ 'doc-card--fav': docStore.isFavorite(doc.id) }"
+            :title="doc.description ?? doc.name"
+            @click="openDoc(doc)"
+          >
+            <button
+              class="doc-card-fav doc-card-fav--dense"
+              :class="{ 'doc-card-fav--active': docStore.isFavorite(doc.id) }"
+              @click.stop="docStore.toggleFavorite(doc.id)"
+            >
+              <Star :size="10" />
+            </button>
+            <div class="doc-dense-icon" :style="{ background: iconColors[docIconType(doc)] + '1A', color: iconColors[docIconType(doc)] }">
+              <component :is="TYPE_ICON_MAP[docIconType(doc)] ?? File" :size="18" />
+            </div>
+            <p class="doc-dense-name">{{ doc.name }}</p>
+            <span class="doc-dense-meta">{{ formatDate(doc.created_at) }}</span>
+
+            <div class="doc-card-actions" @click.stop>
+              <button class="doc-card-action-btn" title="Copier le lien" @click="copyDocLink(doc)"><Copy :size="12" /></button>
+              <button class="doc-card-action-btn" :title="doc.type === 'link' ? 'Ouvrir' : 'Aperçu'" @click="openDoc(doc)">
+                <Eye v-if="doc.type === 'file'" :size="12" />
+                <ExternalLink v-else :size="12" />
+              </button>
+              <button v-if="doc.type === 'file'" class="doc-card-action-btn" title="Télécharger" @click="api.downloadFile(doc.content)"><Download :size="12" /></button>
+              <button v-if="appStore.isTeacher" class="doc-card-action-btn doc-card-action-btn--danger" title="Supprimer" @click="deleteDoc(doc.id)"><Trash2 :size="12" /></button>
+            </div>
+          </div>
+        </div>
+      </template>
+
+      <!-- ── Normal grouped view (grid / list) ── -->
       <template v-else-if="filtered.length">
         <template v-for="[cat, docs] in byCategory" :key="cat">
           <div v-if="byCategory.size > 1" class="docs-group-header">
@@ -268,15 +349,34 @@
             <span class="docs-group-count">{{ docs.length }} fichier{{ docs.length > 1 ? 's' : '' }}</span>
           </div>
 
+          <!-- List header (sortable columns) -->
+          <div v-if="viewMode === 'list'" class="docs-list-header">
+            <span class="docs-lh-icon" />
+            <button class="docs-lh-col docs-lh-col--name" :class="{ active: sortBy === 'name' }" @click="sortBy = 'name'">Nom</button>
+            <button class="docs-lh-col docs-lh-col--type" :class="{ active: sortBy === 'type' }" @click="sortBy = 'type'">Type</button>
+            <button class="docs-lh-col docs-lh-col--date" :class="{ active: sortBy === 'date' }" @click="sortBy = 'date'">Date</button>
+            <span class="docs-lh-col docs-lh-col--actions" />
+          </div>
+
           <div class="docs-grid" :class="{ 'docs-grid--list': viewMode === 'list' }">
             <div
               v-for="doc in docs"
               :key="doc.id"
               class="doc-card"
-              :class="{ 'doc-card--list': viewMode === 'list' }"
+              :class="{ 'doc-card--list': viewMode === 'list', 'doc-card--fav': docStore.isFavorite(doc.id) }"
               :title="doc.description ?? doc.name"
               @click="openDoc(doc)"
             >
+              <!-- Favorite star (always visible) -->
+              <button
+                class="doc-card-fav"
+                :class="{ 'doc-card-fav--active': docStore.isFavorite(doc.id) }"
+                :title="docStore.isFavorite(doc.id) ? 'Retirer des favoris' : 'Ajouter aux favoris'"
+                @click.stop="docStore.toggleFavorite(doc.id)"
+              >
+                <Star :size="13" />
+              </button>
+
               <div class="doc-card-icon" :style="{ background: iconColors[docIconType(doc)] + '1A', color: iconColors[docIconType(doc)] }">
                 <component :is="TYPE_ICON_MAP[docIconType(doc)] ?? File" :size="viewMode === 'list' ? 20 : 28" />
               </div>
@@ -289,6 +389,8 @@
                 {{ doc.name }}
                 <span v-if="isRecent(doc.created_at)" class="doc-new-badge">Nouveau</span>
               </p>
+
+              <p v-if="doc.description" class="doc-card-desc">{{ doc.description }}</p>
 
               <span v-if="doc.travail_title" class="doc-devoir-badge">
                 <BookMarked :size="10" />
@@ -385,34 +487,57 @@
         <!-- Toggle fichier / lien -->
         <div class="da-type-row">
           <button class="da-type-btn" :class="{ active: addType === 'file' }" type="button" @click="addType = 'file'">
-            <Upload :size="15" /> Fichier
+            <Upload :size="15" /> Fichier{{ addFiles.length > 1 ? 's' : '' }}
           </button>
           <button class="da-type-btn" :class="{ active: addType === 'link' }" type="button" @click="addType = 'link'">
             <Link2 :size="15" /> Lien URL
           </button>
         </div>
 
-        <!-- Zone de dépôt fichier -->
-        <div v-if="addType === 'file'" class="da-drop-zone">
-          <div v-if="addFile" class="da-file-selected">
-            <CheckCircle2 :size="20" class="da-file-icon" />
-            <div class="da-file-info">
-              <span class="da-file-name">{{ addFileName }}</span>
-              <span class="da-file-hint">Fichier prêt à être envoyé</span>
+        <!-- Zone de dépôt fichier (drag & drop) -->
+        <div
+          v-if="addType === 'file'"
+          class="da-drop-zone"
+          :class="{ 'da-drop-zone--active': modalDragOver }"
+          @dragenter="onModalDragEnter"
+          @dragleave="onModalDragLeave"
+          @dragover="onModalDragOver"
+          @drop="onModalDrop"
+        >
+          <!-- Fichiers sélectionnés -->
+          <div v-if="addFiles.length" class="da-files-list">
+            <div v-for="(f, idx) in addFiles" :key="f.path" class="da-file-selected">
+              <CheckCircle2 :size="16" class="da-file-icon" />
+              <div class="da-file-info">
+                <span class="da-file-name">{{ f.name }}</span>
+              </div>
+              <button class="da-file-clear" type="button" title="Retirer" @click="removeFile(idx)">
+                <X :size="14" />
+              </button>
             </div>
-            <button class="da-file-clear" type="button" title="Changer de fichier" @click="clearFile">
-              <X :size="14" />
+            <button class="da-add-more" type="button" @click="pickFile">
+              <Plus :size="14" /> Ajouter d'autres fichiers
             </button>
           </div>
           <button v-else class="da-file-picker" type="button" @click="pickFile">
             <Upload :size="24" class="da-picker-icon" />
-            <span class="da-picker-label">Cliquer ou glisser un fichier ici</span>
-            <span class="da-picker-hint">PDF, Word, Excel, images, vidéos, archives</span>
+            <span class="da-picker-label">Cliquer ou glisser des fichiers ici</span>
+            <span class="da-picker-hint">PDF, Word, Excel, images, vidéos, archives — sélection multiple possible</span>
           </button>
         </div>
 
+        <!-- Barre de progression -->
+        <div v-if="adding && uploadTotal > 0" class="da-progress">
+          <div class="da-progress-bar">
+            <div class="da-progress-fill" :style="{ width: uploadProgress + '%' }" />
+          </div>
+          <span class="da-progress-text">
+            Fichier {{ uploadCurrentIndex }}/{{ uploadTotal }}… {{ uploadProgress }}%
+          </span>
+        </div>
+
         <!-- URL -->
-        <div v-else class="da-field">
+        <div v-if="addType === 'link'" class="da-field">
           <label class="da-label">Adresse URL</label>
           <input
             v-model="addLink"
@@ -423,8 +548,8 @@
           />
         </div>
 
-        <!-- Nom -->
-        <div class="da-field">
+        <!-- Nom (masqué si multi-fichiers, chaque fichier utilise son nom) -->
+        <div v-if="addType === 'link' || addFiles.length <= 1" class="da-field">
           <label class="da-label">Nom du document</label>
           <input v-model="addName" type="text" class="da-input" placeholder="ex : Cours réseaux - chapitre 3" autofocus />
         </div>
@@ -472,9 +597,74 @@
           <button type="button" class="btn-ghost" @click="showAddModal = false">Annuler</button>
           <button
             type="submit" class="btn-primary da-submit"
-            :disabled="!addName.trim() || (addType === 'file' && !addFile) || (addType === 'link' && !addLink.trim()) || adding"
+            :disabled="(addType === 'file' ? !addFiles.length : (!addName.trim() || !addLink.trim())) || (addType === 'file' && addFiles.length === 1 && !addName.trim()) || adding"
           >
-            {{ adding ? 'Envoi en cours…' : 'Ajouter' }}
+            {{ adding
+              ? (uploadTotal > 1 ? `Envoi ${uploadCurrentIndex}/${uploadTotal}…` : 'Envoi en cours…')
+              : (addFiles.length > 1 ? `Ajouter ${addFiles.length} fichiers` : 'Ajouter')
+            }}
+          </button>
+        </div>
+      </form>
+    </Modal>
+
+    <!-- ── Modal édition ───────────────────────────────────────────────── -->
+    <Modal v-model="showEditModal" title="Modifier le document" max-width="520px">
+      <form class="da" @submit.prevent="submitEdit">
+
+        <!-- Nom -->
+        <div class="da-field">
+          <label class="da-label">Nom du document</label>
+          <input v-model="editName" type="text" class="da-input" placeholder="ex : Cours réseaux - chapitre 3" autofocus />
+        </div>
+
+        <!-- Catégorie — pills -->
+        <div class="da-field">
+          <label class="da-label">Catégorie</label>
+          <div class="da-cat-pills">
+            <button
+              v-for="cat in CATEGORIES"
+              :key="cat.id"
+              type="button"
+              class="da-cat-pill"
+              :class="{ active: editCategory === cat.label }"
+              :style="editCategory === cat.label ? { background: cat.color + '22', color: cat.color, borderColor: cat.color } : {}"
+              @click="editCategory = cat.label"
+            >
+              <component :is="cat.icon" :size="12" />
+              {{ cat.label }}
+            </button>
+          </div>
+        </div>
+
+        <!-- Lien vers un devoir -->
+        <div v-if="editTravailList.length" class="da-field">
+          <label class="da-label">Lien vers un devoir <span class="da-hint">(optionnel)</span></label>
+          <div class="da-travail-select-wrap">
+            <BookMarked :size="14" class="da-travail-icon" />
+            <select v-model="editTravailId" class="da-input da-travail-select">
+              <option :value="null">— Aucun —</option>
+              <option v-for="t in editTravailList" :key="t.id" :value="t.id">
+                {{ t.title }}{{ t.category ? ` · ${t.category}` : '' }}
+              </option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Description -->
+        <div class="da-field">
+          <label class="da-label">Description <span class="da-hint">(optionnelle)</span></label>
+          <textarea v-model="editDescription" class="da-input da-textarea" rows="2" placeholder="Brève description, consignes, contexte…" />
+        </div>
+
+        <!-- Footer -->
+        <div class="da-footer">
+          <button type="button" class="btn-ghost" @click="showEditModal = false">Annuler</button>
+          <button
+            type="submit" class="btn-primary da-submit"
+            :disabled="!editName.trim() || saving"
+          >
+            {{ saving ? 'Enregistrement…' : 'Enregistrer' }}
           </button>
         </div>
       </form>
@@ -719,6 +909,26 @@
 }
 
 /* ── Corps ── */
+/* ── Stats bar (prof) ── */
+.docs-stats-bar {
+  display: flex; align-items: center; gap: 12px;
+  padding: 8px 20px; flex-shrink: 0;
+  background: var(--bg-sidebar);
+  border-bottom: 1px solid var(--border);
+}
+.docs-stat {
+  display: flex; align-items: baseline; gap: 4px;
+}
+.docs-stat-value {
+  font-size: 15px; font-weight: 700; color: var(--text-primary);
+}
+.docs-stat-label {
+  font-size: 11px; color: var(--text-muted);
+}
+.docs-stat-sep {
+  width: 1px; height: 18px; background: var(--border); opacity: .5;
+}
+
 .docs-body {
   flex: 1;
   overflow-y: auto;
@@ -806,6 +1016,31 @@
   flex-shrink: 0;
   margin-bottom: 12px;
 }
+
+/* Favorite star (always visible) */
+.doc-card-fav {
+  position: absolute; top: 8px; left: 8px; z-index: 2;
+  display: flex; align-items: center; justify-content: center;
+  width: 26px; height: 26px; border-radius: 50%;
+  border: none; background: transparent;
+  color: var(--text-muted); cursor: pointer;
+  opacity: .3; transition: all .15s;
+}
+.doc-card:hover .doc-card-fav,
+.doc-card-fav--active { opacity: 1; }
+.doc-card-fav--active { color: #f59e0b; }
+.doc-card-fav:hover { transform: scale(1.15); }
+
+/* Description (truncated) */
+.doc-card-desc {
+  font-size: 11px; color: var(--text-muted);
+  line-height: 1.3; margin-bottom: 4px;
+  display: -webkit-box; -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical; overflow: hidden;
+}
+
+/* Fav border accent */
+.doc-card--fav { border-color: rgba(245,158,11,.2); }
 
 .doc-card-type-badge {
   position: absolute;
@@ -926,7 +1161,8 @@
 .da-type-btn:hover { background: var(--bg-hover); color: var(--text-primary); }
 .da-type-btn.active { background: var(--accent); color: #fff; }
 
-.da-drop-zone { margin: 0; }
+.da-drop-zone { margin: 0; transition: border-color .2s, background .2s; border-radius: 12px; }
+.da-drop-zone--active { border-color: var(--accent) !important; background: rgba(74,144,217,.08) !important; }
 .da-file-picker {
   width: 100%; display: flex; flex-direction: column; align-items: center; gap: 8px;
   padding: 28px 16px; border: 2px dashed var(--border-input); border-radius: 12px;
@@ -938,21 +1174,47 @@
 .da-picker-label { font-size: 13px; font-weight: 600; }
 .da-picker-hint { font-size: 11px; opacity: .5; }
 
+.da-files-list {
+  display: flex; flex-direction: column; gap: 6px;
+  border: 2px dashed var(--border-input); border-radius: 12px;
+  padding: 10px;
+}
 .da-file-selected {
-  display: flex; align-items: center; gap: 10px;
-  padding: 12px 14px; border: 1.5px solid var(--color-success); border-radius: 10px;
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 10px; border: 1px solid var(--color-success); border-radius: 8px;
   background: rgba(39,174,96,.06);
 }
 .da-file-icon { color: var(--color-success); flex-shrink: 0; }
 .da-file-info { flex: 1; min-width: 0; display: flex; flex-direction: column; }
-.da-file-name { font-size: 13px; font-weight: 600; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.da-file-name { font-size: 12px; font-weight: 600; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .da-file-hint { font-size: 11px; color: var(--color-success); }
 .da-file-clear {
-  width: 28px; height: 28px; display: flex; align-items: center; justify-content: center;
+  width: 24px; height: 24px; display: flex; align-items: center; justify-content: center;
   border-radius: 6px; background: transparent; border: none; color: var(--text-muted);
   cursor: pointer; transition: all .15s; flex-shrink: 0;
 }
 .da-file-clear:hover { background: rgba(231,76,60,.1); color: var(--color-danger); }
+.da-add-more {
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  padding: 6px 10px; border: 1px dashed var(--border-input); border-radius: 8px;
+  background: transparent; color: var(--text-muted);
+  font-family: var(--font); font-size: 12px; cursor: pointer; transition: all .15s;
+}
+.da-add-more:hover { border-color: var(--accent); color: var(--accent); background: rgba(74,144,217,.04); }
+
+/* ── Barre de progression upload ── */
+.da-progress { margin-top: 4px; }
+.da-progress-bar {
+  height: 6px; border-radius: 3px; background: var(--bg-hover); overflow: hidden;
+}
+.da-progress-fill {
+  height: 100%; background: var(--accent); border-radius: 3px;
+  transition: width .3s ease;
+}
+.da-progress-text {
+  display: block; margin-top: 4px;
+  font-size: 11px; color: var(--text-muted); text-align: center;
+}
 
 /* ── Pills catégorie ── */
 .da-cat-pills { display: flex; flex-wrap: wrap; gap: 6px; }
@@ -1206,6 +1468,43 @@
   gap: 4px;
 }
 
+/* ── Dense mode ── */
+.docs-grid--dense {
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 8px;
+}
+.doc-card--dense {
+  padding: 10px 10px 8px;
+  gap: 0;
+  align-items: center;
+  text-align: center;
+}
+.doc-card--dense .doc-card-fav--dense {
+  position: absolute; top: 4px; left: 4px;
+  width: 20px; height: 20px;
+}
+.doc-dense-icon {
+  width: 36px; height: 36px; border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 6px;
+}
+.doc-dense-name {
+  font-size: 11px; font-weight: 600; color: var(--text-primary);
+  line-height: 1.3;
+  display: -webkit-box; -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical; overflow: hidden;
+  margin: 0 0 2px; word-break: break-word;
+}
+.doc-dense-meta {
+  font-size: 9px; color: var(--text-muted);
+}
+.doc-card--dense .doc-card-actions {
+  gap: 3px; padding: 4px;
+}
+.doc-card--dense .doc-card-action-btn {
+  width: 26px; height: 26px; border-radius: 6px;
+}
+
 .doc-card--list {
   flex-direction: row;
   align-items: center;
@@ -1273,7 +1572,30 @@
   color: var(--color-success);
   vertical-align: middle;
   margin-left: 4px;
+  animation: doc-new-pulse 2s ease-in-out infinite;
 }
+@keyframes doc-new-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: .5; }
+}
+
+/* ── List header (sortable columns) ── */
+.docs-list-header {
+  display: grid;
+  grid-template-columns: 36px 1fr 80px 100px 80px;
+  gap: 8px; align-items: center;
+  padding: 6px 14px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 4px;
+}
+.docs-lh-col {
+  font-size: 11px; font-weight: 600; color: var(--text-muted);
+  text-transform: uppercase; letter-spacing: .3px;
+  border: none; background: transparent; cursor: pointer;
+  text-align: left; padding: 2px 0;
+  transition: color .15s; font-family: var(--font);
+}
+.docs-lh-col:hover, .docs-lh-col.active { color: var(--accent); }
 
 /* ── File size badge ── */
 .doc-card-size {

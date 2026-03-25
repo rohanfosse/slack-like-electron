@@ -74,13 +74,40 @@ export const useDocumentsStore = defineStore('documents', () => {
     return data !== null
   }
 
-  function openPreview(doc: AppDocument) { previewDoc.value = doc }
+  // Liste de navigation (documents filtres actuels)
+  const previewList = ref<AppDocument[]>([])
+
+  function openPreview(doc: AppDocument, list?: AppDocument[]) {
+    previewDoc.value = doc
+    if (list) previewList.value = list
+  }
   function closePreview() { previewDoc.value = null }
+
+  function previewNext() {
+    if (!previewDoc.value || !previewList.value.length) return
+    const idx = previewList.value.findIndex(d => d.id === previewDoc.value!.id)
+    if (idx >= 0 && idx < previewList.value.length - 1) {
+      previewDoc.value = previewList.value[idx + 1]
+    }
+  }
+  function previewPrev() {
+    if (!previewDoc.value || !previewList.value.length) return
+    const idx = previewList.value.findIndex(d => d.id === previewDoc.value!.id)
+    if (idx > 0) {
+      previewDoc.value = previewList.value[idx - 1]
+    }
+  }
+  function previewIndex(): { current: number; total: number } {
+    if (!previewDoc.value || !previewList.value.length) return { current: 0, total: 0 }
+    const idx = previewList.value.findIndex(d => d.id === previewDoc.value!.id)
+    return { current: idx + 1, total: previewList.value.length }
+  }
 
   return {
     documents, categories, loading, searchQuery,
-    activeCategory, previewDoc, favoriteIds,
+    activeCategory, previewDoc, previewList, favoriteIds,
     fetchDocuments, addDocument, updateDocument, deleteDocument,
-    openPreview, closePreview, toggleFavorite, isFavorite,
+    openPreview, closePreview, previewNext, previewPrev, previewIndex,
+    toggleFavorite, isFavorite,
   }
 })

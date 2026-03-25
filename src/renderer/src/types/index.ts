@@ -124,6 +124,7 @@ export interface AppDocument {
   id: number
   channel_id: number | null
   promo_id: number | null
+  project?: string | null
   name: string
   type: 'file' | 'link'
   content: string

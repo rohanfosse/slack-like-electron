@@ -9,8 +9,9 @@
   import ContextMenu from '@/components/ui/ContextMenu.vue'
   import type { ContextMenuItem } from '@/components/ui/ContextMenu.vue'
   import { parseCategoryIcon } from '@/utils/categoryIcon'
-  import { useAppStore }    from '@/stores/app'
-  import { useModalsStore } from '@/stores/modals'
+  import { useAppStore }       from '@/stores/app'
+  import { useModalsStore }    from '@/stores/modals'
+  import { useDocumentsStore } from '@/stores/documents'
   import PromoRail          from './PromoRail.vue'
   import ChannelItem        from './ChannelItem.vue'
   import SidebarDashboard   from './SidebarDashboard.vue'
@@ -26,6 +27,7 @@
 
   const appStore = useAppStore()
   const modals   = useModalsStore()
+  const docStore = useDocumentsStore()
   const route    = useRoute()
   const router   = useRouter()
 
@@ -63,6 +65,28 @@
     onProjectCreated, selectProject, dashboardProjectGroups,
     editingProject, getProjectMeta, saveProjectMeta, deleteProject, getProjectColor,
   } = useSidebarProjects(visibleChannels)
+
+  // ── Documents sidebar helpers ────────────────────────────────────────────
+  const docCategories = computed(() => {
+    const cats = new Set(docStore.documents.map(d => d.category ?? 'Général'))
+    return Array.from(cats).sort()
+  })
+  const projectDocCounts = computed(() => {
+    const counts: Record<string, number> = {}
+    for (const d of docStore.documents) {
+      const p = d.project ?? ''
+      counts[p] = (counts[p] ?? 0) + 1
+    }
+    return counts
+  })
+  const docCatCounts = computed(() => {
+    const counts: Record<string, number> = {}
+    for (const d of docStore.documents) {
+      const cat = d.category ?? 'Général'
+      counts[cat] = (counts[cat] ?? 0) + 1
+    }
+    return counts
+  })
 
   // ── Project context menu ──────────────────────────────────────────────────
   function openProjectCtx(e: MouseEvent, proj: string) {
@@ -296,29 +320,46 @@
           <button
             class="sidebar-item"
             :class="{ active: appStore.activeProject === null }"
-            @click="appStore.activeProject = null"
+            @click="appStore.activeProject = null; docStore.activeCategory = ''"
           >
             <FolderOpen :size="13" class="project-icon" />
             <span class="channel-name">Tous les documents</span>
+            <span v-if="docStore.documents.length" class="sidebar-doc-count">{{ docStore.documents.length }}</span>
           </button>
 
           <!-- Projets -->
-          <button
-            v-for="proj in allProjects"
-            :key="proj"
-            class="sidebar-item"
-            :class="{ active: appStore.activeProject === proj }"
-            @click="appStore.activeProject = proj"
-          >
-            <component
-              v-if="parseCategoryIcon(proj).icon"
-              :is="parseCategoryIcon(proj).icon!"
-              :size="13"
-              class="project-icon"
-            />
-            <span v-else class="project-bullet" />
-            <span class="channel-name">{{ parseCategoryIcon(proj).label }}</span>
-          </button>
+          <template v-for="proj in allProjects" :key="proj">
+            <button
+              class="sidebar-item"
+              :class="{ active: appStore.activeProject === proj }"
+              @click="appStore.activeProject = proj; docStore.activeCategory = ''"
+            >
+              <component
+                v-if="parseCategoryIcon(proj).icon"
+                :is="parseCategoryIcon(proj).icon!"
+                :size="13"
+                class="project-icon"
+              />
+              <span v-else class="project-bullet" />
+              <span class="channel-name">{{ parseCategoryIcon(proj).label }}</span>
+              <span class="sidebar-doc-count">{{ projectDocCounts[proj] ?? 0 }}</span>
+            </button>
+
+            <!-- Categories sous le projet actif -->
+            <template v-if="appStore.activeProject === proj && docCategories.length > 1">
+              <button
+                v-for="cat in docCategories"
+                :key="cat"
+                class="sidebar-item sidebar-item--sub"
+                :class="{ active: docStore.activeCategory === cat }"
+                @click="docStore.activeCategory = docStore.activeCategory === cat ? '' : cat"
+              >
+                <span class="sidebar-sub-dot" />
+                <span class="channel-name">{{ cat }}</span>
+                <span class="sidebar-doc-count">{{ docCatCounts[cat] ?? 0 }}</span>
+              </button>
+            </template>
+          </template>
         </nav>
       </template>
 
@@ -626,6 +667,21 @@
 .sidebar-all-docs-btn.section-documents.active { color: #27AE60; background: rgba(39,174,96,.08); }
 
 .sidebar-all-docs-icon { flex-shrink: 0; }
+
+/* Document count badge in sidebar */
+.sidebar-doc-count {
+  margin-left: auto; font-size: 10px; font-weight: 600;
+  color: var(--text-muted); background: var(--bg-hover);
+  padding: 1px 6px; border-radius: 8px; flex-shrink: 0;
+}
+
+/* Sub-items (categories under project) */
+.sidebar-item--sub { padding-left: 36px; }
+.sidebar-sub-dot {
+  width: 5px; height: 5px; border-radius: 50%;
+  background: var(--text-muted); opacity: .4; flex-shrink: 0;
+}
+.sidebar-item--sub.active .sidebar-sub-dot { background: var(--accent); opacity: 1; }
 
 /* Accent coloré selon la section active */
 .sidebar-section-indicator::before {

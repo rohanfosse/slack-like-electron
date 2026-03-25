@@ -139,7 +139,9 @@ export function useDocumentsData() {
     if (doc.type === 'link') {
       await openExternal(doc.content)
     } else {
-      docStore.openPreview(doc)
+      // Pass filtered list for prev/next navigation in preview
+      const fileList = filtered.value.filter(d => d.type !== 'link')
+      docStore.openPreview(doc, fileList)
       modals.documentPreview = true
     }
   }

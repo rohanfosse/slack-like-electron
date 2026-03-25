@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { watch, ref, computed, onBeforeUnmount } from 'vue'
-import { Download, ExternalLink, FileText, Image, Video, File, Table2, BookOpen, ZoomIn, ZoomOut } from 'lucide-vue-next'
+import { watch, ref, computed, onMounted, onBeforeUnmount } from 'vue'
+import { Download, ExternalLink, FileText, Image, Video, File, Table2, BookOpen, ZoomIn, ZoomOut, ChevronLeft, ChevronRight } from 'lucide-vue-next'
 import { useDocumentsStore } from '@/stores/documents'
 import { useOpenExternal }   from '@/composables/useOpenExternal'
 import Modal from '@/components/ui/Modal.vue'
@@ -27,6 +27,20 @@ function zoomOut() { zoomLevel.value = Math.max(50, zoomLevel.value - 25) }
 function zoomReset() { zoomLevel.value = 100 }
 
 const doc = computed(() => docStore.previewDoc)
+const navInfo = computed(() => docStore.previewIndex())
+const canPrev = computed(() => navInfo.value.current > 1)
+const canNext = computed(() => navInfo.value.current < navInfo.value.total)
+
+function goNext() { if (canNext.value) docStore.previewNext() }
+function goPrev() { if (canPrev.value) docStore.previewPrev() }
+
+function onKeydown(e: KeyboardEvent) {
+  if (!props.modelValue) return
+  if (e.key === 'ArrowRight' || e.key === 'ArrowDown') { e.preventDefault(); goNext() }
+  else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') { e.preventDefault(); goPrev() }
+}
+onMounted(() => window.addEventListener('keydown', onKeydown))
+onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
 
 // ── Nettoyage du blob URL précédent ──────────────────────────────────────────
 function revokeBlob() {
@@ -149,6 +163,14 @@ function openWith() {
     max-width="900px"
     @update:model-value="emit('update:modelValue', $event)"
   >
+    <!-- Navigation arrows -->
+    <button v-if="canPrev" class="preview-nav preview-nav--prev" title="Précédent (←)" @click="goPrev">
+      <ChevronLeft :size="24" />
+    </button>
+    <button v-if="canNext" class="preview-nav preview-nav--next" title="Suivant (→)" @click="goNext">
+      <ChevronRight :size="24" />
+    </button>
+
     <div class="preview-body">
 
       <!-- Chargement -->
@@ -246,7 +268,10 @@ function openWith() {
 
     <!-- Footer -->
     <div class="modal-footer preview-footer">
-      <span class="preview-footer-name">{{ doc?.name }}</span>
+      <div class="preview-footer-left">
+        <span class="preview-footer-name">{{ doc?.name }}</span>
+        <span v-if="navInfo.total > 1" class="preview-footer-counter">{{ navInfo.current }}/{{ navInfo.total }}</span>
+      </div>
       <div style="display:flex;gap:8px">
         <button
           v-if="doc?.type === 'file'"
@@ -273,6 +298,31 @@ function openWith() {
 </template>
 
 <style scoped>
+/* ── Navigation arrows ── */
+.preview-nav {
+  position: absolute; top: 50%; z-index: 10;
+  transform: translateY(-50%);
+  display: flex; align-items: center; justify-content: center;
+  width: 40px; height: 40px; border-radius: 50%;
+  background: rgba(0,0,0,.5); color: #fff;
+  border: 1px solid rgba(255,255,255,.15);
+  cursor: pointer; transition: all .2s;
+  backdrop-filter: blur(4px);
+}
+.preview-nav:hover { background: rgba(0,0,0,.7); transform: translateY(-50%) scale(1.08); }
+.preview-nav--prev { left: 12px; }
+.preview-nav--next { right: 12px; }
+
+.preview-footer-left {
+  display: flex; align-items: center; gap: 10px;
+  overflow: hidden; min-width: 0;
+}
+.preview-footer-counter {
+  font-size: 11px; font-weight: 600;
+  color: var(--text-muted); background: var(--bg-secondary);
+  padding: 2px 8px; border-radius: 10px; white-space: nowrap;
+}
+
 .preview-body {
   min-height: 420px;
   max-height: 68vh;
