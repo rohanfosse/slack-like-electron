@@ -71,7 +71,11 @@ Les formations s'appuient sur un patchwork d'outils : mails, groupes WhatsApp, M
 
 ### Messagerie temps reel
 
-Canaux par promotion, canaux d'annonce en lecture seule, messages prives. Reponses avec citation, reactions emoji, epinglage, mentions `@nom` et `@everyone`, recherche plein texte, notifications desktop. Commandes slash integrees : `/devoir`, `/doc`, `/annonce`, `/sondage`, `/code`.
+Canaux par promotion, canaux d'annonce en lecture seule, messages prives. Reponses avec citation, reactions emoji, epinglage, mentions `@nom` et `@everyone`, recherche plein texte, notifications desktop. Indicateur de frappe en temps reel. Commandes slash integrees : `/devoir`, `/doc`, `/annonce`, `/sondage`, `/code`.
+
+### Messages prives (DM)
+
+Conversations privees securisees entre etudiants et enseignants. Indicateur en ligne / hors ligne et indicateur de frappe dans le header. Envoi de fichiers et images par drag-and-drop ou bouton trombone. Cache de conversation (60s) pour un switch instantane entre DMs. Isolation totale : un etudiant ne peut acceder qu'a ses propres conversations.
 
 ### Devoirs et evaluation
 
@@ -81,15 +85,27 @@ Cinq types de devoirs : livrable, soutenance, CCTL, etude de cas, memoire. Mode 
 
 Sessions interactives avec trois formats : QCM (correction instantanee), sondages (vote libre), nuage de mots (reponses en direct). Resultats affiches en temps reel pour le pilote et partageables avec la classe.
 
-### Documents
+### Documents et ressources
 
-Upload fichiers et liens, categorisation, description. Visionneuse integree pour PDF, images, Word (.docx) et Excel (.xlsx). Drag and drop depuis n'importe quelle page.
+Upload fichiers et liens, categorisation (Moodle, GitHub, LinkedIn, Site Web, Package, Grille). Visionneuse integree pour PDF, images, Word (.docx) et Excel (.xlsx). Drag and drop depuis n'importe quelle page. Recherche et liaison de documents existants aux devoirs. Les ressources ajoutees a un devoir apparaissent automatiquement dans les documents du projet.
 
-### Dashboards
+### Dashboards personnalisables
 
-**Pilote** : layout Bento-box avec focus widget adaptatif, stats par promotion, frise chronologique, analytique (distribution notes, taux de depot), centre d'actions prioritaires.
+**Pilote** : layout Bento-box avec focus widget adaptatif, stats par promotion, frise chronologique interactive, analytique (distribution notes, taux de depot), centre d'actions prioritaires, todo persistant. Widgets optionnels : horloge, citation du jour, pomodoro, liens rapides, fichiers DM, calendrier semaine. Reorganisation par drag-and-drop en mode edition.
 
-**Etudiant** : widgets personnalisables (prochaines epreuves, livrables, soutenances, projet en cours, conversations recentes), notifications de notes en temps reel.
+**Etudiant** : widgets personnalisables et reorganisables par drag-and-drop (prochaines epreuves, livrables, soutenances, projet en cours, dernier retour, document recent). Widgets optionnels : horloge, citation du jour, calendrier des deadlines, progression globale, liens rapides, pomodoro.
+
+### Frise chronologique
+
+Vue timeline interactive des devoirs par projet. Zoom semaine / mois / trimestre / annee, navigation par drag et molette. Labels au survol avec titre et date. Seuls les devoirs futurs sont affiches. Distribution verticale intelligente pour eviter les chevauchements.
+
+### Kanban par projet
+
+Tableau de bord de suivi par groupe et par devoir. Cartes avec titre, description, assignation. Drag-and-drop entre colonnes (A faire, En cours, Termine).
+
+### REX (Retour d'Experience)
+
+Sessions de retour d'experience interactives. Activites de collecte de feedback en temps reel avec resultats agreges.
 
 ### Smart Focus
 
@@ -98,6 +114,32 @@ Sidebar proactive : devoirs a rendre bientot, annonces non lues, notes recentes.
 ### Mobile PWA
 
 Navigation tactile avec barre inferieure, swipe entre les vues, optimise pour les petits ecrans.
+
+<br />
+
+## Securite
+
+### Isolation par promotion
+
+Les etudiants ne peuvent acceder qu'aux donnees de leur propre promotion. Chaque endpoint API verifie l'appartenance promo via le middleware `requirePromo`. Les messages de canal sont emis uniquement vers la room Socket.IO de la promotion concernee (pas de broadcast global).
+
+### Controle d'acces par role
+
+Toutes les actions d'administration (CRUD promotions, canaux, devoirs, notes, groupes, intervenants, sessions) sont reservees aux enseignants via le middleware `requireTeacher`. Les etudiants ne peuvent modifier ou supprimer que leurs propres messages (`requireMessageOwner`).
+
+### Confidentialite des DMs
+
+Un etudiant ne peut lire, envoyer ou rechercher que dans ses propres conversations privees (`requireDmParticipant`). Les enseignants ont acces a toutes les boites DM en tant qu'interlocuteurs.
+
+### Protection des donnees
+
+Authentification JWT avec expiration 7 jours, validation Zod sur tous les payloads, hachage bcrypt des mots de passe, protection CSRF, Content-Security-Policy stricte. Export RGPD (Art. 20) des donnees personnelles.
+
+### Securite IPC (Electron)
+
+Les handlers IPC du processus principal verifient le role et la promotion de l'utilisateur via `handleTeacher` et `handlePromo`, reproduisant les memes controles que les routes HTTP.
+
+Voir [SECURITY.md](SECURITY.md) pour les details complets et le signalement de vulnerabilites.
 
 <br />
 
@@ -180,7 +222,7 @@ NODE_ENV=production PORT=3001 JWT_SECRET=<secret-32-chars> node server/index.js
 | Page vitrine | [cursus.school](https://cursus.school) | Landing page statique |
 | Administration | [admin.cursus.school](https://admin.cursus.school) | Console de monitoring |
 
-L'infrastructure de production utilise Docker + Nginx + Let's Encrypt sur un VPS. Le deploiement est automatise via GitHub Actions : chaque push sur `main` declenche un rebuild Docker et un redemarrage du container.
+L'infrastructure de production utilise Docker + Nginx + Let's Encrypt sur un VPS. Le deploiement est automatise via GitHub Actions : chaque push sur `main` declenche un rebuild Docker et un redemarrage du container. Les mises a jour Electron sont silencieuses (NSIS oneClick).
 
 <br />
 
@@ -196,12 +238,12 @@ cursus/
     landing/           Page vitrine
   server/
     db/                SQLite : connexion, schema, migrations, models
-    routes/            API REST (13 domaines + admin modulaire)
-    middleware/        Auth JWT, validation Zod
+    routes/            API REST (18 domaines + admin modulaire)
+    middleware/        Auth JWT, validation Zod, autorisation (role + promo)
     public/            Console d'administration
   tests/
     frontend/          Tests unitaires utils + stores
-    backend/           Tests models + routes + middleware
+    backend/           Tests models + routes + middleware + securite
   config/              Nginx, PM2, ecosystem
   resources/           Icones, installer assets
 ```
@@ -210,14 +252,14 @@ cursus/
 
 | Couche | Technologies |
 |--------|-------------|
-| Desktop | Electron 29, context isolation, sandbox, auto-update (electron-updater) |
-| Frontend | Vue 3 Composition API, TypeScript strict, Pinia, Vue Router |
-| Backend | Express 4, Socket.IO 4, SQLite (Better-SQLite3), JWT, Zod |
+| Desktop | Electron 29, context isolation, sandbox, auto-update silencieux (electron-updater, NSIS oneClick) |
+| Frontend | Vue 3 Composition API, TypeScript strict, Pinia, Vue Router, vue-draggable-plus |
+| Backend | Express 4, Socket.IO 4, SQLite (Better-SQLite3), JWT, Zod, bcrypt |
 | Build | electron-vite, Vite 6, electron-builder, Rollup |
 | Mobile | PWA, service worker (stale-while-revalidate), Web App Manifest |
 | CI/CD | GitHub Actions (tests, deploy Docker, release Windows/macOS, Lighthouse, CodeQL) |
 | Deploiement | Docker multi-stage, Nginx reverse proxy, Let's Encrypt, auto-deploy via webhook |
-| Qualite | Vitest, vue-tsc strict, Lighthouse CI, CodeQL, Dependabot |
+| Qualite | Vitest, Supertest, vue-tsc strict, Lighthouse CI, CodeQL, Dependabot |
 
 <br />
 
@@ -229,10 +271,10 @@ Les contributions sont les bienvenues. Voir [CONTRIBUTING.md](CONTRIBUTING.md) p
 
 ```
 dev (developpement) ──PR──> main (production)
-                              │
-                              ├── Tests CI obligatoires
-                              ├── Deploy Docker automatique
-                              └── Release Windows/macOS (sur tag)
+                              |
+                              +-- Tests CI obligatoires
+                              +-- Deploy Docker automatique
+                              +-- Release Windows/macOS (sur tag)
 ```
 
 ```bash
@@ -249,13 +291,7 @@ git push origin dev           # pousser sur dev
 - **Commits** : prefixes `feat:`, `fix:`, `chore:`, `refactor:`, `docs:`
 - **Code** : TypeScript strict, Composition API, composables documentes
 - **CSS** : variables CSS dans `base.css`, pas de couleurs hardcodees
-- **Tests** : couvrir les utilitaires et composables critiques
-
-<br />
-
-## Securite
-
-Les vulnerabilites doivent etre signalees en prive a [rohan.fosse@viacesi.fr](mailto:rohan.fosse@viacesi.fr). Voir [SECURITY.md](SECURITY.md) pour les details et les mesures en place.
+- **Tests** : couvrir les utilitaires, composables et endpoints critiques
 
 <br />
 
