@@ -36,6 +36,8 @@ function register() {
     return result
   }))
   handle('db:getProjectDocumentCategories', (promoId, project) => queries.getProjectDocumentCategories(promoId, project ?? null))
+  handle('db:searchDocuments',              (promoId, q) => queries.searchDocuments(promoId, q ?? ''))
+  handle('db:linkDocumentToTravail',        (docId, travailId) => queries.linkDocumentToTravail(docId, travailId ?? null))
 }
 
 module.exports = { register }

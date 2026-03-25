@@ -1,7 +1,7 @@
 <script setup lang="ts">
   import { ref, computed, watch } from 'vue'
   import {
-    ExternalLink, FileText, Trash2, Upload, Link2, Plus, X, CheckCircle2,
+    ExternalLink, FileText, Trash2, Upload, Link2, Plus, X, CheckCircle2, Search,
     BookOpen, Github, Linkedin, Globe, Package, HelpCircle, ClipboardList,
   } from 'lucide-vue-next'
   import { useTravauxStore } from '@/stores/travaux'
@@ -10,6 +10,7 @@
   import { useConfirm }      from '@/composables/useConfirm'
   import { useOpenExternal } from '@/composables/useOpenExternal'
   import Modal from '@/components/ui/Modal.vue'
+  import type { AppDocument } from '@/types'
 
   const props = defineProps<{ modelValue: boolean }>()
   const emit  = defineEmits<{ 'update:modelValue': [v: boolean] }>()
@@ -41,6 +42,61 @@
   const addCategory = ref('autre')
   const adding      = ref(false)
 
+  // ── Recherche de documents existants ──────────────────────────────────────
+  const showSearch       = ref(false)
+  const searchQuery      = ref('')
+  const searchResults    = ref<AppDocument[]>([])
+  const searchLoading    = ref(false)
+  let searchDebounce: ReturnType<typeof setTimeout> | null = null
+
+  watch(searchQuery, (q) => {
+    if (searchDebounce) clearTimeout(searchDebounce)
+    if (!q.trim()) { searchResults.value = []; return }
+    searchDebounce = setTimeout(() => doSearch(q.trim()), 300)
+  })
+
+  async function doSearch(q: string) {
+    const promoId = appStore.activePromoId ?? appStore.currentUser?.promo_id
+    if (!promoId || !q) return
+    searchLoading.value = true
+    try {
+      const res = await window.api.searchDocuments(promoId, q)
+      if (res?.ok && res.data) {
+        // Exclure les documents déjà liés à ce travail
+        searchResults.value = (res.data as AppDocument[]).filter(
+          d => d.travail_id !== selectedTravailId.value
+        )
+      }
+    } finally {
+      searchLoading.value = false
+    }
+  }
+
+  async function linkExistingDoc(doc: AppDocument) {
+    if (!selectedTravailId.value) return
+    const res = await window.api.linkDocumentToTravail(doc.id, selectedTravailId.value)
+    if (res?.ok) {
+      showToast(`"${doc.name}" lié au devoir.`, 'success')
+      searchResults.value = searchResults.value.filter(d => d.id !== doc.id)
+      await travauxStore.fetchRessources(selectedTravailId.value)
+    } else {
+      showToast('Erreur lors de la liaison.', 'error')
+    }
+  }
+
+  function openSearch() {
+    showSearch.value = true
+    showForm.value   = false
+    searchQuery.value = ''
+    searchResults.value = []
+  }
+
+  function closeSearch() {
+    showSearch.value = false
+    searchQuery.value = ''
+    searchResults.value = []
+  }
+
   // Travail sélectionné (défaut = currentTravailId du store)
   const selectedTravailId = ref<number | null>(appStore.currentTravailId)
 
@@ -58,7 +114,8 @@
       if (selectedTravailId.value) {
         await travauxStore.fetchRessources(selectedTravailId.value)
       }
-      showForm.value = false
+      showForm.value   = false
+      showSearch.value = false
     }
   })
 
@@ -88,6 +145,7 @@
     addFileName.value = null
     addCategory.value = 'autre'
     showForm.value    = true
+    showSearch.value  = false
   }
 
   async function pickFile() {
@@ -143,9 +201,13 @@
     else await window.api.openPath(content)
   }
 
-  async function removeResource(id: number) {
+  async function removeResource(id: number, source?: string) {
     if (!await confirm('Supprimer cette ressource ?', 'danger', 'Supprimer')) return
-    await window.api.deleteRessource(id)
+    if (source === 'document') {
+      await window.api.deleteChannelDocument(id)
+    } else {
+      await window.api.deleteRessource(id)
+    }
     if (selectedTravailId.value) await travauxStore.fetchRessources(selectedTravailId.value)
   }
 
@@ -174,11 +236,11 @@
       <template v-else>
         <!-- Liste des ressources -->
         <ul class="ress-list">
-          <li v-if="!travauxStore.ressources.length && !showForm" class="ress-empty">
+          <li v-if="!travauxStore.ressources.length && !showForm && !showSearch" class="ress-empty">
             Aucune ressource attachée à ce travail.
           </li>
 
-          <li v-for="r in travauxStore.ressources" :key="r.id" class="ress-item">
+          <li v-for="r in travauxStore.ressources" :key="`${r.source}-${r.id}`" class="ress-item">
             <!-- Icône catégorie -->
             <div class="ress-item-cat" :style="{ background: catInfo(r.category ?? 'autre').color + '22', color: catInfo(r.category ?? 'autre').color }">
               <component :is="catInfo(r.category ?? 'autre').icon" :size="13" />
@@ -190,11 +252,47 @@
               {{ catInfo(r.category ?? 'autre').label }}
             </span>
             <span class="ress-item-type">{{ r.type === 'link' ? 'Lien' : 'Fichier' }}</span>
-            <button v-if="appStore.isTeacher" class="btn-icon ress-item-delete" title="Supprimer" @click="removeResource(r.id)">
+            <button v-if="appStore.isTeacher" class="btn-icon ress-item-delete" title="Supprimer" @click="removeResource(r.id, r.source)">
               <Trash2 :size="13" />
             </button>
           </li>
         </ul>
+
+        <!-- Recherche de documents existants -->
+        <div v-if="showSearch && appStore.isTeacher" class="ress-form">
+          <div class="ress-form-header">
+            <span class="ress-form-title">Associer un document existant</span>
+            <button class="btn-icon" aria-label="Fermer" @click="closeSearch"><X :size="14" /></button>
+          </div>
+
+          <div class="ress-search-input-wrap">
+            <Search :size="14" class="ress-search-icon" />
+            <input
+              v-model="searchQuery"
+              type="text"
+              class="form-input ress-search-input"
+              placeholder="Rechercher un document par nom…"
+              autofocus
+            />
+          </div>
+
+          <div v-if="searchLoading" class="ress-empty" style="padding:12px">Recherche…</div>
+
+          <ul v-else-if="searchResults.length" class="ress-list ress-search-results">
+            <li v-for="doc in searchResults" :key="doc.id" class="ress-item ress-search-item" @click="linkExistingDoc(doc)">
+              <div class="ress-item-cat" :style="{ background: catInfo(doc.category ?? 'autre').color + '22', color: catInfo(doc.category ?? 'autre').color }">
+                <component :is="catInfo(doc.category ?? 'autre').icon" :size="13" />
+              </div>
+              <span class="ress-search-item-name">{{ doc.name }}</span>
+              <span class="ress-item-type">{{ doc.type === 'link' ? 'Lien' : 'Fichier' }}</span>
+              <Plus :size="14" class="ress-search-item-add" />
+            </li>
+          </ul>
+
+          <div v-else-if="searchQuery.trim()" class="ress-empty" style="padding:12px">
+            Aucun document trouvé.
+          </div>
+        </div>
 
         <!-- Formulaire d'ajout -->
         <div v-if="showForm && appStore.isTeacher" class="ress-form">
@@ -282,9 +380,14 @@
 
     <!-- Footer -->
     <div class="modal-footer ress-footer">
-      <button v-if="appStore.isTeacher && !showForm && selectedTravailId" class="btn-ghost ress-add-btn" @click="openForm">
-        <Plus :size="13" /> Ajouter une ressource
-      </button>
+      <template v-if="appStore.isTeacher && !showForm && !showSearch && selectedTravailId">
+        <button class="btn-ghost ress-add-btn" @click="openForm">
+          <Plus :size="13" /> Nouvelle ressource
+        </button>
+        <button class="btn-ghost ress-add-btn" @click="openSearch">
+          <Search :size="13" /> Associer un document
+        </button>
+      </template>
       <button class="btn-ghost" style="margin-left:auto" @click="emit('update:modelValue', false)">Fermer</button>
     </div>
   </Modal>
@@ -477,12 +580,58 @@
   gap: 8px;
 }
 
+/* ── Recherche documents ── */
+.ress-search-input-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.ress-search-icon {
+  position: absolute;
+  left: 10px;
+  color: var(--text-muted);
+  pointer-events: none;
+}
+.ress-search-input {
+  padding-left: 32px !important;
+}
+.ress-search-results {
+  max-height: 200px;
+  overflow-y: auto;
+}
+.ress-search-item {
+  cursor: pointer;
+  transition: all .15s;
+}
+.ress-search-item:hover {
+  border-color: var(--accent);
+  background: var(--accent-subtle);
+}
+.ress-search-item-name {
+  flex: 1;
+  font-size: 13px;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ress-search-item-add {
+  color: var(--accent);
+  flex-shrink: 0;
+  opacity: 0;
+  transition: opacity .15s;
+}
+.ress-search-item:hover .ress-search-item-add {
+  opacity: 1;
+}
+
 /* ── Footer ── */
 .ress-footer {
   padding: 10px 16px;
   border-top: 1px solid var(--border);
   display: flex;
   align-items: center;
+  gap: 8px;
 }
 
 .ress-add-btn {

@@ -11,6 +11,10 @@ router.post('/channel',                       wrap((req) => queries.addChannelDo
 router.patch('/project/:id',                  wrap((req) => queries.updateProjectDocument({ id: Number(req.params.id), ...req.body })))
 router.delete('/channel/:id',                 wrap((req) => queries.deleteChannelDocument(Number(req.params.id))))
 
+// ── Recherche & liaison ───────────────────────────────────────────────────────
+router.get('/search', wrap((req) => queries.searchDocuments(Number(req.query.promoId), req.query.q ?? '')))
+router.patch('/link/:id', wrap((req) => queries.linkDocumentToTravail(Number(req.params.id), req.body.travailId ?? null)))
+
 // ── Documents de projet ───────────────────────────────────────────────────────
 router.get('/project', wrap((req) => queries.getProjectDocuments(
   Number(req.query.promoId),

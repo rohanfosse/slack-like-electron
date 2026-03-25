@@ -144,6 +144,7 @@ export interface Ressource {
   type: 'file' | 'link'
   content: string
   category?: string
+  source?: 'ressource' | 'document'
 }
 
 export interface Group {

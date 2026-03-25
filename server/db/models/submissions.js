@@ -61,15 +61,24 @@ function setFeedback({ depotId, feedback }) {
 // ─── Ressources ───────────────────────────────────────────────────────────────
 
 function getRessources(travailId) {
-  return getDb().prepare(
-    'SELECT *, path_or_url AS content FROM ressources WHERE travail_id = ? ORDER BY created_at ASC'
-  ).all(travailId);
+  return getDb().prepare(`
+    SELECT id, travail_id, type, name, path_or_url AS content, category, created_at, 'ressource' AS source
+    FROM ressources WHERE travail_id = ?
+    UNION ALL
+    SELECT id, travail_id, type, name, path_or_url AS content, category, created_at, 'document' AS source
+    FROM channel_documents WHERE travail_id = ?
+    ORDER BY created_at ASC
+  `).all(travailId, travailId);
 }
 
 function addRessource({ travailId, type, name, pathOrUrl, category }) {
-  return getDb().prepare(`
-    INSERT INTO ressources (travail_id, type, name, path_or_url, category) VALUES (?, ?, ?, ?, ?)
-  `).run(travailId, type, name, pathOrUrl, category ?? 'autre');
+  const db = getDb()
+  const travail = db.prepare('SELECT promo_id, category AS project FROM travaux WHERE id = ?').get(travailId)
+  if (!travail) throw new Error('Travail introuvable')
+  return db.prepare(`
+    INSERT INTO channel_documents (promo_id, project, category, type, name, path_or_url, travail_id)
+    VALUES (?, ?, ?, ?, ?, ?, ?)
+  `).run(travail.promo_id, travail.project ?? null, category ?? 'autre', type, name, pathOrUrl, travailId)
 }
 
 function deleteRessource(ressourceId) {

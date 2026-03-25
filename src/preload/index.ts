@@ -348,6 +348,8 @@ contextBridge.exposeInMainWorld('api', {
   },
   addProjectDocument:           (payload: unknown)  => post('/api/documents/project', payload),
   updateProjectDocument:        (id: number, payload: unknown) => patch(`/api/documents/project/${id}`, payload),
+  searchDocuments:              (promoId: number, q: string) => get(`/api/documents/search?promoId=${promoId}&q=${encodeURIComponent(q)}`),
+  linkDocumentToTravail:        (docId: number, travailId: number | null) => patch(`/api/documents/link/${docId}`, { travailId }),
 
   // ── Intervenants ────────────────────────────────────────────────────────────
   getIntervenants:    ()                 => get('/api/teachers'),

@@ -103,9 +103,24 @@ function getChannelDocumentCategories(channelId) {
   `).all(channelId).map(r => r.category);
 }
 
+function searchDocuments(promoId, query) {
+  return getDb().prepare(`
+    SELECT id, name, type, category, path_or_url AS content, travail_id, created_at
+    FROM channel_documents
+    WHERE promo_id = ? AND name LIKE ?
+    ORDER BY created_at DESC
+    LIMIT 20
+  `).all(promoId, `%${query}%`);
+}
+
+function linkDocumentToTravail(docId, travailId) {
+  return getDb().prepare('UPDATE channel_documents SET travail_id = ? WHERE id = ?').run(travailId ?? null, docId);
+}
+
 module.exports = {
   getProjectDocuments, getChannelDocuments,
   getPromoDocuments, addProjectDocument, addChannelDocument,
   updateProjectDocument, deleteChannelDocument,
   getProjectDocumentCategories, getChannelDocumentCategories,
+  searchDocuments, linkDocumentToTravail,
 };
