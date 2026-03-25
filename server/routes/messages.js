@@ -114,11 +114,11 @@ router.post('/', validate(sendMessageSchema), (req, res) => {
     const io = req.app.get('io')
     if (io) {
       if (payload.dmStudentId) {
-        // DM → envoyer aux deux participants (Math.abs car les IDs profs sont négatifs côté frontend mais positifs dans le JWT/rooms)
-        io.to(`user:${Math.abs(payload.dmStudentId)}`).emit('msg:new', push)
+        // DM → envoyer aux deux participants (IDs négatifs pour profs, positifs pour étudiants)
+        io.to(`user:${payload.dmStudentId}`).emit('msg:new', push)
         const peerId = payload.dmPeerId ?? req.user.id
-        if (Math.abs(peerId) !== Math.abs(payload.dmStudentId)) {
-          io.to(`user:${Math.abs(peerId)}`).emit('msg:new', push)
+        if (peerId !== payload.dmStudentId) {
+          io.to(`user:${peerId}`).emit('msg:new', push)
         }
       } else if (payload.promoId) {
         // Canal → envoyer à la promo
