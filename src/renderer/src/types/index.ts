@@ -314,6 +314,7 @@ export interface CalendarEvent {
 export interface SendMessagePayload {
   channelId?: number | null
   dmStudentId?: number | null
+  dmPeerId?: number | null
   authorName: string
   authorType: 'teacher' | 'ta' | 'student'
   content: string

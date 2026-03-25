@@ -341,7 +341,7 @@ export const useMessagesStore = defineStore('messages', () => {
     reactions, userVotes,
     quotedMessage, setQuote, clearQuote,
     typingText, setTyping, stopTyping, clearAllTyping, initTypingListener,
-    isGrouped, fetchMessages, loadOlderMessages, fetchPinned,
+    isGrouped, fetchMessages, loadOlderMessages, fetchPinned, upsertMessage,
     sendMessage, togglePin,
     initReactions, toggleReaction, getReactionUsers, clearSearch,
     deleteMessage, editMessage,

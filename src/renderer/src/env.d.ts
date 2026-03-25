@@ -185,6 +185,7 @@ declare global {
         preview:         string | null
         mentionEveryone: boolean
         mentionNames:    string[]
+        message?:        unknown
       }) => void): () => void
       onSocketStateChange(cb: (connected: boolean) => void): () => void
       onPresenceUpdate?(cb: (data: { id: number; name: string; role: string }[]) => void): () => void
