@@ -190,6 +190,11 @@ contextBridge.exposeInMainWorld('api', {
   setToken: (token: string) => {
     jwtToken = token
     connectSocket(token)
+    // Décoder le JWT pour transmettre le contexte utilisateur au main process (IPC auth)
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]))
+      ipcRenderer.send('auth:setUser', { id: payload.id, name: payload.name, type: payload.type, promo_id: payload.promo_id })
+    } catch { /* token invalide — ignoré */ }
   },
 
   getIdentities: () => get('/api/auth/identities'),
