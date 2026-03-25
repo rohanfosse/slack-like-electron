@@ -208,6 +208,7 @@ export const useMessagesStore = defineStore('messages', () => {
       () => window.api.sendMessage({
         channelId:   appStore.activeChannelId   ?? undefined,
         dmStudentId: appStore.activeDmStudentId ?? undefined,
+        dmPeerId:    appStore.activeDmPeerId    ?? undefined,
         authorName:  appStore.currentUser!.name,
         authorType:  appStore.currentUser!.type,
         channelName: appStore.activeChannelName || undefined,

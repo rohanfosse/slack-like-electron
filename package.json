@@ -1,6 +1,6 @@
 {
   "name": "cursus",
-  "version": "0.5.2",
+  "version": "0.5.3",
   "description": "Cursus - Suivez votre parcours de formation",
   "main": "out/main/index.js",
   "scripts": {
@@ -125,10 +125,7 @@
     },
     "compression": "maximum",
     "nsis": {
-      "oneClick": false,
-      "allowToChangeInstallationDirectory": true,
-      "installerSidebar": "resources/installer-sidebar.bmp",
-      "installerHeader": "resources/installer-header.bmp",
+      "oneClick": true,
       "installerHeaderIcon": "resources/icon.ico",
       "language": "1036",
       "runAfterFinish": true,
@@ -138,8 +135,6 @@
       "menuCategory": "Cursus",
       "deleteAppDataOnUninstall": false,
       "perMachine": false,
-      "license": "LICENSE",
-      "displayLanguageSelector": false,
       "artifactName": "Cursus-Setup-${version}.${ext}",
       "uninstallDisplayName": "Cursus ${version}",
       "unicode": true

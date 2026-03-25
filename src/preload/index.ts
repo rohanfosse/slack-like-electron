@@ -27,6 +27,7 @@ type MsgNewPayload = {
   preview:         string | null
   mentionEveryone: boolean
   mentionNames:    string[]
+  message?:        unknown
 }
 const msgCallbacks: Array<(data: MsgNewPayload) => void> = []
 const socketStateCallbacks: Array<(connected: boolean) => void> = []
@@ -71,7 +72,11 @@ const gradeNewCallbacks: Array<(data: GradeNewPayload) => void> = []
 
 // ─── Socket.io ────────────────────────────────────────────────────────────────
 function connectSocket(token: string): void {
-  socket?.disconnect()
+  // Nettoyer l'ancien socket (anti-stacking de listeners)
+  if (socket) {
+    socket.removeAllListeners()
+    socket.disconnect()
+  }
   socket = io(SERVER_URL, {
     auth: { token },
     transports: ['websocket', 'polling'],
@@ -103,6 +108,7 @@ function connectSocket(token: string): void {
   socket.on('rex:invite',          (data: RexInvitePayload) => rexInviteCallbacks.forEach(cb => cb(data)))
   socket.on('grade:new',           (data: GradeNewPayload) => gradeNewCallbacks.forEach(cb => cb(data)))
   socket.on('connect', () => {
+    console.log('[Socket.io] Connecté (rooms auto-rejointes côté serveur)')
     socketStateCallbacks.forEach((cb) => cb(true))
   })
   socket.on('disconnect', () => {
@@ -637,8 +643,8 @@ contextBridge.exposeInMainWorld('api', {
   emitTyping: (channelId: number) => {
     socket?.emit('typing', { channelId })
   },
-  emitDmTyping: (dmStudentId: number) => {
-    socket?.emit('dm:typing', { dmStudentId })
+  emitDmTyping: (dmStudentId: number, dmPeerId?: number) => {
+    socket?.emit('typing', { dmStudentId, dmPeerId })
   },
   onTyping: (cb: (data: TypingPayload) => void) => {
     typingCallbacks.push(cb)

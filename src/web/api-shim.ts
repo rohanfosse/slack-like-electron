@@ -697,8 +697,8 @@ async function importStudentsBrowser(promoId: number): Promise<unknown> {
   emitTyping(channelId: number) {
     socket?.emit('typing', { channelId })
   },
-  emitDmTyping(dmStudentId: number) {
-    socket?.emit('typing', { dmStudentId })
+  emitDmTyping(dmStudentId: number, dmPeerId?: number) {
+    socket?.emit('typing', { dmStudentId, dmPeerId })
   },
 
   // ── Temps réel (Socket.io) ───────────────────────────────────────────────────

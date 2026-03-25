@@ -189,7 +189,7 @@ declare global {
       onSocketStateChange(cb: (connected: boolean) => void): () => void
       onPresenceUpdate?(cb: (data: { id: number; name: string; role: string }[]) => void): () => void
       emitTyping?(channelId: number): void
-      emitDmTyping?(dmStudentId: number): void
+      emitDmTyping?(dmStudentId: number, dmPeerId?: number): void
       onTyping?(cb: (data: { channelId: number; userName: string }) => void): () => void
       getClasseStats(promoId: number): Promise<IpcResponse<{
         id: number; name: string; avatar_initials: string; photo_data: string | null

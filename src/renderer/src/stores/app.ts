@@ -52,9 +52,10 @@ export const useAppStore = defineStore('app', () => {
   const notificationHistory = ref<NotifEntry[]>([])
 
   // ── Callback pour rafraîchir les DMs en temps réel ──────────────────────
-  const _dmRefreshCallbacks: (() => void)[] = []
-  function onDmRefresh(cb: () => void)  { _dmRefreshCallbacks.push(cb) }
-  function offDmRefresh(cb: () => void) {
+  type DmRefreshCb = (message?: unknown) => void
+  const _dmRefreshCallbacks: DmRefreshCb[] = []
+  function onDmRefresh(cb: DmRefreshCb)  { _dmRefreshCallbacks.push(cb) }
+  function offDmRefresh(cb: DmRefreshCb) {
     const idx = _dmRefreshCallbacks.indexOf(cb)
     if (idx >= 0) _dmRefreshCallbacks.splice(idx, 1)
   }
@@ -353,7 +354,7 @@ export const useAppStore = defineStore('app', () => {
 
   // Listener temps-réel - appelé une seule fois au démarrage (App.vue onMounted)
   function initUnreadListener(): () => void {
-    return window.api.onNewMessage(({ channelId, dmStudentId, authorName, channelName, promoId, preview, mentionEveryone, mentionNames }) => {
+    return window.api.onNewMessage(({ channelId, dmStudentId, authorName, channelName, promoId, preview, mentionEveryone, mentionNames, message }) => {
       // Ne pas compter ses propres messages
       if (authorName && authorName === currentUser.value?.name) return
 
@@ -367,7 +368,7 @@ export const useAppStore = defineStore('app', () => {
           activeDmPeerId.value === dmStudentId
 
         if (inThisConversation) {
-          _dmRefreshCallbacks.forEach(cb => cb())
+          _dmRefreshCallbacks.forEach(cb => cb(message))
         } else {
           // Badge unread
           unreadDms.value = { ...unreadDms.value, [senderName]: (unreadDms.value[senderName] ?? 0) + 1 }
@@ -400,7 +401,7 @@ export const useAppStore = defineStore('app', () => {
 
       // ── Message de canal ──────────────────────────────────────────────────
       if (channelId === activeChannelId.value) {
-        _dmRefreshCallbacks.forEach(cb => cb())
+        _dmRefreshCallbacks.forEach(cb => cb(message))
       } else {
         unread.value = { ...unread.value, [channelId]: (unread.value[channelId] ?? 0) + 1 }
       }

@@ -73,7 +73,7 @@ export function useSidebarDm(
     appStore.openDm(s.id, s.promo_id, s.name)
     if (route.name !== 'messages') router.push('/messages')
     emit('navigate')
-    setTimeout(() => loadRecentDmContacts(), 500)
+    loadRecentDmContacts()
   }
 
   function openDmContextMenu(e: MouseEvent, s: Student) {

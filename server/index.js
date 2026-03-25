@@ -290,13 +290,17 @@ io.on('connection', (socket) => {
   })
 
   // Indicateur de frappe
-  socket.on('typing', ({ channelId, dmStudentId }) => {
+  socket.on('typing', ({ channelId, dmStudentId, dmPeerId }) => {
     if (channelId) {
       // Canal - envoyer à la promo du canal
       socket.to('all').emit('typing', { channelId, userName: socket.user?.name })
     } else if (dmStudentId) {
-      // DM - envoyer uniquement au destinataire
+      // DM - envoyer aux deux participants
       socket.to(userRoom(dmStudentId)).emit('typing', { dmStudentId, userName: socket.user?.name })
+      const peer = dmPeerId ?? socket.user?.id
+      if (peer && peer !== dmStudentId) {
+        socket.to(userRoom(peer)).emit('typing', { dmStudentId, userName: socket.user?.name })
+      }
     }
   })
 

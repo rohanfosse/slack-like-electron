@@ -5,10 +5,9 @@ const MESSAGE_SELECT = `
   SELECT m.*,
          m.pinned AS is_pinned,
          COALESCE(s.avatar_initials, substr(upper(m.author_name), 1, 2)) AS author_initials,
-         COALESCE(s.photo_data, t.photo_data) AS author_photo
+         s.photo_data AS author_photo
   FROM messages m
   LEFT JOIN students s ON s.name = m.author_name
-  LEFT JOIN teachers t ON t.name = m.author_name
 `;
 
 function getChannelMessages(channelId) {
@@ -207,24 +206,22 @@ function searchAllMessages(promoId, query, limit = 8, userId = null) {
     ? `SELECT m.id, m.content, m.author_name, m.created_at,
              c.id AS channel_id, c.name AS channel_name, c.promo_id,
              COALESCE(s.avatar_initials, substr(upper(m.author_name), 1, 2)) AS author_initials,
-             COALESCE(s.photo_data, t.photo_data) AS author_photo,
+             s.photo_data AS author_photo,
              'channel' AS source_type
        FROM messages m
        JOIN channels c ON m.channel_id = c.id
        LEFT JOIN students s ON s.name = m.author_name
-       LEFT JOIN teachers t ON t.name = m.author_name
        WHERE c.promo_id = ? AND m.dm_student_id IS NULL
          AND m.content LIKE '%' || ? || '%'
        ORDER BY m.created_at DESC LIMIT ?`
     : `SELECT m.id, m.content, m.author_name, m.created_at,
              c.id AS channel_id, c.name AS channel_name, c.promo_id,
              COALESCE(s.avatar_initials, substr(upper(m.author_name), 1, 2)) AS author_initials,
-             COALESCE(s.photo_data, t.photo_data) AS author_photo,
+             s.photo_data AS author_photo,
              'channel' AS source_type
        FROM messages m
        JOIN channels c ON m.channel_id = c.id
        LEFT JOIN students s ON s.name = m.author_name
-       LEFT JOIN teachers t ON t.name = m.author_name
        WHERE m.dm_student_id IS NULL AND m.content LIKE '%' || ? || '%'
        ORDER BY m.created_at DESC LIMIT ?`;
 
@@ -238,11 +235,10 @@ function searchAllMessages(promoId, query, limit = 8, userId = null) {
       SELECT m.id, m.content, m.author_name, m.created_at,
              NULL AS channel_id, 'Message direct' AS channel_name, NULL AS promo_id,
              COALESCE(s.avatar_initials, substr(upper(m.author_name), 1, 2)) AS author_initials,
-             COALESCE(s.photo_data, t.photo_data) AS author_photo,
+             s.photo_data AS author_photo,
              'dm' AS source_type
       FROM messages m
       LEFT JOIN students s ON s.name = m.author_name
-      LEFT JOIN teachers t ON t.name = m.author_name
       WHERE m.dm_student_id = ? AND m.content LIKE '%' || ? || '%'
       ORDER BY m.created_at DESC LIMIT ?
     `).all(userId, query, Math.ceil(limit / 2));

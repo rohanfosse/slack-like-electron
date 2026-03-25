@@ -79,7 +79,7 @@ export function useMsgSend(
     if (channelId && window.api.emitTyping) {
       window.api.emitTyping(channelId)
     } else if (dmStudentId && window.api.emitDmTyping) {
-      window.api.emitDmTyping(dmStudentId)
+      window.api.emitDmTyping(dmStudentId, appStore.activeDmPeerId ?? undefined)
     }
   }
 

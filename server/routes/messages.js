@@ -107,6 +107,7 @@ router.post('/', validate(sendMessageSchema), (req, res) => {
       preview:         rawContent.replace(/[*_`>#[\]!]/g, '').slice(0, 80),
       mentionEveryone,
       mentionNames,
+      message:         payload.dmStudentId ? message : undefined,
     }
     // Envoi ciblé via Socket.io (pas de broadcast global)
     const io = req.app.get('io')
@@ -114,7 +115,10 @@ router.post('/', validate(sendMessageSchema), (req, res) => {
       if (payload.dmStudentId) {
         // DM → envoyer uniquement aux deux participants
         io.to(`user:${payload.dmStudentId}`).emit('msg:new', push)
-        io.to(`user:${req.user.id}`).emit('msg:new', push)
+        const peerId = payload.dmPeerId ?? req.user.id
+        if (peerId !== payload.dmStudentId) {
+          io.to(`user:${peerId}`).emit('msg:new', push)
+        }
       } else if (payload.promoId) {
         // Canal → envoyer à la promo
         io.to(`promo:${payload.promoId}`).emit('msg:new', push)

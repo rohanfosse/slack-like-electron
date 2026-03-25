@@ -1,6 +1,6 @@
 const { getDb } = require('./connection');
 
-const CURRENT_VERSION = 35;
+const CURRENT_VERSION = 36;
 
 // ─── Schema initial ───────────────────────────────────────────────────────────
 // Crée toutes les tables avec leur schéma complet (colonnes UTC, toutes colonnes incluses).
@@ -743,6 +743,12 @@ function runMigrations(db) {
     // v35 : documents — taille du fichier (file_size en octets)
     (db) => {
       tryAlter(db, 'ALTER TABLE channel_documents ADD COLUMN file_size INTEGER');
+    },
+    // v36 : indexes DM performance
+    (db) => {
+      db.exec('CREATE INDEX IF NOT EXISTS idx_messages_dm_author ON messages(dm_student_id, author_name, created_at)');
+      db.exec('CREATE INDEX IF NOT EXISTS idx_students_name ON students(name)');
+      db.exec('CREATE INDEX IF NOT EXISTS idx_teachers_name ON teachers(name)');
     },
   ];
 

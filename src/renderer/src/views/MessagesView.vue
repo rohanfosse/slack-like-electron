@@ -54,7 +54,13 @@
   }
 
   // ── Rafraîchir les DMs en temps réel ────────────────────────────────────
-  function onDmLive() { messagesStore.fetchMessages() }
+  function onDmLive(msg?: unknown) {
+    if (msg && typeof msg === 'object' && 'id' in msg) {
+      messagesStore.upsertMessage(msg as import('@/types').Message)
+    } else {
+      messagesStore.fetchMessages()
+    }
+  }
   onMounted(() => appStore.onDmRefresh(onDmLive))
   onUnmounted(() => appStore.offDmRefresh(onDmLive))
 
@@ -271,17 +277,17 @@
           <Menu :size="22" />
         </button>
 
-        <!-- Avatar DM -->
-        <div v-if="appStore.activeDmStudentId" class="dm-avatar" :style="{ background: dmAvatarColor(appStore.activeChannelName ?? '') }">
-          {{ dmInitials(appStore.activeChannelName ?? '?') }}
-        </div>
+        <!-- Icône DM -->
+        <span v-if="appStore.activeDmStudentId" class="dm-header-icon">
+          <MessageSquare :size="20" />
+        </span>
         <!-- Icône canal classique -->
         <span v-else id="channel-icon" class="channel-icon">#</span>
 
         <div class="channel-header-info">
           <div class="channel-header-title-row">
             <span id="channel-name" class="channel-name">{{ appStore.activeChannelName }}</span>
-            <span v-if="appStore.activeDmStudentId" class="channel-type-badge channel-type-badge--dm">Message privé</span>
+            <!-- badge DM retiré -->
             <span
               v-else-if="channelHeader?.type === 'annonce'"
               id="channel-type-badge"
@@ -571,13 +577,11 @@
   min-width: 0;
 }
 
-/* ── Avatar DM dans le header ── */
-.dm-avatar {
-  width: 32px; height: 32px; border-radius: 50%;
+/* ── Icône DM dans le header ── */
+.dm-header-icon {
   display: flex; align-items: center; justify-content: center;
-  font-size: 12px; font-weight: 700; color: #fff;
-  flex-shrink: 0; letter-spacing: .5px;
-  box-shadow: 0 0 0 2px var(--bg-sidebar);
+  color: var(--accent-light);
+  flex-shrink: 0;
 }
 
 /* ── Channel type badges ── */
