@@ -287,9 +287,8 @@
         <div class="channel-header-info">
           <div class="channel-header-title-row">
             <span id="channel-name" class="channel-name">{{ appStore.activeChannelName }}</span>
-            <!-- badge DM retiré -->
             <span
-              v-else-if="channelHeader?.type === 'annonce'"
+              v-if="channelHeader?.type === 'annonce'"
               id="channel-type-badge"
               class="channel-type-badge channel-type-badge--annonce"
             >
