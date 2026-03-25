@@ -11,6 +11,7 @@ const optStr   = z.string().max(10_000).optional().nullable()
 const sendMessagePayload = z.object({
   channelId:      optId,
   dmStudentId:    optId,
+  dmPeerId:       optId,
   authorName:     safeStr,
   authorType:     z.enum(['teacher', 'ta', 'student']),
   content:        z.string().min(1).max(10_000),

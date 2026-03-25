@@ -9,7 +9,7 @@ function register() {
   handle('db:getChannelMessages',     (channelId)              => queries.getChannelMessages(channelId))
   handle('db:getDmMessages',          (studentId)              => queries.getDmMessages(studentId))
   handle('db:getChannelMessagesPage', (channelId, beforeId)    => queries.getChannelMessagesPage(channelId, beforeId ?? null))
-  handle('db:getDmMessagesPage',      (studentId, beforeId)    => queries.getDmMessagesPage(studentId, beforeId ?? null))
+  handle('db:getDmMessagesPage',      (studentId, beforeId, peer) => queries.getDmMessagesPage(studentId, beforeId ?? null, peer ?? null))
   handle('db:searchMessages',         (channelId, query)       => queries.searchMessages(channelId, query))
   handle('db:searchAllMessages',      ({ promoId, query, limit }) => queries.searchAllMessages(promoId ?? null, query, limit ?? 8))
 
@@ -49,6 +49,7 @@ function register() {
         preview:        rawContent.replace(/[*_`>#[\]!]/g, '').slice(0, 80),
         mentionEveryone,
         mentionNames,
+        message:        payload.dmStudentId ? message : undefined,
       }
       for (const win of BrowserWindow.getAllWindows()) {
         if (!win.isDestroyed()) win.webContents.send('msg:new', push)

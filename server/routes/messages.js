@@ -9,6 +9,7 @@ const wrap         = require('../utils/wrap')
 const sendMessageSchema = z.object({
   channelId:   z.number().int().nullable().optional(),
   dmStudentId: z.number().int().nullable().optional(),
+  dmPeerId:    z.number().int().nullable().optional(),
   content:     z.string().min(1, 'Le message ne peut pas être vide').max(10000, 'Message trop long (max 10 000 caractères)'),
   channelName: z.string().nullable().optional(),
   promoId:     z.number().int().nullable().optional(),
