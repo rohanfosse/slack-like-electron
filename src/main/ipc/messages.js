@@ -1,8 +1,6 @@
-// ─── IPC : Messages (envoi, recherche, épinglage, réactions) ─────────────────
-const { ipcMain, BrowserWindow } = require('electron')
+// ─── IPC : Messages (lecture, recherche, épinglage, réactions) ────────────────
 const { handle } = require('./helpers')
 const queries = require('../../../server/db/index')
-const { sendMessagePayload } = require('./validation')
 
 function register() {
   // ── Lecture ──────────────────────────────────────────────────────────────
@@ -13,53 +11,8 @@ function register() {
   handle('db:searchMessages',         (channelId, query)       => queries.searchMessages(channelId, query))
   handle('db:searchAllMessages',      ({ promoId, query, limit }) => queries.searchAllMessages(promoId ?? null, query, limit ?? 8))
 
-  // ── Envoi - handler dédié : DB + push temps-réel ────────────────────────
-  ipcMain.handle('db:sendMessage', async (_event, payload) => {
-    try {
-      // Validation du payload
-      const parsed = sendMessagePayload.safeParse(payload)
-      if (!parsed.success) {
-        const msg = parsed.error.issues.map(i => `${i.path.join('.')}: ${i.message}`).join(', ')
-        return { ok: false, error: `Données invalides : ${msg}` }
-      }
-      payload = parsed.data
-      const result = queries.sendMessage(payload)
-      const message = queries.getMessageById(Number(result.lastInsertRowid))
-      if (!message) {
-        throw new Error('Le message a été inséré mais n’a pas pu être relu.')
-      }
-
-      // Parsing des mentions
-      const rawContent      = payload.content ?? ''
-      const mentionEveryone = /@everyone\b/i.test(rawContent)
-      const mentionNames    = []
-      const re = /@([\w][\w.\-]*)/g
-      let m
-      while ((m = re.exec(rawContent)) !== null) {
-        const name = m[1].toLowerCase()
-        if (name !== 'everyone') mentionNames.push(m[1])
-      }
-
-      const push = {
-        channelId:      payload.channelId   ?? null,
-        dmStudentId:    payload.dmStudentId ?? null,
-        authorName:     payload.authorName  ?? null,
-        channelName:    payload.channelName ?? null,
-        promoId:        payload.promoId     ?? null,
-        preview:        rawContent.replace(/[*_`>#[\]!]/g, '').slice(0, 80),
-        mentionEveryone,
-        mentionNames,
-        message:        payload.dmStudentId ? message : undefined,
-      }
-      for (const win of BrowserWindow.getAllWindows()) {
-        if (!win.isDestroyed()) win.webContents.send('msg:new', push)
-      }
-      return { ok: true, data: message }
-    } catch (err) {
-      console.error('[IPC db:sendMessage]', err.message)
-      return { ok: false, error: err.message }
-    }
-  })
+  // Note : l'envoi de messages passe par HTTP POST /api/messages (pas par IPC).
+  // Le serveur Express gère la sauvegarde DB + l'émission Socket.io.
 
   // ── Épinglage ───────────────────────────────────────────────────────────
   handle('db:getPinnedMessages', (channelId) => queries.getPinnedMessages(channelId))

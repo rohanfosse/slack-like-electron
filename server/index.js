@@ -295,11 +295,11 @@ io.on('connection', (socket) => {
       // Canal - envoyer à la promo du canal
       socket.to('all').emit('typing', { channelId, userName: socket.user?.name })
     } else if (dmStudentId) {
-      // DM - envoyer aux deux participants
-      socket.to(userRoom(dmStudentId)).emit('typing', { dmStudentId, userName: socket.user?.name })
+      // DM - envoyer aux deux participants (Math.abs car IDs profs négatifs côté frontend)
+      socket.to(userRoom(Math.abs(dmStudentId))).emit('typing', { dmStudentId, userName: socket.user?.name })
       const peer = dmPeerId ?? socket.user?.id
-      if (peer && peer !== dmStudentId) {
-        socket.to(userRoom(peer)).emit('typing', { dmStudentId, userName: socket.user?.name })
+      if (peer && Math.abs(peer) !== Math.abs(dmStudentId)) {
+        socket.to(userRoom(Math.abs(peer))).emit('typing', { dmStudentId, userName: socket.user?.name })
       }
     }
   })
