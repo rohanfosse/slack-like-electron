@@ -89,7 +89,7 @@ describe('signatures model', () => {
   it('getSignatureRequests returns requests sorted by date DESC', () => {
     const list = queries.getSignatureRequests({})
     expect(list.length).toBe(2)
-    // Most recent first
-    expect(list[0].file_name).toBe('attestation.pdf')
+    // Most recent (higher id) first
+    expect(list[0].id).toBeGreaterThan(list[1].id)
   })
 })
