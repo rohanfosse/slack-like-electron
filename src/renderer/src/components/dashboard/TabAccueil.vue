@@ -7,7 +7,8 @@
  *   Messages (1x1) | Quick actions (2x1) | Activity feed (2x1)
  */
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, watch, type Component } from 'vue'
+import { VueDraggable } from 'vue-draggable-plus'
 import TeacherTodoWidget from './TeacherTodoWidget.vue'
 import WidgetClock from './student-widgets/WidgetClock.vue'
 import WidgetQuote from './student-widgets/WidgetQuote.vue'
@@ -216,6 +217,17 @@ function toggleEditMode() {
   if (!editMode.value) showTileDrawer.value = false
 }
 defineExpose({ toggleEditMode, editMode })
+
+// ── Drag-and-drop widgets optionnels ────────────────────────────────────────
+const optWidgetComponents: Record<string, Component> = {
+  clock: WidgetClock, quote: WidgetQuote, pomodoro: WidgetPomodoro,
+  quicklinks: WidgetQuickLinks, 'dm-files': WidgetDmFiles, 'week-cal': WidgetWeekCal,
+}
+const wideWidgets = new Set(['quote', 'quicklinks', 'dm-files', 'week-cal'])
+
+const draggableOpt = ref([...bento.visibleOptionalTiles.value])
+watch(() => bento.visibleOptionalTiles.value, (v) => { draggableOpt.value = [...v] })
+function onOptDragEnd() { bento.reorderOptional(draggableOpt.value) }
 </script>
 
 <template>
@@ -381,31 +393,26 @@ defineExpose({ toggleEditMode, editMode })
       <TeacherTodoWidget />
     </div>
 
-    <!-- ═══ OPTIONAL WIDGETS (shared with student) ═══ -->
-    <div v-if="bento.isVisible('clock')" class="dashboard-card bento-tile bento-optional" :class="{ 'bento-tile--editing': editMode }">
-      <button v-if="editMode" class="bento-tile-remove" @click="bento.toggleTile('clock')"><X :size="12" /></button>
-      <WidgetClock />
-    </div>
-    <div v-if="bento.isVisible('quote')" class="dashboard-card bento-tile bento-optional bento-optional--wide" :class="{ 'bento-tile--editing': editMode }">
-      <button v-if="editMode" class="bento-tile-remove" @click="bento.toggleTile('quote')"><X :size="12" /></button>
-      <WidgetQuote />
-    </div>
-    <div v-if="bento.isVisible('pomodoro')" class="dashboard-card bento-tile bento-optional" :class="{ 'bento-tile--editing': editMode }">
-      <button v-if="editMode" class="bento-tile-remove" @click="bento.toggleTile('pomodoro')"><X :size="12" /></button>
-      <WidgetPomodoro />
-    </div>
-    <div v-if="bento.isVisible('quicklinks')" class="dashboard-card bento-tile bento-optional bento-optional--wide" :class="{ 'bento-tile--editing': editMode }">
-      <button v-if="editMode" class="bento-tile-remove" @click="bento.toggleTile('quicklinks')"><X :size="12" /></button>
-      <WidgetQuickLinks />
-    </div>
-    <div v-if="bento.isVisible('dm-files')" class="dashboard-card bento-tile bento-optional bento-optional--wide" :class="{ 'bento-tile--editing': editMode }">
-      <button v-if="editMode" class="bento-tile-remove" @click="bento.toggleTile('dm-files')"><X :size="12" /></button>
-      <WidgetDmFiles />
-    </div>
-    <div v-if="bento.isVisible('week-cal')" class="dashboard-card bento-tile bento-optional bento-optional--wide" :class="{ 'bento-tile--editing': editMode }">
-      <button v-if="editMode" class="bento-tile-remove" @click="bento.toggleTile('week-cal')"><X :size="12" /></button>
-      <WidgetWeekCal :items="next48h" />
-    </div>
+    <!-- ═══ OPTIONAL WIDGETS (drag-and-drop en mode édition) ═══ -->
+    <VueDraggable
+      v-if="draggableOpt.length"
+      v-model="draggableOpt"
+      :disabled="!editMode"
+      ghost-class="bento-opt--ghost"
+      :animation="200"
+      class="bento-opt-grid"
+      @end="onOptDragEnd"
+    >
+      <div
+        v-for="t in draggableOpt"
+        :key="t.id"
+        class="dashboard-card bento-tile bento-optional"
+        :class="{ 'bento-tile--editing': editMode, 'bento-optional--wide': wideWidgets.has(t.id) }"
+      >
+        <button v-if="editMode" class="bento-tile-remove" @click="bento.toggleTile(t.id); bento.refreshVisibleOptional()"><X :size="12" /></button>
+        <component :is="optWidgetComponents[t.id]" v-bind="t.id === 'week-cal' ? { items: next48h } : {}" />
+      </div>
+    </VueDraggable>
 
     <!-- ═══ ADD WIDGET (edit mode) ═══ -->
     <button v-if="editMode && hiddenTileDefs.length" class="bento-add-tile" @click="showTileDrawer = !showTileDrawer">
@@ -771,9 +778,20 @@ defineExpose({ toggleEditMode, editMode })
   grid-column: span 2;
 }
 
-/* ── Optional widgets ── */
+/* ── Optional widgets (drag-drop grid) ── */
+.bento-opt-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  grid-column: 1 / -1;
+}
 .bento-optional { grid-column: span 1; }
 .bento-optional--wide { grid-column: span 2; }
+.bento-opt--ghost {
+  opacity: 0.3;
+  border: 2px dashed var(--accent) !important;
+  border-radius: var(--radius);
+}
 .activity-list {
   display: flex;
   flex-direction: column;

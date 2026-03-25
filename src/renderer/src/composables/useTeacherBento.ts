@@ -38,6 +38,9 @@ export const TEACHER_TILES: TeacherTileDef[] = [
 ]
 
 const STORAGE_KEY = 'teacher_bento_hidden'
+const ORDER_KEY   = 'teacher_bento_opt_order'
+
+const OPTIONAL_IDS = TEACHER_TILES.filter(t => t.defaultHidden).map(t => t.id)
 
 function loadHidden(): Set<string> {
   try {
@@ -58,8 +61,28 @@ function loadHidden(): Set<string> {
 // État singleton partagé entre tous les composants qui importent ce composable
 const hidden = ref<Set<string>>(loadHidden())
 
+// Ordre des widgets optionnels (persisté séparément)
+function loadOptOrder(): string[] {
+  try {
+    const saved = localStorage.getItem(ORDER_KEY)
+    if (saved) {
+      const arr = JSON.parse(saved) as string[]
+      // Ajouter les IDs manquants à la fin
+      for (const id of OPTIONAL_IDS) {
+        if (!arr.includes(id)) arr.push(id)
+      }
+      return arr.filter(id => OPTIONAL_IDS.includes(id))
+    }
+  } catch { /* ignore */ }
+  return [...OPTIONAL_IDS]
+}
+const optionalOrder = ref<string[]>(loadOptOrder())
+
 function persist() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify([...hidden.value]))
+}
+function persistOrder() {
+  localStorage.setItem(ORDER_KEY, JSON.stringify(optionalOrder.value))
 }
 
 export function useTeacherBento() {
@@ -74,8 +97,28 @@ export function useTeacherBento() {
 
   function resetTiles() {
     hidden.value = new Set()
+    optionalOrder.value = [...OPTIONAL_IDS]
     localStorage.removeItem(STORAGE_KEY)
+    localStorage.removeItem(ORDER_KEY)
   }
 
-  return { hidden, isVisible, toggleTile, resetTiles, allTiles: TEACHER_TILES }
+  /** Widgets optionnels visibles, dans l'ordre persisté. */
+  const visibleOptionalTiles = ref(
+    optionalOrder.value.filter(id => !hidden.value.has(id)).map(id => TEACHER_TILES.find(t => t.id === id)!).filter(Boolean)
+  )
+
+  function refreshVisibleOptional() {
+    visibleOptionalTiles.value = optionalOrder.value
+      .filter(id => !hidden.value.has(id))
+      .map(id => TEACHER_TILES.find(t => t.id === id)!)
+      .filter(Boolean)
+  }
+
+  function reorderOptional(newOrder: TeacherTileDef[]) {
+    optionalOrder.value = newOrder.map(t => t.id)
+    persistOrder()
+    refreshVisibleOptional()
+  }
+
+  return { hidden, isVisible, toggleTile, resetTiles, allTiles: TEACHER_TILES, visibleOptionalTiles, reorderOptional, refreshVisibleOptional }
 }
