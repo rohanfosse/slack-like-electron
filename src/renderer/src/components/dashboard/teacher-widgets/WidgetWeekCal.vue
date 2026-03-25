@@ -22,7 +22,7 @@ const weekDays = computed(() => {
       date: `${d.getDate()}/${d.getMonth() + 1}`,
       isToday: i === 0,
       items: props.items.filter(it => {
-        const itDate = new Date(it.date ?? it.deadline ?? '').toISOString().slice(0, 10)
+        const itDate = new Date(it.time).toISOString().slice(0, 10)
         return itDate === dateStr
       }),
     })
