@@ -276,15 +276,34 @@
             <span class="docs-group-count">{{ docs.length }} fichier{{ docs.length > 1 ? 's' : '' }}</span>
           </div>
 
+          <!-- List header (sortable columns) -->
+          <div v-if="viewMode === 'list'" class="docs-list-header">
+            <span class="docs-lh-icon" />
+            <button class="docs-lh-col docs-lh-col--name" :class="{ active: sortBy === 'name' }" @click="sortBy = 'name'">Nom</button>
+            <button class="docs-lh-col docs-lh-col--type" :class="{ active: sortBy === 'type' }" @click="sortBy = 'type'">Type</button>
+            <button class="docs-lh-col docs-lh-col--date" :class="{ active: sortBy === 'date' }" @click="sortBy = 'date'">Date</button>
+            <span class="docs-lh-col docs-lh-col--actions" />
+          </div>
+
           <div class="docs-grid" :class="{ 'docs-grid--list': viewMode === 'list' }">
             <div
               v-for="doc in docs"
               :key="doc.id"
               class="doc-card"
-              :class="{ 'doc-card--list': viewMode === 'list' }"
+              :class="{ 'doc-card--list': viewMode === 'list', 'doc-card--fav': docStore.isFavorite(doc.id) }"
               :title="doc.description ?? doc.name"
               @click="openDoc(doc)"
             >
+              <!-- Favorite star (always visible) -->
+              <button
+                class="doc-card-fav"
+                :class="{ 'doc-card-fav--active': docStore.isFavorite(doc.id) }"
+                :title="docStore.isFavorite(doc.id) ? 'Retirer des favoris' : 'Ajouter aux favoris'"
+                @click.stop="docStore.toggleFavorite(doc.id)"
+              >
+                <Star :size="13" />
+              </button>
+
               <div class="doc-card-icon" :style="{ background: iconColors[docIconType(doc)] + '1A', color: iconColors[docIconType(doc)] }">
                 <component :is="TYPE_ICON_MAP[docIconType(doc)] ?? File" :size="viewMode === 'list' ? 20 : 28" />
               </div>
@@ -297,6 +316,8 @@
                 {{ doc.name }}
                 <span v-if="isRecent(doc.created_at)" class="doc-new-badge">Nouveau</span>
               </p>
+
+              <p v-if="doc.description" class="doc-card-desc">{{ doc.description }}</p>
 
               <span v-if="doc.travail_title" class="doc-devoir-badge">
                 <BookMarked :size="10" />
@@ -841,6 +862,31 @@
   margin-bottom: 12px;
 }
 
+/* Favorite star (always visible) */
+.doc-card-fav {
+  position: absolute; top: 8px; left: 8px; z-index: 2;
+  display: flex; align-items: center; justify-content: center;
+  width: 26px; height: 26px; border-radius: 50%;
+  border: none; background: transparent;
+  color: var(--text-muted); cursor: pointer;
+  opacity: .3; transition: all .15s;
+}
+.doc-card:hover .doc-card-fav,
+.doc-card-fav--active { opacity: 1; }
+.doc-card-fav--active { color: #f59e0b; }
+.doc-card-fav:hover { transform: scale(1.15); }
+
+/* Description (truncated) */
+.doc-card-desc {
+  font-size: 11px; color: var(--text-muted);
+  line-height: 1.3; margin-bottom: 4px;
+  display: -webkit-box; -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical; overflow: hidden;
+}
+
+/* Fav border accent */
+.doc-card--fav { border-color: rgba(245,158,11,.2); }
+
 .doc-card-type-badge {
   position: absolute;
   top: 10px;
@@ -1334,7 +1380,30 @@
   color: var(--color-success);
   vertical-align: middle;
   margin-left: 4px;
+  animation: doc-new-pulse 2s ease-in-out infinite;
 }
+@keyframes doc-new-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: .5; }
+}
+
+/* ── List header (sortable columns) ── */
+.docs-list-header {
+  display: grid;
+  grid-template-columns: 36px 1fr 80px 100px 80px;
+  gap: 8px; align-items: center;
+  padding: 6px 14px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 4px;
+}
+.docs-lh-col {
+  font-size: 11px; font-weight: 600; color: var(--text-muted);
+  text-transform: uppercase; letter-spacing: .3px;
+  border: none; background: transparent; cursor: pointer;
+  text-align: left; padding: 2px 0;
+  transition: color .15s; font-family: var(--font);
+}
+.docs-lh-col:hover, .docs-lh-col.active { color: var(--accent); }
 
 /* ── File size badge ── */
 .doc-card-size {
