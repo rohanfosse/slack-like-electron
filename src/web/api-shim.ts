@@ -703,6 +703,10 @@ async function importStudentsBrowser(promoId: number): Promise<unknown> {
   windowIsMaximized: () => Promise.resolve({ ok: true, data: false }),
   onMaximizeChange:  (_cb: unknown) => () => {},
 
+  // ── Updater - no-ops en web ──────────────────────────────────────────────
+  onUpdaterAvailable:  (_cb: unknown) => () => {},
+  onUpdaterDownloaded: (_cb: unknown) => () => {},
+
   platform: 'web',
 
   // ── Typing indicator ───────────────────────────────────────────────────────
