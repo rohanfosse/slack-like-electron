@@ -52,14 +52,15 @@ function extIcon(ext: string): string {
   return map[ext] || '📎'
 }
 
-function extColor(ext: string): string {
+function extCssClass(ext: string): string {
   const map: Record<string, string> = {
-    PDF: '#dc2626', DOC: '#3b82f6', DOCX: '#3b82f6',
-    XLS: '#059669', XLSX: '#059669', CSV: '#059669',
-    PPT: '#d97706', PPTX: '#d97706',
-    ZIP: '#8b5cf6', RAR: '#8b5cf6', '7Z': '#8b5cf6',
+    PDF: 'mfc--pdf', DOC: 'mfc--doc', DOCX: 'mfc--doc',
+    XLS: 'mfc--xls', XLSX: 'mfc--xls', CSV: 'mfc--xls',
+    PPT: 'mfc--ppt', PPTX: 'mfc--ppt',
+    ZIP: 'mfc--zip', RAR: 'mfc--zip', '7Z': 'mfc--zip',
+    PNG: 'mfc--img', JPG: 'mfc--img', JPEG: 'mfc--img', GIF: 'mfc--img', WEBP: 'mfc--img',
   }
-  return map[ext] || 'var(--text-muted)'
+  return map[ext] || 'mfc--default'
 }
 
 function formatFileSize(bytes: number): string {
@@ -85,15 +86,15 @@ marked.use({
         const sizeMatch = (href ?? '').match(/#size=(\d+)/)
         const sizeStr = sizeMatch ? formatFileSize(parseInt(sizeMatch[1])) : ''
         const cleanUrl = escapeHtml((href ?? '').replace(/#size=\d+/, ''))
-        const color = extColor(ext)
         const icon = extIcon(ext)
+        const extClass = extCssClass(ext)
         const imgExts = ['PNG', 'JPG', 'JPEG', 'GIF', 'WEBP', 'SVG', 'BMP']
         const isImg = imgExts.includes(ext)
         const iconHtml = isImg
-          ? `<img class="msg-file-card-thumb" src="${cleanUrl}" alt="" loading="lazy" />`
-          : `<span class="msg-file-card-icon" style="color:${color}">${icon}</span>`
+          ? `<img class="msg-file-card-thumb" src="${cleanUrl}" alt="" />`
+          : `<span class="msg-file-card-icon ${extClass}">${icon}</span>`
         return (
-          `<a class="msg-file-card" data-url="${cleanUrl}" data-file-name="${escapeHtml(name)}" href="#" tabindex="0" style="border-left:3px solid ${color}">` +
+          `<a class="msg-file-card ${extClass}" data-url="${cleanUrl}" data-file-name="${escapeHtml(name)}" href="#" tabindex="0">` +
           iconHtml +
           `<span class="msg-file-card-body"><span class="msg-file-card-name">${escapeHtml(name)}</span>` +
           `<span class="msg-file-card-meta"><span class="msg-file-card-ext">${escapeHtml(ext)}</span>` +
@@ -206,6 +207,6 @@ export function renderMessageContent(raw: string, searchTerm = '', currentUserNa
   if (searchTerm) html = highlightInHtml(html, searchTerm)
   return DOMPurify.sanitize(html, {
     ALLOWED_TAGS: ['p', 'br', 'strong', 'em', 'code', 'pre', 'a', 'span', 'div', 'mark', 'ul', 'ol', 'li', 'blockquote', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'hr', 'img', 'del', 's'],
-    ALLOWED_ATTR: ['class', 'data-url', 'data-channel', 'data-devoir-id', 'role', 'href', 'tabindex', 'style', 'src', 'alt'],
+    ALLOWED_ATTR: ['class', 'data-url', 'data-channel', 'data-devoir-id', 'data-file-name', 'role', 'href', 'tabindex', 'style', 'src', 'alt', 'loading'],
   })
 }
