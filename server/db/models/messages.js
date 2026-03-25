@@ -323,15 +323,28 @@ function getDmFiles() {
   const result  = [];
 
   for (const row of rows) {
-    const push = (name, url, isImage) => result.push({
-      message_id:   row.message_id,
-      student_id:   row.student_id,
-      student_name: row.student_name ?? row.author_name,
-      file_name:    name.trim() || url.split('/').pop(),
-      file_url:     url,
-      is_image:     isImage,
-      sent_at:      row.created_at,
-    });
+    const push = (name, url, isImage) => {
+      const cleanUrl = url.replace(/#size=\d+/, '');
+      const sizeMatch = url.match(/#size=(\d+)/);
+      // Extraire le nom original du fichier (retire le prefix timestamp_hex_)
+      let fileName = name.trim();
+      if (!fileName) {
+        const raw = cleanUrl.split('/').pop() || '';
+        // Format serveur: "1774343958211_05da371d8f_nom-original.ext"
+        const cleaned = raw.replace(/^\d+_[a-f0-9]+_/, '');
+        fileName = decodeURIComponent(cleaned) || raw;
+      }
+      result.push({
+        message_id:   row.message_id,
+        student_id:   row.student_id,
+        student_name: row.student_name ?? row.author_name,
+        file_name:    fileName,
+        file_url:     cleanUrl,
+        is_image:     isImage,
+        file_size:    sizeMatch ? parseInt(sizeMatch[1]) : null,
+        sent_at:      row.created_at,
+      });
+    };
     let m;
     fileRe.lastIndex  = 0;
     imageRe.lastIndex = 0;

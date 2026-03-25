@@ -7,6 +7,7 @@ import { useRouter }        from 'vue-router'
 import { useAppStore }      from '@/stores/app'
 import { useMessagesStore } from '@/stores/messages'
 import { useModalsStore }   from '@/stores/modals'
+import { useDocumentsStore } from '@/stores/documents'
 import { useTravauxStore }  from '@/stores/travaux'
 import { useToast }         from '@/composables/useToast'
 import { useOpenExternal }  from '@/composables/useOpenExternal'
@@ -20,6 +21,7 @@ export function useBubbleActions(msg: () => Message) {
   const appStore      = useAppStore()
   const messagesStore = useMessagesStore()
   const modals        = useModalsStore()
+  const documentsStore = useDocumentsStore()
   const travauxStore  = useTravauxStore()
   const { openExternal } = useOpenExternal()
   const { showToast }    = useToast()
@@ -120,8 +122,24 @@ export function useBubbleActions(msg: () => Message) {
     reportReason.value = ''
   }
 
-  // ── Click handler (liens externes + #canal)
+  // ── Click handler (fichiers, liens externes + #canal)
   function onMsgClick(e: MouseEvent) {
+    // File card → preview si type supporté, sinon download
+    const fileCard = (e.target as HTMLElement).closest('.msg-file-card') as HTMLElement | null
+    if (fileCard) {
+      e.preventDefault()
+      const url = fileCard.dataset.url || ''
+      const fileName = fileCard.dataset.fileName || ''
+      const ext = fileName.split('.').pop()?.toLowerCase() || ''
+      const previewable = ['pdf', 'png', 'jpg', 'jpeg', 'gif', 'webp', 'docx', 'xlsx', 'txt']
+      if (previewable.includes(ext)) {
+        documentsStore.openPreview({ id: 0, channel_id: null, promo_id: null, name: fileName, type: 'file', content: url, category: null, description: null, created_at: '' })
+        modals.documentPreview = true
+      } else {
+        openExternal(url)
+      }
+      return
+    }
     const a = (e.target as HTMLElement).closest('a[data-url]') as HTMLAnchorElement | null
     if (a) {
       e.preventDefault()

@@ -3,14 +3,18 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import {
-  Paperclip, Image, FileText, FileArchive, FileCode, Download,
+  Paperclip, Image, FileText, FileArchive, FileCode, Download, Eye, Copy,
   Search, X, LayoutGrid, List, ChevronDown, ChevronRight, User,
 } from 'lucide-vue-next'
 import { useAppStore } from '@/stores/app'
+import { useDocumentsStore } from '@/stores/documents'
+import { useModalsStore } from '@/stores/modals'
 import { useApi }      from '@/composables/useApi'
 import { relativeTime } from '@/utils/date'
 
 const appStore = useAppStore()
+const documentsStore = useDocumentsStore()
+const modals   = useModalsStore()
 const router   = useRouter()
 const { api }  = useApi()
 
@@ -23,7 +27,15 @@ interface DmFile {
   file_name:    string
   file_url:     string
   is_image:     boolean
+  file_size:    number | null
   sent_at:      string
+}
+
+function formatFileSize(bytes: number | null | undefined): string {
+  if (!bytes || bytes <= 0) return ''
+  if (bytes < 1024) return bytes + ' o'
+  if (bytes < 1048576) return (bytes / 1024).toFixed(0) + ' Ko'
+  return (bytes / 1048576).toFixed(1) + ' Mo'
 }
 
 const files       = ref<DmFile[]>([])
@@ -109,9 +121,17 @@ function initials(name: string) {
 
 function openFile(f: DmFile) {
   if (f.is_image) { lightboxUrl.value = f.file_url; return }
-  window.api.openPath(f.file_url)
+  const ext = extOf(f.file_name)
+  const previewable = ['pdf', 'docx', 'xlsx', 'txt']
+  if (previewable.includes(ext)) {
+    documentsStore.openPreview({ id: 0, channel_id: null, promo_id: null, name: f.file_name, type: 'file', content: f.file_url, category: null, description: null, created_at: f.sent_at })
+    modals.documentPreview = true
+  } else {
+    window.api.openPath(f.file_url)
+  }
 }
 function downloadFile(f: DmFile) { window.api.openPath(f.file_url) }
+function copyFileLink(f: DmFile) { navigator.clipboard.writeText(f.file_url) }
 function downloadLightbox()       { if (lightboxUrl.value) window.api.openPath(lightboxUrl.value) }
 
 function toggleCollapse(studentId: number) {
@@ -201,11 +221,14 @@ function toggleCollapse(studentId: number) {
           <div class="fv-card-meta">
             <span class="fv-card-avatar" :style="{ background: avatarColor(f.student_name) }">{{ initials(f.student_name) }}</span>
             <span class="fv-card-student">{{ f.student_name }}</span>
+            <span v-if="f.file_size" class="fv-card-size">{{ formatFileSize(f.file_size) }}</span>
             <span class="fv-card-date">{{ relativeTime(f.sent_at) }}</span>
           </div>
         </div>
         <div class="fv-card-actions" @click.stop>
-          <button class="fv-card-btn" title="Télécharger / Ouvrir" @click="downloadFile(f)"><Download :size="13" /></button>
+          <button class="fv-card-btn" title="Aperçu" @click="openFile(f)"><Eye :size="13" /></button>
+          <button class="fv-card-btn" title="Copier le lien" @click="copyFileLink(f)"><Copy :size="13" /></button>
+          <button class="fv-card-btn" title="Télécharger" @click="downloadFile(f)"><Download :size="13" /></button>
         </div>
       </div>
     </div>
@@ -235,7 +258,9 @@ function toggleCollapse(studentId: number) {
             </div>
             <span class="fv-list-item-name">{{ f.file_name }}</span>
             <span class="fv-list-item-ext">{{ extOf(f.file_name).toUpperCase() || '—' }}</span>
+            <span v-if="f.file_size" class="fv-list-item-size">{{ formatFileSize(f.file_size) }}</span>
             <span class="fv-list-item-date">{{ relativeTime(f.sent_at) }}</span>
+            <button class="fv-card-btn" title="Aperçu" @click.stop="openFile(f)"><Eye :size="13" /></button>
             <button class="fv-card-btn" title="Télécharger" @click.stop="downloadFile(f)"><Download :size="13" /></button>
           </div>
         </div>
@@ -327,34 +352,34 @@ function toggleCollapse(studentId: number) {
 /* ── Grid ── */
 .fv-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(175px, 1fr));
-  gap: 10px; overflow-y: auto; padding-right: 2px; flex: 1;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 8px; overflow-y: auto; padding-right: 2px; flex: 1;
 }
 
 /* ── Card ── */
 .fv-card {
   display: flex; flex-direction: column;
   background: var(--bg-elevated); border: 1px solid var(--border);
-  border-radius: 10px; overflow: hidden; cursor: pointer;
-  transition: box-shadow .15s, transform .15s;
+  border-radius: var(--radius, 10px); overflow: hidden; cursor: pointer;
+  transition: border-color .15s, box-shadow .15s, transform .15s;
   position: relative;
 }
-.fv-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,.12); transform: translateY(-1px); }
+.fv-card:hover { border-color: rgba(74,144,217,.3); box-shadow: 0 4px 16px rgba(0,0,0,.12); transform: translateY(-1px); }
 
 .fv-card-thumb {
-  height: 100px; display: flex; align-items: center; justify-content: center;
+  height: 88px; display: flex; align-items: center; justify-content: center;
   overflow: hidden; position: relative;
 }
 .fv-card-img { width: 100%; height: 100%; object-fit: cover; }
 .fv-card-ext {
   position: absolute; bottom: 6px; right: 6px;
   font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: .3px;
-  color: #fff; padding: 1px 5px; border-radius: 4px; opacity: .9;
+  color: #fff; padding: 2px 6px; border-radius: 4px;
 }
 
-.fv-card-body { padding: 8px 10px; display: flex; flex-direction: column; gap: 5px; }
+.fv-card-body { padding: 8px 10px 10px; display: flex; flex-direction: column; gap: 4px; }
 .fv-card-name {
-  font-size: 11.5px; font-weight: 600; color: var(--text-primary);
+  font-size: 12px; font-weight: 600; color: var(--text-primary);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .fv-card-meta { display: flex; align-items: center; gap: 5px; }
@@ -369,8 +394,11 @@ function toggleCollapse(studentId: number) {
 }
 .fv-card-date { font-size: 9.5px; color: var(--text-muted); white-space: nowrap; }
 
+.fv-card-size { font-size: 9.5px; color: var(--text-muted); }
+
 .fv-card-actions {
   position: absolute; top: 6px; right: 6px;
+  display: flex; gap: 3px;
   opacity: 0; transition: opacity .12s;
 }
 .fv-card:hover .fv-card-actions { opacity: 1; }
@@ -378,9 +406,9 @@ function toggleCollapse(studentId: number) {
   width: 26px; height: 26px; border-radius: 7px;
   background: var(--bg-base); border: 1px solid var(--border);
   display: flex; align-items: center; justify-content: center;
-  color: var(--text-secondary); cursor: pointer; transition: color .12s;
+  color: var(--text-secondary); cursor: pointer; transition: color .12s, background .12s;
 }
-.fv-card-btn:hover { color: var(--accent); }
+.fv-card-btn:hover { color: var(--accent); background: var(--bg-hover); }
 
 /* ── Vue Liste ── */
 .fv-list { display: flex; flex-direction: column; gap: 8px; overflow-y: auto; flex: 1; padding-right: 2px; }
@@ -419,6 +447,7 @@ function toggleCollapse(studentId: number) {
 .fv-list-thumb { width: 100%; height: 100%; object-fit: cover; }
 .fv-list-item-name { flex: 1; font-size: 12.5px; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .fv-list-item-ext { font-size: 10px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; flex-shrink: 0; min-width: 28px; text-align: right; }
+.fv-list-item-size { font-size: 10px; color: var(--text-muted); flex-shrink: 0; min-width: 50px; text-align: right; }
 .fv-list-item-date { font-size: 10.5px; color: var(--text-muted); flex-shrink: 0; min-width: 70px; text-align: right; }
 
 /* ── Empty / Loading ── */

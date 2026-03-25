@@ -56,7 +56,7 @@ const {
   triggerMention, triggerChannel, triggerDevoir, executeCommand, dismissAll,
 } = useMsgAutocomplete(content, inputEl, autoResize)
 
-const { attaching, attachFile } = useMsgAttachment(content, inputEl, autoResize)
+const { attaching, attachFile, uploadProgress } = useMsgAttachment(content, inputEl, autoResize)
 
 const {
   sending, everyoneWarning, isOfflineOrDisconnected,
@@ -321,6 +321,11 @@ function onKeydown(e: KeyboardEvent) {
           @keydown="onKeydown"
           @blur="onBlur"
         />
+
+        <!-- Barre de progression upload -->
+        <div v-if="uploadProgress !== null" class="msg-upload-bar">
+          <div class="msg-upload-fill" :style="{ width: uploadProgress + '%' }" />
+        </div>
 
         <!-- Barre d'actions bas -->
         <div class="mi-actions-row">

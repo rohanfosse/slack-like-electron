@@ -40,6 +40,34 @@ export function escapeHtml(str: string | null | undefined): string {
     .replace(/"/g, '&quot;')
 }
 
+// ─── Helpers fichiers ────────────────────────────────────────────────────────
+
+function extIcon(ext: string): string {
+  const map: Record<string, string> = {
+    PDF: '📄', DOC: '📝', DOCX: '📝', XLS: '📊', XLSX: '📊',
+    PPT: '📊', PPTX: '📊', ZIP: '📦', RAR: '📦', '7Z': '📦',
+    PNG: '🖼️', JPG: '🖼️', JPEG: '🖼️', GIF: '🖼️', WEBP: '🖼️', SVG: '🖼️',
+    MP4: '🎬', MP3: '🎵', TXT: '📃', CSV: '📊', MD: '📃',
+  }
+  return map[ext] || '📎'
+}
+
+function extColor(ext: string): string {
+  const map: Record<string, string> = {
+    PDF: '#dc2626', DOC: '#3b82f6', DOCX: '#3b82f6',
+    XLS: '#059669', XLSX: '#059669', CSV: '#059669',
+    PPT: '#d97706', PPTX: '#d97706',
+    ZIP: '#8b5cf6', RAR: '#8b5cf6', '7Z': '#8b5cf6',
+  }
+  return map[ext] || 'var(--text-muted)'
+}
+
+function formatFileSize(bytes: number): string {
+  if (bytes < 1024) return bytes + ' o'
+  if (bytes < 1048576) return (bytes / 1024).toFixed(0) + ' Ko'
+  return (bytes / 1048576).toFixed(1) + ' Mo'
+}
+
 // ─── Configuration marked (singleton) ────────────────────────────────────────
 
 marked.use({
@@ -50,16 +78,27 @@ marked.use({
     link({ href, tokens }: { href: string; title?: string | null; tokens: unknown[] }) {
       const text = (this as any).parser.parseInline(tokens)
       const safe = escapeHtml(href ?? '')
-      // Pièce jointe 📎 → card visuel au lieu d'un lien texte
+      // Pièce jointe 📎 → card visuel enrichie
       if (text.includes('📎')) {
         const name = text.replace(/📎\s*/g, '').replace(/<[^>]+>/g, '').trim()
         const ext  = name.split('.').pop()?.toUpperCase() ?? 'FILE'
+        const sizeMatch = (href ?? '').match(/#size=(\d+)/)
+        const sizeStr = sizeMatch ? formatFileSize(parseInt(sizeMatch[1])) : ''
+        const cleanUrl = escapeHtml((href ?? '').replace(/#size=\d+/, ''))
+        const color = extColor(ext)
+        const icon = extIcon(ext)
+        const imgExts = ['PNG', 'JPG', 'JPEG', 'GIF', 'WEBP', 'SVG', 'BMP']
+        const isImg = imgExts.includes(ext)
+        const iconHtml = isImg
+          ? `<img class="msg-file-card-thumb" src="${cleanUrl}" alt="" loading="lazy" />`
+          : `<span class="msg-file-card-icon" style="color:${color}">${icon}</span>`
         return (
-          `<a class="msg-file-card" data-url="${safe}" href="#" tabindex="0">` +
-          `<span class="msg-file-card-icon">📎</span>` +
+          `<a class="msg-file-card" data-url="${cleanUrl}" data-file-name="${escapeHtml(name)}" href="#" tabindex="0" style="border-left:3px solid ${color}">` +
+          iconHtml +
           `<span class="msg-file-card-body"><span class="msg-file-card-name">${escapeHtml(name)}</span>` +
-          `<span class="msg-file-card-ext">${escapeHtml(ext)}</span></span>` +
-          `</a>`
+          `<span class="msg-file-card-meta"><span class="msg-file-card-ext">${escapeHtml(ext)}</span>` +
+          (sizeStr ? `<span class="msg-file-card-size">${sizeStr}</span>` : '') +
+          `</span></span></a>`
         )
       }
       return `<a class="msg-link" data-url="${safe}" href="#" tabindex="0">${text}</a>`

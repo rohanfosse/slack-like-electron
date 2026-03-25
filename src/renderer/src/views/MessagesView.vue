@@ -41,6 +41,12 @@
   interface DmFile { message_id: number; student_id: number; student_name: string; file_name: string; file_url: string; is_image: boolean; sent_at: string }
   const dmFiles        = ref<DmFile[]>([])
   const dmFilesLoading = ref(false)
+  const dmFileFilter   = ref<'all' | 'images' | 'docs'>('all')
+  const filteredDmFiles = computed(() => {
+    if (dmFileFilter.value === 'all') return dmFiles.value
+    if (dmFileFilter.value === 'images') return dmFiles.value.filter(f => f.is_image)
+    return dmFiles.value.filter(f => !f.is_image)
+  })
 
   async function loadDmFiles() {
     if (!appStore.activeDmStudentId) return
@@ -144,11 +150,12 @@
     dmUploading.value = true
     try {
       let url: string | null = null
+      let fileSize = 0
       const electronPath = (file as unknown as { path?: string }).path
       if (electronPath) {
         // Electron : upload via preload
-        const res = await window.api.uploadFile(electronPath) as { ok: boolean; data?: { url: string } } | null
-        if (res?.ok && res.data) url = res.data.url
+        const res = await window.api.uploadFile(electronPath) as { ok: boolean; data?: { url: string; file_size?: number } } | null
+        if (res?.ok && res.data) { url = res.data.url; fileSize = res.data.file_size || 0 }
       } else {
         // Web : upload direct FormData
         const formData = new FormData()
@@ -159,12 +166,13 @@
           headers: token ? { Authorization: `Bearer ${token}` } : {},
           body: formData,
         })
-        const json = await resp.json() as { ok: boolean; data?: string }
-        if (json.ok && json.data) url = window.location.origin + json.data
+        const json = await resp.json() as { ok: boolean; data?: string; file_size?: number }
+        if (json.ok && json.data) { url = window.location.origin + json.data; fileSize = json.file_size || 0 }
       }
       if (!url) { showToast('Échec de l\'upload.', 'error'); return }
+      const sizedUrl = fileSize ? `${url}#size=${fileSize}` : url
       const isImage = /\.(png|jpe?g|gif|webp|svg|bmp)$/i.test(file.name)
-      injectMd(isImage ? `![${file.name}](${url})` : `[📎 ${file.name}](${url})`)
+      injectMd(isImage ? `![${file.name}](${sizedUrl})` : `[📎 ${file.name}](${sizedUrl})`)
       // Rafraîchir la liste des fichiers DM si le panel est ouvert
       if (rightPanel.value === 'dm-files') loadDmFiles()
     } catch { showToast('Erreur lors de l\'upload.', 'error') }
@@ -485,11 +493,16 @@
             <span class="dm-files-panel-title"><Paperclip :size="14" /> Fichiers partagés</span>
             <button class="btn-icon" aria-label="Fermer" @click="rightPanel = null"><XIcon :size="14" /></button>
           </div>
+          <div class="dm-files-filters">
+            <button :class="{ active: dmFileFilter === 'all' }" @click="dmFileFilter = 'all'">Tout</button>
+            <button :class="{ active: dmFileFilter === 'images' }" @click="dmFileFilter = 'images'">Images</button>
+            <button :class="{ active: dmFileFilter === 'docs' }" @click="dmFileFilter = 'docs'">Documents</button>
+          </div>
           <div v-if="dmFilesLoading" class="dm-files-empty">Chargement…</div>
-          <div v-else-if="!dmFiles.length" class="dm-files-empty">Aucun fichier partagé dans cette conversation.</div>
+          <div v-else-if="!filteredDmFiles.length" class="dm-files-empty">Aucun fichier {{ dmFileFilter === 'all' ? 'partagé dans cette conversation' : dmFileFilter === 'images' ? 'image' : 'document' }}.</div>
           <div v-else class="dm-files-list">
             <a
-              v-for="f in dmFiles"
+              v-for="f in filteredDmFiles"
               :key="f.message_id + f.file_url"
               class="dm-file-item"
               :href="f.file_url"
@@ -699,6 +712,14 @@
   flex-shrink: 0;
 }
 .dm-files-panel-title { display: flex; align-items: center; gap: 6px; }
+.dm-files-filters { display: flex; gap: 4px; padding: 8px 12px; flex-shrink: 0; }
+.dm-files-filters button {
+  padding: 4px 12px; border-radius: 100px; border: 1px solid var(--border);
+  background: transparent; font-size: 11px; font-weight: 600; cursor: pointer;
+  color: var(--text-muted); font-family: inherit; transition: all .15s;
+}
+.dm-files-filters button.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+.dm-files-filters button:hover:not(.active) { border-color: var(--text-muted); }
 .dm-files-empty { padding: 24px 16px; font-size: 12.5px; color: var(--text-muted); text-align: center; }
 .dm-files-list { flex: 1; overflow-y: auto; padding: 6px 0; }
 .dm-file-item {
