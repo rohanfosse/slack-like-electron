@@ -16,6 +16,12 @@ import WidgetLivrables from './student-widgets/WidgetLivrables.vue'
 import WidgetSoutenances from './student-widgets/WidgetSoutenances.vue'
 import WidgetLastFeedback from './student-widgets/WidgetLastFeedback.vue'
 import WidgetRecentDoc from './student-widgets/WidgetRecentDoc.vue'
+import WidgetClock from './student-widgets/WidgetClock.vue'
+import WidgetQuote from './student-widgets/WidgetQuote.vue'
+import WidgetCalendar from './student-widgets/WidgetCalendar.vue'
+import WidgetProgress from './student-widgets/WidgetProgress.vue'
+import WidgetQuickLinks from './student-widgets/WidgetQuickLinks.vue'
+import WidgetPomodoro from './student-widgets/WidgetPomodoro.vue'
 import { STUDENT_WIDGETS } from './student-widgets/registry'
 
 const props = defineProps<{
@@ -60,15 +66,25 @@ const widgetComponents: Record<string, Component> = {
   live: WidgetLive, project: WidgetProject, exams: WidgetExams,
   livrables: WidgetLivrables, soutenances: WidgetSoutenances,
   feedback: WidgetLastFeedback, recentDoc: WidgetRecentDoc,
+  clock: WidgetClock, quote: WidgetQuote, calendar: WidgetCalendar,
+  progress: WidgetProgress, quicklinks: WidgetQuickLinks, pomodoro: WidgetPomodoro,
 }
 
 const latestFeedback = computed(() => props.recentFeedback?.[0] ?? null)
+
+const calendarDeadlines = computed(() =>
+  props.urgentActions.filter(a => a.deadline).map(a => ({ date: a.deadline!, title: a.title })),
+)
 
 const widgetProps = computed<Record<string, Record<string, unknown>>>(() => ({
   live: {}, project: { project: activeProject.value },
   exams: { exams: nextExams.value }, livrables: { livrables: nextLivrables.value },
   soutenances: { soutenances: nextSoutenances.value },
   feedback: { feedback: latestFeedback.value }, recentDoc: {},
+  clock: {}, quote: {},
+  calendar: { deadlines: calendarDeadlines.value },
+  progress: { submitted: props.studentStats.submitted, total: totalDevoirs.value, graded: props.studentStats.graded },
+  quicklinks: {}, pomodoro: {},
 }))
 
 const widgetEvents: Record<string, Record<string, (...args: unknown[]) => void>> = {
