@@ -256,6 +256,34 @@
       </button>
     </div>
 
+    <!-- ── Stats bar (prof only) ──────────────────────────────────────── -->
+    <div v-if="appStore.isTeacher && docStore.documents.length" class="docs-stats-bar">
+      <div class="docs-stat">
+        <span class="docs-stat-value">{{ docStore.documents.length }}</span>
+        <span class="docs-stat-label">documents</span>
+      </div>
+      <div class="docs-stat-sep" />
+      <div class="docs-stat">
+        <span class="docs-stat-value">{{ docStore.documents.filter(d => d.type === 'file').length }}</span>
+        <span class="docs-stat-label">fichiers</span>
+      </div>
+      <div class="docs-stat-sep" />
+      <div class="docs-stat">
+        <span class="docs-stat-value">{{ docStore.documents.filter(d => d.type === 'link').length }}</span>
+        <span class="docs-stat-label">liens</span>
+      </div>
+      <div class="docs-stat-sep" />
+      <div class="docs-stat">
+        <span class="docs-stat-value">{{ docStore.documents.filter(d => isRecent(d.created_at)).length }}</span>
+        <span class="docs-stat-label">cette semaine</span>
+      </div>
+      <div class="docs-stat-sep" />
+      <div class="docs-stat">
+        <span class="docs-stat-value">{{ categories.length }}</span>
+        <span class="docs-stat-label">catégories</span>
+      </div>
+    </div>
+
     <!-- ── Contenu ─────────────────────────────────────────────────────── -->
     <div class="docs-body">
 
@@ -774,6 +802,26 @@
 }
 
 /* ── Corps ── */
+/* ── Stats bar (prof) ── */
+.docs-stats-bar {
+  display: flex; align-items: center; gap: 12px;
+  padding: 8px 20px; flex-shrink: 0;
+  background: var(--bg-sidebar);
+  border-bottom: 1px solid var(--border);
+}
+.docs-stat {
+  display: flex; align-items: baseline; gap: 4px;
+}
+.docs-stat-value {
+  font-size: 15px; font-weight: 700; color: var(--text-primary);
+}
+.docs-stat-label {
+  font-size: 11px; color: var(--text-muted);
+}
+.docs-stat-sep {
+  width: 1px; height: 18px; background: var(--border); opacity: .5;
+}
+
 .docs-body {
   flex: 1;
   overflow-y: auto;

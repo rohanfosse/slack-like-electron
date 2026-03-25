@@ -14,6 +14,8 @@ const BLOCKED_EXTENSIONS = new Set([
   '.exe', '.bat', '.cmd', '.com', '.msi', '.dll', '.scr', '.pif', '.vbs', '.wsf',
 ])
 
+const MAX_FILE_SIZE = 50 * 1024 * 1024 // 50 Mo
+
 export interface PendingFile {
   /** Chemin local (Electron) ou URL serveur (Web, déjà uploadé via openFileDialog) */
   path: string
@@ -50,6 +52,9 @@ export function useDocumentsAdd() {
   // Compat : getter simple pour le premier fichier
   const addFile     = computed(() => addFiles.value.length ? addFiles.value[0].path : null)
   const addFileName = computed(() => addFiles.value.length ? addFiles.value[0].name : null)
+
+  // Nombre de fichiers en attente (pour affichage)
+  const pendingFileCount = computed(() => addFiles.value.length)
 
   // Liste des projets disponibles (depuis les devoirs)
   const projectList = computed(() => {
@@ -168,6 +173,10 @@ export function useDocumentsAdd() {
         showToast(`Type non autorisé : ${file.name}`, 'error')
         continue
       }
+      if (file.size > MAX_FILE_SIZE) {
+        showToast(`Fichier trop volumineux : ${file.name} (max 50 Mo)`, 'error')
+        continue
+      }
 
       // Electron : file.path disponible
       const electronPath = (file as unknown as { path?: string }).path
@@ -256,8 +265,8 @@ export function useDocumentsAdd() {
       uploadProgress.value = 100
       if (successCount > 0) {
         const msg = successCount === 1
-          ? 'Document ajouté.'
-          : `${successCount} documents ajoutés.`
+          ? `"${addFiles.value[0]?.name ?? 'Document'}" ajouté avec succès`
+          : `${successCount} documents ajoutés avec succès`
         showToast(msg, 'success')
         showAddModal.value = false
       } else {
