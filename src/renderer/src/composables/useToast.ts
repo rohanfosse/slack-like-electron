@@ -1,11 +1,10 @@
 /**
  * Système de toast global (singleton) : affichage de notifications temporaires (error, success, info, undo).
- * Used by de nombreux composants et composables
+ * Les erreurs restent affichées 8s (au lieu de 4s) et peuvent être fermées manuellement.
  */
 import { reactive } from 'vue'
 
 // ─── État partagé (singleton) ────────────────────────────────────────────────
-// Un seul toast visible à la fois. Le composant <Toast> est abonné à cet état.
 
 export type ToastType = 'error' | 'success' | 'info' | 'undo'
 
@@ -13,6 +12,7 @@ interface ToastState {
   message: string
   type: ToastType
   visible: boolean
+  detail?: string
   onUndo?: () => void
 }
 
@@ -20,6 +20,7 @@ export const toastState = reactive<ToastState>({
   message: '',
   type: 'error',
   visible: false,
+  detail: undefined,
 })
 
 let _timer: ReturnType<typeof setTimeout> | null = null
@@ -27,13 +28,21 @@ let _timer: ReturnType<typeof setTimeout> | null = null
 // ─── Composable ──────────────────────────────────────────────────────────────
 
 export function useToast() {
-  function showToast(msg: string, type: Exclude<ToastType, 'undo'> = 'error') {
+  function showToast(msg: string, type: Exclude<ToastType, 'undo'> = 'error', detail?: string) {
     if (_timer) clearTimeout(_timer)
     toastState.message = msg
     toastState.type    = type
     toastState.visible = true
+    toastState.detail  = detail
     toastState.onUndo  = undefined
-    _timer = setTimeout(() => { toastState.visible = false }, 4000)
+    // Erreurs : 8s. Succès/Info : 4s.
+    const duration = type === 'error' ? 8000 : 4000
+    _timer = setTimeout(() => { toastState.visible = false }, duration)
+  }
+
+  function dismissToast() {
+    if (_timer) clearTimeout(_timer)
+    toastState.visible = false
   }
 
   function showUndoToast(msg: string, duration = 5000): Promise<boolean> {
@@ -42,6 +51,7 @@ export function useToast() {
       toastState.message = msg
       toastState.type    = 'undo'
       toastState.visible = true
+      toastState.detail  = undefined
       let settled = false
 
       toastState.onUndo = () => {
@@ -58,5 +68,5 @@ export function useToast() {
     })
   }
 
-  return { showToast, showUndoToast }
+  return { showToast, showUndoToast, dismissToast }
 }

@@ -2,14 +2,15 @@
 const router  = require('express').Router()
 const queries = require('../db/index')
 const wrap    = require('../utils/wrap')
+const { requirePromo, promoFromTravail } = require('../middleware/authorize')
 
 // GET /travaux/:travailId/groups/:groupId - cartes d'un groupe pour un travail
-router.get('/travaux/:travailId/groups/:groupId', wrap((req) => {
+router.get('/travaux/:travailId/groups/:groupId', requirePromo(promoFromTravail), wrap((req) => {
   return queries.getKanbanCards(Number(req.params.travailId), Number(req.params.groupId))
 }))
 
 // POST /travaux/:travailId/groups/:groupId - créer une carte
-router.post('/travaux/:travailId/groups/:groupId', wrap((req) => {
+router.post('/travaux/:travailId/groups/:groupId', requirePromo(promoFromTravail), wrap((req) => {
   const { title, description } = req.body
   if (!title) throw new Error('title requis')
   const createdBy = req.user?.name ?? ''

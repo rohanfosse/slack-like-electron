@@ -37,6 +37,14 @@ router.post('/', validate(submitDepotSchema), (req, res) => {
     if (req.user.type === 'student' && studentId !== req.user.id) {
       return res.status(403).json({ ok: false, error: 'Vous ne pouvez soumettre que pour votre propre compte.' })
     }
+    // Vérifier que le devoir appartient à la promo de l'étudiant
+    if (req.user.type === 'student') {
+      const { getDb } = require('../db/connection')
+      const travail = getDb().prepare('SELECT promo_id FROM travaux WHERE id = ?').get(payload.travail_id)
+      if (travail && travail.promo_id !== req.user.promo_id) {
+        return res.status(403).json({ ok: false, error: 'Ce devoir n\'appartient pas à votre promotion.' })
+      }
+    }
     res.json({ ok: true, data: queries.addDepot(payload) })
   } catch (err) {
     res.status(400).json({ ok: false, error: err.message })

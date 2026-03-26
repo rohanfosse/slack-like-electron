@@ -31,9 +31,9 @@ router.get('/categories',               requirePromo(promoFromParam), wrap((req)
 router.get('/gantt',                    requirePromo(promoFromParam), wrap((req) => queries.getGanttData(req.query.promoId ? Number(req.query.promoId) : null, req.query.channelId ? Number(req.query.channelId) : null)))
 router.get('/rendus',                   requirePromo(promoFromParam), wrap((req) => queries.getAllRendus(req.query.promoId ? Number(req.query.promoId) : null)))
 router.get('/',                         requirePromo(promoFromChannel), wrap((req) => queries.getTravaux(Number(req.query.channelId))))
-router.get('/:id',                      wrap((req) => queries.getTravailById(Number(req.params.id))))
-router.get('/:id/suivi',                wrap((req) => queries.getTravauxSuivi(Number(req.params.id))))
-router.get('/:id/group-members',        wrap((req) => queries.getTravailGroupMembers(Number(req.params.id))))
+router.get('/:id',                      requirePromo(promoFromTravail), wrap((req) => queries.getTravailById(Number(req.params.id))))
+router.get('/:id/suivi',                requirePromo(promoFromTravail), wrap((req) => queries.getTravauxSuivi(Number(req.params.id))))
+router.get('/:id/group-members',        requirePromo(promoFromTravail), wrap((req) => queries.getTravailGroupMembers(Number(req.params.id))))
 router.post('/', requireTeacher, validate(createAssignmentSchema), wrap((req) => queries.createTravail(req.body)))
 router.post('/publish', requireTeacher, async (req, res) => {
   try {

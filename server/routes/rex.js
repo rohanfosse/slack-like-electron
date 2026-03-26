@@ -152,10 +152,11 @@ router.patch('/activities/:id/status', (req, res) => {
 // POST /activities/:id/respond - soumettre une reponse anonyme
 router.post('/activities/:id/respond', (req, res) => {
   try {
-    const studentId = req.body.studentId ?? req.user?.id
+    // Sécurité : forcer l'identité depuis le JWT (anti-usurpation)
+    const studentId = req.user?.id
     let answer = req.body.answer
     if (answer === undefined && req.body.words) answer = req.body.words.join(',')
-    if (!studentId || answer === undefined) throw new Error('studentId et answer requis')
+    if (!studentId || answer === undefined) throw new Error('Identité et réponse requises')
     const activityId = Number(req.params.id)
     const response = queries.submitRexResponse({
       activityId, studentId, answer: String(answer),

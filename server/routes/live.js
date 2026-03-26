@@ -185,9 +185,9 @@ router.patch('/activities/:id/status', (req, res) => {
 // POST /activities/:id/respond - soumettre une réponse
 router.post('/activities/:id/respond', (req, res) => {
   try {
-    // Support both: explicit studentId in body OR extracted from JWT token
-    const studentId = req.body.studentId ?? req.user?.id
-    const studentName = req.body.studentName ?? req.user?.name ?? ''
+    // Sécurité : forcer l'identité depuis le JWT (anti-usurpation)
+    const studentId = req.user?.id
+    const studentName = req.user?.name ?? ''
     // Support multiple answer formats: { answer } or { answers } or { text } or { words }
     let answer = req.body.answer
     if (answer === undefined && req.body.answers) answer = req.body.answers.join(',')
