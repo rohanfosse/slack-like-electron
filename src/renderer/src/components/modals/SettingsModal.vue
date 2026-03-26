@@ -143,7 +143,7 @@
             <img :src="logoUrl" class="stg-about-logo" alt="Cursus" />
             <div class="stg-about-hero-text">
               <h4 class="stg-about-name">Cursus</h4>
-              <span class="stg-about-version">v1.0.5</span>
+              <span class="stg-about-version">v1.0.6</span>
             </div>
             <p class="stg-about-tagline">Suivez votre parcours de formation</p>
           </div>
