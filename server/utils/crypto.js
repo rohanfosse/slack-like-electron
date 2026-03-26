@@ -11,7 +11,10 @@ let _key = null
 /** Dérive une clé AES-256 à partir du JWT_SECRET (PBKDF2). */
 function getKey() {
   if (_key) return _key
-  const secret = process.env.JWT_SECRET || 'changeme-dev-secret'
+  const secret = process.env.JWT_SECRET
+  if (!secret || secret.length < 32) {
+    throw new Error('[SECURITY] JWT_SECRET absent ou trop court — impossible de dériver la clé de chiffrement.')
+  }
   _key = crypto.pbkdf2Sync(secret, 'cursus-msg-encryption-salt', 100000, 32, 'sha256')
   return _key
 }

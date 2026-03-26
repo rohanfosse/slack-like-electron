@@ -1,9 +1,10 @@
 // ─── Middlewares d'autorisation (rôle + isolation promo) ──────────────────────
 const { getDb } = require('../db/connection')
 
-/** Bloque les étudiants — seuls les profs et intervenants passent. */
+/** Bloque tout sauf les enseignants (teacher) et intervenants (ta). */
 function requireTeacher(req, res, next) {
-  if (req.user?.type === 'student') {
+  const role = req.user?.type
+  if (role !== 'teacher' && role !== 'ta') {
     return res.status(403).json({ ok: false, error: 'Accès réservé aux enseignants.' })
   }
   next()

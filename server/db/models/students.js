@@ -19,10 +19,29 @@ function validatePasswordStrength(pwd) {
   if (!/[^A-Za-z0-9]/.test(pwd))    throw new Error('Le mot de passe doit contenir au moins un caractère spécial.');
 }
 
-/** Mot de passe par défaut pour les comptes créés sans mot de passe explicite. */
-const DEFAULT_PASSWORD = 'Cursus2026!';
+/** Génère un mot de passe temporaire aléatoire (12 caractères, conforme aux règles de robustesse). */
 function generateTempPassword() {
-  return DEFAULT_PASSWORD;
+  const upper  = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
+  const lower  = 'abcdefghjkmnpqrstuvwxyz';
+  const digits = '23456789';
+  const special = '!@#$%&*';
+  const all    = upper + lower + digits + special;
+  const bytes  = crypto.randomBytes(12);
+  // Garantir au moins 1 majuscule, 1 minuscule, 1 chiffre, 1 spécial
+  const mandatory = [
+    upper[bytes[0] % upper.length],
+    lower[bytes[1] % lower.length],
+    digits[bytes[2] % digits.length],
+    special[bytes[3] % special.length],
+  ];
+  const rest = Array.from(bytes.subarray(4), b => all[b % all.length]);
+  // Mélange Fisher-Yates pour ne pas avoir les obligatoires toujours en tête
+  const chars = [...mandatory, ...rest];
+  for (let i = chars.length - 1; i > 0; i--) {
+    const j = crypto.randomBytes(1)[0] % (i + 1);
+    [chars[i], chars[j]] = [chars[j], chars[i]];
+  }
+  return chars.join('');
 }
 
 /** Compare un mot de passe avec un hash stocké.
@@ -35,8 +54,11 @@ function checkPassword(plain, stored) {
     // Hash bcrypt - comparaison sécurisée
     return { match: bcrypt.compareSync(plain, stored), needsRehash: false };
   }
-  // Mot de passe en clair hérité - migration automatique
-  return { match: plain === stored, needsRehash: true };
+  // Mot de passe en clair hérité - comparaison timing-safe + migration automatique
+  const a = Buffer.from(plain);
+  const b = Buffer.from(stored);
+  if (a.length !== b.length) return { match: false, needsRehash: false };
+  return { match: crypto.timingSafeEqual(a, b), needsRehash: true };
 }
 
 // ── Lecture ───────────────────────────────────────────────────────────────────
@@ -158,7 +180,7 @@ function registerStudent({ name, email, promoId, photoData, password }) {
   if (existing) throw new Error('Cette adresse email est déjà utilisée.');
 
   const initials = name.trim().split(/\s+/).map(w => w[0]).join('').toUpperCase().slice(0, 2);
-  const plain    = (password ?? '').trim() || DEFAULT_PASSWORD;
+  const plain    = (password ?? '').trim() || generateTempPassword();
   validatePasswordStrength(plain);
   const hashed   = hashPassword(plain);
 

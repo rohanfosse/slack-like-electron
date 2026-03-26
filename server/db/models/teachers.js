@@ -1,4 +1,29 @@
 const { getDb } = require('../connection')
+const bcrypt = require('bcryptjs')
+const crypto = require('crypto')
+
+/** Génère un mot de passe temporaire aléatoire pour un intervenant. */
+function generateTaPassword() {
+  const upper  = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
+  const lower  = 'abcdefghjkmnpqrstuvwxyz';
+  const digits = '23456789';
+  const special = '!@#$%&*';
+  const all    = upper + lower + digits + special;
+  const bytes  = crypto.randomBytes(12);
+  const mandatory = [
+    upper[bytes[0] % upper.length],
+    lower[bytes[1] % lower.length],
+    digits[bytes[2] % digits.length],
+    special[bytes[3] % special.length],
+  ];
+  const rest = Array.from(bytes.subarray(4), b => all[b % all.length]);
+  const chars = [...mandatory, ...rest];
+  for (let i = chars.length - 1; i > 0; i--) {
+    const j = crypto.randomBytes(1)[0] % (i + 1);
+    [chars[i], chars[j]] = [chars[j], chars[i]];
+  }
+  return chars.join('');
+}
 
 /** Tous les intervenants (role = 'ta') */
 function getIntervenants() {
@@ -15,10 +40,11 @@ function createIntervenant({ name, email, password }) {
   const db = getDb()
   const existing = db.prepare('SELECT id FROM teachers WHERE LOWER(email) = LOWER(?)').get(email.trim())
   if (existing) throw new Error('Cette adresse email est déjà utilisée.')
-  const pwd = (password ?? '').trim() || 'admin'
+  const plain = (password ?? '').trim() || generateTaPassword()
+  const hashed = bcrypt.hashSync(plain, 10)
   return db.prepare(
     "INSERT INTO teachers (name, email, password, role) VALUES (?, ?, ?, 'ta')"
-  ).run(name.trim(), email.trim().toLowerCase(), pwd).lastInsertRowid
+  ).run(name.trim(), email.trim().toLowerCase(), hashed).lastInsertRowid
 }
 
 /**
