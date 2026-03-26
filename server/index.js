@@ -7,6 +7,7 @@ const { Server } = require('socket.io')
 const cors       = require('cors')
 const jwt        = require('jsonwebtoken')
 const queries    = require('./db/index')
+const log        = require('./utils/logger')
 
 const PORT   = process.env.PORT       ?? 3001
 const ORIGIN = process.env.CORS_ORIGIN ?? 'http://localhost:5173'
@@ -41,6 +42,20 @@ app.use((_req, res, next) => {
   if (process.env.NODE_ENV === 'production') {
     res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains')
   }
+  next()
+})
+
+// ── Logging des requêtes (temps de réponse, erreurs) ─────────────────────────
+app.use((req, res, next) => {
+  const start = Date.now()
+  res.on('finish', () => {
+    const ms = Date.now() - start
+    if (res.statusCode >= 400) {
+      log.warn('request', { method: req.method, path: req.path, status: res.statusCode, ms, ip: req.ip })
+    } else if (ms > 1000) {
+      log.warn('slow_request', { method: req.method, path: req.path, status: res.statusCode, ms })
+    }
+  })
   next()
 })
 

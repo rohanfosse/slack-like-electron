@@ -1,38 +1,25 @@
 /** Routes API carnet de suivi etudiant. */
 const router  = require('express').Router()
+const { z }   = require('zod')
 const queries = require('../db/index')
+const { validate } = require('../middleware/validate')
 const wrap    = require('../utils/wrap')
 const { requireTeacher } = require('../middleware/authorize')
 
-// GET /student/:studentId — notes pour un etudiant
-router.get('/student/:studentId', requireTeacher, wrap((req) => {
-  const teacherId = req.user?.id
-  if (!teacherId) throw new Error('Non authentifie')
-  return queries.getNotesByStudent(Number(req.params.studentId), teacherId)
-}))
+// ── Schémas ─────────────────────────────────────────────────────────────────
+const createNoteSchema = z.object({
+  studentId: z.number().int().positive(),
+  promoId:   z.number().int().positive(),
+  content:   z.string().min(1, 'Le contenu est requis').max(5000),
+  tag:       z.enum(['progression', 'objectif', 'observation', 'alerte', 'autre']).optional().default('observation'),
+  category:  z.string().max(100).optional().default('generale'),
+})
 
-// GET /promo/:promoId — toutes les notes pour une promo
-router.get('/promo/:promoId', requireTeacher, wrap((req) => {
-  const teacherId = req.user?.id
-  if (!teacherId) throw new Error('Non authentifie')
-  return queries.getNotesByPromo(Number(req.params.promoId), teacherId)
-}))
-
-// GET /promo/:promoId/summary — compteurs par etudiant
-router.get('/promo/:promoId/summary', requireTeacher, wrap((req) => {
-  const teacherId = req.user?.id
-  if (!teacherId) throw new Error('Non authentifie')
-  return queries.getNotesCountByStudent(Number(req.params.promoId), teacherId)
-}))
-
-// POST / — creer une note
-router.post('/', requireTeacher, wrap((req) => {
-  const teacherId = req.user?.id
-  if (!teacherId) throw new Error('Non authentifie')
-  const { studentId, promoId, content, tag, category } = req.body
-  if (!studentId || !promoId || !content?.trim()) throw new Error('studentId, promoId et content requis')
-  return queries.createNote({ teacherId, studentId, promoId, content: content.trim(), tag, category })
-}))
+const updateNoteSchema = z.object({
+  content:  z.string().min(1, 'Le contenu est requis').max(5000),
+  tag:      z.enum(['progression', 'objectif', 'observation', 'alerte', 'autre']).optional(),
+  category: z.string().max(100).optional(),
+})
 
 // ── Helper : vérifier que la note appartient au prof courant ─────────────────
 function requireNoteOwner(req, res, next) {
@@ -45,14 +32,32 @@ function requireNoteOwner(req, res, next) {
   next()
 }
 
-// PATCH /:id — modifier une note (propriétaire uniquement)
-router.patch('/:id', requireTeacher, requireNoteOwner, wrap((req) => {
-  const { content, tag, category } = req.body
-  if (!content?.trim()) throw new Error('content requis')
-  return queries.updateNote(Number(req.params.id), { content: content.trim(), tag, category })
+// GET /student/:studentId
+router.get('/student/:studentId', requireTeacher, wrap((req) => {
+  return queries.getNotesByStudent(Number(req.params.studentId), req.user.id)
 }))
 
-// DELETE /:id — supprimer une note (propriétaire uniquement)
+// GET /promo/:promoId
+router.get('/promo/:promoId', requireTeacher, wrap((req) => {
+  return queries.getNotesByPromo(Number(req.params.promoId), req.user.id)
+}))
+
+// GET /promo/:promoId/summary
+router.get('/promo/:promoId/summary', requireTeacher, wrap((req) => {
+  return queries.getNotesCountByStudent(Number(req.params.promoId), req.user.id)
+}))
+
+// POST /
+router.post('/', requireTeacher, validate(createNoteSchema), wrap((req) => {
+  return queries.createNote({ teacherId: req.user.id, ...req.body, content: req.body.content.trim() })
+}))
+
+// PATCH /:id
+router.patch('/:id', requireTeacher, requireNoteOwner, validate(updateNoteSchema), wrap((req) => {
+  return queries.updateNote(Number(req.params.id), { ...req.body, content: req.body.content.trim() })
+}))
+
+// DELETE /:id
 router.delete('/:id', requireTeacher, requireNoteOwner, wrap((req) => {
   queries.deleteNote(Number(req.params.id))
   return null

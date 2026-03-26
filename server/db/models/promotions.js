@@ -1,13 +1,18 @@
 const { getDb } = require('../connection');
+const cache = require('../../utils/cache');
 
 function getPromotions() {
-  return getDb().prepare('SELECT * FROM promotions ORDER BY name').all();
+  return cache.wrap('promotions:all', () =>
+    getDb().prepare('SELECT * FROM promotions ORDER BY name').all()
+  , 30_000) // 30s TTL
 }
 
 function getChannels(promoId) {
-  return getDb().prepare(
-    "SELECT * FROM channels WHERE promo_id = ? ORDER BY COALESCE(category, 'zzz') ASC, type DESC, name ASC"
-  ).all(promoId);
+  return cache.wrap(`channels:${promoId}`, () =>
+    getDb().prepare(
+      "SELECT * FROM channels WHERE promo_id = ? ORDER BY COALESCE(category, 'zzz') ASC, type DESC, name ASC"
+    ).all(promoId)
+  , 30_000)
 }
 
 function createPromotion({ name, color }) {
@@ -15,11 +20,14 @@ function createPromotion({ name, color }) {
   const promoId = db.prepare('INSERT INTO promotions (name, color) VALUES (?, ?)').run(name, color).lastInsertRowid;
   db.prepare("INSERT INTO channels (promo_id, name, description, type) VALUES (?, 'annonces', 'Informations importantes', 'annonce')").run(promoId);
   db.prepare("INSERT INTO channels (promo_id, name, description, type) VALUES (?, 'general', 'Canal principal', 'chat')").run(promoId);
+  cache.invalidate('promotions:'); cache.invalidate('channels:');
   return promoId;
 }
 
 function deletePromotion(promoId) {
-  return getDb().prepare('DELETE FROM promotions WHERE id = ?').run(promoId);
+  const res = getDb().prepare('DELETE FROM promotions WHERE id = ?').run(promoId);
+  cache.invalidate('promotions:'); cache.invalidate('channels:');
+  return res;
 }
 
 function createChannel({ promoId, name, type, isPrivate, members, category }) {
@@ -32,17 +40,20 @@ function createChannel({ promoId, name, type, isPrivate, members, category }) {
 }
 
 function renameChannel(id, name) {
-  return getDb().prepare('UPDATE channels SET name = ? WHERE id = ?').run(name, id);
+  const res = getDb().prepare('UPDATE channels SET name = ? WHERE id = ?').run(name, id);
+  cache.invalidate('channels:'); return res;
 }
 
 function deleteChannel(id) {
-  return getDb().prepare('DELETE FROM channels WHERE id = ?').run(id);
+  const res = getDb().prepare('DELETE FROM channels WHERE id = ?').run(id);
+  cache.invalidate('channels:'); return res;
 }
 
 /** Renomme la catégorie pour tous les canaux d'une promo */
 function renameCategory(promoId, oldCategory, newCategory) {
-  return getDb().prepare('UPDATE channels SET category = ? WHERE promo_id = ? AND category = ?')
+  const res = getDb().prepare('UPDATE channels SET category = ? WHERE promo_id = ? AND category = ?')
     .run(newCategory, promoId, oldCategory);
+  cache.invalidate('channels:'); return res;
 }
 
 /** Dégroupe la catégorie (met category = null) sans supprimer les canaux */

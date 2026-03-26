@@ -1,4 +1,4 @@
-// ─── Composable pour normaliser les appels API et la gestion d'erreurs ─────
+// ─── Composable pour normaliser les appels API avec retry & gestion d'erreurs ─
 import { useToast } from './useToast'
 
 interface ApiResult<T = unknown> {
@@ -7,9 +7,17 @@ interface ApiResult<T = unknown> {
   error?: string
 }
 
+interface ApiOptions {
+  /** Contexte d'erreur (clé dans ERROR_CONTEXT) */
+  context?: string
+  /** Nombre de tentatives en cas d'erreur réseau (défaut 0 = pas de retry) */
+  retries?: number
+  /** Afficher un toast en cas d'erreur (défaut true) */
+  silent?: boolean
+}
+
 /**
  * Messages d'erreur contextualisés par domaine.
- * Chaque entrée contient un message principal et un détail technique.
  */
 const ERROR_CONTEXT: Record<string, { msg: string; detail?: string }> = {
   // Messages
@@ -44,11 +52,9 @@ const ERROR_CONTEXT: Record<string, { msg: string; detail?: string }> = {
   // Network
   'network':  { msg: 'Impossible de contacter le serveur.',              detail: 'Vérifiez votre connexion internet et réessayez.' },
   'timeout':  { msg: 'Le serveur met trop de temps à répondre.',         detail: 'Réessayez dans quelques instants.' },
+  'offline':  { msg: 'Vous êtes hors ligne.',                            detail: 'L\'action sera réessayée automatiquement à la reconnexion.' },
 }
 
-/**
- * Détecte le contexte d'erreur à partir du message serveur.
- */
 function detectErrorContext(serverMsg: string): string | null {
   const lower = serverMsg.toLowerCase()
   if (lower.includes('autoris') || lower.includes('permission') || lower.includes('interdit') || lower.includes('403')) return 'forbidden'
@@ -59,52 +65,91 @@ function detectErrorContext(serverMsg: string): string | null {
   return null
 }
 
+function isNetworkError(msg: string): boolean {
+  return ['fetch', 'network', 'Failed', 'ECONNREFUSED', 'ERR_CONNECTION', 'Load failed'].some(k => msg.includes(k))
+}
+
+/** Attente avec backoff exponentiel (200ms, 400ms, 800ms...) */
+function backoff(attempt: number): Promise<void> {
+  return new Promise(r => setTimeout(r, Math.min(200 * 2 ** attempt, 5000)))
+}
+
 /**
- * Helper pour les appels API avec gestion d'erreurs uniforme.
+ * Helper pour les appels API avec retry automatique et gestion d'erreurs uniforme.
  *
  * Usage :
  *   const { api } = useApi()
  *   const data = await api(() => window.api.sendMessage(payload), 'send')
+ *   // Avec retry :
+ *   const data = await api(() => window.api.loadData(), { context: 'search', retries: 2 })
  */
 export function useApi() {
   const { showToast } = useToast()
 
   async function api<T>(
     call: () => Promise<ApiResult<T>>,
-    context?: string,
+    optionsOrContext?: string | ApiOptions,
   ): Promise<T | null> {
-    try {
-      const res = await call()
-      if (!res?.ok) {
-        const serverError = res?.error || ''
-        const ctx = context ? ERROR_CONTEXT[context] : null
-        const autoCtx = serverError ? ERROR_CONTEXT[detectErrorContext(serverError) ?? ''] : null
+    const opts: ApiOptions = typeof optionsOrContext === 'string'
+      ? { context: optionsOrContext }
+      : optionsOrContext ?? {}
+    const { context, retries = 0, silent = false } = opts
 
-        // Message principal : serveur d'abord, puis contexte, puis générique
-        const msg = serverError || ctx?.msg || 'Une erreur est survenue.'
-        // Détail technique : contexte d'abord, puis auto-détection
-        const detail = ctx?.detail || autoCtx?.detail || undefined
-
-        showToast(msg, 'error', detail)
-        return null
-      }
-      return (res.data ?? null) as T | null
-    } catch (err: unknown) {
-      const message = (err as Error)?.message ?? ''
-      if (message.includes('fetch') || message.includes('network') || message.includes('Failed') || message.includes('ECONNREFUSED')) {
-        showToast(ERROR_CONTEXT['network'].msg, 'error', ERROR_CONTEXT['network'].detail)
-      } else if (message.includes('timeout') || message.includes('abort')) {
-        showToast(ERROR_CONTEXT['timeout'].msg, 'error', ERROR_CONTEXT['timeout'].detail)
-      } else {
-        const ctx = context ? ERROR_CONTEXT[context] : null
-        showToast(
-          ctx?.msg || message || 'Erreur inattendue.',
-          'error',
-          ctx?.detail || (message ? `Détail : ${message}` : undefined),
-        )
-      }
+    // Vérification offline avant d'appeler
+    if (!navigator.onLine) {
+      if (!silent) showToast(ERROR_CONTEXT['offline'].msg, 'error', ERROR_CONTEXT['offline'].detail)
       return null
     }
+
+    let lastError: unknown = null
+
+    for (let attempt = 0; attempt <= retries; attempt++) {
+      try {
+        const res = await call()
+        if (!res?.ok) {
+          // Erreur serveur — pas de retry (c'est une erreur métier, pas réseau)
+          if (!silent) {
+            const serverError = res?.error || ''
+            const ctx = context ? ERROR_CONTEXT[context] : null
+            const autoCtx = serverError ? ERROR_CONTEXT[detectErrorContext(serverError) ?? ''] : null
+            const msg = serverError || ctx?.msg || 'Une erreur est survenue.'
+            const detail = ctx?.detail || autoCtx?.detail || undefined
+            showToast(msg, 'error', detail)
+          }
+          return null
+        }
+        return (res.data ?? null) as T | null
+      } catch (err: unknown) {
+        lastError = err
+        const message = (err as Error)?.message ?? ''
+
+        // Retry uniquement sur erreur réseau
+        if (isNetworkError(message) && attempt < retries) {
+          await backoff(attempt)
+          continue
+        }
+
+        // Dernière tentative échouée — afficher l'erreur
+        if (!silent) {
+          if (isNetworkError(message)) {
+            const retryMsg = retries > 0 ? ` (${retries + 1} tentatives échouées)` : ''
+            showToast(ERROR_CONTEXT['network'].msg + retryMsg, 'error', ERROR_CONTEXT['network'].detail)
+          } else if (message.includes('timeout') || message.includes('abort')) {
+            showToast(ERROR_CONTEXT['timeout'].msg, 'error', ERROR_CONTEXT['timeout'].detail)
+          } else {
+            const ctx = context ? ERROR_CONTEXT[context] : null
+            showToast(
+              ctx?.msg || message || 'Erreur inattendue.',
+              'error',
+              ctx?.detail || (message ? `Détail : ${message}` : undefined),
+            )
+          }
+        }
+        return null
+      }
+    }
+
+    return null
   }
 
   return { api, ERROR_CONTEXT }
