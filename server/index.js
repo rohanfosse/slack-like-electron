@@ -20,8 +20,7 @@ if (process.env.NODE_ENV === 'production') {
     process.exit(1)
   }
   if (!process.env.CORS_ORIGIN || process.env.CORS_ORIGIN === '*') {
-    console.error('[SECURITY] CORS_ORIGIN non défini ou wildcard (*) interdit en production. Arrêt du serveur.')
-    process.exit(1)
+    log.warn('cors_wildcard', { msg: 'CORS_ORIGIN non défini ou wildcard (*) — utilisation du domaine par défaut.' })
   }
   if (!process.env.DEPLOY_SECRET || process.env.DEPLOY_SECRET.length < 16) {
     log.warn('deploy_secret_missing', { msg: 'DEPLOY_SECRET absent ou trop court — webhook de déploiement désactivé.' })

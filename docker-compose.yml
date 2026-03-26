@@ -16,7 +16,7 @@ services:
       - NODE_ENV=production
       - PORT=3001
       - JWT_SECRET=${JWT_SECRET}
-      - CORS_ORIGIN=${CORS_ORIGIN:-*}
+      - CORS_ORIGIN=${CORS_ORIGIN:-https://app.cursus.school}
       - DB_PATH=/data/db/cursus.db
       - UPLOAD_DIR=/data/uploads
       - DEPLOY_SECRET=${DEPLOY_SECRET}
