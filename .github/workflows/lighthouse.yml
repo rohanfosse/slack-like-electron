@@ -21,3 +21,4 @@ jobs:
             https://cursus.school
           uploadArtifacts: true
           temporaryPublicStorage: true
+          budgetPath: .github/lighthouse-budget.json

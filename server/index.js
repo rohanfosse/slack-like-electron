@@ -187,16 +187,31 @@ app.use('/api/files', require('./routes/files'))
 // ── Health check ─────────────────────────────────────────────────────────────
 app.get('/health', (_req, res) => {
   try {
-    // Vérifier la connexion DB
     const { getDb } = require('./db/connection')
     getDb().prepare('SELECT 1').get()
-    res.json({
+
+    const mem = process.memoryUsage()
+    const data = {
       ok: true,
       version: require('../package.json').version,
       uptime: Math.floor(process.uptime()),
       connections: onlineUsers.size,
-      memory: Math.round(process.memoryUsage().heapUsed / 1024 / 1024),
-    })
+      memory: Math.round(mem.heapUsed / 1024 / 1024),
+      rss: Math.round(mem.rss / 1024 / 1024),
+    }
+
+    // Disk usage (Linux only, non-blocking best-effort)
+    try {
+      const { execSync } = require('child_process')
+      const df = execSync("df -B1 / | tail -1", { encoding: 'utf8', timeout: 2000 }).trim().split(/\s+/)
+      data.disk = {
+        total: Math.round(Number(df[1]) / 1024 / 1024),
+        used: Math.round(Number(df[2]) / 1024 / 1024),
+        pct: parseInt(df[4]),
+      }
+    } catch {}
+
+    res.json(data)
   } catch (err) {
     res.status(503).json({ ok: false, error: 'Base de données inaccessible', version: require('../package.json').version })
   }

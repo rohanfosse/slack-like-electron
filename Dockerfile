@@ -4,8 +4,8 @@ FROM node:22-alpine AS build
 WORKDIR /app
 
 COPY package.json package-lock.json ./
-# --ignore-scripts évite la compilation des modules natifs (Electron, better-sqlite3)
-# qui ne sont pas nécessaires pour le build Vite
+# --ignore-scripts evite la compilation des modules natifs (Electron, better-sqlite3)
+# qui ne sont pas necessaires pour le build Vite
 RUN npm ci --ignore-scripts
 
 COPY src/ ./src/
@@ -16,20 +16,30 @@ ENV VITE_SERVER_URL=${VITE_SERVER_URL}
 
 RUN npx vite build --config vite.web.config.ts --mode production
 
-# ── Stage 2 : Image de production (serveur uniquement) ───────────────────────
-FROM node:22-alpine
-
-RUN apk add --no-cache tini python3 make g++
+# ── Stage 2 : Compilation des modules natifs ─────────────────────────────────
+FROM node:22-alpine AS native
 
 WORKDIR /app
+
+RUN apk add --no-cache python3 make g++
 
 COPY package.json package-lock.json ./
 RUN npm ci --omit=dev --ignore-scripts && \
     npm rebuild better-sqlite3 && \
-    npm cache clean --force && \
-    apk del python3 make g++
+    npm cache clean --force
 
-# Copier le serveur + le frontend buildé depuis le stage 1
+# ── Stage 3 : Image de production (serveur uniquement) ──────────────────────
+FROM node:22-alpine
+
+RUN apk add --no-cache tini
+
+WORKDIR /app
+
+# Copier node_modules pre-compiles (sans les outils de build)
+COPY --from=native /app/node_modules ./node_modules
+COPY --from=native /app/package.json ./
+
+# Copier le serveur + le frontend builde depuis le stage 1
 COPY server/ ./server/
 COPY src/landing/ ./src/landing/
 COPY --from=build /app/dist-web/ ./dist-web/

@@ -7,23 +7,25 @@ on:
     branches: [main]
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   test:
     name: Lint, Typecheck & Test
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v6
 
       - uses: actions/setup-node@v6
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
 
-      - run: npm ci
+      - run: npm ci --ignore-scripts
 
-      - name: Rebuild native modules for Node.js
+      - name: Rebuild better-sqlite3 for Node.js
         run: npm rebuild better-sqlite3
 
       - name: TypeScript type-check
@@ -56,10 +58,10 @@ jobs:
 
       - uses: actions/setup-node@v6
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
 
-      - run: npm ci
+      - run: npm ci --ignore-scripts
 
       - name: Count lines of code
         id: loc

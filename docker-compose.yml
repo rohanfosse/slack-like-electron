@@ -6,6 +6,11 @@ services:
         VITE_SERVER_URL: ${VITE_SERVER_URL:-https://app.cursus.school}
     container_name: cursus-server
     restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
     ports:
       - "3001:3001"
     volumes:

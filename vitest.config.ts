@@ -8,6 +8,12 @@ export default defineConfig({
     },
   },
   test: {
+    pool: 'forks',
+    poolOptions: {
+      forks: {
+        execArgv: ['--experimental-require-module'],
+      },
+    },
     projects: [
       {
         test: {

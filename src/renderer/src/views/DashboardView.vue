@@ -42,7 +42,8 @@ function goToProject(key: string) {
 }
 
 // ── Tabs ────────────────────────────────────────────────────────────────────
-const dashTab = ref<'accueil' | 'promotions' | 'frise' | 'analytique' | 'reglages' | 'live' | 'rex' | 'suivi' | 'engagement' | 'projets' | 'notes' | 'planning'>(
+type DashTab = 'accueil' | 'promotions' | 'frise' | 'analytique' | 'reglages' | 'live' | 'rex' | 'suivi' | 'engagement' | 'projets' | 'notes' | 'planning'
+const dashTab = ref<DashTab>(
   route.query.tab === 'frise' ? 'frise' : route.query.tab === 'planning' ? 'planning' : route.query.tab === 'analytique' ? 'analytique' : route.query.tab === 'promotions' ? 'promotions' : route.query.tab === 'live' ? 'live' : route.query.tab === 'rex' ? 'rex' : route.query.tab === 'suivi' ? 'suivi' : route.query.tab === 'engagement' ? 'engagement' : route.query.tab === 'projets' ? 'projets' : route.query.tab === 'notes' ? 'notes' : 'accueil',
 )
 watch(() => route.query.tab, (tab) => {
@@ -209,7 +210,7 @@ onUnmounted(() => {
       :milestone-left="milestoneLeft"
       :project-line-style="projectLineStyle"
       @update:active-promo-id="appStore.activePromoId = $event"
-      @update:dash-tab="(t: typeof dashTab.value) => { dashTab = t; router.replace({ query: { ...route.query, tab: t === 'accueil' ? undefined : t } }) }"
+      @update:dash-tab="(t: DashTab) => { dashTab = t; router.replace({ query: { ...route.query, tab: t === 'accueil' ? undefined : t } }) }"
       @update:renaming-promo-id="renamingPromoId = $event"
       @update:renaming-promo-value="renamingPromoValue = $event"
       @update:frise-offset="friseOffset = $event"
@@ -267,7 +268,7 @@ onUnmounted(() => {
       :gantt-today-pct="ganttTodayPct"
       :milestone-left="milestoneLeft"
       :project-line-style="projectLineStyle"
-      @update:dash-tab="(t: typeof dashTab.value) => { dashTab = t; router.replace({ query: { ...route.query, tab: t === 'accueil' ? undefined : t } }) }"
+      @update:dash-tab="(t: DashTab) => { dashTab = t; router.replace({ query: { ...route.query, tab: t === 'accueil' ? undefined : t } }) }"
       @update:frise-offset="friseOffset = $event"
       @dismiss-onboarding="dismissOnboarding"
       @go-to-project="goToProject"

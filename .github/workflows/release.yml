@@ -9,9 +9,27 @@ permissions:
   contents: write
 
 jobs:
+  # ── Gate: run tests before building releases ─────────────────────────────────
+  preflight:
+    name: Preflight Tests
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - run: npm rebuild better-sqlite3
+      - run: npm run typecheck
+      - run: npx vitest run
+
   # ── Build Windows (.exe) ─────────────────────────────────────────────────────
   build-windows:
     name: Build Windows
+    needs: preflight
     runs-on: windows-latest
     steps:
       - name: Checkout
@@ -47,6 +65,7 @@ jobs:
   # ── Build macOS (.dmg) ───────────────────────────────────────────────────────
   build-macos:
     name: Build macOS
+    needs: preflight
     runs-on: macos-latest
     steps:
       - name: Checkout

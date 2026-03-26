@@ -6,17 +6,12 @@
     <meta name="theme-color" content="#4A90D9" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <!--
-      CSP : les URLs du serveur API sont dynamiques (VITE_SERVER_URL).
-      En production, le serveur Express devrait envoyer un header CSP adapté.
-      Le meta CSP ici couvre uniquement le mode dev et le fallback statique.
-    -->
     <meta
       http-equiv="Content-Security-Policy"
       content="
         default-src 'self';
-        script-src  'self' 'unsafe-inline';
-        style-src   'self' 'unsafe-inline';
+        script-src  'self';
+        style-src   'self';
         img-src     'self' data: blob: https: http:;
         media-src   'self' data: blob: https: http:;
         font-src    'self' data:;
@@ -38,13 +33,5 @@
   <body>
     <div id="app"></div>
     <script type="module" src="./main-web.ts"></script>
-    <script>
-      // Enregistrement du service worker
-      if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/sw.js').catch(() => {})
-        })
-      }
-    </script>
   </body>
 </html>
