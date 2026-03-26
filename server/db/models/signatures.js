@@ -1,10 +1,10 @@
 const { getDb } = require('../connection');
 
-function createSignatureRequest(messageId, dmStudentId, fileUrl, fileName) {
+function createSignatureRequest(messageId, dmStudentId, fileUrl, fileName, fileHash, createdBy, createdIp) {
   return getDb().prepare(`
-    INSERT INTO signature_requests (message_id, dm_student_id, file_url, file_name)
-    VALUES (?, ?, ?, ?)
-  `).run(messageId, dmStudentId, fileUrl, fileName);
+    INSERT INTO signature_requests (message_id, dm_student_id, file_url, file_name, file_hash, created_by, created_ip)
+    VALUES (?, ?, ?, ?, ?, ?, ?)
+  `).run(messageId, dmStudentId, fileUrl, fileName, fileHash || null, createdBy || null, createdIp || null);
 }
 
 function getSignatureRequests({ status, studentId } = {}) {
@@ -38,20 +38,21 @@ function getPendingCount() {
   return getDb().prepare("SELECT COUNT(*) AS count FROM signature_requests WHERE status = 'pending'").get().count;
 }
 
-function signDocument(id, signerName, signedFileUrl) {
+function signDocument(id, signerName, signedFileUrl, signerId, signerIp) {
   return getDb().prepare(`
     UPDATE signature_requests
-    SET status = 'signed', signer_name = ?, signed_file_url = ?, signed_at = datetime('now')
-    WHERE id = ?
-  `).run(signerName, signedFileUrl, id);
+    SET status = 'signed', signer_name = ?, signed_file_url = ?, signed_at = datetime('now'),
+        signer_id = ?, signer_ip = ?
+    WHERE id = ? AND status = 'pending'
+  `).run(signerName, signedFileUrl, signerId || null, signerIp || null, id);
 }
 
-function rejectDocument(id, reason) {
+function rejectDocument(id, reason, signerId, signerIp) {
   return getDb().prepare(`
     UPDATE signature_requests
-    SET status = 'rejected', rejection_reason = ?
-    WHERE id = ?
-  `).run(reason, id);
+    SET status = 'rejected', rejection_reason = ?, signer_id = ?, signer_ip = ?
+    WHERE id = ? AND status = 'pending'
+  `).run(reason, signerId || null, signerIp || null, id);
 }
 
 module.exports = {

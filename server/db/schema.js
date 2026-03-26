@@ -1,6 +1,6 @@
 const { getDb } = require('./connection');
 
-const CURRENT_VERSION = 38;
+const CURRENT_VERSION = 39;
 
 // ─── Schema initial ───────────────────────────────────────────────────────────
 // Crée toutes les tables avec leur schéma complet (colonnes UTC, toutes colonnes incluses).
@@ -776,6 +776,14 @@ function runMigrations(db) {
     (db) => {
       tryAlter(db, 'ALTER TABLE messages ADD COLUMN deleted_at TEXT DEFAULT NULL');
       db.exec('CREATE INDEX IF NOT EXISTS idx_messages_deleted ON messages(deleted_at)');
+    },
+    // v39 : sécurité signatures — hash document, audit, IP
+    (db) => {
+      tryAlter(db, 'ALTER TABLE signature_requests ADD COLUMN file_hash TEXT DEFAULT NULL');
+      tryAlter(db, 'ALTER TABLE signature_requests ADD COLUMN created_by INTEGER DEFAULT NULL');
+      tryAlter(db, 'ALTER TABLE signature_requests ADD COLUMN created_ip TEXT DEFAULT NULL');
+      tryAlter(db, 'ALTER TABLE signature_requests ADD COLUMN signer_id INTEGER DEFAULT NULL');
+      tryAlter(db, 'ALTER TABLE signature_requests ADD COLUMN signer_ip TEXT DEFAULT NULL');
     },
   ];
 
