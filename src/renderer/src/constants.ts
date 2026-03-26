@@ -46,9 +46,6 @@ export const TYPING_EMIT_INTERVAL_MS = 2_000
 /** Nombre de contacts DM récents */
 export const DM_RECENT_LIMIT = 10
 
-/** Durée idle avant fermeture AudioContext (ms) */
-export const AUDIO_IDLE_TIMEOUT_MS = 30_000
-
 /** Limite de l'historique de notifications */
 export const NOTIFICATION_HISTORY_LIMIT = 100
 

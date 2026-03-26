@@ -1,4 +1,4 @@
-import { app, BrowserWindow, dialog, ipcMain, nativeImage } from 'electron'
+import { app, BrowserWindow, dialog, ipcMain, nativeImage, Tray, Menu } from 'electron'
 import { join } from 'path'
 import { autoUpdater } from 'electron-updater'
 
@@ -30,7 +30,11 @@ process.on('unhandledRejection', (reason) => {
   )
 })
 
-function createWindow(): void {
+let mainWin: BrowserWindow | null = null
+let tray: Tray | null = null
+let isQuitting = false
+
+function createWindow(splash: BrowserWindow | null): void {
   const win = new BrowserWindow({
     width: 1280,
     height: 800,
@@ -57,17 +61,27 @@ function createWindow(): void {
 
   // Afficher la fenêtre seulement quand le renderer est chargé
   win.once('ready-to-show', () => {
+    if (splash && !splash.isDestroyed()) splash.destroy()
     win.show()
     win.focus()
   })
 
   // Fallback : forcer l'affichage si ready-to-show ne se déclenche pas dans les 5s
   setTimeout(() => {
+    if (splash && !splash.isDestroyed()) splash.destroy()
     if (!win.isDestroyed() && !win.isVisible()) {
       win.show()
       win.focus()
     }
   }, 5000)
+
+  // Minimiser au tray au lieu de quitter
+  win.on('close', (event) => {
+    if (!isQuitting) {
+      event.preventDefault()
+      win.hide()
+    }
+  })
 
   // Diagnostic : échec de chargement du renderer
   win.webContents.on('did-fail-load', (_event, code, desc, url) => {
@@ -122,6 +136,8 @@ function createWindow(): void {
   } else {
     win.loadFile(join(__dirname, '../renderer/index.html'))
   }
+
+  mainWin = win
 }
 
 app.whenReady().then(() => {
@@ -139,7 +155,34 @@ app.whenReady().then(() => {
   }
   ipc.register()
   notifications.start()
-  createWindow()
+
+  // ── Splash screen ──────────────────────────────────────────────────────────
+  const splash = new BrowserWindow({
+    width: 360,
+    height: 360,
+    frame: false,
+    transparent: true,
+    resizable: false,
+    alwaysOnTop: true,
+    skipTaskbar: true,
+    center: true,
+    show: true,
+    webPreferences: { contextIsolation: true, nodeIntegration: false },
+  })
+  splash.loadFile(join(__dirname, '../../resources/splash.html'))
+
+  createWindow(splash)
+
+  // ── System tray ────────────────────────────────────────────────────────────
+  const trayIconPath = join(__dirname, '../../resources/icon.ico')
+  tray = new Tray(nativeImage.createFromPath(trayIconPath))
+  tray.setToolTip('Cursus')
+  tray.setContextMenu(Menu.buildFromTemplate([
+    { label: 'Afficher Cursus', click: () => { mainWin?.show(); mainWin?.focus() } },
+    { type: 'separator' },
+    { label: 'Quitter', click: () => { isQuitting = true; app.quit() } },
+  ]))
+  tray.on('double-click', () => { mainWin?.show(); mainWin?.focus() })
 
   // ── Auto-update (production uniquement) ──────────────────────────────────
   if (app.isPackaged) {
@@ -182,11 +225,12 @@ app.whenReady().then(() => {
 })
 
 app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') app.quit()
+  // Le tray garde l'app en vie, ne pas quitter
 })
 
 // ── Fermeture propre ──────────────────────────────────────────────────────────
 app.on('before-quit', () => {
+  isQuitting = true
   notifications.stop()
   db.close()
 })

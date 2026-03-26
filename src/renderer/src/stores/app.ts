@@ -4,7 +4,7 @@ import type { User } from '@/types'
 import { useToast } from '@/composables/useToast'
 import { useApi } from '@/composables/useApi'
 import {
-  STORAGE_KEYS, AUDIO_IDLE_TIMEOUT_MS,
+  STORAGE_KEYS,
   NOTIFICATION_HISTORY_LIMIT,
 } from '@/constants'
 
@@ -346,51 +346,25 @@ export const useAppStore = defineStore('app', () => {
   }
   function isDmMuted(name: string): boolean { return _getMutedDms().has(name) }
 
-  let _audioCtx: AudioContext | null = null
-  let _audioIdleTimer: ReturnType<typeof setTimeout> | null = null
-  // Débloquer AudioContext au premier clic utilisateur (requis par les navigateurs)
-  let _audioUnlocked = false
-  if (typeof document !== 'undefined') {
-    const unlockAudio = () => {
-      if (_audioUnlocked) return
-      _audioUnlocked = true
-      if (_audioCtx && _audioCtx.state === 'suspended') _audioCtx.resume().catch(() => {})
-      document.removeEventListener('click', unlockAudio)
-      document.removeEventListener('keydown', unlockAudio)
-    }
-    document.addEventListener('click', unlockAudio, { once: false })
-    document.addEventListener('keydown', unlockAudio, { once: false })
-  }
-  function _playNotifSound(freq = 800, dur = 0.25) {
+  // ── Sons de notification ───────────────────────────────────────────────────
+  const _notifSoundUrl    = new URL('@/assets/sounds/notif.wav', import.meta.url).href
+  const _notifDmSoundUrl  = new URL('@/assets/sounds/notif-dm.wav', import.meta.url).href
+
+  function _playNotifSound(isDm = false) {
     if (!_prefNotifSound()) return
     try {
-      if (!_audioCtx) _audioCtx = new AudioContext()
-      if (_audioCtx.state === 'suspended') _audioCtx.resume().catch(() => {})
-      const osc = _audioCtx.createOscillator()
-      const gain = _audioCtx.createGain()
-      osc.connect(gain).connect(_audioCtx.destination)
-      osc.frequency.value = freq
-      osc.type = 'sine'
-      gain.gain.value = 0.12
-      osc.start()
-      gain.gain.exponentialRampToValueAtTime(0.001, _audioCtx.currentTime + dur)
-      osc.stop(_audioCtx.currentTime + dur)
-      // Fermer l'AudioContext après 30s d'inactivité
-      if (_audioIdleTimer) clearTimeout(_audioIdleTimer)
-      _audioIdleTimer = setTimeout(() => {
-        _audioCtx?.close().catch(() => {})
-        _audioCtx = null
-        _audioIdleTimer = null
-      }, AUDIO_IDLE_TIMEOUT_MS)
+      const audio = new Audio(isDm ? _notifDmSoundUrl : _notifSoundUrl)
+      audio.volume = 0.3
+      audio.play().catch(() => {})
     } catch {}
   }
 
   function _fireNotification(title: string, body: string, isDm: boolean, senderName: string, preview: string) {
     // Son
     if (isDm) {
-      _playNotifSound(900, 0.3) // DM : son plus aigu
+      _playNotifSound(true)  // DM
     } else {
-      _playNotifSound(700, 0.2) // Mention canal : son plus grave
+      _playNotifSound(false) // Mention canal
     }
 
     // Toast in-app si fenêtre au premier plan
