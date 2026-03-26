@@ -8,7 +8,17 @@ const { requireTeacher, requirePromo, promoFromChannel, promoFromParam } = requi
 router.get('/channel/:channelId',             requirePromo(promoFromChannel), wrap((req) => queries.getChannelDocuments(Number(req.params.channelId))))
 router.get('/channel/:channelId/categories',  requirePromo(promoFromChannel), wrap((req) => queries.getChannelDocumentCategories(Number(req.params.channelId))))
 router.get('/promo/:promoId',                 requirePromo(promoFromParam), wrap((req) => queries.getPromoDocuments(Number(req.params.promoId))))
-router.post('/channel',                       wrap((req) => queries.addChannelDocument(req.body)))
+router.post('/channel', async (req, res) => {
+  try {
+    const result = queries.addChannelDocument(req.body)
+    // Notifier les etudiants du canal
+    const io = req.app.get('io')
+    if (io && req.body.promoId) {
+      io.to(`promo:${req.body.promoId}`).emit('document:new', { name: req.body.name, category: req.body.category || null, promoId: req.body.promoId })
+    }
+    res.json({ ok: true, data: result })
+  } catch (err) { res.status(400).json({ ok: false, error: err.message }) }
+})
 router.patch('/project/:id',                  requireTeacher, wrap((req) => queries.updateProjectDocument({ id: Number(req.params.id), ...req.body })))
 router.delete('/channel/:id',                 requireTeacher, wrap((req) => queries.deleteChannelDocument(Number(req.params.id))))
 
@@ -49,6 +59,12 @@ router.post('/project', (req, res) => {
       } catch (e) {
         console.warn('[addProjectDocument] Notification canal échouée :', e.message)
       }
+    }
+
+    // Notifier les etudiants
+    const io = req.app.get('io')
+    if (io && payload.promoId) {
+      io.to(`promo:${payload.promoId}`).emit('document:new', { name: payload.name, category: payload.category || null, promoId: payload.promoId })
     }
 
     res.json({ ok: true, data: result })

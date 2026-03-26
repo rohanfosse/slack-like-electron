@@ -287,32 +287,50 @@
     // Écouter les notifications de notes (étudiants uniquement)
     unsubGradeNew = window.api.onGradeNew((data) => {
       if (appStore.isStaff) return
-      // Toast in-app
       const label = data.note
         ? `Nouvelle note : ${data.note} sur ${data.devoirTitle}`
         : `Nouveau feedback sur ${data.devoirTitle}`
-      showToast(label, 'info')
-
-      // Ajouter à l'historique de notifications
-      const entry = {
-        id:          `grade-${Date.now()}`,
-        channelId:   null,
+      appStore.addNotification({
+        category: 'grade',
+        title: data.note ? 'Nouvelle note' : 'Nouveau feedback',
+        preview: label,
         channelName: data.devoirTitle,
-        dmStudentId: null,
-        promoId:     null,
-        authorName:  data.note ? `Note : ${data.note}` : 'Feedback',
-        isMention:   true,
-        timestamp:   Date.now(),
-        read:        false,
-      }
-      appStore.notificationHistory.unshift(entry)
-      if (appStore.notificationHistory.length > 50) appStore.notificationHistory.length = 50
-
-      // Badge barre des taches + notification navigateur
+        authorName: data.note ? `Note : ${data.note}` : 'Feedback',
+      })
       window.api?.setBadge?.()
-      if (document.hidden && 'Notification' in window && Notification.permission === 'granted') {
-        new Notification('Cursus - Nouvelle note', { body: label, icon: '/assets/icon-192.png' })
-      }
+    })
+
+    // Écouter les mises à jour de signature (étudiants)
+    window.api.onSignatureUpdate?.((data) => {
+      if (appStore.isStaff) return
+      appStore.addNotification({
+        category: 'signature',
+        title: data.status === 'signed' ? 'Document signe' : 'Signature refusee',
+        preview: data.signer_name ? `Par ${data.signer_name}` : '',
+        channelName: 'Signature',
+      })
+    })
+
+    // Écouter les nouveaux documents
+    window.api.onDocumentNew?.((data: { name: string; category?: string }) => {
+      if (appStore.isStaff) return
+      appStore.addNotification({
+        category: 'document',
+        title: 'Nouveau document',
+        preview: data.name,
+        channelName: data.category || 'Document',
+      })
+    })
+
+    // Écouter les nouveaux devoirs
+    window.api.onAssignmentNew?.((data: { title: string; category?: string; deadline?: string }) => {
+      if (appStore.isStaff) return
+      appStore.addNotification({
+        category: 'assignment',
+        title: 'Nouveau devoir',
+        preview: data.title,
+        channelName: data.category || 'Devoir',
+      })
     })
   })
 

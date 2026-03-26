@@ -77,6 +77,12 @@ Canaux par promotion, canaux d'annonce en lecture seule, messages prives. Repons
 
 Conversations privees securisees entre etudiants et enseignants. Indicateur en ligne / hors ligne et indicateur de frappe dans le header. Envoi de fichiers et images par drag-and-drop ou bouton trombone. Cache de conversation (60s) pour un switch instantane entre DMs. Isolation totale : un etudiant ne peut acceder qu'a ses propres conversations.
 
+File cards enrichies avec icone coloree par type (PDF rouge, DOC bleu, XLS vert, ZIP violet), taille du fichier, miniature pour les images. Barre de progression pendant l'upload. Panel "Fichiers partages" avec filtres Tout/Images/Documents. Apercu des PDF et documents directement depuis le chat (DocumentPreviewModal).
+
+### Signature de documents
+
+Workflow de signature de documents PDF en DM. L'etudiant envoie un fichier et clique "Demander une signature" (lien discret sous la zone de saisie). Le professeur recoit une notification, ouvre le document en apercu, dessine sa signature sur un pad canvas tactile, et clique "Signer". La signature est tamponnee directement sur le PDF via pdf-lib (image + nom + date + reference unique REF-SIG-XXXX). L'etudiant peut ensuite telecharger le PDF signe. Le professeur peut aussi refuser avec un motif. La signature est sauvegardee en local pour reutilisation.
+
 ### Devoirs et evaluation
 
 Cinq types de devoirs : livrable, soutenance, CCTL, etude de cas, memoire. Mode brouillon, blocage automatique apres deadline, grilles multicriteres avec ponderation, notation A-F depuis la liste des rendus, feedback individuel, export CSV. Notifications en temps reel a l'etudiant des qu'une note est attribuee.
@@ -91,7 +97,7 @@ Upload fichiers et liens, categorisation (Moodle, GitHub, LinkedIn, Site Web, Pa
 
 ### Dashboards personnalisables
 
-**Pilote** : layout Bento-box avec focus widget adaptatif, stats par promotion, frise chronologique interactive, analytique (distribution notes, taux de depot), centre d'actions prioritaires, todo persistant. Widgets optionnels : horloge, citation du jour, pomodoro, liens rapides, fichiers DM, calendrier semaine. Reorganisation par drag-and-drop en mode edition.
+**Pilote** : layout Bento-box avec focus widget adaptatif, stats par promotion, frise chronologique interactive, analytique (distribution notes, taux de depot), centre d'actions prioritaires, todo persistant. Widgets optionnels : horloge, citation du jour, pomodoro, liens rapides, fichiers DM, calendrier semaine, signatures en attente. Reorganisation par drag-and-drop en mode edition.
 
 **Etudiant** : widgets personnalisables et reorganisables par drag-and-drop (prochaines epreuves, livrables, soutenances, projet en cours, dernier retour, document recent). Widgets optionnels : horloge, citation du jour, calendrier des deadlines, progression globale, liens rapides, pomodoro.
 

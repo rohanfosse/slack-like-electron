@@ -70,6 +70,16 @@ const rexInviteCallbacks:         Array<(data: RexInvitePayload) => void> = []
 type GradeNewPayload = { devoirTitle: string; note: string | null; feedback: string | null; devoirId: number; category: string | null }
 const gradeNewCallbacks: Array<(data: GradeNewPayload) => void> = []
 
+// Signature update callbacks
+type SignatureUpdatePayload = { id: number; status: string; signed_file_url?: string; signer_name?: string; rejection_reason?: string }
+const signatureUpdateCallbacks: Array<(data: SignatureUpdatePayload) => void> = []
+
+// Document & assignment notification callbacks
+type DocumentNewPayload = { name: string; category?: string; promoId?: number }
+type AssignmentNewPayload = { title: string; category?: string; deadline?: string; promoId?: number }
+const documentNewCallbacks: Array<(data: DocumentNewPayload) => void> = []
+const assignmentNewCallbacks: Array<(data: AssignmentNewPayload) => void> = []
+
 // ─── Socket.io ────────────────────────────────────────────────────────────────
 function connectSocket(token: string): void {
   // Nettoyer l'ancien socket (anti-stacking de listeners)
@@ -107,6 +117,9 @@ function connectSocket(token: string): void {
   socket.on('rex:session-ended',   (data: RexSessionEndedPayload) => rexSessionEndedCallbacks.forEach(cb => cb(data)))
   socket.on('rex:invite',          (data: RexInvitePayload) => rexInviteCallbacks.forEach(cb => cb(data)))
   socket.on('grade:new',           (data: GradeNewPayload) => gradeNewCallbacks.forEach(cb => cb(data)))
+  socket.on('signature:update',    (data: SignatureUpdatePayload) => signatureUpdateCallbacks.forEach(cb => cb(data)))
+  socket.on('document:new',       (data: DocumentNewPayload) => documentNewCallbacks.forEach(cb => cb(data)))
+  socket.on('assignment:new',     (data: AssignmentNewPayload) => assignmentNewCallbacks.forEach(cb => cb(data)))
   socket.on('connect', () => {
     console.log('[Socket.io] Connecté (rooms auto-rejointes côté serveur)')
     socketStateCallbacks.forEach((cb) => cb(true))
@@ -526,6 +539,22 @@ contextBridge.exposeInMainWorld('api', {
   onGradeNew: (cb: (data: GradeNewPayload) => void) => {
     gradeNewCallbacks.push(cb)
     return () => { const i = gradeNewCallbacks.indexOf(cb); if (i !== -1) gradeNewCallbacks.splice(i, 1) }
+  },
+
+  // ── Signature notifications ──────────────────────────────────────────────────
+  onSignatureUpdate: (cb: (data: SignatureUpdatePayload) => void) => {
+    signatureUpdateCallbacks.push(cb)
+    return () => { const i = signatureUpdateCallbacks.indexOf(cb); if (i !== -1) signatureUpdateCallbacks.splice(i, 1) }
+  },
+
+  // ── Document & assignment notifications ────────────────────────────────────
+  onDocumentNew: (cb: (data: DocumentNewPayload) => void) => {
+    documentNewCallbacks.push(cb)
+    return () => { const i = documentNewCallbacks.indexOf(cb); if (i !== -1) documentNewCallbacks.splice(i, 1) }
+  },
+  onAssignmentNew: (cb: (data: AssignmentNewPayload) => void) => {
+    assignmentNewCallbacks.push(cb)
+    return () => { const i = assignmentNewCallbacks.indexOf(cb); if (i !== -1) assignmentNewCallbacks.splice(i, 1) }
   },
 
   // ── Admin ────────────────────────────────────────────────────────────────────
