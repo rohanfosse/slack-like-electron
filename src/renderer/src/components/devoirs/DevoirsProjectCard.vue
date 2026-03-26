@@ -3,11 +3,13 @@
  * Displays project name, type pills, progress bar, and next deadline.
  */
 <script setup lang="ts">
-import { ChevronRight, Clock } from 'lucide-vue-next'
+import { computed } from 'vue'
+import { ChevronRight, Clock, FolderOpen } from 'lucide-vue-next'
 import { deadlineClass, deadlineLabel } from '@/utils/date'
 import { typeLabel } from '@/utils/devoir'
+import { parseCategoryIcon } from '@/utils/categoryIcon'
 
-defineProps<{
+const props = defineProps<{
   name: string
   typeCounts: { type: string; count: number }[]
   submitted: number
@@ -18,12 +20,16 @@ defineProps<{
   devoirCount: number
   nextDeadline?: string | null
 }>()
+
+const parsed = computed(() => parseCategoryIcon(props.name))
 </script>
 
 <template>
   <div class="dv-proj-card">
     <div class="dv-proj-card-header">
-      <span class="dv-proj-card-name">{{ name }}</span>
+      <component :is="parsed.icon" v-if="parsed.icon" :size="16" class="dv-proj-card-icon" />
+      <FolderOpen v-else :size="16" class="dv-proj-card-icon" />
+      <span class="dv-proj-card-name">{{ parsed.label }}</span>
       <ChevronRight :size="14" class="dv-proj-card-chevron" />
     </div>
 
@@ -64,7 +70,8 @@ defineProps<{
   display: flex; align-items: center; justify-content: space-between;
   margin-bottom: 12px;
 }
-.dv-proj-card-name { font-size: 15px; font-weight: 700; color: var(--text-primary); }
+.dv-proj-card-icon { color: var(--text-muted); flex-shrink: 0; }
+.dv-proj-card-name { font-size: 15px; font-weight: 700; color: var(--text-primary); flex: 1; min-width: 0; }
 .dv-proj-card-chevron { color: var(--text-muted); opacity: .4; transition: opacity .15s; }
 .dv-proj-card:hover .dv-proj-card-chevron { opacity: 1; color: var(--accent); }
 
