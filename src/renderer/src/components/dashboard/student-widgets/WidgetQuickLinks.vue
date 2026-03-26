@@ -32,6 +32,7 @@ watch(links, (val) => {
 }, { deep: true })
 
 function openLink(url: string) {
+  if (!url.startsWith('https://') && !url.startsWith('http://')) return
   if (window.api?.openExternal) {
     window.api.openExternal(url)
   } else {

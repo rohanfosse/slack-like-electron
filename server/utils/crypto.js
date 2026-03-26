@@ -45,16 +45,17 @@ function decrypt(data) {
   }
 }
 
-/** Déchiffre le contenu d'une ligne message si c'est un DM. */
+/** Déchiffre le contenu d'une ligne message si c'est un DM (retourne une copie). */
 function decryptRow(row) {
   if (!row) return row
-  if (row.dm_student_id && row.content) {
-    row.content = decrypt(row.content)
+  const needsContentDecrypt = row.dm_student_id && row.content
+  const needsPreviewDecrypt = row.last_message_preview
+  if (!needsContentDecrypt && !needsPreviewDecrypt) return row
+  return {
+    ...row,
+    ...(needsContentDecrypt  ? { content: decrypt(row.content) } : {}),
+    ...(needsPreviewDecrypt  ? { last_message_preview: decrypt(row.last_message_preview) } : {}),
   }
-  if (row.last_message_preview) {
-    row.last_message_preview = decrypt(row.last_message_preview)
-  }
-  return row
 }
 
 /** Déchiffre le contenu de plusieurs lignes messages. */

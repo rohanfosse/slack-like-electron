@@ -156,13 +156,13 @@ setInterval(() => {
 const path = require('path')
 const fs   = require('fs')
 
-// Fichiers uploadés - auth JWT requise (via header ou query param ?token=)
+// Fichiers uploadés - auth JWT requise (header Authorization uniquement)
 const UPLOAD_DIR = process.env.UPLOAD_DIR
   ? path.join(process.env.UPLOAD_DIR, 'uploads')
   : path.join(__dirname, '../uploads')
 if (!fs.existsSync(UPLOAD_DIR)) fs.mkdirSync(UPLOAD_DIR, { recursive: true })
 app.use('/uploads', (req, res, next) => {
-  const token = req.query.token || req.headers.authorization?.replace('Bearer ', '')
+  const token = req.headers.authorization?.replace('Bearer ', '')
   if (!token) return res.status(401).json({ ok: false, error: 'Non authentifié' })
   try {
     jwt.verify(token, SECRET)
@@ -223,8 +223,19 @@ app.use('/download', require('./routes/download'))
 // ── Webhook de déploiement (pas d'auth JWT, validé par DEPLOY_SECRET) ─────────
 app.use('/webhook/deploy', require('./routes/deploy'))
 
-// ── Page admin monitoring ─────────────────────────────────────────────────────
-app.use('/admin-monitor', express.static(path.join(__dirname, 'public/admin'), {
+// ── Page admin monitoring (auth JWT requise) ──────────────────────────────────
+app.use('/admin-monitor', (req, res, next) => {
+  const token = req.headers.authorization?.replace('Bearer ', '')
+    || req.query.token
+  if (!token) return res.status(401).json({ ok: false, error: 'Non authentifié' })
+  try {
+    const decoded = jwt.verify(token, SECRET)
+    if (decoded.type !== 'teacher') return res.status(403).json({ ok: false, error: 'Accès réservé aux pilotes.' })
+    next()
+  } catch {
+    return res.status(401).json({ ok: false, error: 'Token invalide' })
+  }
+}, express.static(path.join(__dirname, 'public/admin'), {
   setHeaders: (res) => res.set('Cache-Control', 'no-cache, no-store, must-revalidate'),
 }))
 app.get('/admin-monitor', (_req, res) => {

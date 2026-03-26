@@ -124,12 +124,14 @@ function getDmMessagesPage(studentId, beforeId, peerStudentId) {
 }
 
 function searchMessages(channelId, query) {
+  const q = (query ?? '').slice(0, 200)
+  if (!q) return []
   return getDb().prepare(`
     ${MESSAGE_SELECT}
     AND m.channel_id = ? AND m.content LIKE '%' || ? || '%'
     ORDER BY m.created_at ASC
     LIMIT 200
-  `).all(channelId, query);
+  `).all(channelId, q);
 }
 
 /**

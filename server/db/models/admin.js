@@ -136,6 +136,7 @@ function logAudit({ actorId, actorName, actorType, action, target, details, ip }
 function getAdminUsers({ search, promo_id, type, page = 1, limit = 50 }) {
   const db = getDb()
   const offset = (page - 1) * limit
+  const safeSearch = search ? search.slice(0, 200) : null
 
   let users = []
 
@@ -149,7 +150,7 @@ function getAdminUsers({ search, promo_id, type, page = 1, limit = 50 }) {
       WHERE 1=1
     `
     const params = []
-    if (search) { sql += ` AND (s.name LIKE ? OR s.email LIKE ?)`; params.push(`%${search}%`, `%${search}%`) }
+    if (safeSearch) { sql += ` AND (s.name LIKE ? OR s.email LIKE ?)`; params.push(`%${safeSearch}%`, `%${safeSearch}%`) }
     if (promo_id) { sql += ` AND s.promo_id = ?`; params.push(promo_id) }
     sql += ` ORDER BY s.name`
     users.push(...db.prepare(sql).all(...params))
@@ -164,7 +165,7 @@ function getAdminUsers({ search, promo_id, type, page = 1, limit = 50 }) {
     const params = []
     if (type === 'teacher') { sql += ` AND t.role = 'teacher'`; }
     else if (type === 'ta') { sql += ` AND t.role = 'ta'`; }
-    if (search) { sql += ` AND (t.name LIKE ? OR t.email LIKE ?)`; params.push(`%${search}%`, `%${search}%`) }
+    if (safeSearch) { sql += ` AND (t.name LIKE ? OR t.email LIKE ?)`; params.push(`%${safeSearch}%`, `%${safeSearch}%`) }
     sql += ` ORDER BY t.name`
 
     const teachers = db.prepare(sql).all(...params).map(t => ({
