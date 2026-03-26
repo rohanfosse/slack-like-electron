@@ -33,6 +33,7 @@ const upload = multer({
 // ── Extensions dangereuses rejetées ─────────────────────────────────────────
 const BLOCKED_EXTENSIONS = new Set([
   '.exe', '.bat', '.cmd', '.com', '.msi', '.dll', '.scr', '.pif', '.vbs', '.wsf',
+  '.html', '.htm', '.svg', '.php', '.jsp', '.aspx', '.py', '.sh', '.ps1', '.reg',
 ])
 
 // POST /api/files/upload

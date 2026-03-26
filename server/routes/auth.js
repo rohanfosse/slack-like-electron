@@ -80,11 +80,17 @@ router.get('/identities', (req, res, next) => {
   })
 }, wrap(() => queries.getIdentities()))
 
-// GET /api/auth/student-by-email?email=X  (requiert JWT)
-router.get('/student-by-email', auth, wrap((req) => queries.getStudentByEmail(req.query.email)))
+// GET /api/auth/student-by-email?email=X  (profs uniquement)
+router.get('/student-by-email', auth, (req, res, next) => {
+  if (req.user?.type === 'student') return res.status(403).json({ ok: false, error: 'Accès réservé aux enseignants.' })
+  next()
+}, wrap((req) => queries.getStudentByEmail(req.query.email)))
 
-// GET /api/auth/find-user?name=X  (requiert JWT - accessible à tous)
-router.get('/find-user', auth, wrap((req) => queries.findUserByName(req.query.name)))
+// GET /api/auth/find-user?name=X  (profs uniquement — les étudiants utilisent les DM)
+router.get('/find-user', auth, (req, res, next) => {
+  if (req.user?.type === 'student') return res.status(403).json({ ok: false, error: 'Accès réservé aux enseignants.' })
+  next()
+}, wrap((req) => queries.findUserByName(req.query.name)))
 
 // GET /api/auth/teachers  (requiert JWT - retourne les enseignants visibles pour les DMs)
 router.get('/teachers', auth, wrap(() => {

@@ -76,7 +76,8 @@ router.post('/users/:id/reset-password', (req, res) => {
     const isTeacher = userId < 0
     const realId = Math.abs(userId)
 
-    const tempPwd = 'Cursus2026!'
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789!@#$%'
+    const tempPwd = Array.from(crypto.randomBytes(12), b => chars[b % chars.length]).join('')
     const hashed  = bcrypt.hashSync(tempPwd, 10)
     const table   = isTeacher ? 'teachers' : 'students'
 

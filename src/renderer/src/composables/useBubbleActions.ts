@@ -167,7 +167,7 @@ export function useBubbleActions(msg: () => Message) {
           window.api.getChannels(promoId).then((res) => {
             const ch = res?.ok ? res.data.find((c: Channel) => c.name === channelName) : null
             if (ch) appStore.openChannel(ch.id, ch.promo_id, ch.name, ch.type)
-          })
+          }).catch(() => { /* canal introuvable — ignoré */ })
         }
       }
     }

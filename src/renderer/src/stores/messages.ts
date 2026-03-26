@@ -343,7 +343,8 @@ export const useMessagesStore = defineStore('messages', () => {
     for (const [k, v] of Object.entries(r)) {
       if (v > 0) toSave[k] = reactionsData[msgId][k] ?? { count: v, users: [] }
     }
-    api(() => window.api.updateReactions(msgId, JSON.stringify(toSave)))
+    api(() => window.api.updateReactions(msgId, JSON.stringify(toSave)), 'reaction')
+      .then(res => { if (res === null) toggleReaction(msgId, type) /* rollback */ })
   }
 
   async function deleteMessage(id: number) {

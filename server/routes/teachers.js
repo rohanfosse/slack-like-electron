@@ -4,7 +4,7 @@ const queries = require('../db/index')
 const wrap    = require('../utils/wrap')
 const { requireTeacher } = require('../middleware/authorize')
 
-router.get('/',                  wrap(() => queries.getIntervenants()))
+router.get('/',                  requireTeacher, wrap(() => queries.getIntervenants()))
 router.post('/',                 requireTeacher, wrap((req) => queries.createIntervenant(req.body)))
 router.delete('/:id',            requireTeacher, wrap((req) => queries.deleteIntervenant(Number(req.params.id))))
 router.get('/:id/channels',      wrap((req) => queries.getTeacherChannels(Number(req.params.id))))

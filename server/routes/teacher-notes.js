@@ -34,15 +34,26 @@ router.post('/', requireTeacher, wrap((req) => {
   return queries.createNote({ teacherId, studentId, promoId, content: content.trim(), tag, category })
 }))
 
-// PATCH /:id — modifier une note
-router.patch('/:id', requireTeacher, wrap((req) => {
+// ── Helper : vérifier que la note appartient au prof courant ─────────────────
+function requireNoteOwner(req, res, next) {
+  const { getDb } = require('../db/connection')
+  const note = getDb().prepare('SELECT teacher_id FROM teacher_notes WHERE id = ?').get(Number(req.params.id))
+  if (!note) return res.status(404).json({ ok: false, error: 'Note introuvable.' })
+  if (note.teacher_id !== req.user?.id) {
+    return res.status(403).json({ ok: false, error: 'Vous ne pouvez modifier que vos propres notes.' })
+  }
+  next()
+}
+
+// PATCH /:id — modifier une note (propriétaire uniquement)
+router.patch('/:id', requireTeacher, requireNoteOwner, wrap((req) => {
   const { content, tag, category } = req.body
   if (!content?.trim()) throw new Error('content requis')
   return queries.updateNote(Number(req.params.id), { content: content.trim(), tag, category })
 }))
 
-// DELETE /:id — supprimer une note
-router.delete('/:id', requireTeacher, wrap((req) => {
+// DELETE /:id — supprimer une note (propriétaire uniquement)
+router.delete('/:id', requireTeacher, requireNoteOwner, wrap((req) => {
   queries.deleteNote(Number(req.params.id))
   return null
 }))

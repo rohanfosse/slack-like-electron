@@ -10,8 +10,10 @@ const SIGNAL_DIR    = '/deploy-signal'
 const SIGNAL_FILE   = path.join(SIGNAL_DIR, 'trigger')
 
 router.post('/', (req, res) => {
-  const secret = req.headers['x-deploy-secret']
-  if (!DEPLOY_SECRET || secret !== DEPLOY_SECRET) {
+  const crypto = require('crypto')
+  const secret = req.headers['x-deploy-secret'] || ''
+  if (!DEPLOY_SECRET || !secret ||
+      !crypto.timingSafeEqual(Buffer.from(secret), Buffer.from(DEPLOY_SECRET))) {
     console.warn('[Deploy] Tentative non autorisee depuis', req.ip)
     return res.status(403).json({ ok: false, error: 'Unauthorized' })
   }

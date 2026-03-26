@@ -32,6 +32,18 @@ const io     = new Server(server, {
 app.use(cors({ origin: ORIGIN }))
 app.use(express.json({ limit: '20mb' }))
 
+// ── Headers de sécurité ─────────────────────────────────────────────────────
+app.use((_req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff')
+  res.setHeader('X-Frame-Options', 'SAMEORIGIN')
+  res.setHeader('X-XSS-Protection', '1; mode=block')
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin')
+  if (process.env.NODE_ENV === 'production') {
+    res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains')
+  }
+  next()
+})
+
 const rateLimit = require('express-rate-limit')
 // Limite générale : 300 req/min par IP
 app.use(rateLimit({ windowMs: 60_000, max: 300, standardHeaders: true, legacyHeaders: false }))
@@ -136,7 +148,16 @@ app.use('/uploads', (req, res, next) => {
   } catch {
     return res.status(401).json({ ok: false, error: 'Token invalide' })
   }
-}, express.static(UPLOAD_DIR))
+}, express.static(UPLOAD_DIR, {
+  setHeaders: (res, filePath) => {
+    // Forcer le téléchargement sauf pour les images (affichage inline autorisé)
+    const ext = path.extname(filePath).toLowerCase()
+    const inlineExts = ['.png', '.jpg', '.jpeg', '.gif', '.webp', '.bmp']
+    if (!inlineExts.includes(ext)) {
+      res.setHeader('Content-Disposition', 'attachment')
+    }
+  },
+}))
 
 // Route upload (auth requise - montée après authMiddleware global /api)
 app.use('/api/files', require('./routes/files'))

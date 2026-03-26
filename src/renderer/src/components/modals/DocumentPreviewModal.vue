@@ -6,6 +6,7 @@ import { useOpenExternal }   from '@/composables/useOpenExternal'
 import Modal from '@/components/ui/Modal.vue'
 import * as mammoth from 'mammoth'
 import * as XLSX from 'xlsx'
+import DOMPurify from 'dompurify'
 
 const api   = window.api
 const { openExternal } = useOpenExternal()
@@ -127,12 +128,12 @@ watch(() => props.modelValue, async (open) => {
 
     } else if (isWordMime(mime.value)) {
       const result = await mammoth.convertToHtml({ arrayBuffer: b64ToBuffer(b64) })
-      wordHtml.value = result.value
+      wordHtml.value = DOMPurify.sanitize(result.value)
 
     } else if (isExcelMime(mime.value)) {
       const wb = XLSX.read(b64ToBuffer(b64), { type: 'array' })
       const ws = wb.Sheets[wb.SheetNames[0]]
-      excelHtml.value = XLSX.utils.sheet_to_html(ws, { editable: false })
+      excelHtml.value = DOMPurify.sanitize(XLSX.utils.sheet_to_html(ws, { editable: false }))
     }
   } catch (e) {
     error.value = 'Erreur lors de la lecture du fichier.'

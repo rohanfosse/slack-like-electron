@@ -10,6 +10,9 @@ const ROOT = path.join(__dirname, '../../..')
 
 router.post('/reset-seed', (req, res) => {
   try {
+    if (req.body?.confirm !== 'RESET') {
+      return res.status(400).json({ ok: false, error: 'Confirmation requise. Envoyez { "confirm": "RESET" } pour confirmer cette opération destructrice.' })
+    }
     queries.resetAndSeed()
     res.json({ ok: true, data: null })
   } catch (err) {
@@ -105,10 +108,11 @@ router.post('/cleanup-logs', (req, res) => {
 router.post('/purge', (req, res) => {
   try {
     const { auditDays, loginDays, sessionDays } = req.body
+    const clamp = (v, min, max, def) => { const n = Number(v); return (isNaN(n) || n < min) ? def : Math.min(n, max) }
     const data = queries.purgeOldData({
-      auditDays: Number(auditDays) || 90,
-      loginDays: Number(loginDays) || 30,
-      sessionDays: Number(sessionDays) || 30,
+      auditDays:   clamp(auditDays, 7, 365, 90),
+      loginDays:   clamp(loginDays, 7, 365, 30),
+      sessionDays: clamp(sessionDays, 7, 365, 30),
     })
     res.json({ ok: true, data })
   } catch (err) {

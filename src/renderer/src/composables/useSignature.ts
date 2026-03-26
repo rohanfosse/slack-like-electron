@@ -12,7 +12,7 @@ export function useSignature() {
   const { api } = useApi()
   const { showToast } = useToast()
 
-  // Signature sauvegardee du prof (base64 PNG)
+  // Signature sauvegardée du prof (base64 PNG)
   const savedSignature = ref<string | null>(localStorage.getItem(STORAGE_KEY))
 
   function saveSignature(base64: string) {
@@ -29,41 +29,51 @@ export function useSignature() {
 
   async function loadRequests(status?: string) {
     loading.value = true
-    const res = await api<SignatureRequest[]>(() => window.api.getSignatureRequests(status) as Promise<{ ok: boolean; data: SignatureRequest[] }>)
+    const res = await api<SignatureRequest[]>(
+      () => window.api.getSignatureRequests(status) as Promise<{ ok: boolean; data: SignatureRequest[] }>,
+      'signature',
+    )
     requests.value = Array.isArray(res) ? res : []
     loading.value = false
   }
 
   async function requestSignature(messageId: number, dmStudentId: number, fileUrl: string, fileName: string) {
-    const res = await window.api.createSignatureRequest({ message_id: messageId, dm_student_id: dmStudentId, file_url: fileUrl, file_name: fileName })
-    if (res?.ok) {
-      showToast('Demande de signature envoyee', 'success')
-      return res.data
+    const res = await api(
+      () => window.api.createSignatureRequest({ message_id: messageId, dm_student_id: dmStudentId, file_url: fileUrl, file_name: fileName }),
+      'signature',
+    )
+    if (res) {
+      showToast('Demande de signature envoyée', 'success')
+      return res
     }
-    showToast('Erreur lors de la demande', 'error')
     return null
   }
 
   async function signDocument(requestId: number, signatureBase64: string) {
-    const res = await window.api.signDocument(requestId, signatureBase64)
-    if (res?.ok) {
-      showToast('Document signe avec succes', 'success')
-      // Mettre a jour localement
+    const res = await api<{ signed_file_url: string }>(
+      () => window.api.signDocument(requestId, signatureBase64),
+      'sign',
+    )
+    if (res) {
+      showToast('Document signé avec succès', 'success', 'Le fichier signé a été envoyé à l\'étudiant.')
+      // Mettre à jour localement
       const req = requests.value.find(r => r.id === requestId)
       if (req) {
         req.status = 'signed'
-        req.signed_file_url = res.data?.signed_file_url || null
+        req.signed_file_url = res.signed_file_url || null
       }
-      return res.data
+      return res
     }
-    showToast('Erreur lors de la signature', 'error')
     return null
   }
 
   async function rejectSignature(requestId: number, reason: string) {
-    const res = await window.api.rejectSignature(requestId, reason)
-    if (res?.ok) {
-      showToast('Demande refusee', 'info')
+    const res = await api(
+      () => window.api.rejectSignature(requestId, reason),
+      'signature',
+    )
+    if (res !== null) {
+      showToast('Demande de signature refusée', 'info', reason ? `Motif : ${reason}` : undefined)
       const req = requests.value.find(r => r.id === requestId)
       if (req) {
         req.status = 'rejected'
@@ -71,13 +81,14 @@ export function useSignature() {
       }
       return true
     }
-    showToast('Erreur lors du refus', 'error')
     return false
   }
 
   async function getSignatureForMessage(messageId: number): Promise<SignatureRequest | null> {
-    const res = await window.api.getSignatureByMessage(messageId) as { ok: boolean; data: SignatureRequest | null }
-    return res?.ok ? res.data : null
+    return await api<SignatureRequest>(
+      () => window.api.getSignatureByMessage(messageId) as Promise<{ ok: boolean; data: SignatureRequest | null }>,
+      'signature',
+    )
   }
 
   return {
