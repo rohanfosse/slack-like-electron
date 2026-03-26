@@ -1,5 +1,6 @@
 import { ref } from 'vue'
 import { defineStore } from 'pinia'
+import type { SignatureRequest } from '@/types'
 
 // ─── Store centralisé pour l'état d'ouverture de chaque modal ────────────────
 // Chaque modal est un booléen ref. Les données contextuelles associées
@@ -25,6 +26,7 @@ export const useModalsStore = defineStore('modals', () => {
   const intervenants      = ref(false)
   const classe            = ref(false)
   const createPromo       = ref(false)
+  const signatureRequest  = ref<SignatureRequest | null>(null)
 
   function closeAll() {
     depots.value            = false
@@ -46,6 +48,7 @@ export const useModalsStore = defineStore('modals', () => {
     intervenants.value      = false
     classe.value            = false
     createPromo.value       = false
+    signatureRequest.value  = null
   }
 
   return {
@@ -53,6 +56,7 @@ export const useModalsStore = defineStore('modals', () => {
     timeline, echeancier, settings, documentPreview,
     newDevoir, createChannel, cmdPalette, impersonate, newProject,
     studentTimeline, rubric, importStudents, intervenants, classe, createPromo,
+    signatureRequest,
     closeAll,
   }
 })

@@ -37,6 +37,7 @@
   import IntervenantsModal       from '@/components/modals/IntervenantsModal.vue'
   import ClasseModal             from '@/components/modals/ClasseModal.vue'
   import CreatePromoModal        from '@/components/modals/CreatePromoModal.vue'
+  import SignatureModal           from '@/components/modals/SignatureModal.vue'
 
   const appStore = useAppStore()
   const modals   = useModalsStore()
@@ -499,6 +500,12 @@
     <IntervenantsModal       v-model="modals.intervenants"      />
     <ClasseModal             v-model="modals.classe"            />
     <CreatePromoModal        v-model="modals.createPromo"       @created="onPromoCreated" />
+    <SignatureModal
+      v-if="modals.signatureRequest"
+      :request="modals.signatureRequest"
+      @close="modals.signatureRequest = null"
+      @signed="modals.signatureRequest = null"
+    />
 
     <!-- Changement de mot de passe forcé (première connexion) -->
     <ChangePasswordModal

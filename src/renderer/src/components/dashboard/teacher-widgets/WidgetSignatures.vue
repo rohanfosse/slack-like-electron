@@ -1,17 +1,29 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { Pen, Clock, FileText } from 'lucide-vue-next'
+import { Pen, FileText } from 'lucide-vue-next'
 import { useSignature } from '@/composables/useSignature'
+import { useModalsStore } from '@/stores/modals'
 import { relativeTime } from '@/utils/date'
 import type { SignatureRequest } from '@/types'
 
 const { requests, loading, loadRequests } = useSignature()
-const emit = defineEmits<{ openSignature: [request: SignatureRequest] }>()
+const modals = useModalsStore()
 
 onMounted(() => loadRequests('pending'))
 
+function openSignature(req: SignatureRequest) {
+  modals.signatureRequest = req
+}
+
 function initials(name: string) {
   return name?.split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase() || '?'
+}
+
+function avatarColor(name: string) {
+  const colors = ['#4a90d9','#22c55e','#f59e0b','#8b5cf6','#ec4899','#06b6d4','#f97316']
+  let h = 0
+  for (const c of name || '') h = (h * 31 + c.charCodeAt(0)) % colors.length
+  return colors[h]
 }
 </script>
 
@@ -31,9 +43,9 @@ function initials(name: string) {
         v-for="req in requests.slice(0, 5)"
         :key="req.id"
         class="wsig-item"
-        @click="$emit('openSignature', req)"
+        @click="openSignature(req)"
       >
-        <div class="wsig-avatar" :style="{ background: '#4a90d9' }">{{ initials(req.student_name || '') }}</div>
+        <div class="wsig-avatar" :style="{ background: avatarColor(req.student_name || '') }">{{ initials(req.student_name || '') }}</div>
         <div class="wsig-info">
           <span class="wsig-name">{{ req.student_name }}</span>
           <span class="wsig-file"><FileText :size="10" /> {{ req.file_name }}</span>
