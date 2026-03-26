@@ -65,7 +65,7 @@ function addChannelDocument({ channelId, promoId, project, category, type, name,
   // legacy: derive promoId from channelId
   const ch = getDb().prepare('SELECT promo_id, category FROM channels WHERE id = ?').get(channelId);
   return addProjectDocument({
-    promoId: ch?.promo_id ?? 1,
+    promoId: ch?.promo_id ?? null,
     project: project ?? ch?.category ?? null,
     category, type, name, pathOrUrl, description,
   });

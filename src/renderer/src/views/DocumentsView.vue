@@ -675,68 +675,6 @@
       </form>
     </Modal>
 
-    <!-- ── Modal édition ───────────────────────────────────────────────── -->
-    <Modal v-model="showEditModal" title="Modifier le document" max-width="520px">
-      <form class="da" @submit.prevent="submitEdit">
-
-        <!-- Nom -->
-        <div class="da-field">
-          <label class="da-label">Nom du document</label>
-          <input v-model="editName" type="text" class="da-input" placeholder="ex : Cours réseaux - chapitre 3" autofocus />
-        </div>
-
-        <!-- Catégorie — pills -->
-        <div class="da-field">
-          <label class="da-label">Catégorie</label>
-          <div class="da-cat-pills">
-            <button
-              v-for="cat in CATEGORIES"
-              :key="cat.id"
-              type="button"
-              class="da-cat-pill"
-              :class="{ active: editCategory === cat.label }"
-              :style="editCategory === cat.label ? { background: cat.color + '22', color: cat.color, borderColor: cat.color } : {}"
-              @click="editCategory = cat.label"
-            >
-              <component :is="cat.icon" :size="12" />
-              {{ cat.label }}
-            </button>
-          </div>
-        </div>
-
-        <!-- Lien vers un devoir -->
-        <div v-if="editTravailList.length" class="da-field">
-          <label class="da-label">Lien vers un devoir <span class="da-hint">(optionnel)</span></label>
-          <div class="da-travail-select-wrap">
-            <BookMarked :size="14" class="da-travail-icon" />
-            <select v-model="editTravailId" class="da-input da-travail-select">
-              <option :value="null">— Aucun —</option>
-              <option v-for="t in editTravailList" :key="t.id" :value="t.id">
-                {{ t.title }}{{ t.category ? ` · ${t.category}` : '' }}
-              </option>
-            </select>
-          </div>
-        </div>
-
-        <!-- Description -->
-        <div class="da-field">
-          <label class="da-label">Description <span class="da-hint">(optionnelle)</span></label>
-          <textarea v-model="editDescription" class="da-input da-textarea" rows="2" placeholder="Brève description, consignes, contexte…" />
-        </div>
-
-        <!-- Footer -->
-        <div class="da-footer">
-          <button type="button" class="btn-ghost" @click="showEditModal = false">Annuler</button>
-          <button
-            type="submit" class="btn-primary da-submit"
-            :disabled="!editName.trim() || saving"
-          >
-            {{ saving ? 'Enregistrement…' : 'Enregistrer' }}
-          </button>
-        </div>
-      </form>
-    </Modal>
-
     <!-- Drag & drop overlay -->
     <DropOverlay
       :is-drag-over="isDragOver"

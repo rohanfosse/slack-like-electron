@@ -1,17 +1,62 @@
 // ─── Routes documents ────────────────────────────────────────────────────────
 const router  = require('express').Router()
+const { z }   = require('zod')
 const queries = require('../db/index')
+const { validate } = require('../middleware/validate')
 const wrap    = require('../utils/wrap')
 const { requireTeacher, requirePromo, promoFromChannel, promoFromParam } = require('../middleware/authorize')
+
+// ── Schémas de validation ─────────────────────────────────────────────────────
+const addChannelDocSchema = z.object({
+  channelId:   z.number().int().positive().optional(),
+  promoId:     z.number().int().positive().optional(),
+  project:     z.string().max(200).nullable().optional(),
+  category:    z.string().max(100).optional().default('Général'),
+  type:        z.enum(['file', 'link']),
+  name:        z.string().min(1, 'Nom requis').max(255),
+  pathOrUrl:   z.string().min(1).max(2000),
+  description: z.string().max(2000).nullable().optional(),
+  fileSize:    z.number().int().nullable().optional(),
+  authorName:  z.string().max(100).optional(),
+  authorType:  z.string().max(20).optional(),
+  travailId:   z.number().int().nullable().optional(),
+}).passthrough()
+
+const updateDocSchema = z.object({
+  name:        z.string().min(1, 'Nom requis').max(255).optional(),
+  category:    z.string().max(100).optional(),
+  description: z.string().max(2000).nullable().optional(),
+  travailId:   z.number().int().nullable().optional(),
+}).passthrough()
+
+// ── Helper : vérifier que le document appartient à une promo du prof ─────────
+function requireDocOwnership(req, res, next) {
+  const { getDb } = require('../db/connection')
+  const docId = Number(req.params.id)
+  const doc = getDb().prepare('SELECT promo_id FROM channel_documents WHERE id = ?').get(docId)
+  if (!doc) return res.status(404).json({ ok: false, error: 'Document introuvable.' })
+  // En mode "teacher avec affectations", vérifier l'accès promo
+  // (les profs sans affectation = admin ont accès total)
+  const teacherId = Math.abs(req.user?.id ?? 0)
+  const hasAny = getDb().prepare('SELECT 1 FROM teacher_channels WHERE teacher_id = ? LIMIT 1').get(teacherId)
+  if (hasAny) {
+    const hasAccess = getDb().prepare(`
+      SELECT 1 FROM teacher_channels tc JOIN channels c ON tc.channel_id = c.id
+      WHERE tc.teacher_id = ? AND c.promo_id = ? LIMIT 1
+    `).get(teacherId, doc.promo_id)
+    if (!hasAccess) return res.status(403).json({ ok: false, error: 'Vous n\'avez pas accès aux documents de cette promotion.' })
+  }
+  next()
+}
 
 // ── Documents de canal ────────────────────────────────────────────────────────
 router.get('/channel/:channelId',             requirePromo(promoFromChannel), wrap((req) => queries.getChannelDocuments(Number(req.params.channelId))))
 router.get('/channel/:channelId/categories',  requirePromo(promoFromChannel), wrap((req) => queries.getChannelDocumentCategories(Number(req.params.channelId))))
 router.get('/promo/:promoId',                 requirePromo(promoFromParam), wrap((req) => queries.getPromoDocuments(Number(req.params.promoId))))
-router.post('/channel', requireTeacher, async (req, res) => {
+
+router.post('/channel', requireTeacher, validate(addChannelDocSchema), async (req, res) => {
   try {
     const result = queries.addChannelDocument(req.body)
-    // Notifier les etudiants du canal
     const io = req.app.get('io')
     if (io && req.body.promoId) {
       io.to(`promo:${req.body.promoId}`).emit('document:new', { name: req.body.name, category: req.body.category || null, promoId: req.body.promoId })
@@ -19,12 +64,18 @@ router.post('/channel', requireTeacher, async (req, res) => {
     res.json({ ok: true, data: result })
   } catch (err) { res.status(400).json({ ok: false, error: err.message }) }
 })
-router.patch('/project/:id',                  requireTeacher, wrap((req) => queries.updateProjectDocument({ id: Number(req.params.id), ...req.body })))
-router.delete('/channel/:id',                 requireTeacher, wrap((req) => queries.deleteChannelDocument(Number(req.params.id))))
+
+router.patch('/project/:id', requireTeacher, requireDocOwnership, validate(updateDocSchema), wrap((req) => {
+  return queries.updateProjectDocument({ id: Number(req.params.id), ...req.body })
+}))
+
+router.delete('/channel/:id', requireTeacher, requireDocOwnership, wrap((req) => {
+  return queries.deleteChannelDocument(Number(req.params.id))
+}))
 
 // ── Recherche & liaison ───────────────────────────────────────────────────────
 router.get('/search', requirePromo(promoFromParam), wrap((req) => queries.searchDocuments(Number(req.query.promoId), req.query.q ?? '')))
-router.patch('/link/:id', requireTeacher, wrap((req) => queries.linkDocumentToTravail(Number(req.params.id), req.body.travailId ?? null)))
+router.patch('/link/:id', requireTeacher, requireDocOwnership, wrap((req) => queries.linkDocumentToTravail(Number(req.params.id), req.body.travailId ?? null)))
 
 // ── Documents de projet ───────────────────────────────────────────────────────
 router.get('/project', requirePromo(promoFromParam), wrap((req) => queries.getProjectDocuments(
@@ -35,7 +86,8 @@ router.get('/project/categories', requirePromo(promoFromParam), wrap((req) => qu
   Number(req.query.promoId),
   req.query.project ?? null,
 )))
-router.post('/project', requireTeacher, (req, res) => {
+
+router.post('/project', requireTeacher, validate(addChannelDocSchema), (req, res) => {
   try {
     const payload = req.body
     const result  = queries.addProjectDocument(payload)
@@ -61,7 +113,6 @@ router.post('/project', requireTeacher, (req, res) => {
       }
     }
 
-    // Notifier les etudiants
     const io = req.app.get('io')
     if (io && payload.promoId) {
       io.to(`promo:${payload.promoId}`).emit('document:new', { name: payload.name, category: payload.category || null, promoId: payload.promoId })

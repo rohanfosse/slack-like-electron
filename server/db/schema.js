@@ -1,6 +1,6 @@
 const { getDb } = require('./connection');
 
-const CURRENT_VERSION = 39;
+const CURRENT_VERSION = 40;
 
 // ─── Schema initial ───────────────────────────────────────────────────────────
 // Crée toutes les tables avec leur schéma complet (colonnes UTC, toutes colonnes incluses).
@@ -784,6 +784,12 @@ function runMigrations(db) {
       tryAlter(db, 'ALTER TABLE signature_requests ADD COLUMN created_ip TEXT DEFAULT NULL');
       tryAlter(db, 'ALTER TABLE signature_requests ADD COLUMN signer_id INTEGER DEFAULT NULL');
       tryAlter(db, 'ALTER TABLE signature_requests ADD COLUMN signer_ip TEXT DEFAULT NULL');
+    },
+    // v40 : indexes performance documents
+    (db) => {
+      db.exec('CREATE INDEX IF NOT EXISTS idx_doc_promo ON channel_documents(promo_id)');
+      db.exec('CREATE INDEX IF NOT EXISTS idx_doc_promo_project ON channel_documents(promo_id, project)');
+      db.exec('CREATE INDEX IF NOT EXISTS idx_doc_channel ON channel_documents(channel_id)');
     },
   ];
 
