@@ -13,7 +13,9 @@ module.exports = function wrap(fn) {
       // Erreurs inattendues (DB crash, bug interne) → 500
       const isClientError = msg.includes('requis') || msg.includes('invalide') ||
         msg.includes('introuvable') || msg.includes('autoris') || msg.includes('Accès') ||
-        msg.includes('UNIQUE constraint') || msg.includes('pas pu')
+        msg.includes('UNIQUE constraint') || msg.includes('pas pu') ||
+        msg.includes('incorrect') || msg.includes('expiré') || msg.includes('existe') ||
+        msg.includes('Données invalides') || msg.includes('trop long') || msg.includes('trop court')
       const status = isClientError ? 400 : 500
       if (status === 500) {
         log.error('route_error', { method: req.method, path: req.path, error: msg })

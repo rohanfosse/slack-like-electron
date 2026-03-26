@@ -19,13 +19,15 @@ const UPLOAD_DIR = process.env.UPLOAD_DIR
 // ── Rate limiters spécifiques ────────────────────────────────────────────────
 const createLimiter = rateLimit({
   windowMs: 60_000, max: 10,
-  keyGenerator: (req) => `sig-create:${req.user?.id || req.ip}`,
+  keyGenerator: (req) => `sig-create:${req.user?.id ?? 'anon'}`,
   message: { ok: false, error: 'Trop de demandes de signature. Réessayez dans une minute.' },
+  validate: { xForwardedForHeader: false },
 })
 const signLimiter = rateLimit({
   windowMs: 60_000, max: 15,
-  keyGenerator: (req) => `sig-sign:${req.user?.id || req.ip}`,
+  keyGenerator: (req) => `sig-sign:${req.user?.id ?? 'anon'}`,
   message: { ok: false, error: 'Trop de signatures. Réessayez dans une minute.' },
+  validate: { xForwardedForHeader: false },
 })
 
 // ── Schémas de validation ────────────────────────────────────────────────────

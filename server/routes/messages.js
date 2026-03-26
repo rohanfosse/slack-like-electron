@@ -11,10 +11,11 @@ const { requireTeacher, requirePromo, promoFromChannel, requireMessageOwner, req
 const messageLimiter = rateLimit({
   windowMs: 60_000,
   max: 30,
-  keyGenerator: (req) => `msg:${req.user?.id || req.ip}`,
+  keyGenerator: (req) => `msg:${req.user?.id ?? 'anon'}`,
   standardHeaders: true,
   legacyHeaders: false,
   message: { ok: false, error: 'Trop de messages envoyés. Réessayez dans une minute.' },
+  validate: { xForwardedForHeader: false },
 })
 
 // ── Schémas de validation ─────────────────────────────────────────────────────
