@@ -598,6 +598,7 @@
   border-color: var(--border-input);
   color: var(--text-secondary);
 }
+.sidebar-search-bar:focus-visible { outline: var(--focus-ring); outline-offset: var(--focus-offset); }
 
 .sidebar-search-placeholder {
   flex: 1;
@@ -655,6 +656,7 @@
   flex-shrink: 0;
 }
 .sidebar-all-docs-btn:hover { background: var(--bg-hover); color: var(--text-primary); }
+.sidebar-all-docs-btn:focus-visible { outline: var(--focus-ring); outline-offset: var(--focus-offset); }
 
 /* Couleurs actives par section */
 .sidebar-all-docs-btn.section-messages .sidebar-all-docs-icon { color: var(--accent); }
@@ -663,8 +665,8 @@
 .sidebar-all-docs-btn.section-devoirs .sidebar-all-docs-icon  { color: var(--color-cctl); }
 .sidebar-all-docs-btn.section-devoirs.active  { color: var(--color-cctl); background: rgba(155,135,245,.08); }
 
-.sidebar-all-docs-btn.section-documents .sidebar-all-docs-icon { color: #27AE60; }
-.sidebar-all-docs-btn.section-documents.active { color: #27AE60; background: rgba(39,174,96,.08); }
+.sidebar-all-docs-btn.section-documents .sidebar-all-docs-icon { color: var(--color-online); }
+.sidebar-all-docs-btn.section-documents.active { color: var(--color-online); background: rgba(39,174,96,.08); }
 
 .sidebar-all-docs-icon { flex-shrink: 0; }
 
@@ -694,13 +696,13 @@
   flex-shrink: 0;
 }
 .sidebar-section--messages::before  { background: var(--accent); }
-.sidebar-section--devoirs::before   { background: #9B87F5; }
-.sidebar-section--documents::before { background: #27AE60; }
-.sidebar-section--dashboard::before { background: #E5A842; }
+.sidebar-section--devoirs::before   { background: var(--color-cctl); }
+.sidebar-section--documents::before { background: var(--color-online); }
+.sidebar-section--dashboard::before { background: var(--color-gold); }
 .sidebar-section--messages  { color: var(--accent); }
 .sidebar-section--devoirs   { color: var(--color-cctl); }
-.sidebar-section--documents { color: #27AE60; }
-.sidebar-section--dashboard { color: #E5A842; }
+.sidebar-section--documents { color: var(--color-online); }
+.sidebar-section--dashboard { color: var(--color-gold); }
 
 /* ── Renommage inline ── */
 .sidebar-category-header-wrap { position: relative; }
@@ -820,14 +822,14 @@
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: #9B87F5;
+  background: var(--color-cctl);
   flex-shrink: 0;
   margin-left: 4px;
   margin-right: 2px;
   opacity: .7;
 }
 
-.sidebar-item.active .project-bullet { opacity: 1; background: #9B87F5; }
+.sidebar-item.active .project-bullet { opacity: 1; background: var(--color-cctl); }
 
 .project-color-dot {
   width: 7px;
@@ -843,6 +845,7 @@
   transition: opacity .12s;
 }
 .sidebar-add-project:hover { opacity: 1; }
+.sidebar-add-project:focus-visible { outline: var(--focus-ring); outline-offset: var(--focus-offset); }
 
 .project-add-row {
   display: flex;
@@ -921,6 +924,7 @@
 }
 .sidebar-section-header:hover .dm-toggle-btn { opacity: 1; }
 .dm-toggle-btn:hover { color: var(--accent, #4a90d9); background: var(--bg-hover); }
+.dm-toggle-btn:focus-visible { outline: var(--focus-ring); outline-offset: var(--focus-offset); }
 
 .dm-item {
   display: flex !important; align-items: center; gap: 6px; padding: 4px 10px 4px 14px !important;
@@ -1057,6 +1061,7 @@
   white-space: nowrap;
 }
 .dash-devoirs-link:hover { background: rgba(155,135,245,.15); color: #b8a8f7; }
+.dash-devoirs-link:focus-visible { outline: var(--focus-ring); outline-offset: var(--focus-offset); }
 
 .dash-project-channels {
   padding-left: 10px;

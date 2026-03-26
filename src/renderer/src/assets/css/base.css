@@ -106,6 +106,31 @@ body.theme-transitioning *::after {
 
   /* Couleurs sémantiques complémentaires */
   --color-ta: #7B5EA7;
+  --color-info:    #3B82F6;
+  --color-gold:    #E5A842;
+  --color-online:  #27AE60;
+
+  /* Focus ring (accessibilité clavier) */
+  --focus-ring: 2px solid var(--accent);
+  --focus-offset: 2px;
+
+  /* Échelle typographique */
+  --text-2xs: 10px;
+  --text-xs:  11px;
+  --text-sm:  12px;
+  --text-base: 14px;
+  --text-md:  15px;
+  --text-lg:  17px;
+  --text-xl:  20px;
+  --text-2xl: 24px;
+
+  /* Échelle de rayons élargie */
+  --radius-xs: 4px;
+  /* --radius-sm: 6px (déjà défini) */
+  /* --radius:    10px (déjà défini) */
+  /* --radius-lg: 14px (déjà défini) */
+  --radius-xl:   20px;
+  --radius-full: 50%;
 
   /* Types de devoirs */
   --color-livrable:     #4A90D9;

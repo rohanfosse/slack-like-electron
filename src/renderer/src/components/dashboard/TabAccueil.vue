@@ -475,13 +475,13 @@ function onOptDragEnd() { bento.reorderOptional(draggableOpt.value) }
   background: rgba(239, 68, 68, .08);
   border-color: rgba(239, 68, 68, .25);
 }
-.focus--critical .focus-icon { color: #ef4444; }
+.focus--critical .focus-icon { color: var(--color-danger); }
 
 .focus--warning {
   background: rgba(245, 158, 11, .08);
   border-color: rgba(245, 158, 11, .25);
 }
-.focus--warning .focus-icon { color: #f59e0b; }
+.focus--warning .focus-icon { color: var(--color-warning); }
 
 .focus--normal {
   background: rgba(74, 144, 217, .06);
@@ -493,7 +493,7 @@ function onOptDragEnd() { bento.reorderOptional(draggableOpt.value) }
   background: linear-gradient(135deg, rgba(34, 197, 94, .06) 0%, rgba(74, 144, 217, .04) 100%);
   border-color: rgba(34, 197, 94, .2);
 }
-.focus--clear .focus-icon { color: #22c55e; }
+.focus--clear .focus-icon { color: var(--color-success); }
 
 .focus-title {
   font-size: 22px;
@@ -524,6 +524,7 @@ function onOptDragEnd() { bento.reorderOptional(draggableOpt.value) }
   transition: filter .15s, transform .15s;
 }
 .focus-action:hover { filter: brightness(1.1); transform: translateY(-1px); }
+.focus-action:focus-visible { outline: var(--focus-ring); outline-offset: var(--focus-offset); }
 
 /* ── STAT TILES ── */
 .bento-stat {
@@ -572,20 +573,20 @@ function onOptDragEnd() { bento.reorderOptional(draggableOpt.value) }
   background: rgba(239, 68, 68, .06);
   border-color: rgba(239, 68, 68, .2);
 }
-.stat--alert .stat-number { color: #ef4444; }
-.stat--alert .stat-icon { color: #ef4444; opacity: .4; }
+.stat--alert .stat-number { color: var(--color-danger); }
+.stat--alert .stat-icon { color: var(--color-danger); opacity: .4; }
 
 .stat-online-dot {
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: #22c55e;
+  background: var(--color-success);
   box-shadow: 0 0 6px rgba(34, 197, 94, .5);
   margin-bottom: 2px;
 }
 
 .stat-grade.grade-a { color: var(--color-success); }
-.stat-grade.grade-b { color: #27ae60; }
+.stat-grade.grade-b { color: var(--color-online); }
 .stat-grade.grade-c { color: var(--color-warning); }
 .stat-grade.grade-d { color: var(--color-danger); }
 .stat-grade.grade-empty { color: var(--text-muted); }
@@ -629,7 +630,7 @@ function onOptDragEnd() { bento.reorderOptional(draggableOpt.value) }
   opacity: .4;
 }
 .schedule-current {
-  background: rgba(74, 144, 217, .1);
+  background: var(--accent-subtle);
   border-color: rgba(74, 144, 217, .3);
 }
 .schedule-time {
@@ -648,8 +649,8 @@ function onOptDragEnd() { bento.reorderOptional(draggableOpt.value) }
   flex-shrink: 0;
 }
 .schedule-type-deadline   { background: rgba(74, 144, 217, .15); color: var(--accent); }
-.schedule-type-soutenance { background: rgba(139, 92, 246, .15); color: #8b5cf6; }
-.schedule-type-reminder   { background: rgba(34, 197, 94, .15); color: #22c55e; }
+.schedule-type-soutenance { background: rgba(139, 92, 246, .15); color: var(--color-cctl); }
+.schedule-type-reminder   { background: rgba(34, 197, 94, .15); color: var(--color-success); }
 .schedule-title {
   font-size: 12px;
   color: var(--text-primary);
@@ -669,7 +670,7 @@ function onOptDragEnd() { bento.reorderOptional(draggableOpt.value) }
   font-size: 11px;
   font-weight: 600;
   color: var(--accent);
-  background: rgba(74, 144, 217, .1);
+  background: var(--accent-subtle);
   padding: 2px 8px;
   border-radius: 10px;
   align-self: flex-start;
@@ -719,7 +720,7 @@ function onOptDragEnd() { bento.reorderOptional(draggableOpt.value) }
   font-size: 10px;
   font-weight: 700;
   color: var(--accent);
-  background: rgba(74, 144, 217, .12);
+  background: var(--accent-subtle);
   padding: 1px 6px;
   border-radius: 8px;
   flex-shrink: 0;
@@ -766,6 +767,7 @@ function onOptDragEnd() { bento.reorderOptional(draggableOpt.value) }
   color: var(--text-primary);
   border-color: var(--accent);
 }
+.action-btn:focus-visible { outline: var(--focus-ring); outline-offset: var(--focus-offset); }
 .action-label {
   font-size: 12px;
   font-weight: 700;
@@ -815,7 +817,7 @@ function onOptDragEnd() { bento.reorderOptional(draggableOpt.value) }
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(74, 144, 217, .12);
+  background: var(--accent-subtle);
   color: var(--accent);
   flex-shrink: 0;
 }
@@ -879,7 +881,7 @@ function onOptDragEnd() { bento.reorderOptional(draggableOpt.value) }
   border: 2px dashed transparent;
   animation: bento-jiggle .3s ease infinite alternate;
 }
-.bento-tile--editing:hover { border-color: rgba(74,144,217,.3); }
+.bento-tile--editing:hover { border-color: rgba(74, 144, 217, .3); }
 
 @keyframes bento-jiggle {
   from { transform: rotate(-0.2deg); }
@@ -890,7 +892,7 @@ function onOptDragEnd() { bento.reorderOptional(draggableOpt.value) }
   position: absolute; top: -8px; right: -8px; z-index: 5;
   display: flex; align-items: center; justify-content: center;
   width: 22px; height: 22px; border-radius: 50%;
-  background: #ef4444; color: #fff; border: 2px solid var(--bg-main);
+  background: var(--color-danger); color: #fff; border: 2px solid var(--bg-main);
   cursor: pointer; transition: transform .15s;
   box-shadow: 0 2px 6px rgba(0,0,0,.2);
 }
@@ -902,14 +904,15 @@ function onOptDragEnd() { bento.reorderOptional(draggableOpt.value) }
 .bento-add-tile {
   display: flex; align-items: center; justify-content: center; gap: 8px;
   padding: 16px; border-radius: 14px; grid-column: span 4;
-  border: 2px dashed rgba(74,144,217,.3);
-  background: rgba(74,144,217,.03);
+  border: 2px dashed rgba(74, 144, 217, .3);
+  background: var(--accent-subtle);
   color: var(--accent); cursor: pointer;
   transition: all .2s; font-family: var(--font); font-size: 13px; font-weight: 600;
 }
 .bento-add-tile:hover {
-  border-color: var(--accent); background: rgba(74,144,217,.06);
+  border-color: var(--accent); background: var(--accent-subtle);
 }
+.bento-add-tile:focus-visible { outline: var(--focus-ring); outline-offset: var(--focus-offset); }
 
 /* Drawer */
 .bento-drawer {
@@ -943,6 +946,7 @@ function onOptDragEnd() { bento.reorderOptional(draggableOpt.value) }
   border-color: var(--accent); transform: translateY(-1px);
   box-shadow: 0 2px 8px rgba(0,0,0,.06);
 }
+.bento-drawer-item:focus-visible { outline: var(--focus-ring); outline-offset: var(--focus-offset); }
 .bento-drawer-item-add { color: var(--accent); opacity: .5; }
 .bento-drawer-item:hover .bento-drawer-item-add { opacity: 1; }
 

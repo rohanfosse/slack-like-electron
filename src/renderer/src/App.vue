@@ -583,7 +583,7 @@
     right: 0;
     z-index: var(--z-sticky);
     height: 36px;
-    background: #E67E22;
+    background: var(--color-warning);
     color: #fff;
     display: flex;
     align-items: center;
@@ -602,6 +602,7 @@
     border-radius: var(--radius-sm) !important;
   }
   .simulation-stop-btn:hover { background: var(--bg-active) !important; }
+  .simulation-stop-btn:focus-visible { outline: var(--focus-ring); outline-offset: var(--focus-offset); }
 
   /* Bandeau hors-ligne */
   .offline-banner {
@@ -673,22 +674,24 @@
   }
   .update-banner--ready {
     background: #0f4c3a;
-    border-color: #22c55e44;
+    border-color: var(--color-success);
     color: #bbf7d0;
   }
   .update-banner-left { display: flex; align-items: center; gap: 8px; }
   .update-banner-actions { display: flex; align-items: center; gap: 6px; }
   .update-btn-restart {
     padding: 5px 12px; border-radius: 6px; border: none; cursor: pointer;
-    background: #22c55e; color: #0a2e1f; font-size: 12px; font-weight: 700;
+    background: var(--color-success); color: #0a2e1f; font-size: 12px; font-weight: 700;
     font-family: var(--font);
   }
   .update-btn-restart:hover { background: #4ade80; }
+  .update-btn-restart:focus-visible { outline: var(--focus-ring); outline-offset: var(--focus-offset); }
   .update-btn-dismiss {
     background: transparent; border: none; cursor: pointer;
     color: inherit; opacity: .6; font-size: 16px; line-height: 1; padding: 2px 4px;
   }
   .update-btn-dismiss:hover { opacity: 1; }
+  .update-btn-dismiss:focus-visible { outline: var(--focus-ring); outline-offset: var(--focus-offset); }
   @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
   .update-spin { animation: spin 1.4s linear infinite; }
 
@@ -854,6 +857,7 @@
     justify-content: center;
   }
   .fab-feedback:hover { transform: scale(1.1); box-shadow: 0 6px 20px rgba(0,0,0,.45); }
+  .fab-feedback:focus-visible { outline: var(--focus-ring); outline-offset: var(--focus-offset); }
 
   /* ── Mini-modale feedback ── */
   .fab-feedback-modal {
@@ -923,7 +927,7 @@
     width: 8px;
     height: 8px;
     border-radius: 50%;
-    background: #ef4444;
+    background: var(--color-danger);
     flex-shrink: 0;
     animation: live-invite-pulse 2s infinite;
   }
@@ -969,6 +973,7 @@
     background: var(--bg-active);
     color: var(--text-primary);
   }
+  .live-invite-btn:focus-visible { outline: var(--focus-ring); outline-offset: var(--focus-offset); }
 
   /* Slide-in from right */
   .live-invite-slide-enter-active { transition: opacity .25s ease, transform .25s cubic-bezier(.34,1.56,.64,1); }
