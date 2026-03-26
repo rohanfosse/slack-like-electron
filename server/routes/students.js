@@ -6,7 +6,7 @@ const { requireTeacher } = require('../middleware/authorize')
 
 // Liste étudiants : profs voient tout, étudiants uniquement leur promo
 router.get('/', wrap((req) => {
-  if (req.user?.type === 'student') return queries.getStudentsByPromo(req.user.promo_id)
+  if (req.user?.type === 'student') return queries.getStudents(req.user.promo_id)
   return queries.getAllStudents()
 }))
 router.get('/stats',               requireTeacher, wrap((req) => queries.getClasseStats(Number(req.query.promoId))))

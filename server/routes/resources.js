@@ -7,12 +7,18 @@ const wrap    = require('../utils/wrap')
 const { requireTeacher, requirePromo, promoFromTravail } = require('../middleware/authorize')
 
 const addResourceSchema = z.object({
-  travail_id:  z.number().int().positive(),
+  travail_id:  z.number().int().positive().optional(),
+  travailId:   z.number().int().positive().optional(),
   type:        z.enum(['file', 'link']),
   name:        z.string().min(1).max(255),
-  path_or_url: z.string().min(1).max(1000),
+  path_or_url: z.string().min(1).max(1000).optional(),
+  pathOrUrl:   z.string().min(1).max(1000).optional(),
   category:    z.string().max(100).optional().default('autre'),
-}).passthrough()
+}).passthrough().transform(data => ({
+  ...data,
+  travail_id:  data.travail_id ?? data.travailId,
+  path_or_url: data.path_or_url ?? data.pathOrUrl,
+}))
 
 router.get('/',      requirePromo(promoFromTravail), wrap((req) => queries.getRessources(Number(req.query.travailId))))
 router.post('/',     requireTeacher, validate(addResourceSchema), wrap((req) => queries.addRessource(req.body)))

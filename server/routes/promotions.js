@@ -28,10 +28,14 @@ const createChannelSchema = z.object({
   name:       z.string().min(1).max(100),
   type:       z.enum(['chat', 'annonce']).optional().default('chat'),
   category:   z.string().max(100).nullable().optional(),
-  is_private: z.union([z.boolean(), z.number()]).optional().default(false),
-  members:    z.string().nullable().optional(),
+  is_private: z.union([z.boolean(), z.number()]).optional(),
+  isPrivate:  z.union([z.boolean(), z.number()]).optional(),
+  members:    z.union([z.string(), z.array(z.any())]).nullable().optional(),
   group_id:   z.number().int().nullable().optional(),
-}).passthrough()
+}).passthrough().transform(data => ({
+  ...data,
+  isPrivate: data.isPrivate ?? data.is_private ?? false,
+}))
 
 // ── Promotions ────────────────────────────────────────────────────────────────
 router.get('/',    wrap(() => queries.getPromotions()))

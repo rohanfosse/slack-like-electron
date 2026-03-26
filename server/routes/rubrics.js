@@ -20,7 +20,7 @@ const upsertRubricSchema = z.object({
 
 router.get('/scores/:depotId', requireTeacher, wrap((req) => queries.getDepotScores(Number(req.params.depotId))))
 router.post('/scores',         requireTeacher, wrap((req) => queries.setDepotScores(req.body)))
-router.get('/:travailId',      requireTeacher, wrap((req) => queries.getRubric(Number(req.params.travailId))))
+router.get('/:travailId',      wrap((req) => queries.getRubric(Number(req.params.travailId))))
 router.post('/',               requireTeacher, validate(upsertRubricSchema), wrap((req) => queries.upsertRubric(req.body)))
 router.delete('/:travailId',   requireTeacher, wrap((req) => queries.deleteRubric(Number(req.params.travailId))))
 
