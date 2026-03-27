@@ -421,9 +421,13 @@ const _scheduledTimer = setInterval(() => {
     const due = getDueScheduledMessages()
     for (const sm of due) {
       try {
+        // Résoudre l'authorId depuis le nom (négatif pour profs)
+        const { getDb } = require('./db/connection')
+        const teacher = getDb().prepare('SELECT id FROM teachers WHERE name = ?').get(sm.author_name)
+        const authorId = teacher ? -(teacher.id) : null
         queries.sendMessage({
           channelId: sm.channel_id, authorName: sm.author_name,
-          authorType: sm.author_type, content: sm.content,
+          authorId, authorType: sm.author_type, content: sm.content,
         })
         markScheduledSent(sm.id)
         // Envoi ciblé à la promo du canal

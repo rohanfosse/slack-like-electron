@@ -7,8 +7,8 @@ beforeAll(() => {
   // Seed a DM message for signature tests
   const db = getTestDb()
   db.prepare(`
-    INSERT INTO messages (id, channel_id, dm_student_id, author_name, author_type, content, created_at)
-    VALUES (100, NULL, 1, 'Jean Dupont', 'student', '[📎 convention.pdf](/uploads/test.pdf)', datetime('now'))
+    INSERT INTO messages (id, channel_id, dm_student_id, author_name, author_id, author_type, content, created_at)
+    VALUES (100, NULL, 1, 'Jean Dupont', 1, 'student', '[📎 convention.pdf](/uploads/test.pdf)', datetime('now'))
   `).run()
   queries = require('../../../server/db/models/signatures')
 })
