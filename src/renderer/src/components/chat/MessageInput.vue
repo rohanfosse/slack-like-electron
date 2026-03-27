@@ -141,7 +141,7 @@ function onKeydown(e: KeyboardEvent) {
       if (activeRef.value === 'command') executeCommand(item as SlashCommand)
       else if (activeRef.value === 'channel') insertRef('#' + (item as { name: string }).name)
       else if (activeRef.value === 'devoir') insertRef('\\[' + (item as RefDevoir).title + '](devoir:' + (item as RefDevoir).id + ')')
-      else if (activeRef.value === 'doc') insertRef('📄 [' + (item as { name: string }).name + ']')
+      else if (activeRef.value === 'doc') insertRef('📄 [' + (item as RefDoc).name + '](doc:' + (item as RefDoc).id + ')')
       return
     }
     if (e.key === 'Escape') { e.preventDefault(); activeRef.value = null; return }
@@ -321,7 +321,7 @@ function onKeydown(e: KeyboardEvent) {
                 :key="(d as RefDoc).name"
                 class="mi-mention-item"
                 :class="{ 'mi-mention-selected': i === refIndex }"
-                @mousedown.prevent="insertRef('📄 [' + (d as RefDoc).name + ']')"
+                @mousedown.prevent="insertRef('📄 [' + (d as RefDoc).name + '](doc:' + (d as RefDoc).id + ')')"
                 @mouseenter="refIndex = i"
               >
                 <span class="mi-ref-icon">📄</span>

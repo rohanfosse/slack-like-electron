@@ -45,7 +45,7 @@ export interface MentionUser {
 
 export interface RefChannel { name: string; type: string }
 export interface RefDevoir { id: number; title: string; type: string; deadline: string }
-export interface RefDoc    { name: string; type: string; category: string | null }
+export interface RefDoc    { id: number; name: string; type: string; content: string; category: string | null }
 
 function normalize(s: string) {
   return s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()

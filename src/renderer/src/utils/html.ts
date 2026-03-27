@@ -182,7 +182,11 @@ export function applyInlineRefs(html: string): string {
   html = html.replace(/📋\s*\[([^\]]+)\]/g, (_m, title) => {
     return `<span class="devoir-ref">📋 ${escapeHtml(title)}</span>`
   })
-  // 📄 [Nom du document]
+  // 📄 [Nom](doc:ID) — référence document cliquable
+  html = html.replace(/📄\s*\[([^\]]+)\]\(doc:(\d+)\)/g, (_m, title, id) => {
+    return `<span class="doc-ref" data-doc-id="${escapeHtml(id)}" role="link" tabindex="0">📄 ${escapeHtml(title)}</span>`
+  })
+  // 📄 [Nom du document] — legacy (sans ID, non cliquable)
   html = html.replace(/📄\s*\[([^\]]+)\]/g, (_m, title) => {
     return `<span class="doc-ref">📄 ${escapeHtml(title)}</span>`
   })
@@ -208,6 +212,6 @@ export function renderMessageContent(raw: string, searchTerm = '', currentUserNa
   if (searchTerm) html = highlightInHtml(html, searchTerm)
   return DOMPurify.sanitize(html, {
     ALLOWED_TAGS: ['p', 'br', 'strong', 'em', 'code', 'pre', 'a', 'span', 'div', 'mark', 'ul', 'ol', 'li', 'blockquote', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'hr', 'img', 'del', 's'],
-    ALLOWED_ATTR: ['class', 'data-url', 'data-channel', 'data-devoir-id', 'data-file-name', 'role', 'href', 'tabindex', 'style', 'src', 'alt', 'loading'],
+    ALLOWED_ATTR: ['class', 'data-url', 'data-channel', 'data-devoir-id', 'data-doc-id', 'data-file-name', 'role', 'href', 'tabindex', 'style', 'src', 'alt', 'loading'],
   })
 }

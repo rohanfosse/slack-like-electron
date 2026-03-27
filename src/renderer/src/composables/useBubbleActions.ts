@@ -157,6 +157,31 @@ export function useBubbleActions(msg: () => Message) {
       }
       return
     }
+    // Document ref → ouvrir le document (aperçu ou lien externe)
+    const docRef = (e.target as HTMLElement).closest('.doc-ref[data-doc-id]') as HTMLElement | null
+    if (docRef) {
+      e.preventDefault()
+      const docId = Number(docRef.dataset.docId)
+      if (docId) {
+        const promoId = appStore.activePromoId ?? appStore.currentUser?.promo_id
+        if (promoId) {
+          window.api.getProjectDocuments(promoId).then((res: { ok: boolean; data: { id: number; name: string; type: string; content: string }[] }) => {
+            const doc = res?.ok ? res.data.find((d) => d.id === docId) : null
+            if (doc) {
+              if (doc.type === 'link') {
+                openExternal(doc.content)
+              } else {
+                documentsStore.openPreview(doc as any)
+                modals.documentPreview = true
+              }
+            } else {
+              showToast('Document introuvable.', 'error')
+            }
+          }).catch(() => { showToast('Impossible de charger le document.', 'error') })
+        }
+      }
+      return
+    }
     const chanRef = (e.target as HTMLElement).closest('.channel-ref') as HTMLElement | null
     if (chanRef) {
       e.preventDefault()
