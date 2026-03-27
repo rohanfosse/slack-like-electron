@@ -1,8 +1,43 @@
 /** SettingsAbout — section A propos du modal Settings. */
 <script setup lang="ts">
-import { Info, Globe, Monitor, Heart, Github, ExternalLink } from 'lucide-vue-next'
+import { ref } from 'vue'
+import { Info, Globe, Monitor, Heart, Github, ExternalLink, Download } from 'lucide-vue-next'
 import logoUrl from '@/assets/logo.png'
 import { version } from '../../../../../../package.json'
+
+// ── Mise à jour manuelle ────────────────────────────────────────────────────
+type UpdateStatus = 'idle' | 'checking' | 'available' | 'downloaded' | 'up-to-date' | 'error'
+const updateStatus  = ref<UpdateStatus>('idle')
+const updateVersion = ref('')
+const updateError   = ref('')
+
+async function checkUpdate() {
+  updateStatus.value = 'checking'
+  updateError.value  = ''
+  try {
+    const res = await window.api.checkForUpdates?.()
+    if (!res?.ok) {
+      updateStatus.value = 'error'
+      updateError.value = res?.error ?? 'Impossible de vérifier les mises à jour.'
+      return
+    }
+    if (res.data?.available) {
+      updateStatus.value = 'available'
+      updateVersion.value = res.data.version
+      window.api.onUpdaterDownloaded?.((v: string) => {
+        updateVersion.value = v
+        updateStatus.value = 'downloaded'
+      })
+    } else {
+      updateStatus.value = 'up-to-date'
+    }
+  } catch {
+    updateStatus.value = 'error'
+    updateError.value = 'Erreur de connexion.'
+  }
+}
+
+function installUpdate() { window.api.updaterQuitAndInstall() }
 </script>
 
 <template>
@@ -21,6 +56,36 @@ import { version } from '../../../../../../package.json'
       <p class="stg-about-tagline">Suivez votre parcours de formation</p>
     </div>
 
+    <!-- Mise à jour -->
+    <div class="stg-group">
+      <div class="stg-group-header">
+        <Download :size="13" class="stg-group-icon" />
+        <h4 class="stg-group-title">Mise à jour</h4>
+      </div>
+      <div class="stg-update-section">
+        <p v-if="updateStatus === 'idle'" class="stg-update-text">Vérifiez si une nouvelle version est disponible.</p>
+        <p v-else-if="updateStatus === 'checking'" class="stg-update-text stg-update-checking">Recherche en cours…</p>
+        <p v-else-if="updateStatus === 'available'" class="stg-update-text stg-update-available">Mise à jour {{ updateVersion }} disponible — téléchargement en cours…</p>
+        <p v-else-if="updateStatus === 'downloaded'" class="stg-update-text stg-update-ready">Mise à jour {{ updateVersion }} prête. Redémarrez pour installer.</p>
+        <p v-else-if="updateStatus === 'up-to-date'" class="stg-update-text stg-update-ok">Vous êtes à jour.</p>
+        <p v-else-if="updateStatus === 'error'" class="stg-update-text stg-update-error">Erreur : {{ updateError }}</p>
+        <div class="stg-update-actions">
+          <button
+            v-if="updateStatus === 'downloaded'"
+            class="stg-update-btn stg-update-btn--install"
+            @click="installUpdate"
+          >Redémarrer et installer</button>
+          <button
+            v-else
+            class="stg-update-btn"
+            :disabled="updateStatus === 'checking'"
+            @click="checkUpdate"
+          >Chercher une mise à jour</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Liens -->
     <div class="stg-group">
       <div class="stg-group-header">
         <Globe :size="13" class="stg-group-icon" />
@@ -38,6 +103,7 @@ import { version } from '../../../../../../package.json'
       </div>
     </div>
 
+    <!-- Technique -->
     <div class="stg-group">
       <div class="stg-group-header">
         <Monitor :size="13" class="stg-group-icon" />
@@ -63,6 +129,7 @@ import { version } from '../../../../../../package.json'
       </div>
     </div>
 
+    <!-- Auteur -->
     <div class="stg-group">
       <div class="stg-group-header">
         <Heart :size="13" class="stg-group-icon" />
@@ -78,13 +145,31 @@ import { version } from '../../../../../../package.json'
         </div>
       </div>
     </div>
-
-    <div class="stg-about-desc">
-      <p>
-        Plateforme pédagogique open-source combinant messagerie en temps réel,
-        suivi des devoirs et rendus, gestion documentaire et planification Gantt.
-        Tout en un seul endroit.
-      </p>
-    </div>
   </section>
 </template>
+
+<style scoped>
+.stg-update-section {
+  display: flex; flex-direction: column; gap: 10px;
+  padding: 12px 14px; background: var(--bg-elevated); border: 1px solid var(--border);
+  border-radius: 10px;
+}
+.stg-update-text { font-size: 12.5px; color: var(--text-secondary); margin: 0; line-height: 1.4; }
+.stg-update-checking { color: var(--accent); }
+.stg-update-available { color: #f59e0b; }
+.stg-update-ready { color: var(--color-success, #059669); font-weight: 600; }
+.stg-update-ok { color: var(--color-success, #059669); }
+.stg-update-error { color: var(--color-danger, #dc2626); }
+.stg-update-actions { display: flex; gap: 8px; }
+.stg-update-btn {
+  padding: 7px 16px; border-radius: 8px; font-size: 12.5px; font-weight: 600;
+  font-family: var(--font); cursor: pointer; border: 1px solid var(--border);
+  background: var(--bg-hover); color: var(--text-primary); transition: all .15s;
+}
+.stg-update-btn:hover:not(:disabled) { background: var(--bg-active); border-color: var(--accent); }
+.stg-update-btn:disabled { opacity: .5; cursor: not-allowed; }
+.stg-update-btn--install {
+  background: var(--color-success, #059669); color: #fff; border-color: transparent;
+}
+.stg-update-btn--install:hover { opacity: .9; }
+</style>
