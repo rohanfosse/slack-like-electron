@@ -198,7 +198,7 @@
                 <button
                   v-if="updateStatus === 'downloaded'"
                   class="stg-update-btn stg-update-btn--install"
-                  @click="window.api.updaterQuitAndInstall()"
+                  @click="() => window.api.updaterQuitAndInstall()"
                 >Redémarrer et installer</button>
                 <button
                   v-else

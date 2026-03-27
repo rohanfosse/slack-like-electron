@@ -302,6 +302,7 @@ declare global {
       onUpdaterAvailable(cb: (version: string) => void): () => void
       onUpdaterDownloaded(cb: (version: string) => void): () => void
       updaterQuitAndInstall(): void
+      checkForUpdates(): Promise<{ ok: boolean; data?: { version: string; available: boolean }; error?: string }>
     }
   }
 }
