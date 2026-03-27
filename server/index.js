@@ -422,8 +422,8 @@ const _scheduledTimer = setInterval(() => {
     for (const sm of due) {
       try {
         // Résoudre l'authorId depuis le nom (négatif pour profs)
-        const { getDb } = require('./db/connection')
-        const teacher = getDb().prepare('SELECT id FROM teachers WHERE name = ?').get(sm.author_name)
+        const db = require('./db/connection').getDb()
+        const teacher = db.prepare('SELECT id FROM teachers WHERE name = ?').get(sm.author_name)
         const authorId = teacher ? -(teacher.id) : null
         queries.sendMessage({
           channelId: sm.channel_id, authorName: sm.author_name,
@@ -431,8 +431,7 @@ const _scheduledTimer = setInterval(() => {
         })
         markScheduledSent(sm.id)
         // Envoi ciblé à la promo du canal
-        const { getDb } = require('./db/connection')
-        const ch = getDb().prepare('SELECT promo_id FROM channels WHERE id = ?').get(sm.channel_id)
+        const ch = db.prepare('SELECT promo_id FROM channels WHERE id = ?').get(sm.channel_id)
         if (ch) io.to(`promo:${ch.promo_id}`).emit('msg:new', {
           channelId: sm.channel_id, authorName: sm.author_name,
           promoId: ch.promo_id,
