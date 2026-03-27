@@ -20,16 +20,16 @@ beforeAll(() => {
      VALUES (2, 2, 'Alice Martin', 'alice@test.fr', 'AM', 'hash', 0)`
   ).run()
 
-  // Messages dans chaque promo
+  // Messages dans chaque promo (author_id requis pour ownership check)
   db.prepare(
-    `INSERT INTO messages (channel_id, author_name, author_type, content) VALUES (1, 'Jean Dupont', 'student', 'Message promo 1')`
+    `INSERT INTO messages (channel_id, author_name, author_id, author_type, content) VALUES (1, 'Jean Dupont', 1, 'student', 'Message promo 1')`
   ).run()
   db.prepare(
-    `INSERT INTO messages (channel_id, author_name, author_type, content) VALUES (10, 'Alice Martin', 'student', 'Message promo 2')`
+    `INSERT INTO messages (channel_id, author_name, author_id, author_type, content) VALUES (10, 'Alice Martin', 2, 'student', 'Message promo 2')`
   ).run()
   // DM de l'étudiant 1
   db.prepare(
-    `INSERT INTO messages (dm_student_id, author_name, author_type, content) VALUES (1, 'Jean Dupont', 'student', 'DM etudiant 1')`
+    `INSERT INTO messages (dm_student_id, author_name, author_id, author_type, content) VALUES (1, 'Jean Dupont', 1, 'student', 'DM etudiant 1')`
   ).run()
 
   // Tokens

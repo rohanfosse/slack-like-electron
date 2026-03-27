@@ -15,6 +15,7 @@ describe('messages model', () => {
       channelId: 1,
       dmStudentId: null,
       authorName: 'Jean Dupont',
+      authorId: 1,
       authorType: 'student',
       content: 'Hello world',
     })
