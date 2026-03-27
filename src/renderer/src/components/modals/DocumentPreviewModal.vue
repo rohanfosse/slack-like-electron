@@ -200,10 +200,11 @@ function openWith() {
         </div>
       </div>
 
-      <!-- PDF → iframe avec blob URL -->
-      <iframe
+      <!-- PDF → embed (fonctionne dans Electron Windows contrairement à iframe) -->
+      <embed
         v-else-if="previewType === 'pdf'"
         :src="blobUrl!"
+        type="application/pdf"
         class="preview-pdf"
         title="Aperçu PDF"
       />

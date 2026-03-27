@@ -634,7 +634,8 @@ async function importStudentsBrowser(promoId: number): Promise<unknown> {
     }
     if (filePath.startsWith('http://') || filePath.startsWith('https://')) {
       try {
-        const res  = await fetch(filePath)
+        const headers: Record<string, string> = jwtToken ? { Authorization: `Bearer ${jwtToken}` } : {}
+        const res  = await fetch(filePath, { headers })
         const blob = await res.blob()
         const ext  = filePath.split('/').pop()?.split('.').pop()?.toLowerCase() ?? 'bin'
         return new Promise<unknown>((resolve) => {
@@ -644,6 +645,26 @@ async function importStudentsBrowser(promoId: number): Promise<unknown> {
             resolve({ ok: true, data: { b64, mime: blob.type || 'application/octet-stream', ext } })
           }
           reader.onerror = () => resolve({ ok: false, error: 'Lecture distante échouée.' })
+          reader.readAsDataURL(blob)
+        })
+      } catch (err) {
+        return { ok: false, error: String(err) }
+      }
+    }
+    // Chemin relatif /uploads/... → préfixer avec SERVER_URL
+    if (filePath.startsWith('/uploads/')) {
+      try {
+        const headers: Record<string, string> = jwtToken ? { Authorization: `Bearer ${jwtToken}` } : {}
+        const res  = await fetch(`${SERVER_URL}${filePath}`, { headers })
+        const blob = await res.blob()
+        const ext  = filePath.split('.').pop()?.toLowerCase() ?? 'bin'
+        return new Promise<unknown>((resolve) => {
+          const reader = new FileReader()
+          reader.onload  = () => {
+            const b64 = (reader.result as string).split(',')[1] ?? ''
+            resolve({ ok: true, data: { b64, mime: blob.type || 'application/octet-stream', ext } })
+          }
+          reader.onerror = () => resolve({ ok: false, error: 'Lecture échouée.' })
           reader.readAsDataURL(blob)
         })
       } catch (err) {

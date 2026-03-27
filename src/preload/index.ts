@@ -608,7 +608,8 @@ contextBridge.exposeInMainWorld('api', {
   readFileBase64: async (filePath: string) => {
     if (filePath.startsWith('http://') || filePath.startsWith('https://')) {
       try {
-        const res  = await fetch(filePath)
+        const headers: Record<string, string> = jwtToken ? { Authorization: `Bearer ${jwtToken}` } : {}
+        const res  = await fetch(filePath, { headers })
         const blob = await res.blob()
         const ext  = filePath.split('/').pop()?.split('.').pop()?.toLowerCase() ?? 'bin'
         return new Promise<unknown>((resolve) => {

@@ -55,6 +55,7 @@ function createWindow(splash: BrowserWindow | null): void {
       contextIsolation: true,
       nodeIntegration: false,
       sandbox: true,
+      plugins: true, // Active le viewer PDF Chromium intégré
       devTools: !app.isPackaged,
     },
   })
