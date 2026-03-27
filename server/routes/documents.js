@@ -92,18 +92,21 @@ router.post('/project', requireTeacher, validate(addChannelDocSchema), (req, res
     const payload = req.body
     const result  = queries.addProjectDocument(payload)
 
-    // Notification aux canaux du projet
+    // Notification aux canaux du projet avec ref document cliquable
+    const docId = result?.lastInsertRowid ?? null
     if (result?.changes && payload.project && payload.promoId && payload.authorName) {
       try {
         const channels = queries.getChannels(payload.promoId)
         const projectChannels = channels.filter((c) => c.category?.trim() === payload.project?.trim())
-        const emoji   = payload.type === 'link' ? '🔗' : '📎'
         const catPart = payload.category && payload.category !== 'Général' ? ` · ${payload.category}` : ''
-        const text    = `${emoji} **${payload.name}** a été ajouté aux documents${catPart}`
+        // Format: ref document cliquable si on a l'ID, sinon texte brut
+        const docRef = docId ? `📄 [${payload.name}](doc:${docId})` : `📄 **${payload.name}**`
+        const text   = `${docRef} a été ajouté aux documents${catPart}`
         for (const ch of projectChannels) {
           queries.sendMessage({
             channelId:  ch.id,
             authorName: payload.authorName,
+            authorId:   payload.authorId ?? null,
             authorType: payload.authorType ?? 'teacher',
             content:    text,
           })
