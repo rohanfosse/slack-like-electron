@@ -83,105 +83,46 @@ router.get('/dm/:studentId/search', requireDmParticipant, wrap((req) => {
 
 router.get('/dm-files', requireTeacher, wrap(() => queries.getDmFiles()))
 
-// ── Écriture ──────────────────────────────────────────────────────────────────
+// ── Ecriture ──────────────────────────────────────────────────────────────────
+const MessageService = require('../services/messages')
+
 router.post('/', messageLimiter, validate(sendMessageSchema), (req, res) => {
   try {
-    const payload = req.body
+    const { message, pushPayload } = MessageService.create(req.body, req.user)
 
-    // ── Sécurité : forcer l'identité depuis le JWT (anti-usurpation) ────────
-    payload.authorName = req.user.name
-    payload.authorId   = req.user.id
-    payload.authorType = req.user.type === 'ta' ? 'teacher' : req.user.type
-
-    // ── Sécurité : valider le destinataire DM ────────────────────────────────
-    if (payload.dmStudentId) {
-      // Un étudiant ne peut envoyer un DM que dans sa propre boîte
-      if (req.user.type === 'student' && payload.dmStudentId !== req.user.id) {
-        return res.status(403).json({ ok: false, error: 'Vous ne pouvez envoyer des messages que dans vos propres conversations.' })
-      }
-      // Valider dmPeerId : un étudiant ne peut avoir qu'un prof (ID négatif) comme peer
-      if (req.user.type === 'student' && payload.dmPeerId != null && payload.dmPeerId >= 0) {
-        return res.status(403).json({ ok: false, error: 'Destinataire DM invalide.' })
-      }
-      const { getDb } = require('../db/connection')
-      const exists = getDb().prepare('SELECT id FROM students WHERE id = ?').get(payload.dmStudentId)
-      if (!exists) {
-        return res.status(400).json({ ok: false, error: 'Destinataire introuvable.' })
-      }
-    }
-
-    // ── Sécurité : bloquer les étudiants sur les canaux d'annonce ───────────
-    if (payload.channelId && req.user.type === 'student') {
-      const { getDb } = require('../db/connection')
-      const ch = getDb().prepare('SELECT type FROM channels WHERE id = ?').get(payload.channelId)
-      if (ch?.type === 'annonce') {
-        return res.status(403).json({ ok: false, error: 'Les étudiants ne peuvent pas poster dans les canaux d\'annonce.' })
-      }
-    }
-
-    const result  = queries.sendMessage(payload)
-    const message = queries.getMessageById(Number(result.lastInsertRowid))
-    if (!message) {
-      throw new Error('Le message a été inséré mais n\'a pas pu être relu.')
-    }
-
-    // ── Audit log ──────────────────────────────────────────────────────────
+    // Audit log
     audit(req, 'message:create', `message:${message.id}`, {
-      channelId: payload.channelId, dmStudentId: payload.dmStudentId,
+      channelId: req.body.channelId, dmStudentId: req.body.dmStudentId,
     })
 
-    // ── Parsing des mentions ─────────────────────────────────────────────────
-    const rawContent      = payload.content ?? ''
-    const mentionEveryone = /@everyone\b/i.test(rawContent)
-    const mentionNames    = []
-    const re = /@([\w][\w.\-]*)/g
-    let m
-    while ((m = re.exec(rawContent)) !== null) {
-      const name = m[1].toLowerCase()
-      if (name !== 'everyone') mentionNames.push(m[1])
-    }
-
-    const push = {
-      channelId:       payload.channelId   ?? null,
-      dmStudentId:     payload.dmStudentId ?? null,
-      authorName:      req.user.name       ?? null,
-      channelName:     payload.channelName ?? null,
-      promoId:         payload.promoId     ?? null,
-      preview:         rawContent.replace(/[*_`>#[\]!]/g, '').slice(0, 80),
-      mentionEveryone,
-      mentionNames,
-      message:         payload.dmStudentId ? message : undefined,
-    }
-    // Envoi ciblé via Socket.io (pas de broadcast global)
+    // Envoi cible via Socket.io (transport, pas logique metier)
     const io = req.app.get('io')
     if (io) {
-      if (payload.dmStudentId) {
-        // DM → envoyer aux deux participants (IDs négatifs pour profs, positifs pour étudiants)
-        io.to(`user:${payload.dmStudentId}`).emit('msg:new', push)
-        const peerId = payload.dmPeerId ?? req.user.id
-        if (peerId !== payload.dmStudentId) {
-          io.to(`user:${peerId}`).emit('msg:new', push)
+      if (req.body.dmStudentId) {
+        io.to(`user:${req.body.dmStudentId}`).emit('msg:new', pushPayload)
+        const peerId = req.body.dmPeerId ?? req.user.id
+        if (peerId !== req.body.dmStudentId) {
+          io.to(`user:${peerId}`).emit('msg:new', pushPayload)
         }
-      } else if (payload.channelId) {
-        // Canal → envoyer à la promo du canal uniquement
-        let targetPromo = payload.promoId
+      } else if (req.body.channelId) {
+        let targetPromo = req.body.promoId
         if (!targetPromo) {
           try {
-            const ch = queries.getDb?.()?.prepare('SELECT promo_id FROM channels WHERE id = ?').get(payload.channelId)
-              ?? require('../db/connection').getDb().prepare('SELECT promo_id FROM channels WHERE id = ?').get(payload.channelId)
+            const { getDb } = require('../db/connection')
+            const ch = getDb().prepare('SELECT promo_id FROM channels WHERE id = ?').get(req.body.channelId)
             targetPromo = ch?.promo_id
-          } catch { /* fallback ci-dessous */ }
+          } catch { /* pas de promo → pas de broadcast */ }
         }
         if (targetPromo) {
-          io.to(`promo:${targetPromo}`).emit('msg:new', push)
+          io.to(`promo:${targetPromo}`).emit('msg:new', pushPayload)
         }
-        // Pas de fallback 'all' — un message sans promo n'est jamais broadcasté
       }
     }
 
     res.json({ ok: true, data: message })
   } catch (err) {
-    res.status(400).json({ ok: false, error: err.message })
+    const status = err.statusCode || 400
+    res.status(status).json({ ok: false, error: err.message })
   }
 })
 
