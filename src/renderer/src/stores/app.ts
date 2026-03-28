@@ -102,7 +102,12 @@ export const useAppStore = defineStore('app', () => {
     _persistNotifications()
     if (!opts.silent) {
       const isDm = opts.category === 'dm'
-      _fireNotification(opts.title, opts.preview ?? '', isDm, opts.authorName ?? '', opts.preview ?? '')
+      const notifType = isDm ? 'dm' as const
+        : opts.category === 'mention' ? 'mention' as const
+        : opts.category === 'grade' || opts.category === 'deadline' ? 'devoir' as const
+        : opts.category === 'assignment' ? 'annonce' as const
+        : 'message' as const
+      _fireNotification(opts.title, opts.preview ?? '', isDm, opts.authorName ?? '', opts.preview ?? '', notifType)
     }
   }
 
@@ -324,13 +329,32 @@ export const useAppStore = defineStore('app', () => {
   }
 
   // ── Helpers notification ──────────────────────────────────────────────────
-  function _prefNotifDesktop(): boolean {
-    try { return JSON.parse(localStorage.getItem(STORAGE_KEYS.PREFS) || '{}').notifDesktop !== false }
-    catch { return true }
+  function _loadNotifPrefs() {
+    try { return JSON.parse(localStorage.getItem(STORAGE_KEYS.PREFS) || '{}') }
+    catch { return {} }
   }
-  function _prefNotifSound(): boolean {
-    try { return JSON.parse(localStorage.getItem(STORAGE_KEYS.PREFS) || '{}').notifSound !== false }
-    catch { return true }
+  function _prefNotifDesktop(): boolean { return _loadNotifPrefs().notifDesktop !== false }
+  function _prefNotifSound(): boolean { return _loadNotifPrefs().notifSound !== false }
+
+  /** Verifie si un type de notification est autorise (granulaire + DND). */
+  function _isNotifAllowed(type: 'mention' | 'dm' | 'message' | 'devoir' | 'annonce'): boolean {
+    const p = _loadNotifPrefs()
+    // Mode DND actif ?
+    if (p.dndEnabled) {
+      const now = new Date()
+      const current = now.getHours() * 60 + now.getMinutes()
+      const [sh, sm] = (p.dndStart || '22:00').split(':').map(Number)
+      const [eh, em] = (p.dndEnd || '08:00').split(':').map(Number)
+      const start = sh * 60 + sm, end = eh * 60 + em
+      const inDnd = start > end ? (current >= start || current < end) : (current >= start && current < end)
+      if (inDnd) return false
+    }
+    // Prefs granulaires
+    if (type === 'mention' && p.notifMentions === false) return false
+    if (type === 'dm' && p.notifDms === false) return false
+    if (type === 'devoir' && p.notifDevoirs === false) return false
+    if (type === 'annonce' && p.notifAnnonces === false) return false
+    return true
   }
   function _getMutedDms(): Set<string> {
     try { return new Set(JSON.parse(localStorage.getItem(STORAGE_KEYS.MUTED_DMS) || '[]') as string[]) }
@@ -359,15 +383,18 @@ export const useAppStore = defineStore('app', () => {
     } catch {}
   }
 
-  function _fireNotification(title: string, body: string, isDm: boolean, senderName: string, preview: string) {
+  function _fireNotification(title: string, body: string, isDm: boolean, senderName: string, preview: string, notifType: 'mention' | 'dm' | 'message' | 'devoir' | 'annonce' = 'message') {
+    // Verifier les prefs granulaires + DND
+    if (!_isNotifAllowed(notifType)) return
+
     // Son
     if (isDm) {
-      _playNotifSound(true)  // DM
+      _playNotifSound(true)
     } else {
-      _playNotifSound(false) // Mention canal
+      _playNotifSound(false)
     }
 
-    // Toast in-app si fenêtre au premier plan
+    // Toast in-app si fenetre au premier plan
     if (!document.hidden) {
       window.dispatchEvent(new CustomEvent('cursus:notif-toast', {
         detail: { title, body: `${senderName}: ${preview}` },
@@ -375,7 +402,7 @@ export const useAppStore = defineStore('app', () => {
       return
     }
 
-    // Notification OS si fenêtre en arrière-plan
+    // Notification OS si fenetre en arriere-plan
     if (_prefNotifDesktop() && Notification.permission === 'granted') {
       new Notification(title, { body, silent: false })
     }

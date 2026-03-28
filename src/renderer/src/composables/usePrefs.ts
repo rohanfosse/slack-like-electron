@@ -13,6 +13,15 @@ interface Prefs {
   showTimestamps: boolean
   compactImages: boolean
   rememberMe: boolean
+  // Notifications granulaires
+  notifMentions: boolean
+  notifDms: boolean
+  notifDevoirs: boolean
+  notifAnnonces: boolean
+  // Mode Ne Pas Deranger
+  dndEnabled: boolean
+  dndStart: string  // "HH:MM" format
+  dndEnd: string    // "HH:MM" format
 }
 
 const DEFAULTS: Prefs = {
@@ -27,6 +36,15 @@ const DEFAULTS: Prefs = {
   showTimestamps: true,
   compactImages: false,
   rememberMe: false,
+  // Toutes les notifs activees par defaut
+  notifMentions: true,
+  notifDms: true,
+  notifDevoirs: true,
+  notifAnnonces: true,
+  // DND desactive par defaut
+  dndEnabled: false,
+  dndStart: '22:00',
+  dndEnd: '08:00',
 }
 
 function loadPrefs(): Prefs {

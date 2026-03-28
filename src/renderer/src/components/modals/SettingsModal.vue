@@ -10,9 +10,10 @@
   import ChangePasswordModal  from '@/components/modals/ChangePasswordModal.vue'
   import SettingsGeneral      from './settings/SettingsGeneral.vue'
   import SettingsAppearance   from './settings/SettingsAppearance.vue'
-  import SettingsPreferences  from './settings/SettingsPreferences.vue'
-  import SettingsAccount      from './settings/SettingsAccount.vue'
-  import SettingsAbout        from './settings/SettingsAbout.vue'
+  import SettingsPreferences    from './settings/SettingsPreferences.vue'
+  import SettingsNotifications  from './settings/SettingsNotifications.vue'
+  import SettingsAccount        from './settings/SettingsAccount.vue'
+  import SettingsAbout          from './settings/SettingsAbout.vue'
   import { useAppStore } from '@/stores/app'
   import { STORAGE_KEYS } from '@/constants'
   import Modal from '@/components/ui/Modal.vue'
@@ -25,7 +26,7 @@
   const props = defineProps<{ modelValue: boolean }>()
   const emit  = defineEmits<{ 'update:modelValue': [v: boolean] }>()
 
-  type Section = 'general' | 'apparence' | 'preferences' | 'compte' | 'apropos'
+  type Section = 'general' | 'apparence' | 'notifications' | 'preferences' | 'compte' | 'apropos'
 
   const appStore = useAppStore()
   const { getPref, setPref } = usePrefs()
@@ -63,11 +64,12 @@
   const activeSection = ref<Section>('general')
 
   const navItems: { key: Section; label: string; icon: typeof Settings }[] = [
-    { key: 'general',      label: 'General',      icon: Home },
-    { key: 'apparence',    label: 'Apparence',    icon: Palette },
-    { key: 'preferences',  label: 'Preferences',  icon: Settings },
-    { key: 'compte',       label: 'Mon compte',   icon: User },
-    { key: 'apropos',      label: 'A propos',     icon: Info },
+    { key: 'general',       label: 'General',       icon: Home },
+    { key: 'apparence',     label: 'Apparence',     icon: Palette },
+    { key: 'notifications', label: 'Notifications', icon: BellRing },
+    { key: 'preferences',   label: 'Preferences',   icon: Settings },
+    { key: 'compte',        label: 'Mon compte',    icon: User },
+    { key: 'apropos',       label: 'A propos',      icon: Info },
   ]
 
   // ── Reset state when modal opens ──────────────────────────────────────────
@@ -126,6 +128,9 @@
 
         <!-- ════ Apparence ════ -->
         <SettingsAppearance v-else-if="activeSection === 'apparence'" />
+
+        <!-- ════ Notifications ════ -->
+        <SettingsNotifications v-else-if="activeSection === 'notifications'" />
 
         <!-- ════ Preferences ════ -->
         <SettingsPreferences v-else-if="activeSection === 'preferences'" />

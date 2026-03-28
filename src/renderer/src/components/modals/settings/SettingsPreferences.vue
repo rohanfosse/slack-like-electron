@@ -1,12 +1,12 @@
 /** SettingsPreferences — section Préférences du modal Settings. */
 <script setup lang="ts">
-import { Settings, BellRing, MousePointer, FileText, RotateCcw } from 'lucide-vue-next'
+import { Settings, MousePointer, FileText, RotateCcw } from 'lucide-vue-next'
 import { useAppStore } from '@/stores/app'
 import { useSettingsPreferences } from '@/composables/useSettingsPreferences'
 import { useSettingsAccount } from '@/composables/useSettingsAccount'
 
 const appStore = useAppStore()
-const { docsDefault, notifSound, notifDesktop, enterToSend } = useSettingsPreferences()
+const { docsDefault, enterToSend } = useSettingsPreferences()
 const emit = defineEmits<{ 'update:modelValue': [v: boolean] }>()
 const { resetting, resetDemoData } = useSettingsAccount(emit)
 </script>
@@ -16,32 +16,6 @@ const { resetting, resetDemoData } = useSettingsAccount(emit)
     <div class="stg-section-header">
       <Settings :size="18" />
       <h3 class="stg-section-title">Préférences</h3>
-    </div>
-
-    <!-- Notifications -->
-    <div class="stg-group">
-      <div class="stg-group-header">
-        <BellRing :size="13" class="stg-group-icon" />
-        <h4 class="stg-group-title">Notifications</h4>
-      </div>
-      <label class="stg-toggle-row">
-        <div class="stg-toggle-info">
-          <span class="stg-toggle-label">Notifications bureau</span>
-          <span class="stg-toggle-desc">Afficher les notifications système pour les nouveaux messages.</span>
-        </div>
-        <div class="stg-switch" :class="{ on: notifDesktop }" role="switch" :aria-checked="notifDesktop" tabindex="0" @click="notifDesktop = !notifDesktop" @keydown.enter.prevent="notifDesktop = !notifDesktop" @keydown.space.prevent="notifDesktop = !notifDesktop">
-          <div class="stg-switch-thumb" />
-        </div>
-      </label>
-      <label class="stg-toggle-row">
-        <div class="stg-toggle-info">
-          <span class="stg-toggle-label">Son de notification</span>
-          <span class="stg-toggle-desc">Jouer un son lors de la réception d'un message.</span>
-        </div>
-        <div class="stg-switch" :class="{ on: notifSound }" role="switch" :aria-checked="notifSound" tabindex="0" @click="notifSound = !notifSound" @keydown.enter.prevent="notifSound = !notifSound" @keydown.space.prevent="notifSound = !notifSound">
-          <div class="stg-switch-thumb" />
-        </div>
-      </label>
     </div>
 
     <!-- Saisie -->
