@@ -2,13 +2,15 @@
  * StudentBento.vue - Dashboard etudiant compact.
  */
 <script setup lang="ts">
-import { computed, ref, watch, nextTick, type Component } from 'vue'
+import { computed, ref, watch, type Component } from 'vue'
 import { VueDraggable } from 'vue-draggable-plus'
-import { Settings, CheckCircle2, Clock, AlertTriangle, Wifi, X, Plus } from 'lucide-vue-next'
+import { AlertTriangle } from 'lucide-vue-next'
 import { useBentoPrefs } from '@/composables/useBentoPrefs'
 import { useAppStore } from '@/stores/app'
 import { nextUpcoming } from '@/utils/devoirFilters'
 import type { StudentProjectCard } from '@/composables/useDashboardStudent'
+
+import BentoCustomizer from './student-widgets/BentoCustomizer.vue'
 
 import WidgetLive from './student-widgets/WidgetLive.vue'
 import WidgetProject from './student-widgets/WidgetProject.vue'
@@ -28,7 +30,6 @@ import WidgetGrades from './student-widgets/WidgetGrades.vue'
 import WidgetBookmarks from './student-widgets/WidgetBookmarks.vue'
 import WidgetCountdown from './student-widgets/WidgetCountdown.vue'
 import WidgetGroupMembers from './student-widgets/WidgetGroupMembers.vue'
-import { STUDENT_WIDGETS } from './student-widgets/registry'
 
 const props = defineProps<{
   studentStats: { pending: number; submitted: number; graded: number; modeGrade: string | null }
@@ -43,17 +44,13 @@ const emit = defineEmits<{ goToProject: [key: string] }>()
 
 const appStore = useAppStore()
 const showCustomizer = ref(false)
-const showWidgetDrawer = ref(false)
 
 function toggleCustomizer() {
   showCustomizer.value = !showCustomizer.value
-  if (!showCustomizer.value) showWidgetDrawer.value = false
 }
 defineExpose({ toggleCustomizer })
 
-const { visibleWidgets, allWidgets, isVisible, toggleWidget, moveWidget, reorderWidgets, resetDefaults } = useBentoPrefs()
-
-// No longer need customizerRef - inline edit mode now
+const { visibleWidgets, allWidgets, isVisible, toggleWidget, reorderWidgets, resetDefaults } = useBentoPrefs()
 
 // ── Widget data ──────────────────────────────────────────────────────────
 const activeProject = computed(() => {
@@ -110,18 +107,21 @@ const widgetEvents: Record<string, Record<string, (...args: unknown[]) => void>>
 const totalDevoirs = computed(() => props.studentStats.pending + props.studentStats.submitted + props.studentStats.graded)
 const overdueCount = computed(() => props.urgentActions.filter(a => a.isOverdue).length)
 
-// Widgets masques (pour le drawer)
-const hiddenWidgets = computed(() =>
-  STUDENT_WIDGETS.filter(w => !isVisible(w.id) && w.id !== 'live' && w.id !== 'promoActivity'),
-)
-
 // Focus : only show if overdue (critical)
 const showFocusAlert = computed(() => overdueCount.value > 0)
 
-// Drag-and-drop : liste réordonnée des widgets visibles (hors live/promoActivity)
+// Drag-and-drop : liste reordonnee des widgets visibles (hors live/promoActivity)
 const draggableWidgets = ref(visibleWidgets.value.filter(w => w.id !== 'live' && w.id !== 'promoActivity'))
 watch(visibleWidgets, (v) => { draggableWidgets.value = v.filter(w => w.id !== 'live' && w.id !== 'promoActivity') })
 function onDragEnd() { reorderWidgets(draggableWidgets.value) }
+
+function onToggle(id: string) {
+  toggleWidget(id)
+}
+
+function onReset() {
+  resetDefaults()
+}
 </script>
 
 <template>
@@ -135,7 +135,7 @@ function onDragEnd() { reorderWidgets(draggableWidgets.value) }
       <span>{{ overdueCount }} devoir{{ overdueCount > 1 ? 's' : '' }} en retard</span>
     </div>
 
-    <!-- Widgets grid (2 colonnes, drag-and-drop en mode édition) -->
+    <!-- Widgets grid (2 colonnes, drag-and-drop quand customizer ouvert) -->
     <VueDraggable
       v-model="draggableWidgets"
       :disabled="!showCustomizer"
@@ -146,9 +146,6 @@ function onDragEnd() { reorderWidgets(draggableWidgets.value) }
       @end="onDragEnd"
     >
       <div v-for="w in draggableWidgets" :key="w.id" class="sb-widget" :class="{ 'sb-widget--editing': showCustomizer }">
-        <button v-if="showCustomizer" class="sb-widget-remove" title="Retirer" @click="toggleWidget(w.id)">
-          <X :size="14" />
-        </button>
         <component
           :is="widgetComponents[w.id]"
           v-bind="widgetProps[w.id]"
@@ -157,36 +154,17 @@ function onDragEnd() { reorderWidgets(draggableWidgets.value) }
       </div>
     </VueDraggable>
 
-    <!-- Add widget button (edit mode) -->
-    <button v-if="showCustomizer" class="sb-add-widget" @click="showWidgetDrawer = !showWidgetDrawer">
-      <Plus :size="24" />
-      <span>Ajouter un widget</span>
-    </button>
-
-    <!-- Widget drawer (edit mode) -->
-    <Transition name="sb-drawer">
-      <div v-if="showCustomizer && showWidgetDrawer" class="sb-drawer">
-        <div class="sb-drawer-header">
-          <h4>Widgets disponibles</h4>
-          <button class="sb-drawer-close" @click="showWidgetDrawer = false"><X :size="14" /></button>
-        </div>
-        <div class="sb-drawer-grid">
-          <button
-            v-for="w in hiddenWidgets"
-            :key="w.id"
-            class="sb-drawer-card"
-            @click="toggleWidget(w.id); showWidgetDrawer = hiddenWidgets.length > 1"
-          >
-            <div class="sb-drawer-card-icon">
-              <component :is="w.icon" :size="20" />
-            </div>
-            <span class="sb-drawer-card-label">{{ w.label }}</span>
-            <span class="sb-drawer-card-desc">{{ w.description }}</span>
-            <Plus :size="14" class="sb-drawer-card-add" />
-          </button>
-        </div>
-        <p v-if="!hiddenWidgets.length" class="sb-drawer-empty">Tous les widgets sont actifs</p>
-      </div>
+    <!-- Widget customizer panel -->
+    <Transition name="sb-customizer">
+      <BentoCustomizer
+        v-if="showCustomizer"
+        :all-widgets="allWidgets"
+        :is-visible="isVisible"
+        @toggle="onToggle"
+        @reorder="reorderWidgets"
+        @reset="onReset"
+        @close="showCustomizer = false"
+      />
     </Transition>
   </div>
 </template>
@@ -221,7 +199,7 @@ function onDragEnd() { reorderWidgets(draggableWidgets.value) }
 .sb-widget--editing {
   border: 2px dashed transparent;
   border-radius: 14px;
-  animation: sb-jiggle .3s ease infinite alternate;
+  cursor: grab;
 }
 .sb-widget--editing:hover {
   border-color: rgba(74,144,217,.3);
@@ -236,99 +214,12 @@ function onDragEnd() { reorderWidgets(draggableWidgets.value) }
   from { opacity: 0; transform: translateY(6px); }
   to   { opacity: 1; transform: translateY(0); }
 }
-@keyframes sb-jiggle {
-  from { transform: rotate(-0.3deg); }
-  to   { transform: rotate(0.3deg); }
-}
 
-/* Remove button on widget */
-.sb-widget-remove {
-  position: absolute; top: -6px; right: -6px; z-index: 5;
-  display: flex; align-items: center; justify-content: center;
-  width: 22px; height: 22px; border-radius: 50%;
-  background: #ef4444; color: #fff; border: 2px solid var(--bg-main);
-  cursor: pointer; transition: transform .15s;
-  box-shadow: 0 2px 6px rgba(0,0,0,.2);
-}
-.sb-widget-remove:hover { transform: scale(1.15); }
-
-/* Add widget button */
-.sb-add-widget {
-  display: flex; flex-direction: column;
-  align-items: center; justify-content: center; gap: 6px;
-  padding: 24px; border-radius: 14px;
-  border: 2px dashed rgba(74,144,217,.3);
-  background: rgba(74,144,217,.03);
-  color: var(--accent); cursor: pointer;
-  transition: all .2s; grid-column: span 2;
-  font-family: var(--font);
-}
-.sb-add-widget:hover {
-  border-color: var(--accent);
-  background: rgba(74,144,217,.06);
-}
-.sb-add-widget span { font-size: 12px; font-weight: 600; }
-
-/* ── Widget drawer ── */
-.sb-drawer {
-  padding: 16px; border-radius: 14px;
-  background: var(--bg-elevated); border: 1px solid var(--border);
-  box-shadow: 0 8px 24px rgba(0,0,0,.12);
-}
-.sb-drawer-header {
-  display: flex; align-items: center; justify-content: space-between;
-  margin-bottom: 12px;
-}
-.sb-drawer-header h4 { font-size: 14px; font-weight: 700; color: var(--text-primary); margin: 0; }
-.sb-drawer-close {
-  display: flex; align-items: center; justify-content: center;
-  width: 28px; height: 28px; border-radius: 6px;
-  border: none; background: transparent; color: var(--text-muted);
-  cursor: pointer; transition: all .15s;
-}
-.sb-drawer-close:hover { background: var(--bg-hover); color: var(--text-primary); }
-
-.sb-drawer-grid {
-  display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px;
-}
-.sb-drawer-card {
-  display: flex; flex-direction: column; align-items: center;
-  gap: 6px; padding: 16px 10px; border-radius: 12px;
-  background: var(--bg-main); border: 1px solid var(--border);
-  cursor: pointer; transition: all .2s; text-align: center;
-  position: relative; font-family: var(--font);
-}
-.sb-drawer-card:hover {
-  border-color: var(--accent);
-  background: rgba(74,144,217,.04);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0,0,0,.08);
-}
-.sb-drawer-card-icon {
-  display: flex; align-items: center; justify-content: center;
-  width: 40px; height: 40px; border-radius: 12px;
-  background: rgba(74,144,217,.1); color: var(--accent);
-}
-.sb-drawer-card-label { font-size: 12px; font-weight: 600; color: var(--text-primary); }
-.sb-drawer-card-desc { font-size: 10px; color: var(--text-muted); line-height: 1.3; }
-.sb-drawer-card-add {
-  position: absolute; top: 8px; right: 8px;
-  color: var(--accent); opacity: .5;
-}
-.sb-drawer-card:hover .sb-drawer-card-add { opacity: 1; }
-.sb-drawer-empty { text-align: center; color: var(--text-muted); font-size: 12px; padding: 16px 0; }
-
-/* Drawer transition */
-.sb-drawer-enter-active { transition: all .25s cubic-bezier(.4,0,.2,1); }
-.sb-drawer-leave-active { transition: all .15s ease; }
-.sb-drawer-enter-from { opacity: 0; transform: translateY(12px); }
-.sb-drawer-leave-to { opacity: 0; transform: translateY(8px); }
-
-/* ── Transitions ── */
-.sa-customizer-enter-active,
-.sa-customizer-leave-active { transition: all 0.25s ease; }
-.sa-customizer-enter-from,
-.sa-customizer-leave-to { opacity: 0; transform: translateY(-6px); }
+/* ── Customizer transition ── */
+.sb-customizer-enter-active { transition: all .25s cubic-bezier(.4,0,.2,1); }
+.sb-customizer-leave-active { transition: all .15s ease; }
+.sb-customizer-enter-from { opacity: 0; transform: translateY(12px); }
+.sb-customizer-leave-to { opacity: 0; transform: translateY(8px); }
 
 /* ── Responsive ── */
 @media (max-width: 600px) {

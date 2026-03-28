@@ -77,18 +77,19 @@ export function useBentoPrefs() {
   }
 
   function toggleWidget(id: string) {
-    const hiddenIdx = prefs.value.hidden.indexOf(id)
-    if (hiddenIdx >= 0) {
+    const isHidden = prefs.value.hidden.includes(id)
+    if (isHidden) {
       // Show: remove from hidden, add to end of order
-      prefs.value.hidden.splice(hiddenIdx, 1)
-      if (!prefs.value.order.includes(id)) {
-        prefs.value.order.push(id)
+      prefs.value = {
+        order: prefs.value.order.includes(id) ? [...prefs.value.order] : [...prefs.value.order, id],
+        hidden: prefs.value.hidden.filter(h => h !== id),
       }
     } else {
       // Hide: add to hidden, remove from order
-      prefs.value.hidden.push(id)
-      const orderIdx = prefs.value.order.indexOf(id)
-      if (orderIdx >= 0) prefs.value.order.splice(orderIdx, 1)
+      prefs.value = {
+        order: prefs.value.order.filter(o => o !== id),
+        hidden: [...prefs.value.hidden, id],
+      }
     }
   }
 
@@ -103,14 +104,14 @@ export function useBentoPrefs() {
   }
 
   function reorderWidgets(newOrder: WidgetDef[]) {
-    const hiddenSet = new Set(prefs.value.hidden)
-    const order: string[] = []
-    const hidden: string[] = []
-    for (const w of newOrder) {
-      if (hiddenSet.has(w.id)) hidden.push(w.id)
-      else order.push(w.id)
+    const newIds = new Set(newOrder.map(w => w.id))
+    // Preserve widgets not in the draggable list (live, promoActivity, etc.)
+    const preserved = prefs.value.order.filter(id => !newIds.has(id) && !prefs.value.hidden.includes(id))
+    const reordered = newOrder.filter(w => !prefs.value.hidden.includes(w.id)).map(w => w.id)
+    prefs.value = {
+      order: [...preserved, ...reordered],
+      hidden: [...prefs.value.hidden],
     }
-    prefs.value = { order, hidden }
   }
 
   function resetDefaults() {
