@@ -35,20 +35,20 @@ describe('POST /api/auth/login', () => {
     expect(res.body.data.type).toBe('teacher')
   })
 
-  it('returns 400 for wrong password', async () => {
+  it('returns 401 for wrong password', async () => {
     const res = await request(app)
       .post('/api/auth/login')
       .send({ email: 'jean@test.fr', password: 'WrongPass1!' })
-    expect(res.status).toBe(400)
+    expect(res.status).toBe(401)
     expect(res.body.ok).toBe(false)
     expect(res.body.error).toMatch(/incorrect/)
   })
 
-  it('returns 400 for non-existent email', async () => {
+  it('returns 401 for non-existent email', async () => {
     const res = await request(app)
       .post('/api/auth/login')
       .send({ email: 'nobody@test.fr', password: TEST_PASSWORD })
-    expect(res.status).toBe(400)
+    expect(res.status).toBe(401)
     expect(res.body.ok).toBe(false)
   })
 })

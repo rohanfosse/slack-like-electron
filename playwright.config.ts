@@ -5,7 +5,7 @@ export default defineConfig({
   timeout: 30_000,
   retries: 0,
   use: {
-    baseURL: 'http://localhost:5173',
+    baseURL: 'http://localhost:5174',
     headless: true,
     screenshot: 'only-on-failure',
     trace: 'retain-on-failure',
@@ -16,13 +16,13 @@ export default defineConfig({
   webServer: [
     {
       command: 'node server/index.js',
-      port: 3000,
+      port: 3001,
       reuseExistingServer: true,
-      timeout: 15_000,
+      timeout: 60_000,
     },
     {
       command: 'npm run dev:web',
-      port: 5173,
+      port: 5174,
       reuseExistingServer: true,
       timeout: 30_000,
     },

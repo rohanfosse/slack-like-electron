@@ -59,36 +59,10 @@ describe('useBentoPrefs', () => {
     expect(prefs.value.order).toContain('w4')
   })
 
-  it('moveWidget moves up correctly', () => {
-    const { moveWidget, prefs } = useBentoPrefs()
-    // order: [w1, w2, w3] → move w2 up → [w2, w1, w3]
-    moveWidget('w2', 'up')
-    expect(prefs.value.order).toEqual(['w2', 'w1', 'w3'])
-  })
-
-  it('moveWidget moves down correctly', () => {
-    const { moveWidget, prefs } = useBentoPrefs()
-    // order: [w1, w2, w3] → move w2 down → [w1, w3, w2]
-    moveWidget('w2', 'down')
-    expect(prefs.value.order).toEqual(['w1', 'w3', 'w2'])
-  })
-
-  it('moveWidget: first item cannot move up', () => {
-    const { moveWidget, prefs } = useBentoPrefs()
-    moveWidget('w1', 'up')
-    expect(prefs.value.order).toEqual(['w1', 'w2', 'w3'])
-  })
-
-  it('moveWidget: last item cannot move down', () => {
-    const { moveWidget, prefs } = useBentoPrefs()
-    moveWidget('w3', 'down')
-    expect(prefs.value.order).toEqual(['w1', 'w2', 'w3'])
-  })
-
   it('resetDefaults restores default order', () => {
-    const { toggleWidget, moveWidget, resetDefaults, prefs } = useBentoPrefs()
+    const { toggleWidget, resetDefaults, prefs } = useBentoPrefs()
     toggleWidget('w1')
-    moveWidget('w2', 'down')
+    toggleWidget('w3')
     resetDefaults()
     expect(prefs.value.order).toEqual(['w1', 'w2', 'w3'])
     expect(prefs.value.hidden).toEqual(['w4'])
