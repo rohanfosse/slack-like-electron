@@ -3,6 +3,7 @@
   import { ref, computed, watch } from 'vue'
   import { Search, Calendar, ChevronDown, ChevronUp, MessageSquare, Cloud, Star, FileText, Users } from 'lucide-vue-next'
   import { useRexStore }  from '@/stores/rex'
+  import { useDebounce } from '@/composables/useDebounce'
   import type { RexSessionWithStats, RexSession, RexActivity, RexResults } from '@/types'
 
   import RexSondageResults          from './RexSondageResults.vue'
@@ -32,12 +33,10 @@
   }
   reload()
 
-  let debounce: ReturnType<typeof setTimeout> | null = null
-  watch([search, dateFrom, dateTo], () => {
-    if (debounce) clearTimeout(debounce)
-    debounce = setTimeout(reload, 400)
-  })
-
+  const debouncedSearch   = useDebounce(search, 400)
+  const debouncedDateFrom = useDebounce(dateFrom, 400)
+  const debouncedDateTo   = useDebounce(dateTo, 400)
+  watch([debouncedSearch, debouncedDateFrom, debouncedDateTo], reload)
   watch(() => props.promoId, reload)
 
   async function toggleExpand(s: RexSessionWithStats) {

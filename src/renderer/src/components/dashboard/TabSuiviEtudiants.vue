@@ -82,9 +82,9 @@ async function loadData() {
   loading.value = true
   try {
     const [studentsRes, notesRes, summRes] = await Promise.all([
-      api<StudentItem[]>(() => (window.api as any).getStudents(promoId.value)),
-      api<TeacherNote[]>(() => (window.api as any).getTeacherNotesByPromo(promoId.value)),
-      api<NoteSummary[]>(() => (window.api as any).getTeacherNotesSummary(promoId.value)),
+      api<StudentItem[]>(() => window.api.getStudents(promoId.value)),
+      api<TeacherNote[]>(() => window.api.getTeacherNotesByPromo(promoId.value)),
+      api<NoteSummary[]>(() => window.api.getTeacherNotesSummary(promoId.value)),
     ])
     allStudents.value = studentsRes ?? []
     notes.value       = notesRes    ?? []
@@ -170,12 +170,12 @@ function cancelForm() {
 async function submitForm() {
   if (!formContent.value.trim() || !selectedStudent.value) return
   if (editingNote.value) {
-    await api(() => (window.api as any).updateTeacherNote(editingNote.value!.id, {
+    await api(() => window.api.updateTeacherNote(editingNote.value!.id, {
       content: formContent.value, tag: formTag.value, category: formCategory.value,
     }))
     showToast('Note mise à jour.', 'success')
   } else {
-    await api(() => (window.api as any).createTeacherNote({
+    await api(() => window.api.createTeacherNote({
       studentId: selectedStudent.value!.id,
       promoId:   promoId.value,
       content:   formContent.value,
@@ -191,7 +191,7 @@ async function submitForm() {
 
 async function removeNote(id: number) {
   if (!await confirm('Supprimer cette note ?', 'danger', 'Supprimer')) return
-  await api(() => (window.api as any).deleteTeacherNote(id))
+  await api(() => window.api.deleteTeacherNote(id))
   showToast('Note supprimée.', 'success')
   await loadData()
 }

@@ -372,7 +372,16 @@
           <span class="sb-accent-line" />
         </div>
 
-        <div id="sidebar-channels-header" class="sidebar-section-header sidebar-collapsible-header" @click="channelsCollapsed = !channelsCollapsed">
+        <div
+          id="sidebar-channels-header"
+          class="sidebar-section-header sidebar-collapsible-header"
+          role="button"
+          tabindex="0"
+          :aria-expanded="!channelsCollapsed"
+          @click="channelsCollapsed = !channelsCollapsed"
+          @keydown.enter="channelsCollapsed = !channelsCollapsed"
+          @keydown.space.prevent="channelsCollapsed = !channelsCollapsed"
+        >
           <ChevronDown
             :size="12"
             class="sidebar-category-chevron"
@@ -488,7 +497,16 @@
         <!-- Messages directs -->
         <template v-if="dmStudents.length">
           <div class="sidebar-separator" />
-          <div class="sidebar-section-header sidebar-collapsible-header" @click="dmCollapsed = !dmCollapsed">
+          <div
+            class="sidebar-section-header sidebar-collapsible-header"
+            role="button"
+            tabindex="0"
+            :aria-expanded="!dmCollapsed"
+            aria-controls="sidebar-dm-list"
+            @click="dmCollapsed = !dmCollapsed"
+            @keydown.enter="dmCollapsed = !dmCollapsed"
+            @keydown.space.prevent="dmCollapsed = !dmCollapsed"
+          >
             <ChevronDown
               :size="12"
               class="sidebar-category-chevron"
@@ -499,6 +517,7 @@
               class="dm-toggle-btn"
               style="margin-left:auto"
               :title="showAllDmStudents ? 'Masquer' : 'Nouvelle conversation'"
+              aria-label="Nouvelle conversation"
               @click.stop="showAllDmStudents = !showAllDmStudents"
             >
               <Plus :size="14" />
@@ -506,7 +525,7 @@
           </div>
 
           <!-- Conversations récentes + liste complète -->
-          <div v-show="!dmCollapsed" class="sidebar-scroll-list">
+          <div id="sidebar-dm-list" v-show="!dmCollapsed" class="sidebar-scroll-list">
             <nav aria-label="Messages directs">
               <button
                 v-for="s in dmContactsToShow"

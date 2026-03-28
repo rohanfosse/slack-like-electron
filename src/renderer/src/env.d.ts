@@ -246,14 +246,14 @@ declare global {
       getRexStatsForPromo(promoId: number): Promise<IpcResponse<import('./types').RexStats>>
 
       // Fichiers partagés en DM (prof uniquement)
-      getDmFiles(): Promise<IpcResponse<unknown[]>>
+      getDmFiles(): Promise<IpcResponse<{ message_id: number; student_id: number; student_name: string; file_name: string; file_url: string; is_image: boolean; file_size: number | null; sent_at: string; created_at: string }[]>>
 
       // Carnet de suivi
-      getTeacherNotes(studentId: number): Promise<IpcResponse<unknown[]>>
-      getTeacherNotesByPromo(promoId: number): Promise<IpcResponse<unknown[]>>
-      getTeacherNotesSummary(promoId: number): Promise<IpcResponse<unknown[]>>
-      createTeacherNote(payload: object): Promise<IpcResponse<unknown>>
-      updateTeacherNote(id: number, payload: object): Promise<IpcResponse<unknown>>
+      getTeacherNotes(studentId: number): Promise<IpcResponse<{ id: number; student_id: number; teacher_id: number; promo_id: number; content: string; tag: string; category: string; student_name: string; created_at: string; updated_at: string }[]>>
+      getTeacherNotesByPromo(promoId: number): Promise<IpcResponse<{ id: number; student_id: number; teacher_id: number; promo_id: number; content: string; tag: string; category: string; student_name: string; created_at: string; updated_at: string }[]>>
+      getTeacherNotesSummary(promoId: number): Promise<IpcResponse<{ student_id: number; student_name: string; count: number; last_note_at: string }[]>>
+      createTeacherNote(payload: { studentId: number; promoId: number; content: string; tag: string | null; category: string | null }): Promise<IpcResponse<{ id: number }>>
+      updateTeacherNote(id: number, payload: { content: string; tag: string | null; category: string | null }): Promise<IpcResponse<{ changes: number }>>
       deleteTeacherNote(id: number): Promise<IpcResponse<null>>
 
       // Signatures
@@ -265,7 +265,7 @@ declare global {
       rejectSignature(id: number, reason: string): Promise<IpcResponse<unknown>>
 
       // Engagement
-      getEngagementScores(promoId: number): Promise<IpcResponse<unknown[]>>
+      getEngagementScores(promoId: number): Promise<IpcResponse<{ studentId: number; name: string; score: number; messages: number; onTime: number; late: number; missing: number; totalDevoirs: number; submitted: number; lastActivity: string | null; atRisk: boolean }[]>>
       emitRexJoin(promoId: number): void
       emitRexLeave(promoId: number): void
       onRexActivityPushed(cb: (data: { activity: unknown }) => void): () => void

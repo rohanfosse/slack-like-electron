@@ -52,8 +52,7 @@
   async function loadDmFiles() {
     if (!appStore.activeDmStudentId) return
     dmFilesLoading.value = true
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const res = await api<DmFile[]>(() => window.api.getDmFiles() as any)
+    const res = await api<DmFile[]>(() => window.api.getDmFiles())
     const sid = appStore.activeDmStudentId
     dmFiles.value = (res ?? []).filter(f => f.student_id === sid)
     dmFilesLoading.value = false

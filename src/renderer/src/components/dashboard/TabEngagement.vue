@@ -27,7 +27,7 @@ async function loadData() {
   if (!promoId.value) return
   loading.value = true
   try {
-    const data = await api<EngagementScore[]>(() => window.api.getEngagementScores(promoId.value) as any)
+    const data = await api<EngagementScore[]>(() => window.api.getEngagementScores(promoId.value))
     scores.value = data ?? []
   } finally {
     loading.value = false

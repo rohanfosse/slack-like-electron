@@ -165,13 +165,13 @@ export function useBubbleActions(msg: () => Message) {
       if (docId) {
         const promoId = appStore.activePromoId ?? appStore.currentUser?.promo_id
         if (promoId) {
-          window.api.getProjectDocuments(promoId).then((res: { ok: boolean; data: { id: number; name: string; type: string; content: string }[] }) => {
+          window.api.getProjectDocuments(promoId).then((res) => {
             const doc = res?.ok ? res.data.find((d) => d.id === docId) : null
             if (doc) {
               if (doc.type === 'link') {
                 openExternal(doc.content)
               } else {
-                documentsStore.openPreview(doc as any)
+                documentsStore.openPreview(doc)
                 modals.documentPreview = true
               }
             } else {

@@ -3,6 +3,7 @@
   import { ref, watch } from 'vue'
   import { Search, Calendar, ChevronDown, ChevronUp, Users, BarChart2, MessageSquare, Cloud } from 'lucide-vue-next'
   import { useLiveStore } from '@/stores/live'
+  import { useDebounce } from '@/composables/useDebounce'
   import type { LiveSessionWithStats, LiveSession, LiveResults } from '@/types'
 
   import QcmResults  from './QcmResults.vue'
@@ -30,11 +31,10 @@
   }
   reload()
 
-  let debounce: ReturnType<typeof setTimeout> | null = null
-  watch([search, dateFrom, dateTo], () => {
-    if (debounce) clearTimeout(debounce)
-    debounce = setTimeout(reload, 400)
-  })
+  const debouncedSearch   = useDebounce(search, 400)
+  const debouncedDateFrom = useDebounce(dateFrom, 400)
+  const debouncedDateTo   = useDebounce(dateTo, 400)
+  watch([debouncedSearch, debouncedDateFrom, debouncedDateTo], reload)
   watch(() => props.promoId, reload)
 
   async function toggleExpand(s: LiveSessionWithStats) {

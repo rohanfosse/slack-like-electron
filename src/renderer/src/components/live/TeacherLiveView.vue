@@ -208,7 +208,7 @@
                 <span class="draft-card-title">{{ s.title }}</span>
                 <span class="draft-card-meta">
                   {{ s.status === 'active' ? 'Active' : 'Brouillon' }}
-                  · {{ (s as any).activities?.length ?? '?' }} activite(s)
+                  · {{ s.activities?.length ?? '?' }} activite(s)
                 </span>
               </div>
               <div class="draft-card-actions">

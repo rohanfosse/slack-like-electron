@@ -139,7 +139,7 @@
     if (!confirm(confirmLines.join('\n'))) return
     try {
       await window.api.updateTravailPublished({ travailId: travail.value.id, published: true })
-      const channelId = (travail.value as any).channel_id
+      const channelId = travail.value.channel_id
       if (channelId) {
         await window.api.sendMessage({
           channelId,

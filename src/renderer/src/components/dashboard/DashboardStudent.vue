@@ -62,7 +62,7 @@ const bentoRef = ref<InstanceType<typeof StudentBento> | null>(null)
 
 // ── Emits ────────────────────────────────────────────────────────────────────
 const emit = defineEmits<{
-  'update:dashTab': [tab: 'accueil' | 'projets' | 'notes' | 'planning']
+  'update:dashTab': [tab: 'accueil' | 'projets' | 'notes' | 'planning' | 'quiz' | 'rex']
   'update:friseOffset': [val: number]
   dismissOnboarding: []
   goToProject: [key: string]
@@ -109,29 +109,30 @@ const emit = defineEmits<{
     </div>
 
     <!-- Tabs -->
-    <div class="db-tabs">
-      <button class="db-tab" :class="{ active: dashTab === 'accueil' }" @click="emit('update:dashTab', 'accueil')">
+    <div class="db-tabs" role="tablist" aria-label="Navigation du tableau de bord">
+      <button class="db-tab" role="tab" :aria-selected="dashTab === 'accueil'" :class="{ active: dashTab === 'accueil' }" @click="emit('update:dashTab', 'accueil')">
         <Home :size="13" /> Accueil
       </button>
-      <button class="db-tab" :class="{ active: dashTab === 'projets' }" @click="emit('update:dashTab', 'projets')">
+      <button class="db-tab" role="tab" :aria-selected="dashTab === 'projets'" :class="{ active: dashTab === 'projets' }" @click="emit('update:dashTab', 'projets')">
         <FolderOpen :size="13" /> Mes projets
       </button>
-      <button class="db-tab" :class="{ active: dashTab === 'notes' }" @click="emit('update:dashTab', 'notes')">
+      <button class="db-tab" role="tab" :aria-selected="dashTab === 'notes'" :class="{ active: dashTab === 'notes' }" @click="emit('update:dashTab', 'notes')">
         <Award :size="13" /> Mes notes
       </button>
-      <button class="db-tab" :class="{ active: dashTab === 'planning' }" @click="emit('update:dashTab', 'planning')">
+      <button class="db-tab" role="tab" :aria-selected="dashTab === 'planning'" :class="{ active: dashTab === 'planning' }" @click="emit('update:dashTab', 'planning')">
         <CalendarDays :size="13" /> Planning
       </button>
-      <button class="db-tab db-tab--coming" :class="{ active: dashTab === 'quiz' }" @click="emit('update:dashTab', 'quiz' as any)">
+      <button class="db-tab db-tab--coming" role="tab" :aria-selected="dashTab === 'quiz'" aria-disabled="true" :class="{ active: dashTab === 'quiz' }" @click="emit('update:dashTab', 'quiz')">
         <Radio :size="13" /> Quiz <span class="db-tab-soon">Bientôt</span>
       </button>
-      <button class="db-tab db-tab--coming" :class="{ active: dashTab === 'rex' }" @click="emit('update:dashTab', 'rex' as any)">
+      <button class="db-tab db-tab--coming" role="tab" :aria-selected="dashTab === 'rex'" aria-disabled="true" :class="{ active: dashTab === 'rex' }" @click="emit('update:dashTab', 'rex')">
         <ClipboardList :size="13" /> REX <span class="db-tab-soon">Bientôt</span>
       </button>
       <button
         v-if="dashTab === 'accueil'"
         class="db-tab db-tab--settings"
         title="Personnaliser le tableau de bord"
+        aria-label="Personnaliser le tableau de bord"
         @click="bentoRef?.toggleCustomizer()"
       >
         <Settings :size="13" />

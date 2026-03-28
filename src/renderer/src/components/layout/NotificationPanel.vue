@@ -92,13 +92,13 @@ function formatTime(ts: number): string {
 }
 
 function notifTitle(n: typeof appStore.notificationHistory[number]): string {
-  return (n as any).title || n.authorName || ''
+  return n.title || n.authorName || ''
 }
 function notifPreview(n: typeof appStore.notificationHistory[number]): string {
-  return (n as any).preview || (n.dmStudentId ? 'Message direct' : `#${n.channelName}`)
+  return n.preview || (n.dmStudentId ? 'Message direct' : `#${n.channelName}`)
 }
 function notifCategory(n: typeof appStore.notificationHistory[number]): string {
-  return (n as any).category || (n.isMention ? 'mention' : 'message')
+  return n.category || (n.isMention ? 'mention' : 'message')
 }
 </script>
 
