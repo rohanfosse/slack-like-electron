@@ -1,4 +1,4 @@
-import { ref, watch, onUnmounted, type Ref } from 'vue'
+import { ref, watch, onUnmounted, getCurrentInstance, type Ref } from 'vue'
 
 /**
  * Retourne une ref debounced qui ne se met a jour
@@ -15,9 +15,11 @@ export function useDebounce<T>(source: Ref<T>, delay = 300): Ref<T> {
     }, delay)
   })
 
-  onUnmounted(() => {
-    if (timer) clearTimeout(timer)
-  })
+  if (getCurrentInstance()) {
+    onUnmounted(() => {
+      if (timer) clearTimeout(timer)
+    })
+  }
 
   return debounced
 }
