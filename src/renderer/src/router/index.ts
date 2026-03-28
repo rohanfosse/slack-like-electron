@@ -1,11 +1,12 @@
 import { createRouter, createWebHashHistory } from 'vue-router'
-import MessagesView   from '@/views/MessagesView.vue'
-import DevoirsView    from '@/views/DevoirsView.vue'
-import DocumentsView  from '@/views/DocumentsView.vue'
-import DashboardView  from '@/views/DashboardView.vue'
 
-// HashHistory évite les problèmes de routing dans Electron
-// (pas de serveur HTTP, les URLs en file:// ne supportent pas l'history API)
+// Lazy-load toutes les vues pour reduire le bundle initial
+const DashboardView = () => import('@/views/DashboardView.vue')
+const MessagesView  = () => import('@/views/MessagesView.vue')
+const DevoirsView   = () => import('@/views/DevoirsView.vue')
+const DocumentsView = () => import('@/views/DocumentsView.vue')
+
+// HashHistory evite les problemes de routing dans Electron
 const router = createRouter({
   history: createWebHashHistory(),
   routes: [

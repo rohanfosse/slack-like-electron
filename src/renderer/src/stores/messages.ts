@@ -124,7 +124,7 @@ export const useMessagesStore = defineStore('messages', () => {
 
   // ── Cache conversations (évite le refetch au switch) ─────────────────────
   const _messageCache = new Map<string, { messages: Message[]; hasMore: boolean; timestamp: number }>()
-  const CACHE_TTL = 60_000 // 1 minute
+  const CACHE_TTL = 300_000 // 5 minutes
 
   function _cacheKey(): string | null {
     const { activeChannelId, activeDmStudentId, activeDmPeerId } = appStore

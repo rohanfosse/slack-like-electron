@@ -14,7 +14,11 @@ const listEl = ref<HTMLElement | null>(null)
 // ── Initialisation des réactions ──────────────────────────────────────────
 watch(
   () => store.messages,
-  (msgs) => msgs.forEach((m) => store.initReactions(m.id, m.reactions)),
+  (msgs) => {
+    for (const m of msgs) {
+      if (!store.reactions[m.id]) store.initReactions(m.id, m.reactions)
+    }
+  },
   { immediate: true },
 )
 
@@ -117,6 +121,17 @@ onBeforeUnmount(() => {
 interface GroupedMessage { msg: Message; grouped: boolean; isFirstUnread: boolean }
 interface DateGroup      { date: string; messages: GroupedMessage[] }
 
+// Cache de date-strings pour eviter de creer un Date par message a chaque recomputation
+const _dateCache = new Map<string, string>()
+function cachedDateString(createdAt: string): string {
+  let ds = _dateCache.get(createdAt)
+  if (!ds) {
+    ds = new Date(createdAt).toDateString()
+    _dateCache.set(createdAt, ds)
+  }
+  return ds
+}
+
 const dateGroups = computed<DateGroup[]>(() => {
   const groups: DateGroup[] = []
   let lastDate  = ''
@@ -124,7 +139,7 @@ const dateGroups = computed<DateGroup[]>(() => {
   let unreadMarked = false
 
   for (const msg of store.messages) {
-    const date = new Date(msg.created_at).toDateString()
+    const date = cachedDateString(msg.created_at)
     if (date !== lastDate) {
       lastDate = date
       lastMsg  = null

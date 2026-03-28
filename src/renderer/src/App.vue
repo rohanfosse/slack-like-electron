@@ -185,13 +185,15 @@
     return dmCount + mentionCount
   })
 
-  // Badge barre des taches Windows
+  // Badge barre des taches Windows (debounce 200ms pour eviter les IPC repetitifs)
+  let _badgeTimer: ReturnType<typeof setTimeout> | null = null
   watchEffect(() => {
-    if (totalUnreadBadge.value > 0) {
-      window.api?.setBadge?.()
-    } else {
-      window.api?.clearBadge?.()
-    }
+    const hasUnread = totalUnreadBadge.value > 0
+    if (_badgeTimer) clearTimeout(_badgeTimer)
+    _badgeTimer = setTimeout(() => {
+      if (hasUnread) window.api?.setBadge?.()
+      else window.api?.clearBadge?.()
+    }, 200)
   })
 
   watchEffect(() => {

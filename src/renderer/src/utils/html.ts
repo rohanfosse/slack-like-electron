@@ -195,7 +195,14 @@ export function applyInlineRefs(html: string): string {
 
 // ─── Formatage du contenu d'un message ───────────────────────────────────────
 
+// Cache de rendu markdown : evite de re-parser le meme message a chaque rerender
+const _renderCache = new Map<string, string>()
+const RENDER_CACHE_MAX = 500
+
 export function renderMessageContent(raw: string, searchTerm = '', currentUserName = ''): string {
+  const cacheKey = `${raw.length}:${raw.slice(0, 50)}:${searchTerm}:${currentUserName}`
+  const cached = _renderCache.get(cacheKey)
+  if (cached) return cached
   // Traiter les refs devoir AVANT le markdown (sinon \ et ~ sont consommés par marked)
   let preprocessed = raw
   // \[Title](devoir:ID) et ~[Title](devoir:ID) → placeholder HTML
@@ -210,8 +217,15 @@ export function renderMessageContent(raw: string, searchTerm = '', currentUserNa
   html = applyChannelRefs(html)
   html = applyInlineRefs(html)
   if (searchTerm) html = highlightInHtml(html, searchTerm)
-  return DOMPurify.sanitize(html, {
+  const result = DOMPurify.sanitize(html, {
     ALLOWED_TAGS: ['p', 'br', 'strong', 'em', 'code', 'pre', 'a', 'span', 'div', 'mark', 'ul', 'ol', 'li', 'blockquote', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'hr', 'img', 'del', 's'],
     ALLOWED_ATTR: ['class', 'data-url', 'data-channel', 'data-devoir-id', 'data-doc-id', 'data-file-name', 'role', 'href', 'tabindex', 'style', 'src', 'alt', 'loading'],
   })
+  // Evicter le cache si trop gros
+  if (_renderCache.size >= RENDER_CACHE_MAX) {
+    const firstKey = _renderCache.keys().next().value
+    if (firstKey) _renderCache.delete(firstKey)
+  }
+  _renderCache.set(cacheKey, result)
+  return result
 }
