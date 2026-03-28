@@ -2,6 +2,7 @@
 
 export const STORAGE_KEYS = {
   SESSION:          'cc_session',
+  REMEMBER_TOKEN:   'cc_remember_token',
   NAV_STATE:        'cc_nav_state',
   PREFS:            'cc_prefs',
   MUTED_DMS:        'cc_muted_dms',

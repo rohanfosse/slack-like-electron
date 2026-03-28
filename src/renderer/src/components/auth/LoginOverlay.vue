@@ -2,6 +2,7 @@
   import { ref, computed, onMounted } from 'vue'
   import { useRouter } from 'vue-router'
   import { useAppStore } from '@/stores/app'
+  import { STORAGE_KEYS } from '@/constants'
   import { avatarColor }  from '@/utils/format'
   import type { LoginResponse } from '@/types'
   import logoUrl from '@/assets/logo.png'
@@ -18,7 +19,7 @@
   const loginErr   = ref('')
   const submitting = ref(false)
   const showPwd    = ref(false)
-  const rememberMe = ref(!!localStorage.getItem('cc_remember_token'))
+  const rememberMe = ref(!!localStorage.getItem(STORAGE_KEYS.REMEMBER_TOKEN))
 
   async function handleLogin() {
     loginErr.value   = ''
@@ -35,9 +36,9 @@
       const u = res.data as LoginResponse
       appStore.login({ ...u, avatar_initials: u.avatar_initials ?? u.name.slice(0, 2).toUpperCase() })
       if (rememberMe.value) {
-        localStorage.setItem('cc_remember_token', JSON.stringify({ email: email.value.trim(), ts: Date.now() }))
+        localStorage.setItem(STORAGE_KEYS.REMEMBER_TOKEN, JSON.stringify({ email: email.value.trim(), ts: Date.now() }))
       } else {
-        localStorage.removeItem('cc_remember_token')
+        localStorage.removeItem(STORAGE_KEYS.REMEMBER_TOKEN)
       }
       router.replace('/dashboard')
     } catch (e: unknown) {
@@ -69,7 +70,7 @@
   // Auto-fill email from remembered session (expires after 7 days)
   onMounted(() => {
     try {
-      const raw = localStorage.getItem('cc_remember_token')
+      const raw = localStorage.getItem(STORAGE_KEYS.REMEMBER_TOKEN)
       if (raw) {
         const { email: savedEmail, ts } = JSON.parse(raw)
         const SEVEN_DAYS = 7 * 24 * 60 * 60 * 1000
@@ -77,10 +78,10 @@
           email.value = savedEmail
           rememberMe.value = true
         } else {
-          localStorage.removeItem('cc_remember_token')
+          localStorage.removeItem(STORAGE_KEYS.REMEMBER_TOKEN)
         }
       }
-    } catch { localStorage.removeItem('cc_remember_token') }
+    } catch { localStorage.removeItem(STORAGE_KEYS.REMEMBER_TOKEN) }
   })
 
   const previewInitials = () => {

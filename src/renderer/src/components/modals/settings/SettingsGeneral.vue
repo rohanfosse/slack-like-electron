@@ -3,6 +3,7 @@
 import { ref, watch } from 'vue'
 import { Home, User, Globe, Lock } from 'lucide-vue-next'
 import { useAppStore } from '@/stores/app'
+import { STORAGE_KEYS } from '@/constants'
 import { usePrefs } from '@/composables/usePrefs'
 
 const appStore = useAppStore()
@@ -17,7 +18,7 @@ const roleLabels: Record<string, string> = {
 const rememberMe = ref(getPref('rememberMe') ?? false)
 watch(rememberMe, (v) => {
   setPref('rememberMe', v)
-  if (!v) localStorage.removeItem('cc_remember_token')
+  if (!v) localStorage.removeItem(STORAGE_KEYS.REMEMBER_TOKEN)
 })
 </script>
 

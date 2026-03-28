@@ -14,6 +14,7 @@
   import SettingsAccount      from './settings/SettingsAccount.vue'
   import SettingsAbout        from './settings/SettingsAbout.vue'
   import { useAppStore } from '@/stores/app'
+  import { STORAGE_KEYS } from '@/constants'
   import Modal from '@/components/ui/Modal.vue'
   import logoUrl from '@/assets/logo.png'
   import { useSettingsAppearance } from '@/composables/useSettingsAppearance'
@@ -49,7 +50,7 @@
   const rememberMe = ref(getPref('rememberMe') ?? false)
   watch(rememberMe, (v) => {
     setPref('rememberMe', v)
-    if (!v) localStorage.removeItem('cc_remember_token')
+    if (!v) localStorage.removeItem(STORAGE_KEYS.REMEMBER_TOKEN)
   })
 
   const roleLabels: Record<string, string> = {

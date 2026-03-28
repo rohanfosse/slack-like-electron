@@ -3,11 +3,12 @@ import { ref, computed, watch } from 'vue'
 import { useAppStore }     from '@/stores/app'
 import { useApi }          from '@/composables/useApi'
 import { MAX_SUBMISSION_RATES } from '@/constants'
+import { gradeColor } from '@/utils/grade'
 import type { Ref }        from 'vue'
 import type { GanttRow }   from './useDashboardTeacher'
 
 export const GRADE_COLORS: Record<string, string> = {
-  A: '#22c55e', B: '#27ae60', C: '#f59e0b', D: '#ef4444', NA: '#6b7280',
+  A: gradeColor('A'), B: gradeColor('B'), C: gradeColor('C'), D: gradeColor('D'), NA: '#6b7280',
 }
 
 export function useTeacherAnalytics(
