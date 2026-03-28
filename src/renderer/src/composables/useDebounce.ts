@@ -8,7 +8,7 @@ export function useDebounce<T>(source: Ref<T>, delay = 300): Ref<T> {
   const debounced = ref(source.value) as Ref<T>
   let timer: ReturnType<typeof setTimeout> | null = null
 
-  watch(source, (val) => {
+  const stopWatch = watch(source, (val) => {
     if (timer) clearTimeout(timer)
     timer = setTimeout(() => {
       debounced.value = val
@@ -17,6 +17,7 @@ export function useDebounce<T>(source: Ref<T>, delay = 300): Ref<T> {
 
   if (getCurrentInstance()) {
     onUnmounted(() => {
+      stopWatch()
       if (timer) clearTimeout(timer)
     })
   }

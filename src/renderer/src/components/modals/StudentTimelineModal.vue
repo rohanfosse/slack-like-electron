@@ -7,6 +7,7 @@ import { useTravauxStore } from '@/stores/travaux'
 import { useAppStore }     from '@/stores/app'
 import { parseCategoryIcon } from '@/utils/categoryIcon'
 import { formatDate, deadlineClass, deadlineLabel } from '@/utils/date'
+import { numericGradeClass } from '@/utils/grade'
 import Modal from '@/components/ui/Modal.vue'
 import type { Devoir } from '@/types'
 
@@ -96,12 +97,7 @@ function statusIcon(t: Devoir) {
 }
 
 function gradeColor(note: string | null | undefined): string {
-  const n = parseFloat(note ?? '')
-  if (isNaN(n))  return 'grade-letter'
-  if (n >= 16)   return 'grade-a'
-  if (n >= 12)   return 'grade-b'
-  if (n >= 8)    return 'grade-c'
-  return 'grade-d'
+  return numericGradeClass(note)
 }
 </script>
 

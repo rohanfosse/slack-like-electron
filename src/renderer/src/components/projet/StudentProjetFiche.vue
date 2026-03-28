@@ -12,6 +12,7 @@ import { useDocumentsStore }    from '@/stores/documents'
 import { useModalsStore }       from '@/stores/modals'
 import { useToast }             from '@/composables/useToast'
 import { avatarColor } from '@/utils/format'
+import { numericGradeClass } from '@/utils/grade'
 import StudentProjetHeader      from './StudentProjetHeader.vue'
 import StudentProjetStats       from './StudentProjetStats.vue'
 import StudentProjetDevoirsList from './StudentProjetDevoirsList.vue'
@@ -240,12 +241,7 @@ const nextDeadlineSoon = computed(() => {
 })
 
 function gradeColor(note: string | null | undefined): string {
-  const n = parseFloat(note ?? '')
-  if (isNaN(n)) return 'grade-letter'
-  if (n >= 16) return 'grade-a'
-  if (n >= 12) return 'grade-b'
-  if (n >= 8)  return 'grade-c'
-  return 'grade-d'
+  return numericGradeClass(note)
 }
 
 // ── File type icon helper ────────────────────────────────────────────────────

@@ -6,6 +6,7 @@ import {
   FileText, Link2, CheckCircle2, Lock, Award, Users,
 } from 'lucide-vue-next'
 import { formatDate, deadlineClass, deadlineLabel } from '@/utils/date'
+import { numericGradeClass } from '@/utils/grade'
 import type { Devoir } from '@/types'
 
 const TYPE_LABELS: Record<string, string> = {
@@ -62,12 +63,7 @@ function hasFeedback(t: Devoir): boolean {
 }
 
 function gradeColor(note: string | null | undefined): string {
-  const n = parseFloat(note ?? '')
-  if (isNaN(n)) return 'grade-letter'
-  if (n >= 16) return 'grade-a'
-  if (n >= 12) return 'grade-b'
-  if (n >= 8)  return 'grade-c'
-  return 'grade-d'
+  return numericGradeClass(note)
 }
 
 const collapsedSections = ref<Record<string, boolean>>({})

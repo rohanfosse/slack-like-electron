@@ -93,16 +93,6 @@ export function useBentoPrefs() {
     }
   }
 
-  function moveWidget(id: string, direction: 'up' | 'down') {
-    const idx = prefs.value.order.indexOf(id)
-    if (idx < 0) return
-    const target = direction === 'up' ? idx - 1 : idx + 1
-    if (target < 0 || target >= prefs.value.order.length) return
-    const arr = [...prefs.value.order]
-    ;[arr[idx], arr[target]] = [arr[target], arr[idx]]
-    prefs.value.order = arr
-  }
-
   function reorderWidgets(newOrder: WidgetDef[]) {
     const newIds = new Set(newOrder.map(w => w.id))
     // Preserve widgets not in the draggable list (live, promoActivity, etc.)
@@ -123,7 +113,6 @@ export function useBentoPrefs() {
     allWidgets,
     isVisible,
     toggleWidget,
-    moveWidget,
     reorderWidgets,
     resetDefaults,
     prefs,
