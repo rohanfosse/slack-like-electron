@@ -25,6 +25,8 @@ if (process.env.NODE_ENV === 'production') {
   if (!process.env.DEPLOY_SECRET || process.env.DEPLOY_SECRET.length < 16) {
     log.warn('deploy_secret_missing', { msg: 'DEPLOY_SECRET absent ou trop court — webhook de déploiement désactivé.' })
   }
+} else if (!process.env.JWT_SECRET) {
+  log.warn('jwt_secret_default', { msg: 'JWT_SECRET non défini — secret par défaut utilisé. Ne pas utiliser en dehors du développement local.' })
 }
 
 const app    = express()
