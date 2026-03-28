@@ -50,7 +50,7 @@ const colorClass = computed(() => {
 </script>
 
 <template>
-  <div class="dashboard-card sa-card sa-countdown">
+  <div class="dashboard-card sa-card sa-countdown" aria-label="Compte a rebours">
     <div class="sa-card-header">
       <Hourglass :size="14" class="sa-card-icon sa-icon--countdown" />
       <span class="sa-section-label">Prochaine échéance</span>
@@ -90,5 +90,5 @@ const colorClass = computed(() => {
   text-overflow: ellipsis;
 }
 
-.sa-empty { font-size: 12px; color: var(--text-muted); margin: 0; opacity: .6; }
+/* .sa-empty in devoirs-shared.css */
 </style>

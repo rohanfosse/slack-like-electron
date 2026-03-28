@@ -4,10 +4,11 @@
 <script setup lang="ts">
 import { ref, watch, onMounted } from 'vue'
 import { Bookmark, Plus, X, Pencil } from 'lucide-vue-next'
+import { STORAGE_KEYS } from '@/constants'
 
 interface QuickLink { name: string; url: string }
 
-const STORAGE_KEY = 'cc_student_quicklinks'
+const STORAGE_KEY = STORAGE_KEYS.QUICKLINKS
 const DEFAULT_LINKS: QuickLink[] = [
   { name: 'Moodle', url: 'https://moodle.cesi.fr' },
   { name: 'Teams', url: 'https://teams.microsoft.com' },
@@ -22,7 +23,8 @@ onMounted(() => {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
     links.value = raw ? JSON.parse(raw) : [...DEFAULT_LINKS]
-  } catch {
+  } catch (err) {
+    console.warn('[WidgetQuickLinks] Erreur lecture localStorage', err)
     links.value = [...DEFAULT_LINKS]
   }
 })

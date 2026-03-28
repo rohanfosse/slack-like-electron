@@ -36,7 +36,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="dashboard-card sa-card sa-clock">
+  <div class="dashboard-card sa-card sa-clock" aria-label="Horloge">
     <div class="sa-card-header">
       <Clock :size="14" class="sa-card-icon" />
       <span class="sa-section-label">Horloge</span>

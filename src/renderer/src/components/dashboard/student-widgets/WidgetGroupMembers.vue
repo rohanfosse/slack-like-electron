@@ -15,6 +15,7 @@ const appStore = useAppStore()
 const members = ref<Member[]>([])
 const groupName = ref<string | null>(null)
 const loading = ref(false)
+const error = ref<string | null>(null)
 
 async function fetchGroup() {
   const user = appStore.currentUser
@@ -22,38 +23,38 @@ async function fetchGroup() {
   if (!user || !promoId) { members.value = []; return }
 
   loading.value = true
+  error.value = null
   try {
-    const res = await window.api.getGroups(promoId)
-    if (!res.ok || !res.data) { members.value = []; return }
+    // 1. Fetch all groups for the promo
+    const groupsRes = await window.api.getGroups(promoId)
+    if (!groupsRes.ok || !groupsRes.data) { members.value = []; return }
 
-    // Find the group that contains the current user
-    for (const group of res.data) {
+    // 2. Find the group containing the current user
+    for (const group of groupsRes.data) {
       const membersRes = await window.api.getGroupMembers(group.id)
       if (!membersRes.ok || !membersRes.data) continue
       const memberIds = membersRes.data.map((m) => m.student_id)
-      if (memberIds.includes(user.id)) {
-        groupName.value = group.name
-        // Fetch member names — we only have student_ids so build from profiles
-        const mList: Member[] = []
-        for (const mid of memberIds) {
-          try {
-            const profile = await window.api.getStudentProfile(mid)
-            if (profile.ok && profile.data) {
-              const p = profile.data as { name?: string; id?: number }
-              mList.push({ id: mid, name: p.name ?? `Étudiant #${mid}` })
-            } else {
-              mList.push({ id: mid, name: `Étudiant #${mid}` })
-            }
-          } catch {
-            mList.push({ id: mid, name: `Étudiant #${mid}` })
-          }
-        }
-        members.value = mList
-        return
+      if (!memberIds.includes(user.id)) continue
+
+      groupName.value = group.name
+
+      // 3. Resolve names via getAllStudents (single request instead of N getStudentProfile calls)
+      const studentsRes = await window.api.getAllStudents()
+      const studentMap = new Map<number, string>()
+      if (studentsRes.ok && studentsRes.data) {
+        for (const s of studentsRes.data) studentMap.set(s.id, s.name)
       }
+
+      members.value = memberIds.map(id => ({
+        id,
+        name: studentMap.get(id) ?? `Etudiant #${id}`,
+      }))
+      return
     }
     members.value = []
-  } catch {
+  } catch (err) {
+    console.warn('[WidgetGroupMembers] Erreur lors du chargement du groupe', err)
+    error.value = 'Erreur de chargement'
     members.value = []
   } finally {
     loading.value = false
@@ -79,7 +80,7 @@ watch(() => appStore.activeProject, fetchGroup)
 </script>
 
 <template>
-  <div class="dashboard-card sa-card sa-group">
+  <div class="dashboard-card sa-card sa-group" aria-label="Membres de mon groupe">
     <div class="sa-card-header">
       <Users :size="14" class="sa-card-icon sa-icon--group" />
       <span class="sa-section-label">Mon groupe</span>
@@ -91,8 +92,9 @@ watch(() => appStore.activeProject, fetchGroup)
         <span class="sa-member-name">{{ m.name }}</span>
       </div>
     </div>
-    <p v-else-if="loading" class="sa-empty">Chargement…</p>
-    <p v-else class="sa-empty">Aucun groupe assigné</p>
+    <p v-else-if="loading" class="sa-empty">Chargement...</p>
+    <p v-else-if="error" class="sa-empty sa-empty--error">{{ error }}</p>
+    <p v-else class="sa-empty">Aucun groupe assigne</p>
   </div>
 </template>
 
@@ -136,5 +138,5 @@ watch(() => appStore.activeProject, fetchGroup)
   text-overflow: ellipsis;
 }
 
-.sa-empty { font-size: 12px; color: var(--text-muted); margin: 0; opacity: .6; }
+/* .sa-empty and .sa-empty--error in devoirs-shared.css */
 </style>

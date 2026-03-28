@@ -37,7 +37,6 @@ const props = defineProps<{
   recentGrades: { title: string; note: string; category?: string | null }[]
   recentFeedback?: { title: string; feedback: string; note: string | null; category: string | null }[]
   studentProjectCards: StudentProjectCard[]
-  hasDevoirsLoaded: boolean
 }>()
 
 const emit = defineEmits<{ goToProject: [key: string] }>()

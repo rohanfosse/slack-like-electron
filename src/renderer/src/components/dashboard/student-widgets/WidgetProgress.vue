@@ -24,7 +24,7 @@ const remaining = computed(() => Math.max(0, props.total - props.submitted))
 </script>
 
 <template>
-  <div class="dashboard-card sa-card sa-progress">
+  <div class="dashboard-card sa-card sa-progress" :aria-label="`Progression : ${pct}% soumis, ${gradedPct}% notes`">
     <div class="sa-card-header">
       <TrendingUp :size="14" class="sa-card-icon" />
       <span class="sa-section-label">Progression</span>

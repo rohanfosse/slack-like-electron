@@ -60,7 +60,7 @@ const cells = computed<CalendarCell[]>(() => {
 </script>
 
 <template>
-  <div class="dashboard-card sa-card sa-calendar">
+  <div class="dashboard-card sa-card sa-calendar" aria-label="Calendrier des echeances">
     <div class="sa-card-header">
       <CalendarDays :size="14" class="sa-card-icon" />
       <span class="sa-section-label">Calendrier</span>

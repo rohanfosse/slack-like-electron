@@ -20,7 +20,7 @@ const emit = defineEmits<{ goToProject: [key: string] }>()
       <span class="sa-section-label">{{ livrables.length > 1 ? 'Prochains livrables' : 'Livrables' }}</span>
     </div>
     <div v-if="livrables.length" class="sa-next-list">
-      <div v-for="l in livrables" :key="l.id" class="sa-next-item" role="button" tabindex="0" :aria-label="'Voir le livrable ' + l.title" @click="emit('goToProject', l.category ?? '')" @keydown.enter="emit('goToProject', l.category ?? '')">
+      <div v-for="l in livrables" :key="l.id" class="sa-next-item" role="button" tabindex="0" :aria-label="'Voir le livrable ' + l.title" @click="emit('goToProject', l.category ?? '')" @keydown.enter="emit('goToProject', l.category ?? '')" @keydown.space.prevent="emit('goToProject', l.category ?? '')">
         <span class="sa-next-title">{{ l.title }}</span>
         <span v-if="l.deadline" class="deadline-badge" :class="deadlineClass(l.deadline)">{{ deadlineLabel(l.deadline) }}</span>
       </div>
@@ -33,5 +33,5 @@ const emit = defineEmits<{ goToProject: [key: string] }>()
 /* Base .sa-card, .sa-card-header, .sa-section-label, .sa-next-* styles in devoirs-shared.css */
 .sa-next--livrable { border-left: 3px solid var(--accent); }
 .sa-icon--livrable { color: var(--accent); }
-.sa-empty { font-size: 12px; color: var(--text-muted); margin: 0; opacity: .6; }
+/* .sa-empty in devoirs-shared.css */
 </style>

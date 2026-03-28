@@ -13,9 +13,13 @@ const appStore = useAppStore()
 const docsStore = useDocumentsStore()
 
 onMounted(async () => {
-  const promoId = appStore.activePromoId ?? appStore.currentUser?.promo_id
-  if (promoId) {
-    await docsStore.fetchDocuments(promoId)
+  try {
+    const promoId = appStore.activePromoId ?? appStore.currentUser?.promo_id
+    if (promoId) {
+      await docsStore.fetchDocuments(promoId)
+    }
+  } catch (err) {
+    console.warn('[WidgetRecentDoc] Erreur chargement documents', err)
   }
 })
 
@@ -62,7 +66,7 @@ function navigateToDocuments() {
     tabindex="0"
     aria-label="Voir les documents"
     @click="navigateToDocuments"
-    @keydown.enter="navigateToDocuments"
+    @keydown.enter="navigateToDocuments" @keydown.space.prevent="navigateToDocuments"
   >
     <div class="sa-card-header">
       <component :is="typeIcon" :size="14" class="sa-card-icon" />

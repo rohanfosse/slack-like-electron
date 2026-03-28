@@ -63,7 +63,7 @@ declare global {
       setGroupMembers(payload: object): Promise<IpcResponse<null>>
 
       // Profil & devoirs étudiant
-      getStudentProfile(studentId: number): Promise<IpcResponse<object>>
+      getStudentProfile(studentId: number): Promise<IpcResponse<{ student: { id: number; name: string; email: string; avatar_initials: string; photo_data: string | null; promo_name: string }; travaux: unknown[] }>>
       getStudentTravaux(studentId: number): Promise<IpcResponse<Devoir[]>>
 
       // Ressources

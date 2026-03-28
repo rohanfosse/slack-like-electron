@@ -20,7 +20,7 @@ const emit = defineEmits<{ goToProject: [key: string] }>()
       <span class="sa-section-label">{{ soutenances.length > 1 ? 'Prochaines soutenances' : 'Soutenances' }}</span>
     </div>
     <div v-if="soutenances.length" class="sa-next-list">
-      <div v-for="s in soutenances" :key="s.id" class="sa-next-item" role="button" tabindex="0" :aria-label="'Voir la soutenance ' + s.title" @click="emit('goToProject', s.category ?? '')" @keydown.enter="emit('goToProject', s.category ?? '')">
+      <div v-for="s in soutenances" :key="s.id" class="sa-next-item" role="button" tabindex="0" :aria-label="'Voir la soutenance ' + s.title" @click="emit('goToProject', s.category ?? '')" @keydown.enter="emit('goToProject', s.category ?? '')" @keydown.space.prevent="emit('goToProject', s.category ?? '')">
         <span class="sa-next-title">{{ s.title }}</span>
         <span v-if="s.deadline" class="deadline-badge" :class="deadlineClass(s.deadline)">{{ deadlineLabel(s.deadline) }}</span>
       </div>
@@ -33,5 +33,5 @@ const emit = defineEmits<{ goToProject: [key: string] }>()
 /* Base .sa-card, .sa-card-header, .sa-section-label, .sa-next-* styles in devoirs-shared.css */
 .sa-next--soutenance { border-left: 3px solid var(--color-warning); }
 .sa-icon--soutenance { color: var(--color-warning); }
-.sa-empty { font-size: 12px; color: var(--text-muted); margin: 0; opacity: .6; }
+/* .sa-empty in devoirs-shared.css */
 </style>

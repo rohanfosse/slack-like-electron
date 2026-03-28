@@ -22,7 +22,6 @@ const props = defineProps<{
   today: string
   loadingStudent: boolean
   showOnboarding: boolean
-  hasDevoirsLoaded: boolean
 
   // Stats
   studentStats: { pending: number; submitted: number; graded: number; modeGrade: string | null }
@@ -148,7 +147,6 @@ const emit = defineEmits<{
       :recent-grades="recentGrades"
       :recent-feedback="recentFeedback"
       :student-project-cards="studentProjectCards"
-      :has-devoirs-loaded="hasDevoirsLoaded"
       @go-to-project="(k) => emit('goToProject', k)"
     />
 

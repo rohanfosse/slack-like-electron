@@ -252,7 +252,6 @@ onUnmounted(() => {
       :today="today"
       :loading-student="loadingStudent"
       :show-onboarding="showOnboarding"
-      :has-devoirs-loaded="travauxStore.devoirs.length > 0"
       :student-stats="studentStats"
       :urgent-actions="urgentActions"
       :recent-grades="recentGrades"

@@ -3,6 +3,7 @@
  */
 <script setup lang="ts">
 import { Award } from 'lucide-vue-next'
+import { gradeBadgeClass } from '@/utils/grade'
 
 export interface GradeEntry {
   title: string
@@ -11,14 +12,6 @@ export interface GradeEntry {
 }
 
 defineProps<{ grades: GradeEntry[] }>()
-
-function badgeColor(note: string): string {
-  const letter = note.trim().toUpperCase().charAt(0)
-  if (letter === 'A') return 'grade--green'
-  if (letter === 'B') return 'grade--blue'
-  if (letter === 'C') return 'grade--orange'
-  return 'grade--red'
-}
 </script>
 
 <template>
@@ -29,7 +22,7 @@ function badgeColor(note: string): string {
     </div>
     <div v-if="grades.length" class="sa-grades-list">
       <div v-for="(g, i) in grades.slice(0, 4)" :key="i" class="sa-grade-item">
-        <span class="sa-grade-badge" :class="badgeColor(g.note)">{{ g.note }}</span>
+        <span class="sa-grade-badge" :class="gradeBadgeClass(g.note)">{{ g.note }}</span>
         <span class="sa-grade-title">{{ g.title }}</span>
       </div>
     </div>
@@ -73,5 +66,5 @@ function badgeColor(note: string): string {
   text-overflow: ellipsis;
 }
 
-.sa-empty { font-size: 12px; color: var(--text-muted); margin: 0; opacity: .6; }
+/* .sa-empty in devoirs-shared.css */
 </style>

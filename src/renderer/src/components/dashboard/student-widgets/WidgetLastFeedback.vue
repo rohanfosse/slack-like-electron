@@ -4,6 +4,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { MessageSquare, ChevronRight } from 'lucide-vue-next'
+import { gradeColor as getGradeColor } from '@/utils/grade'
 
 interface Feedback {
   title: string
@@ -22,12 +23,7 @@ const emit = defineEmits<{
 
 const gradeColor = computed(() => {
   if (!props.feedback?.note) return 'var(--text-muted)'
-  const n = props.feedback.note.toUpperCase().trim()
-  if (n === 'A') return '#4ade80'
-  if (n === 'B') return '#60a5fa'
-  if (n === 'C') return '#f59e0b'
-  if (n === 'D') return '#ef4444'
-  return 'var(--text-muted)'
+  return getGradeColor(props.feedback.note)
 })
 
 const borderColor = computed(() => gradeColor.value)
@@ -48,7 +44,7 @@ function handleClick() {
     tabindex="0"
     aria-label="Voir le dernier retour"
     @click="handleClick"
-    @keydown.enter="handleClick"
+    @keydown.enter="handleClick" @keydown.space.prevent="handleClick"
   >
     <div class="sa-card-header">
       <MessageSquare :size="14" class="sa-card-icon" />

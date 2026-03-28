@@ -5,6 +5,7 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { Bookmark } from 'lucide-vue-next'
+import { STORAGE_KEYS } from '@/constants'
 
 interface BookmarkEntry {
   id: string | number
@@ -19,9 +20,11 @@ const bookmarks = ref<BookmarkEntry[]>([])
 
 onMounted(() => {
   try {
-    const raw = localStorage.getItem('cc_bookmarks')
+    const raw = localStorage.getItem(STORAGE_KEYS.BOOKMARKS)
     if (raw) bookmarks.value = JSON.parse(raw) as BookmarkEntry[]
-  } catch { /* ignore corrupt data */ }
+  } catch (err) {
+    console.warn('[WidgetBookmarks] Erreur lecture localStorage', err)
+  }
 })
 
 function truncate(text: string, max: number): string {
@@ -47,7 +50,7 @@ function goToMessages() {
         role="button"
         tabindex="0"
         @click="goToMessages"
-        @keydown.enter="goToMessages"
+        @keydown.enter="goToMessages" @keydown.space.prevent="goToMessages"
       >
         <span class="sa-bookmark-author">{{ b.authorName }}</span>
         <span class="sa-bookmark-content">{{ truncate(b.content, 40) }}</span>
@@ -99,5 +102,5 @@ function goToMessages() {
   flex-shrink: 0;
 }
 
-.sa-empty { font-size: 12px; color: var(--text-muted); margin: 0; opacity: .6; }
+/* .sa-empty in devoirs-shared.css */
 </style>

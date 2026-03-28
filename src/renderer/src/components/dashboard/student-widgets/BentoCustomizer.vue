@@ -15,7 +15,6 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   toggle: [id: string]
-  move: [id: string, direction: 'up' | 'down']
   reorder: [widgets: WidgetDef[]]
   reset: []
   close: []

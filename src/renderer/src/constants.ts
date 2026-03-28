@@ -8,6 +8,7 @@ export const STORAGE_KEYS = {
   PRIVACY_SEEN:     'cc_privacy_seen',
   CUSTOM_PROJECTS:  'cc_custom_projects',
   BOOKMARKS:        'cesia:bookmarks',
+  QUICKLINKS:       'cc_student_quicklinks',
   BENTO_PREFS:      'cc_bento_prefs',
   RECENT_CHANNELS:  'cc_recent_channels',
 

@@ -127,6 +127,9 @@
   text-transform: uppercase; letter-spacing: .08em; font-size: 10px;
   font-weight: 700; color: var(--text-muted); flex: 1;
 }
+.sa-empty { font-size: 12px; color: var(--text-muted); margin: 0; opacity: .6; }
+.sa-empty--error { color: var(--color-danger, #e74c3c); opacity: .8; }
+
 .sa-next-list { display: flex; flex-direction: column; gap: 6px; }
 .sa-next-item {
   display: flex; align-items: center; gap: 8px;
