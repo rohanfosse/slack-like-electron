@@ -13,10 +13,18 @@ export default defineConfig({
   projects: [
     { name: 'chromium', use: { browserName: 'chromium' } },
   ],
-  webServer: {
-    command: 'npm run dev:web',
-    port: 5173,
-    reuseExistingServer: true,
-    timeout: 30_000,
-  },
+  webServer: [
+    {
+      command: 'node server/index.js',
+      port: 3000,
+      reuseExistingServer: true,
+      timeout: 15_000,
+    },
+    {
+      command: 'npm run dev:web',
+      port: 5173,
+      reuseExistingServer: true,
+      timeout: 30_000,
+    },
+  ],
 })

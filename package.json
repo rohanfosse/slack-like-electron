@@ -11,7 +11,7 @@
     "build:mac": "npm run build && electron-builder --mac",
     "build:linux": "npm run build && electron-builder --linux",
     "typecheck": "vue-tsc --noEmit",
-    "lint": "eslint src --ext .ts,.vue --fix",
+    "lint": "eslint src --fix",
     "rebuild": "electron-rebuild -f -w better-sqlite3",
     "postinstall": "node scripts/postinstall.js",
     "server": "node server/index.js",
@@ -64,6 +64,7 @@
   },
   "devDependencies": {
     "@electron/rebuild": "^4.0.3",
+    "@playwright/test": "^1.58.2",
     "@rollup/plugin-commonjs": "^29.0.2",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
