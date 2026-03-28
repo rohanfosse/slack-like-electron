@@ -3,13 +3,13 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="Cursus - Slack + Moodle + Kahoot réunis dans une seule app pour l'enseignement supérieur. Messagerie, devoirs, quiz live et suivi." />
+  <meta name="description" content="Cursus - L'app tout-en-un pour ta promo. Chat, devoirs et documents en un seul endroit." />
   <meta name="theme-color" content="#f9fafb" />
   <title>Cursus · Plateforme pédagogique</title>
 
   <!-- SEO : Open Graph -->
   <meta property="og:title" content="Cursus · Plateforme pédagogique" />
-  <meta property="og:description" content="Messagerie, devoirs, quiz live, kanban, REX et slash commands. Le tout-en-un éducatif." />
+  <meta property="og:description" content="Cursus - L'app tout-en-un pour ta promo. Chat, devoirs et documents en un seul endroit." />
   <meta property="og:image" content="https://cursus.school/assets/icon-512.png" />
   <meta property="og:url" content="https://cursus.school/" />
   <meta property="og:type" content="website" />
@@ -19,7 +19,7 @@
   <!-- SEO : Twitter Card -->
   <meta name="twitter:card" content="summary" />
   <meta name="twitter:title" content="Cursus · Plateforme pédagogique" />
-  <meta name="twitter:description" content="Messagerie, devoirs, quiz live, kanban, REX et slash commands. Le tout-en-un éducatif." />
+  <meta name="twitter:description" content="Cursus - L'app tout-en-un pour ta promo. Chat, devoirs et documents en un seul endroit." />
   <meta name="twitter:image" content="https://cursus.school/assets/icon-512.png" />
 
   <!-- SEO : Canonical -->
@@ -32,7 +32,7 @@
     "@type": "WebApplication",
     "name": "Cursus",
     "url": "https://cursus.school",
-    "description": "Messagerie, devoirs, quiz live, kanban, REX et slash commands. Le tout-en-un éducatif, en desktop et mobile.",
+    "description": "L'app tout-en-un pour ta promo. Chat, devoirs et documents en un seul endroit.",
     "applicationCategory": "EducationalApplication",
     "operatingSystem": "Windows, macOS, Web",
     "inLanguage": "fr",
@@ -65,12 +65,12 @@
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     html { scroll-behavior: smooth; }
-    body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; background: #f9fafb; color: #111827; -webkit-font-smoothing: antialiased; overflow-x: hidden; line-height: 1.6; }
+    body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; background: #f9fafb; color: #111827; -webkit-font-smoothing: antialiased; overflow-x: hidden; line-height: 1.6; --primary: #6366F1; }
     .nav { position: fixed; top: 0; left: 0; right: 0; z-index: 200; padding: 14px 0; background: rgba(249,250,251,.85); backdrop-filter: blur(20px) saturate(1.6); border-bottom: 1px solid rgba(0,0,0,.08); }
     .nav .container { display: flex; align-items: center; max-width: 1080px; margin: 0 auto; padding: 0 28px; }
     .nav-logo { display: flex; align-items: center; gap: 9px; font-size: 16px; font-weight: 800; letter-spacing: -.4px; color: #111827; text-decoration: none; }
     .nav-logo img { width: 28px; height: 28px; border-radius: 7px; }
-    .hero { padding: 120px 0 80px; position: relative; overflow: hidden; }
+    .hero { min-height: 100vh; display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; background: radial-gradient(ellipse at 50% 40%, rgba(99,102,241,.08) 0%, transparent 70%); }
     .container { max-width: 1080px; margin: 0 auto; padding: 0 28px; position: relative; z-index: 1; }
     .fade-up { opacity: 0; transform: translateY(24px) scale(0.98); transition: opacity .65s cubic-bezier(.22,1,.36,1), transform .65s cubic-bezier(.22,1,.36,1); }
     .fade-up.visible { opacity: 1; transform: translateY(0) scale(1); }
@@ -78,11 +78,6 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-
-  <!-- Background blobs -->
-  <div class="bg-blob bg-blob-1"></div>
-  <div class="bg-blob bg-blob-2"></div>
-  <div class="bg-blob bg-blob-3"></div>
 
   <!-- NAV -->
   <nav class="nav">
@@ -111,454 +106,251 @@
   </nav>
 
   <!-- HERO -->
+  <main>
   <section class="hero">
-    <div class="hero-glow"></div>
     <div class="container">
       <div class="hero-center">
-
-        <h1 class="hero-title">Cursus</h1>
-        <p class="hero-sub">
-          Slack + Moodle + Kahoot, réunis dans une seule app pour l'enseignement supérieur.
-        </p>
-
-        <div class="hero-actions">
-          <a href="https://app.cursus.school" class="btn btn-dark">
-            <i data-lucide="arrow-right" style="width:15px;height:15px"></i>
-            Commencer gratuitement
-          </a>
-          <a href="#download" class="btn btn-outline">
-            <i data-lucide="download" style="width:15px;height:15px"></i>
+        <span class="hero-badge fade-up">Open source <span class="sep">&middot;</span> <span id="pill-version">v1.x</span></span>
+        <h1 class="hero-title fade-up">L'app tout-en-un pour ta promo</h1>
+        <p class="hero-sub fade-up">Chat, devoirs et documents. Un seul endroit.</p>
+        <div class="hero-actions fade-up">
+          <a href="#download" class="btn-primary">
+            <i data-lucide="download-cloud" style="width:16px;height:16px"></i>
             Télécharger
           </a>
-        </div>
-
-        <!-- DÉMO INTERACTIVE -->
-        <div class="demo-wrapper fade-up" id="demo">
-
-        <div class="demo-window">
-
-          <div class="demo-titlebar">
-            <div class="demo-dot" style="background:#ff5f57"></div>
-            <div class="demo-dot" style="background:#ffbd2e"></div>
-            <div class="demo-dot" style="background:#28c840"></div>
-            <span style="font-size:11.5px;font-weight:600;color:var(--text-3);margin:0 auto">Cursus · Promo 2026</span>
-          </div>
-
-          <div class="demo-progress">
-            <div class="demo-progress-bar" id="demo-progress-bar"></div>
-          </div>
-
-          <div class="demo-tabs">
-            <div class="demo-tab active" data-tab="chat" onclick="switchTab('chat')">
-              <i data-lucide="message-square"></i> Chat
-            </div>
-<div class="demo-tab" data-tab="dashboard" onclick="switchTab('dashboard')">
-              <i data-lucide="layout-dashboard"></i> Dashboard
-            </div>
-            <div class="demo-tab" data-tab="quiz" onclick="switchTab('quiz')">
-              <i data-lucide="help-circle"></i> Quiz
-            </div>
-            <div class="demo-tab" data-tab="frise" onclick="switchTab('frise')">
-              <i data-lucide="calendar-range"></i> Frise
-            </div>
-            <div class="demo-tab" data-tab="feedback" onclick="switchTab('feedback')">
-              <i data-lucide="message-circle"></i> Feedback
-            </div>
-          </div>
-
-          <div class="demo-body">
-
-            <div class="demo-sidebar" id="demo-sidebar">
-              <div class="demo-sidebar-title">Canaux</div>
-              <div class="demo-channel active" onclick="switchChannel(this, 'général')"><span class="demo-channel-hash">#</span> général</div>
-              <div class="demo-channel" onclick="switchChannel(this, 'annonces')"><span class="demo-channel-hash">#</span> annonces<span class="demo-channel-badge">2</span></div>
-              <div class="demo-channel" onclick="switchChannel(this, 'projet-web')"><span class="demo-channel-hash">#</span> projet-web<span class="demo-channel-badge">5</span></div>
-              <div class="demo-channel" onclick="switchChannel(this, 'algo-tp')"><span class="demo-channel-hash">#</span> algo-tp</div>
-              <div style="margin-top:14px">
-                <div class="demo-sidebar-title">Directs</div>
-                <div class="demo-channel" onclick="switchChannel(this, 'prof')"><span class="demo-channel-hash">@</span> Prof. Martin</div>
-                <div class="demo-channel" onclick="switchChannel(this, 'emma')"><span class="demo-channel-hash">@</span> Emma Lefèvre<span class="demo-channel-badge">1</span></div>
-              </div>
-            </div>
-
-            <!-- Chat -->
-            <div class="demo-main" id="panel-chat">
-              <div class="chat-messages" id="chat-messages"></div>
-              <div class="typing-indicator" id="typing-indicator"></div>
-              <div class="chat-input-row">
-                <div class="slash-popup" id="slash-popup">
-                  <div class="slash-item slash-item--active"><span class="slash-cmd">/devoir</span><span class="slash-desc">Créer un devoir</span></div>
-                  <div class="slash-item"><span class="slash-cmd">/doc</span><span class="slash-desc">Partager un document</span></div>
-                  <div class="slash-item"><span class="slash-cmd">/annonce</span><span class="slash-desc">Envoyer une annonce</span></div>
-                </div>
-                <span class="chat-input-text" id="chat-input-text">&nbsp;</span>
-                <span class="chat-cursor"></span>
-              </div>
-            </div>
-
-
-<!-- Dashboard -->
-            <div class="demo-main dashboard-panel" id="panel-dashboard" style="display:none">
-              <div class="demo-dash-grid">
-                <div class="demo-dash-widget" data-delay="0" style="border-left:3px solid var(--accent)" onclick="dashReminder(this)">
-                  <div class="ddw-title">Prochain devoir</div>
-                  <div class="ddw-value">Projet Web E4</div>
-                  <div class="ddw-sub"><span class="ddw-badge ddw-badge--urgent">Dans 3j</span> Équipe B</div>
-                  <div class="ddw-reminder" style="display:none">Rappel activé ✓</div>
-                </div>
-                <div class="demo-dash-widget" data-delay="80" style="border-left:3px solid var(--green)">
-                  <div class="ddw-title">Dernière note</div>
-                  <div class="ddw-value">13.5<span style="font-size:12px;color:var(--text-3)">/20</span></div>
-                  <div class="ddw-sub">TP Algo</div>
-                  <div class="ddw-sparkline">
-                    <div class="ddw-spark" style="height:60%"></div>
-                    <div class="ddw-spark" style="height:45%"></div>
-                    <div class="ddw-spark" style="height:80%"></div>
-                    <div class="ddw-spark ddw-spark--current" style="height:67%"></div>
-                  </div>
-                </div>
-                <div class="demo-dash-widget" data-delay="160" style="border-left:3px solid var(--orange)">
-                  <div class="ddw-title">Pomodoro</div>
-                  <div class="ddw-value" id="demo-pomodoro" style="font-family:'SF Mono','Fira Code',monospace">25:00</div>
-                  <div class="ddw-sub">Session de travail</div>
-                </div>
-                <div class="demo-dash-widget" data-delay="240" style="border-left:3px solid var(--purple)">
-                  <div class="ddw-title">Progression</div>
-                  <div class="ddw-progress"><div class="ddw-progress-fill" id="demo-progress-fill" style="width:0"></div></div>
-                  <div class="ddw-sub">72% du semestre</div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Quiz -->
-            <div class="demo-main quiz-panel" id="panel-quiz" style="display:none">
-              <div class="demo-quiz">
-                <div class="quiz-question" id="quiz-question"></div>
-                <div class="quiz-options" id="quiz-options"></div>
-                <div class="quiz-results" id="quiz-results"></div>
-                <div class="quiz-footer">Cliquez sur une réponse</div>
-              </div>
-            </div>
-
-            <!-- Frise -->
-            <div class="demo-main frise-panel" id="panel-frise" style="display:none">
-              <div class="frise-header">
-                <span class="frise-title">Frise · Promo 2026</span>
-                <div class="frise-zoom">
-                  <span class="frise-zoom-btn">Sem</span>
-                  <span class="frise-zoom-btn active">Mois</span>
-                  <span class="frise-zoom-btn">Trim</span>
-                </div>
-              </div>
-              <div class="frise-months">
-                <span>Fév</span><span class="frise-month-active">Mars</span><span>Avr</span><span>Mai</span><span>Juin</span>
-              </div>
-              <div class="frise-track">
-                <div class="frise-line"></div>
-                <div class="frise-today" style="left:32%"></div>
-                <div class="frise-dot" data-delay="0" style="left:8%" data-info="TP Algo · 8 fév · Rendu ✓">
-                  <div class="fd-circle fd-done" style="background:#2ECC71"></div>
-                  <div class="fd-name">TP Algo</div>
-                </div>
-                <div class="frise-dot" data-delay="150" style="left:30%" data-info="Projet Web E4 · 25 mars · Dans 3j !">
-                  <div class="fd-circle fd-done" style="background:#4A90D9"></div>
-                  <div class="fd-name">Projet Web</div>
-                </div>
-                <div class="frise-dot" data-delay="300" style="left:50%" data-info="Rapport stage · 15 avr · 21 jours">
-                  <div class="fd-circle fd-future" style="border-color:#F39C12"></div>
-                  <div class="fd-name">Rapport</div>
-                </div>
-                <div class="frise-dot" data-delay="450" style="left:68%" data-info="Soutenance E5 · 12 mai · Oral 20min">
-                  <div class="fd-circle fd-future fd-diamond" style="border-color:#9B87F5"></div>
-                  <div class="fd-name">Soutenance</div>
-                </div>
-                <div class="frise-dot" data-delay="600" style="left:86%" data-info="REX final · 5 juin">
-                  <div class="fd-circle fd-future" style="border-color:#E74C3C"></div>
-                  <div class="fd-name">REX final</div>
-                </div>
-                <div class="frise-tooltip" id="frise-tooltip"></div>
-              </div>
-            </div>
-
-            <!-- Feedback -->
-            <div class="demo-main feedback-panel" id="panel-feedback" style="display:none">
-              <div class="fb-header">
-                <span class="fb-question">Comment s'est passé le cours ?</span>
-                <span class="fb-live"><span class="fb-live-dot"></span>18 réponses</span>
-              </div>
-              <div class="fb-cloud" id="fb-cloud">
-                <span class="fb-word" data-delay="0" style="font-size:22px;color:var(--accent)">Intéressant</span>
-                <span class="fb-word" data-delay="120" style="font-size:15px;color:var(--green)">Clair</span>
-                <span class="fb-word" data-delay="240" style="font-size:18px;color:var(--purple)">Pratique</span>
-                <span class="fb-word" data-delay="360" style="font-size:12px;color:var(--text-3)">Rapide</span>
-                <span class="fb-word" data-delay="480" style="font-size:20px;color:var(--orange)">Utile</span>
-                <span class="fb-word" data-delay="600" style="font-size:13px;color:var(--text-2)">Dense</span>
-                <span class="fb-word" data-delay="720" style="font-size:16px;color:var(--green)">Concret</span>
-                <span class="fb-word" data-delay="840" style="font-size:11px;color:var(--text-3)">Complexe</span>
-                <span class="fb-word" data-delay="960" style="font-size:14px;color:var(--accent)">Motivant</span>
-                <span class="fb-word" data-delay="1080" style="font-size:17px;color:var(--purple)">Enrichissant</span>
-              </div>
-              <div class="fb-footer">Nuage de mots en temps réel</div>
-            </div>
-
-          </div>
-        </div>
-        </div><!-- /demo-wrapper -->
-
-      </div><!-- /hero-center -->
-    </div><!-- /container -->
-  </section>
-
-  <!-- STATS STRIP -->
-  <div class="stats-strip">
-    <div class="container">
-      <div class="stats-grid">
-        <div class="stat-item">
-          <span class="stat-value">3</span>
-          <span class="stat-label">plateformes</span>
-        </div>
-        <div class="stat-sep"></div>
-        <div class="stat-item">
-          <span class="stat-value">100%</span>
-          <span class="stat-label">gratuit</span>
-        </div>
-        <div class="stat-sep"></div>
-        <div class="stat-item">
-          <span class="stat-value">Open source</span>
-          <span class="stat-label">sur GitHub</span>
-        </div>
-        <div class="stat-sep"></div>
-        <div class="stat-item">
-          <span class="stat-value">Temps réel</span>
-          <span class="stat-label">Socket.io</span>
-        </div>
-        <div class="stat-sep"></div>
-        <div class="stat-item">
-          <span class="stat-value" id="pill-version">v1.0.16</span>
-          <span class="stat-label">dernière version</span>
-        </div>
-      </div>
-    </div>
-  </div>
-
-
-  <!-- COMPARATIF -->
-  <section class="compare">
-    <div class="container">
-      <div class="section-head" style="text-align:center">
-        <div class="section-eyebrow fade-up" style="text-align:center">Pourquoi Cursus ?</div>
-        <h2 class="section-title fade-up">Remplacez 5 outils par un seul</h2>
-      </div>
-      <div class="compare-grid">
-        <div class="compare-row fade-up">
-          <div class="compare-before"><i data-lucide="x" class="compare-icon compare-icon--no"></i><span>Moodle pour les cours</span></div>
-          <div class="compare-after"><i data-lucide="check" class="compare-icon compare-icon--yes"></i><span>Un seul outil unifié</span></div>
-        </div>
-        <div class="compare-row fade-up">
-          <div class="compare-before"><i data-lucide="x" class="compare-icon compare-icon--no"></i><span>Teams / Discord pour le chat</span></div>
-          <div class="compare-after"><i data-lucide="check" class="compare-icon compare-icon--yes"></i><span>Messagerie intégrée + /slash</span></div>
-        </div>
-        <div class="compare-row fade-up">
-          <div class="compare-before"><i data-lucide="x" class="compare-icon compare-icon--no"></i><span>Excel pour les notes</span></div>
-          <div class="compare-after"><i data-lucide="check" class="compare-icon compare-icon--yes"></i><span>Dashboard + export CSV</span></div>
-        </div>
-        <div class="compare-row fade-up">
-          <div class="compare-before"><i data-lucide="x" class="compare-icon compare-icon--no"></i><span>Aucun suivi projet</span></div>
-          <div class="compare-after"><i data-lucide="check" class="compare-icon compare-icon--yes"></i><span>Kanban + frise chronologique</span></div>
-        </div>
-        <div class="compare-row fade-up">
-          <div class="compare-before"><i data-lucide="x" class="compare-icon compare-icon--no"></i><span>Pas de feedback live</span></div>
-          <div class="compare-after"><i data-lucide="check" class="compare-icon compare-icon--yes"></i><span>Quiz live + REX temps réel</span></div>
+          <a href="https://app.cursus.school" class="btn-secondary">
+            Ouvrir l'app
+            <i data-lucide="arrow-right" style="width:16px;height:16px"></i>
+          </a>
         </div>
       </div>
     </div>
   </section>
 
   <!-- FEATURES -->
-  <section id="features" class="features">
-    <div class="container">
-      <div class="section-head">
-        <div class="section-eyebrow fade-up">Fonctionnalités</div>
-        <h2 class="section-title fade-up">Des outils conçus pour l'enseignement</h2>
-        <p class="section-sub fade-up">Chaque fonctionnalité répond à un besoin concret, identifié sur le terrain.</p>
-      </div>
-      <div class="feat-filters fade-up">
-        <button class="feat-filter active" data-filter="all" onclick="filterFeats('all')">Tout</button>
-        <button class="feat-filter" data-filter="student" onclick="filterFeats('student')">Étudiants</button>
-        <button class="feat-filter" data-filter="pilot" onclick="filterFeats('pilot')">Professeurs</button>
-      </div>
-      <div class="feat-grid bento">
-        <div class="feat-card feat-2col fade-up" data-audience="both">
-          <div class="feat-icon fi-blue"><i data-lucide="messages-square"></i></div>
-          <h3>Messagerie temps réel</h3>
-          <p>Canaux par promotion, messages directs, mentions @utilisateur et @everyone. Formatage Markdown, coloration syntaxique, réactions, épingles et commandes slash intégrées.</p>
-          <div class="feat-tags">
-            <span class="feat-tag">Markdown</span>
-            <span class="feat-tag">Socket.io</span>
-            <span class="feat-tag">Mentions</span>
-            <span class="feat-tag">Slash commands</span>
-            <span class="feat-tag">Signalement</span>
-          </div>
-          <div class="feat-illus">
-            <code style="display:block;background:#1e1e2e;padding:10px 12px;border-radius:8px;font-size:11px;font-family:'SF Mono','Fira Code',monospace;color:#a5d6a7;width:100%">
-              <span style="color:#81d4fa">function</span> <span style="color:#fff">hello</span>() {<br>
-              &nbsp;&nbsp;<span style="color:#81d4fa">return</span> <span style="color:#a5d6a7">"Cursus"</span><br>
-              }
-            </code>
-          </div>
+  <div id="features">
+
+    <!-- Feature 1: Chat -->
+    <section class="feature-section fade-up" data-color="chat">
+      <div class="container feature-row">
+        <div class="feature-text">
+          <div class="feature-icon" style="--fc: var(--color-chat)"><i data-lucide="message-circle"></i></div>
+          <h2>Discute avec ta promo</h2>
+          <p class="feature-desc">Canaux par promotion, messages directs, mentions, réactions. Tout en temps réel.</p>
+          <ul class="feature-list">
+            <li>Canaux organisés par cours</li>
+            <li>Mentions @nom et @tous</li>
+            <li>Slash commands /devoir /doc</li>
+          </ul>
         </div>
-        <div class="feat-card fade-up" data-audience="pilot">
-          <div class="feat-icon fi-orange"><i data-lucide="clipboard-check"></i></div>
-          <h3>Devoirs et rendus</h3>
-          <p>Cinq types de devoirs : livrable, soutenance, CCTL, étude de cas, mémoire. Grilles multicritères avec pondération, notation A-F et mode brouillon.</p>
-          <div class="feat-tags"><span class="feat-tag">5 types</span><span class="feat-tag">Notation A-F</span><span class="feat-tag">Brouillon</span><span class="feat-tag">Gantt</span></div>
-        </div>
-        <div class="feat-card fade-up" data-audience="both">
-          <div class="feat-icon fi-green"><i data-lucide="file-text"></i></div>
-          <h3>Documents centralisés</h3>
-          <p>Ressources par projet avec aperçu intégré PDF, Word et Excel. Organisation par catégorie avec drag-drop.</p>
-          <div class="feat-tags"><span class="feat-tag">PDF</span><span class="feat-tag">Word</span><span class="feat-tag">Excel</span></div>
-        </div>
-        <div class="feat-card fade-up" data-audience="pilot">
-          <div class="feat-icon fi-purple"><i data-lucide="bar-chart-2"></i></div>
-          <h3>Pilotage et reporting</h3>
-          <p>Tableau de bord par promotion, progression par étudiant, notes par matière et export des résultats.</p>
-          <div class="feat-tags"><span class="feat-tag">Dashboard</span><span class="feat-tag">Export CSV</span></div>
-        </div>
-        <div class="feat-card feat-2row fade-up" data-audience="both">
-          <div class="feat-icon fi-red"><i data-lucide="zap"></i></div>
-          <h3>Quiz Live</h3>
-          <p>QCM en temps réel avec résultats instantanés, classement et statistiques. Engagez vos étudiants pendant le cours.</p>
-          <div class="feat-tags"><span class="feat-tag">Temps réel</span><span class="feat-tag">Classement</span></div>
-          <div class="feat-illus">
-            <div style="display:flex;flex-direction:column;gap:4px;width:100%">
-              <div style="background:var(--green);height:8px;border-radius:4px;width:72%"></div>
-              <div style="background:var(--text-3);height:8px;border-radius:4px;width:15%;opacity:.4"></div>
-              <div style="background:var(--text-3);height:8px;border-radius:4px;width:8%;opacity:.3"></div>
-              <div style="background:var(--text-3);height:8px;border-radius:4px;width:5%;opacity:.2"></div>
+        <div class="mini-demo mini-demo-right" id="demo-chat">
+          <div class="demo-window">
+            <div class="demo-titlebar"><span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span><span class="demo-title"># général</span></div>
+            <div class="demo-chat-body">
+              <div class="demo-sidebar-mini">
+                <div class="sidebar-ch active"><span class="ch-hash">#</span> général</div>
+                <div class="sidebar-ch"><span class="ch-hash">#</span> annonces <span class="badge">2</span></div>
+                <div class="sidebar-ch"><span class="ch-hash">#</span> projet-web <span class="badge">5</span></div>
+                <div class="sidebar-ch"><span class="ch-hash">#</span> algo-tp</div>
+              </div>
+              <div class="demo-messages">
+                <div class="demo-msg" style="--delay: 0ms">
+                  <div class="msg-avatar" style="background: #6366F1">MR</div>
+                  <div class="msg-body"><span class="msg-author" style="color: #6366F1">Prof. Martin</span><span class="msg-time">10:42</span><div class="msg-text">Le livrable du <b>Projet Web E4</b> est à rendre vendredi 17h.</div></div>
+                </div>
+                <div class="demo-msg" style="--delay: 350ms">
+                  <div class="msg-avatar" style="background: #059669">EL</div>
+                  <div class="msg-body"><span class="msg-author">Emma L.</span><span class="msg-time">10:44</span><div class="msg-text">Merci ! On peut travailler en équipe ?</div></div>
+                </div>
+                <div class="demo-msg" style="--delay: 700ms">
+                  <div class="msg-avatar" style="background: #6366F1">MR</div>
+                  <div class="msg-body"><span class="msg-author" style="color: #6366F1">Prof. Martin</span><span class="msg-time">10:45</span><div class="msg-text">Oui, groupes de 2-3. Utilisez le canal <b>#projet-web</b> pour coordonner.</div><div class="msg-reactions"><span class="reaction">👍 4</span><span class="reaction">🎉 2</span></div></div>
+                </div>
+                <div class="demo-typing" style="--delay: 1050ms"><span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span> Jean écrit...</div>
+              </div>
             </div>
           </div>
         </div>
-        <div class="feat-card fade-up" data-audience="both">
-          <div class="feat-icon fi-blue"><i data-lucide="layout-dashboard"></i></div>
-          <h3>Dashboard intelligent</h3>
-          <p>16+ widgets personnalisables et réorganisables par drag-and-drop. Countdown, pomodoro, progression, calendrier. Professeurs : 9 onglets de Accueil à Administration.</p>
-          <div class="feat-tags"><span class="feat-tag">Drag-and-drop</span><span class="feat-tag">16 widgets</span><span class="feat-tag">9 onglets</span></div>
+      </div>
+    </section>
+
+    <!-- Feature 2: Devoirs -->
+    <section class="feature-section fade-up" data-color="devoirs">
+      <div class="container feature-row reverse">
+        <div class="feature-text">
+          <div class="feature-icon" style="--fc: var(--color-devoirs)"><i data-lucide="clipboard-check"></i></div>
+          <h2>Sais toujours quoi rendre</h2>
+          <p class="feature-desc">Crée des devoirs, suis les dépôts, note par rubriques. Les étudiants savent où en sont.</p>
+          <ul class="feature-list">
+            <li>5 types : livrable, soutenance, CCTL...</li>
+            <li>Notation A-F avec grilles</li>
+            <li>Deadlines avec rappels automatiques</li>
+          </ul>
         </div>
-        <div class="feat-card fade-up" data-audience="both">
-          <div class="feat-icon fi-green"><i data-lucide="smartphone"></i></div>
-          <h3>Mobile & PWA</h3>
-          <p>Application progressive installable sur mobile et desktop. Fonctionne hors ligne avec synchronisation automatique.</p>
-          <div class="feat-tags"><span class="feat-tag">PWA</span><span class="feat-tag">Offline</span><span class="feat-tag">Push</span></div>
-        </div>
-        <div class="feat-card fade-up" data-audience="student">
-          <div class="feat-icon fi-purple"><i data-lucide="lock"></i></div>
-          <h3>Messages privés</h3>
-          <p>Conversations sécurisées entre étudiants et enseignants. Indicateur en ligne, envoi de fichiers par drag-and-drop, cache 60s pour un switch instantané.</p>
-          <div class="feat-tags"><span class="feat-tag">Chiffré</span><span class="feat-tag">Fichiers</span><span class="feat-tag">En ligne</span></div>
-        </div>
-        <div class="feat-card fade-up" data-audience="student">
-          <div class="feat-icon fi-orange"><i data-lucide="columns"></i></div>
-          <h3>Kanban par projet</h3>
-          <p>Tableau de suivi par groupe et par devoir. Cartes avec titre, description et assignation. Drag-and-drop entre colonnes : À faire, En cours, Terminé.</p>
-          <div class="feat-tags"><span class="feat-tag">Drag-and-drop</span><span class="feat-tag">Équipes</span></div>
-        </div>
-        <div class="feat-card fade-up" data-audience="pilot">
-          <div class="feat-icon fi-red"><i data-lucide="message-circle"></i></div>
-          <h3>REX interactif</h3>
-          <p>Sessions de feedback en temps réel : sondages, nuage de mots, échelle de notation, questions ouvertes. Résultats agrégés et partageables en direct.</p>
-          <div class="feat-tags"><span class="feat-tag">Temps réel</span><span class="feat-tag">Nuage de mots</span><span class="feat-tag">Sondages</span></div>
-        </div>
-        <div class="feat-card feat-2col fade-up" data-audience="both">
-          <div class="feat-icon fi-green"><i data-lucide="shield-check"></i></div>
-          <h3>Sécurité et confidentialité</h3>
-          <p>Isolation par rôle et promotion, JWT, validation Zod, bcrypt, CSRF, CSP stricte. Export RGPD des données personnelles.</p>
-          <div class="feat-tags"><span class="feat-tag">RGPD</span><span class="feat-tag">JWT</span><span class="feat-tag">Isolation</span><span class="feat-tag">CSRF</span></div>
-          <div class="feat-illus">
-            <div style="display:flex;flex-direction:column;gap:6px;font-size:12px;color:var(--text-2);width:100%">
-              <div style="display:flex;align-items:center;gap:8px"><span style="color:var(--green);font-weight:700;font-size:14px">&#9679;</span> Professeur → accès complet promotion</div>
-              <div style="display:flex;align-items:center;gap:8px"><span style="color:var(--accent);font-weight:700;font-size:14px">&#9679;</span> Étudiant → sa promotion uniquement</div>
-              <div style="display:flex;align-items:center;gap:8px"><span style="color:var(--orange);font-weight:700;font-size:14px">&#9679;</span> DMs → participants vérifiés</div>
+        <div class="mini-demo mini-demo-left" id="demo-devoirs">
+          <div class="demo-window">
+            <div class="demo-titlebar"><span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span><span class="demo-title">Devoirs</span></div>
+            <div class="demo-devoirs-body">
+              <div class="devoir-item" style="--delay: 0ms">
+                <div class="devoir-icon" style="background: var(--color-devoirs)"><i data-lucide="check-circle" style="width:16px;height:16px;color:#fff"></i></div>
+                <div class="devoir-info">
+                  <span class="devoir-name">Projet Web E4</span>
+                  <span class="devoir-meta">Équipe B · Rendu le 15 mars</span>
+                </div>
+                <span class="devoir-badge done">Rendu</span>
+              </div>
+              <div class="devoir-item" style="--delay: 200ms">
+                <div class="devoir-icon" style="background: var(--color-docs)"><i data-lucide="clock" style="width:16px;height:16px;color:#fff"></i></div>
+                <div class="devoir-info">
+                  <span class="devoir-name">TP Algo</span>
+                  <span class="devoir-meta">Individuel</span>
+                  <div class="devoir-progress"><div class="devoir-progress-bar" style="--target: 60%"></div></div>
+                </div>
+                <span class="devoir-badge pending">Dans 2j</span>
+              </div>
+              <div class="devoir-item" style="--delay: 400ms">
+                <div class="devoir-icon" style="background: var(--text-3)"><i data-lucide="file-pen-line" style="width:16px;height:16px;color:#fff"></i></div>
+                <div class="devoir-info">
+                  <span class="devoir-name">Rapport stage</span>
+                  <span class="devoir-meta">Mémoire · Soutenance en juin</span>
+                </div>
+                <span class="devoir-badge draft">Brouillon</span>
+              </div>
             </div>
           </div>
         </div>
-        <div class="feat-card fade-up" data-audience="pilot">
-          <div class="feat-icon fi-blue"><i data-lucide="calendar-range"></i></div>
-          <h3>Frise chronologique</h3>
-          <p>Timeline interactive des devoirs par projet. Zoom semaine, mois, trimestre ou année. Navigation par drag et molette avec distribution verticale intelligente.</p>
-          <div class="feat-tags"><span class="feat-tag">Zoom</span><span class="feat-tag">Drag</span><span class="feat-tag">Timeline</span></div>
+      </div>
+    </section>
+
+    <!-- Feature 3: Documents -->
+    <section class="feature-section fade-up" data-color="docs">
+      <div class="container feature-row">
+        <div class="feature-text">
+          <div class="feature-icon" style="--fc: var(--color-docs)"><i data-lucide="folder-open"></i></div>
+          <h2>Toutes tes ressources, un seul endroit</h2>
+          <p class="feature-desc">PDF, Word, Excel, liens. Tout est classé, cherchable, et lié aux devoirs.</p>
+          <ul class="feature-list">
+            <li>Viewers intégrés (PDF, Word, Excel)</li>
+            <li>Organisation par catégorie</li>
+            <li>Recherche instantanée</li>
+          </ul>
+        </div>
+        <div class="mini-demo mini-demo-right" id="demo-docs">
+          <div class="demo-window">
+            <div class="demo-titlebar"><span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span><span class="demo-title">Documents</span></div>
+            <div class="demo-docs-body">
+              <div class="docs-search"><i data-lucide="search" style="width:14px;height:14px;color:var(--text-3)"></i><span class="docs-search-text"></span></div>
+              <div class="docs-grid">
+                <div class="doc-item" style="--delay: 0ms; --doc-color: #dc2626"><div class="doc-icon">PDF</div><span>Cours Réseaux.pdf</span></div>
+                <div class="doc-item" style="--delay: 120ms; --doc-color: #2563eb"><div class="doc-icon">DOC</div><span>Sujet TP.docx</span></div>
+                <div class="doc-item" style="--delay: 240ms; --doc-color: #059669"><div class="doc-icon">XLS</div><span>Notes S1.xlsx</span></div>
+                <div class="doc-item" style="--delay: 360ms; --doc-color: #7c3aed"><div class="doc-icon">URL</div><span>GitHub projet</span></div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
-    </div>
-  </section>
+    </section>
+
+    <!-- Feature 4: Dashboard -->
+    <section class="feature-section fade-up" data-color="dashboard">
+      <div class="container feature-row reverse">
+        <div class="feature-text">
+          <div class="feature-icon" style="--fc: var(--color-dashboard)"><i data-lucide="layout-grid"></i></div>
+          <h2>Tout ton semestre en un coup d'oeil</h2>
+          <p class="feature-desc">Widgets personnalisables. Deadlines, notes, progression, tout ce qui compte pour toi.</p>
+          <ul class="feature-list">
+            <li>Dashboard personnalisable</li>
+            <li>Notifications en temps réel</li>
+            <li>Progression par matière</li>
+          </ul>
+        </div>
+        <div class="mini-demo mini-demo-left" id="demo-dashboard">
+          <div class="demo-window">
+            <div class="demo-titlebar"><span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span><span class="demo-title">Dashboard</span></div>
+            <div class="demo-dashboard-body">
+              <div class="dash-widget" style="--delay: 0ms; --wc: var(--color-chat)">
+                <span class="widget-label">Prochain devoir</span>
+                <span class="widget-value">Projet Web E4</span>
+                <span class="widget-sub">Dans 3 jours</span>
+              </div>
+              <div class="dash-widget" style="--delay: 150ms; --wc: var(--color-devoirs)">
+                <span class="widget-label">Dernière note</span>
+                <span class="widget-value counter" data-target="14.5">0</span><span class="widget-value-unit">/20</span>
+                <span class="widget-sub">TP Algo</span>
+              </div>
+              <div class="dash-widget" style="--delay: 300ms; --wc: var(--color-dashboard)">
+                <span class="widget-label">Progression</span>
+                <div class="widget-progress-ring" data-target="72">
+                  <svg viewBox="0 0 36 36"><circle cx="18" cy="18" r="15.915" fill="none" stroke="var(--border)" stroke-width="3"/><circle class="progress-arc" cx="18" cy="18" r="15.915" fill="none" stroke="var(--wc)" stroke-width="3" stroke-dasharray="0 100" stroke-linecap="round"/></svg>
+                  <span class="ring-label">0%</span>
+                </div>
+              </div>
+              <div class="dash-widget" style="--delay: 450ms; --wc: var(--color-docs)">
+                <span class="widget-label">Messages non-lus</span>
+                <span class="widget-value"><span class="notif-badge pulse">5</span></span>
+                <span class="widget-sub">3 canaux</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </div><!-- /#features -->
 
   <!-- DOWNLOAD -->
-  <section id="download" class="download">
+  <section class="download-section fade-up" id="download">
     <div class="container">
-      <div class="section-head" style="text-align:center">
-        <div class="section-eyebrow fade-up" style="text-align:center">Télécharger</div>
-        <h2 class="section-title fade-up">Choisissez votre environnement</h2>
-        <p class="section-sub fade-up" style="margin:0 auto">Application native pour Windows et macOS, ou version web sans installation.</p>
+      <h2>Prêt à commencer ?</h2>
+      <p class="section-sub">Disponible sur toutes les plateformes.</p>
+      <div class="download-grid">
+        <a class="dl-card" id="dl-win" href="https://app.cursus.school/download/windows">
+          <i data-lucide="monitor"></i>
+          <span class="dl-platform">Windows</span>
+          <span class="dl-req">Windows 10+</span>
+          <span class="dl-btn">Télécharger .exe</span>
+        </a>
+        <a class="dl-card" id="dl-mac" href="https://app.cursus.school/download/mac">
+          <i data-lucide="laptop"></i>
+          <span class="dl-platform">macOS</span>
+          <span class="dl-req">macOS 11+</span>
+          <span class="dl-btn">Télécharger .dmg</span>
+        </a>
+        <a class="dl-card" id="dl-web" href="https://app.cursus.school">
+          <i data-lucide="globe"></i>
+          <span class="dl-platform">Web</span>
+          <span class="dl-req">Aucune installation</span>
+          <span class="dl-btn">Ouvrir</span>
+        </a>
       </div>
-      <div class="dl-grid">
-        <div class="dl-card fade-up" id="dl-win">
-          <div class="dl-icon dli-win"><i data-lucide="monitor"></i></div>
-          <h3>Windows</h3>
-          <p>Windows 10 ou supérieur</p>
-          <a href="https://app.cursus.school/download/windows" class="dl-btn dl-btn-ghost">
-            <i data-lucide="download" style="width:13px;height:13px"></i> Télécharger .exe
-          </a>
-        </div>
-        <div class="dl-card fade-up" id="dl-mac">
-          <div class="dl-icon dli-mac"><i data-lucide="laptop"></i></div>
-          <h3>macOS</h3>
-          <p>macOS 11 Big Sur et supérieur</p>
-          <a href="https://app.cursus.school/download/mac" class="dl-btn dl-btn-ghost">
-            <i data-lucide="download" style="width:13px;height:13px"></i> Télécharger .dmg
-          </a>
-        </div>
-        <div class="dl-card fade-up" id="dl-web">
-          <div class="dl-icon dli-web"><i data-lucide="globe"></i></div>
-          <h3>Version Web</h3>
-          <p>Aucune installation requise</p>
-          <a href="https://app.cursus.school" class="dl-btn dl-btn-solid">
-            <i data-lucide="arrow-right" style="width:13px;height:13px"></i> Ouvrir
-          </a>
-        </div>
-      </div>
-      <div class="changelog fade-up">
-        <div class="changelog-head">
-          <span class="cl-title">Dernière version</span>
-          <span class="cl-ver" id="cl-version">v1.0.16</span>
-          <span class="cl-date" id="cl-date">Mars 2026</span>
-        </div>
-        <ul class="cl-list">
-          <li>Kanban par projet avec drag-and-drop entre colonnes</li>
-          <li>16 widgets étudiants + 6 widgets professeurs réorganisables par drag-and-drop</li>
-          <li>Commandes slash dans le chat : /devoir, /doc, /annonce, /sondage, /code</li>
-          <li>Messages privés sécurisés avec indicateur en ligne et cache instantané</li>
-          <li>Frise chronologique interactive avec zoom semaine/mois/trimestre/année</li>
-          <li>Grilles multicritères, notation A-F et 5 types de devoirs</li>
-          <li>Sécurité renforcée : isolation promotion, CSRF, CSP, export RGPD</li>
-        </ul>
-      </div>
+      <p class="dl-alt">Ou ouvrir directement <a href="https://app.cursus.school">app.cursus.school</a></p>
     </div>
   </section>
+  </main>
 
   <!-- FOOTER -->
   <footer class="footer">
     <div class="container">
-      <div class="footer-logo">
-        <img src="/assets/icon-192.png" alt="" />
-        Cursus
+      <div class="footer-top">
+        <div class="footer-brand">
+          <img src="/assets/icon-192.png" alt="Cursus" width="32" height="32" />
+          <span>Cursus</span>
+        </div>
+        <div class="footer-links">
+          <a href="#features">Fonctionnalités</a>
+          <a href="#download">Télécharger</a>
+          <a href="https://app.cursus.school">Se connecter</a>
+          <a href="https://app.cursus.school#privacy">Confidentialité</a>
+        </div>
       </div>
-      <div class="footer-links">
-        <a href="#features">Fonctionnalités</a>
-        <a href="#download">Télécharger</a>
-        <a href="https://app.cursus.school">Se connecter</a>
-        <a href="https://app.cursus.school#privacy">Confidentialité</a>
+      <div class="footer-tech">
+        Vue 3 + Electron + Express + SQLite · Open source MIT · Socket.IO
       </div>
-      <span class="footer-copy">Conçu par <a href="https://github.com/rohanfosse" target="_blank" rel="noopener" style="color:var(--text-2)">Rohan Fossé</a> · <span id="footer-version">v1.0.16</span></span>
+      <div class="footer-bottom">
+        <span>Conçu par <a href="https://github.com/rohanfosse" target="_blank" rel="noopener">Rohan Fossé</a></span>
+        <span id="footer-version">v1.x</span>
+      </div>
     </div>
   </footer>
 

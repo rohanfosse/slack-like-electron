@@ -1,73 +1,65 @@
-# Cursus : Pitch Deck (version texte)
+# Cursus : Pitch
 
-## Slide 1 : Le probleme
+## Le probleme
 
 Les etudiants et enseignants utilisent en moyenne **5 outils differents** chaque jour pour communiquer, deposer du travail, acceder aux ressources et suivre leur progression.
 
-Resultat :
-- 30% des annonces sont ratees (mauvais canal)
-- 2h par semaine perdues a relancer les etudiants (enseignant)
-- Les notes arrivent avec 2 a 3 semaines de retard
-- Aucune vue consolidee de la progression d'une promo
+Le resultat n'est pas une perte de temps. C'est une **charge mentale permanente** :
+- "J'ai pas vu l'annonce" (elle etait sur le mauvais canal)
+- "C'est ou le devoir ?" (Moodle ? Teams ? mail ?)
+- "Il a rendu ?" (faut ouvrir 3 onglets pour verifier)
+- Les deadlines se perdent, les relances s'accumulent
 
-## Slide 2 : La solution
+## La solution
 
-**Cursus** reunit messagerie, devoirs, quiz en direct et documents dans une seule application. Accessible en desktop, web et mobile.
+**Cursus** centralise chat, devoirs et documents dans une seule application construite pour la realite pedagogique d'une promotion.
 
-L'etudiant ouvre Cursus le matin. Il voit ses priorites, depose ses rendus, participe aux quiz, recoit ses notes en temps reel. L'enseignant ouvre Cursus et voit l'etat de sa promotion d'un seul coup d'oeil.
+L'etudiant ouvre Cursus le matin et n'a jamais a se demander "c'est ou ?".
 
-## Slide 3 : Comment ca marche
+## Comment ca marche
 
 1. **Communiquer** : canaux par promotion, messages directs, mentions, reactions
-2. **Travailler** : depot de rendus, notation par lettres, grilles d'evaluation, deadlines automatiques
-3. **Interagir** : quiz QCM, sondages, nuages de mots en temps reel pendant le cours
-4. **Suivre** : dashboard personnalise, notifications de notes, frise chronologique
+2. **Travailler** : depot de rendus, notation par lettres et rubriques, deadlines automatiques
+3. **Consulter** : documents et ressources centralises, viewers integres
+4. **Suivre** : dashboard personnalise, notifications instantanees, progression en un coup d'oeil
 
-## Slide 4 : Differenciation
+## Ce qui rend Cursus different
+
+Ce n'est pas "Slack + Moodle combines". C'est un outil **sur-mesure** pour la pedagogie :
 
 | | Cursus | Moodle | Teams Edu | Discord |
 |---|---|---|---|---|
 | Messagerie temps reel | Oui | Non | Oui | Oui |
-| Devoirs + notation | Oui | Oui | Basique | Non |
-| Quiz en direct | Oui | Plugin | Non | Non |
-| Open source | Oui | Oui | Non | Non |
-| Hebergement local | Oui | Oui | Non | Non |
+| Devoirs + notation structuree | Oui (5 types, rubriques) | Oui | Basique | Non |
+| Sur-mesure pedagogique | Oui | Generique | Generique | Non |
+| Open source + local | Oui | Oui | Non | Non |
 | Setup en 5 minutes | Oui | Non | Non | Oui |
 
-## Slide 5 : Traction
+Discord + Google Classroom ne peuvent pas offrir des types de devoirs CESI, une notation par rubrique et un suivi de promo dans un seul outil.
 
-- **Pilote actif** : CESI Bordeaux, 2 promotions, 45 etudiants
-- **Application live** : app.cursus.school
-- **Open source** : github.com/rohanfosse/slack-like-electron
-- **Tech stack** : Vue 3, Electron, Express, Socket.IO, SQLite, Docker
+## Etat actuel
 
-## Slide 6 : Marche cible
+- **Application fonctionnelle** : chat, devoirs, documents, dashboard, quiz, kanban, mode offline
+- **Tech stack** : Vue 3, Electron, Express, Socket.IO, SQLite
+- **Open source** : MIT, github.com/rohanfosse/cursus
+- **Deploiement prevu** : septembre 2026, 1 promo CESI (~30 etudiants)
 
-- **Marche adressable** : 400 000 etudiants en ecoles d'ingenieurs en France
-- **Cible initiale** : reseau CESI (26 campus, 20 000 etudiants)
-- **Extension** : BTS, IUT, universites avec projets en groupe
+## Critere de succes
 
-## Slide 7 : Modele economique
+Pas le nombre d'utilisateurs. La **disparition de la frustration** :
+- Les etudiants ne disent plus "j'ai pas vu"
+- L'enseignant ne relance plus pour la 3e fois
+- Personne n'ouvre Moodle ni Teams pour les cours concernes
 
-- **Gratuit** : code open source, auto-hebergement
-- **Campus** : 2 EUR/etudiant/an pour l'hebergement manage + support
-- **Enterprise** : sur devis pour les reseaux multi-campus (SSO, SLA, support)
+## Vision
 
-Objectif a 3 ans : 50 etablissements, 15 000 etudiants actifs.
+Cursus commence avec une promo. Si ca marche pour 30 etudiants, ca marchera pour 300, puis 3000. L'ambition viendra apres la preuve.
 
-## Slide 8 : Equipe
+A court terme : un outil qui fonctionne impeccablement pour une promotion.
+A moyen terme : open source, adoptable par d'autres enseignants.
+A long terme : un standard dans les ecoles d'ingenieurs francaises.
 
-- **Rohan Fosse** : Developpeur full-stack, etudiant CESI Bordeaux. Createur et mainteneur unique du projet. Connaissance directe du terrain (utilisateur + developpeur).
-
-## Slide 9 : Demande
-
-- Financement pour l'infrastructure (serveurs, domaines)
-- Accompagnement business (incubateur CESI, French Tech)
-- Premiers partenariats campus pour valider le modele
-
-## Slide 10 : Vision
-
-Dans 3 ans, Cursus est l'outil standard de communication et de suivi pedagogique dans les ecoles d'ingenieurs francaises. Un etudiant qui arrive en premiere annee trouve naturellement Cursus sur son telephone, comme il trouve Teams dans une entreprise.
+Mais d'abord, 30 etudiants. Un pilote. La preuve que ca marche.
 
 ---
 
