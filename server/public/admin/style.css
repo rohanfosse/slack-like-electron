@@ -254,6 +254,14 @@ a { color: var(--accent); text-decoration: none; }
 .toggle input:checked + .toggle-slider { background: var(--accent); }
 .toggle input:checked + .toggle-slider::before { transform: translateX(20px); }
 
+/* ── Modules config ── */
+.modules-intro { font-size: .85rem; color: var(--text-muted); margin-bottom: 1.25rem; line-height: 1.6; }
+.module-row { display: flex; align-items: center; justify-content: space-between; padding: .75rem 1rem; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: .5rem; transition: box-shadow .15s; }
+.module-row:hover { box-shadow: 0 2px 8px rgba(0,0,0,.08); }
+.module-info { display: flex; flex-direction: column; gap: .15rem; }
+.module-info strong { font-size: .9rem; color: var(--text); }
+.module-desc { font-size: .8rem; color: var(--text-muted); }
+
 /* ── Archived badge ── */
 .badge.archived { background: rgba(148,163,184,.12); color: var(--text-muted); }
 .badge.pending  { background: rgba(245,158,11,.1); color: #d97706; }

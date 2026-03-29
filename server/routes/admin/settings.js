@@ -17,6 +17,21 @@ router.post('/config', (req, res) => {
   }
 })
 
+// POST /api/admin/modules — activer/desactiver un module enrichissement
+router.post('/modules', (req, res) => {
+  try {
+    const { module: moduleName, enabled } = req.body
+    const allowed = ['kanban', 'frise', 'rex', 'live', 'signatures']
+    if (!allowed.includes(moduleName)) {
+      return res.status(400).json({ ok: false, error: 'Module inconnu.' })
+    }
+    queries.setAppConfig(`module_${moduleName}`, enabled ? '1' : '0')
+    res.json({ ok: true, data: { [moduleName]: !!enabled } })
+  } catch (err) {
+    res.status(500).json({ ok: false, error: err.message })
+  }
+})
+
 router.post('/promos/:id/archive', (req, res) => {
   try {
     const { archived } = req.body

@@ -13,6 +13,9 @@ import { typeLabel, extractDuration, isRattrapage } from '@/utils/devoir'
 import type { GanttRow } from '@/types'
 import type { UnifiedFlatRow } from '@/composables/useDevoirsTeacher'
 import KanbanBoard from './KanbanBoard.vue'
+import { useModules } from '@/composables/useModules'
+
+const { isEnabled } = useModules()
 
 const props = defineProps<{
   unifiedFlat: UnifiedFlatRow[]
@@ -171,7 +174,7 @@ async function handlePublishAll() {
     </div>
 
     <!-- ═══ Kanbans de groupe ═══ -->
-    <div v-if="groupDevoirs.length" class="kb-section">
+    <div v-if="isEnabled('kanban') && groupDevoirs.length" class="kb-section">
       <div class="kb-section-header">
         <LayoutDashboard :size="15" />
         <span class="kb-section-title">Kanbans de groupe</span>

@@ -2,19 +2,28 @@
 const router  = require('express').Router()
 const queries = require('../db/index')
 const wrap    = require('../utils/wrap')
-const { requireTeacher } = require('../middleware/authorize')
+const { requireTeacher, requirePromo, promoFromParam } = require('../middleware/authorize')
+
+/** Lookup : project id → promo_id */
+function promoFromProject(req) {
+  const { getDb } = require('../db/connection')
+  const projectId = Number(req.params.id)
+  if (!projectId) return null
+  const p = getDb().prepare('SELECT promo_id FROM projects WHERE id = ?').get(projectId)
+  return p?.promo_id ?? null
+}
 
 // ── Projets CRUD ──────────────────────────────────────────────────────────────
 
 // GET /ta/my-projects doit etre declare AVANT /:id pour eviter le conflit de route
-router.get('/ta/my-projects', wrap((req) => {
+router.get('/ta/my-projects', requireTeacher, wrap((req) => {
   const teacherId = Math.abs(req.user.id)
   return queries.getTaProjects(teacherId)
 }))
 
-router.get('/promo/:promoId', wrap((req) => queries.getProjectsByPromo(Number(req.params.promoId))))
+router.get('/promo/:promoId', requirePromo(promoFromParam), wrap((req) => queries.getProjectsByPromo(Number(req.params.promoId))))
 
-router.get('/:id', wrap((req) => queries.getProjectById(Number(req.params.id))))
+router.get('/:id', requirePromo(promoFromProject), wrap((req) => queries.getProjectById(Number(req.params.id))))
 
 router.post('/', requireTeacher, wrap((req) => {
   const { promoId, name, description, channelId, deadline } = req.body

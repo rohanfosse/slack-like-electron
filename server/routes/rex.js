@@ -2,7 +2,7 @@
 const router  = require('express').Router()
 const queries = require('../db/index')
 const wrap    = require('../utils/wrap')
-const { requireTeacher } = require('../middleware/authorize')
+const { requireTeacher, requirePromo, promoFromParam } = require('../middleware/authorize')
 
 // ─── Throttle helper pour results-update ─────────────────────────────────────
 const _lastEmit = new Map() // activityId → timestamp
@@ -46,23 +46,23 @@ router.get('/sessions/code/:code', wrap((req) => {
 }))
 
 // GET /sessions/promo/:promoId/active - session active pour une promo
-router.get('/sessions/promo/:promoId/active', wrap((req) => {
+router.get('/sessions/promo/:promoId/active', requirePromo(promoFromParam), wrap((req) => {
   return queries.getActiveRexSession(Number(req.params.promoId))
 }))
 
 // GET /sessions/promo/:promoId/history - historique sessions terminées
-router.get('/sessions/promo/:promoId/history', wrap((req) => {
+router.get('/sessions/promo/:promoId/history', requirePromo(promoFromParam), wrap((req) => {
   const { search, dateFrom, dateTo } = req.query
   return queries.getEndedRexSessionsForPromo(Number(req.params.promoId), { search, dateFrom, dateTo })
 }))
 
 // GET /sessions/promo/:promoId/stats - statistiques REX par promo
-router.get('/sessions/promo/:promoId/stats', wrap((req) => {
+router.get('/sessions/promo/:promoId/stats', requirePromo(promoFromParam), wrap((req) => {
   return queries.getRexStatsForPromo(Number(req.params.promoId))
 }))
 
 // GET /sessions/promo/:promoId - toutes les sessions non terminées (brouillons + actives)
-router.get('/sessions/promo/:promoId', wrap((req) => {
+router.get('/sessions/promo/:promoId', requirePromo(promoFromParam), wrap((req) => {
   return queries.getRexSessionsForPromo(Number(req.params.promoId))
 }))
 

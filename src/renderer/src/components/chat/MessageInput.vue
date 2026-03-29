@@ -18,11 +18,13 @@ const CMD_ICONS: Record<string, object> = {
 import { useMsgAttachment }   from '@/composables/useMsgAttachment'
 import { useMsgSend }         from '@/composables/useMsgSend'
 import { useMsgFormatting }   from '@/composables/useMsgFormatting'
+import { useModules }         from '@/composables/useModules'
 import type { RefChannel, RefDevoir, RefDoc } from '@/composables/useMsgAutocomplete'
 
 const appStore      = useAppStore()
 const messagesStore = useMessagesStore()
 const { getPref }   = usePrefs()
+const { isEnabled: moduleEnabled } = useModules()
 
 const inputEl = ref<HTMLTextAreaElement | null>(null)
 const content = ref('')
@@ -32,7 +34,7 @@ const requestSignature = ref(false)
 // Detecter si le contenu contient un fichier attache (pour afficher le toggle signature)
 const hasFileAttachment = computed(() => content.value.includes('📎'))
 const isDm = computed(() => !!appStore.activeDmStudentId)
-const showSignatureToggle = computed(() => isDm.value && hasFileAttachment.value && !appStore.isTeacher)
+const showSignatureToggle = computed(() => moduleEnabled('signatures') && isDm.value && hasFileAttachment.value && !appStore.isTeacher)
 
 defineExpose({ requestSignature })
 

@@ -103,3 +103,141 @@ describe('Auth required', () => {
     expect(res.status).toBeGreaterThanOrEqual(400)
   })
 })
+
+describe('GET /api/depots', () => {
+  it('returns depots for a travail', async () => {
+    const res = await request(app)
+      .get('/api/depots?travailId=100')
+    expect(res.status).toBe(200)
+    expect(res.body.ok).toBe(true)
+    expect(Array.isArray(res.body.data)).toBe(true)
+    expect(res.body.data.length).toBeGreaterThan(0)
+  })
+
+  it('returns empty array for travail with no depots', async () => {
+    const res = await request(app)
+      .get('/api/depots?travailId=9999')
+    expect(res.status).toBe(200)
+    expect(res.body.data).toEqual([])
+  })
+})
+
+describe('POST /api/depots (submit depot)', () => {
+  it('teacher can submit a depot for any student', async () => {
+    const res = await request(app)
+      .post('/api/depots')
+      .send({
+        travail_id: 100,
+        student_id: 1,
+        type: 'link',
+        content: 'https://github.com/example',
+        link_url: 'https://github.com/example',
+      })
+    expect(res.status).toBe(200)
+    expect(res.body.ok).toBe(true)
+  })
+
+  it('student can submit for themselves', async () => {
+    const studentApp = express()
+    studentApp.use(express.json())
+    studentApp.use((req, _res, next) => {
+      req.user = { id: 1, type: 'student', name: 'Jean Dupont', promo_id: 1 }
+      next()
+    })
+    studentApp.use('/api/depots', require('../../../server/routes/depots'))
+
+    const res = await request(studentApp)
+      .post('/api/depots')
+      .send({
+        travail_id: 100,
+        student_id: 1,
+        type: 'file',
+        content: '/uploads/test.pdf',
+        file_name: 'test.pdf',
+      })
+    expect(res.status).toBe(200)
+    expect(res.body.ok).toBe(true)
+  })
+
+  it('student cannot submit for another student (403)', async () => {
+    const studentApp = express()
+    studentApp.use(express.json())
+    studentApp.use((req, _res, next) => {
+      req.user = { id: 1, type: 'student', name: 'Jean Dupont', promo_id: 1 }
+      next()
+    })
+    studentApp.use('/api/depots', require('../../../server/routes/depots'))
+
+    const res = await request(studentApp)
+      .post('/api/depots')
+      .send({
+        travail_id: 100,
+        student_id: 99,
+        type: 'file',
+        content: '/uploads/hack.pdf',
+        file_name: 'hack.pdf',
+      })
+    expect(res.status).toBe(403)
+    expect(res.body.ok).toBe(false)
+  })
+
+  it('student cannot submit for travail of another promo (403)', async () => {
+    const db = getTestDb()
+    db.exec("INSERT OR IGNORE INTO promotions (id, name, color) VALUES (2, 'Promo B', '#E74C3C')")
+    db.exec(`
+      INSERT OR IGNORE INTO travaux (id, promo_id, channel_id, title, deadline, type, published, requires_submission)
+      VALUES (101, 2, 1, 'Other Promo Devoir', '2099-12-31T23:59:00Z', 'livrable', 1, 1)
+    `)
+
+    const studentApp = express()
+    studentApp.use(express.json())
+    studentApp.use((req, _res, next) => {
+      req.user = { id: 1, type: 'student', name: 'Jean Dupont', promo_id: 1 }
+      next()
+    })
+    studentApp.use('/api/depots', require('../../../server/routes/depots'))
+
+    const res = await request(studentApp)
+      .post('/api/depots')
+      .send({
+        travail_id: 101,
+        student_id: 1,
+        type: 'file',
+        content: '/uploads/cross.pdf',
+        file_name: 'cross.pdf',
+      })
+    expect(res.status).toBe(403)
+  })
+
+  it('rejects invalid payload (missing required fields)', async () => {
+    const res = await request(app)
+      .post('/api/depots')
+      .send({ travail_id: 100 })
+    expect(res.status).toBeGreaterThanOrEqual(400)
+  })
+})
+
+describe('POST /api/depots/note validation', () => {
+  it('rejects note without depot_id', async () => {
+    const res = await request(app)
+      .post('/api/depots/note')
+      .send({ note: '15' })
+    expect(res.status).toBeGreaterThanOrEqual(400)
+  })
+
+  it('rejects note without note value', async () => {
+    const res = await request(app)
+      .post('/api/depots/note')
+      .send({ depot_id: 200 })
+    expect(res.status).toBeGreaterThanOrEqual(400)
+  })
+})
+
+describe('POST /api/depots/feedback validation', () => {
+  it('rejects feedback without depot_id', async () => {
+    const res = await request(app)
+      .post('/api/depots/feedback')
+      .send({ feedback: 'Good' })
+    expect(res.status).toBeGreaterThanOrEqual(400)
+  })
+})

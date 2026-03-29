@@ -26,7 +26,7 @@ const createAssignmentSchema = z.object({
   published:   z.union([z.boolean(), z.number()]).optional(),
 }).passthrough()
 
-router.get('/teacher-schedule',         wrap(() => queries.getTeacherSchedule()))
+router.get('/teacher-schedule',         requireTeacher, wrap(() => queries.getTeacherSchedule()))
 router.get('/categories',               requirePromo(promoFromParam), wrap((req) => queries.getTravailCategories(Number(req.query.promoId))))
 router.get('/gantt',                    requirePromo(promoFromParam), wrap((req) => queries.getGanttData(req.query.promoId ? Number(req.query.promoId) : null, req.query.channelId ? Number(req.query.channelId) : null)))
 router.get('/rendus',                   requirePromo(promoFromParam), wrap((req) => queries.getAllRendus(req.query.promoId ? Number(req.query.promoId) : null)))

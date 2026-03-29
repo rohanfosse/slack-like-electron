@@ -512,6 +512,10 @@ contextBridge.exposeInMainWorld('api', {
   // ── Engagement analytics ─────────────────────────────────────────────────
   getEngagementScores: (promoId: number) => get(`/api/engagement/${promoId}`),
 
+  // ── Modules enrichissement (enable/disable) ─────────────────────────────
+  getModules: () => get('/api/admin/modules'),
+  setModuleEnabled: (module: string, enabled: boolean) => post('/api/admin/modules', { module, enabled }),
+
   // ── Signatures ──────────────────────────────────────────────────────────
   createSignatureRequest: (data: { message_id: number; dm_student_id: number; file_url: string; file_name: string }) =>
     post('/api/signatures', data),

@@ -9,16 +9,18 @@ import { LayoutDashboard, MessageSquare, BookOpen, FileText, Radio } from 'lucid
 import { useAppStore }    from '@/stores/app'
 import { useTravauxStore } from '@/stores/travaux'
 import { useLiveStore }   from '@/stores/live'
+import { useModules }     from '@/composables/useModules'
 
 const appStore     = useAppStore()
 const travauxStore = useTravauxStore()
 const liveStore    = useLiveStore()
+const { isEnabled } = useModules()
 const router       = useRouter()
 const route        = useRoute()
 
 const pendingCount = computed(() => travauxStore.urgentPendingCount)
 const showLive     = computed(() =>
-  !appStore.isStaff && liveStore.currentSession && liveStore.currentSession.status !== 'ended',
+  isEnabled('live') && !appStore.isStaff && liveStore.currentSession && liveStore.currentSession.status !== 'ended',
 )
 </script>
 

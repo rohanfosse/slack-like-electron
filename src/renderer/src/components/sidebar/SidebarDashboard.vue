@@ -6,6 +6,7 @@ import { Plus, FolderOpen, Layers, BookOpen, BarChart2, CalendarDays, Calendar, 
 import { useAppStore }     from '@/stores/app'
 import { useModalsStore }  from '@/stores/modals'
 import { useTravauxStore } from '@/stores/travaux'
+import { useModules }      from '@/composables/useModules'
 import { parseCategoryIcon } from '@/utils/categoryIcon'
 import NewProjectModal from '@/components/modals/NewProjectModal.vue'
 
@@ -27,6 +28,7 @@ const modals       = useModalsStore()
 const travauxStore = useTravauxStore()
 const route        = useRoute()
 const router       = useRouter()
+const { isEnabled } = useModules()
 
 const promoSummary = computed(() => {
   const gantt = travauxStore.ganttData
@@ -67,7 +69,7 @@ const promoSummary = computed(() => {
       <FolderOpen :size="13" class="project-icon" />
       <span class="channel-name">Accueil</span>
     </button>
-    <button class="sidebar-item" :class="{ active: route.query.tab === 'frise' }" @click="router.push({ path: '/dashboard', query: { tab: 'frise' } })">
+    <button v-if="isEnabled('frise')" class="sidebar-item" :class="{ active: route.query.tab === 'frise' }" @click="router.push({ path: '/dashboard', query: { tab: 'frise' } })">
       <BarChart2 :size="13" class="project-icon" />
       <span class="channel-name">Frise chronologique</span>
     </button>

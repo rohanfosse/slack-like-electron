@@ -2,7 +2,25 @@
 const router  = require('express').Router()
 const queries = require('../db/index')
 const wrap    = require('../utils/wrap')
-const { requireTeacher } = require('../middleware/authorize')
+const { requireTeacher, requirePromo } = require('../middleware/authorize')
+
+/** Lookup : live session id → promo_id */
+function promoFromSession(req) {
+  const { getDb } = require('../db/connection')
+  const sessionId = Number(req.params.id ?? req.params.sessionId)
+  if (!sessionId) return null
+  const s = getDb().prepare('SELECT promo_id FROM live_sessions WHERE id = ?').get(sessionId)
+  return s?.promo_id ?? null
+}
+
+/** Lookup : live activity id → promo_id (via session) */
+function promoFromActivity(req) {
+  const { getDb } = require('../db/connection')
+  const activityId = Number(req.params.id)
+  if (!activityId) return null
+  const a = getDb().prepare('SELECT ls.promo_id FROM live_activities la JOIN live_sessions ls ON ls.id = la.session_id WHERE la.id = ?').get(activityId)
+  return a?.promo_id ?? null
+}
 
 // ─── Throttle helper pour results-update ─────────────────────────────────────
 const _lastEmit = new Map() // activityId → timestamp
@@ -244,12 +262,12 @@ router.post('/activities/:id/respond', (req, res) => {
 })
 
 // GET /activities/:id/results - résultats agrégés
-router.get('/activities/:id/results', wrap((req) => {
+router.get('/activities/:id/results', requirePromo(promoFromActivity), wrap((req) => {
   return queries.getActivityResultsAggregated(Number(req.params.id))
 }))
 
 // GET /sessions/:id/leaderboard - classement complet
-router.get('/sessions/:id/leaderboard', wrap((req) => {
+router.get('/sessions/:id/leaderboard', requirePromo(promoFromSession), wrap((req) => {
   return queries.getLeaderboard(Number(req.params.id))
 }))
 

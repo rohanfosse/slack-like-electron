@@ -27,7 +27,13 @@ const feedbackSchema = z.object({
   feedback: z.string().max(5000, 'Feedback trop long (max 5 000 caractères)'),
 })
 
-router.get('/',         requirePromo(promoFromTravail), wrap((req) => queries.getDepots(Number(req.query.travailId))))
+router.get('/',         requirePromo(promoFromTravail), wrap((req) => {
+  const depots = queries.getDepots(Number(req.query.travailId))
+  if (req.user.type === 'student') {
+    return depots.filter(d => d.student_id === req.user.id)
+  }
+  return depots
+}))
 
 // Soumission de dépôt - vérifier que l'étudiant soumet pour lui-même
 router.post('/', validate(submitDepotSchema), (req, res) => {

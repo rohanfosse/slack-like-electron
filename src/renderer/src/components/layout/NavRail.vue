@@ -8,6 +8,7 @@
   import { useTravauxStore } from '@/stores/travaux'
   import { useLiveStore }   from '@/stores/live'
   import { useRexStore }    from '@/stores/rex'
+  import { useModules }     from '@/composables/useModules'
   import { avatarColor }    from '@/utils/format'
   import NotificationPanel from './NotificationPanel.vue'
 
@@ -16,6 +17,7 @@
   const travauxStore = useTravauxStore()
   const liveStore    = useLiveStore()
   const rexStore     = useRexStore()
+  const { isEnabled } = useModules()
   const router      = useRouter()
   const route       = useRoute()
 
@@ -204,9 +206,9 @@
       <span class="nav-label">Fichiers</span>
     </button>
 
-    <!-- Quiz indicator pour étudiants - visible uniquement quand invitation active -->
+    <!-- Quiz indicator pour étudiants - visible uniquement quand invitation active et module actif -->
     <button
-      v-if="!appStore.isStaff && liveStore.currentSession && liveStore.currentSession.status !== 'ended'"
+      v-if="isEnabled('live') && !appStore.isStaff && liveStore.currentSession && liveStore.currentSession.status !== 'ended'"
       class="nav-btn"
       :class="{ active: route.name === 'live' }"
       title="Quiz en cours"
@@ -218,9 +220,9 @@
       <span class="nav-live-dot" />
     </button>
 
-    <!-- REX indicator pour étudiants - visible uniquement quand session active -->
+    <!-- REX indicator pour étudiants - visible uniquement quand session active et module actif -->
     <button
-      v-if="!appStore.isStaff && rexStore.currentSession && rexStore.currentSession.status !== 'ended'"
+      v-if="isEnabled('rex') && !appStore.isStaff && rexStore.currentSession && rexStore.currentSession.status !== 'ended'"
       class="nav-btn"
       :class="{ active: route.name === 'rex' }"
       title="Session REX en cours"

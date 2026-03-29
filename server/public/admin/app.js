@@ -317,6 +317,7 @@ import { loadHeatmap } from './modules/heatmap.js'
 import { checkReadOnlyBanner, toggleReadOnly, toggleArchivePromo } from './modules/settings.js'
 import { loadErrors, clearErrors, showErrorStack, checkErrorsBadge } from './modules/errors.js'
 import { loadAdoption, changeInactiveDays } from './modules/adoption.js'
+import { loadModulesConfig, toggleModule } from './modules/modules-config.js'
 
 // ── Tabs ────────────────────────────────────────────────────────────────────
 
@@ -342,6 +343,7 @@ export function refreshActiveTab() {
     import: loadImport, maintenance: loadMaintenance, feedback: loadFeedback,
     errors: loadErrors,
     adoption: loadAdoption,
+    modules: loadModulesConfig,
   }
   if (loaders[activeTab]) loaders[activeTab]()
   checkReadOnlyBanner()
@@ -441,6 +443,10 @@ window.showErrorStack = showErrorStack
 // Adoption
 window.loadAdoption = loadAdoption
 window.changeInactiveDays = changeInactiveDays
+
+// Modules
+window.loadModulesConfig = loadModulesConfig
+window.toggleModule = toggleModule
 
 // Modal
 window.closeModal = closeModal

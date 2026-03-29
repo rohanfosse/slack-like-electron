@@ -14,6 +14,7 @@ import {
 import { useLiveStore } from '@/stores/live'
 import { useRexStore }  from '@/stores/rex'
 import { useTeacherBento } from '@/composables/useTeacherBento'
+import { useModules }      from '@/composables/useModules'
 
 const bento = useTeacherBento()
 const tabAccueilRef = ref<InstanceType<typeof TabAccueil> | null>(null)
@@ -25,6 +26,7 @@ import TabEngagement      from './TabEngagement.vue'
 
 const liveStore = useLiveStore()
 const rexStore  = useRexStore()
+const { isEnabled } = useModules()
 import type { Promotion, Depot } from '@/types'
 import type { GanttRow, ProjectCard, Reminder } from '@/composables/useDashboardTeacher'
 import type { SavedMessage, AgendaItem } from '@/composables/useDashboardWidgets'
@@ -200,7 +202,7 @@ function setTab(tab: DashTabType) {
       <button class="db-tab" :class="{ active: dashTab === 'promotions' }" @click="setTab('promotions')">
         <Users :size="13" /> Promotions
       </button>
-      <button class="db-tab" :class="{ active: dashTab === 'frise' }" @click="setTab('frise')">
+      <button v-if="isEnabled('frise')" class="db-tab" :class="{ active: dashTab === 'frise' }" @click="setTab('frise')">
         <BarChart2 :size="13" /> Frise
       </button>
       <button class="db-tab" :class="{ active: dashTab === 'suivi' }" @click="setTab('suivi')">
@@ -212,14 +214,14 @@ function setTab(tab: DashTabType) {
       <button class="db-tab" :class="{ active: dashTab === 'engagement' }" @click="setTab('engagement')">
         <Activity :size="13" /> Engagement
       </button>
-      <button class="db-tab db-tab-live" :class="{ active: dashTab === 'live' }" @click="setTab('live')">
+      <button v-if="isEnabled('live')" class="db-tab db-tab-live" :class="{ active: dashTab === 'live' }" @click="setTab('live')">
         <Radio :size="13" /> Quiz
         <span
           v-if="liveStore.currentSession && liveStore.currentSession.status !== 'ended'"
           class="db-tab-live-dot"
         />
       </button>
-      <button class="db-tab db-tab-rex" :class="{ active: dashTab === 'rex' }" @click="setTab('rex')">
+      <button v-if="isEnabled('rex')" class="db-tab db-tab-rex" :class="{ active: dashTab === 'rex' }" @click="setTab('rex')">
         <MessageSquare :size="13" /> REX
         <span
           v-if="rexStore.currentSession && rexStore.currentSession.status !== 'ended'"

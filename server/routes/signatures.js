@@ -247,7 +247,11 @@ router.post('/:id/reject', requireTeacher, validate(rejectSchema), wrap((req) =>
 
 // ── Obtenir la signature pour un message ────────────────────────────────────
 router.get('/by-message/:messageId', wrap((req) => {
-  return queries.getSignatureByMessageId(Number(req.params.messageId))
+  const result = queries.getSignatureByMessageId(Number(req.params.messageId))
+  if (req.user.type === 'student' && result && result.dm_student_id !== req.user.id) {
+    throw Object.assign(new Error('Acces non autorise.'), { statusCode: 403 })
+  }
+  return result
 }))
 
 // ── PDF stamping ────────────────────────────────────────────────────────────

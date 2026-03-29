@@ -14,6 +14,9 @@ import StudentBento from './StudentBento.vue'
 import StudentProjectsTab from './StudentProjectsTab.vue'
 import StudentGradesTab from './StudentGradesTab.vue'
 import TabFrise from './TabFrise.vue'
+import { useModules } from '@/composables/useModules'
+
+const { isEnabled } = useModules()
 
 // ── Props ────────────────────────────────────────────────────────────────────
 const props = defineProps<{
@@ -118,13 +121,13 @@ const emit = defineEmits<{
       <button class="db-tab" role="tab" :aria-selected="dashTab === 'notes'" :class="{ active: dashTab === 'notes' }" @click="emit('update:dashTab', 'notes')">
         <Award :size="13" /> Mes notes
       </button>
-      <button class="db-tab" role="tab" :aria-selected="dashTab === 'planning'" :class="{ active: dashTab === 'planning' }" @click="emit('update:dashTab', 'planning')">
+      <button v-if="isEnabled('frise')" class="db-tab" role="tab" :aria-selected="dashTab === 'planning'" :class="{ active: dashTab === 'planning' }" @click="emit('update:dashTab', 'planning')">
         <CalendarDays :size="13" /> Planning
       </button>
-      <button class="db-tab db-tab--coming" role="tab" :aria-selected="dashTab === 'quiz'" aria-disabled="true" :class="{ active: dashTab === 'quiz' }" @click="emit('update:dashTab', 'quiz')">
+      <button v-if="isEnabled('live')" class="db-tab db-tab--coming" role="tab" :aria-selected="dashTab === 'quiz'" aria-disabled="true" :class="{ active: dashTab === 'quiz' }" @click="emit('update:dashTab', 'quiz')">
         <Radio :size="13" /> Quiz <span class="db-tab-soon">Bientôt</span>
       </button>
-      <button class="db-tab db-tab--coming" role="tab" :aria-selected="dashTab === 'rex'" aria-disabled="true" :class="{ active: dashTab === 'rex' }" @click="emit('update:dashTab', 'rex')">
+      <button v-if="isEnabled('rex')" class="db-tab db-tab--coming" role="tab" :aria-selected="dashTab === 'rex'" aria-disabled="true" :class="{ active: dashTab === 'rex' }" @click="emit('update:dashTab', 'rex')">
         <ClipboardList :size="13" /> REX <span class="db-tab-soon">Bientôt</span>
       </button>
       <button

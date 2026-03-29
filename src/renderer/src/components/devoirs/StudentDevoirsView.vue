@@ -16,6 +16,7 @@ import type { Devoir, Rubric } from '@/types'
 import StudentProjetFiche    from '@/components/projet/StudentProjetFiche.vue'
 import StudentStatsBar       from './StudentStatsBar.vue'
 import KanbanBoard           from './KanbanBoard.vue'
+import { useModules }        from '@/composables/useModules'
 import StudentDevoirGroup    from './StudentDevoirGroup.vue'
 import DevoirsProjectCard    from './DevoirsProjectCard.vue'
 
@@ -65,6 +66,7 @@ defineEmits<{
 
 const appStore     = useAppStore()
 const travauxStore = useTravauxStore()
+const { isEnabled } = useModules()
 
 /** Are we on the accueil (no project selected, multiple categories)? */
 const isAccueil = computed(() => !appStore.activeProject && props.studentCategories.length > 0)
@@ -325,7 +327,7 @@ const kanbanExpanded = ref<Record<number, boolean>>({})
   </template>
 
   <!-- ═══ Kanbans de groupe ═══ -->
-  <div v-if="groupDevoirs.length && appStore.activeProject" class="sdv-kb-section">
+  <div v-if="isEnabled('kanban') && groupDevoirs.length && appStore.activeProject" class="sdv-kb-section">
     <div class="sdv-kb-header">
       <FolderOpen :size="14" />
       <span>Kanbans de groupe</span>

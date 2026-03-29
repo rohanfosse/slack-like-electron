@@ -90,7 +90,8 @@
     "vue-tsc": "^2.2.12"
   },
   "overrides": {
-    "picomatch": "^4.0.4"
+    "picomatch": "^4.0.4",
+    "path-to-regexp": ">=0.1.13"
   },
   "build": {
     "appId": "dev.rohanfosse.cursus",

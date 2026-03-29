@@ -281,6 +281,10 @@ declare global {
 
       // Engagement
       getEngagementScores(promoId: number): Promise<IpcResponse<{ studentId: number; name: string; score: number; messages: number; onTime: number; late: number; missing: number; totalDevoirs: number; submitted: number; lastActivity: string | null; atRisk: boolean }[]>>
+
+      // Modules enrichissement (enable/disable)
+      getModules(): Promise<IpcResponse<Record<string, boolean>>>
+      setModuleEnabled(module: string, enabled: boolean): Promise<IpcResponse<Record<string, boolean>>>
       emitRexJoin(promoId: number): void
       emitRexLeave(promoId: number): void
       onRexActivityPushed(cb: (data: { activity: unknown }) => void): () => void

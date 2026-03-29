@@ -9,6 +9,7 @@
   import { useToast }       from '@/composables/useToast'
   import { useAppListeners } from '@/composables/useAppListeners'
   import { useSwipeNav }    from '@/composables/useSwipeNav'
+  import { useModules }     from '@/composables/useModules'
   import { MessageSquare, FileText, Camera, Lock, Trash2, Download, UserX, Download as DownloadIcon, RefreshCw, Shield, Scale, Clock, Mail, Globe, Eye, Pencil, ChevronDown, Server } from 'lucide-vue-next'
   import Toast        from '@/components/ui/Toast.vue'
   import ConfirmModal from '@/components/ui/ConfirmModal.vue'
@@ -46,6 +47,7 @@
   const router   = useRouter()
   const { getPref } = usePrefs()
   const { showToast } = useToast()
+  const { loadModules } = useModules()
 
   // ── Live invitation popup ─────────────────────────────────────────────────
   const liveInvite = ref<{ sessionId: number; title: string; joinCode: string; teacherName: string } | null>(null)
@@ -152,6 +154,8 @@
     if (user && !localStorage.getItem(PRIVACY_KEY)) {
       showPrivacy.value = true
     }
+    // Charger l'etat des modules enrichissement des que l'utilisateur est connecte
+    if (user) loadModules()
   })
 
   // ── Floating feedback (étudiants uniquement) ──────────────────────────────
@@ -295,7 +299,10 @@
 
     // Restaurer la session depuis localStorage
     const restored = appStore.restoreSession()
-    if (restored) router.replace('/messages')
+    if (restored) {
+      router.replace('/messages')
+      loadModules()
+    }
 
     // Listeners globaux deja initialises via initListeners()
 

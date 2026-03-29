@@ -43,7 +43,9 @@ router.use(requireAdmin, require('./import'))
 router.use(requireAdmin, require('./feedback'))
 
 // ── Config lecture : accessible aux pilotes (lecture seule banner) ────────────
-router.get('/config', requireAdmin, require('./settings-read'))
+const { settingsRead, modulesRead } = require('./settings-read')
+router.get('/config', requireAdmin, settingsRead)
+router.get('/modules', requireAdmin, modulesRead)
 
 // ── Routes systeme (admin uniquement) ────────────────────────────────────────
 router.use(requireSystemAdmin, require('./security'))

@@ -6,6 +6,17 @@ const { validate } = require('../middleware/validate')
 const wrap    = require('../utils/wrap')
 const { requirePromo, promoFromTravail } = require('../middleware/authorize')
 
+/** Lookup : kanban card id → promo_id (via travail) */
+function promoFromCard(req) {
+  const { getDb } = require('../db/connection')
+  const cardId = Number(req.params.id)
+  if (!cardId) return null
+  const card = getDb().prepare('SELECT k.travail_id FROM kanban_cards k WHERE k.id = ?').get(cardId)
+  if (!card) return null
+  const t = getDb().prepare('SELECT promo_id FROM travaux WHERE id = ?').get(card.travail_id)
+  return t?.promo_id ?? null
+}
+
 const createCardSchema = z.object({
   title:       z.string().min(1, 'Titre requis').max(200),
   description: z.string().max(2000).optional().default(''),
@@ -35,7 +46,7 @@ router.post('/travaux/:travailId/groups/:groupId', requirePromo(promoFromTravail
 }))
 
 // PATCH /cards/:id
-router.patch('/cards/:id', validate(updateCardSchema), wrap((req) => {
+router.patch('/cards/:id', requirePromo(promoFromCard), validate(updateCardSchema), wrap((req) => {
   const { title, description, position, status } = req.body
   if (status !== undefined) {
     return queries.moveKanbanCard(Number(req.params.id), status, position ?? 0)
@@ -44,7 +55,7 @@ router.patch('/cards/:id', validate(updateCardSchema), wrap((req) => {
 }))
 
 // DELETE /cards/:id
-router.delete('/cards/:id', wrap((req) => {
+router.delete('/cards/:id', requirePromo(promoFromCard), wrap((req) => {
   queries.deleteKanbanCard(Number(req.params.id))
   return null
 }))

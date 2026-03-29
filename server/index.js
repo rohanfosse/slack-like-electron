@@ -93,7 +93,8 @@ app.use('/api', (req, res, next) => {
   if (req.method === 'GET') return next()
   try {
     const { getAppConfig } = require('./db/models/admin')
-    if (getAppConfig('read_only') === '1' && req.user?.type !== 'teacher') {
+    const { hasRole } = require('./permissions')
+    if (getAppConfig('read_only') === '1' && !hasRole(req.user?.type, 'ta')) {
       return res.status(503).json({ ok: false, error: 'La plateforme est en mode lecture seule.' })
     }
   } catch (err) { log.warn('read_only_check_failed', { error: err.message }) }
@@ -237,7 +238,8 @@ app.use('/admin-monitor', (req, res, next) => {
   if (!token) return res.status(401).json({ ok: false, error: 'Non authentifié' })
   try {
     const decoded = jwt.verify(token, SECRET)
-    if (decoded.type !== 'teacher') return res.status(403).json({ ok: false, error: 'Accès réservé aux pilotes.' })
+    const { hasRole: hasRoleCheck } = require('./permissions')
+    if (!hasRoleCheck(decoded.type, 'teacher')) return res.status(403).json({ ok: false, error: 'Accès réservé aux pilotes.' })
     next()
   } catch {
     return res.status(401).json({ ok: false, error: 'Token invalide' })
