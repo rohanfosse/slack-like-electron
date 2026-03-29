@@ -231,20 +231,8 @@ app.use('/download', require('./routes/download'))
 // ── Webhook de déploiement (pas d'auth JWT, validé par DEPLOY_SECRET) ─────────
 app.use('/webhook/deploy', require('./routes/deploy'))
 
-// ── Page admin monitoring (auth JWT requise) ──────────────────────────────────
-app.use('/admin-monitor', (req, res, next) => {
-  const token = req.headers.authorization?.replace('Bearer ', '')
-    || req.query.token
-  if (!token) return res.status(401).json({ ok: false, error: 'Non authentifié' })
-  try {
-    const decoded = jwt.verify(token, SECRET)
-    const { hasRole: hasRoleCheck } = require('./permissions')
-    if (!hasRoleCheck(decoded.type, 'teacher')) return res.status(403).json({ ok: false, error: 'Accès réservé aux responsables.' })
-    next()
-  } catch {
-    return res.status(401).json({ ok: false, error: 'Token invalide' })
-  }
-}, express.static(path.join(__dirname, 'public/admin'), {
+// ── Page admin monitoring (fichiers statiques sans auth, API protegee par /api/admin) ─
+app.use('/admin-monitor', express.static(path.join(__dirname, 'public/admin'), {
   setHeaders: (res) => res.set('Cache-Control', 'no-cache, no-store, must-revalidate'),
 }))
 app.get('/admin-monitor', (_req, res) => {
