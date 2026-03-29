@@ -442,3 +442,57 @@ describe('getPinnedMessages', () => {
     expect(pinned).toEqual([])
   })
 })
+
+describe('DM etudiant-etudiant', () => {
+  // Student 1 (id=1, promo 1) and student 5 (id=5, promo 1) for isolated DM tests
+  beforeAll(() => {
+    const db = getTestDb()
+    db.prepare(
+      `INSERT OR IGNORE INTO students (id, promo_id, name, email, avatar_initials, password, must_change_password)
+       VALUES (5, 1, 'Paul Dupuis', 'paul@test.fr', 'PD', 'hash', 0)`
+    ).run()
+  })
+
+  it('messages entre etudiants sont chiffres', () => {
+    // Send a DM from student 5 to student 1 — box = min(5,1) = 1
+    const result = queries.sendMessage({
+      dmStudentId: 1,
+      authorName: 'Paul Dupuis',
+      authorId: 5,
+      authorType: 'student',
+      content: 'Salut etudiant !',
+    })
+    expect(result.changes).toBe(1)
+
+    // Verify raw DB content is encrypted
+    const db = getTestDb()
+    const raw = db.prepare('SELECT content FROM messages WHERE id = ?').get(Number(result.lastInsertRowid))
+    expect(raw.content.startsWith('enc:')).toBe(true)
+    expect(raw.content).not.toContain('Salut etudiant')
+  })
+
+  it('getRecentDmContacts inclut les contacts etudiants', () => {
+    // Student 5 sent a DM to box 1 — student 1 should see student 5 as a contact
+    const contacts = queries.getRecentDmContacts(1)
+    expect(contacts.length).toBeGreaterThan(0)
+    const studentContact = contacts.find(c => c.author_id === 5)
+    expect(studentContact).toBeDefined()
+    expect(studentContact.name).toBe('Paul Dupuis')
+  })
+
+  it('getDmMessages retourne les messages dechiffres pour une boite partagee', () => {
+    // Box 1 contains messages from student 5 — content should be decrypted
+    const msgs = queries.getDmMessages(1)
+    const studentMsg = msgs.find(m => m.author_id === 5 && m.content === 'Salut etudiant !')
+    expect(studentMsg).toBeDefined()
+    expect(studentMsg.content).toBe('Salut etudiant !')
+  })
+
+  it('getDmMessagesPage retourne les messages de la boite partagee', () => {
+    const page = queries.getDmMessagesPage(1, null, 5)
+    expect(page.length).toBeGreaterThan(0)
+    const studentMsg = page.find(m => m.author_id === 5)
+    expect(studentMsg).toBeDefined()
+    expect(studentMsg.content).toBe('Salut etudiant !')
+  })
+})

@@ -31,6 +31,30 @@ export function useSidebarDm(
   const recentDmContacts  = ref<DmContact[]>([])
   const showAllDmStudents = ref(false)
 
+  // ── Recherche nouveau DM (etudiant-etudiant) ──────────────────────────
+  const showNewDmSearch = ref(false)
+  const newDmQuery      = ref('')
+
+  /** Etudiants de la meme promo filtrés par la requete de recherche */
+  const newDmFilteredStudents = computed(() => {
+    if (!showNewDmSearch.value || !newDmQuery.value.trim()) return []
+    const q = newDmQuery.value.toLowerCase().trim()
+    return dmStudents.value
+      .filter(s => s.id > 0 && s.name.toLowerCase().includes(q))
+      .slice(0, 10)
+  })
+
+  function startNewDm(student: Student) {
+    selectDm(student)
+    showNewDmSearch.value = false
+    newDmQuery.value = ''
+  }
+
+  function toggleNewDmSearch() {
+    showNewDmSearch.value = !showNewDmSearch.value
+    if (!showNewDmSearch.value) newDmQuery.value = ''
+  }
+
   async function loadRecentDmContacts() {
     if (!user.value?.id) return
     try {
@@ -98,5 +122,10 @@ export function useSidebarDm(
     getDmPreview,
     selectDm,
     openDmContextMenu,
+    showNewDmSearch,
+    newDmQuery,
+    newDmFilteredStudents,
+    startNewDm,
+    toggleNewDmSearch,
   }
 }

@@ -178,13 +178,24 @@ describe('app store', () => {
     expect(s.activeDmPeerId).toBeNull()
   })
 
-  it('openDm sets DM state and clears channel', () => {
+  it('openDm sets DM state and clears channel (student-to-student min/max)', () => {
     const s = useAppStore()
     s.currentUser = makeUser({ id: 1 })
     s.openDm(42, 7, 'Alice')
-    expect(s.activeDmStudentId).toBe(42)
+    // Student-to-student: box = min(1,42), peer = max(1,42)
+    expect(s.activeDmStudentId).toBe(1)
+    expect(s.activeDmPeerId).toBe(42)
     expect(s.activeChannelId).toBeNull()
     expect(s.activeChannelName).toBe('Alice')
+  })
+
+  it('openDm student-to-teacher keeps student as box owner', () => {
+    const s = useAppStore()
+    s.currentUser = makeUser({ id: 5 })
+    s.openDm(-1, 7, 'Prof Martin')
+    expect(s.activeDmStudentId).toBe(5)
+    expect(s.activeDmPeerId).toBe(-1)
+    expect(s.activeChannelName).toBe('Prof Martin')
   })
 
   // ── Unread ─────────────────────────────────────────────────────────────────

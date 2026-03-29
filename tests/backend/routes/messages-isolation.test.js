@@ -305,4 +305,27 @@ describe('POST /api/messages — DM etudiant-etudiant', () => {
     expect(res.status).toBe(403)
     expect(res.body.ok).toBe(false)
   })
+
+  it('etudiant peut lire les messages dechiffres de la boite partagee', async () => {
+    // student 1 lit la boite dm_student_id=1 qui contient les DMs avec student 3
+    const res = await request(app)
+      .get('/api/messages/dm/1')
+      .set('Authorization', `Bearer ${studentToken}`)
+    expect(res.status).toBe(200)
+    expect(res.body.ok).toBe(true)
+    expect(Array.isArray(res.body.data)).toBe(true)
+    // Messages should be decrypted (not start with enc:)
+    for (const msg of res.body.data) {
+      expect(msg.content).not.toMatch(/^enc:/)
+    }
+  })
+
+  it('getDmMessagesPage fonctionne pour les boites partagees', async () => {
+    const res = await request(app)
+      .get('/api/messages/dm/1/page')
+      .set('Authorization', `Bearer ${student3Token}`)
+    expect(res.status).toBe(200)
+    expect(res.body.ok).toBe(true)
+    expect(Array.isArray(res.body.data)).toBe(true)
+  })
 })

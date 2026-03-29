@@ -1,7 +1,7 @@
 <script setup lang="ts">
   import { ref, watch, onMounted, computed } from 'vue'
   import { useRoute, useRouter } from 'vue-router'
-  import { Plus, ChevronDown, FolderOpen, Layers, BookOpen, BarChart2, CalendarDays, Calendar, Pencil, Trash2 } from 'lucide-vue-next'
+  import { Plus, ChevronDown, FolderOpen, Layers, BookOpen, BarChart2, CalendarDays, Calendar, Pencil, Trash2, UserPlus } from 'lucide-vue-next'
   import { useTravauxStore } from '@/stores/travaux'
   import NewProjectModal from '@/components/modals/NewProjectModal.vue'
   import type { ProjectMeta } from '@/components/modals/NewProjectModal.vue'
@@ -58,6 +58,7 @@
     recentDmContacts, showAllDmStudents,
     loadRecentDmContacts, dmContactsToShow, getDmPreview,
     selectDm, openDmContextMenu,
+    showNewDmSearch, newDmQuery, newDmFilteredStudents, startNewDm, toggleNewDmSearch,
   } = useSidebarDm(dmStudents, ctx, emit)
 
   const {
@@ -513,7 +514,9 @@
               :class="{ rotated: dmCollapsed }"
             />
             <span>Messages directs</span>
+            <!-- Bouton "+" pour les profs : affiche tous les etudiants -->
             <button
+              v-if="appStore.isStaff"
               class="dm-toggle-btn"
               style="margin-left:auto"
               :title="showAllDmStudents ? 'Masquer' : 'Nouvelle conversation'"
@@ -522,6 +525,39 @@
             >
               <Plus :size="14" />
             </button>
+            <!-- Bouton "+" pour les etudiants : recherche de camarade -->
+            <button
+              v-if="appStore.isStudent"
+              class="dm-toggle-btn"
+              style="margin-left:auto"
+              :title="showNewDmSearch ? 'Fermer' : 'Nouveau message'"
+              aria-label="Nouveau message"
+              @click.stop="toggleNewDmSearch"
+            >
+              <UserPlus :size="14" />
+            </button>
+          </div>
+
+          <!-- Recherche nouveau DM (etudiant-etudiant) -->
+          <div v-if="showNewDmSearch && appStore.isStudent" class="dm-search">
+            <input
+              v-model="newDmQuery"
+              class="dm-search-input"
+              placeholder="Rechercher un camarade..."
+              aria-label="Rechercher un camarade"
+            />
+            <button
+              v-for="s in newDmFilteredStudents"
+              :key="'search-' + s.id"
+              class="sidebar-item dm-search-result"
+              @click="startNewDm(s)"
+            >
+              <span class="dm-avatar" :style="{ background: avatarColor(s.name) }">{{ s.avatar_initials }}</span>
+              <span class="channel-name">{{ s.name }}</span>
+            </button>
+            <div v-if="newDmQuery.trim() && !newDmFilteredStudents.length" class="dm-empty">
+              Aucun resultat
+            </div>
           </div>
 
           <!-- Conversations récentes + liste complète -->
@@ -532,7 +568,7 @@
                 :key="s.id"
                 class="sidebar-item dm-item"
                 :class="{
-                  active:    appStore.activeDmStudentId === s.id,
+                  active:    appStore.activeDmStudentId === s.id || appStore.activeDmPeerId === s.id,
                   'dm-has-unread': !!appStore.unreadDms[s.name],
                 }"
                 @click="selectDm(s)"
@@ -1000,6 +1036,37 @@
 .dm-all-header {
   font-size: 10px; text-transform: uppercase; letter-spacing: .05em;
   color: var(--text-muted); padding: 8px 16px 4px; font-weight: 600;
+}
+
+/* ── Recherche nouveau DM ── */
+.dm-search {
+  padding: 4px 10px 6px;
+}
+.dm-search-input {
+  width: 100%;
+  background: var(--bg-input, rgba(255,255,255,.07));
+  border: 1px solid var(--border-input, var(--border));
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-size: 12px;
+  font-family: var(--font);
+  padding: 5px 8px;
+  outline: none;
+  margin-bottom: 2px;
+}
+.dm-search-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(74,144,217,.2);
+}
+.dm-search-input::placeholder {
+  color: var(--text-muted);
+  font-style: italic;
+}
+.dm-search-result {
+  display: flex !important;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 8px !important;
 }
 
 /* ── Badge rendus par projet ── */

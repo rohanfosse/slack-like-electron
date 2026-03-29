@@ -257,10 +257,15 @@ export const useAppStore = defineStore('app', () => {
   function openDm(studentId: number, promoId: number, name: string) {
     const myId = currentUser.value?.id ?? 0
     const isStudentOpeningTeacherDm = myId > 0 && studentId < 0
+    const isStudentToStudent        = myId > 0 && studentId > 0
 
     if (isStudentOpeningTeacherDm) {
       activeDmStudentId.value = myId
       activeDmPeerId.value    = studentId
+    } else if (isStudentToStudent) {
+      // Convention min/max pour les DMs etudiant-etudiant
+      activeDmStudentId.value = Math.min(myId, studentId)
+      activeDmPeerId.value    = Math.max(myId, studentId)
     } else {
       activeDmStudentId.value = studentId
       activeDmPeerId.value    = myId
