@@ -243,6 +243,10 @@ export function useDashboardTeacher() {
         brouillonsCount.value = schedData.brouillons?.length ?? 0
       }
       promos.value = promosData ?? []
+      // Reset activePromoId if it no longer exists in the loaded promos
+      if (appStore.activePromoId && !promos.value.find(p => p.id === appStore.activePromoId)) {
+        appStore.activePromoId = promos.value.length ? promos.value[0].id : null
+      }
       if (promos.value.length && !appStore.activePromoId) {
         appStore.activePromoId = promos.value[0].id
       }
