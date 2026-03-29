@@ -46,6 +46,10 @@ describe('hasRole', () => {
   it('returns false for unknown role string', () => {
     expect(hasRole('unknown', 'student')).toBe(false)
   })
+
+  it('returns false for empty string role', () => {
+    expect(hasRole('', 'student')).toBe(false)
+  })
 })
 
 describe('isSystemAdmin', () => {
@@ -56,6 +60,11 @@ describe('isSystemAdmin', () => {
     expect(isSystemAdmin('student')).toBe(false)
     expect(isSystemAdmin(null)).toBe(false)
     expect(isSystemAdmin(undefined)).toBe(false)
+  })
+
+  it('returns false for unknown and empty strings', () => {
+    expect(isSystemAdmin('unknown')).toBe(false)
+    expect(isSystemAdmin('')).toBe(false)
   })
 })
 
@@ -88,5 +97,17 @@ describe('canAccessModule', () => {
 
   it('returns false for unknown module', () => {
     expect(canAccessModule('admin', 'nonexistent')).toBe(false)
+  })
+
+  it('ta cannot access teacher-level or admin-level modules', () => {
+    expect(canAccessModule('ta', 'stats')).toBe(false)
+    expect(canAccessModule('ta', 'security')).toBe(false)
+  })
+
+  it('null/undefined role cannot access any module', () => {
+    for (const mod of Object.keys(ADMIN_MODULES)) {
+      expect(canAccessModule(null, mod)).toBe(false)
+      expect(canAccessModule(undefined, mod)).toBe(false)
+    }
   })
 })

@@ -190,4 +190,40 @@ describe('useSettingsAccount', () => {
     const { avatarBg: adminBg } = useSettingsAccount(emitMock)
     expect(adminBg.value).toBe('var(--accent)')
   })
+
+  // ── Role icon tests ─────────────────────────────────────────────────────────
+
+  it('roleIcon returns Shield for admin', () => {
+    setupUser('admin')
+    const { roleIcon } = useSettingsAccount(emitMock)
+    expect(roleIcon.value).toBeDefined()
+    // Shield is the lucide component for admin
+    expect(roleIcon.value.name).toBe('Shield')
+  })
+
+  it('roleIcon returns BookOpen for teacher', () => {
+    setupUser('teacher')
+    const { roleIcon } = useSettingsAccount(emitMock)
+    expect(roleIcon.value.name).toBe('BookOpen')
+  })
+
+  it('roleIcon returns GraduationCap for ta', () => {
+    setupUser('ta')
+    const { roleIcon } = useSettingsAccount(emitMock)
+    expect(roleIcon.value.name).toBe('GraduationCap')
+  })
+
+  it('roleIcon returns User for student', () => {
+    setupUser('student')
+    const { roleIcon } = useSettingsAccount(emitMock)
+    expect(roleIcon.value.name).toBe('User')
+  })
+
+  // ── Role label edge cases ──────────────────────────────────────────────────
+
+  it('roleLabel defaults to Etudiant when no user is set', () => {
+    // No user set — currentUser is null
+    const { roleLabel } = useSettingsAccount(emitMock)
+    expect(roleLabel.value).toBe('Étudiant')
+  })
 })
