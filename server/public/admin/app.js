@@ -3,6 +3,18 @@
 // ═══════════════════════════════════════════════════════════════════════════════
 
 const API = window.location.origin
+
+// ── SSO : recuperer le token depuis l'URL si present ────────────────────────
+;(() => {
+  const params = new URLSearchParams(window.location.search)
+  const urlToken = params.get('token')
+  if (urlToken) {
+    localStorage.setItem('admin_token', urlToken)
+    // Nettoyer l'URL pour ne pas exposer le token dans l'historique
+    window.history.replaceState({}, '', window.location.pathname)
+  }
+})()
+
 let token = localStorage.getItem('admin_token')
 let activeTab = 'serveur'
 let serverInterval = null

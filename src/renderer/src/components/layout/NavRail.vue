@@ -10,6 +10,7 @@
   import { useRexStore }    from '@/stores/rex'
   import { useModules }     from '@/composables/useModules'
   import { avatarColor }    from '@/utils/format'
+  import { getAuthToken }   from '@/utils/auth'
   import NotificationPanel from './NotificationPanel.vue'
 
   const appStore    = useAppStore()
@@ -39,7 +40,11 @@
   })
 
   function openAdmin() {
-    window.open('https://admin.cursus.school/', '_blank')
+    const token = getAuthToken()
+    const url = token
+      ? `https://admin.cursus.school/?token=${encodeURIComponent(token)}`
+      : 'https://admin.cursus.school/'
+    window.open(url, '_blank')
   }
 
   // ── Centre de notifications ─────────────────────────────────────────────────
