@@ -3,6 +3,7 @@
   import { X, Users, Lock, Globe, UserPlus, UserMinus, Search, Check } from 'lucide-vue-next'
   import { useAppStore } from '@/stores/app'
   import { useToast }    from '@/composables/useToast'
+  import { ROLE_LABELS } from '@/constants'
 
   const emit = defineEmits<{ (e: 'close'): void }>()
 
@@ -131,7 +132,7 @@
           <div class="ch-member-info">
             <span class="ch-member-name">
               {{ s.name }}
-              <span v-if="s.id < 0" class="ch-member-role">Responsable</span>
+              <span v-if="s.id < 0" class="ch-member-role">{{ ROLE_LABELS.teacher }}</span>
             </span>
             <span class="ch-member-email">{{ s.email }}</span>
           </div>

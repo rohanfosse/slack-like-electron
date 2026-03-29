@@ -37,6 +37,11 @@ vi.mock('@/constants', () => ({
     MUTED_DMS: 'cc_muted_dms',
   },
   NOTIFICATION_HISTORY_LIMIT: 50,
+  ROLE_LABELS: { admin: 'Admin', teacher: 'Responsable', ta: 'Intervenant', student: 'Etudiant' },
+  roleLabel: (t: string | undefined | null) => {
+    const labels: Record<string, string> = { admin: 'Admin', teacher: 'Responsable', ta: 'Intervenant', student: 'Etudiant' }
+    return labels[t ?? ''] ?? t ?? ''
+  },
 }))
 
 const localStorageMock = {

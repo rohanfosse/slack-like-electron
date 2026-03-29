@@ -10,7 +10,7 @@ import { useRouter }   from 'vue-router'
 import { useToast }    from '@/composables/useToast'
 import { useConfirm }  from '@/composables/useConfirm'
 import { avatarColor } from '@/utils/format'
-import { roleLabel }   from '@/constants'
+import { roleLabel as getRoleLabel } from '@/constants'
 
 export function useSettingsAccount(emit: (evt: 'update:modelValue', v: boolean) => void) {
   const appStore = useAppStore()
@@ -62,10 +62,7 @@ export function useSettingsAccount(emit: (evt: 'update:modelValue', v: boolean) 
       : avatarColor(appStore.currentUser?.name ?? ''),
   )
 
-  const roleLabel = computed(() => {
-    const t = appStore.currentUser?.type
-    return roleLabel(t)
-  })
+  const roleLabel = computed(() => getRoleLabel(appStore.currentUser?.type))
 
   const roleIcon = computed(() => {
     const t = appStore.currentUser?.type

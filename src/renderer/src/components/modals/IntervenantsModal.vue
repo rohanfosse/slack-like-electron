@@ -6,6 +6,7 @@ import { useAppStore }  from '@/stores/app'
 import { useToast }     from '@/composables/useToast'
 import { useConfirm }   from '@/composables/useConfirm'
 import type { Channel, Promotion } from '@/types'
+import { ROLE_LABELS } from '@/constants'
 
 const props = defineProps<{ modelValue: boolean }>()
 const emit  = defineEmits<{ 'update:modelValue': [boolean] }>()
@@ -222,7 +223,7 @@ function assignedSummary(taId: number): string {
         <div class="iv-card-header">
           <div class="iv-avatar">{{ ta.name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2) }}</div>
           <div class="iv-info">
-            <span class="iv-name">{{ ta.name }} <span class="iv-role-badge iv-role-intervenant">Intervenant</span></span>
+            <span class="iv-name">{{ ta.name }} <span class="iv-role-badge iv-role-intervenant">{{ ROLE_LABELS.ta }}</span></span>
             <span class="iv-email">{{ ta.email }}</span>
           </div>
           <span class="iv-summary">{{ assignedSummary(ta.id) }}</span>

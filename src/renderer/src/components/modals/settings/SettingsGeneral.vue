@@ -2,14 +2,11 @@
 <script setup lang="ts">
 import { Home, User, Mail, Globe, Shield } from 'lucide-vue-next'
 import { useAppStore } from '@/stores/app'
+import { ROLE_LABELS } from '@/constants'
 
 const appStore = useAppStore()
 
-const roleLabels: Record<string, string> = {
-  teacher: 'Enseignant',
-  ta: 'Intervenant',
-  student: 'Etudiant',
-}
+const roleLabels = ROLE_LABELS
 
 const roleBadgeClass: Record<string, string> = {
   teacher: 'stg-role-teacher',
