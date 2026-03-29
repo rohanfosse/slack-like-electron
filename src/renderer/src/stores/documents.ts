@@ -39,11 +39,25 @@ export const useDocumentsStore = defineStore('documents', () => {
     loading.value = true
     activeCategory.value = ''
     try {
+      // Filtrer par projet si specifie, sinon charger tous les docs de la promo
+      const effectiveProject = project ?? appStore.activeProject ?? null
       const data = await api<AppDocument[]>(
-        () => window.api.getProjectDocuments(pid, project ?? appStore.activeProject ?? null),
+        () => window.api.getProjectDocuments(pid, effectiveProject),
       )
       documents.value = data ?? []
-      // Cache offline si donnees recues
+
+      // Fallback : si un filtre projet retourne vide, recharger sans filtre
+      if (documents.value.length === 0 && effectiveProject) {
+        const allData = await api<AppDocument[]>(
+          () => window.api.getProjectDocuments(pid, null),
+        )
+        if (allData && allData.length > 0) {
+          documents.value = allData
+          // Le filtre projet ne correspond a aucun doc — reset le filtre
+          if (appStore.activeProject) appStore.activeProject = null
+        }
+      }
+
       if (documents.value.length) {
         cacheData(`documents-${pid}`, documents.value)
       }
