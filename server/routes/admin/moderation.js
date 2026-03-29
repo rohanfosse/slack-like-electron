@@ -67,8 +67,8 @@ router.get('/reports', (req, res) => {
     })
     data.pendingCount = queries.getPendingReportsCount()
     res.json({ ok: true, data })
-  } catch {
-    res.json({ ok: true, data: { entries: [], total: 0, page: 1, limit: 50, pendingCount: 0 } })
+  } catch (err) {
+    res.status(500).json({ ok: false, error: err.message })
   }
 })
 
