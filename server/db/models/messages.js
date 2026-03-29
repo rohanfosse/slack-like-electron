@@ -150,8 +150,8 @@ function searchDmMessages(studentId, query, peerId) {
 }
 
 function sendMessage({ channelId, dmStudentId, authorName, authorId, authorType, content, replyToId, replyToAuthor, replyToPreview }) {
-  // 'ta' n'est pas dans le CHECK constraint de la table - on le stocke comme 'teacher'
-  const safeType = authorType === 'ta' ? 'teacher' : authorType;
+  // 'ta' et 'admin' ne sont pas dans le CHECK constraint de la table - on les stocke comme 'teacher'
+  const safeType = (authorType === 'ta' || authorType === 'admin') ? 'teacher' : authorType;
   // Chiffrer le contenu des DMs
   const storedContent = dmStudentId ? encrypt(content) : content;
   return getDb().prepare(`
