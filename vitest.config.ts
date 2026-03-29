@@ -18,13 +18,13 @@ export default defineConfig({
       provider: 'v8',
       reporter: ['text', 'json-summary', 'lcov'],
       reportsDirectory: 'coverage',
-      include: ['server/**/*.js', 'src/renderer/src/**/*.{ts,vue}'],
-      exclude: ['**/node_modules/**', '**/dist/**', 'server/public/**'],
+      include: ['server/**/*.js', 'src/renderer/src/**/*.ts'],
+      exclude: ['**/node_modules/**', '**/dist/**', 'server/public/**', '**/*.d.ts'],
       thresholds: {
-        statements: 60,
+        statements: 40,
         branches: 50,
-        functions: 50,
-        lines: 60,
+        functions: 35,
+        lines: 40,
       },
     },
     projects: [

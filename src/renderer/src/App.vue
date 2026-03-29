@@ -9,7 +9,7 @@
   import { useToast }       from '@/composables/useToast'
   import { useAppListeners } from '@/composables/useAppListeners'
   import { useSwipeNav }    from '@/composables/useSwipeNav'
-  import { MessageSquare, FileText, Camera, Lock, Trash2, Download, UserX, Download as DownloadIcon, RefreshCw } from 'lucide-vue-next'
+  import { MessageSquare, FileText, Camera, Lock, Trash2, Download, UserX, Download as DownloadIcon, RefreshCw, Shield, Scale, Clock, Mail, Globe, Eye, Pencil, ChevronDown, Server } from 'lucide-vue-next'
   import Toast        from '@/components/ui/Toast.vue'
   import ConfirmModal from '@/components/ui/ConfirmModal.vue'
   import NavRail    from '@/components/layout/NavRail.vue'
@@ -139,6 +139,7 @@
   // ── Bannière de confidentialité RGPD (première ouverture) ─────────────────
   const PRIVACY_KEY  = 'cc_privacy_seen'
   const showPrivacy  = ref(false)
+  const privacySections = ref({ controller: false, legal: false, data: true, retention: false })
   function acceptPrivacy() {
     localStorage.setItem(PRIVACY_KEY, '1')
     showPrivacy.value = false
@@ -557,52 +558,109 @@
 
   <!-- Banniere RGPD (premiere utilisation ou via Settings) -->
   <Transition name="privacy-fade">
-    <div v-if="showPrivacy && appStore.currentUser" class="privacy-overlay" role="dialog" aria-modal="true" aria-label="Politique de confidentialité">
+    <div v-if="showPrivacy && appStore.currentUser" class="privacy-overlay" role="dialog" aria-modal="true" aria-label="Politique de confidentialite">
       <div class="privacy-box">
         <div class="privacy-header">
+          <div class="privacy-header-icon"><Shield :size="20" /></div>
           <div>
-            <h3 class="privacy-title">Confidentialité et données</h3>
-            <p class="privacy-subtitle">Comment Cursus protège vos informations</p>
+            <h3 class="privacy-title">Protection de vos donnees</h3>
+            <p class="privacy-subtitle">Reglement General sur la Protection des Donnees (RGPD)</p>
           </div>
         </div>
 
         <div class="privacy-body">
+          <!-- Responsable de traitement -->
           <div class="privacy-section">
-            <h4 class="privacy-section-title">Données collectées</h4>
-            <div class="privacy-grid">
-              <div class="privacy-item">
-                <MessageSquare :size="16" class="privacy-item-icon" />
-                <div><strong>Messages</strong><span>Base de données locale</span></div>
-              </div>
-              <div class="privacy-item">
-                <FileText :size="16" class="privacy-item-icon" />
-                <div><strong>Rendus et notes</strong><span>Accessibles au responsable</span></div>
-              </div>
-              <div class="privacy-item">
-                <Camera :size="16" class="privacy-item-icon" />
-                <div><strong>Photo de profil</strong><span>Visible par votre promo</span></div>
-              </div>
-              <div class="privacy-item">
-                <Lock :size="16" class="privacy-item-icon" />
-                <div><strong>Mot de passe</strong><span>Chiffré (bcrypt)</span></div>
+            <button class="privacy-section-toggle" @click="privacySections.controller = !privacySections.controller">
+              <h4 class="privacy-section-title"><Scale :size="14" /> Responsable de traitement</h4>
+              <ChevronDown :size="14" class="privacy-chevron" :class="{ open: privacySections.controller }" />
+            </button>
+            <div v-if="privacySections.controller" class="privacy-section-content">
+              <p class="privacy-text"><strong>Rohan Fosse</strong>, enseignant au CESI.</p>
+              <p class="privacy-text">Cursus est un outil pedagogique developpe dans le cadre des cours dispenses au CESI. Il n'est pas edite par le CESI.</p>
+              <div class="privacy-contact">
+                <Mail :size="13" /> <a href="mailto:rfosse@cesi.fr">rfosse@cesi.fr</a>
               </div>
             </div>
           </div>
 
+          <!-- Base legale -->
           <div class="privacy-section">
-            <h4 class="privacy-section-title">Vos droits <span class="privacy-badge">RGPD</span></h4>
+            <button class="privacy-section-toggle" @click="privacySections.legal = !privacySections.legal">
+              <h4 class="privacy-section-title"><Scale :size="14" /> Base legale</h4>
+              <ChevronDown :size="14" class="privacy-chevron" :class="{ open: privacySections.legal }" />
+            </button>
+            <div v-if="privacySections.legal" class="privacy-section-content">
+              <p class="privacy-text">Le traitement de vos donnees repose sur l'<strong>interet legitime</strong> (art. 6.1.f RGPD) dans le cadre de la mission educative : faciliter la communication, le suivi pedagogique et la remise de travaux au sein de votre promotion.</p>
+            </div>
+          </div>
+
+          <!-- Donnees collectees -->
+          <div class="privacy-section">
+            <button class="privacy-section-toggle" @click="privacySections.data = !privacySections.data">
+              <h4 class="privacy-section-title"><Server :size="14" /> Donnees collectees</h4>
+              <ChevronDown :size="14" class="privacy-chevron" :class="{ open: privacySections.data }" />
+            </button>
+            <div v-if="privacySections.data" class="privacy-section-content">
+              <div class="privacy-grid">
+                <div class="privacy-item">
+                  <MessageSquare :size="15" class="privacy-item-icon" />
+                  <div><strong>Messages</strong><span>Stockes sur le serveur de cours</span></div>
+                </div>
+                <div class="privacy-item">
+                  <FileText :size="15" class="privacy-item-icon" />
+                  <div><strong>Rendus et notes</strong><span>Accessibles a l'enseignant</span></div>
+                </div>
+                <div class="privacy-item">
+                  <Camera :size="15" class="privacy-item-icon" />
+                  <div><strong>Photo de profil</strong><span>Visible par votre promo</span></div>
+                </div>
+                <div class="privacy-item">
+                  <Lock :size="15" class="privacy-item-icon" />
+                  <div><strong>Mot de passe</strong><span>Chiffre (bcrypt, irreversible)</span></div>
+                </div>
+                <div class="privacy-item">
+                  <Globe :size="15" class="privacy-item-icon" />
+                  <div><strong>Donnees techniques</strong><span>Adresse IP, navigateur, pages visitees</span></div>
+                </div>
+                <div class="privacy-item">
+                  <Eye :size="15" class="privacy-item-icon" />
+                  <div><strong>Traces d'activite</strong><span>Connexions, tentatives de login</span></div>
+                </div>
+              </div>
+              <p class="privacy-text privacy-text-small">Aucune donnee n'est transmise a des tiers. Le serveur est heberge en France.</p>
+            </div>
+          </div>
+
+          <!-- Duree de conservation -->
+          <div class="privacy-section">
+            <button class="privacy-section-toggle" @click="privacySections.retention = !privacySections.retention">
+              <h4 class="privacy-section-title"><Clock :size="14" /> Duree de conservation</h4>
+              <ChevronDown :size="14" class="privacy-chevron" :class="{ open: privacySections.retention }" />
+            </button>
+            <div v-if="privacySections.retention" class="privacy-section-content">
+              <p class="privacy-text">Vos donnees sont conservees pendant la duree de votre formation, puis <strong>supprimees dans les 3 mois</strong> suivant la fin de la promotion. Les logs techniques (IP, visites) sont purges automatiquement apres 90 jours.</p>
+            </div>
+          </div>
+
+          <!-- Vos droits -->
+          <div class="privacy-section privacy-section-open">
+            <h4 class="privacy-section-title privacy-section-title-static"><Shield :size="14" /> Vos droits <span class="privacy-badge">RGPD</span></h4>
             <div class="privacy-rights">
-              <div class="privacy-right"><Trash2 :size="14" class="privacy-right-icon" /> Supprimer vos messages</div>
-              <div class="privacy-right"><Download :size="14" class="privacy-right-icon" /> Exporter vos données <span class="privacy-path">Paramètres → Compte</span></div>
-              <div class="privacy-right"><UserX :size="14" class="privacy-right-icon" /> Demander la suppression du compte</div>
+              <div class="privacy-right"><Eye :size="14" class="privacy-right-icon" /> <strong>Acces</strong> Consulter toutes vos donnees</div>
+              <div class="privacy-right"><Download :size="14" class="privacy-right-icon" /> <strong>Portabilite</strong> Exporter vos donnees <span class="privacy-path">Parametres → Compte</span></div>
+              <div class="privacy-right"><Pencil :size="14" class="privacy-right-icon" /> <strong>Rectification</strong> Corriger vos informations</div>
+              <div class="privacy-right"><Trash2 :size="14" class="privacy-right-icon" /> <strong>Suppression</strong> Supprimer vos messages</div>
+              <div class="privacy-right"><UserX :size="14" class="privacy-right-icon" /> <strong>Effacement</strong> Demander la suppression du compte</div>
+            </div>
+            <div class="privacy-contact privacy-contact-bottom">
+              <Mail :size="13" /> Pour exercer vos droits : <a href="mailto:rfosse@cesi.fr">rfosse@cesi.fr</a>
             </div>
           </div>
-
-          <p class="privacy-note">Données utilisées uniquement dans le cadre de votre formation, jamais transmises à des tiers.</p>
         </div>
 
         <button class="btn-primary privacy-accept" @click="acceptPrivacy">
-          Compris, continuer
+          J'ai compris
         </button>
       </div>
     </div>
@@ -763,7 +821,7 @@
 
   @keyframes spin { to { transform: rotate(360deg) } }
 
-  /* ── Bannière RGPD ── */
+  /* ── Banniere RGPD ── */
   .privacy-overlay {
     position: fixed;
     inset: 0;
@@ -781,8 +839,11 @@
     border: 1px solid var(--border);
     border-radius: var(--radius-xl);
     padding: 0;
-    max-width: 480px;
+    max-width: 520px;
     width: 100%;
+    max-height: 85vh;
+    display: flex;
+    flex-direction: column;
     box-shadow: 0 32px 80px rgba(0, 0, 0, .7);
     overflow: hidden;
   }
@@ -791,6 +852,14 @@
     display: flex; align-items: center; gap: 14px;
     padding: 24px 28px 20px;
     border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+
+  .privacy-header-icon {
+    width: 40px; height: 40px; border-radius: 10px;
+    background: color-mix(in srgb, var(--accent) 15%, transparent);
+    display: flex; align-items: center; justify-content: center;
+    color: var(--accent); flex-shrink: 0;
   }
 
   .privacy-title {
@@ -798,16 +867,79 @@
   }
 
   .privacy-subtitle {
-    font-size: 12px; color: var(--text-muted); margin: 2px 0 0; font-weight: 500;
+    font-size: 11.5px; color: var(--text-muted); margin: 2px 0 0; font-weight: 500;
   }
 
   .privacy-body {
-    padding: 20px 28px 24px; display: flex; flex-direction: column; gap: 18px;
+    padding: 16px 28px 20px;
+    display: flex; flex-direction: column; gap: 4px;
+    overflow-y: auto;
+    flex: 1;
+    min-height: 0;
   }
 
+  .privacy-section {
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+
+  .privacy-section-open {
+    border-color: color-mix(in srgb, var(--accent) 30%, var(--border));
+  }
+
+  .privacy-section-toggle {
+    width: 100%;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 14px;
+    background: var(--bg-elevated);
+    border: none; cursor: pointer;
+    transition: background .15s ease;
+  }
+  .privacy-section-toggle:hover { background: color-mix(in srgb, var(--accent) 5%, var(--bg-elevated)); }
+  .privacy-section-toggle:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+
   .privacy-section-title {
-    font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .6px;
-    color: var(--text-muted); margin: 0 0 10px; display: flex; align-items: center; gap: 8px;
+    font-size: 12px; font-weight: 700;
+    color: var(--text-primary); margin: 0;
+    display: flex; align-items: center; gap: 8px;
+  }
+
+  .privacy-section-title-static {
+    padding: 12px 14px;
+    background: var(--bg-elevated);
+  }
+
+  .privacy-chevron {
+    color: var(--text-muted);
+    transition: transform .2s ease;
+    flex-shrink: 0;
+  }
+  .privacy-chevron.open { transform: rotate(180deg); }
+
+  .privacy-section-content {
+    padding: 12px 14px 14px;
+    display: flex; flex-direction: column; gap: 10px;
+  }
+
+  .privacy-text {
+    font-size: 12.5px; color: var(--text-secondary); line-height: 1.6; margin: 0;
+  }
+  .privacy-text strong { color: var(--text-primary); font-weight: 600; }
+  .privacy-text-small { font-size: 11px; color: var(--text-muted); font-style: italic; }
+
+  .privacy-contact {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 12px; color: var(--text-muted);
+  }
+  .privacy-contact a {
+    color: var(--accent); text-decoration: none; font-weight: 600;
+  }
+  .privacy-contact a:hover { text-decoration: underline; }
+  .privacy-contact-bottom {
+    padding: 10px 14px;
+    border-top: 1px solid var(--border);
+    margin-top: 4px;
   }
 
   .privacy-badge {
@@ -819,7 +951,7 @@
 
   .privacy-item {
     display: flex; align-items: flex-start; gap: 10px;
-    padding: 10px 12px; background: var(--bg-elevated);
+    padding: 10px 12px; background: var(--bg-modal);
     border: 1px solid var(--border); border-radius: var(--radius);
   }
 
@@ -829,26 +961,28 @@
   .privacy-item strong { font-size: 12px; font-weight: 600; color: var(--text-primary); }
   .privacy-item span { font-size: 10.5px; color: var(--text-muted); line-height: 1.3; }
 
-  .privacy-rights { display: flex; flex-direction: column; gap: 6px; }
+  .privacy-rights {
+    display: flex; flex-direction: column; gap: 5px;
+    padding: 12px 14px 8px;
+  }
 
   .privacy-right {
-    display: flex; align-items: center; gap: 8px; font-size: 12.5px;
-    color: var(--text-secondary); padding: 8px 12px; background: var(--bg-elevated);
+    display: flex; align-items: center; gap: 8px; font-size: 12px;
+    color: var(--text-secondary); padding: 7px 10px; background: var(--bg-modal);
     border-radius: var(--radius); border: 1px solid var(--border);
+  }
+  .privacy-right strong {
+    color: var(--text-primary); font-weight: 600; min-width: 80px;
   }
 
   .privacy-path {
     font-size: 10px; color: var(--accent); font-weight: 600; margin-left: auto; opacity: .8;
   }
 
-  .privacy-note {
-    font-size: 11px; color: var(--text-muted); font-style: italic; text-align: center;
-    padding-top: 4px; border-top: 1px solid var(--border); margin: 0; line-height: 1.5;
-  }
-
   .privacy-accept {
     margin: 0 28px 24px; width: calc(100% - 56px); justify-content: center;
     padding: 11px; font-size: 13.5px; font-weight: 600; border-radius: var(--radius);
+    flex-shrink: 0;
   }
 
   .privacy-fade-enter-active, .privacy-fade-leave-active { transition: opacity var(--t-base) ease; }
