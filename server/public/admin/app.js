@@ -431,6 +431,11 @@ window.checkReadOnlyBanner = checkReadOnlyBanner
 window.toggleReadOnly = toggleReadOnly
 window.toggleArchivePromo = toggleArchivePromo
 
+// Errors
+window.loadErrors = loadErrors
+window.clearErrors = clearErrors
+window.showErrorStack = showErrorStack
+
 // Modal
 window.closeModal = closeModal
 window.showModal = showModal
