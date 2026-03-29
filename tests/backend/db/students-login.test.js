@@ -60,6 +60,16 @@ describe('loginWithCredentials edge cases', () => {
     expect(user.avatar_initials).toBeDefined()
     expect(user.must_change_password).toBeDefined()
   })
+
+  it('returns email field for teacher login', () => {
+    const user = students.loginWithCredentials('prof@test.fr', TEST_PASSWORD)
+    expect(user.email).toBe('prof@test.fr')
+  })
+
+  it('returns email field for student login', () => {
+    const user = students.loginWithCredentials('jean@test.fr', TEST_PASSWORD)
+    expect(user.email).toBe('jean@test.fr')
+  })
 })
 
 describe('getStudentByEmail', () => {

@@ -154,16 +154,18 @@ describe('useSettingsAccount', () => {
     expect(photoChanged.value).toBe(false)
   })
 
-  it('roleLabel returns correct label per type', () => {
-    setupUser('admin')
-    const { roleLabel } = useSettingsAccount(emitMock)
-    expect(roleLabel.value).toBe('Admin')
-  })
-
-  it('roleLabel returns Pilote for teacher', () => {
-    setupUser('teacher')
-    const { roleLabel } = useSettingsAccount(emitMock)
-    expect(roleLabel.value).toBe('Pilote')
+  it('roleLabel returns correct label for each user type', () => {
+    const cases: Array<[Parameters<typeof setupUser>[0], string]> = [
+      ['admin', 'Admin'],
+      ['teacher', 'Pilote'],
+      ['ta', 'Intervenant'],
+      ['student', 'Étudiant'],
+    ]
+    for (const [type, expected] of cases) {
+      setupUser(type)
+      const { roleLabel } = useSettingsAccount(emitMock)
+      expect(roleLabel.value).toBe(expected)
+    }
   })
 
   it('handleLogout emits close, logs out, and navigates', () => {

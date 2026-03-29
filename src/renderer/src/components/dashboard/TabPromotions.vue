@@ -66,7 +66,8 @@ const promoStats = computed(() => {
 /* ── Filtered promos: only the active one ── */
 const filteredPromos = computed(() => {
   if (props.activePromoId == null) return props.promos
-  return props.promos.filter(p => p.id === props.activePromoId)
+  const filtered = props.promos.filter(p => p.id === props.activePromoId)
+  return filtered.length ? filtered : props.promos
 })
 
 /* ── Ring chart helpers ── */

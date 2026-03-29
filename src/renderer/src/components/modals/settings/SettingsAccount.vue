@@ -35,6 +35,9 @@ const {
             <component :is="roleIcon" :size="12" />
             <span>{{ roleLabel }}</span>
           </div>
+          <div v-if="appStore.currentUser?.email" class="stg-profile-email">
+            {{ appStore.currentUser.email }}
+          </div>
           <div v-if="appStore.currentUser?.promo_name" class="stg-profile-promo">
             {{ appStore.currentUser.promo_name }}
           </div>

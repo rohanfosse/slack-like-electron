@@ -133,6 +133,7 @@ function loginWithCredentials(email, password) {
     return {
       id:                  -(teacher.id),
       name:                teacher.name,
+      email:               teacher.email,
       avatar_initials:     initials,
       photo_data:          teacher.photo_data ?? null,
       type:                teacher.role,

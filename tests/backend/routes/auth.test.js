@@ -36,6 +36,22 @@ describe('POST /api/auth/login', () => {
     expect(res.body.data.type).toBe('teacher')
   })
 
+  it('returns email field for teacher login', async () => {
+    const res = await request(app)
+      .post('/api/auth/login')
+      .send({ email: 'prof@test.fr', password: TEST_PASSWORD })
+    expect(res.status).toBe(200)
+    expect(res.body.data.email).toBe('prof@test.fr')
+  })
+
+  it('returns email field for student login', async () => {
+    const res = await request(app)
+      .post('/api/auth/login')
+      .send({ email: 'jean@test.fr', password: TEST_PASSWORD })
+    expect(res.status).toBe(200)
+    expect(res.body.data.email).toBe('jean@test.fr')
+  })
+
   it('returns 401 for wrong password', async () => {
     const res = await request(app)
       .post('/api/auth/login')
