@@ -3,6 +3,23 @@ const router  = require('express').Router()
 const queries = require('../db/index')
 const wrap    = require('../utils/wrap')
 const { requireTeacher, requirePromo, promoFromParam } = require('../middleware/authorize')
+const { getDb } = require('../db/connection')
+
+/** Lookup : rex session id → promo_id */
+function promoFromRexSession(req) {
+  const id = Number(req.params.id)
+  if (!id) return null
+  const s = getDb().prepare('SELECT promo_id FROM rex_sessions WHERE id = ?').get(id)
+  return s?.promo_id ?? null
+}
+
+/** Lookup : rex activity id → promo_id (via session) */
+function promoFromRexActivity(req) {
+  const id = Number(req.params.id)
+  if (!id) return null
+  const a = getDb().prepare('SELECT rs.promo_id FROM rex_activities ra JOIN rex_sessions rs ON rs.id = ra.session_id WHERE ra.id = ?').get(id)
+  return a?.promo_id ?? null
+}
 
 // ─── Throttle helper pour results-update ─────────────────────────────────────
 const _lastEmit = new Map() // activityId → timestamp
@@ -32,7 +49,7 @@ router.post('/sessions', requireTeacher, wrap((req) => {
 }))
 
 // GET /sessions/:id - recuperer une session + activites
-router.get('/sessions/:id', wrap((req) => {
+router.get('/sessions/:id', requirePromo(promoFromRexSession), wrap((req) => {
   const session = queries.getRexSession(Number(req.params.id))
   if (!session) throw new Error('Session introuvable')
   return session
@@ -157,7 +174,7 @@ router.patch('/activities/:id/status', requireTeacher, (req, res) => {
 // ─── Responses ───────────────────────────────────────────────────────────────
 
 // POST /activities/:id/respond - soumettre une reponse anonyme
-router.post('/activities/:id/respond', (req, res) => {
+router.post('/activities/:id/respond', requirePromo(promoFromRexActivity), (req, res) => {
   try {
     // Sécurité : forcer l'identité depuis le JWT (anti-usurpation)
     const studentId = req.user?.id
@@ -184,7 +201,7 @@ router.post('/activities/:id/respond', (req, res) => {
 })
 
 // GET /activities/:id/results - resultats agreges (anonymes)
-router.get('/activities/:id/results', wrap((req) => {
+router.get('/activities/:id/results', requirePromo(promoFromRexActivity), wrap((req) => {
   return queries.getRexActivityResultsAggregated(Number(req.params.id))
 }))
 
@@ -199,7 +216,7 @@ router.post('/responses/:id/pin', requireTeacher, wrap((req) => {
 // ─── Export ──────────────────────────────────────────────────────────────────
 
 // GET /sessions/:id/export - export JSON ou CSV
-router.get('/sessions/:id/export', (req, res) => {
+router.get('/sessions/:id/export', requireTeacher, requirePromo(promoFromRexSession), (req, res) => {
   try {
     const data = queries.exportRexSession(Number(req.params.id))
     if (!data) return res.status(404).json({ ok: false, error: 'Session introuvable' })

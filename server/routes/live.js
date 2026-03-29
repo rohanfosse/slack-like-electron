@@ -2,7 +2,7 @@
 const router  = require('express').Router()
 const queries = require('../db/index')
 const wrap    = require('../utils/wrap')
-const { requireTeacher, requirePromo } = require('../middleware/authorize')
+const { requireTeacher, requirePromo, promoFromParam } = require('../middleware/authorize')
 
 /** Lookup : live session id → promo_id */
 function promoFromSession(req) {
@@ -62,7 +62,7 @@ router.post('/sessions', requireTeacher, wrap((req) => {
 }))
 
 // GET /sessions/:id - récupérer une session + activités
-router.get('/sessions/:id', wrap((req) => {
+router.get('/sessions/:id', requirePromo(promoFromSession), wrap((req) => {
   const session = queries.getSession(Number(req.params.id))
   if (!session) throw new Error('Session introuvable')
   return session
@@ -76,23 +76,23 @@ router.get('/sessions/code/:code', wrap((req) => {
 }))
 
 // GET /sessions/promo/:promoId/active - session active pour une promo
-router.get('/sessions/promo/:promoId/active', wrap((req) => {
+router.get('/sessions/promo/:promoId/active', requirePromo(promoFromParam), wrap((req) => {
   return queries.getActiveSessionForPromo(Number(req.params.promoId))
 }))
 
 // GET /sessions/promo/:promoId/history - historique sessions terminées
-router.get('/sessions/promo/:promoId/history', wrap((req) => {
+router.get('/sessions/promo/:promoId/history', requirePromo(promoFromParam), wrap((req) => {
   const { search, dateFrom, dateTo } = req.query
   return queries.getEndedSessionsForPromo(Number(req.params.promoId), { search, dateFrom, dateTo })
 }))
 
 // GET /sessions/promo/:promoId/stats - statistiques quiz par promo
-router.get('/sessions/promo/:promoId/stats', wrap((req) => {
+router.get('/sessions/promo/:promoId/stats', requirePromo(promoFromParam), wrap((req) => {
   return queries.getLiveStatsForPromo(Number(req.params.promoId))
 }))
 
 // GET /sessions/promo/:promoId - toutes les sessions non terminées (brouillons + actives)
-router.get('/sessions/promo/:promoId', wrap((req) => {
+router.get('/sessions/promo/:promoId', requirePromo(promoFromParam), wrap((req) => {
   return queries.getSessionsForPromo(Number(req.params.promoId))
 }))
 
@@ -209,7 +209,7 @@ router.patch('/activities/:id/status', requireTeacher, (req, res) => {
 // ─── Responses ───────────────────────────────────────────────────────────────
 
 // POST /activities/:id/respond - soumettre une réponse
-router.post('/activities/:id/respond', (req, res) => {
+router.post('/activities/:id/respond', requirePromo(promoFromActivity), (req, res) => {
   try {
     // Sécurité : forcer l'identité depuis le JWT (anti-usurpation)
     const studentId = req.user?.id

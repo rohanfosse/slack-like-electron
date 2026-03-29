@@ -41,7 +41,7 @@ router.delete('/:id', requireTeacher, wrap((req) => queries.deleteProject(Number
 
 // ── Travaux d'un projet ───────────────────────────────────────────────────────
 
-router.get('/:id/travaux', wrap((req) => queries.getProjectTravaux(Number(req.params.id))))
+router.get('/:id/travaux', requirePromo(promoFromProject), wrap((req) => queries.getProjectTravaux(Number(req.params.id))))
 
 router.post('/:id/travaux/:travailId', requireTeacher, wrap((req) =>
   queries.addTravailToProject(Number(req.params.id), Number(req.params.travailId))
@@ -53,7 +53,7 @@ router.delete('/:id/travaux/:travailId', requireTeacher, wrap((req) =>
 
 // ── Documents d'un projet ─────────────────────────────────────────────────────
 
-router.get('/:id/documents', wrap((req) => queries.getProjectLinkedDocuments(Number(req.params.id))))
+router.get('/:id/documents', requirePromo(promoFromProject), wrap((req) => queries.getProjectLinkedDocuments(Number(req.params.id))))
 
 router.post('/:id/documents/:documentId', requireTeacher, wrap((req) =>
   queries.addDocumentToProject(Number(req.params.id), Number(req.params.documentId))
@@ -61,7 +61,7 @@ router.post('/:id/documents/:documentId', requireTeacher, wrap((req) =>
 
 // ── Assignation TA ────────────────────────────────────────────────────────────
 
-router.get('/:id/tas', wrap((req) => queries.getProjectTas(Number(req.params.id))))
+router.get('/:id/tas', requirePromo(promoFromProject), wrap((req) => queries.getProjectTas(Number(req.params.id))))
 
 router.post('/:id/assign-ta', requireTeacher, wrap((req) => {
   const { teacherId } = req.body
