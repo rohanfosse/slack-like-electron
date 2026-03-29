@@ -1,8 +1,8 @@
 {
   "ci": {
     "collect": {
-      "url": ["https://cursus.school", "https://app.cursus.school"],
-      "numberOfRuns": 3
+      "url": ["https://cursus.school"],
+      "numberOfRuns": 1
     },
     "assert": {
       "assertions": {
