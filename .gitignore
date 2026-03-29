@@ -27,3 +27,4 @@ logs/
 
 *.pdf
 .claude/.mcp.json
+coverage/
