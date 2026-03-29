@@ -69,9 +69,9 @@ Les etudiants et enseignants naviguent chaque jour entre 5 a 8 outils : Moodle, 
 
 | Fonctionnalite | Description |
 |----------------|-------------|
-| **Chat temps reel** | Canaux par promotion, annonces en lecture seule, DMs, reactions, mentions `@nom` et `@tous`, slash commands `/devoir` `/doc` `/annonce`, recherche plein texte, indicateur de frappe, notifications desktop |
+| **Chat temps reel** | Canaux par promotion (archivables), annonces en lecture seule, DMs etudiant-etudiant, reactions, mentions `@nom` et `@tous`, slash commands `/devoir` `/doc` `/annonce`, recherche plein texte, indicateur de frappe, notifications desktop, offline queue avec retry |
 | **Devoirs et evaluation** | 5 types (livrable, soutenance, CCTL, etude de cas, memoire), brouillon, verrouillage apres deadline, grilles multicriteres, notation A-F, feedback individuel, export CSV |
-| **Documents et ressources** | Upload et liens, categorisation, viewers integres (PDF, Word, Excel), drag-and-drop, recherche, liaison aux devoirs |
+| **Documents et ressources** | Upload avec validation (taille max 50 Mo, extensions bloquees), liens, categorisation, viewers integres (PDF, Word, Excel), drag-and-drop, recherche, liaison aux devoirs |
 | **Dashboard personnalisable** | Widgets reorganisables par drag-and-drop, deadlines proches, dernieres notes, progression, pomodoro, calendrier. Vues differentes enseignant/etudiant |
 
 ### Enrichissement

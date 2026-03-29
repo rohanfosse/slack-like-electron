@@ -30,20 +30,16 @@ npm run server:dev
 
 ## Tests
 
-```bash
-npm test
-```
-
-Pour le mode watch pendant le developpement :
+Suite de tests comprehensive (1500+ tests) couvrant frontend, backend et E2E :
 
 ```bash
-npm run test:watch
-```
-
-Pour generer un rapport de couverture :
-
-```bash
-npm run test:coverage
+npm test              # Tous les tests (Vitest)
+npm run test:watch   # Mode watch pendant le developpement
+npm run test:frontend # Tests frontend seulement
+npm run test:backend  # Tests backend seulement
+npm run test:coverage # Rapport de couverture (objectif 80%+)
+npm run test:e2e      # Tests E2E Playwright (critical user flows)
+npm run test:e2e:ui   # UI Playwright en mode interactif
 ```
 
 Avant de soumettre une PR, verifiez que le typage compile sans erreur :
@@ -77,10 +73,16 @@ src/
     constants/     Constantes partagees
     stores/        Stores Pinia
     types/         Types TypeScript
+    utils/         Utilitaires (auth, validation, stockage, DMs queue, PDF signing)
     views/         Pages principales
   web/           Build web (PWA) avec shim IPC
   landing/       Page d'accueil publique
 server/          Serveur Express + Socket.IO (mode web)
+  db/            SQLite : connexion, schema, migrations, models
+  routes/        API REST (18 domaines + admin modulaire)
+  middleware/    Auth JWT, validation Zod, autorisation (role + promo)
+  public/        Console d'administration web
+  utils/         Utilitaires (roles, cache, crypto, logger, errors, joinCode)
 config/          Configuration Nginx, PM2, Docker
 scripts/         Scripts utilitaires (postinstall, seed)
 ```
