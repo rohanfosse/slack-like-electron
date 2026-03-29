@@ -121,15 +121,18 @@
     ],
     "win": {
       "target": "nsis",
-      "icon": "resources/icon.ico"
+      "icon": "resources/icon.ico",
+      "artifactName": "Cursus-${version}-win.${ext}"
     },
     "mac": {
       "target": "dmg",
-      "icon": "resources/icon.icns"
+      "icon": "resources/icon.icns",
+      "artifactName": "Cursus-${version}-mac.${ext}"
     },
     "linux": {
       "target": "AppImage",
-      "icon": "resources/icon.png"
+      "icon": "resources/icon.png",
+      "artifactName": "Cursus-${version}-linux.${ext}"
     },
     "publish": {
       "provider": "github",
