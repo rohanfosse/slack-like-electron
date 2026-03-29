@@ -47,22 +47,11 @@ describe('GET /api/admin/stats', () => {
     expect(res.body.ok).toBe(false)
   })
 
-  it('teacher recoit les stats filtrees par promo', async () => {
+  it('teacher bloque sur stats (403)', async () => {
     const res = await request(app)
       .get('/api/admin/stats')
       .set('Authorization', `Bearer ${teacherToken}`)
-    expect(res.status).toBe(200)
-    expect(res.body.ok).toBe(true)
-    expect(res.body.data).toHaveProperty('counts')
-    expect(res.body.data).toHaveProperty('activity24h')
-    expect(res.body.data).toHaveProperty('messagesPerDay')
-    expect(res.body.data).toHaveProperty('depotsPerDay')
-    expect(res.body.data).toHaveProperty('topChannels')
-    expect(res.body.data).toHaveProperty('promosSummary')
-    expect(res.body.data).toHaveProperty('gradeDistribution')
-    expect(res.body.data).toHaveProperty('lateCount')
-    expect(res.body.data).toHaveProperty('ungradedCount')
-    expect(res.body.data).toHaveProperty('avgGrade')
+    expect(res.status).toBe(403)
   })
 
   it('admin recoit les stats globales', async () => {
@@ -90,13 +79,11 @@ describe('GET /api/admin/heatmap', () => {
     expect(res.status).toBe(403)
   })
 
-  it('teacher recoit la heatmap (tableau)', async () => {
+  it('teacher bloque sur heatmap (403)', async () => {
     const res = await request(app)
       .get('/api/admin/heatmap')
       .set('Authorization', `Bearer ${teacherToken}`)
-    expect(res.status).toBe(200)
-    expect(res.body.ok).toBe(true)
-    expect(Array.isArray(res.body.data)).toBe(true)
+    expect(res.status).toBe(403)
   })
 
   it('admin recoit la heatmap', async () => {
@@ -119,18 +106,11 @@ describe('GET /api/admin/visits', () => {
     expect(res.status).toBe(403)
   })
 
-  it('teacher recoit les stats de visites', async () => {
+  it('teacher bloque sur stats de visites (403)', async () => {
     const res = await request(app)
       .get('/api/admin/visits')
       .set('Authorization', `Bearer ${teacherToken}`)
-    expect(res.status).toBe(200)
-    expect(res.body.ok).toBe(true)
-    expect(res.body.data).toHaveProperty('dau')
-    expect(res.body.data).toHaveProperty('wau')
-    expect(res.body.data).toHaveProperty('mau')
-    expect(res.body.data).toHaveProperty('visitsPerDay')
-    expect(res.body.data).toHaveProperty('topPages')
-    expect(res.body.data).toHaveProperty('loginStats')
+    expect(res.status).toBe(403)
   })
 })
 
@@ -145,32 +125,25 @@ describe('GET /api/admin/error-reports', () => {
     expect(res.status).toBe(403)
   })
 
-  it('teacher recoit les rapports d\'erreur', async () => {
+  it('teacher bloque sur rapports d\'erreur (403)', async () => {
     const res = await request(app)
       .get('/api/admin/error-reports')
       .set('Authorization', `Bearer ${teacherToken}`)
-    expect(res.status).toBe(200)
-    expect(res.body.ok).toBe(true)
-    expect(res.body.data).toHaveProperty('items')
-    expect(res.body.data).toHaveProperty('total')
-    expect(Array.isArray(res.body.data.items)).toBe(true)
-    expect(res.body.data.total).toBeGreaterThanOrEqual(1)
+    expect(res.status).toBe(403)
   })
 
-  it('respecte le parametre limit', async () => {
+  it('teacher bloque sur parametre limit (403)', async () => {
     const res = await request(app)
       .get('/api/admin/error-reports?limit=1')
       .set('Authorization', `Bearer ${teacherToken}`)
-    expect(res.status).toBe(200)
-    expect(res.body.data.items.length).toBeLessThanOrEqual(1)
+    expect(res.status).toBe(403)
   })
 
-  it('respecte le parametre offset', async () => {
+  it('teacher bloque sur parametre offset (403)', async () => {
     const res = await request(app)
       .get('/api/admin/error-reports?offset=1000')
       .set('Authorization', `Bearer ${teacherToken}`)
-    expect(res.status).toBe(200)
-    expect(res.body.data.items.length).toBe(0)
+    expect(res.status).toBe(403)
   })
 })
 

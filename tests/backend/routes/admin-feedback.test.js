@@ -41,14 +41,12 @@ describe('POST /api/admin/feedback', () => {
     expect(res.status).toBe(403)
   })
 
-  it('teacher can submit feedback', async () => {
+  it('teacher CANNOT submit feedback (403)', async () => {
     const res = await request(app)
       .post('/api/admin/feedback')
       .set('Authorization', `Bearer ${teacherToken}`)
       .send({ type: 'bug', title: 'Bug rendu', description: 'Erreur lors du depot' })
-    expect(res.status).toBe(200)
-    expect(res.body.ok).toBe(true)
-    expect(res.body.data).toHaveProperty('id')
+    expect(res.status).toBe(403)
   })
 
   it('admin can submit feedback', async () => {
@@ -60,22 +58,20 @@ describe('POST /api/admin/feedback', () => {
     expect(res.body.ok).toBe(true)
   })
 
-  it('rejects missing title', async () => {
+  it('teacher bloque sur titre manquant (403)', async () => {
     const res = await request(app)
       .post('/api/admin/feedback')
       .set('Authorization', `Bearer ${teacherToken}`)
       .send({ type: 'bug', title: '', description: 'test' })
-    expect(res.status).toBe(400)
-    expect(res.body.ok).toBe(false)
+    expect(res.status).toBe(403)
   })
 
-  it('rejects invalid type', async () => {
+  it('teacher bloque sur type invalide (403)', async () => {
     const res = await request(app)
       .post('/api/admin/feedback')
       .set('Authorization', `Bearer ${teacherToken}`)
       .send({ type: 'invalid', title: 'Test', description: 'test' })
-    expect(res.status).toBe(400)
-    expect(res.body.ok).toBe(false)
+    expect(res.status).toBe(403)
   })
 })
 
@@ -90,30 +86,25 @@ describe('GET /api/admin/feedback', () => {
     expect(res.status).toBe(403)
   })
 
-  it('teacher can list feedback', async () => {
+  it('teacher CANNOT list feedback (403)', async () => {
     const res = await request(app)
       .get('/api/admin/feedback')
       .set('Authorization', `Bearer ${teacherToken}`)
-    expect(res.status).toBe(200)
-    expect(res.body.ok).toBe(true)
-    expect(res.body.data).toHaveProperty('items')
-    expect(res.body.data).toHaveProperty('stats')
+    expect(res.status).toBe(403)
   })
 
-  it('supports filter by type', async () => {
+  it('teacher bloque sur filtre type (403)', async () => {
     const res = await request(app)
       .get('/api/admin/feedback?type=bug')
       .set('Authorization', `Bearer ${teacherToken}`)
-    expect(res.status).toBe(200)
-    expect(res.body.ok).toBe(true)
+    expect(res.status).toBe(403)
   })
 
-  it('supports pagination params', async () => {
+  it('teacher bloque sur pagination feedback (403)', async () => {
     const res = await request(app)
       .get('/api/admin/feedback?limit=1&offset=0')
       .set('Authorization', `Bearer ${teacherToken}`)
-    expect(res.status).toBe(200)
-    expect(res.body.data.items.length).toBeLessThanOrEqual(1)
+    expect(res.status).toBe(403)
   })
 })
 
@@ -128,13 +119,11 @@ describe('GET /api/admin/feedback/mine', () => {
     expect(res.status).toBe(403)
   })
 
-  it('teacher can see own feedback', async () => {
+  it('teacher CANNOT see own feedback (403)', async () => {
     const res = await request(app)
       .get('/api/admin/feedback/mine')
       .set('Authorization', `Bearer ${teacherToken}`)
-    expect(res.status).toBe(200)
-    expect(res.body.ok).toBe(true)
-    expect(Array.isArray(res.body.data)).toBe(true)
+    expect(res.status).toBe(403)
   })
 })
 
@@ -149,13 +138,11 @@ describe('GET /api/admin/feedback/stats', () => {
     expect(res.status).toBe(403)
   })
 
-  it('teacher can get feedback stats', async () => {
+  it('teacher CANNOT get feedback stats (403)', async () => {
     const res = await request(app)
       .get('/api/admin/feedback/stats')
       .set('Authorization', `Bearer ${teacherToken}`)
-    expect(res.status).toBe(200)
-    expect(res.body.ok).toBe(true)
-    expect(res.body.data).toHaveProperty('total')
+    expect(res.status).toBe(403)
   })
 })
 
@@ -166,10 +153,10 @@ describe('POST /api/admin/feedback/:id/status', () => {
   let feedbackId
 
   beforeAll(async () => {
-    // Create a feedback to update
+    // Create a feedback to update (admin only now)
     const res = await request(app)
       .post('/api/admin/feedback')
-      .set('Authorization', `Bearer ${teacherToken}`)
+      .set('Authorization', `Bearer ${adminToken}`)
       .send({ type: 'question', title: 'Comment faire X ?', description: '' })
     feedbackId = res.body.data.id
   })
@@ -182,22 +169,20 @@ describe('POST /api/admin/feedback/:id/status', () => {
     expect(res.status).toBe(403)
   })
 
-  it('teacher can update feedback status', async () => {
+  it('teacher CANNOT update feedback status (403)', async () => {
     const res = await request(app)
       .post(`/api/admin/feedback/${feedbackId}/status`)
       .set('Authorization', `Bearer ${teacherToken}`)
       .send({ status: 'in_progress', adminReply: 'On regarde.' })
-    expect(res.status).toBe(200)
-    expect(res.body.ok).toBe(true)
+    expect(res.status).toBe(403)
   })
 
-  it('rejects invalid status value', async () => {
+  it('teacher bloque sur statut invalide (403)', async () => {
     const res = await request(app)
       .post(`/api/admin/feedback/${feedbackId}/status`)
       .set('Authorization', `Bearer ${teacherToken}`)
       .send({ status: 'bogus' })
-    expect(res.status).toBe(400)
-    expect(res.body.ok).toBe(false)
+    expect(res.status).toBe(403)
   })
 
   it('admin can resolve feedback', async () => {

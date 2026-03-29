@@ -52,15 +52,11 @@ describe('GET /api/admin/users', () => {
     expect(res.body.ok).toBe(false)
   })
 
-  it('teacher can list users', async () => {
+  it('teacher CANNOT list users (403)', async () => {
     const res = await request(app)
       .get('/api/admin/users')
       .set('Authorization', `Bearer ${teacherToken}`)
-    expect(res.status).toBe(200)
-    expect(res.body.ok).toBe(true)
-    expect(res.body.data).toHaveProperty('users')
-    expect(res.body.data).toHaveProperty('total')
-    expect(res.body.data.total).toBeGreaterThanOrEqual(2)
+    expect(res.status).toBe(403)
   })
 
   it('admin can list users', async () => {
@@ -71,30 +67,25 @@ describe('GET /api/admin/users', () => {
     expect(res.body.ok).toBe(true)
   })
 
-  it('supports search filter', async () => {
+  it('teacher bloque sur search filter (403)', async () => {
     const res = await request(app)
       .get('/api/admin/users?search=Marie')
       .set('Authorization', `Bearer ${teacherToken}`)
-    expect(res.status).toBe(200)
-    expect(res.body.ok).toBe(true)
-    const names = res.body.data.users.map(u => u.name)
-    expect(names.some(n => n.includes('Marie'))).toBe(true)
+    expect(res.status).toBe(403)
   })
 
-  it('supports promo_id filter', async () => {
+  it('teacher bloque sur promo_id filter (403)', async () => {
     const res = await request(app)
       .get('/api/admin/users?promo_id=1')
       .set('Authorization', `Bearer ${teacherToken}`)
-    expect(res.status).toBe(200)
-    expect(res.body.ok).toBe(true)
+    expect(res.status).toBe(403)
   })
 
-  it('supports pagination', async () => {
+  it('teacher bloque sur pagination (403)', async () => {
     const res = await request(app)
       .get('/api/admin/users?page=1&limit=1')
       .set('Authorization', `Bearer ${teacherToken}`)
-    expect(res.status).toBe(200)
-    expect(res.body.data.users.length).toBeLessThanOrEqual(1)
+    expect(res.status).toBe(403)
   })
 })
 
@@ -109,21 +100,18 @@ describe('GET /api/admin/users/:id', () => {
     expect(res.status).toBe(403)
   })
 
-  it('teacher can get student detail', async () => {
+  it('teacher CANNOT get student detail (403)', async () => {
     const res = await request(app)
       .get('/api/admin/users/1')
       .set('Authorization', `Bearer ${teacherToken}`)
-    expect(res.status).toBe(200)
-    expect(res.body.ok).toBe(true)
-    expect(res.body.data).toHaveProperty('name')
+    expect(res.status).toBe(403)
   })
 
-  it('returns 404 for non-existent user', async () => {
+  it('teacher bloque sur user inexistant (403)', async () => {
     const res = await request(app)
       .get('/api/admin/users/99999')
       .set('Authorization', `Bearer ${teacherToken}`)
-    expect(res.status).toBe(404)
-    expect(res.body.ok).toBe(false)
+    expect(res.status).toBe(403)
   })
 })
 
@@ -139,31 +127,28 @@ describe('PATCH /api/admin/users/:id', () => {
     expect(res.status).toBe(403)
   })
 
-  it('teacher can update a student name', async () => {
+  it('teacher CANNOT update a student name (403)', async () => {
     const res = await request(app)
       .patch('/api/admin/users/2')
       .set('Authorization', `Bearer ${teacherToken}`)
       .send({ name: 'Marie Curie-Sklodowska' })
-    expect(res.status).toBe(200)
-    expect(res.body.ok).toBe(true)
+    expect(res.status).toBe(403)
   })
 
-  it('teacher can update a teacher (negative id)', async () => {
+  it('teacher CANNOT update a teacher (403)', async () => {
     const res = await request(app)
       .patch('/api/admin/users/-2')
       .set('Authorization', `Bearer ${teacherToken}`)
       .send({ name: 'Pilote Renomme' })
-    expect(res.status).toBe(200)
-    expect(res.body.ok).toBe(true)
+    expect(res.status).toBe(403)
   })
 
-  it('empty update returns ok', async () => {
+  it('teacher bloque sur update vide (403)', async () => {
     const res = await request(app)
       .patch('/api/admin/users/2')
       .set('Authorization', `Bearer ${teacherToken}`)
       .send({})
-    expect(res.status).toBe(200)
-    expect(res.body.ok).toBe(true)
+    expect(res.status).toBe(403)
   })
 })
 
@@ -178,23 +163,18 @@ describe('POST /api/admin/users/:id/reset-password', () => {
     expect(res.status).toBe(403)
   })
 
-  it('teacher can reset a student password', async () => {
+  it('teacher CANNOT reset a student password (403)', async () => {
     const res = await request(app)
       .post('/api/admin/users/2/reset-password')
       .set('Authorization', `Bearer ${teacherToken}`)
-    expect(res.status).toBe(200)
-    expect(res.body.ok).toBe(true)
-    expect(res.body.data).toHaveProperty('tempPassword')
-    expect(res.body.data.tempPassword.length).toBeGreaterThanOrEqual(8)
+    expect(res.status).toBe(403)
   })
 
-  it('teacher can reset a teacher password (negative id)', async () => {
+  it('teacher CANNOT reset a teacher password (403)', async () => {
     const res = await request(app)
       .post('/api/admin/users/-2/reset-password')
       .set('Authorization', `Bearer ${teacherToken}`)
-    expect(res.status).toBe(200)
-    expect(res.body.ok).toBe(true)
-    expect(res.body.data.tempPassword).toBeDefined()
+    expect(res.status).toBe(403)
   })
 })
 
@@ -220,28 +200,24 @@ describe('DELETE /api/admin/users/:id', () => {
     expect(res.status).toBe(403)
   })
 
-  it('teacher can delete a student', async () => {
+  it('teacher CANNOT delete a student (403)', async () => {
     const res = await request(app)
       .delete(`/api/admin/users/${deletableStudentId}`)
       .set('Authorization', `Bearer ${teacherToken}`)
-    expect(res.status).toBe(200)
-    expect(res.body.ok).toBe(true)
+    expect(res.status).toBe(403)
   })
 
-  it('cannot delete a teacher with role=teacher (responsable)', async () => {
-    // Teacher id=1 has role='teacher' (responsable pedagogique)
+  it('teacher CANNOT delete a teacher with role=teacher (403)', async () => {
     const res = await request(app)
       .delete('/api/admin/users/-1')
       .set('Authorization', `Bearer ${teacherToken}`)
     expect(res.status).toBe(403)
-    expect(res.body.ok).toBe(false)
   })
 
-  it('can delete a teacher with role=pilote', async () => {
+  it('teacher CANNOT delete a teacher with role=pilote (403)', async () => {
     const res = await request(app)
       .delete('/api/admin/users/-2')
       .set('Authorization', `Bearer ${teacherToken}`)
-    expect(res.status).toBe(200)
-    expect(res.body.ok).toBe(true)
+    expect(res.status).toBe(403)
   })
 })

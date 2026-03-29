@@ -32,17 +32,17 @@ beforeAll(() => {
 afterAll(() => teardownTestDb())
 
 // ═══════════════════════════════════════════
-//  Routes promo — accessibles aux teachers ET admins
+//  Routes admin — accessibles aux admins uniquement
 // ═══════════════════════════════════════════
-const promoRoutes = [
+const adminRoutes = [
   { method: 'get', path: '/api/admin/stats' },
   { method: 'get', path: '/api/admin/users' },
   { method: 'get', path: '/api/admin/messages' },
   { method: 'get', path: '/api/admin/config' },
 ]
 
-describe('Routes promo (teacher + admin)', () => {
-  it.each(promoRoutes)(
+describe('Routes admin (admin uniquement)', () => {
+  it.each(adminRoutes)(
     'etudiant bloque sur $method $path (403)',
     async ({ method, path }) => {
       const res = await request(app)[method](path)
@@ -52,16 +52,16 @@ describe('Routes promo (teacher + admin)', () => {
     }
   )
 
-  it.each(promoRoutes)(
-    'teacher autorise sur $method $path (pas 403)',
+  it.each(adminRoutes)(
+    'teacher bloque sur $method $path (403)',
     async ({ method, path }) => {
       const res = await request(app)[method](path)
         .set('Authorization', `Bearer ${teacherToken}`)
-      expect(res.status).not.toBe(403)
+      expect(res.status).toBe(403)
     }
   )
 
-  it.each(promoRoutes)(
+  it.each(adminRoutes)(
     'admin autorise sur $method $path (pas 403)',
     async ({ method, path }) => {
       const res = await request(app)[method](path)
@@ -144,12 +144,11 @@ describe('GET /api/admin/me', () => {
     expect(res.status).toBe(403)
   })
 
-  it('teacher voit son role', async () => {
+  it('teacher bloque sur /me (403)', async () => {
     const res = await request(app)
       .get('/api/admin/me')
       .set('Authorization', `Bearer ${teacherToken}`)
-    expect(res.status).toBe(200)
-    expect(res.body.data.type).toBe('teacher')
+    expect(res.status).toBe(403)
   })
 
   it('admin voit son role', async () => {
@@ -162,17 +161,14 @@ describe('GET /api/admin/me', () => {
 })
 
 // ═══════════════════════════════════════════
-//  GET /api/admin/stats — filtrage promo pour teacher
+//  GET /api/admin/stats — acces admin uniquement
 // ═══════════════════════════════════════════
-describe('GET /api/admin/stats (promo filtering)', () => {
-  it('teacher recoit des stats (pas 403)', async () => {
+describe('GET /api/admin/stats (acces admin uniquement)', () => {
+  it('teacher bloque sur stats (403)', async () => {
     const res = await request(app)
       .get('/api/admin/stats')
       .set('Authorization', `Bearer ${teacherToken}`)
-    expect(res.status).toBe(200)
-    expect(res.body.ok).toBe(true)
-    expect(res.body.data).toHaveProperty('counts')
-    expect(res.body.data).toHaveProperty('promosSummary')
+    expect(res.status).toBe(403)
   })
 
   it('admin recoit des stats globales', async () => {

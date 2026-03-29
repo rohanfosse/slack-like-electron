@@ -39,14 +39,11 @@ describe('GET /api/admin/config', () => {
     expect(res.body.ok).toBe(false)
   })
 
-  it('teacher peut lire la config', async () => {
+  it('teacher CANNOT lire la config (403)', async () => {
     const res = await request(app)
       .get('/api/admin/config')
       .set('Authorization', `Bearer ${teacherToken}`)
-    expect(res.status).toBe(200)
-    expect(res.body.ok).toBe(true)
-    expect(res.body.data).toHaveProperty('read_only')
-    expect(typeof res.body.data.read_only).toBe('boolean')
+    expect(res.status).toBe(403)
   })
 
   it('admin peut lire la config', async () => {
