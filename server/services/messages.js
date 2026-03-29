@@ -4,6 +4,7 @@
  */
 const queries = require('../db/index')
 const { ForbiddenError, NotFoundError, AppError } = require('../utils/errors')
+const { safeAuthorType } = require('../utils/roles')
 
 /**
  * Valide les permissions DM et l'existence du destinataire.
@@ -80,7 +81,7 @@ function create(payload, user) {
   // Forcer l'identite depuis le JWT (anti-usurpation)
   payload.authorName = user.name
   payload.authorId = user.id
-  payload.authorType = user.type === 'ta' ? 'teacher' : user.type
+  payload.authorType = safeAuthorType(user.type)
 
   // Validations
   validateDm(payload, user)

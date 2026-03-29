@@ -1,5 +1,6 @@
 // ─── Requêtes administration ─────────────────────────────────────────────────
 const { getDb } = require('../connection')
+const { safeAuthorType, safeUserType } = require('../../utils/roles')
 
 // ── Statistiques applicatives ────────────────────────────────────────────────
 
@@ -211,7 +212,7 @@ function logAudit({ actorId, actorName, actorType, action, target, details, ip }
     getDb().prepare(`
       INSERT INTO audit_log (actor_id, actor_name, actor_type, action, target, details, ip)
       VALUES (?, ?, ?, ?, ?, ?, ?)
-    `).run(actorId, actorName, actorType, action, target || null, details || null, ip || null)
+    `).run(actorId, actorName, safeUserType(actorType), action, target || null, details || null, ip || null)
   } catch { /* non bloquant — ne doit jamais casser le flux principal */ }
 }
 
@@ -363,7 +364,7 @@ function createReport({ messageId, reporterId, reporterName, reporterType, reaso
   return getDb().prepare(`
     INSERT INTO reports (message_id, reporter_id, reporter_name, reporter_type, reason, details)
     VALUES (?, ?, ?, ?, ?, ?)
-  `).run(messageId, reporterId, reporterName, reporterType, reason || 'other', details || null)
+  `).run(messageId, reporterId, reporterName, safeUserType(reporterType), reason || 'other', details || null)
 }
 
 function getReports({ status, page = 1, limit = 50 }) {
@@ -430,7 +431,7 @@ function createScheduledMessage({ channelId, authorName, authorType, content, se
   return getDb().prepare(`
     INSERT INTO scheduled_messages (channel_id, author_name, author_type, content, send_at)
     VALUES (?, ?, ?, ?, ?)
-  `).run(channelId, authorName, authorType, content, sendAt)
+  `).run(channelId, authorName, safeAuthorType(authorType), content, sendAt)
 }
 
 function deleteScheduledMessage(id) {
@@ -455,7 +456,7 @@ function upsertSession({ userId, userName, userType, tokenHash, ip, userAgent })
     INSERT INTO active_sessions (user_id, user_name, user_type, token_hash, ip, user_agent)
     VALUES (?, ?, ?, ?, ?, ?)
     ON CONFLICT(token_hash) DO UPDATE SET last_seen = datetime('now'), ip = excluded.ip
-  `).run(userId, userName, userType, tokenHash, ip, userAgent)
+  `).run(userId, userName, safeUserType(userType), tokenHash, ip, userAgent)
 }
 
 function getActiveSessions() {
@@ -500,7 +501,7 @@ function createFeedback({ userId, userName, userType, type, title, description }
   return getDb().prepare(`
     INSERT INTO feedback (user_id, user_name, user_type, type, title, description)
     VALUES (?, ?, ?, ?, ?, ?)
-  `).run(userId, userName, userType, type, title, description || '').lastInsertRowid
+  `).run(userId, userName, safeUserType(userType), type, title, description || '').lastInsertRowid
 }
 
 function getFeedbackList({ status, type, limit = 50, offset = 0 }) {
@@ -613,7 +614,7 @@ function recordVisit({ userId, userName, userType, path }) {
     return getDb().prepare(`
       INSERT INTO page_visits (user_id, user_name, user_type, path)
       VALUES (?, ?, ?, ?)
-    `).run(userId, userName, userType, path)
+    `).run(userId, userName, safeUserType(userType), path)
   } catch { /* table peut ne pas exister en migration */ }
 }
 
@@ -746,7 +747,7 @@ function reportError({ userId, userName, userType, page, message, stack, userAge
   return getDb().prepare(`
     INSERT INTO error_reports (user_id, user_name, user_type, page, message, stack, user_agent, app_version)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-  `).run(userId ?? null, userName ?? null, userType ?? null, page ?? null, message, stack ?? null, userAgent ?? null, appVersion ?? null)
+  `).run(userId ?? null, userName ?? null, userType ? safeUserType(userType) : null, page ?? null, message, stack ?? null, userAgent ?? null, appVersion ?? null)
 }
 
 function getErrorReports({ limit = 50, offset = 0 } = {}) {

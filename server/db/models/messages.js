@@ -1,5 +1,6 @@
 const { getDb } = require('../connection');
 const { encrypt, decrypt, decryptRow, decryptRows } = require('../../utils/crypto');
+const { safeAuthorType } = require('../../utils/roles');
 
 const PAGE_SIZE = 50;
 const MESSAGE_SELECT = `
@@ -150,8 +151,7 @@ function searchDmMessages(studentId, query, peerId) {
 }
 
 function sendMessage({ channelId, dmStudentId, authorName, authorId, authorType, content, replyToId, replyToAuthor, replyToPreview }) {
-  // 'ta' et 'admin' ne sont pas dans le CHECK constraint de la table - on les stocke comme 'teacher'
-  const safeType = (authorType === 'ta' || authorType === 'admin') ? 'teacher' : authorType;
+  const safeType = safeAuthorType(authorType);
   // Chiffrer le contenu des DMs
   const storedContent = dmStudentId ? encrypt(content) : content;
   return getDb().prepare(`
