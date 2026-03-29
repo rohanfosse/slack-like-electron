@@ -64,7 +64,7 @@ function addDocumentToProject(projectId, documentId) {
   ).run(projectId, documentId)
 }
 
-function getProjectDocuments(projectId) {
+function getProjectLinkedDocuments(projectId) {
   return getDb().prepare(`
     SELECT d.* FROM channel_documents d
     JOIN project_documents pd ON pd.document_id = d.id
@@ -132,7 +132,7 @@ module.exports = {
   removeTravailFromProject,
   getProjectTravaux,
   addDocumentToProject,
-  getProjectDocuments,
+  getProjectLinkedDocuments,
   assignTaToProject,
   unassignTaFromProject,
   getProjectTas,

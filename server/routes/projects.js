@@ -53,7 +53,7 @@ router.delete('/:id/travaux/:travailId', requireTeacher, wrap((req) =>
 
 // ── Documents d'un projet ─────────────────────────────────────────────────────
 
-router.get('/:id/documents', wrap((req) => queries.getProjectDocuments(Number(req.params.id))))
+router.get('/:id/documents', wrap((req) => queries.getProjectLinkedDocuments(Number(req.params.id))))
 
 router.post('/:id/documents/:documentId', requireTeacher, wrap((req) =>
   queries.addDocumentToProject(Number(req.params.id), Number(req.params.documentId))

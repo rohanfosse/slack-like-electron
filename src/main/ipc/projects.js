@@ -17,7 +17,7 @@ function register() {
 
   // ── Liaison documents ─────────────────────────────────────────────────
   handleTeacher('projects:addDocument', (projectId, documentId) => queries.addDocumentToProject(projectId, documentId))
-  handle('projects:getDocuments', (projectId) => queries.getProjectDocuments(projectId))
+  handle('projects:getDocuments', (projectId) => queries.getProjectLinkedDocuments(projectId))
 
   // ── Assignation TA ────────────────────────────────────────────────────
   handleTeacher('projects:assignTa',   (teacherId, projectId) => queries.assignTaToProject(teacherId, projectId))
