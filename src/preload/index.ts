@@ -384,6 +384,21 @@ contextBridge.exposeInMainWorld('api', {
   getTeacherChannels: (id: number)       => get(`/api/teachers/${id}/channels`),
   setTeacherChannels: (payload: unknown) => post(`/api/teachers/${(payload as { teacherId: number }).teacherId}/channels`, payload),
 
+  // ── Projets (entite backend) ──────────────────────────────────────────────
+  getProjectsByPromo:      (promoId: number)                          => get(`/api/projects?promoId=${promoId}`),
+  getProjectById:          (id: number)                               => get(`/api/projects/${id}`),
+  createProject:           (payload: unknown)                         => post('/api/projects', payload),
+  updateProject:           (id: number, payload: unknown)             => patch(`/api/projects/${id}`, payload),
+  deleteProject:           (id: number)                               => del(`/api/projects/${id}`),
+  addTravailToProject:     (projectId: number, travailId: number)     => post(`/api/projects/${projectId}/travaux`, { travailId }),
+  removeTravailFromProject:(projectId: number, travailId: number)     => del(`/api/projects/${projectId}/travaux/${travailId}`),
+  getProjectTravaux:       (projectId: number)                        => get(`/api/projects/${projectId}/travaux`),
+  getProjectDocs:          (projectId: number)                        => get(`/api/projects/${projectId}/documents`),
+  assignTaToProject:       (teacherId: number, projectId: number)     => post(`/api/projects/${projectId}/tas`, { teacherId }),
+  unassignTaFromProject:   (teacherId: number, projectId: number)     => del(`/api/projects/${projectId}/tas/${teacherId}`),
+  getProjectTas:           (projectId: number)                        => get(`/api/projects/${projectId}/tas`),
+  getTaProjects:           (teacherId: number)                        => get(`/api/projects/ta/${teacherId}`),
+
   // ── Rubriques ───────────────────────────────────────────────────────────────
   getRubric:      (travailId: number) => get(`/api/rubrics/${travailId}`),
   upsertRubric:   (payload: unknown)  => post('/api/rubrics', payload),

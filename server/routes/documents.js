@@ -38,12 +38,11 @@ function requireDocOwnership(req, res, next) {
   // En mode "teacher avec affectations", vérifier l'accès promo
   // (les profs sans affectation = admin ont accès total)
   const teacherId = Math.abs(req.user?.id ?? 0)
-  const hasAny = getDb().prepare('SELECT 1 FROM teacher_channels WHERE teacher_id = ? LIMIT 1').get(teacherId)
+  const hasAny = getDb().prepare('SELECT 1 FROM teacher_promos WHERE teacher_id = ? LIMIT 1').get(teacherId)
   if (hasAny) {
-    const hasAccess = getDb().prepare(`
-      SELECT 1 FROM teacher_channels tc JOIN channels c ON tc.channel_id = c.id
-      WHERE tc.teacher_id = ? AND c.promo_id = ? LIMIT 1
-    `).get(teacherId, doc.promo_id)
+    const hasAccess = getDb().prepare(
+      'SELECT 1 FROM teacher_promos WHERE teacher_id = ? AND promo_id = ? LIMIT 1'
+    ).get(teacherId, doc.promo_id)
     if (!hasAccess) return res.status(403).json({ ok: false, error: 'Vous n\'avez pas accès aux documents de cette promotion.' })
   }
   next()

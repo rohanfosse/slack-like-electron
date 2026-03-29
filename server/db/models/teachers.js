@@ -60,26 +60,54 @@ function deleteIntervenant(teacherId) {
 }
 
 /**
- * Canaux assignés à un intervenant - renvoie un tableau d'ids (number[]).
- * Si aucune assignation : tableau vide (l'intervenant voit tous les canaux).
+ * Projets assignes a un intervenant - renvoie un tableau d'ids (number[]).
+ * Si aucune assignation : tableau vide (l'intervenant voit tous les projets).
+ */
+function getTeacherProjects(teacherId) {
+  return getDb().prepare(
+    'SELECT project_id FROM teacher_projects WHERE teacher_id = ?'
+  ).all(Math.abs(teacherId)).map(r => r.project_id)
+}
+
+/**
+ * Remplace entierement les projets d'un intervenant.
+ * Wrappe dans une transaction.
+ */
+function setTeacherProjects({ teacherId, projectIds }) {
+  const db     = getDb()
+  const realId = Math.abs(teacherId)
+  db.transaction(() => {
+    db.prepare('DELETE FROM teacher_projects WHERE teacher_id = ?').run(realId)
+    const ins = db.prepare(
+      'INSERT OR IGNORE INTO teacher_projects (teacher_id, project_id) VALUES (?, ?)'
+    )
+    for (const pid of (projectIds ?? [])) {
+      ins.run(realId, Number(pid))
+    }
+  })()
+}
+
+/**
+ * @deprecated Compat shim — renvoie les channel_ids deduits des projets assignes.
+ * Utiliser getTeacherProjects() pour le nouveau modele.
  */
 function getTeacherChannels(teacherId) {
   return getDb().prepare(
-    'SELECT channel_id FROM teacher_channels WHERE teacher_id = ?'
+    'SELECT DISTINCT p.channel_id FROM teacher_projects tp JOIN projects p ON tp.project_id = p.id WHERE tp.teacher_id = ? AND p.channel_id IS NOT NULL'
   ).all(Math.abs(teacherId)).map(r => r.channel_id)
 }
 
 /**
- * Remplace entièrement les canaux d'un intervenant.
- * Wrappé dans une transaction.
+ * @deprecated Compat shim — convertit les channelIds en projets puis assigne.
+ * Utiliser setTeacherProjects() pour le nouveau modele.
  */
 function setTeacherChannels({ teacherId, channelIds }) {
   const db     = getDb()
   const realId = Math.abs(teacherId)
   db.transaction(() => {
-    db.prepare('DELETE FROM teacher_channels WHERE teacher_id = ?').run(realId)
+    db.prepare('DELETE FROM teacher_projects WHERE teacher_id = ?').run(realId)
     const ins = db.prepare(
-      'INSERT OR IGNORE INTO teacher_channels (teacher_id, channel_id) VALUES (?, ?)'
+      'INSERT OR IGNORE INTO teacher_projects (teacher_id, project_id) SELECT ?, id FROM projects WHERE channel_id = ?'
     )
     for (const cid of (channelIds ?? [])) {
       ins.run(realId, Number(cid))
@@ -90,4 +118,5 @@ function setTeacherChannels({ teacherId, channelIds }) {
 module.exports = {
   getIntervenants, createIntervenant, deleteIntervenant,
   getTeacherChannels, setTeacherChannels,
+  getTeacherProjects, setTeacherProjects,
 }

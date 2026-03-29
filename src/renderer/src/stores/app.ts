@@ -122,8 +122,10 @@ export const useAppStore = defineStore('app', () => {
 
   // ── Calculs ───────────────────────────────────────────────────────────────
   const isStudent    = computed(() => currentUser.value?.type === 'student')
-  const isTeacher    = computed(() => currentUser.value?.type === 'teacher')
-  const isStaff      = computed(() => currentUser.value?.type === 'teacher' || currentUser.value?.type === 'ta')
+  const isTeacher    = computed(() => currentUser.value?.type === 'teacher' || currentUser.value?.type === 'admin')
+  const isAdmin      = computed(() => currentUser.value?.type === 'admin')
+  const isStaff      = computed(() => currentUser.value?.type === 'admin' || currentUser.value?.type === 'teacher' || currentUser.value?.type === 'ta')
+  const userRole     = computed(() => (currentUser.value?.type ?? 'student') as import('@/utils/permissions').Role)
   const isSimulating = computed(() => teacherUser.value !== null)
   const isReadonly   = computed(
     () => activeChannelType.value === 'annonce' && isStudent.value,
@@ -494,7 +496,7 @@ export const useAppStore = defineStore('app', () => {
     activeChannelType, activeChannelName, activeChannelDescription, activeProject, pendingChannelCategory, rightPanel, currentTravailId, duplicateDevoirData, pendingDevoirType,
     pendingNoteDepotId, rubricDepotId, unread, mentionChannels, unreadDms, notificationHistory, taChannelIds,
     // calculs
-    isStudent, isTeacher, isStaff, isSimulating, isReadonly,
+    isStudent, isTeacher, isAdmin, isStaff, userRole, isSimulating, isReadonly,
     // actions
     restoreSession, login, logout, impersonate, clearMustChangePassword,
     startSimulation, stopSimulation,

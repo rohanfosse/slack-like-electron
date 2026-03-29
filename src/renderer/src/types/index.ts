@@ -6,7 +6,7 @@ export interface User {
   email?: string
   avatar_initials: string
   photo_data: string | null
-  type: 'teacher' | 'ta' | 'student'
+  type: 'admin' | 'teacher' | 'ta' | 'student'
   promo_id: number | null
   promo_name: string | null
   must_change_password?: number  // 1 = doit changer, 0 = ok
@@ -198,7 +198,7 @@ export interface RenduRow extends Depot {
 export interface LoginResponse {
   id: number
   name: string
-  type: 'teacher' | 'ta' | 'student'
+  type: 'admin' | 'teacher' | 'ta' | 'student'
   avatar_initials: string
   photo_data: string | null
   promo_id: number | null
@@ -335,7 +335,7 @@ export interface SendMessagePayload {
   dmStudentId?: number | null
   dmPeerId?: number | null
   authorName: string
-  authorType: 'teacher' | 'ta' | 'student'
+  authorType: 'admin' | 'teacher' | 'ta' | 'student'
   content: string
   channelName?: string | null
   promoId?: number | null

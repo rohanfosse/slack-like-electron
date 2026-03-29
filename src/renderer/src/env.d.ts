@@ -167,6 +167,21 @@ declare global {
       getTeacherChannels(id: number): Promise<IpcResponse<number[]>>
       setTeacherChannels(payload: { teacherId: number; channelIds: number[] }): Promise<IpcResponse<null>>
 
+      // Projets (entite backend)
+      getProjectsByPromo(promoId: number): Promise<IpcResponse<unknown[]>>
+      getProjectById(id: number): Promise<IpcResponse<unknown>>
+      createProject(payload: object): Promise<IpcResponse<unknown>>
+      updateProject(id: number, payload: object): Promise<IpcResponse<unknown>>
+      deleteProject(id: number): Promise<IpcResponse<null>>
+      addTravailToProject(projectId: number, travailId: number): Promise<IpcResponse<null>>
+      removeTravailFromProject(projectId: number, travailId: number): Promise<IpcResponse<null>>
+      getProjectTravaux(projectId: number): Promise<IpcResponse<unknown[]>>
+      getProjectDocs(projectId: number): Promise<IpcResponse<unknown[]>>
+      assignTaToProject(teacherId: number, projectId: number): Promise<IpcResponse<null>>
+      unassignTaFromProject(teacherId: number, projectId: number): Promise<IpcResponse<null>>
+      getProjectTas(projectId: number): Promise<IpcResponse<unknown[]>>
+      getTaProjects(teacherId: number): Promise<IpcResponse<unknown[]>>
+
       // Contrôles de fenêtre
       windowMinimize(): Promise<IpcResponse<null>>
       windowMaximize(): Promise<IpcResponse<null>>

@@ -8,6 +8,12 @@ let activeTab = 'serveur'
 let serverInterval = null
 export const tabLoaded = {}
 
+/** Role de l'utilisateur connecte ('admin' | 'teacher') */
+let currentUserRole = null
+
+/** Modules reserves a l'admin systeme */
+const SYSTEM_MODULES = ['audit', 'security', 'sessions', 'deploy', 'maintenance']
+
 // ── Helpers (exported for modules) ──────────────────────────────────────────
 
 export function fmtBytes(b) {
@@ -249,10 +255,47 @@ function logout() {
   document.getElementById('login-error').style.display = 'none'
 }
 
-function showDashboard() {
+async function showDashboard() {
   document.getElementById('login-overlay').style.display = 'none'
   document.getElementById('dashboard').style.display = 'block'
+
+  // Recuperer le role pour masquer les modules systeme si besoin
+  try {
+    const r = await fetch(`${API}/api/admin/me`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    if (r.ok) {
+      const json = await r.json()
+      currentUserRole = json.data?.type || 'teacher'
+    } else {
+      currentUserRole = 'teacher'
+    }
+  } catch {
+    currentUserRole = 'teacher'
+  }
+  applyRoleVisibility()
   switchTab('serveur')
+}
+
+/** Cache les onglets systeme pour les utilisateurs non-admin */
+function applyRoleVisibility() {
+  const isAdmin = currentUserRole === 'admin'
+  document.querySelectorAll('.tab-btn[data-tab]').forEach(btn => {
+    const tab = btn.dataset.tab
+    if (SYSTEM_MODULES.includes(tab)) {
+      btn.style.display = isAdmin ? '' : 'none'
+    }
+  })
+  // Egalement cacher les separateurs superflus quand les onglets systeme sont masques
+  if (!isAdmin) {
+    document.querySelectorAll('.tab-separator').forEach(sep => {
+      const next = sep.nextElementSibling
+      const prev = sep.previousElementSibling
+      const nextHidden = next && next.style.display === 'none'
+      const prevHidden = prev && prev.style.display === 'none'
+      if (nextHidden || prevHidden) sep.style.display = 'none'
+    })
+  }
 }
 
 // ── Import modules ──────────────────────────────────────────────────────────

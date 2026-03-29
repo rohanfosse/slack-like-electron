@@ -143,18 +143,15 @@ router.post('/:id/sign', requireTeacher, signLimiter, validate(signSchema), asyn
     if (!sigReq) return res.status(404).json({ ok: false, error: 'Demande introuvable' })
     if (sigReq.status !== 'pending') return res.status(400).json({ ok: false, error: 'Demande déjà traitée' })
 
-    // ── Sécurité : vérifier que le prof a accès au DM de l'étudiant (via teacher_channels)
+    // ── Securite : verifier que le prof a acces au DM de l'etudiant (via teacher_promos)
     const teacherId = Math.abs(req.user.id)
     const student = getDb().prepare('SELECT promo_id FROM students WHERE id = ?').get(sigReq.dm_student_id)
     if (student) {
-      const hasAssignment = getDb().prepare('SELECT 1 FROM teacher_channels WHERE teacher_id = ? LIMIT 1').get(teacherId)
+      const hasAssignment = getDb().prepare('SELECT 1 FROM teacher_promos WHERE teacher_id = ? LIMIT 1').get(teacherId)
       if (hasAssignment) {
-        const hasAccess = getDb().prepare(`
-          SELECT 1 FROM teacher_channels tc
-          JOIN channels c ON tc.channel_id = c.id
-          WHERE tc.teacher_id = ? AND c.promo_id = ?
-          LIMIT 1
-        `).get(teacherId, student.promo_id)
+        const hasAccess = getDb().prepare(
+          'SELECT 1 FROM teacher_promos WHERE teacher_id = ? AND promo_id = ? LIMIT 1'
+        ).get(teacherId, student.promo_id)
         if (!hasAccess) {
           return res.status(403).json({ ok: false, error: 'Vous n\'êtes pas affecté à la promotion de cet étudiant.' })
         }

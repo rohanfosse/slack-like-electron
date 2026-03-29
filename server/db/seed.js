@@ -16,7 +16,8 @@ function seedIfEmpty() {
 function resetAndSeed() {
   const db = getDb()
   db.transaction(() => {
-    for (const t of ['depots','travail_group_members','ressources','channel_documents',
+    for (const t of ['teacher_projects','project_documents','project_travaux','projects','teacher_promos',
+                     'depots','travail_group_members','ressources','channel_documents',
                      'messages','group_members','groups','travaux','students','channels','promotions']) {
       try { db.prepare(`DELETE FROM ${t}`).run() } catch {}
     }
@@ -132,6 +133,39 @@ function doSeed(db) {
   it.run(p2, c2_ang, null, 'TOEIC Blanc 1', 'Durée : 120 min\nFormat : TOEIC Blanc\nPlateforme : Global Exam\nAucune ressource autorisée', null, '2025-10-06T23:59:00', 'Anglais', 'autre', 0)
   it.run(p2, c2_ang, null, 'TOEIC Blanc 2', 'Durée : 120 min\nFormat : TOEIC Blanc\nPlateforme : Global Exam\nAucune ressource autorisée', null, '2026-01-12T23:59:00', 'Anglais', 'autre', 0)
   it.run(p2, c2_ang, null, 'TOEIC Blanc 3', 'Durée : 120 min\nFormat : TOEIC Blanc\nPlateforme : Global Exam\nAucune ressource autorisée', null, '2026-03-16T23:59:00', 'Anglais', 'autre', 0)
+
+  // ════════════════════════════════════════
+  //  TEACHER-PROMOS + PROJETS (v42)
+  // ════════════════════════════════════════
+  try {
+    // Lier tous les enseignants (admin+teacher) a toutes les promos
+    db.exec(`
+      INSERT OR IGNORE INTO teacher_promos (teacher_id, promo_id)
+        SELECT t.id, p.id FROM teachers t, promotions p WHERE t.role IN ('admin', 'teacher');
+    `)
+
+    // Creer des projets pour chaque categorie de devoirs
+    const iProj = db.prepare('INSERT INTO projects (promo_id, name, description, channel_id, deadline, created_by) VALUES (?, ?, ?, ?, ?, ?)')
+    const iPT = db.prepare('INSERT OR IGNORE INTO project_travaux (project_id, travail_id) VALUES (?, ?)')
+
+    // Projets pour promo 1
+    const proj1_se = iProj.run(p1, 'Systèmes embarqués', 'Bloc de formation systèmes embarqués', c1_se, null, 1).lastInsertRowid
+    const proj1_cpo = iProj.run(p1, 'Conception et programmation objet', 'Bloc CPO', c1_cpo, null, 1).lastInsertRowid
+    const proj1_rs = iProj.run(p1, 'Réseaux et Système', 'Bloc réseaux et système', c1_rs, null, 1).lastInsertRowid
+    const proj1_dw = iProj.run(p1, 'Développement web', 'Bloc développement web', c1_dw, null, 1).lastInsertRowid
+
+    // Lier les devoirs aux projets (par categorie)
+    const travaux1 = db.prepare('SELECT id, category FROM travaux WHERE promo_id = ?').all(p1)
+    for (const t of travaux1) {
+      if (t.category === 'Systèmes embarqués') iPT.run(proj1_se, t.id)
+      else if (t.category === 'Conception et programmation objet') iPT.run(proj1_cpo, t.id)
+      else if (t.category === 'Réseaux et Système') iPT.run(proj1_rs, t.id)
+      else if (t.category === 'Développement web') iPT.run(proj1_dw, t.id)
+    }
+
+    // Assigner le TA (id=2) au projet Systèmes embarqués
+    db.prepare('INSERT OR IGNORE INTO teacher_projects (teacher_id, project_id) VALUES (?, ?)').run(2, proj1_se)
+  } catch { /* tables n'existent pas si schema < v42 */ }
 }
 
 module.exports = { seedIfEmpty, resetAndSeed }

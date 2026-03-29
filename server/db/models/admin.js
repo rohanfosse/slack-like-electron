@@ -3,107 +3,191 @@ const { getDb } = require('../connection')
 
 // ── Statistiques applicatives ────────────────────────────────────────────────
 
-function getAdminStats() {
+/**
+ * Statistiques admin. Quand `promoIds` est fourni (tableau non vide),
+ * les resultats sont filtres aux promos indiquees (mode enseignant).
+ */
+function getAdminStats(promoIds) {
   const db = getDb()
+  const filtered = Array.isArray(promoIds) && promoIds.length > 0
+  const placeholders = filtered ? promoIds.map(() => '?').join(',') : ''
 
-  // Compteurs globaux
-  const counts = db.prepare(`
-    SELECT
-      (SELECT COUNT(*) FROM students)   AS students,
-      (SELECT COUNT(*) FROM teachers)   AS teachers,
-      (SELECT COUNT(*) FROM promotions) AS promotions,
-      (SELECT COUNT(*) FROM channels)   AS channels,
-      (SELECT COUNT(*) FROM messages)   AS messages,
-      (SELECT COUNT(*) FROM travaux)    AS travaux,
-      (SELECT COUNT(*) FROM depots)     AS depots
-  `).get()
+  // Compteurs globaux (filtres par promo si besoin)
+  const counts = filtered
+    ? db.prepare(`
+        SELECT
+          (SELECT COUNT(*) FROM students WHERE promo_id IN (${placeholders}))   AS students,
+          (SELECT COUNT(*) FROM teachers)   AS teachers,
+          (SELECT COUNT(*) FROM promotions WHERE id IN (${placeholders})) AS promotions,
+          (SELECT COUNT(*) FROM channels WHERE promo_id IN (${placeholders}))   AS channels,
+          (SELECT COUNT(*) FROM messages WHERE channel_id IN (SELECT id FROM channels WHERE promo_id IN (${placeholders}))) AS messages,
+          (SELECT COUNT(*) FROM travaux WHERE promo_id IN (${placeholders}))    AS travaux,
+          (SELECT COUNT(*) FROM depots WHERE travail_id IN (SELECT id FROM travaux WHERE promo_id IN (${placeholders}))) AS depots
+      `).get(...promoIds, ...promoIds, ...promoIds, ...promoIds, ...promoIds, ...promoIds)
+    : db.prepare(`
+        SELECT
+          (SELECT COUNT(*) FROM students)   AS students,
+          (SELECT COUNT(*) FROM teachers)   AS teachers,
+          (SELECT COUNT(*) FROM promotions) AS promotions,
+          (SELECT COUNT(*) FROM channels)   AS channels,
+          (SELECT COUNT(*) FROM messages)   AS messages,
+          (SELECT COUNT(*) FROM travaux)    AS travaux,
+          (SELECT COUNT(*) FROM depots)     AS depots
+      `).get()
 
-  // Activité dernières 24h
-  const activity24h = db.prepare(`
-    SELECT
-      (SELECT COUNT(*) FROM messages WHERE created_at >= datetime('now', '-1 day')) AS messages_24h,
-      (SELECT COUNT(*) FROM depots   WHERE submitted_at >= datetime('now', '-1 day')) AS depots_24h
-  `).get()
+  // Activite dernieres 24h
+  const activity24h = filtered
+    ? db.prepare(`
+        SELECT
+          (SELECT COUNT(*) FROM messages WHERE created_at >= datetime('now', '-1 day')
+            AND channel_id IN (SELECT id FROM channels WHERE promo_id IN (${placeholders}))) AS messages_24h,
+          (SELECT COUNT(*) FROM depots WHERE submitted_at >= datetime('now', '-1 day')
+            AND travail_id IN (SELECT id FROM travaux WHERE promo_id IN (${placeholders}))) AS depots_24h
+      `).get(...promoIds, ...promoIds)
+    : db.prepare(`
+        SELECT
+          (SELECT COUNT(*) FROM messages WHERE created_at >= datetime('now', '-1 day')) AS messages_24h,
+          (SELECT COUNT(*) FROM depots   WHERE submitted_at >= datetime('now', '-1 day')) AS depots_24h
+      `).get()
 
   // Messages par jour (30 derniers jours)
-  const messagesPerDay = db.prepare(`
-    SELECT date(created_at) AS day, COUNT(*) AS count
-    FROM messages
-    WHERE created_at >= datetime('now', '-30 days')
-    GROUP BY date(created_at)
-    ORDER BY day ASC
-  `).all()
+  const msgWhere = filtered
+    ? `AND channel_id IN (SELECT id FROM channels WHERE promo_id IN (${placeholders}))`
+    : ''
+  const messagesPerDay = filtered
+    ? db.prepare(`
+        SELECT date(created_at) AS day, COUNT(*) AS count
+        FROM messages
+        WHERE created_at >= datetime('now', '-30 days') ${msgWhere}
+        GROUP BY date(created_at) ORDER BY day ASC
+      `).all(...promoIds)
+    : db.prepare(`
+        SELECT date(created_at) AS day, COUNT(*) AS count
+        FROM messages
+        WHERE created_at >= datetime('now', '-30 days')
+        GROUP BY date(created_at) ORDER BY day ASC
+      `).all()
 
-  // Dépôts par jour (30 derniers jours)
-  const depotsPerDay = db.prepare(`
-    SELECT date(submitted_at) AS day, COUNT(*) AS count
-    FROM depots
-    WHERE submitted_at >= datetime('now', '-30 days')
-    GROUP BY date(submitted_at)
-    ORDER BY day ASC
-  `).all()
+  // Depots par jour (30 derniers jours)
+  const depotWhere = filtered
+    ? `AND travail_id IN (SELECT id FROM travaux WHERE promo_id IN (${placeholders}))`
+    : ''
+  const depotsPerDay = filtered
+    ? db.prepare(`
+        SELECT date(submitted_at) AS day, COUNT(*) AS count
+        FROM depots
+        WHERE submitted_at >= datetime('now', '-30 days') ${depotWhere}
+        GROUP BY date(submitted_at) ORDER BY day ASC
+      `).all(...promoIds)
+    : db.prepare(`
+        SELECT date(submitted_at) AS day, COUNT(*) AS count
+        FROM depots
+        WHERE submitted_at >= datetime('now', '-30 days')
+        GROUP BY date(submitted_at) ORDER BY day ASC
+      `).all()
 
   // Top 10 canaux par volume de messages
-  const topChannels = db.prepare(`
-    SELECT c.name, p.name AS promo_name, COUNT(m.id) AS message_count
-    FROM channels c
-    JOIN promotions p ON c.promo_id = p.id
-    JOIN messages m ON m.channel_id = c.id
-    GROUP BY c.id
-    ORDER BY message_count DESC
-    LIMIT 10
-  `).all()
+  const chanWhere = filtered ? `WHERE c.promo_id IN (${placeholders})` : ''
+  const topChannels = filtered
+    ? db.prepare(`
+        SELECT c.name, p.name AS promo_name, COUNT(m.id) AS message_count
+        FROM channels c
+        JOIN promotions p ON c.promo_id = p.id
+        JOIN messages m ON m.channel_id = c.id
+        ${chanWhere}
+        GROUP BY c.id ORDER BY message_count DESC LIMIT 10
+      `).all(...promoIds)
+    : db.prepare(`
+        SELECT c.name, p.name AS promo_name, COUNT(m.id) AS message_count
+        FROM channels c
+        JOIN promotions p ON c.promo_id = p.id
+        JOIN messages m ON m.channel_id = c.id
+        GROUP BY c.id ORDER BY message_count DESC LIMIT 10
+      `).all()
 
   // Distribution des notes
-  const gradeDistribution = db.prepare(`
-    SELECT
-      CASE
-        WHEN CAST(note AS REAL) >= 16 THEN 'A (16-20)'
-        WHEN CAST(note AS REAL) >= 14 THEN 'B (14-16)'
-        WHEN CAST(note AS REAL) >= 12 THEN 'C (12-14)'
-        WHEN CAST(note AS REAL) >= 10 THEN 'D (10-12)'
-        WHEN CAST(note AS REAL) >= 8  THEN 'E (8-10)'
-        ELSE 'F (<8)'
-      END AS range,
-      COUNT(*) AS count
-    FROM depots
-    WHERE note IS NOT NULL AND note != ''
-    GROUP BY range
-    ORDER BY range ASC
-  `).all()
+  const gradeFrom = filtered
+    ? `FROM depots WHERE note IS NOT NULL AND note != '' AND travail_id IN (SELECT id FROM travaux WHERE promo_id IN (${placeholders}))`
+    : `FROM depots WHERE note IS NOT NULL AND note != ''`
+  const gradeDistribution = filtered
+    ? db.prepare(`
+        SELECT
+          CASE
+            WHEN CAST(note AS REAL) >= 16 THEN 'A (16-20)'
+            WHEN CAST(note AS REAL) >= 14 THEN 'B (14-16)'
+            WHEN CAST(note AS REAL) >= 12 THEN 'C (12-14)'
+            WHEN CAST(note AS REAL) >= 10 THEN 'D (10-12)'
+            WHEN CAST(note AS REAL) >= 8  THEN 'E (8-10)'
+            ELSE 'F (<8)'
+          END AS range,
+          COUNT(*) AS count
+        ${gradeFrom}
+        GROUP BY range ORDER BY range ASC
+      `).all(...promoIds)
+    : db.prepare(`
+        SELECT
+          CASE
+            WHEN CAST(note AS REAL) >= 16 THEN 'A (16-20)'
+            WHEN CAST(note AS REAL) >= 14 THEN 'B (14-16)'
+            WHEN CAST(note AS REAL) >= 12 THEN 'C (12-14)'
+            WHEN CAST(note AS REAL) >= 10 THEN 'D (10-12)'
+            WHEN CAST(note AS REAL) >= 8  THEN 'E (8-10)'
+            ELSE 'F (<8)'
+          END AS range,
+          COUNT(*) AS count
+        ${gradeFrom}
+        GROUP BY range ORDER BY range ASC
+      `).all()
 
-  // Dépôts en retard
-  const lateCount = db.prepare(`
-    SELECT COUNT(*) AS count
-    FROM depots d
-    JOIN travaux t ON d.travail_id = t.id
-    WHERE d.submitted_at > t.deadline
-  `).get()
+  // Depots en retard
+  const lateWhere = filtered
+    ? `WHERE d.submitted_at > t.deadline AND t.promo_id IN (${placeholders})`
+    : `WHERE d.submitted_at > t.deadline`
+  const lateCount = filtered
+    ? db.prepare(`SELECT COUNT(*) AS count FROM depots d JOIN travaux t ON d.travail_id = t.id ${lateWhere}`).get(...promoIds)
+    : db.prepare(`SELECT COUNT(*) AS count FROM depots d JOIN travaux t ON d.travail_id = t.id ${lateWhere}`).get()
 
-  // Non notés
-  const ungradedCount = db.prepare(`
-    SELECT COUNT(*) AS count
-    FROM depots WHERE note IS NULL OR note = ''
-  `).get()
+  // Non notes
+  const ungradedWhere = filtered
+    ? `WHERE (note IS NULL OR note = '') AND travail_id IN (SELECT id FROM travaux WHERE promo_id IN (${placeholders}))`
+    : `WHERE note IS NULL OR note = ''`
+  const ungradedCount = filtered
+    ? db.prepare(`SELECT COUNT(*) AS count FROM depots ${ungradedWhere}`).get(...promoIds)
+    : db.prepare(`SELECT COUNT(*) AS count FROM depots ${ungradedWhere}`).get()
 
-  // Moyenne générale
-  const avgGrade = db.prepare(`
-    SELECT AVG(CAST(note AS REAL)) AS avg
-    FROM depots WHERE note IS NOT NULL AND note != ''
-  `).get()
+  // Moyenne generale
+  const avgWhere = filtered
+    ? `WHERE note IS NOT NULL AND note != '' AND travail_id IN (SELECT id FROM travaux WHERE promo_id IN (${placeholders}))`
+    : `WHERE note IS NOT NULL AND note != ''`
+  const avgGrade = filtered
+    ? db.prepare(`SELECT AVG(CAST(note AS REAL)) AS avg FROM depots ${avgWhere}`).get(...promoIds)
+    : db.prepare(`SELECT AVG(CAST(note AS REAL)) AS avg FROM depots ${avgWhere}`).get()
 
-  // Résumé par promo
-  const promosSummary = db.prepare(`
-    SELECT p.id, p.name, p.color, COALESCE(p.archived, 0) AS archived,
-      (SELECT COUNT(*) FROM students s WHERE s.promo_id = p.id) AS student_count,
-      (SELECT COUNT(*) FROM channels c WHERE c.promo_id = p.id) AS channel_count,
-      (SELECT COUNT(*) FROM travaux t WHERE t.promo_id = p.id AND t.published = 1) AS travaux_count,
-      (SELECT AVG(CAST(d.note AS REAL))
-       FROM depots d JOIN travaux t2 ON d.travail_id = t2.id
-       WHERE t2.promo_id = p.id AND d.note IS NOT NULL AND d.note != '') AS avg_grade
-    FROM promotions p
-    ORDER BY p.name
-  `).all()
+  // Resume par promo
+  const promoWhere = filtered ? `WHERE p.id IN (${placeholders})` : ''
+  const promosSummary = filtered
+    ? db.prepare(`
+        SELECT p.id, p.name, p.color, COALESCE(p.archived, 0) AS archived,
+          (SELECT COUNT(*) FROM students s WHERE s.promo_id = p.id) AS student_count,
+          (SELECT COUNT(*) FROM channels c WHERE c.promo_id = p.id) AS channel_count,
+          (SELECT COUNT(*) FROM travaux t WHERE t.promo_id = p.id AND t.published = 1) AS travaux_count,
+          (SELECT AVG(CAST(d.note AS REAL))
+           FROM depots d JOIN travaux t2 ON d.travail_id = t2.id
+           WHERE t2.promo_id = p.id AND d.note IS NOT NULL AND d.note != '') AS avg_grade
+        FROM promotions p ${promoWhere}
+        ORDER BY p.name
+      `).all(...promoIds)
+    : db.prepare(`
+        SELECT p.id, p.name, p.color, COALESCE(p.archived, 0) AS archived,
+          (SELECT COUNT(*) FROM students s WHERE s.promo_id = p.id) AS student_count,
+          (SELECT COUNT(*) FROM channels c WHERE c.promo_id = p.id) AS channel_count,
+          (SELECT COUNT(*) FROM travaux t WHERE t.promo_id = p.id AND t.published = 1) AS travaux_count,
+          (SELECT AVG(CAST(d.note AS REAL))
+           FROM depots d JOIN travaux t2 ON d.travail_id = t2.id
+           WHERE t2.promo_id = p.id AND d.note IS NOT NULL AND d.note != '') AS avg_grade
+        FROM promotions p
+        ORDER BY p.name
+      `).all()
 
   return {
     counts,

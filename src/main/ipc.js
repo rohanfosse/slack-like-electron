@@ -9,6 +9,7 @@ const structure = require('./ipc/structure')
 const messages  = require('./ipc/messages')
 const travaux   = require('./ipc/travaux')
 const documents = require('./ipc/documents')
+const projects  = require('./ipc/projects')
 const files     = require('./ipc/files')
 const { registerOfflineHandlers } = require('./ipc/offline')
 
@@ -22,6 +23,7 @@ function register() {
   messages.register()
   travaux.register()
   documents.register()
+  projects.register()
   files.register()
   registerOfflineHandlers()
 }

@@ -23,7 +23,7 @@
 
   const avatarStyle = computed(() => {
     if (!user.value) return {}
-    if (user.value.type === 'teacher') return { background: 'var(--accent)' }
+    if (user.value.type === 'admin' || user.value.type === 'teacher') return { background: 'var(--accent)' }
     if (user.value.type === 'ta')      return { background: '#7B5EA7' }
     return { background: avatarColor(user.value.name) }
   })
@@ -313,7 +313,7 @@
       @click="modals.settings = true"
     >
       <img v-if="user?.photo_data" :src="user.photo_data" :alt="user?.name" />
-      <Flame v-else-if="user?.type === 'teacher'" :size="18" style="color:#fff;opacity:.95" />
+      <Flame v-else-if="user?.type === 'admin' || user?.type === 'teacher'" :size="18" style="color:#fff;opacity:.95" />
       <span v-else>{{ user?.avatar_initials }}</span>
     </button>
   </nav>

@@ -97,7 +97,7 @@ function onTextClick(e: MouseEvent) {
           :initials="msg.author_initials || msg.author_name.slice(0, 2).toUpperCase()"
           :color="color"
           :photo-data="msg.author_photo"
-          :icon="isMine && appStore.currentUser?.type === 'teacher' && !msg.author_photo ? Flame : null"
+          :icon="isMine && (appStore.currentUser?.type === 'admin' || appStore.currentUser?.type === 'teacher') && !msg.author_photo ? Flame : null"
         />
         <span v-if="appStore.isUserOnline(msg.author_name)" class="presence-dot presence-online"></span>
       </div>

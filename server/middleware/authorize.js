@@ -1,13 +1,24 @@
-// ─── Middlewares d'autorisation (rôle + isolation promo) ──────────────────────
+// ─── Middlewares d'autorisation (hierarchie + isolation promo + projets) ──────
 const { getDb } = require('../db/connection')
+const { hasRole } = require('../permissions')
 
-/** Bloque tout sauf les enseignants (teacher) et intervenants (ta). */
-function requireTeacher(req, res, next) {
-  const role = req.user?.type
-  if (role !== 'teacher' && role !== 'ta') {
-    return res.status(403).json({ ok: false, error: 'Accès réservé aux enseignants.' })
+/**
+ * Verifie que l'utilisateur a au moins le role requis.
+ * admin > teacher > ta > student
+ * Remplace requireTeacher.
+ */
+function requireRole(minRole) {
+  return (req, res, next) => {
+    if (!hasRole(req.user?.type, minRole)) {
+      return res.status(403).json({ ok: false, error: 'Accès réservé aux enseignants.' })
+    }
+    next()
   }
-  next()
+}
+
+/** Raccourci retrocompat — sera supprime quand toutes les routes seront migrees */
+function requireTeacher(req, res, next) {
+  return requireRole('ta')(req, res, next)
 }
 
 /**
@@ -66,9 +77,8 @@ function requireMessageOwner(req, res, next) {
  * Vérifie que l'utilisateur est l'un des deux participants du DM.
  * Le paramètre :studentId identifie la "boîte" DM (toujours l'ID étudiant positif).
  * - Un étudiant ne peut accéder qu'à sa propre boîte (studentId === req.user.id)
- * - Un enseignant ne peut accéder qu'aux DMs des étudiants dans les promos
- *   où il est affecté (via teacher_channels). Si aucune affectation n'existe,
- *   l'accès est total (rétrocompatibilité admin).
+ * - Un teacher/admin passe toujours
+ * - Un TA doit être assigné à un projet de la promo de l'étudiant
  */
 function requireDmParticipant(req, res, next) {
   // Étudiants : uniquement leur propre boîte
@@ -80,39 +90,61 @@ function requireDmParticipant(req, res, next) {
     return next()
   }
 
-  // Enseignants / TAs : vérifier l'affectation promo via teacher_channels
+  // Teachers et admins passent toujours
+  if (hasRole(req.user?.type, 'teacher')) return next()
+
+  // TAs : vérifier l'affectation promo via teacher_projects
   const studentId = Number(req.params.studentId)
   if (studentId) {
     const student = getDb().prepare('SELECT promo_id FROM students WHERE id = ?').get(studentId)
     if (student) {
       const teacherId = Math.abs(req.user.id)
-      // Si le prof a des affectations de canaux, vérifier qu'il est dans la promo de l'étudiant
-      const hasAnyAssignment = getDb().prepare(
-        'SELECT 1 FROM teacher_channels WHERE teacher_id = ? LIMIT 1'
-      ).get(teacherId)
-      if (hasAnyAssignment) {
-        const hasPromoAccess = getDb().prepare(`
-          SELECT 1 FROM teacher_channels tc
-          JOIN channels c ON tc.channel_id = c.id
-          WHERE tc.teacher_id = ? AND c.promo_id = ?
-          LIMIT 1
-        `).get(teacherId, student.promo_id)
-        if (!hasPromoAccess) {
-          return res.status(403).json({ ok: false, error: 'Vous n\'êtes pas affecté à la promotion de cet étudiant.' })
-        }
+      const hasPromoAccess = getDb().prepare(`
+        SELECT 1 FROM teacher_projects tp
+        JOIN projects p ON tp.project_id = p.id
+        WHERE tp.teacher_id = ? AND p.promo_id = ?
+        LIMIT 1
+      `).get(teacherId, student.promo_id)
+      if (!hasPromoAccess) {
+        return res.status(403).json({ ok: false, error: 'Vous n\'êtes pas affecté à la promotion de cet étudiant.' })
       }
-      // Si pas d'affectation du tout → accès total (admin / rétrocompatibilité)
     }
   }
   next()
 }
 
+/**
+ * Verifie que le TA est assigne au projet demande.
+ * Les teachers et admins passent toujours.
+ */
+function requireProject(getProjectId) {
+  return (req, res, next) => {
+    if (hasRole(req.user?.type, 'teacher')) return next()
+    if (req.user?.type !== 'ta') return res.status(403).json({ ok: false, error: 'Accès non autorisé.' })
+
+    const projectId = getProjectId(req)
+    if (!projectId) return next()
+
+    const teacherId = Math.abs(req.user.id)
+    const assigned = getDb().prepare(
+      'SELECT 1 FROM teacher_projects WHERE teacher_id = ? AND project_id = ? LIMIT 1'
+    ).get(teacherId, projectId)
+
+    if (!assigned) {
+      return res.status(403).json({ ok: false, error: 'Vous n\'êtes pas assigné à ce projet.' })
+    }
+    next()
+  }
+}
+
 module.exports = {
-  requireTeacher,
+  requireRole,
+  requireTeacher, // retrocompat
   requirePromo,
   promoFromChannel,
   promoFromParam,
   promoFromTravail,
   requireMessageOwner,
   requireDmParticipant,
+  requireProject,
 }

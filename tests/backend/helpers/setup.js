@@ -33,7 +33,8 @@ function setupTestDb() {
      VALUES (1, 1, 'Jean Dupont', 'jean@test.fr', 'JD', ?, 0)`
   ).run(hash)
   // Update existing teacher password (created by schema migration v12) to known hash
-  testDb.prepare(`UPDATE teachers SET password = ?, must_change_password = 0 WHERE id = 1`).run(hash)
+  // v42 promotes first teacher to 'admin', reset to 'teacher' for test isolation
+  testDb.prepare(`UPDATE teachers SET password = ?, must_change_password = 0, role = 'teacher' WHERE id = 1`).run(hash)
   testDb.prepare(`UPDATE teachers SET name = 'Prof Test', email = 'prof@test.fr' WHERE id = 1`).run()
 
   return testDb

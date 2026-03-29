@@ -4,7 +4,7 @@
  * Used by SettingsModal.vue
  */
 import { ref, computed } from 'vue'
-import { User, BookOpen, GraduationCap } from 'lucide-vue-next'
+import { User, BookOpen, GraduationCap, Shield } from 'lucide-vue-next'
 import { useAppStore } from '@/stores/app'
 import { useRouter }   from 'vue-router'
 import { useToast }    from '@/composables/useToast'
@@ -56,19 +56,19 @@ export function useSettingsAccount(emit: (evt: 'update:modelValue', v: boolean) 
 
   // ── Avatar computed ────────────────────────────────────────────────────────
   const avatarBg = computed(() =>
-    appStore.currentUser?.type === 'teacher'
+    appStore.currentUser?.type === 'admin' || appStore.currentUser?.type === 'teacher'
       ? 'var(--accent)'
       : avatarColor(appStore.currentUser?.name ?? ''),
   )
 
   const roleLabel = computed(() => {
     const t = appStore.currentUser?.type
-    return t === 'teacher' ? 'Pilote' : t === 'ta' ? 'Intervenant' : 'Étudiant'
+    return t === 'admin' ? 'Admin' : t === 'teacher' ? 'Pilote' : t === 'ta' ? 'Intervenant' : 'Étudiant'
   })
 
   const roleIcon = computed(() => {
     const t = appStore.currentUser?.type
-    return t === 'teacher' ? BookOpen : t === 'ta' ? GraduationCap : User
+    return t === 'admin' ? Shield : t === 'teacher' ? BookOpen : t === 'ta' ? GraduationCap : User
   })
 
   // ── Password ───────────────────────────────────────────────────────────────

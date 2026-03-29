@@ -1,19 +1,25 @@
-// ─── Tests isolation Admin — acces reserve aux pilotes (teacher) ─────────────
+// ─── Tests isolation Admin — modules systeme vs promo ─────────────────────────
 const express = require('express')
 const request = require('supertest')
 const jwt     = require('jsonwebtoken')
-const { setupTestDb, teardownTestDb } = require('../helpers/setup')
+const { setupTestDb, teardownTestDb, getTestDb } = require('../helpers/setup')
 const { JWT_SECRET } = require('../helpers/fixtures')
 
 let app
-let studentToken, teacherToken
+let studentToken, teacherToken, adminToken
 
 beforeAll(() => {
-  setupTestDb()
+  const db = setupTestDb()
+
+  // Seed teacher_promos pour le teacher id=1, promo_id=1
+  try {
+    db.prepare('INSERT OR IGNORE INTO teacher_promos (teacher_id, promo_id) VALUES (1, 1)').run()
+  } catch { /* table may already be seeded by schema */ }
 
   // Tokens
   studentToken = jwt.sign({ id: 1, name: 'Jean Dupont', type: 'student', promo_id: 1 }, JWT_SECRET)
   teacherToken = jwt.sign({ id: -1, name: 'Prof Test', type: 'teacher', promo_id: null }, JWT_SECRET)
+  adminToken   = jwt.sign({ id: -1, name: 'Prof Test', type: 'admin', promo_id: null }, JWT_SECRET)
 
   // Express app
   app = express()
@@ -26,107 +32,155 @@ beforeAll(() => {
 afterAll(() => teardownTestDb())
 
 // ═══════════════════════════════════════════
-//  GET /api/admin/stats — statistiques (pilote uniquement)
+//  Routes promo — accessibles aux teachers ET admins
 // ═══════════════════════════════════════════
-describe('GET /api/admin/stats', () => {
-  it('refuse un etudiant (403)', async () => {
-    const res = await request(app)
-      .get('/api/admin/stats')
-      .set('Authorization', `Bearer ${studentToken}`)
-    expect(res.status).toBe(403)
-    expect(res.body.ok).toBe(false)
-  })
+const promoRoutes = [
+  { method: 'get', path: '/api/admin/stats' },
+  { method: 'get', path: '/api/admin/users' },
+  { method: 'get', path: '/api/admin/messages' },
+  { method: 'get', path: '/api/admin/config' },
+]
 
-  it('autorise un prof', async () => {
-    const res = await request(app)
-      .get('/api/admin/stats')
-      .set('Authorization', `Bearer ${teacherToken}`)
-    expect(res.status).toBe(200)
-    expect(res.body.ok).toBe(true)
-  })
-})
-
-// ═══════════════════════════════════════════
-//  GET /api/admin/users — gestion utilisateurs (pilote uniquement)
-// ═══════════════════════════════════════════
-describe('GET /api/admin/users', () => {
-  it('refuse un etudiant (403)', async () => {
-    const res = await request(app)
-      .get('/api/admin/users')
-      .set('Authorization', `Bearer ${studentToken}`)
-    expect(res.status).toBe(403)
-    expect(res.body.ok).toBe(false)
-  })
-
-  it('autorise un prof', async () => {
-    const res = await request(app)
-      .get('/api/admin/users')
-      .set('Authorization', `Bearer ${teacherToken}`)
-    expect(res.status).toBe(200)
-    expect(res.body.ok).toBe(true)
-  })
-})
-
-// ═══════════════════════════════════════════
-//  GET /api/admin/messages — moderation (pilote uniquement)
-// ═══════════════════════════════════════════
-describe('GET /api/admin/messages (moderation)', () => {
-  it('refuse un etudiant (403)', async () => {
-    const res = await request(app)
-      .get('/api/admin/messages')
-      .set('Authorization', `Bearer ${studentToken}`)
-    expect(res.status).toBe(403)
-    expect(res.body.ok).toBe(false)
-  })
-
-  it('prof passe le middleware admin (pas 403)', async () => {
-    const res = await request(app)
-      .get('/api/admin/messages')
-      .set('Authorization', `Bearer ${teacherToken}`)
-    // Le prof franchit requireAdmin -- le status n'est pas 403
-    expect(res.status).not.toBe(403)
-  })
-})
-
-// ═══════════════════════════════════════════
-//  GET /api/admin/config — settings lecture (pilote uniquement)
-// ═══════════════════════════════════════════
-describe('GET /api/admin/config (settings)', () => {
-  it('refuse un etudiant (403)', async () => {
-    const res = await request(app)
-      .get('/api/admin/config')
-      .set('Authorization', `Bearer ${studentToken}`)
-    expect(res.status).toBe(403)
-    expect(res.body.ok).toBe(false)
-  })
-
-  it('autorise un prof', async () => {
-    const res = await request(app)
-      .get('/api/admin/config')
-      .set('Authorization', `Bearer ${teacherToken}`)
-    expect(res.status).toBe(200)
-    expect(res.body.ok).toBe(true)
-  })
-})
-
-// ═══════════════════════════════════════════
-//  Couverture globale — requireAdmin bloque tout etudiant
-// ═══════════════════════════════════════════
-describe('requireAdmin middleware global', () => {
-  const protectedRoutes = [
-    { method: 'get', path: '/api/admin/stats' },
-    { method: 'get', path: '/api/admin/users' },
-    { method: 'get', path: '/api/admin/messages' },
-    { method: 'get', path: '/api/admin/config' },
-  ]
-
-  it.each(protectedRoutes)(
+describe('Routes promo (teacher + admin)', () => {
+  it.each(promoRoutes)(
     'etudiant bloque sur $method $path (403)',
     async ({ method, path }) => {
       const res = await request(app)[method](path)
         .set('Authorization', `Bearer ${studentToken}`)
       expect(res.status).toBe(403)
-      expect(res.body.error).toMatch(/pilotes/i)
+      expect(res.body.ok).toBe(false)
     }
   )
+
+  it.each(promoRoutes)(
+    'teacher autorise sur $method $path (pas 403)',
+    async ({ method, path }) => {
+      const res = await request(app)[method](path)
+        .set('Authorization', `Bearer ${teacherToken}`)
+      expect(res.status).not.toBe(403)
+    }
+  )
+
+  it.each(promoRoutes)(
+    'admin autorise sur $method $path (pas 403)',
+    async ({ method, path }) => {
+      const res = await request(app)[method](path)
+        .set('Authorization', `Bearer ${adminToken}`)
+      expect(res.status).not.toBe(403)
+    }
+  )
+})
+
+// ═══════════════════════════════════════════
+//  Routes systeme — reservees a l'admin global
+// ═══════════════════════════════════════════
+const systemRoutes = [
+  { method: 'get', path: '/api/admin/security' },
+  { method: 'get', path: '/api/admin/sessions' },
+  { method: 'get', path: '/api/admin/audit' },
+]
+
+describe('Routes systeme (admin uniquement)', () => {
+  it.each(systemRoutes)(
+    'etudiant bloque sur $method $path (403)',
+    async ({ method, path }) => {
+      const res = await request(app)[method](path)
+        .set('Authorization', `Bearer ${studentToken}`)
+      expect(res.status).toBe(403)
+    }
+  )
+
+  it.each(systemRoutes)(
+    'teacher bloque sur $method $path (403)',
+    async ({ method, path }) => {
+      const res = await request(app)[method](path)
+        .set('Authorization', `Bearer ${teacherToken}`)
+      expect(res.status).toBe(403)
+      expect(res.body.error).toMatch(/administrateur/i)
+    }
+  )
+
+  it.each(systemRoutes)(
+    'admin autorise sur $method $path (pas 403)',
+    async ({ method, path }) => {
+      const res = await request(app)[method](path)
+        .set('Authorization', `Bearer ${adminToken}`)
+      expect(res.status).not.toBe(403)
+    }
+  )
+})
+
+// ═══════════════════════════════════════════
+//  POST /config (settings write) — admin uniquement
+// ═══════════════════════════════════════════
+describe('POST /api/admin/config (settings write)', () => {
+  it('teacher bloque (403)', async () => {
+    const res = await request(app)
+      .post('/api/admin/config')
+      .set('Authorization', `Bearer ${teacherToken}`)
+      .send({ key: 'read_only', value: '1' })
+    expect(res.status).toBe(403)
+    expect(res.body.error).toMatch(/administrateur/i)
+  })
+
+  it('admin autorise', async () => {
+    const res = await request(app)
+      .post('/api/admin/config')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({ key: 'read_only', value: '0' })
+    expect(res.status).toBe(200)
+    expect(res.body.ok).toBe(true)
+  })
+})
+
+// ═══════════════════════════════════════════
+//  GET /api/admin/me — retourne le role
+// ═══════════════════════════════════════════
+describe('GET /api/admin/me', () => {
+  it('etudiant bloque (403)', async () => {
+    const res = await request(app)
+      .get('/api/admin/me')
+      .set('Authorization', `Bearer ${studentToken}`)
+    expect(res.status).toBe(403)
+  })
+
+  it('teacher voit son role', async () => {
+    const res = await request(app)
+      .get('/api/admin/me')
+      .set('Authorization', `Bearer ${teacherToken}`)
+    expect(res.status).toBe(200)
+    expect(res.body.data.type).toBe('teacher')
+  })
+
+  it('admin voit son role', async () => {
+    const res = await request(app)
+      .get('/api/admin/me')
+      .set('Authorization', `Bearer ${adminToken}`)
+    expect(res.status).toBe(200)
+    expect(res.body.data.type).toBe('admin')
+  })
+})
+
+// ═══════════════════════════════════════════
+//  GET /api/admin/stats — filtrage promo pour teacher
+// ═══════════════════════════════════════════
+describe('GET /api/admin/stats (promo filtering)', () => {
+  it('teacher recoit des stats (pas 403)', async () => {
+    const res = await request(app)
+      .get('/api/admin/stats')
+      .set('Authorization', `Bearer ${teacherToken}`)
+    expect(res.status).toBe(200)
+    expect(res.body.ok).toBe(true)
+    expect(res.body.data).toHaveProperty('counts')
+    expect(res.body.data).toHaveProperty('promosSummary')
+  })
+
+  it('admin recoit des stats globales', async () => {
+    const res = await request(app)
+      .get('/api/admin/stats')
+      .set('Authorization', `Bearer ${adminToken}`)
+    expect(res.status).toBe(200)
+    expect(res.body.ok).toBe(true)
+    expect(res.body.data).toHaveProperty('counts')
+  })
 })

@@ -1,4 +1,5 @@
 import { createRouter, createWebHashHistory } from 'vue-router'
+import { hasRole, type Role } from '@/utils/permissions'
 
 // Lazy-load toutes les vues pour reduire le bundle initial
 const DashboardView = () => import('@/views/DashboardView.vue')
@@ -19,23 +20,21 @@ const router = createRouter({
     { path: '/live',       component: () => import('@/views/LiveView.vue'),   name: 'live'   },
     { path: '/rex',        component: () => import('@/views/RexView.vue'),   name: 'rex'    },
     { path: '/agenda',     component: () => import('@/views/AgendaView.vue'), name: 'agenda' },
-    { path: '/fichiers',   component: () => import('@/views/FilesView.vue'),  name: 'fichiers', meta: { requiresTeacher: true } },
+    { path: '/fichiers',   component: () => import('@/views/FilesView.vue'),  name: 'fichiers', meta: { requiredRole: 'teacher' } },
     // Catch-all → redirect au dashboard
     { path: '/:pathMatch(.*)*', redirect: '/dashboard' },
   ],
 })
 
-// ── Route guard : pages réservées aux enseignants ───────────────────────────
+// ── Route guard : pages a acces restreint par role ──────────────────────────
 router.beforeEach((to, _from, next) => {
-  if (to.meta?.requiresTeacher) {
-    // Vérifier le rôle depuis localStorage (le store Pinia peut ne pas être prêt)
+  if (to.meta?.requiredRole) {
+    // Verifier le role depuis localStorage (le store Pinia peut ne pas etre pret)
     try {
       const raw = localStorage.getItem('cc_session')
-      if (raw) {
-        const user = JSON.parse(raw)
-        if (user?.type === 'student') {
-          return next('/dashboard')
-        }
+      const role = raw ? (JSON.parse(raw).type || 'student') : 'student'
+      if (!hasRole(role, to.meta.requiredRole as Role)) {
+        return next('/dashboard')
       }
     } catch { /* session corrompue */ }
   }

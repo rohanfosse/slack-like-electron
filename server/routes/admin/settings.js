@@ -1,17 +1,9 @@
 /**
- * Routes admin - Paramètres (mode lecture seule, archivage promos, config app)
+ * Routes admin - Parametres systeme (ecriture config, archivage promos)
+ * Note : GET /config est monte separement dans index.js (accessible aux teachers)
  */
 const router  = require('express').Router()
 const queries = require('../../db/index')
-
-router.get('/config', (req, res) => {
-  try {
-    const readOnly = queries.getAppConfig('read_only')
-    res.json({ ok: true, data: { read_only: readOnly === '1' } })
-  } catch {
-    res.json({ ok: true, data: { read_only: false } })
-  }
-})
 
 router.post('/config', (req, res) => {
   try {

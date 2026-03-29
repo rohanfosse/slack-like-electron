@@ -40,7 +40,7 @@ export const COMMAND_CATEGORIES: Record<string, string> = {
 
 export interface MentionUser {
   name: string
-  type: 'student' | 'teacher' | 'ta' | 'everyone'
+  type: 'admin' | 'student' | 'teacher' | 'ta' | 'everyone'
 }
 
 export interface RefChannel { name: string; type: string }
@@ -78,8 +78,8 @@ export function useMsgAutocomplete(
     filtered.sort((a, b) => {
       if (a.type === 'everyone') return -1
       if (b.type === 'everyone') return 1
-      if (a.type === 'teacher' && b.type !== 'teacher') return -1
-      if (b.type === 'teacher' && a.type !== 'teacher') return 1
+      if ((a.type === 'admin' || a.type === 'teacher') && b.type !== 'admin' && b.type !== 'teacher') return -1
+      if ((b.type === 'admin' || b.type === 'teacher') && a.type !== 'admin' && a.type !== 'teacher') return 1
       if (a.type === 'ta' && b.type === 'student') return -1
       if (b.type === 'ta' && a.type === 'student') return 1
       return a.name.localeCompare(b.name, 'fr')
@@ -126,7 +126,7 @@ export function useMsgAutocomplete(
 
     if (appStore.currentUser && appStore.currentUser.type !== 'student') {
       const myName = appStore.currentUser.name
-      const myType = appStore.currentUser.type as 'teacher' | 'ta'
+      const myType = appStore.currentUser.type as 'admin' | 'teacher' | 'ta'
       if (!users.some((u) => u.name === myName)) {
         users = [{ name: myName, type: myType }, ...users]
       }

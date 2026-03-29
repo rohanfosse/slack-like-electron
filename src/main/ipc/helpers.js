@@ -1,6 +1,7 @@
 // ─── IPC helpers partagés ─────────────────────────────────────────────────────
 const { ipcMain } = require('electron')
 const path = require('path')
+const { hasRole } = require('../../../server/permissions')
 
 const MAX_READ_BYTES = 50 * 1024 * 1024
 
@@ -41,12 +42,12 @@ function handle(channel, fn) {
   })
 }
 
-/** Wrapper teacher-only — bloque si l'utilisateur courant est un étudiant. */
-function handleTeacher(channel, fn) {
+/** Wrapper role-based — bloque si l'utilisateur n'a pas le role minimum. */
+function handleRole(minRole, channel, fn) {
   ipcMain.handle(channel, async (_event, ...args) => {
     try {
-      if (_currentUser?.type === 'student') {
-        return { ok: false, error: 'Accès réservé aux enseignants.' }
+      if (!hasRole(_currentUser?.type, minRole)) {
+        return { ok: false, error: 'Accès réservé.' }
       }
       return { ok: true, data: fn(...args) }
     } catch (err) {
@@ -54,6 +55,11 @@ function handleTeacher(channel, fn) {
       return { ok: false, error: err.message }
     }
   })
+}
+
+/** Raccourci retrocompat — sera supprime quand tous les IPC seront migres. */
+function handleTeacher(channel, fn) {
+  return handleRole('ta', channel, fn)
 }
 
 /**
@@ -79,4 +85,4 @@ function handlePromo(channel, getPromoId, fn) {
   })
 }
 
-module.exports = { handle, handleTeacher, handlePromo, assertSafePath, MAX_READ_BYTES, setCurrentUser, getCurrentUser }
+module.exports = { handle, handleRole, handleTeacher, handlePromo, assertSafePath, MAX_READ_BYTES, setCurrentUser, getCurrentUser }

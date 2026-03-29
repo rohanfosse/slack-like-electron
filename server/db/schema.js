@@ -1,6 +1,6 @@
 const { getDb } = require('./connection');
 
-const CURRENT_VERSION = 41;
+const CURRENT_VERSION = 43;
 
 // ─── Schema initial ───────────────────────────────────────────────────────────
 // Crée toutes les tables avec leur schéma complet (colonnes UTC, toutes colonnes incluses).
@@ -806,6 +806,146 @@ function runMigrations(db) {
         ) WHERE author_type = 'student' AND author_id IS NULL
       `);
       db.exec('CREATE INDEX IF NOT EXISTS idx_messages_author_id ON messages(author_id)');
+    },
+
+    // v42 : entite Projet + role admin + teacher_promos (epic roles-permissions #55)
+    (db) => {
+      // 1. Etendre le CHECK constraint de teachers.role pour inclure 'admin'
+      //    SQLite ne supporte pas ALTER CHECK, on recree la table
+      db.exec(`
+        CREATE TABLE IF NOT EXISTS teachers_v42 (
+          id                  INTEGER PRIMARY KEY AUTOINCREMENT,
+          name                TEXT NOT NULL,
+          email               TEXT NOT NULL UNIQUE,
+          password            TEXT,
+          role                TEXT NOT NULL DEFAULT 'teacher' CHECK(role IN ('admin','teacher','ta')),
+          must_change_password INTEGER NOT NULL DEFAULT 0,
+          photo_data          TEXT
+        );
+        INSERT OR IGNORE INTO teachers_v42 (id, name, email, password, role, must_change_password, photo_data)
+          SELECT id, name, email, password, role, COALESCE(must_change_password, 0), photo_data FROM teachers;
+        DROP TABLE teachers;
+        ALTER TABLE teachers_v42 RENAME TO teachers;
+      `);
+
+      // 2. Table projects (entite organisationnelle fondamentale)
+      db.exec(`
+        CREATE TABLE IF NOT EXISTS projects (
+          id          INTEGER PRIMARY KEY AUTOINCREMENT,
+          promo_id    INTEGER NOT NULL REFERENCES promotions(id) ON DELETE CASCADE,
+          name        TEXT NOT NULL,
+          description TEXT,
+          channel_id  INTEGER REFERENCES channels(id) ON DELETE SET NULL,
+          deadline    TEXT,
+          created_by  INTEGER NOT NULL,
+          created_at  TEXT NOT NULL DEFAULT (datetime('now'))
+        );
+        CREATE INDEX IF NOT EXISTS idx_projects_promo ON projects(promo_id);
+      `);
+
+      // 3. Table project_travaux (tout devoir dans un projet)
+      db.exec(`
+        CREATE TABLE IF NOT EXISTS project_travaux (
+          project_id  INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+          travail_id  INTEGER NOT NULL REFERENCES travaux(id) ON DELETE CASCADE,
+          PRIMARY KEY (project_id, travail_id)
+        );
+        CREATE INDEX IF NOT EXISTS idx_pt_travail ON project_travaux(travail_id);
+      `);
+
+      // 4. Table project_documents (documents lies a un projet)
+      db.exec(`
+        CREATE TABLE IF NOT EXISTS project_documents (
+          project_id  INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+          document_id INTEGER NOT NULL REFERENCES channel_documents(id) ON DELETE CASCADE,
+          PRIMARY KEY (project_id, document_id)
+        );
+      `);
+
+      // 5. Table teacher_projects (assignation TA par projet, remplacera teacher_channels)
+      db.exec(`
+        CREATE TABLE IF NOT EXISTS teacher_projects (
+          teacher_id  INTEGER NOT NULL REFERENCES teachers(id) ON DELETE CASCADE,
+          project_id  INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+          can_grade   INTEGER NOT NULL DEFAULT 1,
+          assigned_at TEXT NOT NULL DEFAULT (datetime('now')),
+          PRIMARY KEY (teacher_id, project_id)
+        );
+        CREATE INDEX IF NOT EXISTS idx_tp_teacher ON teacher_projects(teacher_id);
+        CREATE INDEX IF NOT EXISTS idx_tp_project ON teacher_projects(project_id);
+      `);
+
+      // 6. Table teacher_promos (liaison enseignant-promo)
+      db.exec(`
+        CREATE TABLE IF NOT EXISTS teacher_promos (
+          teacher_id  INTEGER NOT NULL REFERENCES teachers(id) ON DELETE CASCADE,
+          promo_id    INTEGER NOT NULL REFERENCES promotions(id) ON DELETE CASCADE,
+          PRIMARY KEY (teacher_id, promo_id)
+        );
+        CREATE INDEX IF NOT EXISTS idx_tpr_teacher ON teacher_promos(teacher_id);
+      `);
+
+      // 7. Promouvoir le premier enseignant en admin s'il n'y en a pas
+      const hasAdmin = db.prepare("SELECT 1 FROM teachers WHERE role = 'admin' LIMIT 1").get();
+      if (!hasAdmin) {
+        const first = db.prepare("SELECT id FROM teachers WHERE role = 'teacher' ORDER BY id LIMIT 1").get();
+        if (first) {
+          db.prepare("UPDATE teachers SET role = 'admin' WHERE id = ?").run(first.id);
+        }
+      }
+
+      // 8. Peupler teacher_promos pour les enseignants existants (toutes les promos)
+      db.exec(`
+        INSERT OR IGNORE INTO teacher_promos (teacher_id, promo_id)
+          SELECT t.id, p.id FROM teachers t, promotions p WHERE t.role IN ('admin', 'teacher');
+      `);
+    },
+
+    // v43 : migration donnees — devoirs vers projets + teacher_channels vers teacher_projects (#59)
+    (db) => {
+      // 1. Creer des projets par defaut pour les devoirs non encore lies a un projet
+      const promos = db.prepare(
+        'SELECT DISTINCT promo_id FROM travaux WHERE id NOT IN (SELECT travail_id FROM project_travaux)'
+      ).all();
+
+      for (const { promo_id } of promos) {
+        const categories = db.prepare(
+          "SELECT DISTINCT COALESCE(category, 'Général') as cat FROM travaux WHERE promo_id = ? AND id NOT IN (SELECT travail_id FROM project_travaux)"
+        ).all(promo_id);
+
+        for (const { cat } of categories) {
+          // Creer un projet pour cette categorie dans la promo
+          const projectId = db.prepare(
+            "INSERT INTO projects (promo_id, name, created_by, created_at) VALUES (?, ?, 1, datetime('now'))"
+          ).run(promo_id, cat).lastInsertRowid;
+
+          // Lier tous les devoirs de cette categorie au projet
+          db.prepare(
+            "INSERT OR IGNORE INTO project_travaux (project_id, travail_id) SELECT ?, id FROM travaux WHERE promo_id = ? AND COALESCE(category, 'Général') = ? AND id NOT IN (SELECT travail_id FROM project_travaux)"
+          ).run(projectId, promo_id, cat);
+        }
+      }
+
+      // 2. Migrer teacher_channels vers teacher_projects
+      const tcExists = db.prepare(
+        "SELECT 1 FROM sqlite_master WHERE type='table' AND name='teacher_channels'"
+      ).get();
+
+      if (tcExists) {
+        const assignments = db.prepare(
+          'SELECT tc.teacher_id, c.promo_id FROM teacher_channels tc JOIN channels c ON tc.channel_id = c.id'
+        ).all();
+
+        for (const { teacher_id, promo_id } of assignments) {
+          // Assigner l'enseignant a TOUS les projets de cette promo
+          db.prepare(
+            'INSERT OR IGNORE INTO teacher_projects (teacher_id, project_id) SELECT ?, id FROM projects WHERE promo_id = ?'
+          ).run(teacher_id, promo_id);
+        }
+
+        // 3. Supprimer teacher_channels apres migration
+        db.exec('DROP TABLE IF EXISTS teacher_channels');
+      }
     },
   ];
 
