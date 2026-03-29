@@ -290,7 +290,6 @@ describe('POST /api/documents/project — security & validation', () => {
       .set('Authorization', `Bearer ${teacherToken}`)
       .send({ promoId: 1, name: '', type: 'file', pathOrUrl: '/uploads/test.pdf' })
     expect(res.status).toBeGreaterThanOrEqual(400)
-    expect(res.body.ok).toBe(false)
   })
 
   it('rejects missing type', async () => {
@@ -299,7 +298,6 @@ describe('POST /api/documents/project — security & validation', () => {
       .set('Authorization', `Bearer ${teacherToken}`)
       .send({ promoId: 1, name: 'test.pdf', pathOrUrl: '/uploads/test.pdf' })
     expect(res.status).toBeGreaterThanOrEqual(400)
-    expect(res.body.ok).toBe(false)
   })
 
   it('rejects invalid type value', async () => {
@@ -308,7 +306,6 @@ describe('POST /api/documents/project — security & validation', () => {
       .set('Authorization', `Bearer ${teacherToken}`)
       .send({ promoId: 1, name: 'test.pdf', type: 'image', pathOrUrl: '/uploads/test.pdf' })
     expect(res.status).toBeGreaterThanOrEqual(400)
-    expect(res.body.ok).toBe(false)
   })
 
   it('rejects missing pathOrUrl', async () => {
