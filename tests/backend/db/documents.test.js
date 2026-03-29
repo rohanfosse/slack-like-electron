@@ -382,8 +382,8 @@ describe('addProjectDocument — edge cases', () => {
     })
     const db = getTestDb()
     const doc = db.prepare('SELECT file_size FROM channel_documents WHERE id = ?').get(Number(result.lastInsertRowid))
-    // fileSize of 0 is falsy, so it becomes null via ?? null
-    expect(doc.file_size).toBeNull()
+    // fileSize ?? null : 0 is not null/undefined, so 0 is stored correctly
+    expect(doc.file_size).toBe(0)
   })
 })
 
