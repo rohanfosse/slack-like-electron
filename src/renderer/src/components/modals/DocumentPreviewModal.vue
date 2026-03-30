@@ -5,8 +5,9 @@ import { useDocumentsStore } from '@/stores/documents'
 import { useOpenExternal }   from '@/composables/useOpenExternal'
 import Modal from '@/components/ui/Modal.vue'
 import * as mammoth from 'mammoth'
-import * as XLSX from 'xlsx'
+import ExcelJS from 'exceljs'
 import DOMPurify from 'dompurify'
+import { escapeHtml } from '@/utils/html'
 
 const api   = window.api
 const { openExternal } = useOpenExternal()
@@ -131,9 +132,24 @@ watch(() => props.modelValue, async (open) => {
       wordHtml.value = DOMPurify.sanitize(result.value)
 
     } else if (isExcelMime(mime.value)) {
-      const wb = XLSX.read(b64ToBuffer(b64), { type: 'array' })
-      const ws = wb.Sheets[wb.SheetNames[0]]
-      excelHtml.value = DOMPurify.sanitize(XLSX.utils.sheet_to_html(ws, { editable: false }))
+      const wb = new ExcelJS.Workbook()
+      await wb.xlsx.load(b64ToBuffer(b64))
+      const ws = wb.worksheets[0]
+      if (ws) {
+        const rows: string[] = ['<table>']
+        ws.eachRow((row) => {
+          rows.push('<tr>')
+          row.eachCell({ includeEmpty: true }, (cell) => {
+            rows.push(`<td>${escapeHtml(cell.text)}</td>`)
+          })
+          rows.push('</tr>')
+        })
+        rows.push('</table>')
+        excelHtml.value = DOMPurify.sanitize(rows.join(''), {
+          ALLOWED_TAGS: ['table', 'tr', 'td', 'th'],
+          ALLOWED_ATTR: [],
+        })
+      }
     }
   } catch (e) {
     error.value = 'Erreur lors de la lecture du fichier.'
@@ -228,7 +244,7 @@ function openWith() {
         <div class="preview-word-content" v-html="wordHtml" />
       </div>
 
-      <!-- Excel (.xlsx) → tableau HTML via SheetJS -->
+      <!-- Excel (.xlsx) → tableau HTML via ExcelJS -->
       <div v-else-if="previewType === 'excel'" class="preview-excel">
         <div class="preview-word-toolbar">
           <Table2 :size="13" style="color:#1D6F42" />
