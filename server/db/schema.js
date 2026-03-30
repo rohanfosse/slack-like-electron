@@ -35,7 +35,7 @@ function initSchema() {
       email           TEXT NOT NULL UNIQUE,
       avatar_initials TEXT NOT NULL,
       photo_data      TEXT,
-      password        TEXT DEFAULT 'cesi1234'
+      password        TEXT
     );
 
     CREATE TABLE IF NOT EXISTS groups (
