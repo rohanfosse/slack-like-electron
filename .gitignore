@@ -28,3 +28,4 @@ logs/
 *.pdf
 .claude/.mcp.json
 coverage/
+tests/uploads/

@@ -30,7 +30,7 @@ export function isRattrapage(t: { title: string; description?: string | null }):
 }
 
 export function isEventType(type: string): boolean {
-  return type === 'soutenance' || type === 'cctl'
+  return type === 'soutenance' || type === 'cctl' || type === 'etude_de_cas'
 }
 
 export function needsSubmission(devoir: { requires_submission?: number | 0 | 1 }): boolean {

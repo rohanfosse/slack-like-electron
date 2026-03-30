@@ -115,7 +115,7 @@ export interface Depot {
   content: string
   file_name?: string | null
   link_url?: string | null
-  submitted_at: string
+  submitted_at: string | null
   note: string | null
   feedback: string | null
   late_seconds?: number | null

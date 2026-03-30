@@ -67,10 +67,13 @@ describe('isEventType', () => {
     expect(isEventType('cctl')).toBe(true)
   })
 
+  it('returns true for etude_de_cas', () => {
+    expect(isEventType('etude_de_cas')).toBe(true)
+  })
+
   it('returns false for non-event types', () => {
     expect(isEventType('livrable')).toBe(false)
     expect(isEventType('memoire')).toBe(false)
-    expect(isEventType('etude_de_cas')).toBe(false)
     expect(isEventType('autre')).toBe(false)
   })
 })

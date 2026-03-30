@@ -352,7 +352,7 @@
         <div class="depot-card-body">
           <div class="depot-card-top">
             <span class="depot-student-name">{{ d.student_name }}</span>
-            <span class="depot-date">{{ formatDate(d.submitted_at) }}</span>
+            <span class="depot-date">{{ d.submitted_at ? formatDate(d.submitted_at) : '' }}</span>
             <span
               v-if="d.late_seconds && d.late_seconds > 0"
               class="depot-late-badge"
