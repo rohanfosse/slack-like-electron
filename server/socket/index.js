@@ -45,7 +45,7 @@ module.exports = function setupSocket(io, queries, SECRET) {
       try {
         const promos = queries.getPromotions?.() ?? []
         for (const p of promos) socket.join(`promo:${p.id}`)
-      } catch { /* pas critique */ }
+      } catch (err) { console.warn('[WS] Impossible de rejoindre les salles promo:', err.message) }
     }
     socket.join('all')
 
