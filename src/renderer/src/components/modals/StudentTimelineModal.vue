@@ -2,6 +2,7 @@
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import {
   Clock, CheckCircle2, CalendarDays, Award, AlertTriangle, Upload, Search,
+  BarChart2, List, ChevronLeft, ChevronRight,
 } from 'lucide-vue-next'
 import { useTravauxStore } from '@/stores/travaux'
 import { useAppStore }     from '@/stores/app'
@@ -9,6 +10,12 @@ import { parseCategoryIcon } from '@/utils/categoryIcon'
 import { formatDate, deadlineClass, deadlineLabel } from '@/utils/date'
 import { numericGradeClass } from '@/utils/grade'
 import Modal from '@/components/ui/Modal.vue'
+import FriseCalendar from '@/components/frise/FriseCalendar.vue'
+import {
+  buildProjectColorMap, flattenMilestones, groupByDay, positionGroups,
+} from '@/composables/useFrise'
+import { useFrise } from '@/composables/useFrise'
+import type { GanttRow } from '@/types'
 import type { Devoir } from '@/types'
 
 defineProps<{ modelValue: boolean }>()
@@ -16,6 +23,19 @@ defineEmits<{ 'update:modelValue': [v: boolean] }>()
 
 const travauxStore = useTravauxStore()
 const appStore     = useAppStore()
+
+// ── Vue toggle : liste (defaut) ou frise horizontale ────────────────────
+const viewMode = ref<'liste' | 'frise'>('liste')
+
+// ── Frise setup (pour le mode frise) ─────────────────────────────────────
+const emptyGantt = ref<GanttRow[]>([])
+const friseCtx = useFrise(emptyGantt)
+
+// Reutilise friseCtx.frise (studentFrise computed, toutes les devoirs non filtrees)
+const studentColorMap   = computed(() => buildProjectColorMap(friseCtx.frise.value))
+const studentFlat       = computed(() => flattenMilestones(friseCtx.frise.value, studentColorMap.value, false))
+const studentGrouped    = computed(() => groupByDay(studentFlat.value))
+const studentPositioned = computed(() => positionGroups(studentGrouped.value, friseCtx.milestoneLeft))
 
 const now = ref(Date.now())
 let clockInterval: ReturnType<typeof setInterval> | null = null
@@ -118,6 +138,10 @@ function gradeColor(note: string | null | undefined): string {
           <button class="stl-tab" :class="{ active: activeFilter === 'done' }" @click="activeFilter = 'done'">Rendus</button>
           <button class="stl-tab" :class="{ active: activeFilter === 'event' }" @click="activeFilter = 'event'">Événements</button>
         </div>
+        <div class="stl-view-toggle">
+          <button class="stl-view-btn" :class="{ active: viewMode === 'liste' }" title="Vue liste" @click="viewMode = 'liste'"><List :size="14" /></button>
+          <button class="stl-view-btn" :class="{ active: viewMode === 'frise' }" title="Vue frise" @click="viewMode = 'frise'"><BarChart2 :size="14" /></button>
+        </div>
         <div class="stl-search-wrap">
           <Search :size="12" class="stl-search-icon" />
           <input v-model="searchQuery" class="stl-search" placeholder="Rechercher un devoir..." type="text" />
@@ -146,8 +170,27 @@ function gradeColor(note: string | null | undefined): string {
           <span class="stl-leg-item stl-leg-pending" :class="{ 'stl-leg-off': !legendFilters.pending }" @click="toggleLegend('pending')"><Upload :size="11" /> À rendre</span>
         </div>
 
-        <!-- Mois groupés -->
-        <div class="stl-months">
+        <!-- Frise horizontale (mode frise) -->
+        <div v-if="viewMode === 'frise'" class="stl-frise-wrap">
+          <div class="stl-frise-nav">
+            <button class="stl-frise-btn" @click="friseCtx.friseOffset.value -= 30"><ChevronLeft :size="14" /></button>
+            <button v-if="friseCtx.friseOffset.value !== 0" class="stl-frise-today" @click="friseCtx.friseOffset.value = 0">Aujourd'hui</button>
+            <button class="stl-frise-btn" @click="friseCtx.friseOffset.value += 30"><ChevronRight :size="14" /></button>
+          </div>
+          <FriseCalendar
+            :groups="studentPositioned"
+            :months="friseCtx.ganttMonths.value"
+            :today-pct="friseCtx.ganttTodayPct.value"
+            :dragging="friseCtx.friseDragging.value"
+            @wheel="friseCtx.onFriseWheel"
+            @drag-start="friseCtx.onFriseDragStart"
+            @drag-move="friseCtx.onFriseDragMove"
+            @drag-end="friseCtx.onFriseDragEnd"
+          />
+        </div>
+
+        <!-- Mois groupés (mode liste) -->
+        <div v-show="viewMode === 'liste'" class="stl-months">
           <div v-for="[month, items] in byMonth" :key="month" class="stl-month-group">
             <div class="stl-month-label">{{ month }}</div>
 
@@ -232,6 +275,32 @@ function gradeColor(note: string | null | undefined): string {
   max-height: 70vh;
   overflow-y: auto;
   padding-right: 4px;
+}
+
+/* View toggle */
+.stl-view-toggle { display: flex; gap: 0; border-radius: 6px; overflow: hidden; border: 1px solid var(--border); }
+.stl-view-btn {
+  display: flex; align-items: center; justify-content: center;
+  width: 30px; height: 26px; background: transparent; border: none;
+  color: var(--text-muted); cursor: pointer; transition: all .15s;
+}
+.stl-view-btn:hover { background: var(--bg-hover); color: var(--text-primary); }
+.stl-view-btn.active { background: var(--accent); color: #fff; }
+
+/* Frise wrap */
+.stl-frise-wrap { display: flex; flex-direction: column; gap: 8px; }
+.stl-frise-nav { display: flex; align-items: center; gap: 6px; justify-content: center; }
+.stl-frise-btn {
+  display: flex; align-items: center; justify-content: center;
+  width: 28px; height: 28px; border-radius: 6px;
+  background: var(--bg-elevated); border: 1px solid var(--border);
+  color: var(--text-secondary); cursor: pointer; transition: all .15s;
+}
+.stl-frise-btn:hover { background: var(--bg-active); }
+.stl-frise-today {
+  font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 6px;
+  background: rgba(74,144,217,.12); color: var(--accent);
+  border: 1px solid rgba(74,144,217,.25); cursor: pointer; font-family: var(--font);
 }
 
 /* Filter bar */

@@ -6,7 +6,7 @@ import { useModalsStore }  from '@/stores/modals'
 import { useTravauxStore } from '@/stores/travaux'
 import { parseCategoryIcon } from '@/utils/categoryIcon'
 import { formatDate }      from '@/utils/date'
-import { FRISE_DEFAULT_SPAN_DAYS } from '@/constants'
+import { FRISE_DEFAULT_SPAN_DAYS, PROJECT_COLORS } from '@/constants'
 import type { Component, Ref } from 'vue'
 import type { GanttRow }   from './useDashboardTeacher'
 
@@ -19,6 +19,96 @@ export interface FriseProject {
 }
 export interface FrisePromo {
   name: string; color: string; projects: FriseProject[]
+}
+
+export interface EnrichedMilestone extends FriseMilestone {
+  projectKey: string; projectLabel: string; color: string
+}
+
+export interface DayGroup {
+  dateKey: string       // "2026-03-21"
+  deadline: string      // ISO string du premier
+  items: EnrichedMilestone[]
+  mainColor: string     // couleur du premier item
+  hasMultipleProjects: boolean
+}
+
+export interface PositionedGroup extends DayGroup {
+  pct: number
+  offsetY: number
+}
+
+export function buildProjectColorMap(promos: FrisePromo[]): Map<string, string> {
+  const map = new Map<string, string>()
+  const allProjects = new Set<string>()
+  for (const promo of promos) {
+    for (const proj of promo.projects) allProjects.add(proj.key)
+  }
+  let i = 0
+  for (const key of allProjects) {
+    map.set(key, PROJECT_COLORS[i % PROJECT_COLORS.length])
+    i++
+  }
+  return map
+}
+
+export function flattenMilestones(promos: FrisePromo[], colorMap: Map<string, string>, excludePast = true): EnrichedMilestone[] {
+  const now = Date.now()
+  const all: EnrichedMilestone[] = []
+  for (const promo of promos) {
+    for (const proj of promo.projects) {
+      const color = colorMap.get(proj.key) ?? '#4A90D9'
+      for (const ms of proj.milestones) {
+        if (excludePast && new Date(ms.deadline).getTime() < now) continue
+        all.push({ ...ms, projectKey: proj.key, projectLabel: proj.label, color })
+      }
+    }
+  }
+  return all.sort((a, b) => a.deadline.localeCompare(b.deadline))
+}
+
+export function groupByDay(milestones: EnrichedMilestone[]): DayGroup[] {
+  const map = new Map<string, EnrichedMilestone[]>()
+  for (const ms of milestones) {
+    const dateKey = ms.deadline.slice(0, 10)
+    if (!map.has(dateKey)) map.set(dateKey, [])
+    map.get(dateKey)!.push(ms)
+  }
+  return Array.from(map.entries())
+    .map(([dateKey, items]) => ({
+      dateKey,
+      deadline: items[0].deadline,
+      items,
+      mainColor: items[0].color,
+      hasMultipleProjects: items.some(item => item.projectKey !== items[0].projectKey),
+    }))
+    .sort((a, b) => a.deadline.localeCompare(b.deadline))
+}
+
+const OVERLAP_THRESHOLD_PCT = 5
+const VERTICAL_OFFSETS_PX = [-50, -30, -10, 10, 30, 50]
+
+export function positionGroups(
+  groups: DayGroup[],
+  milestoneLeftFn: (deadline: string) => string,
+): PositionedGroup[] {
+  const positioned = groups.map(g => ({
+    ...g,
+    pct: parseFloat(milestoneLeftFn(g.deadline)) || 0,
+    offsetY: 0,
+  }))
+  positioned.sort((a, b) => a.pct - b.pct)
+  let level = 0
+  for (let i = 1; i < positioned.length; i++) {
+    if (Math.abs(positioned[i].pct - positioned[i - 1].pct) < OVERLAP_THRESHOLD_PCT) {
+      level = (level + 1) % VERTICAL_OFFSETS_PX.length
+      positioned[i].offsetY = VERTICAL_OFFSETS_PX[level]
+    } else {
+      level = 0
+      positioned[i].offsetY = 0
+    }
+  }
+  return positioned
 }
 
 export function useFrise(ganttFiltered: Ref<GanttRow[]>) {

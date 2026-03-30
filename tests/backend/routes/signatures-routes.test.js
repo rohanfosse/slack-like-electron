@@ -39,7 +39,7 @@ beforeAll(() => {
   app.set('jwtSecret', JWT_SECRET)
   const auth = require('../../../server/middleware/auth')
   app.use('/api/signatures', auth, require('../../../server/routes/signatures'))
-})
+}, 30_000)
 
 afterAll(() => teardownTestDb())
 

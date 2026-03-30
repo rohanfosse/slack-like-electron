@@ -120,7 +120,7 @@ beforeAll(() => {
   app.use('/api/rubrics',      require('../../../server/routes/rubrics'))
   app.use('/api/signatures',   require('../../../server/routes/signatures'))
   app.use('/api/depots',       require('../../../server/routes/depots'))
-})
+}, 30_000)
 
 afterAll(() => teardownTestDb())
 

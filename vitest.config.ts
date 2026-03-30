@@ -21,10 +21,10 @@ export default defineConfig({
       include: ['server/**/*.js', 'src/renderer/src/**/*.ts'],
       exclude: ['**/node_modules/**', '**/dist/**', 'server/public/**', '**/*.d.ts'],
       thresholds: {
-        statements: 40,
-        branches: 50,
-        functions: 35,
-        lines: 40,
+        statements: 60,
+        branches: 55,
+        functions: 50,
+        lines: 60,
       },
     },
     projects: [
