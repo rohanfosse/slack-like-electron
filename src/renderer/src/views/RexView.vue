@@ -1,7 +1,10 @@
 /** Vue REX — wrapper qui affiche la vue etudiant. */
 <script setup lang="ts">
 import StudentRexView from '@/components/rex/StudentRexView.vue'
+import ErrorBoundary  from '@/components/ui/ErrorBoundary.vue'
 </script>
 <template>
-  <StudentRexView />
+  <ErrorBoundary label="REX">
+    <StudentRexView />
+  </ErrorBoundary>
 </template>

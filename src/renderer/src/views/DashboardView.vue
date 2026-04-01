@@ -2,6 +2,7 @@
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import DashboardTeacher from '@/components/dashboard/DashboardTeacher.vue'
 import DashboardStudent from '@/components/dashboard/DashboardStudent.vue'
+import ErrorBoundary    from '@/components/ui/ErrorBoundary.vue'
 import { useAppStore }    from '@/stores/app'
 import { useModalsStore } from '@/stores/modals'
 import { useTravauxStore } from '@/stores/travaux'
@@ -154,6 +155,7 @@ onUnmounted(() => {
 </script>
 
 <template>
+  <ErrorBoundary label="Dashboard">
   <div class="dashboard-shell">
 
     <!-- ════════════════════ VUE PROFESSEUR ════════════════════ -->
@@ -283,6 +285,7 @@ onUnmounted(() => {
     />
 
   </div>
+  </ErrorBoundary>
 </template>
 
 <style scoped>
