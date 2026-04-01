@@ -3,6 +3,7 @@
   import { onMounted, toRef } from 'vue'
   import { Clock, AlertTriangle, BarChart3, ChevronRight } from 'lucide-vue-next'
   import { useMultiPromo, type PromoMetrics, type GanttRow, type RenduRow } from '@/composables/useMultiPromo'
+  import ProgressBar from '@/components/ui/ProgressBar.vue'
   import { formatDate } from '@/utils/date'
   import type { Promotion } from '@/types'
 
@@ -68,9 +69,7 @@
           </div>
         </div>
 
-        <div class="mpc-progress">
-          <div class="linear-progress"><div class="linear-progress-fill" :style="{ width: m.progressPct + '%' }" /></div>
-        </div>
+        <ProgressBar :value="m.progressPct" />
 
         <div v-if="m.upcoming.length" class="mpc-deadlines">
           <button

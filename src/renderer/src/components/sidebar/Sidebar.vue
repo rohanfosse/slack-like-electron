@@ -18,6 +18,7 @@
   import SidebarProjects    from './SidebarProjects.vue'
   import SidebarDocProjects from './SidebarDocProjects.vue'
   import SidebarDmList      from './SidebarDmList.vue'
+  import SkeletonLoader     from '@/components/ui/SkeletonLoader.vue'
   import { avatarColor }  from '@/utils/format'
 
   import { useSidebarData }     from '@/composables/useSidebarData'
@@ -248,12 +249,7 @@
       </div>
 
       <!-- Squelette de chargement -->
-      <template v-if="loading">
-        <div v-for="i in 5" :key="i" class="skel-list-row">
-          <div class="skel skel-avatar skel-avatar-sm" />
-          <div class="skel skel-line skel-w70" />
-        </div>
-      </template>
+      <SkeletonLoader v-if="loading" variant="list" :rows="5" />
 
       <!-- Tableau de bord -->
       <template v-else-if="route.name === 'dashboard'">

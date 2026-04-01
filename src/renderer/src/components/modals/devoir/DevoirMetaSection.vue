@@ -2,6 +2,7 @@
   import { computed } from 'vue'
   import { Clock, ExternalLink, Calendar, MapPin, Calculator, BookOpen, FileText, Award } from 'lucide-vue-next'
   import { deadlineClass, deadlineLabel, formatDate } from '@/utils/date'
+  import ProgressBar from '@/components/ui/ProgressBar.vue'
   import { typeLabel } from '@/utils/devoir'
   import type { Devoir } from '@/types'
 
@@ -66,7 +67,7 @@
 
     <!-- Progress bar (compact) -->
     <div v-if="depotsCounts.total" class="gd-meta-progress">
-      <div class="linear-progress"><div class="linear-progress-fill" :style="{ width: submitPct + '%' }" /></div>
+      <ProgressBar :value="submitPct" />
       <span class="gd-meta-progress-label">
         {{ depotsCounts.submitted }}/{{ depotsCounts.total }} rendus
         <template v-if="depotsCounts.noted"> &middot; {{ depotsCounts.noted }} note{{ depotsCounts.noted > 1 ? 's' : '' }}</template>

@@ -12,6 +12,9 @@
   import { avatarColor, initials, formatGrade, gradeClass } from '@/utils/format'
   import { formatDate } from '@/utils/date'
   import Modal from '@/components/ui/Modal.vue'
+  import ProgressBar from '@/components/ui/ProgressBar.vue'
+  import EmptyState from '@/components/ui/EmptyState.vue'
+  import SkeletonLoader from '@/components/ui/SkeletonLoader.vue'
   import type { Depot } from '@/types'
 
   const props = defineProps<{ modelValue: boolean }>()
@@ -215,10 +218,7 @@
         <span class="depots-progress-label">
           <strong>{{ notedCount }}</strong> / {{ totalStudents }} noté{{ notedCount > 1 ? 's' : '' }}
         </span>
-        <div class="linear-progress" style="flex:1">
-          <div class="linear-progress-fill" :style="{ width: progressPct + '%' }" />
-        </div>
-        <span class="depots-progress-pct">{{ progressPct }} %</span>
+        <ProgressBar :value="progressPct" show-pct style="flex:1" />
       </div>
 
       <!-- Distribution des notes (#3) -->
@@ -416,9 +416,7 @@
 
     <!-- ═══ MODE NORMAL (liste classique) ═══ -->
     <div v-if="!batch.active.value" class="depots-body">
-      <div v-if="travauxStore.depots.length === 0" class="empty-hint" style="padding:32px 0">
-        <p>Aucun rendu déposé pour l'instant.</p>
-      </div>
+      <EmptyState v-if="travauxStore.depots.length === 0" title="Aucun rendu depose" subtitle="Les etudiants n'ont pas encore soumis de travail." compact />
 
       <div
         v-for="d in filteredDepots"
