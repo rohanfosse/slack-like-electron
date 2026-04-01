@@ -22,17 +22,16 @@
   const filterType = ref<FilterType>('all')
 
   watch(() => props.modelValue, async (open) => {
-    if (open) {
-      loading.value = true
-      try {
-        const res = await window.api.getGanttData(
-          appStore.activePromoId ?? undefined as unknown as number,
-          appStore.activeChannelId ?? undefined,
-        )
-        items.value = res?.ok ? (res.data as typeof items.value) : []
-      } finally {
-        loading.value = false
-      }
+    if (!open || !appStore.activePromoId) return
+    loading.value = true
+    try {
+      const res = await window.api.getGanttData(
+        appStore.activePromoId,
+        appStore.activeChannelId ?? undefined,
+      )
+      items.value = res?.ok ? (res.data as typeof items.value) : []
+    } finally {
+      loading.value = false
     }
   })
 

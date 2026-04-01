@@ -8,6 +8,7 @@
   import { useTravauxStore } from '@/stores/travaux'
   import { useLiveStore }   from '@/stores/live'
   import { useRexStore }    from '@/stores/rex'
+  import { useToast }       from '@/composables/useToast'
   import { useModules }     from '@/composables/useModules'
   import { avatarColor }    from '@/utils/format'
   import { getAuthToken }   from '@/utils/auth'
@@ -18,6 +19,7 @@
   const travauxStore = useTravauxStore()
   const liveStore    = useLiveStore()
   const rexStore     = useRexStore()
+  const { showToast } = useToast()
   const { isEnabled } = useModules()
   const router      = useRouter()
   const route       = useRoute()
@@ -82,7 +84,9 @@
     try {
       const res = await window.api.getMyFeedback()
       if (res?.ok) myFeedbacks.value = res.data as typeof myFeedbacks.value
-    } catch {}
+    } catch {
+      console.warn('[NavRail] Erreur chargement feedback')
+    }
   }
 
   watch(showFeedback, (open) => { if (open) loadMyFeedback() })
@@ -93,11 +97,16 @@
     try {
       const res = await window.api.submitFeedback(feedbackType.value, feedbackTitle.value.trim(), feedbackDesc.value.trim())
       if (res?.ok) {
+        showToast('Merci pour votre retour !', 'success')
         feedbackTitle.value = ''
         feedbackDesc.value = ''
         await loadMyFeedback()
+      } else {
+        showToast('Erreur lors de l\'envoi.', 'error')
       }
-    } catch {}
+    } catch {
+      showToast('Erreur lors de l\'envoi.', 'error')
+    }
     feedbackSending.value = false
   }
   const unreadCount = computed(() =>

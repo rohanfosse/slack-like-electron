@@ -123,7 +123,7 @@ function connectSocket(token: string): void {
   socket.on('document:new',       (data: DocumentNewPayload) => documentNewCallbacks.forEach(cb => cb(data)))
   socket.on('assignment:new',     (data: AssignmentNewPayload) => assignmentNewCallbacks.forEach(cb => cb(data)))
   socket.on('connect', () => {
-    console.log('[Socket.io] Connecté (rooms auto-rejointes côté serveur)')
+    if (process.env.NODE_ENV === 'development') console.log('[Socket.io] Connecte')
     socketStateCallbacks.forEach((cb) => cb(true))
   })
   socket.on('disconnect', () => {
@@ -361,7 +361,7 @@ contextBridge.exposeInMainWorld('api', {
   getGroups:       (promoId: number)  => get(`/api/groups?promoId=${promoId}`),
   createGroup:     (payload: unknown) => post('/api/groups', payload),
   getGroupMembers: (groupId: number)  => get(`/api/groups/${groupId}/members`),
-  setGroupMembers: (payload: unknown) => post(`/api/groups/${(payload as { groupId: number }).groupId}/members`, payload),
+  setGroupMembers: (payload: { groupId: number; members?: number[] }) => post(`/api/groups/${payload.groupId}/members`, payload),
 
   // ── Ressources ──────────────────────────────────────────────────────────────
   getRessources:  (travailId: number) => get(`/api/resources?travailId=${travailId}`),
@@ -386,7 +386,7 @@ contextBridge.exposeInMainWorld('api', {
   createIntervenant:  (payload: unknown) => post('/api/teachers', payload),
   deleteIntervenant:  (id: number)       => del(`/api/teachers/${id}`),
   getTeacherChannels: (id: number)       => get(`/api/teachers/${id}/channels`),
-  setTeacherChannels: (payload: unknown) => post(`/api/teachers/${(payload as { teacherId: number }).teacherId}/channels`, payload),
+  setTeacherChannels: (payload: { teacherId: number; channelIds: number[] }) => post(`/api/teachers/${payload.teacherId}/channels`, payload),
 
   // ── Projets (entite backend) ──────────────────────────────────────────────
   getProjectsByPromo:      (promoId: number)                          => get(`/api/projects?promoId=${promoId}`),
