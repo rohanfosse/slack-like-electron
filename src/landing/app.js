@@ -27,6 +27,35 @@ function toggleTheme() {
 // ── DOMContentLoaded ──────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
 
+  // ── Burger menu toggle ──────────────────────────────────────────────
+  const burger = document.getElementById('burger-toggle')
+  const mobileMenu = document.getElementById('mobile-menu')
+
+  if (burger && mobileMenu) {
+    burger.addEventListener('click', () => {
+      const open = burger.getAttribute('aria-expanded') === 'true'
+      burger.setAttribute('aria-expanded', String(!open))
+      mobileMenu.setAttribute('aria-hidden', String(open))
+    })
+
+    // Close on link click
+    mobileMenu.querySelectorAll('.mobile-link').forEach(link => {
+      link.addEventListener('click', () => {
+        burger.setAttribute('aria-expanded', 'false')
+        mobileMenu.setAttribute('aria-hidden', 'true')
+      })
+    })
+
+    // Close on Escape
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && burger.getAttribute('aria-expanded') === 'true') {
+        burger.setAttribute('aria-expanded', 'false')
+        mobileMenu.setAttribute('aria-hidden', 'true')
+        burger.focus()
+      }
+    })
+  }
+
   // ── Keyboard accessibility for interactive demos ──────────────────
   function handleKeyActivation(e) {
     if (e.key === 'Enter' || e.key === ' ') {
@@ -41,6 +70,15 @@ document.addEventListener('DOMContentLoaded', () => {
     el.addEventListener('keydown', handleKeyActivation)
   })
 
+  // ── GitHub stars fetch ────────────────────────────────────────────────
+  fetch('https://api.github.com/repos/rohanfosse/cursus')
+    .then(r => r.ok ? r.json() : null)
+    .then(data => {
+      if (!data?.stargazers_count) return
+      const el = document.getElementById('gh-stars')
+      if (el) el.textContent = data.stargazers_count + ' stars'
+    }).catch(() => {})
+
   // ── Version fetch ─────────────────────────────────────────────────────
   fetch('/download')
     .then(r => r.ok ? r.json() : null)
@@ -53,10 +91,7 @@ document.addEventListener('DOMContentLoaded', () => {
       })
     }).catch(() => {})
 
-  // ── OS detection for download cards ───────────────────────────────────
-  const ua = navigator.userAgent.toLowerCase()
-  const os = ua.includes('win') ? 'win' : ua.includes('mac') ? 'mac' : 'web'
-  document.getElementById('dl-' + os)?.classList.add('recommended')
+  // ── OS detection (kept for analytics, Web is always recommended) ──────
 
   // ── Scroll reveal (IntersectionObserver) ──────────────────────────────
   const observer = new IntersectionObserver((entries) => {

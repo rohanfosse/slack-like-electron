@@ -3,13 +3,13 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="Cursus - L'app tout-en-un pour ta promo. Chat, devoirs et documents en un seul endroit." />
+  <meta name="description" content="Cursus, l'alternative gratuite à Discord et Moodle pour les écoles d'ingénieurs. Chat en temps réel, gestion de devoirs, documents partagés. Open source, sans installation." />
   <meta name="theme-color" content="#f9fafb" />
-  <title>Cursus · Plateforme pédagogique</title>
+  <title>Cursus — Alternative gratuite à Discord et Moodle pour étudiants</title>
 
   <!-- SEO : Open Graph -->
-  <meta property="og:title" content="Cursus · Plateforme pédagogique" />
-  <meta property="og:description" content="Cursus - L'app tout-en-un pour ta promo. Chat, devoirs et documents en un seul endroit." />
+  <meta property="og:title" content="Cursus — Alternative gratuite à Discord et Moodle pour étudiants" />
+  <meta property="og:description" content="Chat en temps réel, gestion de devoirs, documents partagés. L'app tout-en-un pour les promos d'écoles d'ingénieurs. Open source et gratuit." />
   <meta property="og:image" content="https://cursus.school/assets/icon-512.png" />
   <meta property="og:url" content="https://cursus.school/" />
   <meta property="og:type" content="website" />
@@ -18,8 +18,8 @@
 
   <!-- SEO : Twitter Card -->
   <meta name="twitter:card" content="summary" />
-  <meta name="twitter:title" content="Cursus · Plateforme pédagogique" />
-  <meta name="twitter:description" content="Cursus - L'app tout-en-un pour ta promo. Chat, devoirs et documents en un seul endroit." />
+  <meta name="twitter:title" content="Cursus — Alternative gratuite à Discord et Moodle pour étudiants" />
+  <meta name="twitter:description" content="Chat en temps réel, gestion de devoirs, documents partagés. Open source et gratuit, sans installation." />
   <meta name="twitter:image" content="https://cursus.school/assets/icon-512.png" />
   <meta name="author" content="Rohan Fosse">
 
@@ -100,7 +100,20 @@
           <svg aria-hidden="true" class="icon-moon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
         </button>
         <a href="https://app.cursus.school" class="nav-cta">Ouvrir l'app</a>
+        <button class="burger-btn" id="burger-toggle" aria-label="Ouvrir le menu" aria-expanded="false" aria-controls="mobile-menu">
+          <span class="burger-line"></span>
+          <span class="burger-line"></span>
+          <span class="burger-line"></span>
+        </button>
       </div>
+    </div>
+    <!-- Mobile menu overlay -->
+    <div class="mobile-menu" id="mobile-menu" aria-hidden="true">
+      <a href="#features" class="mobile-link">Fonctionnalites</a>
+      <a href="#download" class="mobile-link">Telecharger</a>
+      <a href="https://github.com/rohanfosse/cursus" class="mobile-link" target="_blank" rel="noopener">GitHub</a>
+      <a href="https://app.cursus.school" class="mobile-link mobile-link--cta">Ouvrir l'app</a>
+    </div>
     </div>
   </nav>
 
@@ -112,6 +125,22 @@
         <span class="hero-badge fade-up">Open source <span class="sep">&middot;</span> <span id="pill-version">v1.x</span></span>
         <h1 class="hero-title fade-up">L'app tout-en-un pour ta promo</h1>
         <p class="hero-sub fade-up">Chat, devoirs et documents. Un seul endroit.</p>
+        <div class="hero-proof fade-up">
+          <a href="https://github.com/rohanfosse/cursus" class="proof-item proof-link" target="_blank" rel="noopener">
+            <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61-.546-1.385-1.335-1.755-1.335-1.755-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg>
+            <span id="gh-stars">Open source</span> sur GitHub
+          </a>
+          <span class="proof-sep">&middot;</span>
+          <span class="proof-item">
+            <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="m9 11 3 3L22 4"/></svg>
+            <span id="test-count">1700+</span> tests automatisés
+          </span>
+          <span class="proof-sep">&middot;</span>
+          <span class="proof-item">
+            <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="3" rx="2"/><path d="M2 12h20"/></svg>
+            Fonctionne dans le navigateur, rien à installer
+          </span>
+        </div>
         <div class="hero-actions fade-up">
           <a href="#download" class="btn-primary">
             <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242"/><path d="M12 12v9"/><path d="m8 17 4 4 4-4"/></svg>
@@ -127,7 +156,7 @@
   </section>
 
   <!-- FEATURES -->
-  <div id="features">
+  <section id="features" aria-label="Fonctionnalités">
 
     <!-- Feature 1: Chat -->
     <section class="feature-section fade-up" data-color="chat">
@@ -296,7 +325,7 @@
       </div>
     </section>
 
-  </div><!-- /#features -->
+  </section><!-- /#features -->
 
   <!-- DOWNLOAD -->
   <section class="download-section fade-up" id="download">
@@ -304,23 +333,23 @@
       <h2>Prêt à commencer ?</h2>
       <p class="section-sub">Disponible sur toutes les plateformes.</p>
       <div class="download-grid">
+        <a class="dl-card recommended" id="dl-web" href="https://app.cursus.school">
+          <svg aria-hidden="true" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>
+          <span class="dl-platform">Web</span>
+          <span class="dl-req">Aucune installation requise</span>
+          <span class="dl-btn">Ouvrir dans le navigateur</span>
+        </a>
         <a class="dl-card" id="dl-win" href="https://app.cursus.school/download/windows">
           <svg aria-hidden="true" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="3" rx="2"/><line x1="8" x2="16" y1="21" y2="21"/><line x1="12" x2="12" y1="17" y2="21"/></svg>
           <span class="dl-platform">Windows</span>
           <span class="dl-req">Windows 10+</span>
-          <span class="dl-btn">Télécharger .exe</span>
+          <span class="dl-btn">Telecharger .exe</span>
         </a>
         <a class="dl-card" id="dl-mac" href="https://app.cursus.school/download/mac">
           <svg aria-hidden="true" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 16V7a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v9m16 0H4m16 0 1.28 2.55a1 1 0 0 1-.9 1.45H3.62a1 1 0 0 1-.9-1.45L4 16"/></svg>
           <span class="dl-platform">macOS</span>
           <span class="dl-req">macOS 11+</span>
-          <span class="dl-btn">Télécharger .dmg</span>
-        </a>
-        <a class="dl-card" id="dl-web" href="https://app.cursus.school">
-          <svg aria-hidden="true" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>
-          <span class="dl-platform">Web</span>
-          <span class="dl-req">Aucune installation</span>
-          <span class="dl-btn">Ouvrir</span>
+          <span class="dl-btn">Telecharger .dmg</span>
         </a>
       </div>
       <p class="dl-alt">Ou ouvrir directement <a href="https://app.cursus.school">app.cursus.school</a></p>
@@ -344,7 +373,7 @@
         </div>
       </div>
       <div class="footer-tech">
-        Vue 3 + Electron + Express + SQLite · Open source MIT · Socket.IO
+        Open source sous licence MIT · Hébergement souverain possible
       </div>
       <div class="footer-bottom">
         <span>Conçu par <a href="https://github.com/rohanfosse" target="_blank" rel="noopener">Rohan Fossé</a></span>
