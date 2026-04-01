@@ -1,6 +1,6 @@
 const { getDb } = require('./connection');
 
-const CURRENT_VERSION = 47;
+const CURRENT_VERSION = 48;
 
 // ─── Schema initial ───────────────────────────────────────────────────────────
 // Crée toutes les tables avec leur schéma complet (colonnes UTC, toutes colonnes incluses).
@@ -991,6 +991,11 @@ function runMigrations(db) {
     // v47 : archivage des canaux (#80)
     (db) => {
       tryAlter(db, 'ALTER TABLE channels ADD COLUMN archived INTEGER NOT NULL DEFAULT 0');
+    },
+
+    // v48 : publication programmee des devoirs (#91)
+    (db) => {
+      tryAlter(db, 'ALTER TABLE travaux ADD COLUMN scheduled_publish_at TEXT DEFAULT NULL');
     },
   ];
 

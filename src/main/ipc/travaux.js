@@ -29,6 +29,7 @@ function register() {
 
   // ── Brouillon / publication (teacher-only) ────────────────────────────
   handleTeacher('db:updateTravailPublished', (payload) => queries.updateTravailPublished(payload))
+  handleTeacher('db:updateTravailScheduled', (payload) => queries.updateTravail(payload.travailId, { scheduledPublishAt: payload.scheduledAt ?? null }))
 
   // ── Ressources ────────────────────────────────────────────────────────
   handle('db:getRessources',  (travailId) => queries.getRessources(travailId))

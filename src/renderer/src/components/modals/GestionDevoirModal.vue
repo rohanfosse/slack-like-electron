@@ -122,6 +122,25 @@
     }
   }
 
+  // ── Cancel scheduled publish ───────────────────────────────────────────────
+  async function cancelScheduledPublish() {
+    if (!travail.value) return
+    const result = await api(() => window.api.updateTravailScheduled({ travailId: travail.value!.id, scheduledAt: null }))
+    if (result !== null) {
+      showToast('Programmation annulee.', 'success')
+      await travauxStore.openTravail(travail.value.id)
+    }
+  }
+
+  // ── Publish now (override scheduled) ──────────────────────────────────────
+  async function publishNow() {
+    if (!travail.value) return
+    await api(() => window.api.updateTravailScheduled({ travailId: travail.value!.id, scheduledAt: null }))
+    await api(() => window.api.updateTravailPublished({ travailId: travail.value!.id, published: true }))
+    showToast('Devoir publie immediatement.', 'success')
+    await travauxStore.openTravail(travail.value.id)
+  }
+
   // ── Publish + Notify ──────────────────────────────────────────────────────
   async function publishAndNotify() {
     if (!travail.value) return
@@ -365,7 +384,15 @@
 
         <!-- ═══ 4. ACTIONS ═══ -->
         <div class="gd-actions-bar">
-          <template v-if="!travail.is_published">
+          <template v-if="travail.scheduled_publish_at">
+            <button class="gd-action-btn gd-action-btn--primary" @click="publishNow">
+              <Eye :size="13" /> Publier maintenant
+            </button>
+            <button class="gd-action-btn" @click="cancelScheduledPublish">
+              <Clock :size="13" /> Annuler la programmation
+            </button>
+          </template>
+          <template v-else-if="!travail.is_published">
             <button class="gd-action-btn gd-action-btn--primary" @click="publishAndNotify">
               <Eye :size="13" /> Publier et notifier
             </button>

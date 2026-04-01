@@ -308,3 +308,53 @@ describe('DELETE /api/assignments/:id', () => {
     expect(res.body.ok).toBe(true)
   })
 })
+
+// ── Scheduled publishing route (#94) ─────────────────────────────────────────
+
+describe('POST /api/assignments/schedule', () => {
+  let schedTravailId
+
+  beforeAll(() => {
+    const db = getTestDb()
+    const result = db.prepare(
+      `INSERT INTO travaux (title, type, channel_id, promo_id, deadline, published)
+       VALUES ('Scheduled Route Test', 'livrable', 1, 1, '2026-12-01T00:00:00Z', 0)`
+    ).run()
+    schedTravailId = Number(result.lastInsertRowid)
+  })
+
+  it('teacher can schedule publication', async () => {
+    const res = await request(app)
+      .post('/api/assignments/schedule')
+      .set('Authorization', `Bearer ${teacherToken}`)
+      .send({ travailId: schedTravailId, scheduledAt: '2026-06-01T08:00:00Z' })
+    expect(res.status).toBe(200)
+    expect(res.body.ok).toBe(true)
+  })
+
+  it('teacher can cancel scheduled publication', async () => {
+    const res = await request(app)
+      .post('/api/assignments/schedule')
+      .set('Authorization', `Bearer ${teacherToken}`)
+      .send({ travailId: schedTravailId, scheduledAt: null })
+    expect(res.status).toBe(200)
+    expect(res.body.ok).toBe(true)
+  })
+
+  it('student cannot schedule publication', async () => {
+    const res = await request(app)
+      .post('/api/assignments/schedule')
+      .set('Authorization', `Bearer ${studentToken}`)
+      .send({ travailId: schedTravailId, scheduledAt: '2026-06-01T08:00:00Z' })
+    expect(res.status).toBe(403)
+  })
+
+  it('rejects without travailId', async () => {
+    const res = await request(app)
+      .post('/api/assignments/schedule')
+      .set('Authorization', `Bearer ${teacherToken}`)
+      .send({ scheduledAt: '2026-06-01T08:00:00Z' })
+    expect(res.status).toBe(400)
+    expect(res.body.ok).toBe(false)
+  })
+})

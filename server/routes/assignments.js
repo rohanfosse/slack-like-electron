@@ -24,6 +24,8 @@ const createAssignmentSchema = z.object({
   aavs:        z.string().max(2000).nullable().optional(),
   requires_submission: z.number().int().min(0).max(1).optional().default(1),
   published:   z.union([z.boolean(), z.number()]).optional(),
+  scheduledPublishAt: z.string().nullable().optional(),
+  scheduled_publish_at: z.string().nullable().optional(),
 }).passthrough()
 
 router.get('/teacher-schedule',         requireTeacher, wrap(() => queries.getTeacherSchedule()))
@@ -56,6 +58,11 @@ router.post('/publish', requireTeacher, async (req, res) => {
     res.json({ ok: true, data: result })
   } catch (err) { res.status(400).json({ ok: false, error: err.message }) }
 })
+router.post('/schedule', requireTeacher, wrap((req) => {
+  const { travailId, scheduledAt } = req.body
+  if (!travailId) throw new Error('travailId requis')
+  return queries.updateTravail(travailId, { scheduledPublishAt: scheduledAt ?? null })
+}))
 router.post('/group-member',            requireTeacher, wrap((req) => queries.setTravailGroupMember(req.body)))
 router.post('/:id/mark-missing',        requireTeacher, wrap((req) => queries.markNonSubmittedAsD(Number(req.params.id))))
 router.delete('/:id',                   requireTeacher, wrap((req) => queries.deleteTravail(Number(req.params.id))))

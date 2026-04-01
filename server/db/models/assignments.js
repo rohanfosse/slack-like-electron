@@ -34,20 +34,22 @@ function updateTravail(id, fields) {
   if (fields.deadline) db.prepare('UPDATE travaux SET deadline = ? WHERE id = ?').run(fields.deadline, id)
   if (fields.description !== undefined) db.prepare('UPDATE travaux SET description = ? WHERE id = ?').run(fields.description, id)
   if (fields.room !== undefined) db.prepare('UPDATE travaux SET room = ? WHERE id = ?').run(fields.room, id)
+  if (fields.scheduledPublishAt !== undefined) db.prepare('UPDATE travaux SET scheduled_publish_at = ? WHERE id = ?').run(fields.scheduledPublishAt, id)
   return { changes: 1 }
 }
 
-function createTravail({ promoId, channelId, groupId, title, description, startDate, deadline, category, type, published, room, aavs, requiresSubmission }) {
+function createTravail({ promoId, channelId, groupId, title, description, startDate, deadline, category, type, published, room, aavs, requiresSubmission, scheduledPublishAt }) {
   const db = getDb();
   const reqSub = requiresSubmission != null ? (requiresSubmission ? 1 : 0) : 1;
   const result = db.prepare(`
-    INSERT INTO travaux (promo_id, channel_id, group_id, title, description, start_date, deadline, category, type, published, room, aavs, requires_submission)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO travaux (promo_id, channel_id, group_id, title, description, start_date, deadline, category, type, published, room, aavs, requires_submission, scheduled_publish_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `).run(
     promoId, channelId ?? null, groupId ?? null, title, description, startDate ?? null,
     deadline, category ?? null, type ?? 'livrable',
     published != null ? (published ? 1 : 0) : 1,
-    room ?? null, aavs ?? null, reqSub
+    room ?? null, aavs ?? null, reqSub,
+    scheduledPublishAt ?? null
   );
   if (groupId) {
     const travailId = result.lastInsertRowid;
@@ -292,6 +294,26 @@ function getTravailCategories(promoId) {
   return rows.map(r => r.category);
 }
 
+// ─── Publication programmee ────────────────────────────────────────────────────
+
+function getDueScheduledDevoirs() {
+  return getDb().prepare(`
+    SELECT t.*, c.name AS channel_name, p.name AS promo_name
+    FROM travaux t
+    LEFT JOIN channels c ON t.channel_id = c.id
+    LEFT JOIN promotions p ON t.promo_id = p.id
+    WHERE t.scheduled_publish_at IS NOT NULL
+      AND t.scheduled_publish_at <= datetime('now')
+      AND t.published = 0
+  `).all();
+}
+
+function publishScheduledDevoir(id) {
+  return getDb().prepare(
+    'UPDATE travaux SET published = 1, scheduled_publish_at = NULL WHERE id = ?'
+  ).run(id);
+}
+
 // ─── Notifications ────────────────────────────────────────────────────────────
 // Renvoie les travaux dont l'échéance tombe dans les prochaines 25h (fenêtre J-1).
 function getUpcomingNotifications() {
@@ -313,4 +335,5 @@ module.exports = {
   getTravailGroupMembers, setTravailGroupMember,
   getGanttData, getAllRendus, getTeacherSchedule, markNonSubmittedAsD,
   getTravailCategories, getUpcomingNotifications,
+  getDueScheduledDevoirs, publishScheduledDevoir,
 };

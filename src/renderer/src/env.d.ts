@@ -74,8 +74,9 @@ declare global {
       // Groupes par projet
       getTravailGroupMembers(travailId: number): Promise<IpcResponse<object[]>>
 
-      // Brouillon
+      // Brouillon / publication programmee
       updateTravailPublished(payload: object): Promise<IpcResponse<null>>
+      updateTravailScheduled(payload: { travailId: number; scheduledAt: string | null }): Promise<IpcResponse<null>>
 
       // Promotions & canaux
       createPromotion(payload: object): Promise<IpcResponse<{ id: number }>>

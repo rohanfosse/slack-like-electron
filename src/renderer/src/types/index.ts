@@ -99,6 +99,7 @@ export interface Devoir {
   aavs?: string | null
   requires_submission?: number | 0 | 1
   promo_id?: number | null
+  scheduled_publish_at?: string | null
 }
 
 // backward compat alias - le backend renvoie toujours Travail, on l'aliase ici

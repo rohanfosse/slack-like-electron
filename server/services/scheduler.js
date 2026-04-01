@@ -40,5 +40,49 @@ module.exports = function startScheduler(io, queries) {
     } catch (err) {
       log.error('scheduled_messages_failed', { error: err.message })
     }
+
+    // ── Publication programmee des devoirs ────────────────────────────────
+    try {
+      const { getDueScheduledDevoirs, publishScheduledDevoir } = require('../db/models/assignments')
+      const dueDevoirs = getDueScheduledDevoirs()
+      for (const devoir of dueDevoirs) {
+        try {
+          publishScheduledDevoir(devoir.id)
+
+          // Notifier les etudiants via socket
+          if (devoir.promo_id) {
+            io.to(`promo:${devoir.promo_id}`).emit('assignment:new', {
+              title: devoir.title,
+              category: devoir.category || null,
+              deadline: devoir.deadline || null,
+              promoId: devoir.promo_id,
+            })
+          }
+
+          // Message d'annonce dans le canal lie
+          if (devoir.channel_id) {
+            queries.sendMessage({
+              channelId: devoir.channel_id,
+              authorName: 'Cursus',
+              authorId: null,
+              authorType: 'system',
+              content: `**Nouveau devoir publie** : ${devoir.title}${devoir.deadline ? ` (a rendre le ${devoir.deadline})` : ''}`,
+            })
+            io.to(`promo:${devoir.promo_id}`).emit('msg:new', {
+              channelId: devoir.channel_id,
+              authorName: 'Cursus',
+              promoId: devoir.promo_id,
+              preview: `Nouveau devoir publie : ${devoir.title}`,
+            })
+          }
+
+          console.log(`[Scheduled] Devoir #${devoir.id} "${devoir.title}" publie`)
+        } catch (err) {
+          console.error(`[Scheduled] Erreur publication devoir #${devoir.id}:`, err.message)
+        }
+      }
+    } catch (err) {
+      log.error('scheduled_devoirs_failed', { error: err.message })
+    }
   }, 30000)
 }

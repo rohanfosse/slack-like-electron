@@ -36,6 +36,7 @@
 
   const devoirStatus = computed(() => {
     const t = props.travail
+    if (t.scheduled_publish_at) return { label: 'Programme', cls: 'status-scheduled' }
     if (!t.is_published) return { label: 'Brouillon', cls: 'status-draft' }
     if (props.depotsCounts.total > 0 && props.depotsCounts.submitted >= props.depotsCounts.total)
       return { label: 'Complet', cls: 'status-complete' }
@@ -115,6 +116,11 @@
         </template>
       </div>
 
+      <div v-if="travail.scheduled_publish_at" class="gd-info-field gd-field-scheduled">
+        <Clock :size="12" class="gd-info-icon" />
+        <span>Publication le {{ formatDate(travail.scheduled_publish_at) }}</span>
+      </div>
+
       <div v-if="travail.channel_name" class="gd-info-field">
         <button class="gd-link-btn" @click="emit('go-to-channel')">
           # {{ travail.channel_name }} <ExternalLink :size="10" />
@@ -146,6 +152,7 @@
 .status-published { background: rgba(34,197,94,.08); color: #22c55e; }
 .status-expired   { background: rgba(239,68,68,.08); color: #f87171; }
 .status-complete  { background: rgba(59,130,246,.08); color: #60a5fa; }
+.status-scheduled { background: rgba(245,158,11,.08); color: #f59e0b; }
 
 /* Meta container */
 .gd-meta { padding: 14px 20px 10px; }
@@ -184,6 +191,7 @@
   font-size: 12px; color: var(--text-secondary); margin-bottom: 8px;
 }
 .gd-info-field { display: inline-flex; align-items: center; gap: 4px; }
+.gd-field-scheduled { color: #f59e0b; font-weight: 600; font-size: 11px; }
 .gd-info-icon { color: var(--text-muted); flex-shrink: 0; }
 .gd-info-label { color: var(--text-muted); }
 

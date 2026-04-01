@@ -381,3 +381,137 @@ describe('travail group members', () => {
     expect(marie).toBeUndefined()
   })
 })
+
+// ── Publication programmee (#91-#94) ─────────────────────────────────────────
+
+describe('scheduled publishing', () => {
+  it('creates a devoir with scheduled_publish_at', () => {
+    const result = queries.createTravail({
+      title: 'Scheduled Devoir',
+      type: 'livrable',
+      channelId: 1,
+      promoId: 1,
+      deadline: '2026-06-01T23:59:00Z',
+      published: false,
+      scheduledPublishAt: '2026-05-01T08:00:00Z',
+    })
+    const id = Number(result.lastInsertRowid)
+    const devoir = queries.getTravailById(id)
+    expect(devoir.scheduled_publish_at).toBe('2026-05-01T08:00:00Z')
+    expect(devoir.is_published).toBe(0)
+  })
+
+  it('creates a devoir without scheduled_publish_at (defaults to null)', () => {
+    const result = queries.createTravail({
+      title: 'Non-Scheduled Devoir',
+      type: 'cctl',
+      channelId: 1,
+      promoId: 1,
+      deadline: '2026-06-15T10:00:00Z',
+      published: true,
+    })
+    const id = Number(result.lastInsertRowid)
+    const devoir = queries.getTravailById(id)
+    expect(devoir.scheduled_publish_at).toBeNull()
+  })
+
+  it('updates scheduled_publish_at via updateTravail', () => {
+    const result = queries.createTravail({
+      title: 'Update Schedule Test',
+      type: 'livrable',
+      channelId: 1,
+      promoId: 1,
+      deadline: '2026-07-01T00:00:00Z',
+      published: false,
+    })
+    const id = Number(result.lastInsertRowid)
+    queries.updateTravail(id, { scheduledPublishAt: '2026-06-15T09:00:00Z' })
+    const devoir = queries.getTravailById(id)
+    expect(devoir.scheduled_publish_at).toBe('2026-06-15T09:00:00Z')
+  })
+
+  it('clears scheduled_publish_at by setting null', () => {
+    const result = queries.createTravail({
+      title: 'Clear Schedule Test',
+      type: 'livrable',
+      channelId: 1,
+      promoId: 1,
+      deadline: '2026-07-01T00:00:00Z',
+      published: false,
+      scheduledPublishAt: '2026-06-20T10:00:00Z',
+    })
+    const id = Number(result.lastInsertRowid)
+    queries.updateTravail(id, { scheduledPublishAt: null })
+    const devoir = queries.getTravailById(id)
+    expect(devoir.scheduled_publish_at).toBeNull()
+  })
+})
+
+describe('getDueScheduledDevoirs', () => {
+  it('returns devoirs due for publication', () => {
+    // Create a devoir scheduled in the past (should be due)
+    queries.createTravail({
+      title: 'Due Devoir',
+      type: 'livrable',
+      channelId: 1,
+      promoId: 1,
+      deadline: '2026-12-01T00:00:00Z',
+      published: false,
+      scheduledPublishAt: '2020-01-01T00:00:00Z',
+    })
+    const due = queries.getDueScheduledDevoirs()
+    expect(Array.isArray(due)).toBe(true)
+    const found = due.find(d => d.title === 'Due Devoir')
+    expect(found).toBeDefined()
+    expect(found.published).toBe(0)
+  })
+
+  it('does not return already published devoirs', () => {
+    queries.createTravail({
+      title: 'Already Published',
+      type: 'livrable',
+      channelId: 1,
+      promoId: 1,
+      deadline: '2026-12-01T00:00:00Z',
+      published: true,
+      scheduledPublishAt: '2020-01-01T00:00:00Z',
+    })
+    const due = queries.getDueScheduledDevoirs()
+    const found = due.find(d => d.title === 'Already Published')
+    expect(found).toBeUndefined()
+  })
+
+  it('does not return devoirs scheduled in the future', () => {
+    queries.createTravail({
+      title: 'Future Devoir',
+      type: 'livrable',
+      channelId: 1,
+      promoId: 1,
+      deadline: '2099-12-01T00:00:00Z',
+      published: false,
+      scheduledPublishAt: '2099-01-01T00:00:00Z',
+    })
+    const due = queries.getDueScheduledDevoirs()
+    const found = due.find(d => d.title === 'Future Devoir')
+    expect(found).toBeUndefined()
+  })
+})
+
+describe('publishScheduledDevoir', () => {
+  it('publishes devoir and clears scheduled_publish_at', () => {
+    const result = queries.createTravail({
+      title: 'Publish Me',
+      type: 'livrable',
+      channelId: 1,
+      promoId: 1,
+      deadline: '2026-12-01T00:00:00Z',
+      published: false,
+      scheduledPublishAt: '2020-01-01T00:00:00Z',
+    })
+    const id = Number(result.lastInsertRowid)
+    queries.publishScheduledDevoir(id)
+    const devoir = queries.getTravailById(id)
+    expect(devoir.is_published).toBe(1)
+    expect(devoir.scheduled_publish_at).toBeNull()
+  })
+})

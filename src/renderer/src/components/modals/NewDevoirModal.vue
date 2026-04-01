@@ -55,6 +55,7 @@
   const room        = ref('')
   const aavs        = ref('')
   const isDraft     = ref(false)
+  const scheduledPublishAt = ref<string | null>(null)
   const channelId   = ref<number | null>(null)
   const channels    = ref<{ id: number; name: string }[]>([])
   const creating    = ref(false)
@@ -65,6 +66,8 @@
     return diff > 0 ? Math.ceil(diff / 86_400_000) : null
   })
   const showAdvanced = ref(false)
+
+  watch(scheduledPublishAt, (v) => { if (v) isDraft.value = true })
 
   // Champs structurés (événements)
   const duration      = ref<number | null>(20)
@@ -177,9 +180,13 @@
         room:         room.value.trim() || null,
         aavs:         aavs.value.trim() || null,
         requires_submission: requiresSubmission.value ? 1 : 0,
+        scheduledPublishAt: scheduledPublishAt.value || null,
       })
       if (!res) { showToast('Erreur lors de la création.', 'error'); return }
-      showToast(isDraft.value ? 'Brouillon enregistré.' : 'Devoir publié.', 'success')
+      const msg = scheduledPublishAt.value
+        ? 'Publication programmee.'
+        : isDraft.value ? 'Brouillon enregistré.' : 'Devoir publié.'
+      showToast(msg, 'success')
       emit('update:modelValue', false)
     } finally {
       creating.value = false
@@ -327,6 +334,14 @@
         <div class="nd-field">
           <label class="nd-label">AAVs <span class="nd-hint">(un par ligne, optionnel)</span></label>
           <textarea v-model="aavs" class="nd-input nd-textarea" rows="2" placeholder="Acquis d'Apprentissage Visés…" />
+        </div>
+
+        <div class="nd-field">
+          <label class="nd-label"><Clock :size="12" /> Publication programmee <span class="nd-hint">(optionnel)</span></label>
+          <DateTimePicker v-model="scheduledPublishAt" label="Publier automatiquement le" :min="new Date().toISOString()" />
+          <p v-if="scheduledPublishAt" class="nd-hint" style="margin-top:4px">
+            Le devoir sera cree en brouillon et publie automatiquement a la date choisie.
+          </p>
         </div>
       </div>
 

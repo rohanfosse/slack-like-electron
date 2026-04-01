@@ -337,6 +337,7 @@ contextBridge.exposeInMainWorld('api', {
   deleteTravail:          (id: number)         => del(`/api/assignments/${id}`),
   getTravauxSuivi:        (travailId: number)  => get(`/api/assignments/${travailId}/suivi`),
   updateTravailPublished: (payload: unknown)   => post('/api/assignments/publish', payload),
+  updateTravailScheduled: (payload: { travailId: number; scheduledAt: string | null }) => post('/api/assignments/schedule', payload),
   getTravailCategories:   (promoId: number)    => get(`/api/assignments/categories?promoId=${promoId}`),
   getGanttData:           (promoId: number, channelId?: number) => get(`/api/assignments/gantt?promoId=${promoId}${channelId ? `&channelId=${channelId}` : ''}`),
   getAllRendus:            (promoId: number)    => get(`/api/assignments/rendus?promoId=${promoId}`),
