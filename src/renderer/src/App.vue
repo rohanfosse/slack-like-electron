@@ -49,15 +49,8 @@
   const { showToast } = useToast()
   const { loadModules } = useModules()
 
-  // ── Live invitation popup ─────────────────────────────────────────────────
-  const liveInvite = ref<{ sessionId: number; title: string; joinCode: string; teacherName: string } | null>(null)
-  let _liveInviteTimer: ReturnType<typeof setTimeout> | null = null
-  let _unsubLiveInvite: (() => void) | null = null
-
-  function dismissLiveInvite() {
-    liveInvite.value = null
-    if (_liveInviteTimer) { clearTimeout(_liveInviteTimer); _liveInviteTimer = null }
-  }
+  // ── Listeners extraits dans useAppListeners ────────────────────────────────
+  const { initListeners, cleanupListeners, liveInvite, updateState, updateVersion, dismissLiveInvite } = useAppListeners()
 
   async function acceptLiveInvite() {
     if (!liveInvite.value) return
@@ -238,19 +231,8 @@
     }
   })
 
-  // ── Bannière de mise à jour ───────────────────────────────────────────────
-  type UpdateState = 'idle' | 'downloading' | 'ready'
-  const updateState   = ref<UpdateState>('idle')
-  const updateVersion = ref('')
-  let _unsubUpdaterAvailable:  (() => void) | null = null
-  let _unsubUpdaterDownloaded: (() => void) | null = null
-
   function dismissUpdate() { updateState.value = 'idle' }
   function quitAndInstall() { window.api.updaterQuitAndInstall() }
-
-  // Listeners extraits dans un composable dedie
-  const { initListeners, cleanupListeners } = useAppListeners()
-  let unsubGradeNew: (() => void) | null = null
 
   onMounted(() => {
     initListeners()
@@ -304,83 +286,11 @@
       loadModules()
     }
 
-    // Listeners globaux deja initialises via initListeners()
-
-    // Écouter les invitations live (étudiants uniquement)
-    _unsubLiveInvite = window.api.onLiveInvite((data) => {
-      if (appStore.isStaff) return // Les profs n'ont pas besoin de l'invitation
-      liveInvite.value = data
-      if (_liveInviteTimer) clearTimeout(_liveInviteTimer)
-      _liveInviteTimer = setTimeout(() => { liveInvite.value = null }, 30_000)
-    })
-
-    // Écouter les événements de mise à jour
-    _unsubUpdaterAvailable = window.api.onUpdaterAvailable((version: string) => {
-      updateVersion.value = version
-      updateState.value = 'downloading'
-    })
-    _unsubUpdaterDownloaded = window.api.onUpdaterDownloaded((version: string) => {
-      updateVersion.value = version
-      updateState.value = 'ready'
-    })
-
-    // Écouter les notifications de notes (étudiants uniquement)
-    unsubGradeNew = window.api.onGradeNew((data) => {
-      if (appStore.isStaff) return
-      const label = data.note
-        ? `Nouvelle note : ${data.note} sur ${data.devoirTitle}`
-        : `Nouveau feedback sur ${data.devoirTitle}`
-      appStore.addNotification({
-        category: 'grade',
-        title: data.note ? 'Nouvelle note' : 'Nouveau feedback',
-        preview: label,
-        channelName: data.devoirTitle,
-        authorName: data.note ? `Note : ${data.note}` : 'Feedback',
-      })
-      window.api?.setBadge?.()
-    })
-
-    // Écouter les mises à jour de signature (étudiants)
-    window.api.onSignatureUpdate?.((data) => {
-      if (appStore.isStaff) return
-      appStore.addNotification({
-        category: 'signature',
-        title: data.status === 'signed' ? 'Document signe' : 'Signature refusee',
-        preview: data.signer_name ? `Par ${data.signer_name}` : '',
-        channelName: 'Signature',
-      })
-    })
-
-    // Écouter les nouveaux documents
-    window.api.onDocumentNew?.((data: { name: string; category?: string }) => {
-      if (appStore.isStaff) return
-      appStore.addNotification({
-        category: 'document',
-        title: 'Nouveau document',
-        preview: data.name,
-        channelName: data.category || 'Document',
-      })
-    })
-
-    // Écouter les nouveaux devoirs
-    window.api.onAssignmentNew?.((data: { title: string; category?: string; deadline?: string }) => {
-      if (appStore.isStaff) return
-      appStore.addNotification({
-        category: 'assignment',
-        title: 'Nouveau devoir',
-        preview: data.title,
-        channelName: data.category || 'Devoir',
-      })
-    })
+    // Tous les listeners IPC sont geres par useAppListeners (liveInvite, updater, grade, signature, document, assignment)
   })
 
   onUnmounted(() => {
     cleanupListeners()
-    _unsubLiveInvite?.()
-    unsubGradeNew?.()
-    _unsubUpdaterAvailable?.()
-    _unsubUpdaterDownloaded?.()
-    dismissLiveInvite()
     window.removeEventListener('online', onOnline)
     window.removeEventListener('offline', onOffline)
   })

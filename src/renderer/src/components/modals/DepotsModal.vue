@@ -7,6 +7,8 @@
   import { useToast }        from '@/composables/useToast'
   import { useOpenExternal } from '@/composables/useOpenExternal'
   import { useBatchGrading } from '@/composables/useBatchGrading'
+  import { useDepotFeedbackBank } from '@/composables/useDepotFeedbackBank'
+  import { useGithubCiStatus, CI_ICON, CI_TITLE } from '@/composables/useGithubCiStatus'
   import { avatarColor, initials, formatGrade, gradeClass } from '@/utils/format'
   import { formatDate } from '@/utils/date'
   import Modal from '@/components/ui/Modal.vue'
@@ -39,45 +41,16 @@
 
   const NOTES = ['A', 'B', 'C', 'D', 'NA']
 
-  const DEFAULT_FEEDBACK = [
-    'Excellent travail, bravo !',
-    'Bonne structure et organisation',
-    'Code insuffisamment commenté',
-    'Rendu incomplet',
-    'Hors sujet par rapport aux consignes',
-    'À retravailler et soumettre à nouveau',
-    'Manque de profondeur dans l\'analyse',
-    'Bon effort, quelques ajustements nécessaires',
-  ]
-
-  const CUSTOM_FB_KEY = 'cc_custom_feedback'
-  function loadCustomFeedback(): string[] {
-    try { return JSON.parse(localStorage.getItem(CUSTOM_FB_KEY) || '[]') } catch { return [] }
-  }
-  const customFeedback = ref<string[]>(loadCustomFeedback())
-  const feedbackBank = computed(() => [...customFeedback.value, ...DEFAULT_FEEDBACK])
-  const newFeedbackText = ref('')
-  const showAddFeedback = ref(false)
-
-  function addCustomFeedback() {
-    const text = newFeedbackText.value.trim()
-    if (!text || customFeedback.value.includes(text)) return
-    customFeedback.value = [text, ...customFeedback.value]
-    localStorage.setItem(CUSTOM_FB_KEY, JSON.stringify(customFeedback.value))
-    newFeedbackText.value = ''
-    showAddFeedback.value = false
-  }
-
-  function removeCustomFeedback(text: string) {
-    customFeedback.value = customFeedback.value.filter(f => f !== text)
-    localStorage.setItem(CUSTOM_FB_KEY, JSON.stringify(customFeedback.value))
-  }
+  // Feedback bank (extracted composable)
+  const fb = useDepotFeedbackBank()
+  const { feedbackBank, customFeedback, newFeedbackText, showAddFeedback, addCustomFeedback, removeCustomFeedback } = fb
 
   function insertFeedback(text: string) {
-    feedbackInput.value = feedbackInput.value
-      ? feedbackInput.value.trimEnd() + ' ' + text
-      : text
+    fb.insertFeedback(feedbackInput, text)
   }
+
+  // GitHub CI status (extracted composable, limited to 5 requests)
+  const { ciStatus, parseGithubRepo } = useGithubCiStatus(computed(() => travauxStore.depots))
 
   watch(() => props.modelValue, async (open) => {
     if (open && appStore.currentTravailId) {
@@ -218,49 +191,6 @@
     modals.rubric = true
   }
 
-  // ── GitHub CI (#10) ───────────────────────────────────────────────────────
-  type CiState = 'success' | 'failure' | 'pending' | 'unknown'
-  const ciStatus = ref<Record<string, CiState>>({})
-
-  function parseGithubRepo(url: string): { owner: string; repo: string } | null {
-    try {
-      const u = new URL(url)
-      if (u.hostname !== 'github.com' && u.hostname !== 'www.github.com') return null
-      const parts = u.pathname.replace(/^\//, '').split('/')
-      if (parts.length < 2) return null
-      return { owner: parts[0], repo: parts[1].replace(/\.git$/, '') }
-    } catch { return null }
-  }
-
-  async function fetchCiStatus(url: string) {
-    const gh = parseGithubRepo(url)
-    if (!gh) return
-    if (ciStatus.value[url] !== undefined) return  // déjà chargé
-    ciStatus.value[url] = 'pending'
-    try {
-      const apiUrl = `https://api.github.com/repos/${gh.owner}/${gh.repo}/commits/HEAD/status`
-      const res = await fetch(apiUrl, { headers: { Accept: 'application/vnd.github+json' } })
-      if (!res.ok) { ciStatus.value[url] = 'unknown'; return }
-      const json = await res.json() as { state: string }
-      ciStatus.value[url] = (json.state === 'success' ? 'success' : json.state === 'failure' || json.state === 'error' ? 'failure' : 'pending') as CiState
-    } catch {
-      ciStatus.value[url] = 'unknown'
-    }
-  }
-
-  const CI_ICON: Record<CiState, string> = {
-    success: '✅', failure: '❌', pending: '🔄', unknown: '❓',
-  }
-  const CI_TITLE: Record<CiState, string> = {
-    success: 'CI : succès', failure: 'CI : échec', pending: 'CI : en cours', unknown: 'CI : statut inconnu',
-  }
-
-  // Charger CI pour tous les dépôts de type link avec URL GitHub
-  watch(() => travauxStore.depots, (depots) => {
-    for (const d of depots) {
-      if (d.type === 'link') fetchCiStatus(d.content)
-    }
-  }, { immediate: true })
 </script>
 
 <template>

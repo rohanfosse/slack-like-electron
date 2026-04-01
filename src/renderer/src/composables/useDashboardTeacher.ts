@@ -149,7 +149,9 @@ export function useDashboardTeacher() {
     try {
       const result = await api(() => window.api.renamePromotion(p.id, renamingPromoValue.value.trim()), 'promo')
       if (result !== null) {
-        p.name = renamingPromoValue.value.trim()
+        promos.value = promos.value.map(promo =>
+          promo.id === p.id ? { ...promo, name: renamingPromoValue.value.trim() } : promo,
+        )
         renamingPromoId.value = null
         showToast('Promotion renommée.', 'success')
       }

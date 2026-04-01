@@ -24,6 +24,7 @@ export interface CreateProjectPayload {
   deadline?: string
 }
 
+// Generic API call type — uses any because window.api methods return heterogeneous IpcResponse<T>
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnyCall = () => Promise<any>
 

@@ -1,8 +1,8 @@
 /**
- * useAppListeners - regroupe les listeners globaux de l'application.
+ * useAppListeners - regroupe TOUS les listeners globaux de l'application.
  * Extrait de App.vue pour reduire la complexite du composant racine.
  */
-import { onMounted, onUnmounted, watch } from 'vue'
+import { ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAppStore }      from '@/stores/app'
 import { useMessagesStore } from '@/stores/messages'
@@ -15,6 +15,11 @@ export function useAppListeners() {
   const appStore = useAppStore()
   const modals   = useModalsStore()
 
+  // ── State expose au template App.vue ─────────────────────────────────────
+  const liveInvite = ref<{ sessionId: number; title: string; joinCode: string; teacherName: string } | null>(null)
+  const updateState = ref<'idle' | 'downloading' | 'ready'>('idle')
+  const updateVersion = ref('')
+
   // ── Raccourcis clavier globaux ────────────────────────────────────────────
   function onGlobalShortcut(e: KeyboardEvent) {
     if (e.ctrlKey && !e.shiftKey && !e.altKey) {
@@ -26,13 +31,20 @@ export function useAppListeners() {
     }
   }
 
-  // ── Listeners lifecycle ───────────────────────────────────────────────────
+  // ── Core listeners ───────────────────────────────────────────────────────
   let unsubUnread:   (() => void) | null = null
   let unsubOnline:   (() => void) | null = null
   let unsubSocket:   (() => void) | null = null
   let unsubTyping:   (() => void) | null = null
   let unsubPresence: (() => void) | null = null
   let unsubAuthExpired: (() => void) | null = null
+
+  // ── IPC listeners (previously inline in App.vue onMounted) ───────────────
+  let unsubLiveInvite: (() => void) | null = null
+  let unsubUpdaterAvailable: (() => void) | null = null
+  let unsubUpdaterDownloaded: (() => void) | null = null
+  let unsubGradeNew: (() => void) | null = null
+  let liveInviteTimer: ReturnType<typeof setTimeout> | null = null
 
   function initListeners() {
     document.addEventListener('keydown', onGlobalShortcut)
@@ -46,10 +58,9 @@ export function useAppListeners() {
     const messagesStore = useMessagesStore()
     unsubTyping = messagesStore.initTypingListener()
 
-    // Sync auto au retour en ligne (silencieuse)
+    // Sync au retour en ligne
     watch(() => appStore.isOnline, (online, wasOnline) => {
       if (online && !wasOnline) {
-        console.log('[Sync] Retour en ligne, re-fetch des donnees...')
         messagesStore.fetchMessages()
         messagesStore.flushDmQueue()
         const travauxStore = useTravauxStore()
@@ -58,6 +69,73 @@ export function useAppListeners() {
         const pid = appStore.activePromoId ?? appStore.currentUser?.promo_id
         if (pid) docsStore.fetchDocuments(pid)
       }
+    })
+
+    // Live invite (etudiants)
+    unsubLiveInvite = window.api.onLiveInvite((data) => {
+      if (appStore.isStaff) return
+      liveInvite.value = data
+      if (liveInviteTimer) clearTimeout(liveInviteTimer)
+      liveInviteTimer = setTimeout(() => { liveInvite.value = null }, 30_000)
+    })
+
+    // Auto-updater
+    unsubUpdaterAvailable = window.api.onUpdaterAvailable((version: string) => {
+      updateVersion.value = version
+      updateState.value = 'downloading'
+    })
+    unsubUpdaterDownloaded = window.api.onUpdaterDownloaded((version: string) => {
+      updateVersion.value = version
+      updateState.value = 'ready'
+    })
+
+    // Grade notifications (etudiants)
+    unsubGradeNew = window.api.onGradeNew((data) => {
+      if (appStore.isStaff) return
+      const label = data.note
+        ? `Nouvelle note : ${data.note} sur ${data.devoirTitle}`
+        : `Nouveau feedback sur ${data.devoirTitle}`
+      appStore.addNotification({
+        category: 'grade',
+        title: data.note ? 'Nouvelle note' : 'Nouveau feedback',
+        preview: label,
+        channelName: data.devoirTitle,
+        authorName: data.note ? `Note : ${data.note}` : 'Feedback',
+      })
+      window.api?.setBadge?.()
+    })
+
+    // Signature updates (etudiants)
+    window.api.onSignatureUpdate?.((data) => {
+      if (appStore.isStaff) return
+      appStore.addNotification({
+        category: 'signature',
+        title: data.status === 'signed' ? 'Document signe' : 'Signature refusee',
+        preview: data.signer_name ? `Par ${data.signer_name}` : '',
+        channelName: 'Signature',
+      })
+    })
+
+    // Nouveaux documents (etudiants)
+    window.api.onDocumentNew?.((data: { name: string; category?: string }) => {
+      if (appStore.isStaff) return
+      appStore.addNotification({
+        category: 'document',
+        title: 'Nouveau document',
+        preview: data.name,
+        channelName: data.category || 'Document',
+      })
+    })
+
+    // Nouveaux devoirs (etudiants)
+    window.api.onAssignmentNew?.((data: { title: string; category?: string; deadline?: string }) => {
+      if (appStore.isStaff) return
+      appStore.addNotification({
+        category: 'assignment',
+        title: 'Nouveau devoir',
+        preview: data.title,
+        channelName: data.category || 'Devoir',
+      })
     })
   }
 
@@ -69,7 +147,24 @@ export function useAppListeners() {
     unsubTyping?.()
     unsubPresence?.()
     unsubAuthExpired?.()
+    unsubLiveInvite?.()
+    unsubUpdaterAvailable?.()
+    unsubUpdaterDownloaded?.()
+    unsubGradeNew?.()
+    if (liveInviteTimer) clearTimeout(liveInviteTimer)
   }
 
-  return { initListeners, cleanupListeners }
+  function dismissLiveInvite() {
+    liveInvite.value = null
+    if (liveInviteTimer) clearTimeout(liveInviteTimer)
+  }
+
+  return {
+    initListeners,
+    cleanupListeners,
+    liveInvite,
+    updateState,
+    updateVersion,
+    dismissLiveInvite,
+  }
 }

@@ -8,6 +8,7 @@
   import { useAppStore }     from '@/stores/app'
   import { useModalsStore }  from '@/stores/modals'
   import { useToast }        from '@/composables/useToast'
+  import { useConfirm }      from '@/composables/useConfirm'
   import { useApi }          from '@/composables/useApi'
   import { useRouter }       from 'vue-router'
   import { formatDate }      from '@/utils/date'
@@ -25,6 +26,7 @@
   const appStore     = useAppStore()
   const modals       = useModalsStore()
   const { showToast } = useToast()
+  const { confirm: confirmDialog } = useConfirm()
   const { api }       = useApi()
   const router = useRouter()
 
@@ -153,7 +155,7 @@
       studentCount > 0 ? `Ce devoir sera visible par ${studentCount} etudiant${studentCount > 1 ? 's' : ''}.` : '',
       ...warnings.map(w => `\u26A0 ${w}`),
     ].filter(Boolean)
-    if (!confirm(confirmLines.join('\n'))) return
+    if (!(await confirmDialog(confirmLines.join('\n'), 'warning', 'Publier'))) return
     try {
       await window.api.updateTravailPublished({ travailId: travail.value.id, published: true })
       const channelId = travail.value.channel_id
@@ -174,7 +176,7 @@
   // ── Delete ────────────────────────────────────────────────────────────────
   async function deleteDevoir() {
     if (!travail.value) return
-    if (!confirm(`Supprimer "${travail.value.title}" ?\nLes soumissions et notes seront perdues.`)) return
+    if (!(await confirmDialog(`Supprimer "${travail.value.title}" ?\nLes soumissions et notes seront perdues.`, 'danger', 'Supprimer'))) return
     try {
       await window.api.deleteTravail(travail.value.id)
       showToast('Devoir supprime.', 'success')
