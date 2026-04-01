@@ -36,6 +36,8 @@ import WidgetGrades from './student-widgets/WidgetGrades.vue'
 import WidgetBookmarks from './student-widgets/WidgetBookmarks.vue'
 import WidgetCountdown from './student-widgets/WidgetCountdown.vue'
 import WidgetGroupMembers from './student-widgets/WidgetGroupMembers.vue'
+import WidgetStreak from './student-widgets/WidgetStreak.vue'
+import WidgetWeekPlanner from './student-widgets/WidgetWeekPlanner.vue'
 
 const props = defineProps<{
   studentStats: { pending: number; submitted: number; graded: number; modeGrade: string | null }
@@ -92,6 +94,7 @@ const widgetComponents: Record<string, Component> = {
   clock: WidgetClock, quote: WidgetQuote, calendar: WidgetCalendar,
   progress: WidgetProgress, quicklinks: WidgetQuickLinks, pomodoro: WidgetPomodoro,
   grades: WidgetGrades, bookmarks: WidgetBookmarks, countdown: WidgetCountdown, group: WidgetGroupMembers,
+  streak: WidgetStreak, weekplanner: WidgetWeekPlanner,
 }
 
 const latestFeedback = computed(() => props.recentFeedback?.[0] ?? null)

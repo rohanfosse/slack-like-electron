@@ -17,6 +17,7 @@ import WidgetQuickLinks from './student-widgets/WidgetQuickLinks.vue'
 import WidgetDmFiles from './teacher-widgets/WidgetDmFiles.vue'
 import WidgetWeekCal from './teacher-widgets/WidgetWeekCal.vue'
 import WidgetSignatures from './teacher-widgets/WidgetSignatures.vue'
+import WidgetAtRisk from './teacher-widgets/WidgetAtRisk.vue'
 import MultiPromoCard from './MultiPromoCard.vue'
 import { useTeacherBento } from '@/composables/useTeacherBento'
 
@@ -247,6 +248,11 @@ function onOptDragEnd() { bento.reorderOptional(draggableOpt.value) }
       style="grid-column: 1 / -1"
       @open-devoir="(tid, pid, cid, cname) => emit('openDevoirCrossPromo', tid, pid, cid, cname)"
     />
+
+    <!-- ═══ AT-RISK STUDENTS (2x1) ═══ -->
+    <div v-if="bento.isVisible('at-risk')" class="dashboard-card bento-tile" style="grid-column: span 2">
+      <WidgetAtRisk />
+    </div>
 
     <!-- ═══ FOCUS TILE (2x2) ═══ -->
     <div v-if="bento.isVisible('focus')" class="dashboard-card bento-tile bento-focus" :class="focusBgClass">

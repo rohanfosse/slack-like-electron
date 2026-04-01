@@ -8,7 +8,7 @@ import {
   Radio, FolderOpen, Award, FileText, Mic,
   MessageSquare, FileBox, Activity,
   Clock, Quote, CalendarDays, TrendingUp, Bookmark, Timer,
-  Hourglass, Users,
+  Hourglass, Users, Flame, LayoutGrid,
 } from 'lucide-vue-next'
 
 // Re-export pour compatibilite (l'ancien WidgetDef venait d'ici)
@@ -35,4 +35,6 @@ export const STUDENT_WIDGETS: WidgetDef[] = [
   { id: 'bookmarks',     label: 'Sauvegardes',         icon: Bookmark,      description: 'Messages sauvegardes',                      category: 'communication',  sizes: ['1x1', '2x1'],                defaultSize: '1x1', defaultEnabled: false, role: 'both' },
   { id: 'countdown',     label: 'Compte a rebours',    icon: Hourglass,     description: 'Temps restant avant la prochaine deadline', category: 'essential',      sizes: ['1x1'],                        defaultSize: '1x1', defaultEnabled: false, role: 'student' },
   { id: 'group',         label: 'Mon groupe',          icon: Users,         description: 'Membres de votre groupe de projet',         category: 'tracking',       sizes: ['1x1', '2x1'],                defaultSize: '1x1', defaultEnabled: false, role: 'student' },
+  { id: 'streak',        label: 'Streak',              icon: Flame,         description: 'Jours consecutifs d\'activite',              category: 'tracking',       sizes: ['1x1'],                        defaultSize: '1x1', defaultEnabled: true,  role: 'student' },
+  { id: 'weekplanner',   label: 'Planning semaine',    icon: LayoutGrid,    description: 'Vue semaine avec deadlines et events',       category: 'essential',      sizes: ['2x1', '2x2', '4x1'],        defaultSize: '2x1', defaultEnabled: true,  role: 'student' },
 ]
