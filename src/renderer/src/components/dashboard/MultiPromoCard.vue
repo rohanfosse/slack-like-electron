@@ -3,12 +3,11 @@
  * Visible uniquement si le prof a 2+ promos.
  */
 <script setup lang="ts">
-  import { onMounted } from 'vue'
+  import { onMounted, toRef } from 'vue'
   import { Clock, AlertTriangle, BarChart3, ChevronRight } from 'lucide-vue-next'
   import { useMultiPromo, type PromoMetrics, type GanttRow, type RenduRow } from '@/composables/useMultiPromo'
   import { formatDate } from '@/utils/date'
   import type { Promotion } from '@/types'
-  import type { Ref } from 'vue'
 
   const props = defineProps<{
     promos: Promotion[]
@@ -19,7 +18,7 @@
   }>()
 
   const { loading, hasMultiplePromos, metrics, load } = useMultiPromo({
-    promos: { value: props.promos } as Ref<Promotion[]>,
+    promos: toRef(props, 'promos'),
     fetchGantt: async (promoId) => {
       const res = await window.api.getGanttData(promoId)
       return res?.ok ? (res.data as unknown as GanttRow[]) : null

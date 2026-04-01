@@ -199,11 +199,23 @@ describe('useBatchGrading', () => {
     it('calls onSave with depot id, note, and feedback', async () => {
       const batch = createBatch()
       batch.toggle()
-      batch.setGrade('A')
+      // Change grade to something different from current (Alice has 'A')
+      batch.setGrade('B')
       batch.pendingFeedback.value = 'Excellent'
       await batch.save()
       const activeId = batch.filteredList.value[0].id
-      expect(onSave).toHaveBeenCalledWith(activeId, 'A', 'Excellent')
+      expect(onSave).toHaveBeenCalledWith(activeId, 'B', 'Excellent')
+    })
+
+    it('does not save when nothing changed', async () => {
+      const batch = createBatch()
+      batch.toggle()
+      // Manually sync to match Alice's existing data (watcher may be async)
+      batch.pendingNote.value = 'A'
+      batch.pendingFeedback.value = 'Bien'
+      const result = await batch.save()
+      expect(result).toBe(false)
+      expect(onSave).not.toHaveBeenCalled()
     })
 
     it('does not save when no active depot', async () => {

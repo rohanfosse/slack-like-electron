@@ -1,5 +1,5 @@
 <script setup lang="ts">
-  import { ref, computed, watch, onUnmounted } from 'vue'
+  import { ref, computed, watch } from 'vue'
   import { AlertTriangle, Download, FileText, Link2, MessageSquare, X, LayoutList, Star, Search, ArrowUpDown, Zap } from 'lucide-vue-next'
   import { useTravauxStore } from '@/stores/travaux'
   import { useAppStore }     from '@/stores/app'
@@ -29,8 +29,6 @@
       await travauxStore.setFeedback({ depotId, feedback: feedback || null })
     },
   })
-
-  onUnmounted(() => batch.cleanup())
 
   // ── Notation inline ───────────────────────────────────────────────────────
   const editingNoteId     = ref<number | null>(null)

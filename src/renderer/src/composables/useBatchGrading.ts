@@ -1,13 +1,13 @@
 /**
  * Logique de notation en lot (batch grading).
- * Gère la navigation, le filtre, l'auto-save debounced, et les raccourcis clavier.
- * Testable indépendamment du composant DepotsModal.
+ * Gere la navigation, le filtre, l'auto-save au changement d'etudiant, et les raccourcis clavier.
  */
 import { ref, computed, watch, type Ref } from 'vue'
 import type { Depot } from '@/types'
 
 export type BatchFilter = 'all' | 'ungraded' | 'graded'
 const GRADES = ['A', 'B', 'C', 'D'] as const
+const ALL_GRADES = ['A', 'B', 'C', 'D', 'NA'] as const
 type Grade = typeof GRADES[number]
 
 export interface BatchGradingOptions {
@@ -24,37 +24,35 @@ export function useBatchGrading({ depots, onSave }: BatchGradingOptions) {
   const saving        = ref(false)
   const savedFlash    = ref(false)
 
-  // ── Filtered list ──────────────────────────────────────────────────
+  // Sort once, filter separately (avoids re-sorting on every computed access)
+  const sortedDepots = computed(() =>
+    [...depots.value].sort((a, b) => a.student_name.localeCompare(b.student_name)),
+  )
+
   const filteredList = computed(() => {
-    const list = [...depots.value].sort((a, b) =>
-      a.student_name.localeCompare(b.student_name),
-    )
-    if (filter.value === 'ungraded') return list.filter(d => d.note == null)
-    if (filter.value === 'graded')   return list.filter(d => d.note != null)
-    return list
+    if (filter.value === 'ungraded') return sortedDepots.value.filter(d => d.note == null)
+    if (filter.value === 'graded')   return sortedDepots.value.filter(d => d.note != null)
+    return sortedDepots.value
   })
 
   const activeDepot = computed(() => filteredList.value[activeIndex.value] ?? null)
 
-  // ── Progress ───────────────────────────────────────────────────────
   const totalCount  = computed(() => depots.value.length)
   const gradedCount = computed(() => depots.value.filter(d => d.note != null).length)
   const progressPct = computed(() =>
     totalCount.value ? Math.round((gradedCount.value / totalCount.value) * 100) : 0,
   )
 
-  // ── Grade distribution ─────────────────────────────────────────────
   const distribution = computed(() => {
     const counts: Record<string, number> = {}
     for (const d of depots.value) {
       if (d.note) counts[d.note] = (counts[d.note] ?? 0) + 1
     }
-    return (['A', 'B', 'C', 'D', 'NA'] as const)
+    return ALL_GRADES
       .filter(g => counts[g])
       .map(g => ({ grade: g, count: counts[g] }))
   })
 
-  // ── Navigation ─────────────────────────────────────────────────────
   function selectIndex(i: number) {
     const clamped = Math.max(0, Math.min(i, filteredList.value.length - 1))
     if (clamped === activeIndex.value) return
@@ -69,22 +67,28 @@ export function useBatchGrading({ depots, onSave }: BatchGradingOptions) {
     if (idx >= 0) activeIndex.value = idx
   }
 
-  // ── Sync pending values when active depot changes ──────────────────
+  // Sync pending values when active depot changes
   watch(activeDepot, (d) => {
     if (!d) return
     pendingNote.value     = d.note ?? ''
     pendingFeedback.value = d.feedback ?? ''
   })
 
-  // ── Set grade ──────────────────────────────────────────────────────
   function setGrade(grade: Grade) {
     pendingNote.value = grade
   }
 
-  // ── Save ───────────────────────────────────────────────────────────
+  // Skip save if nothing was entered (prevents overwriting existing data with empty string)
+  function hasChanges(depot: Depot): boolean {
+    const noteChanged = pendingNote.value !== (depot.note ?? '')
+    const feedbackChanged = pendingFeedback.value !== (depot.feedback ?? '')
+    return noteChanged || feedbackChanged
+  }
+
   async function save(): Promise<boolean> {
     const d = activeDepot.value
     if (!d || saving.value) return false
+    if (!hasChanges(d)) return false
     saving.value = true
     try {
       await onSave(d.id, pendingNote.value, pendingFeedback.value)
@@ -96,29 +100,29 @@ export function useBatchGrading({ depots, onSave }: BatchGradingOptions) {
     }
   }
 
-  // ── Auto-save on navigation (save current before moving) ───────────
-  let saveTimer: ReturnType<typeof setTimeout> | null = null
-
-  function debouncedSave() {
-    if (saveTimer) clearTimeout(saveTimer)
-    saveTimer = setTimeout(() => { save() }, 300)
-  }
-
-  // Watch index changes to trigger auto-save of *previous* depot
-  let prevDepotId: number | null = null
+  // Auto-save previous depot when navigating (uses oldIdx to avoid watcher race)
   let skipAutoSave = false
-  watch(activeIndex, async () => {
-    if (prevDepotId != null && active.value && !skipAutoSave) {
-      if (saveTimer) clearTimeout(saveTimer)
-      await save()
+  watch(activeIndex, async (_newIdx, oldIdx) => {
+    if (oldIdx == null || !active.value || skipAutoSave) {
+      skipAutoSave = false
+      return
+    }
+    const prevDepot = filteredList.value[oldIdx]
+    if (prevDepot && pendingNote.value) {
+      saving.value = true
+      try {
+        const noteChanged = pendingNote.value !== (prevDepot.note ?? '')
+        const feedbackChanged = pendingFeedback.value !== (prevDepot.feedback ?? '')
+        if (noteChanged || feedbackChanged) {
+          await onSave(prevDepot.id, pendingNote.value, pendingFeedback.value)
+        }
+      } finally {
+        saving.value = false
+      }
     }
     skipAutoSave = false
   })
-  watch(activeDepot, (d) => {
-    prevDepotId = d?.id ?? null
-  })
 
-  // ── Save + advance (skips auto-save since we save manually) ────────
   async function saveAndNext() {
     const ok = await save()
     if (ok) {
@@ -127,21 +131,18 @@ export function useBatchGrading({ depots, onSave }: BatchGradingOptions) {
     }
   }
 
-  // ── Keyboard handler ──────────────────────────────────────────────
   function handleKeydown(e: KeyboardEvent) {
     if (!active.value) return
 
     const target = e.target as HTMLElement
     const inTextarea = target.tagName === 'TEXTAREA' || target.tagName === 'INPUT'
 
-    // Escape exits batch mode
     if (e.key === 'Escape') {
       e.preventDefault()
       active.value = false
       return
     }
 
-    // Arrow keys navigate students
     if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
       e.preventDefault()
       if (e.key === 'ArrowUp') prev()
@@ -149,14 +150,12 @@ export function useBatchGrading({ depots, onSave }: BatchGradingOptions) {
       return
     }
 
-    // Enter in textarea: save + next
     if (e.key === 'Enter' && inTextarea && !e.shiftKey) {
       e.preventDefault()
       saveAndNext()
       return
     }
 
-    // Grade keys (only when not in textarea)
     if (!inTextarea) {
       const upper = e.key.toUpperCase()
       if (GRADES.includes(upper as Grade)) {
@@ -167,25 +166,15 @@ export function useBatchGrading({ depots, onSave }: BatchGradingOptions) {
     }
   }
 
-  // ── Toggle ────────────────────────────────────────────────────────
   function toggle() {
     active.value = !active.value
     if (active.value) {
       activeIndex.value = 0
-      const d = filteredList.value[0]
-      if (d) {
-        pendingNote.value     = d.note ?? ''
-        pendingFeedback.value = d.feedback ?? ''
-      }
+      // The watch(activeDepot) will sync pendingNote/pendingFeedback automatically
     }
   }
 
-  function cleanup() {
-    if (saveTimer) clearTimeout(saveTimer)
-  }
-
   return {
-    // State
     active,
     activeIndex,
     filter,
@@ -193,16 +182,12 @@ export function useBatchGrading({ depots, onSave }: BatchGradingOptions) {
     pendingFeedback,
     saving,
     savedFlash,
-
-    // Computed
     filteredList,
     activeDepot,
     totalCount,
     gradedCount,
     progressPct,
     distribution,
-
-    // Actions
     toggle,
     next,
     prev,
@@ -211,8 +196,6 @@ export function useBatchGrading({ depots, onSave }: BatchGradingOptions) {
     setGrade,
     save,
     saveAndNext,
-    debouncedSave,
     handleKeydown,
-    cleanup,
   }
 }

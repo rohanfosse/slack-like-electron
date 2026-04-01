@@ -7,7 +7,7 @@ import type { Promotion } from '@/types'
 
 export interface PromoMetrics {
   promo: Promotion
-  upcoming: { id: number; title: string; deadline: string; channel_id: number; channel_name: string; depots_count: number; students_total: number }[]
+  upcoming: GanttRow[]
   toGrade: number
   totalDevoirs: number
   progressPct: number
@@ -79,15 +79,6 @@ export function useMultiPromo({ promos, fetchGantt, fetchRendus }: UseMultiPromo
         .filter(g => g.published === 1 && g.deadline > now)
         .sort((a, b) => a.deadline.localeCompare(b.deadline))
         .slice(0, 3)
-        .map(g => ({
-          id: g.id,
-          title: g.title,
-          deadline: g.deadline,
-          channel_id: g.channel_id,
-          channel_name: g.channel_name,
-          depots_count: g.depots_count,
-          students_total: g.students_total,
-        }))
 
       // Rendus en attente de note (submitted but not graded)
       const toGrade = rendus.filter(r => r.note == null).length
@@ -107,7 +98,5 @@ export function useMultiPromo({ promos, fetchGantt, fetchRendus }: UseMultiPromo
     hasMultiplePromos,
     metrics,
     load,
-    ganttByPromo,
-    rendusByPromo,
   }
 }
