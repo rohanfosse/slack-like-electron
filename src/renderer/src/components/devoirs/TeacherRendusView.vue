@@ -4,6 +4,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { Users, ChevronRight, Link2, FileText, Award, X } from 'lucide-vue-next'
+import EmptyState from '@/components/ui/EmptyState.vue'
 import { useTravauxStore } from '@/stores/travaux'
 import { avatarColor, initials } from '@/utils/format'
 import { typeLabel } from '@/utils/devoir'
@@ -54,11 +55,12 @@ const travauxStore = useTravauxStore()
     </div>
   </div>
 
-  <div v-else-if="rendusByDevoir.length === 0" class="empty-state-custom">
-    <Users :size="48" class="empty-icon" />
-    <h3>Aucun rendu pour cette promotion</h3>
-    <p>Les rendus des étudiants apparaîtront ici.</p>
-  </div>
+  <EmptyState
+    v-else-if="rendusByDevoir.length === 0"
+    :icon="Users"
+    title="Aucun rendu pour cette promotion"
+    subtitle="Les rendus des etudiants apparaitront ici."
+  />
 
   <div v-else class="devoirs-list">
     <div

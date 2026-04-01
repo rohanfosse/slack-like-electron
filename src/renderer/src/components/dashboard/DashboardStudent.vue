@@ -15,6 +15,7 @@ import StudentProjectsTab from './StudentProjectsTab.vue'
 import StudentGradesTab from './StudentGradesTab.vue'
 import TabFrise from './TabFrise.vue'
 import { useModules } from '@/composables/useModules'
+import SkeletonLoader from '@/components/ui/SkeletonLoader.vue'
 
 const { isEnabled } = useModules()
 
@@ -82,10 +83,7 @@ const emit = defineEmits<{
 <template>
   <!-- Loading skeleton -->
   <div v-if="loadingStudent" class="db-loading">
-    <div v-for="i in 4" :key="i" class="skel db-skel-card" />
-    <div class="db-skel-content">
-      <div v-for="i in 5" :key="i" class="skel skel-line" :style="{ width: (45 + (i % 3) * 18) + '%' }" />
-    </div>
+    <SkeletonLoader variant="card" :rows="4" />
   </div>
 
   <template v-else>

@@ -8,6 +8,7 @@ import { X, BookOpen, Clock, CheckCircle2, FileText, Mic, Award } from 'lucide-v
 import { useAppStore } from '@/stores/app'
 import { useModalsStore } from '@/stores/modals'
 import { deadlineClass, deadlineLabel } from '@/utils/date'
+import SkeletonLoader from '@/components/ui/SkeletonLoader.vue'
 import { typeLabel } from '@/utils/devoir'
 
 const emit = defineEmits<{ close: [] }>()
@@ -60,7 +61,7 @@ const TYPE_ICONS: Record<string, object> = {
     <div class="side-panel-body">
       <!-- Loading -->
       <div v-if="loading" class="sp-loading">
-        <div v-for="i in 4" :key="i" class="skel skel-line" style="height:48px;border-radius:8px;margin-bottom:8px" />
+        <SkeletonLoader variant="list" :rows="4" />
       </div>
 
       <!-- Empty -->

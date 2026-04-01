@@ -41,6 +41,7 @@ import TabPromotions from './TabPromotions.vue'
 import TabAccueil from './TabAccueil.vue'
 import TabReglages from './TabReglages.vue'
 import TabFrise from './TabFrise.vue'
+import SkeletonLoader from '@/components/ui/SkeletonLoader.vue'
 
 // ── Props ────────────────────────────────────────────────────────────────────
 const props = defineProps<{
@@ -175,10 +176,7 @@ function setTab(tab: DashTabType) {
 
 <template>
   <div v-if="loadingTeacher" class="db-loading">
-    <div v-for="i in 4" :key="i" class="skel db-skel-card" />
-    <div class="db-skel-content">
-      <div v-for="i in 6" :key="i" class="skel skel-line" :style="{ width: (50 + (i % 3) * 15) + '%' }" />
-    </div>
+    <SkeletonLoader variant="card" :rows="4" />
   </div>
 
   <template v-else>

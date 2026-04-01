@@ -1,6 +1,7 @@
 <script setup lang="ts">
   import { ref, computed, watch } from 'vue'
   import { Plus, Trash2, GripVertical } from 'lucide-vue-next'
+  import EmptyState from '@/components/ui/EmptyState.vue'
   import { useAppStore }    from '@/stores/app'
   import { useModalsStore } from '@/stores/modals'
   import { useTravauxStore } from '@/stores/travaux'
@@ -262,14 +263,16 @@
           </div>
 
           <!-- Better empty state -->
-          <div v-if="!draftCriteria.length" class="rubric-empty-state">
-            <div class="rubric-empty-icon">+</div>
-            <p class="rubric-empty-title">Ajoutez votre premier critère</p>
-            <p class="rubric-empty-sub">Définissez les critères d'évaluation pour noter vos étudiants de manière structurée.</p>
+          <EmptyState
+            v-if="!draftCriteria.length"
+            title="Ajoutez votre premier critere"
+            subtitle="Definissez les criteres d'evaluation pour noter vos etudiants de maniere structuree."
+            compact
+          >
             <button class="btn-primary" style="font-size:12px;margin-top:8px" @click="addCriterion">
-              <Plus :size="13" /> Ajouter un critère
+              <Plus :size="13" /> Ajouter un critere
             </button>
-          </div>
+          </EmptyState>
 
           <!-- Total points display -->
           <div v-if="draftCriteria.length" class="rubric-total-pts">
@@ -302,12 +305,12 @@
 
     <!-- ── Mode notation ── -->
     <template v-else>
-      <div v-if="!rubric" class="rubric-no-rubric">
-        <p>Aucune grille définie pour ce travail.</p>
-        <p style="font-size:12px;color:var(--text-muted)">
-          Gérez la grille depuis la liste des dépôts.
-        </p>
-      </div>
+      <EmptyState
+        v-if="!rubric"
+        title="Aucune grille definie pour ce travail."
+        subtitle="Gerez la grille depuis la liste des depots."
+        compact
+      />
 
       <div v-else class="rubric-body">
         <p class="rubric-scoring-title">{{ rubric.title }}</p>

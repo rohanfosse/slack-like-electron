@@ -2,6 +2,7 @@
 import { ref, computed, watch } from 'vue'
 import { Plus, Trash2, ChevronDown, ChevronRight, Check, X as XIcon, Search, Users } from 'lucide-vue-next'
 import Modal from '@/components/ui/Modal.vue'
+import EmptyState from '@/components/ui/EmptyState.vue'
 import { useAppStore }  from '@/stores/app'
 import { useToast }     from '@/composables/useToast'
 import { useConfirm }   from '@/composables/useConfirm'
@@ -208,11 +209,13 @@ function assignedSummary(taId: number): string {
 
     <!-- ── Liste des intervenants ── -->
     <div class="iv-list">
-      <div v-if="!intervenants.length" class="iv-empty">
-        <Users :size="28" style="opacity:.35" />
-        <p>Aucun intervenant pour l'instant.</p>
-        <span class="iv-empty-hint">Ajoutez-en un avec le bouton ci-dessus.</span>
-      </div>
+      <EmptyState
+        v-if="!intervenants.length"
+        :icon="Users"
+        title="Aucun intervenant pour l'instant."
+        subtitle="Ajoutez-en un avec le bouton ci-dessus."
+        compact
+      />
 
       <div
         v-for="ta in filteredIntervenants"

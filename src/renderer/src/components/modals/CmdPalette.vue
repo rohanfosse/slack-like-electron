@@ -1,6 +1,7 @@
 <script setup lang="ts">
   import { ref, computed, watch, nextTick, onMounted, onUnmounted } from 'vue'
   import { Search, Hash, MessageSquare, User, LayoutGrid } from 'lucide-vue-next'
+  import EmptyState from '@/components/ui/EmptyState.vue'
   import logoUrl from '@/assets/logo.png'
   import { useAppStore }      from '@/stores/app'
   import { useModalsStore }   from '@/stores/modals'
@@ -305,8 +306,11 @@
             </template>
 
             <li v-else-if="query" class="cmd-empty">
-              <Search :size="16" class="cmd-empty-icon" />
-              Aucun résultat pour « {{ query }} »
+              <EmptyState
+                :icon="Search"
+                :title="`Aucun resultat pour « ${query} »`"
+                compact
+              />
             </li>
             <li v-else class="cmd-empty cmd-empty-hint">
               <div class="cmd-shortcuts">

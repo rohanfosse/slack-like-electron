@@ -315,7 +315,7 @@
           </button>
         </div>
         <div class="batch-progress-bar">
-          <div class="linear-progress"><div class="linear-progress-fill" :style="{ width: batch.progressPct.value + '%' }" /></div>
+          <ProgressBar :value="batch.progressPct.value" />
           <span class="batch-progress-label">{{ batch.gradedCount.value }}/{{ batch.totalCount.value }}</span>
         </div>
       </div>

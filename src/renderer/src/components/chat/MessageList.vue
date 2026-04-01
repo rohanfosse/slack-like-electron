@@ -4,6 +4,7 @@ import { ChevronDown, MessageSquare, Search, Hash, Send } from 'lucide-vue-next'
 import { useMessagesStore } from '@/stores/messages'
 import { useAppStore } from '@/stores/app'
 import MessageBubble from './MessageBubble.vue'
+import SkeletonLoader from '@/components/ui/SkeletonLoader.vue'
 import { formatDateSeparator } from '@/utils/date'
 import type { Message } from '@/types'
 
@@ -171,14 +172,7 @@ const dateGroups = computed<DateGroup[]>(() => {
           <span class="skel-spinner" />
           <span>Chargement des messages...</span>
         </div>
-        <div v-for="i in 6" :key="i" class="skel-msg-row">
-          <div class="skel skel-avatar" />
-          <div class="skel-msg-body">
-            <div class="skel skel-line skel-w30" />
-            <div class="skel skel-line skel-w90" />
-            <div v-if="i % 3 !== 0" class="skel skel-line skel-w70" />
-          </div>
-        </div>
+        <SkeletonLoader variant="message" :rows="6" />
       </div>
     </Transition>
 

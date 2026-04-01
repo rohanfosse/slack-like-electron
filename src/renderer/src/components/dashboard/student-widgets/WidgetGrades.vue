@@ -4,6 +4,7 @@
 <script setup lang="ts">
 import { Award } from 'lucide-vue-next'
 import { gradeBadgeClass } from '@/utils/grade'
+import EmptyState from '@/components/ui/EmptyState.vue'
 
 export interface GradeEntry {
   title: string
@@ -26,7 +27,7 @@ defineProps<{ grades: GradeEntry[] }>()
         <span class="sa-grade-title">{{ g.title }}</span>
       </div>
     </div>
-    <p v-else class="sa-empty">Aucune note pour l'instant</p>
+    <EmptyState v-else title="Aucune note pour l'instant" compact />
   </div>
 </template>
 

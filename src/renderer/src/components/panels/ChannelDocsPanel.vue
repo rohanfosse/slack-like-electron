@@ -4,6 +4,7 @@
     X, FolderOpen, FileText, Link2, ExternalLink, Trash2,
     FolderPlus, RefreshCw, ChevronDown,
   } from 'lucide-vue-next'
+  import EmptyState from '@/components/ui/EmptyState.vue'
   import { useAppStore } from '@/stores/app'
   import { useDocumentsStore } from '@/stores/documents'
   import { useModalsStore } from '@/stores/modals'
@@ -115,11 +116,13 @@
     </div>
 
     <!-- Empty -->
-    <div v-else-if="!docs.length" class="dp-empty">
-      <FolderOpen :size="32" style="opacity:.2" />
-      <p>Aucun document dans ce canal.</p>
-      <p class="dp-empty-hint">Glissez-déposez un fichier dans le chat pour en ajouter un.</p>
-    </div>
+    <EmptyState
+      v-else-if="!docs.length"
+      :icon="FolderOpen"
+      title="Aucun document dans ce canal."
+      subtitle="Glissez-deposez un fichier dans le chat pour en ajouter un."
+      compact
+    />
 
     <!-- Doc list -->
     <div v-else class="dp-body">

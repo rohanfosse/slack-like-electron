@@ -14,6 +14,7 @@
   import { formatDate }      from '@/utils/date'
   import { isEventType }     from '@/utils/devoir'
   import Modal               from '@/components/ui/Modal.vue'
+  import SkeletonLoader      from '@/components/ui/SkeletonLoader.vue'
   import DevoirMetaSection   from '@/components/modals/devoir/DevoirMetaSection.vue'
   import DevoirRendusList    from '@/components/modals/devoir/DevoirRendusList.vue'
   import DevoirReminderBuilder from '@/components/modals/devoir/DevoirReminderBuilder.vue'
@@ -293,9 +294,9 @@
   >
     <!-- Loading skeleton -->
     <div v-if="!travail" class="gd-loading">
-      <div class="skel skel-line skel-w50" style="height:16px;margin-bottom:10px" />
-      <div class="skel skel-line skel-w90" style="height:12px;margin-bottom:8px" />
-      <div class="skel skel-line skel-w70" style="height:12px" />
+      <SkeletonLoader variant="line" />
+      <SkeletonLoader variant="line" />
+      <SkeletonLoader variant="line" />
     </div>
 
     <template v-else>

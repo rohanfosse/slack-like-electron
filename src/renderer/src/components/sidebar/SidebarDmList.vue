@@ -1,6 +1,7 @@
 <script setup lang="ts">
   // Section Messages Directs de la sidebar
   import { ChevronDown, Plus, UserPlus } from 'lucide-vue-next'
+  import EmptyState from '@/components/ui/EmptyState.vue'
   import { useAppStore } from '@/stores/app'
   import { avatarColor } from '@/utils/format'
   import type { Student } from '@/types'
@@ -76,7 +77,7 @@
       <span class="dm-avatar" :style="{ background: avatarColor(s.name) }">{{ s.avatar_initials }}</span>
       <span class="channel-name">{{ s.name }}</span>
     </button>
-    <div v-if="newDmQuery.trim() && !newDmFilteredStudents.length" class="dm-empty">Aucun resultat</div>
+    <EmptyState v-if="newDmQuery.trim() && !newDmFilteredStudents.length" title="Aucun resultat" compact />
   </div>
 
   <!-- Conversations -->
@@ -106,7 +107,7 @@
           {{ (appStore.unreadDms[s.name] as number) > 9 ? '9+' : appStore.unreadDms[s.name] }}
         </span>
       </button>
-      <div v-if="!dmContactsToShow.length && !showAllDmStudents" class="dm-empty">Aucune conversation</div>
+      <EmptyState v-if="!dmContactsToShow.length && !showAllDmStudents" title="Aucune conversation" compact />
     </nav>
 
     <template v-if="showAllDmStudents">

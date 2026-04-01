@@ -2,6 +2,7 @@
   import { computed } from 'vue'
   import { CheckCircle2, Clock, XCircle, Star } from 'lucide-vue-next'
   import { avatarColor, initials, formatGrade, gradeClass } from '@/utils/format'
+  import ProgressBar from '@/components/ui/ProgressBar.vue'
   import type { Depot } from '@/types'
 
   interface Props {
@@ -53,7 +54,7 @@
 
     <!-- Compact progress -->
     <div class="gd-rendus-progress">
-      <div class="linear-progress"><div class="linear-progress-fill" :style="{ width: submitPct + '%' }" /></div>
+      <ProgressBar :value="submitPct" />
     </div>
 
     <!-- Grade distribution -->
