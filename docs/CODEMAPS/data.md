@@ -1,6 +1,6 @@
-<!-- Generated: 2026-03-30 | Cursus v2.4.0 | Token estimate: ~450 -->
+<!-- Generated: 2026-04-01 | Cursus v2.5.0 | Token estimate: ~460 -->
 
-# Database Schema (SQLite v47)
+# Database Schema (SQLite v48)
 
 ## Core Tables
 
@@ -17,7 +17,7 @@
 
 | Table | Key Columns | Purpose | References |
 |-------|------------|---------|-----------|
-| `travaux` | id, promo_id, title, type (livrable/soutenance/cctl/etude_de_cas/memoire/autre), deadline, published, channel_id, group_id, requires_submission, room, aavs | Assignments + milestones | depots, rubrics, ressources, kanban_cards, project_travaux |
+| `travaux` | id, promo_id, title, type (livrable/soutenance/cctl/etude_de_cas/memoire/autre), deadline, published, scheduled_publish_at, channel_id, group_id, requires_submission, room, aavs | Assignments + milestones + publication programmee | depots, rubrics, ressources, kanban_cards, project_travaux |
 | `depots` | id, travail_id, student_id, file_path, file_name, note (grade), feedback, link_url, deploy_url, submitted_at | Student submissions | rubric_scores |
 | `travail_group_members` | travail_id, student_id, group_id | Assignment group access | (pivot) |
 | `ressources` | id, travail_id, type (file/link), name, path_or_url, category (Moodle/Github/LinkedIn/Site Web/Autre) | Assignment resources | |

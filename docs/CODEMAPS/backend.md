@@ -1,4 +1,4 @@
-<!-- Generated: 2026-03-30 | Cursus v2.4.0 | Token estimate: ~350 -->
+<!-- Generated: 2026-04-01 | Cursus v2.5.0 | Token estimate: ~370 -->
 
 # Backend Routes & Middleware
 
@@ -27,7 +27,7 @@
 | `/api/students` | list, get, update, delete, bulk | Student profiles + avatar |
 | `/api/teachers` | list, get, update, delete, setRole | Teacher profiles + roles (admin/ta) |
 | `/api/messages` | send, edit, delete, getChannelMessages, getDMs, pin, react, report | Chat + DM + reactions |
-| `/api/assignments` | list, create, update, delete, getGantt, getSchedule, publish, mark-missing | Travaux (devoirs/soutenance/etc) |
+| `/api/assignments` | list, create, update, delete, getGantt, getSchedule, publish, schedule, mark-missing | Travaux (devoirs/soutenance/etc) + publication programmee |
 | `/api/depots` | list, create, update, delete, getStudentSubmissions | Student submissions |
 | `/api/groups` | list, create, update, delete, addMember, removeMember | Groupes + members |
 | `/api/resources` | list, create, delete | Ressources (files/links for travaux) |

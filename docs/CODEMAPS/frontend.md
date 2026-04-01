@@ -1,4 +1,4 @@
-<!-- Generated: 2026-03-30 | Cursus v2.4.0 | Token estimate: ~450 -->
+<!-- Generated: 2026-04-01 | Cursus v2.5.0 | Token estimate: ~500 -->
 
 # Frontend Views, Stores & Composables
 
@@ -53,16 +53,22 @@
 - `useDashboardStudent.ts` — Student dashboard widgets (upcoming, recent)
 - `useDashboardTeacher.ts` — Teacher dashboard (pending grading, new messages)
 - `useDashboardWidgets.ts` — Widget grid + drag-drop customization
+- `useMultiPromo.ts` — Multi-promo metrics: gantt + rendus par promo, upcoming deadlines, toGrade count
 
 ### Assignments
 - `useDevoirsStudent.ts` — Student view: filter, sort, submit
 - `useDevoirsTeacher.ts` — Teacher view: grading, feedback, rubrics, gantt, rendus
 - `useDevoirContextMenu.ts` — Travail context menu (edit, delete, publish)
 
-### Devoir Modal Sub-Components (v2.4.0 — vue unique scrollable)
-- `modals/devoir/DevoirMetaSection.vue` — Status, badges, deadline, progress, toggle requires_submission
+### Devoir Modal Sub-Components (v2.5.0)
+
+- `modals/devoir/DevoirMetaSection.vue` — Status (incl. "Programme"), badges, deadline, progress
 - `modals/devoir/DevoirRendusList.vue` — Unified submissions list (submitted + pending), grade distribution
 - `modals/devoir/DevoirReminderBuilder.vue` — Modular reminder message composer
+
+### Dashboard Widgets (v2.5.0)
+
+- `dashboard/MultiPromoCard.vue` — Vue multi-promo: metriques par promo, deadlines top 3, navigation cross-promo
 
 ### Documents
 - `useDocumentsData.ts` — Fetch + cache documents
@@ -71,6 +77,7 @@
 
 ### Grading & Assessment
 - `useTeacherGrading.ts` — Rubric scoring + feedback
+- `useBatchGrading.ts` — Notation en lot: split view, keyboard nav (A/B/C/D), auto-save, filters
 - `useStudentDeposit.ts` — Submit assignment
 - `useSignature.ts` — Digital signature workflow
 
