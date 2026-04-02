@@ -4,6 +4,7 @@
 const router = require('express').Router()
 const fs     = require('fs')
 const path   = require('path')
+const log    = require('../utils/logger')
 
 const DEPLOY_SECRET = process.env.DEPLOY_SECRET
 const SIGNAL_DIR    = '/deploy-signal'
@@ -17,7 +18,7 @@ router.post('/', (req, res) => {
   if (!DEPLOY_SECRET || !secret ||
       secretBuf.length !== expectedBuf.length ||
       !crypto.timingSafeEqual(secretBuf, expectedBuf)) {
-    console.warn('[Deploy] Tentative non autorisee depuis', req.ip)
+    log.warn('deploy_unauthorized', { ip: req.ip })
     return res.status(403).json({ ok: false, error: 'Unauthorized' })
   }
 
@@ -27,10 +28,10 @@ router.post('/', (req, res) => {
       timestamp: new Date().toISOString(),
       triggered_by: 'webhook',
     }) + '\n')
-    console.log('[Deploy] Signal ecrit, en attente du watcher hote...')
+    log.info('deploy_signal_written')
     res.json({ ok: true, message: 'Deploiement declenche' })
   } catch (err) {
-    console.error('[Deploy] Erreur ecriture signal:', err.message)
+    log.error('deploy_signal_error', { error: err.message })
     res.status(500).json({ ok: false, error: 'Impossible de declencher le deploiement' })
   }
 })

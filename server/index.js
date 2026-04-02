@@ -290,7 +290,7 @@ require('./socket')(io, queries, SECRET)
 
 // ── Initialisation DB ─────────────────────────────────────────────────────────
 queries.init()
-console.log('[DB] Base de données initialisée')
+log.info('db_initialized')
 
 // ── Timer : envoi des annonces planifiees (toutes les 30s) ─────────────────
 const _scheduledTimer = require('./services/scheduler')(io, queries)
@@ -307,12 +307,11 @@ app.use((err, _req, res, _next) => {
 // ── Démarrage ─────────────────────────────────────────────────────────────────
 server.listen(PORT, '0.0.0.0', () => {
   log.info('server_started', { port: PORT, env: process.env.NODE_ENV || 'development' })
-  console.log(`[Cursus] Serveur démarré → http://0.0.0.0:${PORT}`)
 })
 
 // ── Arrêt gracieux ────────────────────────────────────────────────────────────
 function shutdown() {
-  console.log('[Cursus] Arrêt en cours...')
+  log.info('shutdown_initiated')
   clearInterval(_scheduledTimer)
   server.close(() => {
     try { queries.close() } catch {}
