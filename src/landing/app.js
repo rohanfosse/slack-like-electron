@@ -312,8 +312,8 @@ document.addEventListener('DOMContentLoaded', () => {
   // ── Devoirs demo: expandable items ──────────────────────────────────────
   const devoirDetails = {
     'Projet Web E4': { type: 'Livrable', date: '15 mars 2026', note: 'A', desc: 'Application web responsive avec authentification et CRUD.' },
-    'TP Algo': { type: 'TP individuel', date: '30 mars 2026', note: '—', desc: 'Implémentation d\'un arbre AVL avec rotations.' },
-    'Rapport stage': { type: 'Mémoire', date: '15 juin 2026', note: '—', desc: 'Rapport de stage de fin d\'études (40-60 pages).' },
+    'TP Algo': { type: 'TP individuel', date: '30 mars 2026', note: 'En attente', desc: 'Implementation d\'un arbre AVL avec rotations.' },
+    'Rapport stage': { type: 'Memoire', date: '15 juin 2026', note: 'En attente', desc: 'Rapport de stage de fin d\'etudes (40-60 pages).' },
   }
 
   document.querySelectorAll('.devoir-item').forEach(item => {

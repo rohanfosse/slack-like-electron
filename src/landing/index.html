@@ -89,6 +89,7 @@
       </a>
       <div class="nav-center">
         <a href="#features">Fonctionnalites</a>
+        <a href="#feat-live">Live Quiz</a>
         <a href="#download">Telecharger</a>
       </div>
       <div class="nav-right">
@@ -110,6 +111,7 @@
     <!-- Mobile menu overlay -->
     <div class="mobile-menu" id="mobile-menu" aria-hidden="true">
       <a href="#features" class="mobile-link">Fonctionnalites</a>
+      <a href="#feat-live" class="mobile-link">Live Quiz</a>
       <a href="#download" class="mobile-link">Telecharger</a>
       <a href="https://github.com/rohanfosse/cursus" class="mobile-link" target="_blank" rel="noopener">GitHub</a>
       <a href="https://app.cursus.school" class="mobile-link mobile-link--cta">Ouvrir l'app</a>
@@ -135,15 +137,14 @@
         </div>
       </div>
 
-      <!-- Bento Grid: 5 interactive cards -->
+      <!-- Bento Grid: 6 interactive cards -->
       <div class="bento fade-up">
-        <!-- Card 1: Chat (2 cols) -->
-        <a href="#feat-chat" class="bento-card bento-2x1" data-color="chat" aria-label="Decouvrir le chat">
+        <!-- Card 1: Chat -->
+        <a href="#feat-chat" class="bento-card" data-color="chat" aria-label="Decouvrir le chat">
           <div class="bento-label"><svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/></svg> Chat</div>
           <div class="bento-demo" id="bento-chat">
             <div class="bento-msg"><span class="bento-avatar bento-avatar--prof">MR</span><span class="bento-msg-text">Le livrable est a rendre vendredi 17h.</span></div>
             <div class="bento-msg"><span class="bento-avatar bento-avatar--student">EL</span><span class="bento-msg-text">Merci ! On peut travailler en equipe ?</span></div>
-            <div class="bento-msg"><span class="bento-avatar bento-avatar--prof">MR</span><span class="bento-msg-text">Oui, groupes de 2-3.</span></div>
           </div>
         </a>
 
@@ -168,17 +169,33 @@
           </div>
         </a>
 
-        <!-- Card 4: Dashboard (2 cols) -->
-        <a href="#feat-dashboard" class="bento-card bento-2x1" data-color="dashboard" aria-label="Decouvrir le dashboard">
-          <div class="bento-label"><svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/></svg> Dashboard</div>
-          <div class="bento-demo bento-stats">
-            <div class="bento-stat"><span class="bento-stat-val">72%</span><span class="bento-stat-lbl">Progression</span></div>
-            <div class="bento-stat"><span class="bento-stat-val">14.5</span><span class="bento-stat-lbl">Derniere note</span></div>
-            <div class="bento-stat"><span class="bento-stat-val bento-pulse">5</span><span class="bento-stat-lbl">Non lus</span></div>
+        <!-- Card 4: Live Quiz -->
+        <a href="#feat-live" class="bento-card" data-color="live" aria-label="Decouvrir le live quiz">
+          <div class="bento-label"><svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> Live Quiz</div>
+          <div class="bento-demo bento-live-demo">
+            <div class="bento-live-q">Quelle complexite pour un tri fusion ?</div>
+            <div class="bento-live-opts">
+              <span class="bento-live-opt">O(n)</span>
+              <span class="bento-live-opt bento-live-opt--correct">O(n log n)</span>
+              <span class="bento-live-opt">O(n²)</span>
+            </div>
           </div>
         </a>
 
-        <!-- Card 5: Comparaison (1 col) -->
+        <!-- Card 5: REX -->
+        <a href="#feat-rex" class="bento-card" data-color="rex" aria-label="Decouvrir les REX">
+          <div class="bento-label"><svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg> REX</div>
+          <div class="bento-demo bento-rex-demo">
+            <div class="bento-rex-q">Qu'avez-vous retenu ?</div>
+            <div class="bento-rex-cloud">
+              <span style="font-size:15px;opacity:.9">travail d'equipe</span>
+              <span style="font-size:11px;opacity:.6">autonomie</span>
+              <span style="font-size:13px;opacity:.8">gestion du temps</span>
+            </div>
+          </div>
+        </a>
+
+        <!-- Card 6: Comparaison -->
         <div class="bento-card bento-compare">
           <div class="bento-label">Pourquoi Cursus ?</div>
           <div class="bento-demo">
@@ -259,7 +276,7 @@
           <p class="feature-desc">Crée des devoirs, suis les dépôts, note par rubriques. Les étudiants savent où en sont.</p>
           <ul class="feature-list">
             <li>5 types : livrable, soutenance, CCTL...</li>
-            <li>Notation A-F avec grilles</li>
+            <li>Notation A-D avec grilles criteriees</li>
             <li>Deadlines avec rappels automatiques</li>
           </ul>
         </div>
@@ -351,8 +368,8 @@
                 <span class="widget-sub">Dans 3 jours</span>
               </div>
               <div class="dash-widget" style="--delay: 150ms; --wc: var(--color-devoirs)">
-                <span class="widget-label">Dernière note</span>
-                <span class="widget-value counter" data-target="14.5">0</span><span class="widget-value-unit">/20</span>
+                <span class="widget-label">Derniere note</span>
+                <span class="widget-value widget-grade">A</span>
                 <span class="widget-sub">TP Algo</span>
               </div>
               <div class="dash-widget" style="--delay: 300ms; --wc: var(--color-dashboard)">
@@ -367,6 +384,75 @@
                 <span class="widget-value"><span class="notif-badge pulse">5</span></span>
                 <span class="widget-sub">3 canaux</span>
               </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Feature 5: Live Quiz -->
+    <section id="feat-live" class="feature-section fade-up" data-color="live">
+      <div class="container feature-row">
+        <div class="feature-text">
+          <div class="feature-icon" style="--fc: var(--color-live)"><svg aria-hidden="true" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></div>
+          <h2>Quiz en direct, scores en temps reel</h2>
+          <p class="feature-desc">Lance un quiz interactif en plein cours. QCM, questions ouvertes, nuages de mots. Les etudiants repondent depuis leur telephone.</p>
+          <ul class="feature-list">
+            <li>QCM avec correction automatique</li>
+            <li>Classement et scores en direct</li>
+            <li>Code de session a 6 chiffres</li>
+          </ul>
+        </div>
+        <div class="mini-demo mini-demo-right" id="demo-live">
+          <div class="demo-window">
+            <div class="demo-titlebar"><span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span><span class="demo-title">Live Quiz</span></div>
+            <div class="demo-live-body">
+              <div class="live-question" style="--delay: 0ms">
+                <span class="live-q-badge">Question 3/5</span>
+                <span class="live-q-text">Quelle est la complexite d'un tri fusion ?</span>
+              </div>
+              <div class="live-options">
+                <div class="live-opt" style="--delay: 150ms"><span class="live-opt-letter">A</span> O(n)</div>
+                <div class="live-opt live-opt--correct" style="--delay: 300ms"><span class="live-opt-letter">B</span> O(n log n) <span class="live-check">&#10003;</span></div>
+                <div class="live-opt" style="--delay: 450ms"><span class="live-opt-letter">C</span> O(n²)</div>
+                <div class="live-opt" style="--delay: 600ms"><span class="live-opt-letter">D</span> O(log n)</div>
+              </div>
+              <div class="live-bar" style="--delay: 750ms">
+                <div class="live-bar-fill" style="--w:68%">68% correct</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Feature 6: REX -->
+    <section id="feat-rex" class="feature-section fade-up" data-color="rex">
+      <div class="container feature-row reverse">
+        <div class="feature-text">
+          <div class="feature-icon" style="--fc: var(--color-rex)"><svg aria-hidden="true" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg></div>
+          <h2>Retours d'experience anonymes</h2>
+          <p class="feature-desc">Collecte les ressentis de ta promo en temps reel. Questions ouvertes, echelles, nuages de mots. 100% anonyme.</p>
+          <ul class="feature-list">
+            <li>Reponses anonymes en temps reel</li>
+            <li>Nuage de mots et echelles</li>
+            <li>Export CSV pour analyse</li>
+          </ul>
+        </div>
+        <div class="mini-demo mini-demo-left" id="demo-rex">
+          <div class="demo-window">
+            <div class="demo-titlebar"><span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span><span class="demo-title">REX Session</span></div>
+            <div class="demo-rex-body">
+              <div class="rex-question" style="--delay: 0ms">Qu'avez-vous le plus apprecie cette semaine ?</div>
+              <div class="rex-cloud" style="--delay: 200ms">
+                <span class="rex-word" style="--size:1.3;--o:.95">travail d'equipe</span>
+                <span class="rex-word" style="--size:1.1;--o:.8">TP pratique</span>
+                <span class="rex-word" style="--size:.9;--o:.65">autonomie</span>
+                <span class="rex-word" style="--size:1.0;--o:.75">entraide</span>
+                <span class="rex-word" style="--size:.85;--o:.55">gestion du temps</span>
+                <span class="rex-word" style="--size:1.2;--o:.9">projet concret</span>
+              </div>
+              <div class="rex-count" style="--delay: 400ms"><span class="rex-count-num">24</span> reponses</div>
             </div>
           </div>
         </div>
