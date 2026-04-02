@@ -134,14 +134,14 @@ describe('DELETE /api/rubrics/:travailId', () => {
   })
 
   it('teacher CAN delete rubric (200)', async () => {
-    // Re-create for this test
+    // Re-create for this test (travailId 1 = promo 1, teacher's promo)
     await request(app)
       .post('/api/rubrics')
       .set('Authorization', `Bearer ${teacherToken}`)
-      .send({ travailId: 2, title: 'Temp', criteria: [{ label: 'A', max_pts: 5 }] })
+      .send({ travailId: 1, title: 'Temp', criteria: [{ label: 'A', max_pts: 5 }] })
 
     const res = await request(app)
-      .delete('/api/rubrics/2')
+      .delete('/api/rubrics/1')
       .set('Authorization', `Bearer ${teacherToken}`)
     expect(res.status).toBe(200)
     expect(res.body.ok).toBe(true)

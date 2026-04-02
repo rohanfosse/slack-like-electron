@@ -36,6 +36,8 @@ function setupTestDb() {
   // v42 promotes first teacher to 'admin', reset to 'teacher' for test isolation
   testDb.prepare(`UPDATE teachers SET password = ?, must_change_password = 0, role = 'teacher' WHERE id = 1`).run(hash)
   testDb.prepare(`UPDATE teachers SET name = 'Prof Test', email = 'prof@test.fr' WHERE id = 1`).run()
+  // Assign teacher to promo 1 (ownership checks require teacher_promos)
+  testDb.exec(`INSERT OR IGNORE INTO teacher_promos (teacher_id, promo_id) VALUES (1, 1)`)
 
   return testDb
 }

@@ -4,7 +4,7 @@ const { z }   = require('zod')
 const queries = require('../db/index')
 const { validate } = require('../middleware/validate')
 const wrap    = require('../utils/wrap')
-const { requireRole, requirePromo, promoFromTravail } = require('../middleware/authorize')
+const { requireRole, requirePromo, promoFromTravail, requireResourceOwner } = require('../middleware/authorize')
 
 const addResourceSchema = z.object({
   travail_id:  z.number().int().positive().optional(),
@@ -22,6 +22,6 @@ const addResourceSchema = z.object({
 
 router.get('/',      requirePromo(promoFromTravail), wrap((req) => queries.getRessources(Number(req.query.travailId))))
 router.post('/',     requireRole('teacher'), validate(addResourceSchema), wrap((req) => queries.addRessource(req.body)))
-router.delete('/:id', requireRole('teacher'), wrap((req) => queries.deleteRessource(Number(req.params.id))))
+router.delete('/:id', requireRole('teacher'), requireResourceOwner, wrap((req) => queries.deleteRessource(Number(req.params.id))))
 
 module.exports = router

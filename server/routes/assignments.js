@@ -4,7 +4,7 @@ const { z }   = require('zod')
 const queries = require('../db/index')
 const { validate } = require('../middleware/validate')
 const wrap         = require('../utils/wrap')
-const { requireRole, requirePromo, promoFromParam, promoFromChannel, promoFromTravail, requireTravailOwner } = require('../middleware/authorize')
+const { requireRole, requirePromo, promoFromParam, promoFromChannel, promoFromTravail, requireTravailOwner, requireReminderOwner } = require('../middleware/authorize')
 
 const createAssignmentSchema = z.object({
   title:       z.string().min(1, 'Titre requis').max(200, 'Titre trop long (max 200 caractères)'),
@@ -65,8 +65,8 @@ router.post('/schedule', requireRole('teacher'), wrap((req) => {
 }))
 router.post('/group-member',            requireRole('teacher'), wrap((req) => queries.setTravailGroupMember(req.body)))
 router.post('/:id/mark-missing',        requireRole('teacher'), requireTravailOwner, wrap((req) => queries.markNonSubmittedAsD(Number(req.params.id))))
-router.delete('/:id',                   requireRole('teacher'), wrap((req) => queries.deleteTravail(Number(req.params.id))))
-router.patch('/:id',                    requireRole('teacher'), wrap((req) => queries.updateTravail(Number(req.params.id), req.body)))
+router.delete('/:id',                   requireRole('teacher'), requireTravailOwner, wrap((req) => queries.deleteTravail(Number(req.params.id))))
+router.patch('/:id',                    requireRole('teacher'), requireTravailOwner, wrap((req) => queries.updateTravail(Number(req.params.id), req.body)))
 
 // ── Rappels enseignant ────────────────────────────────────────────────────────
 router.get('/reminders',    requireRole('teacher'), wrap((req) => queries.getReminders(req.query.promoTag || null)))
@@ -75,8 +75,8 @@ router.post('/reminders',   requireRole('teacher'), wrap((req) => {
   if (!date || !title) throw new Error('date et title requis')
   return queries.createReminder({ promoTag, date, title, description, bloc })
 }))
-router.patch('/reminders/:id',  requireRole('teacher'), wrap((req) => queries.updateReminder(Number(req.params.id), req.body)))
-router.delete('/reminders/:id', requireRole('teacher'), wrap((req) => {
+router.patch('/reminders/:id',  requireRole('teacher'), requireReminderOwner, wrap((req) => queries.updateReminder(Number(req.params.id), req.body)))
+router.delete('/reminders/:id', requireRole('teacher'), requireReminderOwner, wrap((req) => {
   queries.deleteReminder(Number(req.params.id))
   return null
 }))

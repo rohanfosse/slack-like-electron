@@ -2,7 +2,7 @@
 const router  = require('express').Router()
 const queries = require('../db/index')
 const wrap    = require('../utils/wrap')
-const { requireRole, requirePromo, promoFromParam, requireSessionOwner } = require('../middleware/authorize')
+const { requireRole, requirePromo, promoFromParam, requireSessionOwner, requireActivityOwner } = require('../middleware/authorize')
 const { getDb } = require('../db/connection')
 
 /** Lookup : rex session id → promo_id */
@@ -91,16 +91,16 @@ router.post('/sessions/:id/clone', requireRole('teacher'), wrap((req) => {
   return queries.cloneRexSession(Number(req.params.id), { teacherId, promoId, title })
 }))
 
-// PATCH /sessions/:id/activities/reorder - réordonner les activités
-router.patch('/sessions/:id/activities/reorder', requireRole('teacher'), wrap((req) => {
+// PATCH /sessions/:id/activities/reorder (propre session ou admin)
+router.patch('/sessions/:id/activities/reorder', requireRole('teacher'), requireSessionOwner('rex_sessions'), wrap((req) => {
   const { order } = req.body
   if (!Array.isArray(order)) throw new Error('order (tableau d\'IDs) requis')
   queries.reorderRexActivities(Number(req.params.id), order)
   return queries.getRexSession(Number(req.params.id))
 }))
 
-// PATCH /sessions/:id/status - demarrer/terminer
-router.patch('/sessions/:id/status', requireRole('teacher'), (req, res) => {
+// PATCH /sessions/:id/status (propre session ou admin)
+router.patch('/sessions/:id/status', requireRole('teacher'), requireSessionOwner('rex_sessions'), (req, res) => {
   try {
     const { status } = req.body
     if (!['waiting', 'active', 'ended'].includes(status)) {
@@ -126,8 +126,8 @@ router.delete('/sessions/:id', requireRole('teacher'), requireSessionOwner('rex_
 
 // ─── Activities ──────────────────────────────────────────────────────────────
 
-// POST /sessions/:id/activities - ajouter une activite
-router.post('/sessions/:id/activities', requireRole('teacher'), wrap((req) => {
+// POST /sessions/:id/activities (propre session ou admin)
+router.post('/sessions/:id/activities', requireRole('teacher'), requireSessionOwner('rex_sessions'), wrap((req) => {
   const { type, title, maxWords, maxRating, position } = req.body
   if (!type || !title) throw new Error('type et title requis')
   return queries.addRexActivity({
@@ -135,21 +135,21 @@ router.post('/sessions/:id/activities', requireRole('teacher'), wrap((req) => {
   })
 }))
 
-// PATCH /activities/:id - modifier une activité REX
-router.patch('/activities/:id', requireRole('teacher'), wrap((req) => {
+// PATCH /activities/:id (propre activité ou admin)
+router.patch('/activities/:id', requireRole('teacher'), requireActivityOwner('rex_activities', 'rex_sessions'), wrap((req) => {
   return queries.updateRexActivity(Number(req.params.id), req.body)
 }))
 
-// DELETE /activities/:id
-router.delete('/activities/:id', requireRole('teacher'), wrap((req) => {
+// DELETE /activities/:id (propre activité ou admin)
+router.delete('/activities/:id', requireRole('teacher'), requireActivityOwner('rex_activities', 'rex_sessions'), wrap((req) => {
   const id = Number(req.params.id)
   _lastEmit.delete(id)
   queries.deleteRexActivity(id)
   return null
 }))
 
-// PATCH /activities/:id/status - lancer/fermer une activite
-router.patch('/activities/:id/status', requireRole('teacher'), (req, res) => {
+// PATCH /activities/:id/status (propre activité ou admin)
+router.patch('/activities/:id/status', requireRole('teacher'), requireActivityOwner('rex_activities', 'rex_sessions'), (req, res) => {
   try {
     const { status } = req.body
     if (!['pending', 'live', 'closed'].includes(status)) {

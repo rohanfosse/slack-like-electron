@@ -171,8 +171,8 @@ function requireSessionOwner(table) {
     const session = getDb().prepare(`SELECT teacher_id FROM ${table} WHERE id = ?`).get(sessionId)
     if (!session) return res.status(404).json({ ok: false, error: 'Session introuvable.' })
     const teacherId = Math.abs(req.user.id)
-    if (session.teacher_id !== teacherId) {
-      return res.status(403).json({ ok: false, error: 'Vous ne pouvez supprimer que vos propres sessions.' })
+    if (Math.abs(session.teacher_id) !== teacherId) {
+      return res.status(403).json({ ok: false, error: 'Vous ne pouvez modifier que vos propres sessions.' })
     }
     next()
   }
@@ -181,10 +181,11 @@ function requireSessionOwner(table) {
 /**
  * Vérifie que le devoir appartient à une promo gérée par l'enseignant.
  * Les admins passent toujours.
+ * Supporte :id et :travailId comme paramètre.
  */
 function requireTravailOwner(req, res, next) {
   if (req.user?.type === 'admin') return next()
-  const travailId = Number(req.params.id)
+  const travailId = Number(req.params.id ?? req.params.travailId ?? req.body?.travailId)
   if (!travailId) return res.status(400).json({ ok: false, error: 'ID devoir manquant.' })
   const travail = getDb().prepare('SELECT promo_id FROM travaux WHERE id = ?').get(travailId)
   if (!travail) return res.status(404).json({ ok: false, error: 'Devoir introuvable.' })
@@ -194,6 +195,116 @@ function requireTravailOwner(req, res, next) {
   ).get(teacherId, travail.promo_id)
   if (!assigned) {
     return res.status(403).json({ ok: false, error: 'Ce devoir n\'appartient pas à vos promotions.' })
+  }
+  next()
+}
+
+/**
+ * Vérifie que l'activité (live ou rex) appartient à une session créée par l'enseignant.
+ * Les admins passent toujours.
+ * @param {string} activityTable — 'live_activities' ou 'rex_activities'
+ * @param {string} sessionTable — 'live_sessions' ou 'rex_sessions'
+ */
+function requireActivityOwner(activityTable, sessionTable) {
+  return (req, res, next) => {
+    if (req.user?.type === 'admin') return next()
+    const activityId = Number(req.params.id)
+    if (!activityId) return res.status(400).json({ ok: false, error: 'ID activité manquant.' })
+    const activity = getDb().prepare(`SELECT session_id FROM ${activityTable} WHERE id = ?`).get(activityId)
+    if (!activity) return res.status(404).json({ ok: false, error: 'Activité introuvable.' })
+    const session = getDb().prepare(`SELECT teacher_id FROM ${sessionTable} WHERE id = ?`).get(activity.session_id)
+    if (!session) return res.status(404).json({ ok: false, error: 'Session introuvable.' })
+    const teacherId = Math.abs(req.user.id)
+    if (Math.abs(session.teacher_id) !== teacherId) {
+      return res.status(403).json({ ok: false, error: 'Vous ne pouvez modifier que vos propres activités.' })
+    }
+    next()
+  }
+}
+
+/**
+ * Vérifie que le projet a été créé par l'enseignant (via created_by).
+ * Les admins passent toujours.
+ */
+function requireProjectOwner(req, res, next) {
+  if (req.user?.type === 'admin') return next()
+  const projectId = Number(req.params.id)
+  if (!projectId) return res.status(400).json({ ok: false, error: 'ID projet manquant.' })
+  const project = getDb().prepare('SELECT created_by FROM projects WHERE id = ?').get(projectId)
+  if (!project) return res.status(404).json({ ok: false, error: 'Projet introuvable.' })
+  const teacherId = Math.abs(req.user.id)
+  if (project.created_by !== teacherId) {
+    return res.status(403).json({ ok: false, error: 'Vous ne pouvez modifier que vos propres projets.' })
+  }
+  next()
+}
+
+/**
+ * Vérifie que le groupe appartient à une promo gérée par l'enseignant.
+ * Les admins passent toujours.
+ */
+function requireGroupOwner(req, res, next) {
+  if (req.user?.type === 'admin') return next()
+  const groupId = Number(req.params.id)
+  if (!groupId) return res.status(400).json({ ok: false, error: 'ID groupe manquant.' })
+  const group = getDb().prepare('SELECT promo_id FROM groups WHERE id = ?').get(groupId)
+  if (!group) return res.status(404).json({ ok: false, error: 'Groupe introuvable.' })
+  const teacherId = Math.abs(req.user.id)
+  const assigned = getDb().prepare(
+    'SELECT 1 FROM teacher_promos WHERE teacher_id = ? AND promo_id = ? LIMIT 1'
+  ).get(teacherId, group.promo_id)
+  if (!assigned) {
+    return res.status(403).json({ ok: false, error: 'Ce groupe n\'appartient pas à vos promotions.' })
+  }
+  next()
+}
+
+/**
+ * Vérifie que la ressource appartient à un devoir d'une promo gérée par l'enseignant.
+ * Les admins passent toujours.
+ */
+function requireResourceOwner(req, res, next) {
+  if (req.user?.type === 'admin') return next()
+  const resourceId = Number(req.params.id)
+  if (!resourceId) return res.status(400).json({ ok: false, error: 'ID ressource manquant.' })
+  // Chercher dans ressources puis channel_documents (addRessource insère dans channel_documents)
+  let promoId = null
+  const fromRessources = getDb().prepare('SELECT travail_id FROM ressources WHERE id = ?').get(resourceId)
+  if (fromRessources) {
+    const travail = getDb().prepare('SELECT promo_id FROM travaux WHERE id = ?').get(fromRessources.travail_id)
+    promoId = travail?.promo_id
+  } else {
+    const fromDocs = getDb().prepare('SELECT promo_id FROM channel_documents WHERE id = ?').get(resourceId)
+    promoId = fromDocs?.promo_id
+  }
+  if (promoId == null) return res.status(404).json({ ok: false, error: 'Ressource introuvable.' })
+  const teacherId = Math.abs(req.user.id)
+  const assigned = getDb().prepare(
+    'SELECT 1 FROM teacher_promos WHERE teacher_id = ? AND promo_id = ? LIMIT 1'
+  ).get(teacherId, promoId)
+  if (!assigned) {
+    return res.status(403).json({ ok: false, error: 'Cette ressource n\'appartient pas à vos promotions.' })
+  }
+  next()
+}
+
+/**
+ * Vérifie que le rappel appartient à une promo gérée par l'enseignant (via promo_tag).
+ * Les admins passent toujours.
+ */
+function requireReminderOwner(req, res, next) {
+  if (req.user?.type === 'admin') return next()
+  const reminderId = Number(req.params.id)
+  if (!reminderId) return res.status(400).json({ ok: false, error: 'ID rappel manquant.' })
+  const reminder = getDb().prepare('SELECT promo_tag FROM teacher_reminders WHERE id = ?').get(reminderId)
+  if (!reminder) return res.status(404).json({ ok: false, error: 'Rappel introuvable.' })
+  // promo_tag = nom de la promo ; vérifier que l'enseignant gère au moins une promo avec ce tag
+  const teacherId = Math.abs(req.user.id)
+  const assigned = getDb().prepare(
+    'SELECT 1 FROM teacher_promos tp JOIN promotions p ON p.id = tp.promo_id WHERE tp.teacher_id = ? AND p.name = ? LIMIT 1'
+  ).get(teacherId, reminder.promo_tag)
+  if (!assigned) {
+    return res.status(403).json({ ok: false, error: 'Ce rappel n\'appartient pas à vos promotions.' })
   }
   next()
 }
@@ -210,4 +321,9 @@ module.exports = {
   requireProject,
   requireSessionOwner,
   requireTravailOwner,
+  requireActivityOwner,
+  requireProjectOwner,
+  requireGroupOwner,
+  requireResourceOwner,
+  requireReminderOwner,
 }

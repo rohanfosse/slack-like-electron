@@ -2,7 +2,7 @@
 const router  = require('express').Router()
 const queries = require('../db/index')
 const wrap    = require('../utils/wrap')
-const { requireRole, requirePromo, promoFromParam, requireSessionOwner } = require('../middleware/authorize')
+const { requireRole, requirePromo, promoFromParam, requireSessionOwner, requireActivityOwner } = require('../middleware/authorize')
 
 /** Lookup : live session id → promo_id */
 function promoFromSession(req) {
@@ -104,16 +104,16 @@ router.post('/sessions/:id/clone', requireRole('teacher'), wrap((req) => {
   return queries.cloneSession(Number(req.params.id), { teacherId, promoId, title })
 }))
 
-// PATCH /sessions/:id/activities/reorder (prof uniquement)
-router.patch('/sessions/:id/activities/reorder', requireRole('teacher'), wrap((req) => {
+// PATCH /sessions/:id/activities/reorder (prof uniquement — propre session ou admin)
+router.patch('/sessions/:id/activities/reorder', requireRole('teacher'), requireSessionOwner('live_sessions'), wrap((req) => {
   const { order } = req.body
   if (!Array.isArray(order)) throw new Error('order (tableau d\'IDs) requis')
   queries.reorderActivities(Number(req.params.id), order)
   return queries.getSession(Number(req.params.id))
 }))
 
-// PATCH /sessions/:id/status (prof uniquement)
-router.patch('/sessions/:id/status', requireRole('teacher'), (req, res) => {
+// PATCH /sessions/:id/status (prof uniquement — propre session ou admin)
+router.patch('/sessions/:id/status', requireRole('teacher'), requireSessionOwner('live_sessions'), (req, res) => {
   try {
     const { status } = req.body
     if (!['waiting', 'active', 'ended'].includes(status)) {
@@ -148,8 +148,8 @@ router.delete('/sessions/:id', requireRole('teacher'), requireSessionOwner('live
 
 // ─── Activities ──────────────────────────────────────────────────────────────
 
-// POST /sessions/:id/activities (prof uniquement)
-router.post('/sessions/:id/activities', requireRole('teacher'), wrap((req) => {
+// POST /sessions/:id/activities (prof uniquement — propre session ou admin)
+router.post('/sessions/:id/activities', requireRole('teacher'), requireSessionOwner('live_sessions'), wrap((req) => {
   const { type, title, options, multi, maxWords, position, timer_seconds, correct_answers } = req.body
   if (!type || !title) throw new Error('type et title requis')
   return queries.addActivity({
@@ -159,21 +159,21 @@ router.post('/sessions/:id/activities', requireRole('teacher'), wrap((req) => {
   })
 }))
 
-// PATCH /activities/:id (prof uniquement)
-router.patch('/activities/:id', requireRole('teacher'), wrap((req) => {
+// PATCH /activities/:id (prof uniquement — propre activité ou admin)
+router.patch('/activities/:id', requireRole('teacher'), requireActivityOwner('live_activities', 'live_sessions'), wrap((req) => {
   return queries.updateActivity(Number(req.params.id), req.body)
 }))
 
-// DELETE /activities/:id (prof uniquement)
-router.delete('/activities/:id', requireRole('teacher'), wrap((req) => {
+// DELETE /activities/:id (prof uniquement — propre activité ou admin)
+router.delete('/activities/:id', requireRole('teacher'), requireActivityOwner('live_activities', 'live_sessions'), wrap((req) => {
   const id = Number(req.params.id)
   _lastEmit.delete(id)
   queries.deleteActivity(id)
   return null
 }))
 
-// PATCH /activities/:id/status (prof uniquement)
-router.patch('/activities/:id/status', requireRole('teacher'), (req, res) => {
+// PATCH /activities/:id/status (prof uniquement — propre activité ou admin)
+router.patch('/activities/:id/status', requireRole('teacher'), requireActivityOwner('live_activities', 'live_sessions'), (req, res) => {
   try {
     const { status } = req.body
     if (!['pending', 'live', 'closed'].includes(status)) {

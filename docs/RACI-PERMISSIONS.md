@@ -1,6 +1,6 @@
 # RACI — Matrice des permissions par role
 
-> Mise a jour : 2026-04-02 (post-migration `requireRole` + separation admin/teacher)
+> Mise a jour : 2026-04-02 (ownership checks complets — sessions, activites, devoirs, projets, groupes, rubriques, ressources, rappels)
 
 ## Hierarchie des roles
 
@@ -19,16 +19,21 @@ Chaque role herite des permissions des roles inferieurs.
 
 | Capacite | Teacher | Admin |
 |----------|---------|-------|
-| Gerer promos, canaux, devoirs, projets | ✓ creer/modifier | ✓ tout |
+| Gerer promos, canaux, devoirs, projets | ✓ ses propres ressources | ✓ tout |
 | **Supprimer une promo** | ✗ | ✓ |
 | **Supprimer un intervenant** | ✗ (peut ajouter/desassigner) | ✓ |
 | **Supprimer une categorie** | ✗ | ✓ |
-| Supprimer session live/REX | ✓ ses propres sessions | ✓ toutes |
-| Marquer absents (note D) | ✓ ses propres promos | ✓ toutes |
+| Sessions live/REX (CRUD, status, activites) | ✓ ses propres sessions | ✓ toutes |
+| Devoirs (modifier, supprimer, mark-missing) | ✓ ses propres promos | ✓ toutes |
+| Projets (modifier, supprimer, lier) | ✓ ses propres projets | ✓ tous |
+| Groupes (supprimer, membres) | ✓ ses propres promos | ✓ tous |
+| Rubriques (creer, supprimer) | ✓ ses propres promos | ✓ toutes |
+| Ressources (supprimer) | ✓ ses propres promos | ✓ toutes |
+| Rappels (modifier, supprimer) | ✓ ses propres promos | ✓ tous |
 | Panel admin (stats, users, moderation) | ✓ | ✓ |
 | Modules systeme (security, deploy, maintenance) | ✗ | ✓ |
 
-**Principe** : un teacher ne peut pas effectuer d'actions destructives irreversibles sur des donnees partagees. L'admin est le seul a pouvoir supprimer des entites structurelles (promos, intervenants, categories).
+**Principe** : un teacher ne peut modifier/supprimer que les ressources liees a ses propres promos ou qu'il a creees. L'admin est le seul a pouvoir supprimer des entites structurelles (promos, intervenants, categories) et acceder a toutes les ressources.
 
 ---
 
@@ -73,13 +78,13 @@ Chaque role herite des permissions des roles inferieurs.
 | POST | `/publish` | ✗ | ✗ | ✓ | ✓ | Publier |
 | POST | `/schedule` | ✗ | ✗ | ✓ | ✓ | Programmer la publication |
 | POST | `/group-member` | ✗ | ✗ | ✓ | ✓ | Affecter a un groupe |
-| POST | `/:id/mark-missing` | ✗ | ✗ | ✓* | ✓ | Propres promos uniquement (`requireTravailOwner`) |
-| PATCH | `/:id` | ✗ | ✗ | ✓ | ✓ | Modifier |
-| DELETE | `/:id` | ✗ | ✗ | ✓ | ✓ | Supprimer |
+| POST | `/:id/mark-missing` | ✗ | ✗ | ✓* | ✓ | Propres promos (`requireTravailOwner`) |
+| PATCH | `/:id` | ✗ | ✗ | ✓* | ✓ | Propres promos (`requireTravailOwner`) |
+| DELETE | `/:id` | ✗ | ✗ | ✓* | ✓ | Propres promos (`requireTravailOwner`) |
 | GET | `/reminders` | ✗ | ✗ | ✓ | ✓ | — |
 | POST | `/reminders` | ✗ | ✗ | ✓ | ✓ | — |
-| PATCH | `/reminders/:id` | ✗ | ✗ | ✓ | ✓ | — |
-| DELETE | `/reminders/:id` | ✗ | ✗ | ✓ | ✓ | — |
+| PATCH | `/reminders/:id` | ✗ | ✗ | ✓* | ✓ | Propres promos (`requireReminderOwner`) |
+| DELETE | `/reminders/:id` | ✗ | ✗ | ✓* | ✓ | Propres promos (`requireReminderOwner`) |
 
 ---
 
@@ -123,13 +128,13 @@ Chaque role herite des permissions des roles inferieurs.
 | GET | `/:id/documents` | ✓* | ✓ | ✓ | ✓ | Meme promo |
 | GET | `/:id/tas` | ✓* | ✓ | ✓ | ✓ | Meme promo |
 | POST | `/` | ✗ | ✗ | ✓ | ✓ | Creer projet |
-| PUT | `/:id` | ✗ | ✗ | ✓ | ✓ | Modifier projet |
-| DELETE | `/:id` | ✗ | ✗ | ✓ | ✓ | Supprimer projet |
-| POST | `/:id/travaux/:travailId` | ✗ | ✗ | ✓ | ✓ | Lier devoir |
-| DELETE | `/:id/travaux/:travailId` | ✗ | ✗ | ✓ | ✓ | Delier devoir |
-| POST | `/:id/documents/:documentId` | ✗ | ✗ | ✓ | ✓ | Lier document |
-| POST | `/:id/assign-ta` | ✗ | ✗ | ✓ | ✓ | Assigner TA |
-| DELETE | `/:id/unassign-ta/:teacherId` | ✗ | ✗ | ✓ | ✓ | Retirer TA |
+| PUT | `/:id` | ✗ | ✗ | ✓* | ✓ | Createur du projet (`requireProjectOwner`) |
+| DELETE | `/:id` | ✗ | ✗ | ✓* | ✓ | Createur du projet (`requireProjectOwner`) |
+| POST | `/:id/travaux/:travailId` | ✗ | ✗ | ✓* | ✓ | Createur du projet (`requireProjectOwner`) |
+| DELETE | `/:id/travaux/:travailId` | ✗ | ✗ | ✓* | ✓ | Createur du projet (`requireProjectOwner`) |
+| POST | `/:id/documents/:documentId` | ✗ | ✗ | ✓* | ✓ | Createur du projet (`requireProjectOwner`) |
+| POST | `/:id/assign-ta` | ✗ | ✗ | ✓* | ✓ | Createur du projet (`requireProjectOwner`) |
+| DELETE | `/:id/unassign-ta/:teacherId` | ✗ | ✗ | ✓* | ✓ | Createur du projet (`requireProjectOwner`) |
 
 ---
 
@@ -187,8 +192,8 @@ Chaque role herite des permissions des roles inferieurs.
 | GET | `/` | ✓* | ✓ | ✓ | ✓ | Meme promo |
 | GET | `/:id/members` | ✓* | ✓ | ✓ | ✓ | Meme promo |
 | POST | `/` | ✗ | ✗ | ✓ | ✓ | — |
-| DELETE | `/:id` | ✗ | ✗ | ✓ | ✓ | — |
-| POST | `/:id/members` | ✗ | ✗ | ✓ | ✓ | — |
+| DELETE | `/:id` | ✗ | ✗ | ✓* | ✓ | Propres promos (`requireGroupOwner`) |
+| POST | `/:id/members` | ✗ | ✗ | ✓* | ✓ | Propres promos (`requireGroupOwner`) |
 
 ---
 
@@ -207,13 +212,13 @@ Chaque role herite des permissions des roles inferieurs.
 | POST | `/activities/:id/respond` | ✓* | ✓ | ✓ | ✓ | Meme promo |
 | POST | `/sessions` | ✗ | ✗ | ✓ | ✓ | — |
 | POST | `/sessions/:id/clone` | ✗ | ✗ | ✓ | ✓ | — |
-| POST | `/sessions/:id/activities` | ✗ | ✗ | ✓ | ✓ | — |
-| PATCH | `/sessions/:id/status` | ✗ | ✗ | ✓ | ✓ | — |
-| PATCH | `/sessions/:id/activities/reorder` | ✗ | ✗ | ✓ | ✓ | — |
-| PATCH | `/activities/:id` | ✗ | ✗ | ✓ | ✓ | — |
-| PATCH | `/activities/:id/status` | ✗ | ✗ | ✓ | ✓ | — |
-| DELETE | `/sessions/:id` | ✗ | ✗ | ✓* | ✓ | Propre session uniquement (`requireSessionOwner`) |
-| DELETE | `/activities/:id` | ✗ | ✗ | ✓ | ✓ | — |
+| POST | `/sessions/:id/activities` | ✗ | ✗ | ✓* | ✓ | Propre session (`requireSessionOwner`) |
+| PATCH | `/sessions/:id/status` | ✗ | ✗ | ✓* | ✓ | Propre session (`requireSessionOwner`) |
+| PATCH | `/sessions/:id/activities/reorder` | ✗ | ✗ | ✓* | ✓ | Propre session (`requireSessionOwner`) |
+| PATCH | `/activities/:id` | ✗ | ✗ | ✓* | ✓ | Propre activite (`requireActivityOwner`) |
+| PATCH | `/activities/:id/status` | ✗ | ✗ | ✓* | ✓ | Propre activite (`requireActivityOwner`) |
+| DELETE | `/sessions/:id` | ✗ | ✗ | ✓* | ✓ | Propre session (`requireSessionOwner`) |
+| DELETE | `/activities/:id` | ✗ | ✗ | ✓* | ✓ | Propre activite (`requireActivityOwner`) |
 
 ---
 
@@ -229,15 +234,15 @@ Chaque role herite des permissions des roles inferieurs.
 | POST | `/activities/:id/respond` | ✓* | ✓ | ✓ | ✓ | Meme promo |
 | POST | `/sessions` | ✗ | ✗ | ✓ | ✓ | — |
 | POST | `/sessions/:id/clone` | ✗ | ✗ | ✓ | ✓ | — |
-| POST | `/sessions/:id/activities` | ✗ | ✗ | ✓ | ✓ | — |
-| PATCH | `/sessions/:id/status` | ✗ | ✗ | ✓ | ✓ | — |
-| PATCH | `/sessions/:id/activities/reorder` | ✗ | ✗ | ✓ | ✓ | — |
-| PATCH | `/activities/:id` | ✗ | ✗ | ✓ | ✓ | — |
-| PATCH | `/activities/:id/status` | ✗ | ✗ | ✓ | ✓ | — |
+| POST | `/sessions/:id/activities` | ✗ | ✗ | ✓* | ✓ | Propre session (`requireSessionOwner`) |
+| PATCH | `/sessions/:id/status` | ✗ | ✗ | ✓* | ✓ | Propre session (`requireSessionOwner`) |
+| PATCH | `/sessions/:id/activities/reorder` | ✗ | ✗ | ✓* | ✓ | Propre session (`requireSessionOwner`) |
+| PATCH | `/activities/:id` | ✗ | ✗ | ✓* | ✓ | Propre activite (`requireActivityOwner`) |
+| PATCH | `/activities/:id/status` | ✗ | ✗ | ✓* | ✓ | Propre activite (`requireActivityOwner`) |
 | POST | `/responses/:id/pin` | ✗ | ✗ | ✓ | ✓ | — |
 | GET | `/sessions/:id/export` | ✗ | ✗ | ✓ | ✓ | — |
-| DELETE | `/sessions/:id` | ✗ | ✗ | ✓* | ✓ | Propre session uniquement (`requireSessionOwner`) |
-| DELETE | `/activities/:id` | ✗ | ✗ | ✓ | ✓ | — |
+| DELETE | `/sessions/:id` | ✗ | ✗ | ✓* | ✓ | Propre session (`requireSessionOwner`) |
+| DELETE | `/activities/:id` | ✗ | ✗ | ✓* | ✓ | Propre activite (`requireActivityOwner`) |
 
 ---
 
@@ -248,8 +253,8 @@ Chaque role herite des permissions des roles inferieurs.
 | GET | `/:travailId` | ✓* | ✓ | ✓ | ✓ | Meme promo |
 | GET | `/scores/:depotId` | ✗ | ✗ | ✓ | ✓ | — |
 | POST | `/scores` | ✗ | ✗ | ✓ | ✓ | — |
-| POST | `/` | ✗ | ✗ | ✓ | ✓ | — |
-| DELETE | `/:travailId` | ✗ | ✗ | ✓ | ✓ | — |
+| POST | `/` | ✗ | ✗ | ✓* | ✓ | Propres promos (`requireTravailOwner`) |
+| DELETE | `/:travailId` | ✗ | ✗ | ✓* | ✓ | Propres promos (`requireTravailOwner`) |
 
 ---
 
@@ -322,7 +327,7 @@ Chaque role herite des permissions des roles inferieurs.
 |---------|-------|---------|-----|---------|-------|-----------|
 | GET | `/` | ✓* | ✓ | ✓ | ✓ | Meme promo |
 | POST | `/` | ✗ | ✗ | ✓ | ✓ | — |
-| DELETE | `/:id` | ✗ | ✗ | ✓ | ✓ | — |
+| DELETE | `/:id` | ✗ | ✗ | ✓* | ✓ | Propres promos (`requireResourceOwner`) |
 
 ---
 
@@ -408,6 +413,13 @@ Chaque role herite des permissions des roles inferieurs.
 | `requireProject(fn)` | ta | Verifie l'affectation TA-projet |
 | `requireMessageOwner` | student+ | Auteur du message uniquement |
 | `requireDmParticipant` | student+ | Participant du DM (boite partagee / TA scope) |
+| `requireSessionOwner(table)` | teacher | Createur de la session live/rex |
+| `requireActivityOwner(actTable, sessTable)` | teacher | Createur de l'activite (via session) |
+| `requireTravailOwner` | teacher | Devoir dans une promo geree par l'enseignant |
+| `requireProjectOwner` | teacher | Createur du projet (`created_by`) |
+| `requireGroupOwner` | teacher | Groupe dans une promo geree par l'enseignant |
+| `requireResourceOwner` | teacher | Ressource liee a un devoir de ses promos |
+| `requireReminderOwner` | teacher | Rappel lie a une promo geree par l'enseignant |
 | `requireDocOwnership` | teacher | Proprietaire du document |
 | `requireSystemAdmin` | admin | Admin systeme uniquement (routes admin) |
 | `requireAdmin` | teacher | Enseignant+ (modules promo admin) |

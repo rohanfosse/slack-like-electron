@@ -4,7 +4,7 @@ const { z }   = require('zod')
 const queries = require('../db/index')
 const { validate } = require('../middleware/validate')
 const wrap    = require('../utils/wrap')
-const { requireRole, requirePromo, promoFromTravail } = require('../middleware/authorize')
+const { requireRole, requirePromo, promoFromTravail, requireTravailOwner } = require('../middleware/authorize')
 
 const upsertRubricSchema = z.object({
   travailId: z.number().int().positive('Devoir invalide'),
@@ -21,7 +21,7 @@ const upsertRubricSchema = z.object({
 router.get('/scores/:depotId', requireRole('teacher'), wrap((req) => queries.getDepotScores(Number(req.params.depotId))))
 router.post('/scores',         requireRole('teacher'), wrap((req) => queries.setDepotScores(req.body)))
 router.get('/:travailId',      requirePromo(promoFromTravail), wrap((req) => queries.getRubric(Number(req.params.travailId))))
-router.post('/',               requireRole('teacher'), validate(upsertRubricSchema), wrap((req) => queries.upsertRubric(req.body)))
-router.delete('/:travailId',   requireRole('teacher'), wrap((req) => queries.deleteRubric(Number(req.params.travailId))))
+router.post('/',               requireRole('teacher'), validate(upsertRubricSchema), requireTravailOwner, wrap((req) => queries.upsertRubric(req.body)))
+router.delete('/:travailId',   requireRole('teacher'), requireTravailOwner, wrap((req) => queries.deleteRubric(Number(req.params.travailId))))
 
 module.exports = router
