@@ -19,7 +19,7 @@ router.post('/', (req, res) => {
       secretBuf.length !== expectedBuf.length ||
       !crypto.timingSafeEqual(secretBuf, expectedBuf)) {
     log.warn('deploy_unauthorized', { ip: req.ip })
-    return res.status(403).json({ ok: false, error: 'Unauthorized' })
+    return res.status(403).json({ ok: false, error: 'Acces non autorise.' })
   }
 
   try {

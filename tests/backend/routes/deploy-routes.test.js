@@ -40,7 +40,7 @@ describe('Deploy webhook auth', () => {
       .send({})
     expect(res.status).toBe(403)
     expect(res.body.ok).toBe(false)
-    expect(res.body.error).toMatch(/unauthorized/i)
+    expect(res.body.error).toMatch(/autoris/i)
   })
 
   it('rejects request with wrong secret (403)', async () => {
