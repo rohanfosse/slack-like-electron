@@ -264,6 +264,15 @@ async function importStudentsBrowser(promoId: number): Promise<unknown> {
   // ── Auth / session ──────────────────────────────────────────────────────────
   setToken(token: string) { jwtToken = token; connectSocket(token) },
 
+  async refreshToken() {
+    const res = await post('/api/auth/refresh', {}) as { ok: boolean; data?: { token?: string } }
+    if (res?.ok && res.data?.token) {
+      jwtToken = res.data.token
+      return { token: res.data.token }
+    }
+    return null
+  },
+
   getIdentities: () => get('/api/auth/identities'),
   findUserByName: (name: string) => get(`/api/auth/find-user?name=${encodeURIComponent(name)}`),
   getTeachers: () => get('/api/auth/teachers'),

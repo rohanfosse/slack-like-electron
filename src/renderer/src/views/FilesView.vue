@@ -1,5 +1,6 @@
 /** Vue "Fichiers partagés" — accessible uniquement par le professeur. */
 <script setup lang="ts">
+import ErrorBoundary from '@/components/ui/ErrorBoundary.vue'
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import {
@@ -148,6 +149,7 @@ function toggleCollapse(studentId: number) {
 </script>
 
 <template>
+  <ErrorBoundary label="Fichiers">
   <div class="fv-root">
 
     <!-- ── Header ── -->
@@ -302,6 +304,7 @@ function toggleCollapse(studentId: number) {
       </div>
     </Transition>
   </div>
+  </ErrorBoundary>
 </template>
 
 <style scoped>

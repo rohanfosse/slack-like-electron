@@ -1,5 +1,6 @@
 /** AgendaView — calendrier agrégé : échéances travaux + rappels enseignant. */
 <script setup lang="ts">
+import ErrorBoundary from '@/components/ui/ErrorBoundary.vue'
 import { ref, computed, onMounted, watch } from 'vue'
 import VueCal from 'vue-cal'
 import 'vue-cal/dist/vuecal.css'
@@ -93,6 +94,7 @@ watch(() => promoId.value, load)
 </script>
 
 <template>
+  <ErrorBoundary label="Agenda">
   <div class="agenda-area">
 
     <!-- Header -->
@@ -204,6 +206,7 @@ watch(() => promoId.value, load)
       </aside>
     </div>
   </div>
+  </ErrorBoundary>
 </template>
 
 <style scoped>

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+  import ErrorBoundary from '@/components/ui/ErrorBoundary.vue'
   import { ref, computed, watch } from 'vue'
   import {
     FileText, Image, Link2, Video, File, Plus, Trash2,
@@ -105,6 +106,7 @@
 </script>
 
 <template>
+  <ErrorBoundary label="Documents">
   <div
     id="documents-area" class="docs-layout"
     @dragenter="onDragEnter" @dragleave="onDragLeave"
@@ -458,6 +460,7 @@
       @cancel="cancelDrop"
     />
   </div>
+  </ErrorBoundary>
 </template>
 
 <style scoped>

@@ -24,6 +24,7 @@ declare global {
 
       // Auth / session
       setToken(token: string): void
+      refreshToken(): Promise<{ token: string } | null>
 
       // Structure
       getPromotions(): Promise<IpcResponse<Promotion[]>>

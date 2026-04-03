@@ -89,6 +89,21 @@ router.post('/login', loginLimiter, validate(loginSchema), wrap(async (req) => {
   return { ...user, token }
 }))
 
+// POST /api/auth/refresh — renouveler le JWT si encore valide (< 7j)
+router.post('/refresh', auth, (req, res) => {
+  try {
+    const secret = req.app.get('jwtSecret')
+    const token = jwt.sign(
+      { id: req.user.id, name: req.user.name, type: req.user.type, promo_id: req.user.promo_id },
+      secret,
+      { expiresIn: '7d' },
+    )
+    res.json({ ok: true, data: { token } })
+  } catch (err) {
+    res.status(500).json({ ok: false, error: err.message })
+  }
+})
+
 // GET /api/auth/identities  (dev uniquement, ou enseignant authentifié)
 router.get('/identities', (req, res, next) => {
   if (process.env.NODE_ENV !== 'production') return next()

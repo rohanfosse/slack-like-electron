@@ -1,4 +1,5 @@
 <script setup lang="ts">
+  import ErrorBoundary from '@/components/ui/ErrorBoundary.vue'
   import { computed, watch, ref, nextTick, onMounted, onUnmounted } from 'vue'
   import { Search, X as XIcon, ClipboardList, BookCheck, FileText, FolderPlus, X as Close, CalendarRange, Users, FolderOpen, Menu, MessageSquare, Megaphone, Paperclip, Image as ImageIcon, ExternalLink } from 'lucide-vue-next'
   import { useAppStore }      from '@/stores/app'
@@ -278,6 +279,7 @@
 </script>
 
 <template>
+  <ErrorBoundary label="Messages">
   <div
     id="main-area"
     class="main-area"
@@ -575,6 +577,7 @@
       </div>
     </Transition>
   </div>
+  </ErrorBoundary>
 </template>
 
 <style>

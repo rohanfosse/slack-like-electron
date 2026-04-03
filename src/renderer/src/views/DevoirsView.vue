@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import ErrorBoundary from '@/components/ui/ErrorBoundary.vue'
 import { onMounted, onBeforeUnmount, watch } from 'vue'
 import { useAppStore }     from '@/stores/app'
 import { useTravauxStore } from '@/stores/travaux'
@@ -85,6 +86,7 @@ watch(() => appStore.activeChannelId, () => {
 </script>
 
 <template>
+  <ErrorBoundary label="Devoirs">
   <div class="devoirs-area">
 
     <DevoirsHeader :toggle-sidebar="props.toggleSidebar" />
@@ -182,6 +184,7 @@ watch(() => appStore.activeChannelId, () => {
     :ctx-delete="ctxDelete"
     :close-ctx-menu="closeCtxMenu"
   />
+  </ErrorBoundary>
 </template>
 
 <style scoped>

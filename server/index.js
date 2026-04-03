@@ -332,10 +332,21 @@ function shutdown() {
   log.info('shutdown_initiated')
   clearInterval(_scheduledTimer)
   _backup.stop()
+  // Notifier les clients WebSocket avant l'arret
+  io.emit('server:maintenance', { message: 'Le serveur redémarre, reconnexion automatique dans quelques secondes.' })
+
+  // Drain period : laisser les requetes en cours se terminer (max 10s)
   server.close(() => {
     try { queries.close() } catch {}
     process.exit(0)
   })
+
+  // Forcer l'arret si drain depasse 10s
+  setTimeout(() => {
+    log.warn('shutdown_forced', { reason: 'drain timeout 10s' })
+    try { queries.close() } catch {}
+    process.exit(1)
+  }, 10_000).unref()
 }
 process.on('SIGTERM', shutdown)
 process.on('SIGINT',  shutdown)

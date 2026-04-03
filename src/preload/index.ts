@@ -212,6 +212,28 @@ contextBridge.exposeInMainWorld('api', {
     } catch { /* token invalide — ignoré */ }
   },
 
+  async refreshToken(): Promise<{ token: string } | null> {
+    if (!jwtToken) return null
+    try {
+      const res = await fetch(`${baseUrl}/api/auth/refresh`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${jwtToken}` },
+        body: '{}',
+      })
+      const data = await res.json()
+      if (data?.ok && data.data?.token) {
+        jwtToken = data.data.token
+        connectSocket(jwtToken)
+        try {
+          const payload = JSON.parse(atob(jwtToken.split('.')[1]))
+          ipcRenderer.send('auth:setUser', { id: payload.id, name: payload.name, type: payload.type, promo_id: payload.promo_id })
+        } catch { /* ignoré */ }
+        return { token: data.data.token }
+      }
+      return null
+    } catch { return null }
+  },
+
   getIdentities: () => get('/api/auth/identities'),
   findUserByName: (name: string) => get(`/api/auth/find-user?name=${encodeURIComponent(name)}`),
   getTeachers: () => get('/api/auth/teachers'),

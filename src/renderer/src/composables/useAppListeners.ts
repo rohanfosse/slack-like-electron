@@ -45,8 +45,16 @@ export function useAppListeners() {
   let unsubUpdaterDownloaded: (() => void) | null = null
   let unsubGradeNew: (() => void) | null = null
   let liveInviteTimer: ReturnType<typeof setTimeout> | null = null
+  let tokenRefreshTimer: ReturnType<typeof setInterval> | null = null
 
   function initListeners() {
+    // Refresh proactif du JWT toutes les 6h (expire dans 7j)
+    tokenRefreshTimer = setInterval(async () => {
+      try {
+        const res = await window.api.refreshToken?.()
+        if (res?.token) window.api.setToken(res.token)
+      } catch { /* silencieux — le prochain appel re-tentera */ }
+    }, 6 * 60 * 60_000)
     document.addEventListener('keydown', onGlobalShortcut)
 
     unsubUnread = appStore.initUnreadListener()
@@ -152,6 +160,7 @@ export function useAppListeners() {
     unsubUpdaterDownloaded?.()
     unsubGradeNew?.()
     if (liveInviteTimer) clearTimeout(liveInviteTimer)
+    if (tokenRefreshTimer) clearInterval(tokenRefreshTimer)
   }
 
   function dismissLiveInvite() {
