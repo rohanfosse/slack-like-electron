@@ -187,4 +187,72 @@ describe('travaux store', () => {
     expect(s.currentDevoir).toEqual(devoir)
     expect(appStore.currentTravailId).toBe(5)
   })
+
+  it('fetchDepots populates depots', async () => {
+    const depotList = [{ id: 1, travail_id: 5, student_id: 1, student_name: 'Alice', type: 'file', content: 'f.pdf', submitted_at: null, note: null, feedback: null }]
+    apiMock.mockResolvedValue(depotList)
+
+    const s = useTravauxStore()
+    await s.fetchDepots(5)
+    expect(s.depots).toEqual(depotList)
+  })
+
+  it('createTravail calls API with payload', async () => {
+    const result = { id: 10 }
+    apiMock.mockResolvedValue(result)
+
+    const s = useTravauxStore()
+    const payload = { title: 'TP2', deadline: '2026-06-01' }
+    const res = await s.createTravail(payload)
+    expect(apiMock).toHaveBeenCalled()
+    expect(res).toEqual(result)
+  })
+
+  it('setNote calls API and refetches depots', async () => {
+    const appStore = useAppStore()
+    appStore.currentTravailId = 5
+    let callCount = 0
+    apiMock.mockImplementation(async () => {
+      callCount++
+      if (callCount === 1) return null // setNote returns null
+      return [] // fetchDepots returns empty
+    })
+
+    const s = useTravauxStore()
+    await s.setNote({ depot_id: 1, note: 'A' })
+    // api called twice: once for setNote, once for fetchDepots
+    expect(apiMock).toHaveBeenCalledTimes(2)
+  })
+
+  it('setFeedback calls API and refetches depots', async () => {
+    const appStore = useAppStore()
+    appStore.currentTravailId = 5
+    let callCount = 0
+    apiMock.mockImplementation(async () => {
+      callCount++
+      if (callCount === 1) return null
+      return []
+    })
+
+    const s = useTravauxStore()
+    await s.setFeedback({ depot_id: 1, feedback: 'Bien' })
+    expect(apiMock).toHaveBeenCalledTimes(2)
+  })
+
+  it('fetchStudentDevoirs falls back to offline cache on error when offline', async () => {
+    const { loadCached } = await import('@/composables/useOfflineCache')
+    const cachedDevoirs = [makeDevoir({ id: 99, title: 'Cached' })]
+    vi.mocked(loadCached).mockResolvedValue(cachedDevoirs)
+
+    const appStore = useAppStore()
+    appStore.currentUser = { id: 1, name: 'J', avatar_initials: 'J', photo_data: null, type: 'student', promo_id: 7, promo_name: 'P' }
+    appStore.isOnline = false
+
+    apiMock.mockRejectedValue(new Error('Network error'))
+
+    const s = useTravauxStore()
+    await s.fetchStudentDevoirs()
+    expect(s.devoirs).toEqual(cachedDevoirs)
+    expect(s.loading).toBe(false)
+  })
 })

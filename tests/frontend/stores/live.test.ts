@@ -211,4 +211,137 @@ describe('live store', () => {
     expect(ok).toBe(true)
     expect(s.currentSession).toBeNull()
   })
+
+  // ── joinByCode ──────────────────────────────────────────────────────────────
+
+  it('joinByCode sets session, currentActivity from live activity, and emits join', async () => {
+    const liveAct = { id: 5, session_id: 1, status: 'live', title: 'Q1' }
+    const session = { id: 1, promo_id: 7, activities: [{ id: 4, status: 'closed' }, liveAct] }
+    apiMock.mockResolvedValue(session)
+
+    const s = useLiveStore()
+    const ok = await s.joinByCode('ABC123')
+    expect(ok).toBe(true)
+    expect(s.currentSession).toEqual(session)
+    expect(s.currentActivity).toEqual(liveAct)
+    expect(s.hasResponded).toBe(false)
+    expect(emitLiveJoinMock).toHaveBeenCalledWith(7)
+  })
+
+  it('joinByCode returns false and sets error on failure', async () => {
+    apiMock.mockResolvedValue(null)
+    const s = useLiveStore()
+    const ok = await s.joinByCode('INVALID')
+    expect(ok).toBe(false)
+    expect(s.error).toBe('Code de session invalide ou session introuvable')
+    expect(s.currentSession).toBeNull()
+  })
+
+  // ── startSession ────────────────────────────────────────────────────────────
+
+  it('startSession updates status to active', async () => {
+    const updated = { id: 1, promo_id: 7, status: 'active' }
+    apiMock.mockResolvedValue(updated)
+
+    const s = useLiveStore()
+    s.currentSession = { id: 1, promo_id: 7, status: 'waiting', activities: [] } as any
+    const ok = await s.startSession(1)
+    expect(ok).toBe(true)
+    expect(s.currentSession!.status).toBe('active')
+  })
+
+  it('startSession returns false on api failure', async () => {
+    apiMock.mockResolvedValue(null)
+    const s = useLiveStore()
+    s.currentSession = { id: 1, promo_id: 7, status: 'waiting' } as any
+    const ok = await s.startSession(1)
+    expect(ok).toBe(false)
+  })
+
+  // ── fetchDraftSessions ──────────────────────────────────────────────────────
+
+  it('fetchDraftSessions populates draftSessions', async () => {
+    const sessions = [
+      { id: 1, title: 'Draft 1', status: 'waiting' },
+      { id: 2, title: 'Draft 2', status: 'waiting' },
+    ]
+    apiMock.mockResolvedValue(sessions)
+
+    const s = useLiveStore()
+    await s.fetchDraftSessions(7)
+    expect(s.draftSessions).toEqual(sessions)
+  })
+
+  it('fetchDraftSessions does not overwrite on null response', async () => {
+    apiMock.mockResolvedValue(null)
+    const s = useLiveStore()
+    s.draftSessions = [{ id: 99 }] as any
+    await s.fetchDraftSessions(7)
+    expect(s.draftSessions).toEqual([{ id: 99 }])
+  })
+
+  // ── deleteSession ───────────────────────────────────────────────────────────
+
+  it('deleteSession removes session from draftSessions', async () => {
+    apiMock.mockResolvedValue({})
+    const s = useLiveStore()
+    s.draftSessions = [{ id: 1 }, { id: 2 }, { id: 3 }] as any
+    const ok = await s.deleteSession(2)
+    expect(ok).toBe(true)
+    expect(s.draftSessions).toHaveLength(2)
+    expect(s.draftSessions.find((d: any) => d.id === 2)).toBeUndefined()
+  })
+
+  it('deleteSession also calls leaveSession if deleting the current session', async () => {
+    apiMock.mockResolvedValue({})
+    const s = useLiveStore()
+    s.currentSession = { id: 5, promo_id: 7 } as any
+    s.draftSessions = [{ id: 5 }] as any
+    const ok = await s.deleteSession(5)
+    expect(ok).toBe(true)
+    expect(s.currentSession).toBeNull()
+    expect(emitLiveLeaveMock).toHaveBeenCalledWith(7)
+  })
+
+  // ── initSocketListeners / disposeSocketListeners ────────────────────────────
+
+  it('initSocketListeners registers all socket handlers', () => {
+    const s = useLiveStore()
+    const wApi = (window as any).api
+    s.initSocketListeners()
+
+    expect(wApi.onLiveActivityPushed).toHaveBeenCalled()
+    expect(wApi.onLiveActivityClosed).toHaveBeenCalled()
+    expect(wApi.onLiveResultsUpdate).toHaveBeenCalled()
+    expect(wApi.onLiveScoresUpdate).toHaveBeenCalled()
+    expect(wApi.onLiveSessionStarted).toHaveBeenCalled()
+    expect(wApi.onLiveSessionEnded).toHaveBeenCalled()
+  })
+
+  it('disposeSocketListeners calls all cleanup functions', () => {
+    const cleanup1 = vi.fn()
+    const cleanup2 = vi.fn()
+    const wApi = (window as any).api
+    wApi.onLiveActivityPushed.mockReturnValue(cleanup1)
+    wApi.onLiveActivityClosed.mockReturnValue(cleanup2)
+
+    const s = useLiveStore()
+    s.initSocketListeners()
+    s.disposeSocketListeners()
+
+    expect(cleanup1).toHaveBeenCalled()
+    expect(cleanup2).toHaveBeenCalled()
+  })
+
+  it('initSocketListeners disposes previous listeners before registering new ones', () => {
+    const cleanup = vi.fn()
+    const wApi = (window as any).api
+    wApi.onLiveActivityPushed.mockReturnValue(cleanup)
+
+    const s = useLiveStore()
+    s.initSocketListeners()
+    s.initSocketListeners() // second call should dispose first
+
+    expect(cleanup).toHaveBeenCalled()
+  })
 })
