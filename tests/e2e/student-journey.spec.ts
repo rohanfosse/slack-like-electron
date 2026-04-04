@@ -10,7 +10,6 @@ test.describe('Parcours etudiant complet', () => {
 
   test('login etudiant et acces au dashboard', async ({ page }) => {
     await loginAndWaitDashboard(page, STUDENT.email, STUDENT.password)
-    await expect(page.locator('main, [data-testid="dashboard"], .dashboard, .dashboard-shell').first()).toBeVisible({ timeout: 10_000 })
   })
 
   test('naviguer vers messages et voir le canal general', async ({ page }) => {

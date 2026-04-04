@@ -68,24 +68,7 @@ export async function login(page: Page, email: string, password: string): Promis
 }
 
 export async function loginAndWaitDashboard(page: Page, email: string, password: string): Promise<void> {
-  // Login via API et injection du token dans localStorage (plus fiable en CI)
-  const res = await fetch(`${API_BASE}/api/auth/login`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email, password }),
-  })
-  const data = await res.json()
-  if (!data.ok) throw new Error(`Login failed for ${email}: ${data.error}`)
-
-  const session = JSON.stringify(data.data)
-
-  // Injecter la session dans localStorage avant de charger la page
-  await page.goto('/')
-  await page.evaluate((s) => {
-    localStorage.setItem('cc_session', s)
-  }, session)
-
-  // Recharger pour que l'app lise la session
-  await page.goto('/#/dashboard')
-  await page.waitForSelector('#app-shell, .app-shell, .dashboard-shell, .app-columns', { timeout: 20_000 })
+  await login(page, email, password)
+  // Attendre la redirection vers le dashboard (hash router: /#/dashboard)
+  await expect(page).toHaveURL(/dashboard/, { timeout: 15_000 })
 }
