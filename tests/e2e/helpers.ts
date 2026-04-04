@@ -51,8 +51,8 @@ export async function provisionStudent(): Promise<void> {
     }),
   })
   const data = await res.json()
-  // Ignore if already exists (409)
-  if (!data.ok && res.status !== 409) {
+  // Ignore if already exists (409 or "déjà utilisée" error)
+  if (!data.ok && res.status !== 409 && !data.error?.includes('déjà')) {
     throw new Error(`Student provisioning failed: ${data.error}`)
   }
 }
