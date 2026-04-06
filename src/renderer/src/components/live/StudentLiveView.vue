@@ -18,6 +18,10 @@
 
   // Selected QCM answers (indices)
   const selectedAnswers = ref<number[]>([])
+  // Association: student mapping (index of right item for each left item)
+  const associationMapping = ref<number[]>([])
+  // Shuffled right-column indices for association
+  const shuffledRight = ref<number[]>([])
 
   const promoId = computed(() => appStore.currentUser?.promo_id ?? 0)
   const session = computed(() => liveStore.currentSession)
@@ -30,9 +34,23 @@
   const KAHOOT_SHAPES = ['\u25B2', '\u25C6', '\u25CF', '\u25A0', '\u2605', '\u2B22'] // triangle, diamond, circle, square, star, hex
 
   // Initialize word inputs when activity changes
-  watch(activity, () => {
+  function shuffleArray<T>(arr: T[]): T[] {
+    const a = [...arr]
+    for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]] }
+    return a
+  }
+
+  watch(activity, (act) => {
     selectedAnswers.value = []
     textInput.value = ''
+    if (act?.type === 'association' && act.correct_answers) {
+      try {
+        const parsed = JSON.parse(act.correct_answers as unknown as string)
+        const len = Array.isArray(parsed) ? parsed.length : 0
+        associationMapping.value = Array(len).fill(-1)
+        shuffledRight.value = shuffleArray(Array.from({ length: len }, (_, i) => i))
+      } catch { associationMapping.value = []; shuffledRight.value = [] }
+    }
     liveStore.hasResponded = false
     scoreResult.value = null
     timerExpired.value = false
@@ -69,6 +87,18 @@
   async function submitQcm() {
     if (!activity.value || selectedAnswers.value.length === 0) return
     const result = await liveStore.submitResponse(activity.value.id, { answers: selectedAnswers.value })
+    if (result) scoreResult.value = result
+  }
+
+  async function submitAssociation() {
+    if (!activity.value || associationMapping.value.some(v => v === -1)) return
+    const result = await liveStore.submitResponse(activity.value.id, { answer: associationMapping.value.join(',') })
+    if (result) scoreResult.value = result
+  }
+
+  async function submitEstimation() {
+    if (!activity.value || !textInput.value.trim()) return
+    const result = await liveStore.submitResponse(activity.value.id, { text: textInput.value.trim() })
     if (result) scoreResult.value = result
   }
 
@@ -191,6 +221,31 @@
         <div v-else-if="activity.type === 'reponse_courte'" class="text-response">
           <input v-model="textInput" class="text-input short-input" placeholder="Votre reponse..." maxlength="100" @keydown.enter="submitText" />
           <button class="submit-btn" :disabled="!textInput.trim()" @click="submitText">
+            <Send :size="16" /> Envoyer
+          </button>
+        </div>
+
+        <!-- Association -->
+        <div v-else-if="activity.type === 'association' && activity.correct_answers" class="association-response">
+          <div v-for="(leftIdx, i) in associationMapping.length" :key="i" class="assoc-row">
+            <span class="assoc-left">{{ JSON.parse(activity.correct_answers as unknown as string)[i]?.left }}</span>
+            <span class="assoc-arrow">&rarr;</span>
+            <select v-model.number="associationMapping[i]" class="assoc-select">
+              <option :value="-1" disabled>Choisir...</option>
+              <option v-for="si in shuffledRight" :key="si" :value="si">
+                {{ JSON.parse(activity.correct_answers as unknown as string)[si]?.right }}
+              </option>
+            </select>
+          </div>
+          <button class="submit-btn" :disabled="associationMapping.some(v => v === -1)" @click="submitAssociation">
+            <Send :size="16" /> Envoyer
+          </button>
+        </div>
+
+        <!-- Estimation -->
+        <div v-else-if="activity.type === 'estimation'" class="text-response">
+          <input v-model="textInput" class="text-input short-input" type="number" step="any" placeholder="Votre estimation..." @keydown.enter="submitEstimation" />
+          <button class="submit-btn" :disabled="!textInput.trim()" @click="submitEstimation">
             <Send :size="16" /> Envoyer
           </button>
         </div>
@@ -628,4 +683,11 @@
 .vf-faux.selected { background: #ef444422; border-color: #ef4444; color: #ef4444; }
 /* Reponse courte */
 .short-input { width: 100%; padding: 14px 16px; border-radius: 10px; font-size: 16px; border: 2px solid var(--border); background: var(--bg-elevated); color: var(--text-primary); }
+/* Association */
+.association-response { display: flex; flex-direction: column; gap: 10px; }
+.assoc-row { display: flex; align-items: center; gap: 8px; }
+.assoc-left { flex: 1; padding: 10px 12px; border-radius: 8px; background: var(--bg-elevated); font-weight: 600; color: var(--text-primary); font-size: 14px; }
+.assoc-arrow { color: var(--text-secondary); font-size: 16px; flex-shrink: 0; }
+.assoc-select { flex: 1; padding: 10px 12px; border-radius: 8px; border: 2px solid var(--border); background: var(--bg-elevated); color: var(--text-primary); font-size: 14px; cursor: pointer; }
+.assoc-select:focus { border-color: var(--accent); outline: none; }
 </style>

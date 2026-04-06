@@ -1,12 +1,12 @@
 <!-- ActivityForm.vue - Formulaire de création/édition d'activité Live (QCM / Sondage / Nuage) -->
 <script setup lang="ts">
   import { ref } from 'vue'
-  import { ListChecks, ToggleLeft, Type, Plus, X } from 'lucide-vue-next'
+  import { ListChecks, ToggleLeft, Type, Link2, Hash, Plus, X } from 'lucide-vue-next'
   import type { LiveActivity } from '@/types'
 
   const props = defineProps<{ initialData?: LiveActivity | null }>()
 
-  type ActivityType = 'qcm' | 'vrai_faux' | 'reponse_courte'
+  type ActivityType = 'qcm' | 'vrai_faux' | 'reponse_courte' | 'association' | 'estimation'
 
   const emit = defineEmits<{
     save: [payload: {
@@ -36,9 +36,20 @@
     try { const arr = JSON.parse(data.correct_answers as unknown as string); return arr[0] === 1 ? 1 : 0 } catch { return 0 }
   }
 
+  function parsePairs(data?: LiveActivity | null): { left: string; right: string }[] {
+    if (!data || data.type !== 'association' || !data.correct_answers) return [{ left: '', right: '' }, { left: '', right: '' }]
+    try { const arr = JSON.parse(data.correct_answers as unknown as string); return Array.isArray(arr) ? arr : [{ left: '', right: '' }, { left: '', right: '' }] } catch { return [{ left: '', right: '' }, { left: '', right: '' }] }
+  }
+  function parseEstimation(data?: LiveActivity | null): { target: string; margin: string } {
+    if (!data || data.type !== 'estimation' || !data.correct_answers) return { target: '', margin: '0' }
+    try { const obj = JSON.parse(data.correct_answers as unknown as string); return { target: String(obj.target ?? ''), margin: String(obj.margin ?? '0') } } catch { return { target: '', margin: '0' } }
+  }
+
   const activityType = ref<ActivityType>(props.initialData?.type ?? 'qcm')
   const acceptedAnswers = ref<string[]>(parseAcceptedAnswers(props.initialData))
   const vraiFauxCorrect = ref<0 | 1>(parseVraiFauxCorrect(props.initialData))
+  const pairs = ref(parsePairs(props.initialData))
+  const estimation = ref(parseEstimation(props.initialData))
   const title        = ref(props.initialData?.title ?? '')
   const options      = ref<string[]>(parseOptions(props.initialData))
   const timerSeconds = ref(props.initialData?.timer_seconds ?? 30)
@@ -49,6 +60,8 @@
     { id: 'qcm' as const,             label: 'QCM',             icon: ListChecks,   desc: 'Choix multiple' },
     { id: 'vrai_faux' as const,        label: 'Vrai / Faux',     icon: ToggleLeft,   desc: 'Question binaire' },
     { id: 'reponse_courte' as const,   label: 'Réponse courte',  icon: Type,         desc: 'Texte libre noté' },
+    { id: 'association' as const,      label: 'Association',      icon: Link2,        desc: 'Relier les paires' },
+    { id: 'estimation' as const,       label: 'Estimation',       icon: Hash,         desc: 'Réponse numérique' },
   ]
 
   function addOption() {
@@ -73,6 +86,8 @@
 
   function addAccepted() { if (acceptedAnswers.value.length < 10) acceptedAnswers.value.push('') }
   function removeAccepted(i: number) { if (acceptedAnswers.value.length > 1) acceptedAnswers.value = acceptedAnswers.value.filter((_, idx) => idx !== i) }
+  function addPair() { if (pairs.value.length < 8) pairs.value = [...pairs.value, { left: '', right: '' }] }
+  function removePair(i: number) { if (pairs.value.length > 2) pairs.value = pairs.value.filter((_, idx) => idx !== i) }
 
   function save() {
     if (!title.value.trim()) return
@@ -101,6 +116,17 @@
       const filtered = acceptedAnswers.value.map(a => a.trim()).filter(Boolean)
       if (filtered.length === 0) return
       payload.correct_answers = filtered
+    }
+    if (activityType.value === 'association') {
+      const valid = pairs.value.filter(p => p.left.trim() && p.right.trim())
+      if (valid.length < 2) return
+      payload.correct_answers = valid as unknown as string[]
+    }
+    if (activityType.value === 'estimation') {
+      const t = Number(estimation.value.target)
+      if (isNaN(t)) return
+      const m = Math.max(0, Number(estimation.value.margin) || 0)
+      payload.correct_answers = { target: t, margin: m } as unknown as string[]
     }
     emit('save', payload)
   }
@@ -200,6 +226,35 @@
       <button v-if="acceptedAnswers.length < 10" class="add-option-btn" @click="addAccepted">
         <Plus :size="14" /> Ajouter une reponse
       </button>
+    </div>
+
+    <!-- Association pairs -->
+    <div v-if="activityType === 'association'" class="accepted-section">
+      <label class="correct-label">Paires a associer</label>
+      <div v-for="(p, i) in pairs" :key="i" class="pair-row">
+        <input v-model="pairs[i].left" class="form-input pair-input" :placeholder="`Gauche ${i + 1}`" maxlength="80" />
+        <span class="pair-arrow">&rarr;</span>
+        <input v-model="pairs[i].right" class="form-input pair-input" :placeholder="`Droite ${i + 1}`" maxlength="80" />
+        <button v-if="pairs.length > 2" class="option-remove" @click="removePair(i)"><X :size="14" /></button>
+      </div>
+      <button v-if="pairs.length < 8" class="add-option-btn" @click="addPair">
+        <Plus :size="14" /> Ajouter une paire
+      </button>
+    </div>
+
+    <!-- Estimation target + margin -->
+    <div v-if="activityType === 'estimation'" class="estimation-section">
+      <label class="correct-label">Reponse attendue</label>
+      <div class="estimation-fields">
+        <div class="estimation-field">
+          <label class="estimation-label">Valeur cible</label>
+          <input v-model="estimation.target" class="form-input" type="number" step="any" placeholder="Ex: 3.14" />
+        </div>
+        <div class="estimation-field">
+          <label class="estimation-label">Marge de tolerance</label>
+          <input v-model="estimation.margin" class="form-input" type="number" step="any" min="0" placeholder="Ex: 0.1" />
+        </div>
+      </div>
     </div>
 
     <!-- Actions -->
@@ -463,4 +518,13 @@
 .vf-faux.active { background: #ef444422; border-color: #ef4444; color: #ef4444; }
 /* Accepted answers (reponse courte) */
 .accepted-section { display: flex; flex-direction: column; gap: 8px; }
+/* Association pairs */
+.pair-row { display: flex; align-items: center; gap: 8px; }
+.pair-input { flex: 1; }
+.pair-arrow { color: var(--text-secondary); font-size: 16px; flex-shrink: 0; }
+/* Estimation */
+.estimation-section { display: flex; flex-direction: column; gap: 8px; }
+.estimation-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.estimation-field { display: flex; flex-direction: column; gap: 4px; }
+.estimation-label { font-size: 12px; color: var(--text-secondary); }
 </style>

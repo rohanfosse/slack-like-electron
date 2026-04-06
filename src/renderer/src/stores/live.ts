@@ -126,7 +126,7 @@ export const useLiveStore = defineStore('live', () => {
   }
 
   async function pushActivity(sessionId: number, payload: {
-    type: 'qcm' | 'vrai_faux' | 'reponse_courte'; title: string
+    type: 'qcm' | 'vrai_faux' | 'reponse_courte' | 'association' | 'estimation'; title: string
     options?: string[] | null; multi?: number
     timer_seconds?: number; correct_answers?: number[] | string[]
   }): Promise<boolean> {
@@ -197,7 +197,7 @@ export const useLiveStore = defineStore('live', () => {
     return false
   }
 
-  async function submitResponse(activityId: number, payload: { answers?: number[]; text?: string; words?: string[] }): Promise<LiveScoreResult | null> {
+  async function submitResponse(activityId: number, payload: { answers?: number[]; text?: string; words?: string[]; answer?: string }): Promise<LiveScoreResult | null> {
     const data = await api(
       () => window.api.submitLiveResponse(activityId, payload),
     ) as { isCorrect: boolean | null; points: number; rank: number | null } | null

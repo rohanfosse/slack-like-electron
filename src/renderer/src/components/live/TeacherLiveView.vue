@@ -3,7 +3,7 @@
   import { ref, computed, onMounted, onUnmounted } from 'vue'
   import {
     Plus, Play, Square, ChevronRight, Trash2, Users, Zap,
-    ListChecks, ToggleLeft, Type,
+    ListChecks, ToggleLeft, Type, Link2, Hash,
     LogOut, Pencil, GripVertical, Copy,
     History, BarChart3,
   } from 'lucide-vue-next'
@@ -65,7 +65,7 @@
 
   // ── Activity management ──────────────────────────────────────────────────
   async function onAddActivity(payload: {
-    type: 'qcm' | 'vrai_faux' | 'reponse_courte'; title: string; options?: string[]
+    type: 'qcm' | 'vrai_faux' | 'reponse_courte' | 'association' | 'estimation'; title: string; options?: string[]
     timer_seconds?: number; correct_answers?: number[] | string[]
   }) {
     if (!liveStore.currentSession) return
@@ -158,6 +158,8 @@
     if (type === 'qcm') return ListChecks
     if (type === 'vrai_faux') return ToggleLeft
     if (type === 'reponse_courte') return Type
+    if (type === 'association') return Link2
+    if (type === 'estimation') return Hash
     return Zap
   }
 
@@ -165,6 +167,8 @@
     if (type === 'qcm') return 'QCM'
     if (type === 'vrai_faux') return 'Vrai / Faux'
     if (type === 'reponse_courte') return 'Reponse courte'
+    if (type === 'association') return 'Association'
+    if (type === 'estimation') return 'Estimation'
     return 'Spark'
   }
 

@@ -221,6 +221,24 @@ function getActivityResultsAggregated(activityId) {
     return { type: 'reponse_courte', total, counts };
   }
 
+  if (activity.type === 'association') {
+    let correctCount = 0;
+    for (const r of responses) {
+      if (checkCorrectness(activityId, r.answer)) correctCount++;
+    }
+    return { type: 'association', total, correctCount };
+  }
+
+  if (activity.type === 'estimation') {
+    const values = responses.map(r => Number(r.answer)).filter(n => !isNaN(n));
+    let correctCount = 0;
+    for (const r of responses) {
+      if (checkCorrectness(activityId, r.answer)) correctCount++;
+    }
+    const avg = values.length > 0 ? values.reduce((a, b) => a + b, 0) / values.length : 0;
+    return { type: 'estimation', total, correctCount, average: Math.round(avg * 100) / 100, values };
+  }
+
   return { type: activity.type, total, raw: responses };
 }
 
@@ -282,6 +300,26 @@ function checkCorrectness(activityId, answer) {
 
   let parsed;
   try { parsed = JSON.parse(activity.correct_answers); } catch { return null; }
+  if (!parsed || (typeof parsed !== 'object')) return null;
+
+  // Estimation : numeric within margin
+  if (activity.type === 'estimation') {
+    const { target, margin } = parsed;
+    if (target === undefined) return null;
+    const studentVal = Number(answer);
+    if (isNaN(studentVal)) return false;
+    return Math.abs(studentVal - target) <= (margin ?? 0);
+  }
+
+  // Association : student sends comma-separated indices mapping left→right
+  if (activity.type === 'association') {
+    if (!Array.isArray(parsed)) return null;
+    const studentMapping = String(answer).split(',').map(s => Number(s.trim()));
+    if (studentMapping.length !== parsed.length) return false;
+    // correct mapping is 0,1,2,...,n-1 (pairs are stored in order)
+    return studentMapping.every((v, i) => v === i);
+  }
+
   if (!Array.isArray(parsed) || parsed.length === 0) return null;
 
   // Reponse courte : fuzzy string matching against accepted answers
