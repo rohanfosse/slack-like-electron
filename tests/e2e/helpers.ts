@@ -70,14 +70,21 @@ export async function login(page: Page, email: string, password: string): Promis
 export async function loginAndWaitDashboard(page: Page, email: string, password: string): Promise<void> {
   await login(page, email, password)
   await expect(page).toHaveURL(/dashboard/, { timeout: 15_000 })
+  // Attendre que la NavRail soit rendue avec au moins un bouton nav
+  await page.waitForSelector('.nav-rail .nav-btn', { state: 'visible', timeout: 15_000 })
 }
 
 /** Navigue vers une section via le bouton NavRail (aria-label) */
 export async function navigateTo(page: Page, section: 'messages' | 'devoirs' | 'documents' | 'dashboard'): Promise<void> {
-  // Attendre que la NavRail soit rendue
-  await page.waitForSelector('.nav-rail', { timeout: 15_000 })
-  // La NavRail utilise des <button> avec aria-label="Section X"
-  const btn = page.locator(`button[aria-label*="${section}" i], .nav-btn:has-text("${section}")`)
-  await btn.first().click({ timeout: 10_000 })
+  // Strategie multi-selecteur : aria-label "Section X", nav-label text, ou title
+  const btn = page.locator([
+    `button[aria-label*="${section}" i]`,
+    `.nav-btn:has(.nav-label:text-is("${section[0].toUpperCase() + section.slice(1)}"))`,
+    `button[title*="${section}" i]`,
+  ].join(', ')).first()
+
+  // Attendre que le bouton soit visible et stable avant de cliquer
+  await expect(btn).toBeVisible({ timeout: 15_000 })
+  await btn.click({ timeout: 10_000 })
   await expect(page).toHaveURL(new RegExp(section), { timeout: 10_000 })
 }
