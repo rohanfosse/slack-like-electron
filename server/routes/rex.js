@@ -169,9 +169,9 @@ router.delete('/sessions/:id', requireRole('teacher'), requireSessionOwner('rex_
 
 // POST /sessions/:id/activities (propre session ou admin)
 router.post('/sessions/:id/activities', requireRole('teacher'), requireSessionOwner('rex_sessions'), validate(addRexActivitySchema), wrap((req) => {
-  const { type, title, maxWords, maxRating, position } = req.body
+  const { type, title, maxWords, maxRating, position, options } = req.body
   return queries.addRexActivity({
-    sessionId: Number(req.params.id), type, title, maxWords, maxRating, position,
+    sessionId: Number(req.params.id), type, title, maxWords, maxRating, position, options,
   })
 }))
 

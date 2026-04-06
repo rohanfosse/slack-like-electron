@@ -86,17 +86,18 @@ function deleteRexSession(id) {
 
 // ─── Activities ──────────────────────────────────────────────────────────────
 
-function addRexActivity({ sessionId, type, title, maxWords, maxRating, position }) {
+function addRexActivity({ sessionId, type, title, maxWords, maxRating, position, options }) {
   const db = getDb();
+  const optionsJson = options ? JSON.stringify(options) : null;
   const res = db.prepare(
-    'INSERT INTO rex_activities (session_id, type, title, max_words, max_rating, position) VALUES (?, ?, ?, ?, ?, ?)'
-  ).run(sessionId, type, title, maxWords ?? 3, maxRating ?? 5, position ?? 0);
+    'INSERT INTO rex_activities (session_id, type, title, max_words, max_rating, position, options) VALUES (?, ?, ?, ?, ?, ?, ?)'
+  ).run(sessionId, type, title, maxWords ?? 3, maxRating ?? 5, position ?? 0, optionsJson);
   return db.prepare('SELECT * FROM rex_activities WHERE id = ?').get(res.lastInsertRowid);
 }
 
 function updateRexActivity(id, fields) {
   const db = getDb();
-  const allowed = ['title', 'type', 'max_words', 'max_rating', 'position'];
+  const allowed = ['title', 'type', 'max_words', 'max_rating', 'position', 'options'];
   const sets = [];
   const vals = [];
   for (const key of allowed) {
@@ -229,6 +230,60 @@ function getRexActivityResultsAggregated(activityId) {
       'SELECT id, answer, pinned, created_at FROM rex_responses WHERE activity_id = ? ORDER BY pinned DESC, created_at DESC'
     ).all(activityId);
     return { type: 'question_ouverte', total: rows.length, answers: rows.map(r => ({ id: r.id, answer: r.answer, pinned: !!r.pinned, created_at: r.created_at })) };
+  }
+
+  if (activity.type === 'sondage') {
+    const rows = db.prepare(
+      'SELECT answer, COUNT(*) as count FROM rex_responses WHERE activity_id = ? GROUP BY answer ORDER BY count DESC'
+    ).all(activityId);
+    const total = rows.reduce((s, r) => s + r.count, 0);
+    let opts = [];
+    try { opts = JSON.parse(activity.options || '[]'); } catch { /* ignore */ }
+    const counts = opts.map((text, i) => {
+      const match = rows.find(r => String(r.answer) === String(i));
+      return { text, count: match ? match.count : 0 };
+    });
+    return { type: 'sondage', total, counts };
+  }
+
+  if (activity.type === 'humeur') {
+    const rows = db.prepare(
+      'SELECT answer, COUNT(*) as count FROM rex_responses WHERE activity_id = ? GROUP BY answer ORDER BY count DESC'
+    ).all(activityId);
+    const total = rows.reduce((s, r) => s + r.count, 0);
+    return { type: 'humeur', total, emojis: rows.map(r => ({ emoji: r.answer, count: r.count })) };
+  }
+
+  if (activity.type === 'priorite') {
+    const responses = db.prepare('SELECT answer FROM rex_responses WHERE activity_id = ?').all(activityId);
+    const total = responses.length;
+    let items = [];
+    try { items = JSON.parse(activity.options || '[]'); } catch { /* ignore */ }
+    const rankSums = Array(items.length).fill(0);
+    for (const r of responses) {
+      const order = r.answer.split(',').map(Number);
+      order.forEach((itemIdx, rank) => { if (itemIdx >= 0 && itemIdx < items.length) rankSums[itemIdx] += rank; });
+    }
+    const rankings = items.map((item, i) => ({ item, avgRank: total > 0 ? Math.round((rankSums[i] / total) * 100) / 100 : 0 }));
+    rankings.sort((a, b) => a.avgRank - b.avgRank);
+    return { type: 'priorite', total, rankings };
+  }
+
+  if (activity.type === 'matrice') {
+    const responses = db.prepare('SELECT answer FROM rex_responses WHERE activity_id = ?').all(activityId);
+    const total = responses.length;
+    let criteriaNames = [];
+    try { criteriaNames = JSON.parse(activity.options || '[]'); } catch { /* ignore */ }
+    const sums = {};
+    for (const name of criteriaNames) sums[name] = 0;
+    for (const r of responses) {
+      try {
+        const ratings = JSON.parse(r.answer);
+        for (const name of criteriaNames) { if (ratings[name] !== undefined) sums[name] += Number(ratings[name]); }
+      } catch { /* ignore malformed */ }
+    }
+    const criteria = criteriaNames.map(name => ({ name, average: total > 0 ? Math.round((sums[name] / total) * 100) / 100 : 0 }));
+    return { type: 'matrice', total, criteria };
   }
 
   return { type: activity.type, total: 0 };

@@ -1,6 +1,6 @@
 const { getDb } = require('./connection');
 
-const CURRENT_VERSION = 48;
+const CURRENT_VERSION = 49;
 
 // ─── Schema initial ───────────────────────────────────────────────────────────
 // Crée toutes les tables avec leur schéma complet (colonnes UTC, toutes colonnes incluses).
@@ -640,10 +640,11 @@ function runMigrations(db) {
         CREATE TABLE IF NOT EXISTS rex_activities (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
           session_id INTEGER NOT NULL REFERENCES rex_sessions(id) ON DELETE CASCADE,
-          type TEXT NOT NULL CHECK(type IN ('sondage_libre','nuage','echelle','question_ouverte')),
+          type TEXT NOT NULL,
           title TEXT NOT NULL,
           max_words INTEGER NOT NULL DEFAULT 3,
           max_rating INTEGER NOT NULL DEFAULT 5,
+          options TEXT DEFAULT NULL,
           position INTEGER NOT NULL DEFAULT 0,
           status TEXT NOT NULL DEFAULT 'pending' CHECK(status IN ('pending','live','closed')),
           started_at TEXT,
@@ -996,6 +997,36 @@ function runMigrations(db) {
     // v48 : publication programmee des devoirs (#91)
     (db) => {
       tryAlter(db, 'ALTER TABLE travaux ADD COLUMN scheduled_publish_at TEXT DEFAULT NULL');
+    },
+
+    // v49 : Pulse — 4 nouveaux types (sondage, humeur, priorite, matrice) + colonne options
+    (db) => {
+      tryAlter(db, 'ALTER TABLE rex_activities ADD COLUMN options TEXT DEFAULT NULL');
+      // Relacher le CHECK constraint sur type en recreant la table
+      // SQLite ne supporte pas ALTER CHECK, on utilise une approche pragmatique :
+      // supprimer le CHECK et le recreer via une table temporaire
+      try {
+        db.exec(`
+          CREATE TABLE rex_activities_new (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            session_id INTEGER NOT NULL REFERENCES rex_sessions(id) ON DELETE CASCADE,
+            type TEXT NOT NULL,
+            title TEXT NOT NULL,
+            max_words INTEGER NOT NULL DEFAULT 3,
+            max_rating INTEGER NOT NULL DEFAULT 5,
+            options TEXT DEFAULT NULL,
+            position INTEGER NOT NULL DEFAULT 0,
+            status TEXT NOT NULL DEFAULT 'pending' CHECK(status IN ('pending','live','closed')),
+            started_at TEXT,
+            closed_at TEXT
+          );
+          INSERT INTO rex_activities_new (id, session_id, type, title, max_words, max_rating, position, status, started_at, closed_at)
+            SELECT id, session_id, type, title, max_words, max_rating, position, status, started_at, closed_at FROM rex_activities;
+          DROP TABLE rex_activities;
+          ALTER TABLE rex_activities_new RENAME TO rex_activities;
+          CREATE INDEX IF NOT EXISTS idx_rex_activities_session ON rex_activities(session_id);
+        `);
+      } catch { /* migration deja faite */ }
     },
   ];
 

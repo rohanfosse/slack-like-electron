@@ -1,42 +1,80 @@
 /** RexActivityForm — Formulaire de creation/edition d'activite REX pour enseignants. */
 <script setup lang="ts">
   import { ref, computed } from 'vue'
-  import { MessageSquare, Cloud, Star, FileText } from 'lucide-vue-next'
+  import { MessageSquare, Cloud, Star, FileText, BarChart, Smile, ArrowUpDown, Grid3X3, Plus, X } from 'lucide-vue-next'
   import type { RexActivity } from '@/types'
 
-  type RexType = 'sondage_libre' | 'nuage' | 'echelle' | 'question_ouverte'
+  type RexType = RexActivity['type']
 
   const props = defineProps<{ initialData?: RexActivity | null }>()
 
   const emit = defineEmits<{
-    add: [payload: { type: RexType; title: string; max_words?: number; max_rating?: number }]
+    add: [payload: { type: RexType; title: string; max_words?: number; max_rating?: number; options?: string[] }]
     cancel: []
   }>()
 
   const isEditing = !!props.initialData
 
+  function parseOptions(data?: RexActivity | null): string[] {
+    if (!data?.options) return ['', '']
+    try { const arr = JSON.parse(data.options as string); return Array.isArray(arr) ? arr : ['', ''] } catch { return ['', ''] }
+  }
+
   const selectedType = ref<RexType | null>(props.initialData?.type ?? null)
   const title        = ref(props.initialData?.title ?? '')
   const maxWords     = ref(props.initialData?.max_words ?? 2)
   const maxRating    = ref(props.initialData?.max_rating ?? 5)
+  const sondageOptions = ref<string[]>(props.initialData?.type === 'sondage' ? parseOptions(props.initialData) : ['', ''])
+  const prioriteItems  = ref<string[]>(props.initialData?.type === 'priorite' ? parseOptions(props.initialData) : ['', '', ''])
+  const matriceCriteria = ref<string[]>(props.initialData?.type === 'matrice' ? parseOptions(props.initialData) : ['', ''])
+
+  const HUMEUR_EMOJIS = ['😊', '🙂', '😐', '😟', '🤯']
 
   const types: { value: RexType; label: string; icon: typeof MessageSquare }[] = [
-    { value: 'sondage_libre', label: 'Sondage libre', icon: MessageSquare },
-    { value: 'nuage',         label: 'Nuage de mots', icon: Cloud },
-    { value: 'echelle',       label: 'Echelle',       icon: Star },
+    { value: 'sondage_libre',    label: 'Sondage libre',    icon: MessageSquare },
+    { value: 'nuage',            label: 'Nuage de mots',    icon: Cloud },
+    { value: 'echelle',          label: 'Echelle',          icon: Star },
     { value: 'question_ouverte', label: 'Question ouverte', icon: FileText },
+    { value: 'sondage',          label: 'Sondage',          icon: BarChart },
+    { value: 'humeur',           label: 'Humeur',           icon: Smile },
+    { value: 'priorite',         label: 'Priorite',         icon: ArrowUpDown },
+    { value: 'matrice',          label: 'Matrice',          icon: Grid3X3 },
   ]
 
   const canSubmit = computed(() => selectedType.value && title.value.trim())
 
+  function addSondageOption() { if (sondageOptions.value.length < 8) sondageOptions.value = [...sondageOptions.value, ''] }
+  function removeSondageOption(i: number) { if (sondageOptions.value.length > 2) sondageOptions.value = sondageOptions.value.filter((_, idx) => idx !== i) }
+  function addPrioriteItem() { if (prioriteItems.value.length < 8) prioriteItems.value = [...prioriteItems.value, ''] }
+  function removePrioriteItem(i: number) { if (prioriteItems.value.length > 2) prioriteItems.value = prioriteItems.value.filter((_, idx) => idx !== i) }
+  function addMatriceCrit() { if (matriceCriteria.value.length < 8) matriceCriteria.value = [...matriceCriteria.value, ''] }
+  function removeMatriceCrit(i: number) { if (matriceCriteria.value.length > 2) matriceCriteria.value = matriceCriteria.value.filter((_, idx) => idx !== i) }
+
   function submit() {
     if (!canSubmit.value || !selectedType.value) return
-    const payload: { type: RexType; title: string; max_words?: number; max_rating?: number } = {
+    const payload: { type: RexType; title: string; max_words?: number; max_rating?: number; options?: string[] } = {
       type: selectedType.value,
       title: title.value.trim(),
     }
     if (selectedType.value === 'nuage') payload.max_words = maxWords.value
     if (selectedType.value === 'echelle') payload.max_rating = maxRating.value
+    if (selectedType.value === 'sondage') {
+      const filtered = sondageOptions.value.map(o => o.trim()).filter(Boolean)
+      if (filtered.length < 2) return
+      payload.options = filtered
+    }
+    if (selectedType.value === 'humeur') payload.options = HUMEUR_EMOJIS
+    if (selectedType.value === 'priorite') {
+      const filtered = prioriteItems.value.map(o => o.trim()).filter(Boolean)
+      if (filtered.length < 2) return
+      payload.options = filtered
+    }
+    if (selectedType.value === 'matrice') {
+      const filtered = matriceCriteria.value.map(o => o.trim()).filter(Boolean)
+      if (filtered.length < 2) return
+      payload.options = filtered
+      payload.max_rating = maxRating.value
+    }
     emit('add', payload)
     if (!isEditing) { title.value = ''; selectedType.value = null }
   }
@@ -72,12 +110,39 @@
       </div>
     </div>
 
-    <div v-if="selectedType === 'echelle'" class="rex-form-option">
+    <div v-if="selectedType === 'echelle' || selectedType === 'matrice'" class="rex-form-option">
       <span class="rex-form-option-label">Echelle :</span>
       <div class="rex-form-option-btns">
         <button :class="{ active: maxRating === 5 }" @click="maxRating = 5">5 etoiles</button>
         <button :class="{ active: maxRating === 10 }" @click="maxRating = 10">10 slider</button>
       </div>
+    </div>
+
+    <div v-if="selectedType === 'sondage'" class="rex-form-option rex-form-list">
+      <span class="rex-form-option-label">Options du sondage :</span>
+      <div v-for="(_, i) in sondageOptions" :key="i" class="rex-form-list-row">
+        <input v-model="sondageOptions[i]" class="rex-form-input" :placeholder="`Option ${i + 1}`" maxlength="100" />
+        <button v-if="sondageOptions.length > 2" class="rex-form-remove" @click="removeSondageOption(i)"><X :size="14" /></button>
+      </div>
+      <button v-if="sondageOptions.length < 8" class="rex-form-add" @click="addSondageOption"><Plus :size="14" /> Option</button>
+    </div>
+
+    <div v-if="selectedType === 'priorite'" class="rex-form-option rex-form-list">
+      <span class="rex-form-option-label">Items a classer :</span>
+      <div v-for="(_, i) in prioriteItems" :key="i" class="rex-form-list-row">
+        <input v-model="prioriteItems[i]" class="rex-form-input" :placeholder="`Item ${i + 1}`" maxlength="100" />
+        <button v-if="prioriteItems.length > 2" class="rex-form-remove" @click="removePrioriteItem(i)"><X :size="14" /></button>
+      </div>
+      <button v-if="prioriteItems.length < 8" class="rex-form-add" @click="addPrioriteItem"><Plus :size="14" /> Item</button>
+    </div>
+
+    <div v-if="selectedType === 'matrice'" class="rex-form-option rex-form-list">
+      <span class="rex-form-option-label">Criteres a evaluer :</span>
+      <div v-for="(_, i) in matriceCriteria" :key="i" class="rex-form-list-row">
+        <input v-model="matriceCriteria[i]" class="rex-form-input" :placeholder="`Critere ${i + 1}`" maxlength="100" />
+        <button v-if="matriceCriteria.length > 2" class="rex-form-remove" @click="removeMatriceCrit(i)"><X :size="14" /></button>
+      </div>
+      <button v-if="matriceCriteria.length < 8" class="rex-form-add" @click="addMatriceCrit"><Plus :size="14" /> Critere</button>
     </div>
 
     <div class="rex-form-footer">
@@ -209,4 +274,12 @@
   font-family: var(--font, inherit);
 }
 .rex-form-cancel:hover { background: var(--bg-hover); }
+/* Listes d'options (sondage, priorite, matrice) */
+.rex-form-list { display: flex; flex-direction: column; gap: 6px; }
+.rex-form-list-row { display: flex; gap: 6px; align-items: center; }
+.rex-form-list-row .rex-form-input { flex: 1; }
+.rex-form-remove { background: none; border: none; color: var(--text-secondary); cursor: pointer; padding: 4px; border-radius: 6px; }
+.rex-form-remove:hover { background: rgba(239, 68, 68, .15); color: #ef4444; }
+.rex-form-add { display: flex; align-items: center; gap: 4px; background: none; border: 1px dashed var(--border); border-radius: 8px; padding: 8px 12px; color: var(--text-secondary); font-size: 12px; cursor: pointer; }
+.rex-form-add:hover { border-color: var(--accent); color: var(--accent); }
 </style>

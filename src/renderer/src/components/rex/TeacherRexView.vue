@@ -3,7 +3,7 @@
   import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
   import {
     Plus, Play, Square, Trash2, Users,
-    MessageSquare, Cloud, Star, FileText, LogOut,
+    MessageSquare, Cloud, Star, FileText, LogOut, BarChart, Smile, ArrowUpDown, Grid3X3,
     ChevronDown, Download, Pencil, GripVertical, Copy, Clock,
     History, BarChart3, Presentation,
   } from 'lucide-vue-next'
@@ -97,12 +97,14 @@
   }
 
   async function onAddActivity(payload: {
-    type: 'sondage_libre' | 'nuage' | 'echelle' | 'question_ouverte'
-    title: string; max_words?: number; max_rating?: number
+    type: RexActivity['type']
+    title: string; max_words?: number; max_rating?: number; options?: string[]
   }) {
     if (!session.value) return
+    // Serialize options array to JSON string for DB storage
+    const dbPayload = { ...payload, options: payload.options ? JSON.stringify(payload.options) : undefined }
     if (editingActivity.value) {
-      await rex.updateActivity(editingActivity.value.id, payload)
+      await rex.updateActivity(editingActivity.value.id, dbPayload)
       editingActivity.value = null
     } else {
       await rex.pushActivity(session.value.id, payload)
@@ -179,6 +181,10 @@
     if (type === 'sondage_libre') return MessageSquare
     if (type === 'nuage') return Cloud
     if (type === 'echelle') return Star
+    if (type === 'sondage') return BarChart
+    if (type === 'humeur') return Smile
+    if (type === 'priorite') return ArrowUpDown
+    if (type === 'matrice') return Grid3X3
     return FileText
   }
 
@@ -186,6 +192,10 @@
     if (type === 'sondage_libre') return 'Sondage libre'
     if (type === 'nuage') return 'Nuage de mots'
     if (type === 'echelle') return 'Echelle'
+    if (type === 'sondage') return 'Sondage'
+    if (type === 'humeur') return 'Humeur'
+    if (type === 'priorite') return 'Priorite'
+    if (type === 'matrice') return 'Matrice'
     return 'Question ouverte'
   }
 </script>
@@ -368,6 +378,32 @@
             :is-teacher="true"
             @toggle-pin="onTogglePin"
           />
+          <RexSondageResults
+            v-else-if="results.type === 'sondage' && results.counts"
+            :results="results.counts"
+            :total="results.total"
+          />
+          <div v-else-if="results.type === 'humeur' && results.emojis" class="rex-humeur-results">
+            <div v-for="e in results.emojis" :key="e.emoji" class="rex-humeur-result">
+              <span style="font-size:24px">{{ e.emoji }}</span>
+              <div class="rex-humeur-bar" :style="{ width: (results.total ? e.count / results.total * 100 : 0) + '%' }" />
+              <span>{{ e.count }}</span>
+            </div>
+          </div>
+          <div v-else-if="results.type === 'priorite' && results.rankings" class="rex-priorite-results">
+            <div v-for="(r, i) in results.rankings" :key="r.item" class="rex-priorite-result">
+              <strong>{{ i + 1 }}.</strong> {{ r.item }} <span style="margin-left:auto;opacity:.6">moy. {{ r.avgRank + 1 }}</span>
+            </div>
+          </div>
+          <div v-else-if="results.type === 'matrice' && results.criteria" class="rex-matrice-results">
+            <div v-for="c in results.criteria" :key="c.name" class="rex-matrice-result">
+              <span>{{ c.name }}</span>
+              <div style="flex:1;height:14px;background:var(--bg-elevated);border-radius:6px;overflow:hidden">
+                <div :style="{ width: (activity.max_rating ? c.average / activity.max_rating * 100 : 0) + '%', height: '100%', background: 'linear-gradient(90deg, #0d9488, #14b8a6)', borderRadius: '6px' }" />
+              </div>
+              <strong style="color:#0d9488">{{ c.average }}</strong>
+            </div>
+          </div>
           <p v-else class="rex-no-results">En attente de reponses...</p>
         </div>
 
@@ -801,4 +837,8 @@
   background: rgba(13, 148, 136, 0.08);
   border-color: #0d9488;
 }
+/* Resultats nouveaux types */
+.rex-humeur-results, .rex-priorite-results, .rex-matrice-results { display: flex; flex-direction: column; gap: 8px; }
+.rex-humeur-result, .rex-priorite-result, .rex-matrice-result { display: flex; align-items: center; gap: 10px; padding: 6px 0; }
+.rex-humeur-bar { height: 18px; background: linear-gradient(90deg, #0d9488, #14b8a6); border-radius: 6px; min-width: 4px; transition: width .3s; }
 </style>

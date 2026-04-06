@@ -20,6 +20,12 @@
   const textInput   = ref('')
   const wordInputs  = ref<string[]>([])
   const ratingInput = ref(0)
+  const sondageSelected = ref<number | null>(null)
+  const humeurSelected  = ref<string | null>(null)
+  const prioriteOrder   = ref<number[]>([])
+  const matriceRatings  = ref<Record<string, number>>({})
+
+  const HUMEUR_EMOJIS = ['😊', '🙂', '😐', '😟', '🤯']
 
   // Async mode: track responded activity IDs + expanded activity
   const respondedIds       = ref<Set<number>>(new Set())
@@ -27,6 +33,10 @@
   const asyncTextInputs    = ref<Record<number, string>>({})
   const asyncWordInputs    = ref<Record<number, string[]>>({})
   const asyncRatingInputs  = ref<Record<number, number>>({})
+  const asyncSondageInputs = ref<Record<number, number | null>>({})
+  const asyncHumeurInputs  = ref<Record<number, string | null>>({})
+  const asyncPrioriteInputs = ref<Record<number, number[]>>({})
+  const asyncMatriceInputs  = ref<Record<number, Record<string, number>>>({})
 
   const promoId  = computed(() => appStore.currentUser?.promo_id ?? 0)
   const session  = computed(() => rex.currentSession)
@@ -42,8 +52,12 @@
     if (act?.type === 'nuage') {
       wordInputs.value = Array.from({ length: act.max_words || 2 }, () => '')
     }
+    if (act?.type === 'priorite') initPriorite(act)
+    if (act?.type === 'matrice') initMatrice(act)
     textInput.value = ''
     ratingInput.value = 0
+    sondageSelected.value = null
+    humeurSelected.value = null
     rex.hasResponded = false
   })
 
@@ -82,11 +96,56 @@
     await rex.submitResponse(activity.value.id, { rating: ratingInput.value })
   }
 
+  async function submitSondage() {
+    if (!activity.value || sondageSelected.value === null) return
+    await rex.submitResponse(activity.value.id, { answer: String(sondageSelected.value) })
+  }
+
+  async function submitHumeur() {
+    if (!activity.value || !humeurSelected.value) return
+    await rex.submitResponse(activity.value.id, { answer: humeurSelected.value })
+  }
+
+  async function submitPriorite() {
+    if (!activity.value || prioriteOrder.value.length === 0) return
+    await rex.submitResponse(activity.value.id, { answer: prioriteOrder.value.join(',') })
+  }
+
+  async function submitMatrice() {
+    if (!activity.value) return
+    await rex.submitResponse(activity.value.id, { answer: JSON.stringify(matriceRatings.value) })
+  }
+
+  function initPriorite(act: { options?: string | null }) {
+    try {
+      const items = JSON.parse(act.options as string || '[]')
+      prioriteOrder.value = Array.from({ length: items.length }, (_, i) => i)
+    } catch { prioriteOrder.value = [] }
+  }
+
+  function initMatrice(act: { options?: string | null; max_rating?: number }) {
+    try {
+      const criteria = JSON.parse(act.options as string || '[]')
+      const ratings: Record<string, number> = {}
+      for (const c of criteria) ratings[c] = 0
+      matriceRatings.value = ratings
+    } catch { matriceRatings.value = {} }
+  }
+
+  function movePriorite(from: number, to: number) {
+    const arr = [...prioriteOrder.value]
+    const [item] = arr.splice(from, 1)
+    arr.splice(to, 0, item)
+    prioriteOrder.value = arr
+  }
+
   // ── Async submit helpers ────────────────────────────────────────────────
   function initAsyncInputs(act: RexActivity) {
     if (!(act.id in asyncTextInputs.value))   asyncTextInputs.value[act.id] = ''
     if (!(act.id in asyncRatingInputs.value)) asyncRatingInputs.value[act.id] = 0
     if (!(act.id in asyncWordInputs.value))   asyncWordInputs.value[act.id] = Array.from({ length: act.max_words || 2 }, () => '')
+    if (!(act.id in asyncSondageInputs.value)) asyncSondageInputs.value[act.id] = null
+    if (!(act.id in asyncHumeurInputs.value)) asyncHumeurInputs.value[act.id] = null
   }
 
   function expandAsyncActivity(act: RexActivity) {
@@ -123,6 +182,10 @@
     if (type === 'sondage_libre') return 'Sondage libre'
     if (type === 'nuage') return 'Nuage de mots'
     if (type === 'echelle') return 'Echelle'
+    if (type === 'sondage') return 'Sondage'
+    if (type === 'humeur') return 'Humeur'
+    if (type === 'priorite') return 'Priorite'
+    if (type === 'matrice') return 'Matrice'
     return 'Question ouverte'
   }
 
@@ -336,6 +399,76 @@
             <Send :size="14" /> Envoyer
           </button>
         </div>
+
+        <!-- Sondage (options) -->
+        <div v-else-if="activity.type === 'sondage' && activity.options" class="rex-respond-body">
+          <div class="rex-sondage-opts">
+            <button
+              v-for="(opt, i) in JSON.parse(activity.options as unknown as string)"
+              :key="i"
+              class="rex-sondage-opt"
+              :class="{ selected: sondageSelected === i }"
+              @click="sondageSelected = i"
+            >{{ opt }}</button>
+          </div>
+          <button class="rex-btn-primary" :disabled="sondageSelected === null" @click="submitSondage">
+            <Send :size="14" /> Envoyer
+          </button>
+        </div>
+
+        <!-- Humeur (emojis) -->
+        <div v-else-if="activity.type === 'humeur'" class="rex-respond-body">
+          <div class="rex-humeur-grid">
+            <button
+              v-for="emoji in HUMEUR_EMOJIS"
+              :key="emoji"
+              class="rex-humeur-btn"
+              :class="{ selected: humeurSelected === emoji }"
+              @click="humeurSelected = emoji"
+            >{{ emoji }}</button>
+          </div>
+          <button class="rex-btn-primary" :disabled="!humeurSelected" @click="submitHumeur">
+            <Send :size="14" /> Envoyer
+          </button>
+        </div>
+
+        <!-- Priorite (classement) -->
+        <div v-else-if="activity.type === 'priorite' && activity.options" class="rex-respond-body">
+          <div class="rex-priorite-list">
+            <div v-for="(idx, rank) in prioriteOrder" :key="idx" class="rex-priorite-item">
+              <span class="rex-priorite-rank">{{ rank + 1 }}</span>
+              <span class="rex-priorite-label">{{ JSON.parse(activity.options as unknown as string)[idx] }}</span>
+              <div class="rex-priorite-btns">
+                <button v-if="rank > 0" class="rex-priorite-move" @click="movePriorite(rank, rank - 1)">&uarr;</button>
+                <button v-if="rank < prioriteOrder.length - 1" class="rex-priorite-move" @click="movePriorite(rank, rank + 1)">&darr;</button>
+              </div>
+            </div>
+          </div>
+          <button class="rex-btn-primary" @click="submitPriorite">
+            <Send :size="14" /> Envoyer
+          </button>
+        </div>
+
+        <!-- Matrice (multi-criteres) -->
+        <div v-else-if="activity.type === 'matrice' && activity.options" class="rex-respond-body">
+          <div class="rex-matrice-grid">
+            <div v-for="crit in Object.keys(matriceRatings)" :key="crit" class="rex-matrice-row">
+              <span class="rex-matrice-label">{{ crit }}</span>
+              <div class="rex-matrice-stars">
+                <button
+                  v-for="n in (activity.max_rating || 5)"
+                  :key="n"
+                  class="rex-matrice-star"
+                  :class="{ active: (matriceRatings[crit] || 0) >= n }"
+                  @click="matriceRatings[crit] = n"
+                >&#9733;</button>
+              </div>
+            </div>
+          </div>
+          <button class="rex-btn-primary" :disabled="Object.values(matriceRatings).some(v => v === 0)" @click="submitMatrice">
+            <Send :size="14" /> Envoyer
+          </button>
+        </div>
       </div>
 
       <!-- After responding -->
@@ -368,6 +501,34 @@
           :answers="results.answers"
           :is-teacher="false"
         />
+        <RexSondageResults
+          v-else-if="results.type === 'sondage' && results.counts"
+          :results="results.counts"
+          :total="results.total"
+        />
+        <div v-else-if="results.type === 'humeur' && results.emojis" class="rex-humeur-results">
+          <div v-for="e in results.emojis" :key="e.emoji" class="rex-humeur-result">
+            <span class="rex-humeur-emoji">{{ e.emoji }}</span>
+            <div class="rex-humeur-bar" :style="{ width: (results.total ? e.count / results.total * 100 : 0) + '%' }" />
+            <span class="rex-humeur-count">{{ e.count }}</span>
+          </div>
+        </div>
+        <div v-else-if="results.type === 'priorite' && results.rankings" class="rex-priorite-results">
+          <div v-for="(r, i) in results.rankings" :key="r.item" class="rex-priorite-result">
+            <span class="rex-priorite-rank">{{ i + 1 }}</span>
+            <span class="rex-priorite-label">{{ r.item }}</span>
+            <span class="rex-priorite-avg">moy. {{ r.avgRank + 1 }}</span>
+          </div>
+        </div>
+        <div v-else-if="results.type === 'matrice' && results.criteria" class="rex-matrice-results">
+          <div v-for="c in results.criteria" :key="c.name" class="rex-matrice-result">
+            <span class="rex-matrice-label">{{ c.name }}</span>
+            <div class="rex-matrice-bar-wrap">
+              <div class="rex-matrice-bar" :style="{ width: (activity.max_rating ? c.average / activity.max_rating * 100 : 0) + '%' }" />
+            </div>
+            <span class="rex-matrice-avg">{{ c.average }}</span>
+          </div>
+        </div>
       </div>
 
       <!-- Session ended -->
@@ -685,4 +846,43 @@
 .rex-async-form {
   padding: 0 16px 16px;
 }
+/* Sondage options */
+.rex-sondage-opts { display: flex; flex-direction: column; gap: 8px; }
+.rex-sondage-opt { padding: 12px 16px; border-radius: 10px; border: 2px solid var(--border); background: var(--bg-elevated); color: var(--text-primary); font-size: 14px; text-align: left; cursor: pointer; transition: all .15s; }
+.rex-sondage-opt.selected { border-color: #0d9488; background: rgba(13, 148, 136, .1); color: #0d9488; font-weight: 600; }
+/* Humeur emojis */
+.rex-humeur-grid { display: flex; justify-content: center; gap: 12px; }
+.rex-humeur-btn { font-size: 36px; padding: 12px; border-radius: 14px; border: 2px solid transparent; background: var(--bg-elevated); cursor: pointer; transition: all .15s; }
+.rex-humeur-btn.selected { border-color: #0d9488; background: rgba(13, 148, 136, .1); transform: scale(1.15); }
+/* Priorite classement */
+.rex-priorite-list { display: flex; flex-direction: column; gap: 6px; }
+.rex-priorite-item { display: flex; align-items: center; gap: 8px; padding: 10px 14px; border-radius: 10px; background: var(--bg-elevated); border: 1px solid var(--border); }
+.rex-priorite-rank { font-weight: 700; color: #0d9488; min-width: 20px; }
+.rex-priorite-label { flex: 1; font-size: 14px; color: var(--text-primary); }
+.rex-priorite-btns { display: flex; flex-direction: column; gap: 2px; }
+.rex-priorite-move { background: none; border: 1px solid var(--border); border-radius: 4px; padding: 2px 6px; font-size: 12px; cursor: pointer; color: var(--text-secondary); }
+.rex-priorite-move:hover { border-color: #0d9488; color: #0d9488; }
+/* Matrice multi-criteres */
+.rex-matrice-grid { display: flex; flex-direction: column; gap: 12px; }
+.rex-matrice-row { display: flex; align-items: center; gap: 10px; }
+.rex-matrice-label { flex: 1; font-size: 14px; color: var(--text-primary); }
+.rex-matrice-stars { display: flex; gap: 4px; }
+.rex-matrice-star { font-size: 20px; color: var(--border); background: none; border: none; cursor: pointer; transition: color .1s; }
+.rex-matrice-star.active { color: #f59e0b; }
+/* Resultats humeur */
+.rex-humeur-results { display: flex; flex-direction: column; gap: 8px; }
+.rex-humeur-result { display: flex; align-items: center; gap: 10px; }
+.rex-humeur-emoji { font-size: 24px; }
+.rex-humeur-bar { height: 20px; background: linear-gradient(90deg, #0d9488, #14b8a6); border-radius: 6px; min-width: 4px; transition: width .3s; }
+.rex-humeur-count { font-size: 13px; font-weight: 600; color: var(--text-secondary); min-width: 24px; }
+/* Resultats priorite */
+.rex-priorite-results { display: flex; flex-direction: column; gap: 6px; }
+.rex-priorite-result { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 8px; background: var(--bg-elevated); }
+.rex-priorite-avg { font-size: 12px; color: var(--text-secondary); margin-left: auto; }
+/* Resultats matrice */
+.rex-matrice-results { display: flex; flex-direction: column; gap: 8px; }
+.rex-matrice-result { display: flex; align-items: center; gap: 10px; }
+.rex-matrice-bar-wrap { flex: 1; height: 16px; background: var(--bg-elevated); border-radius: 6px; overflow: hidden; }
+.rex-matrice-bar { height: 100%; background: linear-gradient(90deg, #0d9488, #14b8a6); border-radius: 6px; transition: width .3s; }
+.rex-matrice-avg { font-size: 13px; font-weight: 600; color: #0d9488; min-width: 30px; text-align: right; }
 </style>

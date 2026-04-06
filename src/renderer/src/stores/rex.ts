@@ -115,8 +115,8 @@ export const useRexStore = defineStore('rex', () => {
   }
 
   async function pushActivity(sessionId: number, payload: {
-    type: 'sondage_libre' | 'nuage' | 'echelle' | 'question_ouverte'; title: string
-    max_words?: number; max_rating?: number
+    type: RexActivity['type']; title: string
+    max_words?: number; max_rating?: number; options?: string[]
   }): Promise<boolean> {
     const data = await api<RexActivity>(
       () => window.api.addRexActivity(sessionId, payload),
@@ -182,7 +182,7 @@ export const useRexStore = defineStore('rex', () => {
     return false
   }
 
-  async function submitResponse(activityId: number, payload: { text?: string; words?: string[]; rating?: number }): Promise<boolean> {
+  async function submitResponse(activityId: number, payload: { text?: string; words?: string[]; rating?: number; answer?: string }): Promise<boolean> {
     const data = await api(
       () => window.api.submitRexResponse(activityId, payload),
     )

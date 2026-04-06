@@ -264,8 +264,8 @@ export interface RexSession {
 
 export interface RexActivity {
   id: number; session_id: number
-  type: 'sondage_libre' | 'nuage' | 'echelle' | 'question_ouverte'
-  title: string; max_words: number; max_rating: number
+  type: 'sondage_libre' | 'nuage' | 'echelle' | 'question_ouverte' | 'sondage' | 'humeur' | 'priorite' | 'matrice'
+  title: string; max_words: number; max_rating: number; options?: string | null
   position: number; status: 'pending' | 'live' | 'closed'
   started_at: string | null; closed_at: string | null
 }
@@ -276,6 +276,12 @@ export interface RexResults {
   freq?: { word: string; count: number }[]
   average?: number; distribution?: { rating: number; count: number }[]
   answers?: { id: number; answer: string; pinned: boolean; created_at: string }[]
+  // Humeur
+  emojis?: { emoji: string; count: number }[]
+  // Priorite
+  rankings?: { item: string; avgRank: number }[]
+  // Matrice
+  criteria?: { name: string; average: number }[]
 }
 
 export interface RexSessionWithStats extends RexSession {
