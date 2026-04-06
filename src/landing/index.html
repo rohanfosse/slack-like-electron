@@ -3,13 +3,13 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="Cursus, l'alternative gratuite à Discord et Moodle pour les écoles d'ingénieurs. Chat en temps réel, gestion de devoirs, documents partagés. Open source, sans installation." />
+  <meta name="description" content="Messagerie en temps reel, gestion de devoirs, documents partages, quiz interactifs et feedback anonyme. Open source et gratuit." />
   <meta name="theme-color" content="#f9fafb" />
-  <title>Cursus - Alternative gratuite à Discord et Moodle pour étudiants</title>
+  <title>Cursus - Messagerie, devoirs et quiz pour promotions post-bac</title>
 
   <!-- SEO : Open Graph -->
-  <meta property="og:title" content="Cursus - Alternative gratuite à Discord et Moodle pour étudiants" />
-  <meta property="og:description" content="Chat en temps réel, gestion de devoirs, documents partagés. L'app tout-en-un pour les promos d'écoles d'ingénieurs. Open source et gratuit." />
+  <meta property="og:title" content="Cursus - Messagerie, devoirs et quiz pour promotions post-bac" />
+  <meta property="og:description" content="Messagerie en temps reel, gestion de devoirs, documents partages, quiz interactifs et feedback anonyme. Open source et gratuit." />
   <meta property="og:image" content="https://cursus.school/assets/icon-512.png" />
   <meta property="og:url" content="https://cursus.school/" />
   <meta property="og:type" content="website" />
@@ -18,8 +18,8 @@
 
   <!-- SEO : Twitter Card -->
   <meta name="twitter:card" content="summary" />
-  <meta name="twitter:title" content="Cursus - Alternative gratuite à Discord et Moodle pour étudiants" />
-  <meta name="twitter:description" content="Chat en temps réel, gestion de devoirs, documents partagés. Open source et gratuit, sans installation." />
+  <meta name="twitter:title" content="Cursus - Messagerie, devoirs et quiz pour promotions post-bac" />
+  <meta name="twitter:description" content="Messagerie en temps reel, gestion de devoirs, documents partages, quiz interactifs et feedback anonyme. Open source et gratuit." />
   <meta name="twitter:image" content="https://cursus.school/assets/icon-512.png" />
   <meta name="author" content="Rohan Fosse">
 
@@ -33,7 +33,7 @@
     "@type": "WebApplication",
     "name": "Cursus",
     "url": "https://cursus.school",
-    "description": "L'app tout-en-un pour ta promo. Chat, devoirs et documents en un seul endroit.",
+    "description": "Plateforme pedagogique tout-en-un pour les promotions post-bac. Chat, devoirs, documents, quiz et feedback.",
     "applicationCategory": "EducationalApplication",
     "operatingSystem": "Windows, macOS, Web",
     "inLanguage": "fr",
@@ -71,8 +71,9 @@
     .nav .container { display: flex; align-items: center; max-width: 1080px; margin: 0 auto; padding: 0 28px; }
     .nav-logo { display: flex; align-items: center; gap: 9px; font-size: 16px; font-weight: 800; letter-spacing: -.4px; color: #111827; text-decoration: none; }
     .nav-logo img { width: 28px; height: 28px; border-radius: 7px; }
-    .hero { min-height: 100vh; display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; background: radial-gradient(ellipse at 50% 40%, rgba(99,102,241,.08) 0%, transparent 70%); }
+    .hero { min-height: 100vh; display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; }
     .container { max-width: 1080px; margin: 0 auto; padding: 0 28px; position: relative; z-index: 1; }
+
     .fade-up { opacity: 0; transform: translateY(24px) scale(0.98); transition: opacity .65s cubic-bezier(.22,1,.36,1), transform .65s cubic-bezier(.22,1,.36,1); }
     .fade-up.visible { opacity: 1; transform: translateY(0) scale(1); }
   </style>
@@ -121,22 +122,13 @@
   <main>
   <section class="hero">
     <div class="container">
-      <!-- Top bar: badge + title + sub + CTAs -->
-      <div class="hero-top fade-up">
-        <span class="hero-badge"><span class="hero-badge-mono" id="pill-version">v2.5</span> <span class="sep">&middot;</span> Open source</span>
-        <h1 class="hero-title">L'app tout-en-un<br>pour ta promo</h1>
-        <p class="hero-sub">Chat, devoirs et documents. Un seul endroit.</p>
-        <div class="hero-actions">
-          <a href="https://app.cursus.school" class="btn-primary">
-            Ouvrir l'app
-            <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
-          </a>
-          <a href="#download" class="btn-secondary">Télécharger</a>
-        </div>
-      </div>
+      <!-- h1 accessible (visuellement cache) -->
+      <h1 class="sr-only">Cursus - Plateforme pedagogique</h1>
 
-      <!-- Bento intro -->
-      <p class="bento-intro fade-up">Tout ce dont ta promo a besoin, dans une seule app.</p>
+      <!-- Badge version -->
+      <div class="hero-badge-row fade-up">
+        <span class="hero-badge"><span class="hero-badge-mono" id="pill-version">v2.14</span> <span class="sep">&middot;</span> Open source</span>
+      </div>
 
       <!-- Bento Grid: 6 cartes interactives -->
       <div class="bento fade-up">
@@ -156,7 +148,7 @@
         <a href="#feat-devoirs" class="bento-card" data-color="devoirs" aria-label="Découvrir les devoirs">
           <div class="bento-header">
             <div class="bento-icon-circle" style="--ic: var(--color-devoirs)"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="m9 14 2 2 4-4"/></svg></div>
-            <div class="bento-titles"><span class="bento-title">Devoirs</span><span class="bento-subtitle">Notes A-D</span></div>
+            <div class="bento-titles"><span class="bento-title">Devoirs</span><span class="bento-subtitle">Notation A-D</span></div>
           </div>
           <div class="bento-demo">
             <div class="bento-devoir"><span class="bento-devoir-name">Projet Web</span><span class="bento-badge-done">A</span></div>
@@ -169,7 +161,7 @@
         <a href="#feat-docs" class="bento-card" data-color="docs" aria-label="Découvrir les documents">
           <div class="bento-header">
             <div class="bento-icon-circle" style="--ic: var(--color-docs)"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 14 1.5-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.54 6a2 2 0 0 1-1.95 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H18a2 2 0 0 1 2 2v2"/></svg></div>
-            <div class="bento-titles"><span class="bento-title">Documents</span><span class="bento-subtitle">PDF, Word, Excel</span></div>
+            <div class="bento-titles"><span class="bento-title">Documents</span><span class="bento-subtitle">Tous formats</span></div>
           </div>
           <div class="bento-demo bento-docs-grid">
             <span class="bento-doc" style="--dc:#dc2626">PDF</span>
@@ -183,10 +175,10 @@
         <a href="#feat-spark" class="bento-card" data-color="live" aria-label="Découvrir Spark">
           <div class="bento-header">
             <div class="bento-icon-circle" style="--ic: var(--color-live)"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 64 64" fill="none"><defs><linearGradient id="bs-g" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#F59E0B"/><stop offset="50%" stop-color="#F97316"/><stop offset="100%" stop-color="#EF4444"/></linearGradient></defs><circle cx="32" cy="32" r="28" fill="url(#bs-g)" opacity=".08"/><path d="M36 4L14 34 28 34 24 60 50 26 34 26Z" fill="url(#bs-g)" opacity=".15" stroke="url(#bs-g)" stroke-width="2.5" stroke-linejoin="round"/><path d="M34.5 10L18 34 29 34 26 54 46 28 34 28Z" fill="none" stroke="url(#bs-g)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/><circle cx="12" cy="18" r="1.8" fill="#FCD34D" opacity=".7"/><circle cx="52" cy="14" r="1.4" fill="#F97316" opacity=".6"/></svg></div>
-            <div class="bento-titles"><span class="bento-title">Spark</span><span class="bento-subtitle">Interactif</span></div>
+            <div class="bento-titles"><span class="bento-title">Spark</span><span class="bento-subtitle">Quiz interactif</span></div>
           </div>
           <div class="bento-demo bento-live-demo">
-            <div class="bento-live-q">L'étincelle a-t-elle pris ?</div>
+            <div class="bento-live-q">Quelle complexite ?</div>
             <div class="bento-live-opts">
               <span class="bento-live-opt">O(n)</span>
               <span class="bento-live-opt bento-live-opt--correct">O(n log n)</span>
@@ -199,10 +191,10 @@
         <a href="#feat-pulse" class="bento-card" data-color="rex" aria-label="Découvrir Pulse">
           <div class="bento-header">
             <div class="bento-icon-circle" style="--ic: var(--color-rex)"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 64 64" fill="none"><defs><linearGradient id="bp-g" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#0EA5E9"/><stop offset="50%" stop-color="#06B6D4"/><stop offset="100%" stop-color="#34D399"/></linearGradient></defs><path d="M32 56C32 56 6 40 6 22 6 13.2 13.2 6 22 6 26.8 6 30.8 8.4 32 12 33.2 8.4 37.2 6 42 6 50.8 6 58 13.2 58 22 58 40 32 56 32 56Z" fill="url(#bp-g)" opacity=".15" stroke="url(#bp-g)" stroke-width="2.5" stroke-linejoin="round"/><polyline points="4,34 16,34 20,34 24,26 28,42 32,18 36,38 40,28 44,34 48,34 60,34" fill="none" stroke="url(#bp-g)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
-            <div class="bento-titles"><span class="bento-title">Pulse</span><span class="bento-subtitle">Anonyme</span></div>
+            <div class="bento-titles"><span class="bento-title">Pulse</span><span class="bento-subtitle">Feedback anonyme</span></div>
           </div>
           <div class="bento-demo bento-rex-demo">
-            <div class="bento-rex-q">Chaque voix compte</div>
+            <div class="bento-rex-q">Comment s'est passe le cours ?</div>
             <div class="bento-rex-cloud">
               <span style="font-size:15px;opacity:.9">travail d'équipe</span>
               <span style="font-size:11px;opacity:.6">autonomie</span>
@@ -215,7 +207,7 @@
         <div class="bento-card bento-compare">
           <div class="bento-header">
             <div class="bento-icon-circle" style="--ic: var(--primary)"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
-            <div class="bento-titles"><span class="bento-title">Pourquoi Cursus ?</span></div>
+            <div class="bento-titles"><span class="bento-title">Un seul endroit</span></div>
           </div>
           <div class="bento-demo">
             <div class="bento-vs-row"><span class="bento-vs-icon bento-vs-icon--discord">D</span><span class="bento-vs-con">Pas de devoirs</span></div>
@@ -223,6 +215,15 @@
             <div class="bento-vs-row"><img src="/assets/icon-192.png" alt="" width="18" height="18" class="bento-vs-icon" style="border-radius:4px"><span class="bento-vs-pro">Tout en un</span></div>
           </div>
         </div>
+      </div>
+
+      <!-- CTAs sous le bento -->
+      <div class="hero-actions fade-up">
+        <a href="https://app.cursus.school" class="btn-primary">
+          Ouvrir l'app
+          <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+        </a>
+        <a href="#download" class="btn-secondary">Télécharger</a>
       </div>
 
       <!-- Proof bar (below bento) -->
@@ -247,12 +248,12 @@
       <div class="container feature-row">
         <div class="feature-text">
           <div class="feature-icon" style="--fc: var(--color-chat)"><svg aria-hidden="true" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/></svg></div>
-          <h2>Discute avec ta promo</h2>
-          <p class="feature-desc">Canaux par promotion, messages directs, mentions, réactions. Tout en temps réel.</p>
+          <h2>Messagerie instantanee par promotion</h2>
+          <p class="feature-desc">Canaux par promotion, messages directs, mentions et reactions. Communication structuree en temps reel.</p>
           <ul class="feature-list">
-            <li>Canaux organisés par cours</li>
+            <li>Canaux organises par cours et par groupe</li>
             <li>Mentions @nom et @tous</li>
-            <li>Slash commands /devoir /doc</li>
+            <li>Commandes integrees /devoir /doc</li>
           </ul>
         </div>
         <div class="mini-demo mini-demo-right" id="demo-chat">
@@ -298,8 +299,8 @@
       <div class="container feature-row reverse">
         <div class="feature-text">
           <div class="feature-icon" style="--fc: var(--color-devoirs)"><svg aria-hidden="true" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="m9 14 2 2 4-4"/></svg></div>
-          <h2>Sais toujours quoi rendre</h2>
-          <p class="feature-desc">Crée des devoirs, suis les dépôts, note par rubriques. Les étudiants savent où en sont.</p>
+          <h2>Suivi des devoirs et notation</h2>
+          <p class="feature-desc">Creation de devoirs, suivi des depots, notation par rubriques. Etudiants et enseignants voient la progression en un coup d'oeil.</p>
           <ul class="feature-list">
             <li>5 types : livrable, soutenance, CCTL...</li>
             <li>Notation A-D avec grilles critériées</li>
@@ -346,12 +347,12 @@
       <div class="container feature-row">
         <div class="feature-text">
           <div class="feature-icon" style="--fc: var(--color-docs)"><svg aria-hidden="true" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 14 1.5-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.54 6a2 2 0 0 1-1.95 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H18a2 2 0 0 1 2 2v2"/></svg></div>
-          <h2>Toutes tes ressources, un seul endroit</h2>
-          <p class="feature-desc">PDF, Word, Excel, liens. Tout est classé, cherchable, et lié aux devoirs.</p>
+          <h2>Documents centralises et cherchables</h2>
+          <p class="feature-desc">PDF, Word, Excel, liens externes. Tout est classe par categorie, cherchable et lie aux devoirs.</p>
           <ul class="feature-list">
-            <li>Viewers intégrés (PDF, Word, Excel)</li>
-            <li>Organisation par catégorie</li>
-            <li>Recherche instantanée</li>
+            <li>Viewers integres (PDF, Word, Excel)</li>
+            <li>Organisation par categorie</li>
+            <li>Recherche instantanee</li>
           </ul>
         </div>
         <div class="mini-demo mini-demo-right" id="demo-docs">
@@ -376,12 +377,12 @@
       <div class="container feature-row reverse">
         <div class="feature-text">
           <div class="feature-icon" style="--fc: var(--color-dashboard)"><svg aria-hidden="true" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/></svg></div>
-          <h2>Tout ton semestre en un coup d'oeil</h2>
-          <p class="feature-desc">Widgets personnalisables. Deadlines, notes, progression, tout ce qui compte pour toi.</p>
+          <h2>Tableau de bord personnalisable</h2>
+          <p class="feature-desc">Vue d'ensemble du semestre avec widgets personnalisables. Deadlines, notes, progression par matiere.</p>
           <ul class="feature-list">
-            <li>Dashboard personnalisable</li>
-            <li>Notifications en temps réel</li>
-            <li>Progression par matière</li>
+            <li>Widgets configurables par role</li>
+            <li>Notifications en temps reel</li>
+            <li>Progression par matiere</li>
           </ul>
         </div>
         <div class="mini-demo mini-demo-left" id="demo-dashboard">
@@ -421,12 +422,12 @@
       <div class="container feature-row">
         <div class="feature-text">
           <div class="feature-icon" style="--fc: var(--color-live)"><svg aria-hidden="true" width="32" height="32" viewBox="0 0 64 64" fill="none"><defs><linearGradient id="fs-g" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#F59E0B"/><stop offset="50%" stop-color="#F97316"/><stop offset="100%" stop-color="#EF4444"/></linearGradient></defs><circle cx="32" cy="32" r="28" fill="url(#fs-g)" opacity=".08"/><path d="M36 4L14 34 28 34 24 60 50 26 34 26Z" fill="url(#fs-g)" opacity=".15" stroke="url(#fs-g)" stroke-width="2.5" stroke-linejoin="round"/><path d="M34.5 10L18 34 29 34 26 54 46 28 34 28Z" fill="none" stroke="url(#fs-g)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/><circle cx="12" cy="18" r="1.8" fill="#FCD34D" opacity=".7"/><circle cx="52" cy="14" r="1.4" fill="#F97316" opacity=".6"/><circle cx="54" cy="44" r="1.8" fill="#FCD34D" opacity=".5"/></svg></div>
-          <h2>Spark : l'étincelle a-t-elle pris ?</h2>
-          <p class="feature-desc">Vérifie la compréhension en s'amusant, sans stress. 5 formats : QCM, vrai/faux, réponse courte, association et estimation.</p>
+          <h2>Spark : quiz interactifs en temps reel</h2>
+          <p class="feature-desc">L'enseignant lance une question, la classe repond en direct. 5 formats pour evaluer la comprehension sans pression.</p>
           <ul class="feature-list">
-            <li>5 types de questions avec scores en direct</li>
-            <li>Association de paires et estimation numérique</li>
-            <li>Correction intelligente et podium final</li>
+            <li>5 formats : QCM, vrai/faux, reponse courte, association, estimation</li>
+            <li>Scores en direct et podium de fin de session</li>
+            <li>Correction automatique et export des resultats</li>
           </ul>
         </div>
         <div class="mini-demo mini-demo-right" id="demo-live">
@@ -454,12 +455,12 @@
       <div class="container feature-row reverse">
         <div class="feature-text">
           <div class="feature-icon" style="--fc: var(--color-rex)"><svg aria-hidden="true" width="32" height="32" viewBox="0 0 64 64" fill="none"><defs><linearGradient id="fp-g" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#0EA5E9"/><stop offset="50%" stop-color="#06B6D4"/><stop offset="100%" stop-color="#34D399"/></linearGradient></defs><path d="M32 56C32 56 6 40 6 22 6 13.2 13.2 6 22 6 26.8 6 30.8 8.4 32 12 33.2 8.4 37.2 6 42 6 50.8 6 58 13.2 58 22 58 40 32 56 32 56Z" fill="url(#fp-g)" opacity=".15" stroke="url(#fp-g)" stroke-width="2.5" stroke-linejoin="round"/><polyline points="4,34 16,34 20,34 24,26 28,42 32,18 36,38 40,28 44,34 48,34 60,34" fill="none" stroke="url(#fp-g)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
-          <h2>Pulse : chaque voix compte</h2>
-          <p class="feature-desc">Prends le pouls de ta promo en temps réel. Nuages de mots, échelles, questions ouvertes : les ressentis de chacun, en toute confiance.</p>
+          <h2>Pulse : feedback anonyme et pulse de promo</h2>
+          <p class="feature-desc">Sondages anonymes en temps reel. L'enseignant capte le ressenti de sa promotion sans qu'aucun etudiant ne soit expose.</p>
           <ul class="feature-list">
-            <li>100% anonyme, les étudiants s'expriment librement</li>
-            <li>Nuage de mots, échelles et questions ouvertes</li>
-            <li>Résultats en direct et export CSV</li>
+            <li>100% anonyme, reponses confidentielles</li>
+            <li>8 formats : nuage de mots, echelle, humeur, sondage, matrice...</li>
+            <li>Resultats en direct et export CSV</li>
           </ul>
         </div>
         <div class="mini-demo mini-demo-left" id="demo-rex">
@@ -535,7 +536,7 @@
           <img src="/assets/icon-192.png" alt="Cursus" width="32" height="32" />
           <div>
             <span class="footer-brand-name">Cursus</span>
-            <span class="footer-brand-desc">L'app pédagogique pour les promos post-bac</span>
+            <span class="footer-brand-desc">Plateforme pedagogique pour les promotions post-bac</span>
           </div>
         </div>
         <div class="footer-columns">
