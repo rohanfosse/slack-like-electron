@@ -2,7 +2,7 @@
 <script setup lang="ts">
   import { ref, computed, onMounted, onUnmounted } from 'vue'
   import {
-    Plus, Play, Square, ChevronRight, Trash2, Users, Radio,
+    Plus, Play, Square, ChevronRight, Trash2, Users, Zap,
     ListChecks, MessageCircle, Cloud, LogOut, Pencil, GripVertical, Copy,
     History, BarChart3,
   } from 'lucide-vue-next'
@@ -174,8 +174,8 @@
     <!-- ══════════ Pas de session — écran de sélection ══════════ -->
     <div v-if="!liveStore.currentSession" class="live-empty">
       <div class="live-hero">
-        <Radio :size="48" class="hero-icon" />
-        <h1 class="hero-title">Quiz</h1>
+        <Zap :size="48" class="hero-icon" />
+        <h1 class="hero-title">Spark</h1>
       </div>
 
       <!-- Onglets -->
@@ -418,7 +418,7 @@
         <PollResults v-else-if="liveStore.currentActivity.type === 'sondage' && liveStore.results" :results="liveStore.results" />
         <WordCloud v-else-if="liveStore.currentActivity.type === 'nuage' && liveStore.results" :results="liveStore.results" />
         <div v-else class="results-waiting">
-          <Radio :size="32" class="results-waiting-icon" />
+          <Zap :size="32" class="results-waiting-icon" />
           <span>En attente des reponses...</span>
         </div>
       </div>

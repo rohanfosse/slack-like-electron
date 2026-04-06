@@ -1,7 +1,7 @@
 <script setup lang="ts">
   import { computed, ref, watch } from 'vue'
   import { useRouter, useRoute } from 'vue-router'
-  import { MessageSquare, BookOpen, FileText, LayoutDashboard, Bell, Flame, Search, Shield, Bug, Radio, ClipboardList, Paperclip } from 'lucide-vue-next'
+  import { MessageSquare, BookOpen, FileText, LayoutDashboard, Bell, Flame, Search, Shield, Bug, Zap, HeartPulse, Paperclip } from 'lucide-vue-next'
   import logoUrl from '@/assets/logo.png'
   import { useAppStore }    from '@/stores/app'
   import { useModalsStore } from '@/stores/modals'
@@ -225,12 +225,12 @@
       v-if="isEnabled('live') && !appStore.isStaff && liveStore.currentSession && liveStore.currentSession.status !== 'ended'"
       class="nav-btn"
       :class="{ active: route.name === 'live' }"
-      title="Quiz en cours"
-      aria-label="Quiz en cours"
+      title="Spark en cours"
+      aria-label="Spark en cours"
       @click="router.push('/live')"
     >
-      <Radio :size="20" />
-      <span class="nav-label">Quiz</span>
+      <Zap :size="20" />
+      <span class="nav-label">Spark</span>
       <span class="nav-live-dot" />
     </button>
 
@@ -239,12 +239,12 @@
       v-if="isEnabled('rex') && !appStore.isStaff && rexStore.currentSession && rexStore.currentSession.status !== 'ended'"
       class="nav-btn"
       :class="{ active: route.name === 'rex' }"
-      title="Session REX en cours"
-      aria-label="Session REX en cours"
+      title="Session Pulse en cours"
+      aria-label="Session Pulse en cours"
       @click="router.push('/rex')"
     >
-      <ClipboardList :size="20" />
-      <span class="nav-label">REX</span>
+      <HeartPulse :size="20" />
+      <span class="nav-label">Pulse</span>
       <span class="nav-rex-dot" />
     </button>
 

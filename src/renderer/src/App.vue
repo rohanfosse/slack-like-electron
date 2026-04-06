@@ -201,7 +201,7 @@
     messages: 'Messages',
     devoirs: 'Devoirs',
     documents: 'Documents',
-    live: 'Quiz',
+    live: 'Spark',
   }
 
   const totalUnreadBadge = computed(() => {
@@ -308,7 +308,7 @@
       <div class="live-invite-content">
         <div class="live-invite-header">
           <span class="live-invite-dot" />
-          <strong>{{ liveInvite.teacherName }}</strong> vous invite a un quiz
+          <strong>{{ liveInvite.teacherName }}</strong> vous invite a un Spark
         </div>
         <div class="live-invite-title">{{ liveInvite.title }}</div>
         <div class="live-invite-actions">

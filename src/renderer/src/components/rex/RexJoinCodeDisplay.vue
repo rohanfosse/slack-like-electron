@@ -18,7 +18,7 @@
 
 <template>
   <div class="rex-code-card">
-    <span class="rex-code-label">Code de session REX</span>
+    <span class="rex-code-label">Code de session Pulse</span>
     <div class="rex-code-value">
       <span v-for="(ch, i) in code.split('')" :key="i" class="rex-code-char" :style="{ animationDelay: `${i * 60}ms` }">
         {{ ch }}

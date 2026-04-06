@@ -195,7 +195,7 @@
 
     <!-- ═══ A) Pas de session ═══ -->
     <div v-if="!session" class="rex-create">
-      <h2 class="rex-title">Retour d'Experience</h2>
+      <h2 class="rex-title">Pulse</h2>
 
       <!-- Onglets -->
       <div class="rex-tabs">

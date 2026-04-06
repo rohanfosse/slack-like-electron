@@ -5,7 +5,7 @@
  */
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { FolderOpen, Award, CalendarDays, Home, Menu, Radio, ClipboardList, Settings } from 'lucide-vue-next'
+import { FolderOpen, Award, CalendarDays, Home, Menu, Zap, HeartPulse, Settings } from 'lucide-vue-next'
 import type { StudentProjectCard } from '@/composables/useDashboardStudent'
 import type { FriseMilestone, FrisePromo } from '@/composables/useFrise'
 import type { GradedDevoir } from './StudentGradesTab.vue'
@@ -123,10 +123,10 @@ const emit = defineEmits<{
         <CalendarDays :size="13" /> Planning
       </button>
       <button v-if="isEnabled('live')" class="db-tab db-tab--coming" role="tab" :aria-selected="dashTab === 'quiz'" aria-disabled="true" :class="{ active: dashTab === 'quiz' }" @click="emit('update:dashTab', 'quiz')">
-        <Radio :size="13" /> Quiz <span class="db-tab-soon">Bientôt</span>
+        <Zap :size="13" /> Spark <span class="db-tab-soon">Bientôt</span>
       </button>
       <button v-if="isEnabled('rex')" class="db-tab db-tab--coming" role="tab" :aria-selected="dashTab === 'rex'" aria-disabled="true" :class="{ active: dashTab === 'rex' }" @click="emit('update:dashTab', 'rex')">
-        <ClipboardList :size="13" /> REX <span class="db-tab-soon">Bientôt</span>
+        <HeartPulse :size="13" /> Pulse <span class="db-tab-soon">Bientôt</span>
       </button>
       <button
         v-if="dashTab === 'accueil'"
@@ -189,17 +189,17 @@ const emit = defineEmits<{
 
     <!-- Tab: Quiz (coming soon) -->
     <div v-else-if="dashTab === 'quiz'" class="db-coming-placeholder">
-      <Radio :size="40" class="db-coming-icon" />
-      <h3 class="db-coming-title">Quiz interactifs</h3>
-      <p class="db-coming-desc">Participez a des quiz en direct avec votre classe. QCM, sondages et nuages de mots en temps reel.</p>
+      <Zap :size="40" class="db-coming-icon" />
+      <h3 class="db-coming-title">Spark</h3>
+      <p class="db-coming-desc">Verifiez votre comprehension en vous amusant. QCM, sondages et nuages de mots en temps reel, avec le sourire.</p>
       <span class="db-coming-badge">En cours de developpement</span>
     </div>
 
     <!-- Tab: REX (coming soon) -->
     <div v-else-if="dashTab === 'rex'" class="db-coming-placeholder">
-      <ClipboardList :size="40" class="db-coming-icon" />
-      <h3 class="db-coming-title">Retour d'Experience</h3>
-      <p class="db-coming-desc">Donnez votre avis de maniere anonyme sur vos cours. Sondages, echelles et questions ouvertes.</p>
+      <HeartPulse :size="40" class="db-coming-icon" />
+      <h3 class="db-coming-title">Pulse</h3>
+      <p class="db-coming-desc">Prenez le pouls de vos cours en toute confiance. Nuages de mots, echelles et questions ouvertes, 100% anonyme.</p>
       <span class="db-coming-badge">En cours de developpement</span>
     </div>
   </template>

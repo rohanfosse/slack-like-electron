@@ -1,7 +1,7 @@
 <!-- StudentLiveView.vue - Vue étudiant pour le Live Quiz interactif -->
 <script setup lang="ts">
   import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
-  import { Radio, CheckCircle2, Send, LogOut, XCircle } from 'lucide-vue-next'
+  import { Zap, CheckCircle2, Send, LogOut, XCircle } from 'lucide-vue-next'
   import { useAppStore }  from '@/stores/app'
   import { useLiveStore } from '@/stores/live'
   import type { LiveScoreResult } from '@/types'
@@ -107,8 +107,8 @@
     <!-- ══════════ Pas de session ══════════ -->
     <div v-if="!session" class="live-join">
       <div class="join-hero">
-        <Radio :size="44" class="hero-icon" />
-        <h1 class="hero-title">Quiz</h1>
+        <Zap :size="44" class="hero-icon" />
+        <h1 class="hero-title">Spark</h1>
         <p class="hero-desc">Rejoignez une session avec un code</p>
       </div>
 

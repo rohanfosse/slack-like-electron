@@ -1,7 +1,7 @@
 /** StudentRexView — Vue etudiant pour les sessions REX anonymes. */
 <script setup lang="ts">
   import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
-  import { Radio, CheckCircle2, Send, LogOut, Clock } from 'lucide-vue-next'
+  import { HeartPulse, CheckCircle2, Send, LogOut, Clock } from 'lucide-vue-next'
   import { Star } from 'lucide-vue-next'
   import { useAppStore }  from '@/stores/app'
   import { useRexStore }  from '@/stores/rex'
@@ -139,9 +139,9 @@
     <!-- ═══ A) Pas dans une session ═══ -->
     <div v-if="!session" class="rex-join">
       <div class="rex-join-icon">
-        <Radio :size="32" />
+        <HeartPulse :size="32" />
       </div>
-      <h2 class="rex-join-title">Rejoindre un REX</h2>
+      <h2 class="rex-join-title">Rejoindre un Pulse</h2>
       <p class="rex-join-subtitle">Entrez le code a 6 caracteres fourni par votre enseignant</p>
 
       <div class="rex-join-form">

@@ -8,7 +8,7 @@
 import { ref, computed } from 'vue'
 import {
   PlusCircle, CalendarDays, Settings,
-  LayoutDashboard, Users, BarChart2, TrendingUp, Radio, MessageSquare,
+  LayoutDashboard, Users, BarChart2, TrendingUp, Zap, HeartPulse,
   Notebook, Activity, Pencil,
 } from 'lucide-vue-next'
 import { useLiveStore } from '@/stores/live'
@@ -214,14 +214,14 @@ function setTab(tab: DashTabType) {
         <Activity :size="13" /> Engagement
       </button>
       <button v-if="isEnabled('live')" class="db-tab db-tab-live" :class="{ active: dashTab === 'live' }" @click="setTab('live')">
-        <Radio :size="13" /> Quiz
+        <Zap :size="13" /> Spark
         <span
           v-if="liveStore.currentSession && liveStore.currentSession.status !== 'ended'"
           class="db-tab-live-dot"
         />
       </button>
       <button v-if="isEnabled('rex')" class="db-tab db-tab-rex" :class="{ active: dashTab === 'rex' }" @click="setTab('rex')">
-        <MessageSquare :size="13" /> REX
+        <HeartPulse :size="13" /> Pulse
         <span
           v-if="rexStore.currentSession && rexStore.currentSession.status !== 'ended'"
           class="db-tab-rex-dot"

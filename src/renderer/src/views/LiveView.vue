@@ -5,7 +5,7 @@
 </script>
 
 <template>
-  <ErrorBoundary label="Live Quiz">
+  <ErrorBoundary label="Spark">
     <StudentLiveView />
   </ErrorBoundary>
 </template>

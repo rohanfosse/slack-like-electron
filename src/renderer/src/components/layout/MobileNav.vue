@@ -5,7 +5,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { LayoutDashboard, MessageSquare, BookOpen, FileText, Radio } from 'lucide-vue-next'
+import { LayoutDashboard, MessageSquare, BookOpen, FileText, Zap } from 'lucide-vue-next'
 import { useAppStore }    from '@/stores/app'
 import { useTravauxStore } from '@/stores/travaux'
 import { useLiveStore }   from '@/stores/live'
@@ -71,8 +71,8 @@ const showLive     = computed(() =>
       :class="{ active: route.name === 'live' }"
       @click="router.push('/live')"
     >
-      <Radio :size="20" />
-      <span>Quiz</span>
+      <Zap :size="20" />
+      <span>Spark</span>
       <span class="mobile-nav-live-dot" />
     </button>
   </nav>

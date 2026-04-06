@@ -5,7 +5,7 @@
  */
 import type { WidgetDef } from '@/types/widgets'
 import {
-  Radio, FolderOpen, Award, FileText, Mic,
+  Zap, FolderOpen, Award, FileText, Mic,
   MessageSquare, FileBox, Activity,
   Clock, Quote, CalendarDays, TrendingUp, Bookmark, Timer,
   Hourglass, Users, Flame, LayoutGrid,
@@ -16,7 +16,7 @@ export type { WidgetDef } from '@/types/widgets'
 
 export const STUDENT_WIDGETS: WidgetDef[] = [
   // ── Widgets essentiels (actives par defaut) ──
-  { id: 'live',          label: 'Session Live',       icon: Radio,          description: 'Session interactive en cours',              category: 'essential',      sizes: ['2x1', '4x1'],                defaultSize: '2x1', defaultEnabled: true,  role: 'student' },
+  { id: 'live',          label: 'Spark',              icon: Zap,            description: 'Session interactive en cours',              category: 'essential',      sizes: ['2x1', '4x1'],                defaultSize: '2x1', defaultEnabled: true,  role: 'student' },
   { id: 'project',       label: 'Projet en cours',    icon: FolderOpen,     description: 'Progression du projet actif',               category: 'tracking',       sizes: ['1x1', '2x1', '2x2'],         defaultSize: '2x1', defaultEnabled: true,  role: 'student' },
   { id: 'exams',         label: 'Prochaines epreuves', icon: Award,         description: 'CCTLs et etudes de cas a venir',            category: 'essential',      sizes: ['1x1', '2x1'],                defaultSize: '2x1', defaultEnabled: true,  role: 'student' },
   { id: 'livrables',     label: 'Prochains livrables', icon: FileText,      description: 'Livrables a rendre',                        category: 'essential',      sizes: ['1x1', '2x1'],                defaultSize: '1x1', defaultEnabled: true,  role: 'student' },

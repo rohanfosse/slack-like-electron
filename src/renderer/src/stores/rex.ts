@@ -38,7 +38,7 @@ export const useRexStore = defineStore('rex', () => {
         window.api.emitRexJoin(promoId)
         return true
       }
-      error.value = 'Impossible de créer la session REX'
+      error.value = 'Impossible de créer la session Pulse'
       return false
     } finally {
       loading.value = false

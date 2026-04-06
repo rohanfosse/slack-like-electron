@@ -4,7 +4,7 @@
 <script setup lang="ts">
 import { computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { Radio, ArrowRight } from 'lucide-vue-next'
+import { Zap, ArrowRight } from 'lucide-vue-next'
 import { useLiveStore } from '@/stores/live'
 import { useAppStore } from '@/stores/app'
 
@@ -21,10 +21,10 @@ onMounted(() => {
 </script>
 
 <template>
-  <div v-if="hasLive" class="sa-live" role="button" tabindex="0" aria-label="Rejoindre la session live en cours" @click="router.push('/live')" @keydown.enter="router.push('/live')">
-    <Radio :size="16" class="sa-live-icon" />
+  <div v-if="hasLive" class="sa-live" role="button" tabindex="0" aria-label="Rejoindre le Spark en cours" @click="router.push('/live')" @keydown.enter="router.push('/live')">
+    <Zap :size="16" class="sa-live-icon" />
     <span class="sa-live-dot" />
-    <span class="sa-live-text">Quiz en cours : <strong>{{ liveStore.currentSession?.title }}</strong></span>
+    <span class="sa-live-text">Spark en cours : <strong>{{ liveStore.currentSession?.title }}</strong></span>
     <button class="sa-live-btn">Rejoindre <ArrowRight :size="12" /></button>
   </div>
 </template>
