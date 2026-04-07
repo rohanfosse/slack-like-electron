@@ -1,6 +1,6 @@
 const { getDb } = require('./connection');
 
-const CURRENT_VERSION = 49;
+const CURRENT_VERSION = 50;
 
 // ─── Schema initial ───────────────────────────────────────────────────────────
 // Crée toutes les tables avec leur schéma complet (colonnes UTC, toutes colonnes incluses).
@@ -1027,6 +1027,26 @@ function runMigrations(db) {
           CREATE INDEX IF NOT EXISTS idx_rex_activities_session ON rex_activities(session_id);
         `);
       } catch { /* migration deja faite */ }
+    },
+
+    // v50 : Lumen — cours markdown publies par les enseignants
+    (db) => {
+      db.exec(`
+        CREATE TABLE IF NOT EXISTS lumen_courses (
+          id           INTEGER PRIMARY KEY AUTOINCREMENT,
+          teacher_id   INTEGER NOT NULL,
+          promo_id     INTEGER NOT NULL REFERENCES promotions(id) ON DELETE CASCADE,
+          title        TEXT NOT NULL,
+          summary      TEXT DEFAULT '',
+          content      TEXT NOT NULL DEFAULT '',
+          status       TEXT NOT NULL DEFAULT 'draft' CHECK(status IN ('draft','published')),
+          created_at   TEXT NOT NULL DEFAULT (datetime('now')),
+          updated_at   TEXT NOT NULL DEFAULT (datetime('now')),
+          published_at TEXT
+        );
+        CREATE INDEX IF NOT EXISTS idx_lumen_courses_promo  ON lumen_courses(promo_id);
+        CREATE INDEX IF NOT EXISTS idx_lumen_courses_status ON lumen_courses(status);
+      `);
     },
   ];
 

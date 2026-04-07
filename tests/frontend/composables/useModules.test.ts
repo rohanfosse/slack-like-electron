@@ -20,13 +20,13 @@ describe('useModules', () => {
     resetLoaded()
   })
 
-  it('MODULES array contains exactly 5 items', () => {
+  it('MODULES array contains exactly 6 items', () => {
     const { MODULES } = useModules()
-    expect(MODULES).toHaveLength(5)
-    expect(MODULES).toEqual(['kanban', 'frise', 'rex', 'live', 'signatures'])
+    expect(MODULES).toHaveLength(6)
+    expect(MODULES).toEqual(['kanban', 'frise', 'rex', 'live', 'signatures', 'lumen'])
   })
 
-  it('MODULE_LABELS has all 5 modules with string labels', () => {
+  it('MODULE_LABELS has all 6 modules with string labels', () => {
     const { MODULE_LABELS, MODULES } = useModules()
     for (const m of MODULES) {
       expect(typeof MODULE_LABELS[m]).toBe('string')

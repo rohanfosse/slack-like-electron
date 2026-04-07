@@ -307,6 +307,16 @@ declare global {
       // Grade notifications
       onGradeNew(cb: (data: { devoirTitle: string; note: string | null; feedback: string | null; devoirId: number; category: string | null }) => void): () => void
 
+      // Lumen (cours markdown)
+      getLumenCoursesForPromo(promoId: number): Promise<IpcResponse<import('./types').LumenCourse[]>>
+      getLumenCourse(id: number): Promise<IpcResponse<import('./types').LumenCourse>>
+      createLumenCourse(payload: { promoId: number; title: string; summary?: string; content?: string }): Promise<IpcResponse<import('./types').LumenCourse>>
+      updateLumenCourse(id: number, payload: { title?: string; summary?: string; content?: string }): Promise<IpcResponse<import('./types').LumenCourse>>
+      publishLumenCourse(id: number): Promise<IpcResponse<import('./types').LumenCourse>>
+      unpublishLumenCourse(id: number): Promise<IpcResponse<import('./types').LumenCourse>>
+      deleteLumenCourse(id: number): Promise<IpcResponse<{ id: number; deleted: boolean }>>
+      getLumenStatsForPromo(promoId: number): Promise<IpcResponse<{ total: number; published: number; drafts: number }>>
+
       // Kanban
       getKanbanCards(travailId: number, groupId: number): Promise<IpcResponse<import('./types').KanbanCard[]>>
       createKanbanCard(travailId: number, groupId: number, payload: unknown): Promise<IpcResponse<import('./types').KanbanCard>>

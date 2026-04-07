@@ -296,6 +296,21 @@ export interface RexStats {
   participationTrend: { sessionId: number; title: string; endedAt: string; participants: number; enrolled: number }[]
 }
 
+// ─── Lumen (cours markdown) ──────────────────────────────────────────────────
+
+export interface LumenCourse {
+  id: number
+  teacher_id: number
+  promo_id: number
+  title: string
+  summary: string
+  content: string
+  status: 'draft' | 'published'
+  created_at: string
+  updated_at: string
+  published_at: string | null
+}
+
 // ─── Kanban ──────────────────────────────────────────────────────────────────
 
 export interface KanbanCard {

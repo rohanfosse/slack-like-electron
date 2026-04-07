@@ -1,7 +1,7 @@
 <script setup lang="ts">
   import { computed, ref, watch } from 'vue'
   import { useRouter, useRoute } from 'vue-router'
-  import { MessageSquare, BookOpen, FileText, LayoutDashboard, Bell, Flame, Search, Shield, Bug, Zap, HeartPulse, Paperclip } from 'lucide-vue-next'
+  import { MessageSquare, BookOpen, FileText, LayoutDashboard, Bell, Flame, Search, Shield, Bug, Zap, HeartPulse, Paperclip, Lightbulb } from 'lucide-vue-next'
   import logoUrl from '@/assets/logo.png'
   import { useAppStore }    from '@/stores/app'
   import { useModalsStore } from '@/stores/modals'
@@ -205,6 +205,19 @@
     >
       <FileText :size="20" />
       <span class="nav-label">Documents</span>
+    </button>
+
+    <!-- Lumen : cours markdown publies (toujours visible si module actif) -->
+    <button
+      v-if="isEnabled('lumen')"
+      class="nav-btn"
+      :class="{ active: route.name === 'lumen' }"
+      title="Lumen — Cours"
+      aria-label="Section Lumen"
+      @click="router.push('/lumen')"
+    >
+      <Lightbulb :size="20" />
+      <span class="nav-label">Lumen</span>
     </button>
 
     <!-- Fichiers partagés (prof uniquement) -->

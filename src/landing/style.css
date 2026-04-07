@@ -17,6 +17,7 @@
   --color-docs: #F59E0B;
   --color-live: #EF4444;
   --color-rex: #0EA5E9;
+  --color-lumen: #D97706;
   --color-dashboard: #8B5CF6;
   --bg: #F5F3FF;
   --bg-card: #FFFFFF;
@@ -54,6 +55,7 @@
   --color-docs: #FBBF24;
   --color-live: #F87171;
   --color-rex: #38BDF8;
+  --color-lumen: #FBBF24;
   --color-dashboard: #A78BFA;
   --bg: #0F0D1A;
   --bg-card: #1A1733;
@@ -441,6 +443,7 @@ img { max-width: 100%; display: block; }
 .bento-card:hover::after { opacity: 0.04; }
 
 /* Per-card accent colors */
+.bento-card[data-color="lumen"]   { --card-accent: var(--color-lumen); }
 .bento-card[data-color="chat"]    { --card-accent: var(--color-chat); }
 .bento-card[data-color="devoirs"] { --card-accent: var(--color-devoirs); }
 .bento-card[data-color="docs"]    { --card-accent: var(--color-docs); }
@@ -1492,6 +1495,108 @@ img { max-width: 100%; display: block; }
 .bento-rex-q { font-size: 11px; color: var(--text-2); font-weight: 500; }
 .bento-rex-cloud { display: flex; flex-wrap: wrap; gap: 4px 8px; align-items: baseline; }
 .bento-rex-cloud span { color: var(--color-rex); font-weight: 500; }
+
+/* ── Lumen demo (feature section) ─────────────────────────────────── */
+.demo-lumen-body {
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 12px;
+}
+.demo-lumen-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.demo-lumen-status {
+  font-family: var(--font);
+  font-size: 10px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: rgba(5, 150, 105, 0.12);
+  color: #059669;
+}
+.demo-lumen-title {
+  font-family: var(--font);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+}
+.demo-lumen-tabs {
+  display: flex;
+  gap: 4px;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 6px;
+}
+.demo-lumen-tab {
+  font-family: var(--font);
+  font-size: 11px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  color: var(--text-3);
+  font-weight: 600;
+}
+.demo-lumen-tab--active {
+  background: rgba(245, 158, 11, 0.12);
+  color: var(--color-lumen);
+}
+.demo-lumen-content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  line-height: 1.5;
+}
+.demo-lumen-line {
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+.demo-lumen-line--h1 {
+  color: var(--color-lumen);
+  font-weight: 700;
+}
+.demo-lumen-line--h2 {
+  color: var(--color-lumen);
+  font-weight: 600;
+  margin-top: 4px;
+}
+.demo-lumen-line--text { color: var(--text-2); }
+.demo-lumen-line--code {
+  background: rgba(245, 158, 11, 0.06);
+  color: var(--color-lumen);
+  font-weight: 600;
+}
+
+/* ── Bento: Lumen card ────────────────────────────────────────────── */
+.bento-lumen-demo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 11px;
+  line-height: 1.4;
+}
+.bento-lumen-line {
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+.bento-lumen-h1 {
+  color: var(--color-lumen);
+  font-weight: 700;
+  background: rgba(245, 158, 11, 0.06);
+}
+.bento-lumen-text {
+  color: var(--text-2);
+}
+.bento-lumen-code {
+  color: var(--color-lumen);
+  background: rgba(245, 158, 11, 0.08);
+  font-weight: 600;
+  display: inline-block;
+  align-self: flex-start;
+}
 
 /* ── Grade widget ────────────────────────────────────────────────── */
 .widget-grade { color: var(--accent); font-family: var(--font-mono); }

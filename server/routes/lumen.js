@@ -1,0 +1,159 @@
+/** Routes API Lumen — cours markdown publies par les enseignants. */
+const router  = require('express').Router()
+const { z }   = require('zod')
+const queries = require('../db/index')
+const { validate } = require('../middleware/validate')
+const wrap    = require('../utils/wrap')
+const { requireRole, requirePromo, requirePromoAdmin, promoFromParam } = require('../middleware/authorize')
+const { getDb } = require('../db/connection')
+
+// ─── Schemas Zod (strict : refuse les champs inconnus) ──────────────────────
+
+const createCourseSchema = z.object({
+  promoId: z.number().int().positive('promoId requis'),
+  title:   z.string().min(1, 'Titre requis').max(200),
+  summary: z.string().max(500).optional(),
+  content: z.string().max(200_000).optional(),
+}).strict()
+
+const updateCourseSchema = z.object({
+  title:   z.string().min(1).max(200).optional(),
+  summary: z.string().max(500).optional(),
+  content: z.string().max(200_000).optional(),
+}).strict()
+
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+
+/** Lookup : courseId → promo_id (pour requirePromo) */
+function promoFromCourse(req) {
+  const id = Number(req.params.id)
+  if (!id) return null
+  const c = getDb().prepare('SELECT promo_id FROM lumen_courses WHERE id = ?').get(id)
+  return c?.promo_id ?? null
+}
+
+/** Lookup : promoId depuis le body (pour requirePromoAdmin sur POST /courses) */
+function promoFromBody(req) {
+  return Number(req.body?.promoId) || null
+}
+
+/** Normalisation : les JWT enseignants stockent id en negatif. */
+function getTeacherIdFromReq(req) {
+  return Math.abs(req.user.id)
+}
+
+/** requirePromoAdmin uniquement pour les teachers ; passe pour les students. */
+function teacherPromoGuard(getPromoId) {
+  const inner = requirePromoAdmin(getPromoId)
+  return (req, res, next) => {
+    if (req.user?.type === 'student') return next()
+    return inner(req, res, next)
+  }
+}
+
+/** Verifie que le user enseignant est l'auteur du cours OU admin. */
+function requireCourseOwner(req, res, next) {
+  if (req.user?.type === 'admin') return next()
+  if (req.user?.type !== 'teacher') {
+    return res.status(403).json({ ok: false, error: 'Accès réservé aux enseignants.' })
+  }
+  const id = Number(req.params.id)
+  if (!id) return res.status(400).json({ ok: false, error: 'ID cours manquant.' })
+  const course = getDb().prepare('SELECT teacher_id FROM lumen_courses WHERE id = ?').get(id)
+  if (!course) return res.status(404).json({ ok: false, error: 'Cours introuvable.' })
+  if (course.teacher_id !== getTeacherIdFromReq(req)) {
+    return res.status(403).json({ ok: false, error: 'Vous n\'êtes pas l\'auteur de ce cours.' })
+  }
+  next()
+}
+
+// ─── Liste des cours ─────────────────────────────────────────────────────────
+
+// GET /api/lumen/courses/promo/:promoId — liste les cours d'une promo
+// Student : uniquement sa promo (requirePromo) + filtre publies
+// Teacher : uniquement ses promos affectees (requirePromoAdmin) + drafts + publies
+router.get('/courses/promo/:promoId',
+  requirePromo(promoFromParam),
+  teacherPromoGuard(promoFromParam),
+  wrap((req) => {
+    const promoId = Number(req.params.promoId)
+    const onlyPublished = req.user?.type === 'student'
+    return queries.getLumenCoursesForPromo(promoId, { onlyPublished })
+  })
+)
+
+// GET /api/lumen/courses/:id — recuperer un cours complet (avec content markdown)
+// Etudiant : uniquement si publie et meme promo
+router.get('/courses/:id',
+  requirePromo(promoFromCourse),
+  teacherPromoGuard(promoFromCourse),
+  wrap((req) => {
+    const id = Number(req.params.id)
+    const course = queries.getLumenCourse(id)
+    if (!course) {
+      const err = new Error('Cours introuvable')
+      err.statusCode = 404
+      throw err
+    }
+    if (req.user?.type === 'student' && course.status !== 'published') {
+      const err = new Error('Cours non publié')
+      err.statusCode = 404
+      throw err
+    }
+    return course
+  })
+)
+
+// ─── Mutations (enseignants uniquement) ──────────────────────────────────────
+
+// POST /api/lumen/courses — creer un cours (draft)
+// requirePromoAdmin verifie que le teacher appartient bien a la promo cible
+router.post('/courses',
+  requireRole('teacher'),
+  validate(createCourseSchema),
+  teacherPromoGuard(promoFromBody),
+  wrap((req) => {
+    const { promoId, title, summary = '', content = '' } = req.body
+    return queries.createLumenCourse({
+      teacherId: getTeacherIdFromReq(req),
+      promoId, title, summary, content,
+    })
+  })
+)
+
+// PATCH /api/lumen/courses/:id — modifier un cours
+router.patch('/courses/:id', requireCourseOwner, validate(updateCourseSchema), wrap((req) => {
+  const id = Number(req.params.id)
+  return queries.updateLumenCourse(id, req.body)
+}))
+
+// POST /api/lumen/courses/:id/publish — publier un cours
+router.post('/courses/:id/publish', requireCourseOwner, wrap((req) => {
+  const id = Number(req.params.id)
+  return queries.publishLumenCourse(id)
+}))
+
+// POST /api/lumen/courses/:id/unpublish — repasser en draft
+router.post('/courses/:id/unpublish', requireCourseOwner, wrap((req) => {
+  const id = Number(req.params.id)
+  return queries.unpublishLumenCourse(id)
+}))
+
+// DELETE /api/lumen/courses/:id — supprimer un cours
+router.delete('/courses/:id', requireCourseOwner, wrap((req) => {
+  const id = Number(req.params.id)
+  queries.deleteLumenCourse(id)
+  return { id, deleted: true }
+}))
+
+// GET /api/lumen/stats/promo/:promoId — stats pour le dashboard enseignant
+router.get('/stats/promo/:promoId',
+  requireRole('teacher'),
+  teacherPromoGuard(promoFromParam),
+  wrap((req) => {
+    const promoId = Number(req.params.promoId)
+    return queries.getLumenStatsForPromo(promoId)
+  })
+)
+
+module.exports = router

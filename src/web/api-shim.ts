@@ -498,6 +498,16 @@ async function importStudentsBrowser(promoId: number): Promise<unknown> {
   },
   getRexStatsForPromo:    (promoId: number) => get(`/api/rex/sessions/promo/${promoId}/stats`),
 
+  // Lumen (cours markdown)
+  getLumenCoursesForPromo: (promoId: number) => get(`/api/lumen/courses/promo/${promoId}`),
+  getLumenCourse:          (id: number)       => get(`/api/lumen/courses/${id}`),
+  createLumenCourse:       (payload: unknown) => post('/api/lumen/courses', payload),
+  updateLumenCourse:       (id: number, payload: unknown) => patch(`/api/lumen/courses/${id}`, payload),
+  publishLumenCourse:      (id: number)       => post(`/api/lumen/courses/${id}/publish`, {}),
+  unpublishLumenCourse:    (id: number)       => post(`/api/lumen/courses/${id}/unpublish`, {}),
+  deleteLumenCourse:       (id: number)       => del(`/api/lumen/courses/${id}`),
+  getLumenStatsForPromo:   (promoId: number)  => get(`/api/lumen/stats/promo/${promoId}`),
+
   // Kanban
   getKanbanCards:   (travailId: number, groupId: number)                   => get(`/api/kanban/travaux/${travailId}/groups/${groupId}`),
   createKanbanCard: (travailId: number, groupId: number, payload: unknown) => post(`/api/kanban/travaux/${travailId}/groups/${groupId}`, payload),
