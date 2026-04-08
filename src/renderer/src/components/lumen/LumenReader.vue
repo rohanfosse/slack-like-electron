@@ -4,6 +4,7 @@ import { Clock, List, ChevronLeft, ChevronRight, ArrowUp } from 'lucide-vue-next
 import { renderMarkdown, slugifyHeading } from '@/utils/markdown'
 import { formatDate } from '@/utils/date'
 import type { LumenCourse } from '@/types'
+import LumenProjectPanel from '@/components/lumen/LumenProjectPanel.vue'
 
 interface Props {
   course: LumenCourse
@@ -207,6 +208,13 @@ const nextCourse = computed(() =>
           </header>
 
           <div class="reader-prose" v-html="readerHtml" />
+
+          <!-- Projet d'exemple (si un snapshot existe) -->
+          <LumenProjectPanel
+            v-if="course.repo_snapshot_at"
+            :course="course"
+            class="reader-project"
+          />
 
           <!-- Navigation prev / next -->
           <nav v-if="prevCourse || nextCourse" class="reader-nav" aria-label="Autres cours">
@@ -520,6 +528,11 @@ const nextCourse = computed(() =>
 .reader-prose :deep(th) {
   font-weight: 700;
   color: var(--text-primary);
+}
+
+/* ── Projet d'exemple ───────────────────────────────────────────────────── */
+.reader-project {
+  margin-top: 48px;
 }
 
 /* ── Prev / Next navigation ─────────────────────────────────────────────── */

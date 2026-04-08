@@ -4,7 +4,7 @@ import { useRoute } from 'vue-router'
 import {
   Lightbulb, Plus, Eye, Edit3, Trash2, ArrowLeft, CheckCircle2, Clock,
   Save, Columns, BookOpen, ListTree, Maximize2, Minimize2, Download, Clipboard,
-  Command as CommandIcon,
+  Command as CommandIcon, Github, RefreshCw, ExternalLink,
 } from 'lucide-vue-next'
 import { useAppStore } from '@/stores/app'
 import { useLumenStore } from '@/stores/lumen'
@@ -22,6 +22,7 @@ import LumenCommandPalette from '@/components/lumen/LumenCommandPalette.vue'
 import LumenReader from '@/components/lumen/LumenReader.vue'
 import type { CursorInfo } from '@/composables/useLumenEditor'
 import type { LumenCourse, Promotion } from '@/types'
+import { relativeTime } from '@/utils/date'
 
 const appStore = useAppStore()
 const lumenStore = useLumenStore()
@@ -50,6 +51,12 @@ const allPromos = ref<Promotion[]>([])
 // Promo dans laquelle le cours va etre cree (null = nouveau cours non encore sauvegarde)
 // Pour un cours existant, on la derive de lumenStore.currentCourse.promo_id.
 const editorPromoId = ref<number | null>(null)
+
+// URL du repo git d'exemple attache au cours (optionnel)
+const editorRepoUrl = ref<string>('')
+const editorRepoUrlError = ref<string | null>(null)
+// Loading du bouton "Resynchroniser" pendant un fetch snapshot en cours
+const snapshotLoading = ref(false)
 
 // ── UI preferences ─────────────────────────────────────────────────────────
 const splitRatio     = ref(0.5)     // 0..1, ratio de l'editeur dans le split
@@ -116,6 +123,73 @@ async function loadAllPromos() {
   } catch { allPromos.value = [] }
 }
 
+// ── Snapshot repo git (UI enseignant) ────────────────────────────────────
+
+function isValidGitHubUrl(url: string): boolean {
+  try {
+    const u = new URL(url)
+    if (u.protocol !== 'https:' || u.host !== 'github.com') return false
+    const segments = u.pathname.replace(/^\/+|\/+$/g, '').split('/')
+    return segments.length >= 2 && !!segments[0] && !!segments[1]
+  } catch { return false }
+}
+
+function validateRepoUrlOnBlur() {
+  const v = editorRepoUrl.value.trim()
+  if (!v) { editorRepoUrlError.value = null; return }
+  editorRepoUrlError.value = isValidGitHubUrl(v)
+    ? null
+    : 'URL invalide (attendu : https://github.com/owner/repo)'
+}
+
+// Metadonnees du snapshot courant (pour affichage du badge)
+const currentSnapshotMeta = computed(() => {
+  const course = lumenStore.currentCourse
+  if (!course || !course.repo_snapshot_at) return null
+  return {
+    sha: course.repo_commit_sha ? course.repo_commit_sha.slice(0, 7) : null,
+    branch: course.repo_default_branch,
+    snapshotAt: course.repo_snapshot_at,
+    fullSha: course.repo_commit_sha,
+  }
+})
+
+async function handleRefreshSnapshot() {
+  if (!editorCourseId.value) {
+    showToast("Sauvegarde le cours d'abord.", 'error')
+    return
+  }
+  if (!editorRepoUrl.value.trim()) {
+    showToast("Aucune URL de repo n'est definie.", 'error')
+    return
+  }
+  // Si l'URL a change et n'est pas sauvegardee, on la persiste d'abord
+  // pour que le backend utilise la bonne source au moment du fetch.
+  if (dirty.value) {
+    const ok = await saveCourse(true)
+    if (!ok) return
+  }
+  snapshotLoading.value = true
+  try {
+    const result = await lumenStore.refreshSnapshot(editorCourseId.value)
+    if (result) {
+      showToast(
+        result.changed ? 'Snapshot mis a jour — nouveaux fichiers disponibles' : 'Snapshot deja a jour',
+        'success',
+      )
+    }
+  } finally {
+    snapshotLoading.value = false
+  }
+}
+
+function openRepoInBrowser() {
+  const url = editorRepoUrl.value.trim()
+  if (url && isValidGitHubUrl(url)) {
+    window.open(url, '_blank', 'noopener,noreferrer')
+  }
+}
+
 watch(promoId, () => { loadCourses() })
 watch(editorPromoId, loadProjectsForEditorPromo)
 
@@ -175,6 +249,8 @@ async function openEditorEdit(course: LumenCourse) {
   editorContent.value   = full.content
   editorProjectId.value = full.project_id
   editorPromoId.value   = full.promo_id
+  editorRepoUrl.value   = full.repo_url ?? ''
+  editorRepoUrlError.value = null
   dirty.value           = false
   savedAt.value         = full.updated_at
   mode.value = 'editor'
@@ -190,19 +266,21 @@ function resetEditor() {
   // Nouveau cours : on prefille avec la promo globalement active (fallback
   // sur la premiere promo disponible si aucune n'est active).
   editorPromoId.value   = promoId.value ?? allPromos.value[0]?.id ?? null
+  editorRepoUrl.value   = ''
+  editorRepoUrlError.value = null
   dirty.value           = false
   savedAt.value         = null
   cursor.value          = null
 }
 
 // ── Dirty tracking ──────────────────────────────────────────────────────────
-watch([editorTitle, editorSummary, editorContent, editorProjectId, editorPromoId], () => {
+watch([editorTitle, editorSummary, editorContent, editorProjectId, editorPromoId, editorRepoUrl], () => {
   if (mode.value === 'editor') dirty.value = true
 })
 
 // ── Auto-save (3s apres derniere edition) ──────────────────────────────────
 let autoSaveTimer: ReturnType<typeof setTimeout> | null = null
-watch([editorTitle, editorSummary, editorContent, editorProjectId, editorPromoId], () => {
+watch([editorTitle, editorSummary, editorContent, editorProjectId, editorPromoId, editorRepoUrl], () => {
   if (mode.value !== 'editor' || !editorCourseId.value) return
   if (autoSaveTimer) clearTimeout(autoSaveTimer)
   autoSaveTimer = setTimeout(() => { saveCourse(true) }, 3000)
@@ -222,6 +300,7 @@ async function saveCourse(silent = false): Promise<boolean> {
     const content   = editorContent.value
     const projectId = editorProjectId.value
     const courseId  = editorCourseId.value
+    const repoUrl   = editorRepoUrl.value.trim() || null
     // Utilise la promo choisie dans l'editeur (pas forcement la promo
     // globalement active) — permet au prof de creer un cours pour une
     // autre de ses promos sans switcher de contexte.
@@ -235,14 +314,18 @@ async function saveCourse(silent = false): Promise<boolean> {
       if (!silent) showToast('Sélectionne une promotion avant d\'enregistrer', 'error')
       return false
     }
+    if (repoUrl && !isValidGitHubUrl(repoUrl)) {
+      if (!silent) showToast('URL repo invalide (attendu : https://github.com/owner/repo)', 'error')
+      return false
+    }
     saving.value = true
     try {
       if (courseId) {
-        const updated = await lumenStore.updateCourse(courseId, { title, summary, content, projectId })
+        const updated = await lumenStore.updateCourse(courseId, { title, summary, content, projectId, repoUrl })
         if (updated) {
           savedAt.value = formatTime(updated.updated_at)
           // Ne reset dirty que si l'utilisateur n'a rien tape entre-temps
-          if (editorTitle.value.trim() === title && editorSummary.value === summary && editorContent.value === content && editorProjectId.value === projectId) {
+          if (editorTitle.value.trim() === title && editorSummary.value === summary && editorContent.value === content && editorProjectId.value === projectId && (editorRepoUrl.value.trim() || null) === repoUrl) {
             dirty.value = false
           }
           if (!silent) showToast('Cours enregistré', 'success')
@@ -255,7 +338,12 @@ async function saveCourse(silent = false): Promise<boolean> {
         if (created) {
           editorCourseId.value = created.id
           savedAt.value = formatTime(created.updated_at)
-          if (editorTitle.value.trim() === title && editorSummary.value === summary && editorContent.value === content && editorProjectId.value === projectId) {
+          // L'endpoint de creation ne prend pas repoUrl (schema Zod strict) ;
+          // on le patch en second appel si l'enseignant a rempli le champ.
+          if (repoUrl) {
+            await lumenStore.updateCourse(created.id, { repoUrl })
+          }
+          if (editorTitle.value.trim() === title && editorSummary.value === summary && editorContent.value === content && editorProjectId.value === projectId && (editorRepoUrl.value.trim() || null) === repoUrl) {
             dirty.value = false
           }
           if (!silent) showToast('Cours créé', 'success')
@@ -894,6 +982,59 @@ const chromeHidden = computed(() => focusMode.value || zenMode.value)
                 </option>
               </select>
             </div>
+
+            <!-- Ligne repo git d'exemple -->
+            <div class="lumen-meta-repo-row">
+              <label class="lumen-meta-repo-label" for="lumen-repo-url">
+                <Github :size="13" />
+                <span>Projet d'exemple (repo git)</span>
+              </label>
+              <div class="lumen-meta-repo-input-wrap">
+                <input
+                  id="lumen-repo-url"
+                  v-model="editorRepoUrl"
+                  type="url"
+                  class="lumen-meta-repo-input"
+                  :class="{ 'lumen-meta-repo-input--error': editorRepoUrlError }"
+                  placeholder="https://github.com/owner/repo"
+                  maxlength="500"
+                  :disabled="snapshotLoading"
+                  @blur="validateRepoUrlOnBlur"
+                />
+                <button
+                  v-if="editorRepoUrl && isValidGitHubUrl(editorRepoUrl)"
+                  type="button"
+                  class="lumen-meta-repo-link"
+                  title="Ouvrir le repo sur GitHub"
+                  aria-label="Ouvrir le repo sur GitHub"
+                  @click="openRepoInBrowser"
+                >
+                  <ExternalLink :size="13" />
+                </button>
+              </div>
+              <button
+                v-if="editorCourseId && editorRepoUrl && isValidGitHubUrl(editorRepoUrl)"
+                type="button"
+                class="lumen-meta-repo-sync"
+                :disabled="snapshotLoading"
+                :title="currentSnapshotMeta ? 'Refetcher le repo depuis GitHub' : 'Creer le snapshot initial depuis GitHub'"
+                @click="handleRefreshSnapshot"
+              >
+                <RefreshCw :size="13" :class="{ 'lumen-spin': snapshotLoading }" />
+                {{ snapshotLoading ? 'Fetch…' : currentSnapshotMeta ? 'Resynchroniser' : 'Snapshoter' }}
+              </button>
+            </div>
+
+            <!-- Badge snapshot (affiche uniquement si un snapshot existe) -->
+            <div v-if="currentSnapshotMeta" class="lumen-meta-snapshot-badge">
+              <CheckCircle2 :size="11" />
+              <span>
+                Snapshot {{ currentSnapshotMeta.branch }}
+                <code v-if="currentSnapshotMeta.sha" class="lumen-meta-snapshot-sha">{{ currentSnapshotMeta.sha }}</code>
+                · {{ relativeTime(currentSnapshotMeta.snapshotAt) }}
+              </span>
+            </div>
+            <p v-if="editorRepoUrlError" class="lumen-meta-repo-error">{{ editorRepoUrlError }}</p>
           </div>
 
           <!-- Toolbar markdown -->
@@ -1443,6 +1584,132 @@ const chromeHidden = computed(() => focusMode.value || zenMode.value)
   cursor: not-allowed;
   opacity: 0.7;
   background: var(--bg-hover);
+}
+
+/* Ligne repo git d'exemple */
+.lumen-meta-repo-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+.lumen-meta-repo-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+.lumen-meta-repo-input-wrap {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex: 1;
+  min-width: 200px;
+  max-width: 420px;
+  position: relative;
+  background: var(--bg-input);
+  border: 1px solid var(--border-input);
+  border-radius: var(--radius-sm);
+  padding: 0 6px 0 10px;
+  transition: border-color 120ms ease;
+}
+.lumen-meta-repo-input-wrap:focus-within {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-subtle);
+}
+.lumen-meta-repo-input {
+  flex: 1;
+  background: none;
+  border: none;
+  outline: none;
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: var(--text-sm);
+  padding: 5px 0;
+}
+.lumen-meta-repo-input::placeholder { color: var(--text-muted); }
+.lumen-meta-repo-input--error { color: var(--color-danger); }
+.lumen-meta-repo-input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+.lumen-meta-repo-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: color 120ms ease, background 120ms ease;
+}
+.lumen-meta-repo-link:hover {
+  color: var(--accent);
+  background: var(--bg-hover);
+}
+.lumen-meta-repo-sync {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-family: inherit;
+  font-size: var(--text-xs);
+  padding: 5px 10px;
+  font-weight: 600;
+  transition: all 120ms ease;
+}
+.lumen-meta-repo-sync:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--bg-hover);
+}
+.lumen-meta-repo-sync:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+.lumen-spin { animation: lumen-spin-rot 0.8s linear infinite; }
+@keyframes lumen-spin-rot {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+.lumen-meta-snapshot-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+  font-size: 11px;
+  color: var(--color-success, #3fb76f);
+  padding: 3px 10px;
+  background: rgba(63, 183, 111, 0.1);
+  border: 1px solid rgba(63, 183, 111, 0.25);
+  border-radius: var(--radius-sm);
+  width: fit-content;
+}
+.lumen-meta-snapshot-sha {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 10px;
+  background: rgba(63, 183, 111, 0.18);
+  padding: 1px 5px;
+  border-radius: 3px;
+  margin: 0 2px;
+}
+.lumen-meta-repo-error {
+  margin: 4px 0 0;
+  font-size: var(--text-xs);
+  color: var(--color-danger);
 }
 .lumen-meta-project {
   font-family: inherit;
