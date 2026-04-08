@@ -18,31 +18,32 @@ import { searchKeymap, highlightSelectionMatches } from '@codemirror/search'
 import { autocompletion, closeBrackets, closeBracketsKeymap, completionKeymap } from '@codemirror/autocomplete'
 import { tags as t } from '@lezer/highlight'
 
-// ── Theme Lumen : sobre, peu de couleurs, bonne lisibilite ──────────────────
+// ── Theme Lumen : aligne sur les tokens de l'app (accent bleu, neutres) ────
 const lumenHighlightStyle = HighlightStyle.define([
-  { tag: t.heading1, fontSize: '1.5em', fontWeight: 'bold', color: '#b45309' },
-  { tag: t.heading2, fontSize: '1.3em', fontWeight: 'bold', color: '#c2640a' },
-  { tag: t.heading3, fontSize: '1.15em', fontWeight: '700', color: '#d97706' },
-  { tag: t.heading4, fontWeight: '700', color: '#d97706' },
-  { tag: [t.heading5, t.heading6], fontWeight: '700', color: '#d97706' },
-  { tag: t.strong, fontWeight: 'bold', color: '#1e293b' },
-  { tag: t.emphasis, fontStyle: 'italic', color: '#334155' },
-  { tag: t.strikethrough, textDecoration: 'line-through', color: '#94a3b8' },
-  { tag: t.link, color: '#d97706', textDecoration: 'underline' },
-  { tag: t.url,  color: '#d97706' },
-  { tag: t.monospace, fontFamily: "'JetBrains Mono', ui-monospace, monospace", backgroundColor: 'rgba(217, 119, 6, 0.08)', color: '#b45309' },
-  { tag: t.quote, color: '#64748b', fontStyle: 'italic' },
-  { tag: t.list, color: '#334155' },
-  { tag: t.meta, color: '#94a3b8' },
-  { tag: t.comment, color: '#94a3b8', fontStyle: 'italic' },
+  { tag: t.heading1, fontSize: '1.5em', fontWeight: 'bold', color: 'var(--text-primary)' },
+  { tag: t.heading2, fontSize: '1.3em', fontWeight: 'bold', color: 'var(--text-primary)' },
+  { tag: t.heading3, fontSize: '1.15em', fontWeight: '700', color: 'var(--text-primary)' },
+  { tag: t.heading4, fontWeight: '700', color: 'var(--text-primary)' },
+  { tag: [t.heading5, t.heading6], fontWeight: '700', color: 'var(--text-primary)' },
+  { tag: t.strong, fontWeight: 'bold', color: 'var(--text-primary)' },
+  { tag: t.emphasis, fontStyle: 'italic', color: 'var(--text-secondary)' },
+  { tag: t.strikethrough, textDecoration: 'line-through', color: 'var(--text-muted)' },
+  { tag: t.link, color: 'var(--accent-light)', textDecoration: 'underline' },
+  { tag: t.url,  color: 'var(--accent-light)' },
+  { tag: t.monospace, fontFamily: "'JetBrains Mono', ui-monospace, monospace", backgroundColor: 'var(--bg-elevated)', color: 'var(--accent-light)' },
+  { tag: t.quote, color: 'var(--text-secondary)', fontStyle: 'italic' },
+  { tag: t.list, color: 'var(--text-secondary)' },
+  { tag: t.meta, color: 'var(--text-muted)' },
+  { tag: t.comment, color: 'var(--text-muted)', fontStyle: 'italic' },
 ])
 
 // Theme CSS de l'editeur (fond, padding, typographie)
 const lumenEditorTheme = EditorView.theme({
   '&': {
     height: '100%',
-    fontSize: '15px',
-    backgroundColor: 'var(--bg-card, #ffffff)',
+    fontSize: '14.5px',
+    backgroundColor: 'var(--bg-main)',
+    color: 'var(--text-primary)',
   },
   '.cm-scroller': {
     fontFamily: "'JetBrains Mono', ui-monospace, 'SF Mono', monospace",
@@ -50,7 +51,7 @@ const lumenEditorTheme = EditorView.theme({
     padding: '24px 36px 300px 36px',
   },
   '.cm-content': {
-    caretColor: '#d97706',
+    caretColor: 'var(--accent)',
     maxWidth: '780px',
     margin: '0 auto',
   },
@@ -58,43 +59,40 @@ const lumenEditorTheme = EditorView.theme({
     padding: '0',
   },
   '.cm-cursor, .cm-dropCursor': {
-    borderLeftColor: '#d97706',
+    borderLeftColor: 'var(--accent)',
     borderLeftWidth: '2px',
   },
-  // Focus ring : visible mais discret pour ne pas parasiter la lecture du code.
-  // On garde un liseret subtil de 1px sur le bord gauche (accent amber) plutot
-  // qu'un outline complet pour ne pas distraire pendant l'ecriture.
   '&.cm-focused': {
     outline: 'none',
-    boxShadow: 'inset 3px 0 0 rgba(180, 83, 9, 0.55)',
+    boxShadow: 'inset 3px 0 0 var(--accent)',
   },
   '&.cm-focused .cm-selectionBackground, ::selection, .cm-selectionBackground': {
-    background: 'rgba(245, 158, 11, 0.22)',
+    background: 'var(--bg-active)',
   },
   '.cm-activeLine': {
-    backgroundColor: 'rgba(245, 158, 11, 0.04)',
+    backgroundColor: 'var(--bg-hover)',
   },
   '.cm-gutters': {
-    backgroundColor: 'var(--bg, #f8fafc)',
-    color: '#94a3b8',
+    backgroundColor: 'var(--bg-sidebar)',
+    color: 'var(--text-muted)',
     border: 'none',
-    borderRight: '1px solid var(--border, rgba(0,0,0,.08))',
+    borderRight: '1px solid var(--border)',
     fontFamily: "'JetBrains Mono', ui-monospace, monospace",
     fontSize: '12px',
   },
   '.cm-activeLineGutter': {
     backgroundColor: 'transparent',
-    color: '#d97706',
+    color: 'var(--accent-light)',
   },
   '.cm-searchMatch': {
-    backgroundColor: 'rgba(245, 158, 11, 0.25)',
-    outline: '1px solid #f59e0b',
+    backgroundColor: 'var(--bg-active)',
+    outline: '1px solid var(--accent)',
   },
   '.cm-searchMatch.cm-searchMatch-selected': {
-    backgroundColor: 'rgba(245, 158, 11, 0.45)',
+    backgroundColor: 'var(--accent-subtle)',
   },
   '.cm-placeholder': {
-    color: '#cbd5e1',
+    color: 'var(--text-muted)',
     fontStyle: 'italic',
   },
 })

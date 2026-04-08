@@ -78,13 +78,13 @@ const saveDot = computed(() => {
 .lumen-statusbar {
   display: flex;
   align-items: center;
-  min-height: 30px;
+  min-height: 28px;
   padding: 3px 16px;
-  background: var(--bg, #f8fafc);
-  border-top: 1px solid var(--border, rgba(0, 0, 0, .08));
+  background: var(--bg-sidebar);
+  border-top: 1px solid var(--border);
   font-family: 'JetBrains Mono', ui-monospace, monospace;
-  font-size: 12px;
-  color: var(--text-2, #64748b);
+  font-size: var(--text-xs);
+  color: var(--text-muted);
   flex-shrink: 0;
   gap: 24px;
   user-select: none;
@@ -110,18 +110,18 @@ const saveDot = computed(() => {
   border: none;
   color: inherit;
   cursor: pointer;
-  padding: 4px 8px;
-  border-radius: 4px;
+  padding: 3px 8px;
+  border-radius: var(--radius-xs);
   font-family: inherit;
   font-size: inherit;
-  min-height: 24px;
+  min-height: 22px;
 }
 .lumen-sb-item--btn:hover {
-  background: var(--bg-card, #fff);
-  color: #b45309;
+  background: var(--bg-hover);
+  color: var(--text-primary);
 }
 .lumen-sb-item--btn:focus-visible {
-  outline: 2px solid #b45309;
+  outline: var(--focus-ring);
   outline-offset: 1px;
 }
 
@@ -135,13 +135,13 @@ const saveDot = computed(() => {
   width: 6px; height: 6px;
   border-radius: 50%;
 }
-.lumen-status-dot--saving { background: #4338ca; animation: lumen-pulse 1.2s ease-in-out infinite; }
+.lumen-status-dot--saving { background: var(--accent); animation: lumen-pulse 1.2s ease-in-out infinite; }
 @media (prefers-reduced-motion: reduce) {
   .lumen-status-dot--saving { animation: none; }
 }
-.lumen-status-dot--dirty  { background: #b45309; }
-.lumen-status-dot--saved  { background: #047857; }
-.lumen-status-dot--idle   { background: #cbd5e1; }
+.lumen-status-dot--dirty  { background: var(--color-warning); }
+.lumen-status-dot--saved  { background: var(--color-success); }
+.lumen-status-dot--idle   { background: var(--text-muted); }
 
 @keyframes lumen-pulse {
   0%, 100% { opacity: 1; }
@@ -150,6 +150,6 @@ const saveDot = computed(() => {
 
 .lumen-sb-item--lang {
   padding: 2px 6px;
-  border-left: 1px solid var(--border, rgba(0, 0, 0, .08));
+  border-left: 1px solid var(--border);
 }
 </style>

@@ -868,18 +868,18 @@ const chromeHidden = computed(() => focusMode.value || zenMode.value)
   display: flex;
   flex-direction: column;
   height: 100%;
-  background: var(--bg, #f5f3ff);
-  color: var(--text, #1e293b);
-  font-family: var(--font, 'Plus Jakarta Sans', sans-serif);
+  background: var(--bg-main);
+  color: var(--text-primary);
+  font-family: var(--font);
 }
 
-.lumen-app--editor { background: var(--bg-card, #fff); }
+.lumen-app--editor { background: var(--bg-main); }
 
 .lumen-app--zen {
   position: fixed;
   inset: 0;
-  z-index: 90;
-  background: var(--bg-card, #fff);
+  z-index: var(--z-modal);
+  background: var(--bg-main);
 }
 
 .lumen-hidden-input { display: none; }
@@ -890,25 +890,25 @@ const chromeHidden = computed(() => focusMode.value || zenMode.value)
   align-items: center;
   gap: 16px;
   padding: 10px 20px;
-  border-bottom: 1px solid var(--border, rgba(0, 0, 0, .08));
-  background: var(--bg-card, #fff);
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-sidebar);
   flex-shrink: 0;
-  min-height: 56px;
+  min-height: 52px;
 }
 
 .lumen-brand { display: flex; align-items: center; gap: 12px; }
 
 .lumen-brand-icon {
-  width: 36px; height: 36px;
-  border-radius: 10px;
-  background: linear-gradient(135deg, rgba(252, 211, 77, 0.18), rgba(217, 119, 6, 0.12));
+  width: 34px; height: 34px;
+  border-radius: var(--radius);
+  background: var(--accent-subtle);
   display: flex; align-items: center; justify-content: center;
-  color: #d97706;
+  color: var(--accent);
 }
 
 .lumen-brand-text { display: flex; flex-direction: column; line-height: 1.1; }
-.lumen-brand-name { font-size: 15px; font-weight: 800; letter-spacing: -0.01em; }
-.lumen-brand-tag  { font-size: 11px; color: var(--text-3, #94a3b8); font-weight: 500; margin-top: 2px; }
+.lumen-brand-name { font-size: var(--text-md); font-weight: 700; letter-spacing: -0.01em; color: var(--text-primary); }
+.lumen-brand-tag  { font-size: var(--text-xs); color: var(--text-secondary); font-weight: 500; margin-top: 2px; }
 
 .lumen-status-pill { display: flex; align-items: center; gap: 8px; margin-left: 8px; }
 
@@ -917,15 +917,15 @@ const chromeHidden = computed(() => focusMode.value || zenMode.value)
   align-items: center;
   gap: 5px;
   padding: 4px 10px;
-  border-radius: 6px;
-  font-size: 11px;
+  border-radius: var(--radius-sm);
+  font-size: var(--text-xs);
   font-weight: 600;
   white-space: nowrap;
 }
-.lumen-status--saving    { background: rgba(99, 102, 241, 0.1); color: #4338ca; }
-.lumen-status--dirty     { background: rgba(245, 158, 11, 0.12); color: #b45309; }
-.lumen-status--saved     { background: rgba(100, 116, 139, 0.1); color: #475569; }
-.lumen-status--published { background: rgba(5, 150, 105, 0.12); color: #047857; }
+.lumen-status--saving    { background: var(--accent-subtle); color: var(--accent-light); }
+.lumen-status--dirty     { background: rgba(232, 137, 26, .16); color: var(--color-warning); }
+.lumen-status--saved     { background: var(--bg-hover); color: var(--text-secondary); }
+.lumen-status--published { background: rgba(46, 204, 113, .16); color: var(--color-success); }
 
 .lumen-status-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
 
@@ -939,7 +939,7 @@ const chromeHidden = computed(() => focusMode.value || zenMode.value)
 @keyframes lumen-spin { to { transform: rotate(360deg); } }
 
 .lumen-topbar-actions { display: flex; align-items: center; gap: 6px; margin-left: auto; }
-.lumen-topbar-sep { width: 1px; height: 22px; background: var(--border, rgba(0, 0, 0, .1)); margin: 0 4px; }
+.lumen-topbar-sep { width: 1px; height: 20px; background: var(--border); margin: 0 4px; }
 
 /* ── Zen topbar ──────────────────────────────────────────────────────── */
 .lumen-zen-topbar {
@@ -949,78 +949,81 @@ const chromeHidden = computed(() => focusMode.value || zenMode.value)
   z-index: 10;
 }
 .lumen-zen-exit {
-  width: 32px; height: 32px;
-  border-radius: 8px;
-  border: 1px solid var(--border, rgba(0, 0, 0, .1));
-  background: var(--bg-card, #fff);
-  color: var(--text-2, #64748b);
+  width: 30px; height: 30px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--bg-elevated);
+  color: var(--text-secondary);
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
+  transition: all var(--t-base) ease;
 }
-.lumen-zen-exit:hover { color: #d97706; }
+.lumen-zen-exit:hover { color: var(--text-primary); background: var(--bg-hover); }
 
 /* ── Buttons ─────────────────────────────────────────────────────────── */
 .lumen-btn {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 7px 14px;
-  border-radius: 8px;
+  padding: 8px 16px;
+  border-radius: var(--radius);
   border: 1px solid transparent;
   font-family: inherit;
-  font-size: 13px;
+  font-size: var(--text-sm);
   font-weight: 600;
   cursor: pointer;
-  transition: all 200ms ease;
+  transition: all var(--t-base) ease;
   background: transparent;
-  color: var(--text, #1e293b);
+  color: var(--text-primary);
   white-space: nowrap;
 }
-.lumen-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.lumen-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 
 .lumen-btn--primary {
-  background: linear-gradient(135deg, #d97706, #b45309);
+  background: var(--accent);
   color: #fff;
-  box-shadow: 0 1px 3px rgba(180, 83, 9, 0.3);
 }
 .lumen-btn--primary:hover:not(:disabled) {
-  box-shadow: 0 3px 10px rgba(180, 83, 9, 0.35);
-  transform: translateY(-1px);
+  filter: brightness(1.1);
+  box-shadow: var(--shadow-sm);
+}
+.lumen-btn--primary:active:not(:disabled) {
+  filter: brightness(0.92);
 }
 .lumen-btn:focus-visible {
-  outline: 2px solid #b45309;
-  outline-offset: 2px;
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-offset);
 }
 
 .lumen-btn--ghost {
-  background: var(--bg-card, #fff);
-  border-color: var(--border, rgba(0, 0, 0, .1));
-  color: var(--text-2, #64748b);
+  background: transparent;
+  border-color: var(--border);
+  color: var(--text-secondary);
 }
 .lumen-btn--ghost:hover:not(:disabled) {
-  background: var(--bg-glass, rgba(0, 0, 0, .03));
-  color: var(--text, #1e293b);
+  background: var(--bg-hover);
+  color: var(--text-primary);
 }
 
 .lumen-icon-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 36px; height: 36px;
-  border-radius: 8px;
-  border: 1px solid var(--border, rgba(0, 0, 0, .1));
-  background: var(--bg-card, #fff);
-  color: var(--text-2, #64748b);
+  width: 30px; height: 30px;
+  border-radius: var(--radius);
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
   cursor: pointer;
-  transition: all 200ms ease;
+  transition: all var(--t-base) ease;
 }
-.lumen-icon-btn:hover { color: var(--text, #1e293b); background: var(--bg-glass, rgba(0, 0, 0, .03)); }
-.lumen-icon-btn--active { background: rgba(245, 158, 11, 0.12); color: #b45309; border-color: rgba(180, 83, 9, 0.3); }
+.lumen-icon-btn:hover { color: var(--text-primary); background: var(--bg-hover); }
+.lumen-icon-btn--active { background: var(--bg-active); color: var(--accent-light); }
 .lumen-icon-btn:focus-visible {
-  outline: 2px solid #b45309;
-  outline-offset: 2px;
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-offset);
 }
 
 /* ── List view ───────────────────────────────────────────────────────── */
@@ -1041,12 +1044,12 @@ const chromeHidden = computed(() => focusMode.value || zenMode.value)
   text-align: center;
   padding: 100px 20px;
   gap: 12px;
-  color: var(--text-2, #64748b);
+  color: var(--text-secondary);
 }
 
-.lumen-empty-icon { color: #d97706; opacity: 0.4; margin-bottom: 8px; }
-.lumen-empty h2 { margin: 0; font-size: 19px; font-weight: 700; color: var(--text, #1e293b); }
-.lumen-empty p { margin: 0 0 16px; font-size: 14px; }
+.lumen-empty-icon { color: var(--accent); opacity: 0.5; margin-bottom: 8px; }
+.lumen-empty h2 { margin: 0; font-size: var(--text-xl); font-weight: 700; color: var(--text-primary); }
+.lumen-empty p { margin: 0 0 16px; font-size: var(--text-base); }
 
 .lumen-list-grid {
   display: grid;
@@ -1055,26 +1058,27 @@ const chromeHidden = computed(() => focusMode.value || zenMode.value)
 }
 
 .lumen-card {
-  background: var(--bg-card, #fff);
-  border: 1px solid var(--border, rgba(0, 0, 0, .08));
-  border-radius: 14px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
   padding: 20px;
   display: flex;
   flex-direction: column;
   gap: 10px;
   cursor: pointer;
-  transition: all 200ms ease;
+  transition: all var(--t-base) ease;
   text-align: left;
+  box-shadow: var(--shadow-card);
 }
 .lumen-card:hover {
-  transform: translateY(-2px);
-  border-color: rgba(180, 83, 9, 0.35);
-  box-shadow: 0 6px 20px rgba(180, 83, 9, 0.1);
+  transform: translateY(-3px);
+  border-color: var(--accent);
+  box-shadow: var(--shadow-card-hover);
 }
-.lumen-card:focus-visible { outline: 2px solid #b45309; outline-offset: 2px; }
+.lumen-card:focus-visible { outline: var(--focus-ring); outline-offset: var(--focus-offset); }
 .lumen-card--draft {
   background:
-    repeating-linear-gradient(135deg, var(--bg-card, #fff), var(--bg-card, #fff) 14px, rgba(245, 158, 11, 0.025) 14px, rgba(245, 158, 11, 0.025) 16px);
+    repeating-linear-gradient(135deg, var(--bg-elevated), var(--bg-elevated) 14px, var(--bg-hover) 14px, var(--bg-hover) 16px);
 }
 
 .lumen-card-head { display: flex; align-items: center; justify-content: space-between; }
@@ -1083,19 +1087,19 @@ const chromeHidden = computed(() => focusMode.value || zenMode.value)
   align-items: center;
   gap: 4px;
   padding: 3px 9px;
-  border-radius: 6px;
-  font-size: 11px;
+  border-radius: var(--radius-sm);
+  font-size: var(--text-xs);
   font-weight: 700;
 }
-.lumen-pill--ok    { background: rgba(5, 150, 105, 0.12); color: #047857; }
-.lumen-pill--draft { background: rgba(100, 116, 139, 0.12); color: #475569; }
+.lumen-pill--ok    { background: rgba(46, 204, 113, .16); color: var(--color-success); }
+.lumen-pill--draft { background: var(--bg-hover); color: var(--text-secondary); }
 
-.lumen-card-date { font-size: 11px; color: var(--text-3, #94a3b8); }
-.lumen-card-title { margin: 0; font-size: 17px; font-weight: 700; letter-spacing: -0.01em; line-height: 1.3; }
+.lumen-card-date { font-size: var(--text-xs); color: var(--text-muted); }
+.lumen-card-title { margin: 0; font-size: var(--text-lg); font-weight: 700; letter-spacing: -0.01em; line-height: 1.3; color: var(--text-primary); }
 .lumen-card-summary {
   margin: 0;
-  font-size: 13px;
-  color: var(--text-2, #64748b);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
   line-height: 1.5;
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -1107,8 +1111,8 @@ const chromeHidden = computed(() => focusMode.value || zenMode.value)
   display: flex;
   gap: 14px;
   margin-top: auto;
-  padding-top: 8px;
-  border-top: 1px solid var(--border, rgba(0, 0, 0, .06));
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
 }
 .lumen-card-link {
   display: inline-flex;
@@ -1116,58 +1120,68 @@ const chromeHidden = computed(() => focusMode.value || zenMode.value)
   gap: 4px;
   background: none;
   border: none;
-  font-size: 12px;
+  font-size: var(--text-sm);
   font-weight: 600;
-  color: var(--text-2, #64748b);
+  color: var(--text-secondary);
   cursor: pointer;
   padding: 0;
   font-family: inherit;
 }
-.lumen-card-link:hover { color: #b45309; }
+.lumen-card-link:hover { color: var(--accent); }
 .lumen-card-link:focus-visible {
-  outline: 2px solid #b45309;
-  outline-offset: 2px;
-  border-radius: 3px;
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-offset);
+  border-radius: var(--radius-xs);
 }
 
 /* ── Reader view ─────────────────────────────────────────────────────── */
 .lumen-reader-main { flex: 1; overflow-y: auto; padding: 48px 32px 80px; }
 .lumen-reader { max-width: 720px; margin: 0 auto; }
-.lumen-reader-head { margin-bottom: 36px; padding-bottom: 24px; border-bottom: 1px solid var(--border, rgba(0, 0, 0, .08)); }
+.lumen-reader-head { margin-bottom: 36px; padding-bottom: 24px; border-bottom: 1px solid var(--border); }
 .lumen-reader-title {
-  font-size: 36px;
+  font-size: 32px;
   font-weight: 800;
   letter-spacing: -0.025em;
   margin: 0 0 14px;
   line-height: 1.15;
+  color: var(--text-primary);
 }
-.lumen-reader-summary { font-size: 18px; color: var(--text-2, #64748b); line-height: 1.5; margin: 0 0 14px; }
-.lumen-reader-meta { font-size: 13px; color: var(--text-3, #94a3b8); }
+.lumen-reader-summary { font-size: var(--text-md); color: var(--text-secondary); line-height: 1.55; margin: 0 0 14px; }
+.lumen-reader-meta { font-size: var(--text-sm); color: var(--text-muted); }
 
 .lumen-prose {
-  font-size: 16px;
-  line-height: 1.75;
-  color: var(--text, #1e293b);
+  font-size: var(--text-md);
+  line-height: 1.7;
+  color: var(--text-primary);
 }
-.lumen-prose :deep(h1) { font-size: 28px; font-weight: 800; margin: 32px 0 14px; }
+.lumen-prose :deep(h1) { font-size: 26px; font-weight: 800; margin: 32px 0 14px; color: var(--text-primary); letter-spacing: -0.02em; }
 .lumen-prose :deep(h1):first-child { margin-top: 0; }
-.lumen-prose :deep(h2) { font-size: 22px; font-weight: 700; margin: 28px 0 12px; padding-bottom: 6px; border-bottom: 1px solid var(--border, rgba(0, 0, 0, .08)); }
-.lumen-prose :deep(h3) { font-size: 18px; font-weight: 700; margin: 22px 0 10px; }
-.lumen-prose :deep(p) { margin: 0 0 16px; }
-.lumen-prose :deep(ul), .lumen-prose :deep(ol) { margin: 0 0 16px; padding-left: 26px; }
-.lumen-prose :deep(li) { margin: 5px 0; }
-.lumen-prose :deep(a) { color: #b45309; text-decoration: underline; }
-.lumen-prose :deep(a:hover) { color: #92400e; }
+.lumen-prose :deep(h2) { font-size: 21px; font-weight: 700; margin: 28px 0 12px; padding-bottom: 6px; border-bottom: 1px solid var(--border); color: var(--text-primary); letter-spacing: -0.01em; }
+.lumen-prose :deep(h3) { font-size: 17px; font-weight: 700; margin: 22px 0 10px; color: var(--text-primary); }
+.lumen-prose :deep(p) { margin: 0 0 14px; }
+.lumen-prose :deep(ul), .lumen-prose :deep(ol) { margin: 0 0 14px; padding-left: 24px; }
+.lumen-prose :deep(li) { margin: 4px 0; }
+.lumen-prose :deep(a) { color: var(--accent); text-decoration: underline; text-underline-offset: 2px; }
+.lumen-prose :deep(a:hover) { color: var(--accent-hover); }
 .lumen-prose :deep(blockquote) {
-  margin: 16px 0;
-  padding: 10px 18px;
-  border-left: 3px solid #b45309;
-  background: rgba(245, 158, 11, 0.06);
-  color: #475569;
+  margin: 14px 0;
+  padding: 8px 16px;
+  border-left: 3px solid var(--accent);
+  background: var(--accent-subtle);
+  color: var(--text-secondary);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
 }
-.lumen-prose :deep(code) { font-family: 'JetBrains Mono', monospace; font-size: 0.88em; padding: 2px 6px; border-radius: 4px; background: rgba(217, 119, 6, 0.1); color: #92400e; }
-.lumen-prose :deep(pre.lumen-code) { margin: 16px 0; padding: 16px 20px; border-radius: 10px; background: #0f172a; color: #e2e8f0; overflow-x: auto; font-size: 13px; }
-.lumen-prose :deep(pre.lumen-code code) { background: transparent; padding: 0; color: inherit; }
+.lumen-prose :deep(code) {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 0.88em;
+  padding: 1px 6px;
+  border-radius: var(--radius-xs);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-input);
+  color: var(--text-primary);
+}
+.lumen-prose :deep(pre.lumen-code) { margin: 14px 0; padding: 14px 18px; border-radius: var(--radius); background: var(--bg-input); border: 1px solid var(--border); color: var(--text-primary); overflow-x: auto; font-size: var(--text-sm); }
+.lumen-prose :deep(pre.lumen-code code) { background: transparent; border: none; padding: 0; color: inherit; }
 
 /* ── Editor main layout ──────────────────────────────────────────────── */
 .lumen-editor-main {
@@ -1180,8 +1194,8 @@ const chromeHidden = computed(() => focusMode.value || zenMode.value)
 .lumen-sidebar {
   width: 240px;
   flex-shrink: 0;
-  border-right: 1px solid var(--border, rgba(0, 0, 0, .08));
-  background: var(--bg, #f8fafc);
+  border-right: 1px solid var(--border);
+  background: var(--bg-sidebar);
   display: flex;
   flex-direction: column;
 }
@@ -1191,37 +1205,36 @@ const chromeHidden = computed(() => focusMode.value || zenMode.value)
   align-items: center;
   gap: 8px;
   padding: 12px 16px;
-  border-bottom: 1px solid var(--border, rgba(0, 0, 0, .08));
-  font-size: 11px;
+  border-bottom: 1px solid var(--border);
+  font-size: var(--text-xs);
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  color: var(--text-3, #94a3b8);
+  color: var(--text-muted);
 }
 
 .lumen-sidebar-add {
   margin-left: auto;
-  width: 28px; height: 28px;
-  border-radius: 6px;
+  width: 24px; height: 24px;
+  border-radius: var(--radius-sm);
   border: none;
-  background: var(--bg-card, #fff);
-  color: var(--text-2, #64748b);
+  background: transparent;
+  color: var(--text-secondary);
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   position: relative;
 }
-/* Extend hit area pour touch accessibility sans changer la taille visuelle */
 .lumen-sidebar-add::before {
   content: '';
   position: absolute;
   inset: -8px;
 }
-.lumen-sidebar-add:hover { background: rgba(245, 158, 11, 0.12); color: #b45309; }
+.lumen-sidebar-add:hover { background: var(--bg-hover); color: var(--accent-light); }
 .lumen-sidebar-add:focus-visible {
-  outline: 2px solid #b45309;
-  outline-offset: 2px;
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-offset);
 }
 
 .lumen-sidebar-list {
@@ -1235,12 +1248,12 @@ const chromeHidden = computed(() => focusMode.value || zenMode.value)
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 10px 16px;
-  font-size: 13px;
+  padding: 9px 16px;
+  font-size: var(--text-sm);
   cursor: pointer;
-  color: var(--text-2, #64748b);
+  color: var(--text-secondary);
   border-left: 3px solid transparent;
-  transition: all 200ms ease;
+  transition: all var(--t-base) ease;
   background: transparent;
   border-top: none;
   border-right: none;
@@ -1248,20 +1261,20 @@ const chromeHidden = computed(() => focusMode.value || zenMode.value)
   font-family: inherit;
   text-align: left;
   width: 100%;
-  min-height: 40px;
+  min-height: 36px;
 }
 .lumen-sidebar-item:hover {
-  background: var(--bg-card, #fff);
-  color: var(--text, #1e293b);
+  background: var(--bg-hover);
+  color: var(--text-primary);
 }
 .lumen-sidebar-item:focus-visible {
-  outline: 2px solid #b45309;
+  outline: var(--focus-ring);
   outline-offset: -2px;
 }
 .lumen-sidebar-item--active {
-  background: var(--bg-card, #fff);
-  border-left-color: #b45309;
-  color: var(--text, #1e293b);
+  background: var(--bg-active);
+  border-left-color: var(--accent);
+  color: var(--text-primary);
   font-weight: 600;
 }
 
@@ -1270,8 +1283,8 @@ const chromeHidden = computed(() => focusMode.value || zenMode.value)
   border-radius: 50%;
   flex-shrink: 0;
 }
-.lumen-sidebar-dot--ok    { background: #059669; }
-.lumen-sidebar-dot--draft { background: #94a3b8; }
+.lumen-sidebar-dot--ok    { background: var(--color-success); }
+.lumen-sidebar-dot--draft { background: var(--text-muted); }
 
 .lumen-sidebar-title {
   white-space: nowrap;
@@ -1282,8 +1295,8 @@ const chromeHidden = computed(() => focusMode.value || zenMode.value)
 .lumen-sidebar-empty {
   padding: 24px 16px;
   text-align: center;
-  font-size: 12px;
-  color: var(--text-3, #94a3b8);
+  font-size: var(--text-sm);
+  color: var(--text-muted);
 }
 
 /* ── Editor zone ─────────────────────────────────────────────────────── */
@@ -1293,6 +1306,7 @@ const chromeHidden = computed(() => focusMode.value || zenMode.value)
   flex-direction: column;
   min-width: 0;
   position: relative;
+  background: var(--bg-main);
 }
 
 .lumen-meta-row {
@@ -1300,8 +1314,8 @@ const chromeHidden = computed(() => focusMode.value || zenMode.value)
   flex-direction: column;
   gap: 4px;
   padding: 14px 24px 10px;
-  border-bottom: 1px solid var(--border, rgba(0, 0, 0, .06));
-  background: var(--bg-card, #fff);
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-main);
 }
 
 .lumen-meta-title, .lumen-meta-summary {
@@ -1309,20 +1323,20 @@ const chromeHidden = computed(() => focusMode.value || zenMode.value)
   border: none;
   background: transparent;
   font-family: inherit;
-  color: var(--text, #1e293b);
+  color: var(--text-primary);
   outline: none;
   padding: 3px 0;
 }
 
 .lumen-meta-title {
-  font-size: 21px;
+  font-size: var(--text-xl);
   font-weight: 800;
   letter-spacing: -0.02em;
 }
-.lumen-meta-title::placeholder { color: var(--text-3, #cbd5e1); }
+.lumen-meta-title::placeholder { color: var(--text-muted); }
 
-.lumen-meta-summary { font-size: 14px; color: var(--text-2, #64748b); }
-.lumen-meta-summary::placeholder { color: var(--text-3, #cbd5e1); }
+.lumen-meta-summary { font-size: var(--text-base); color: var(--text-secondary); }
+.lumen-meta-summary::placeholder { color: var(--text-muted); }
 
 /* ── Split pane ──────────────────────────────────────────────────────── */
 .lumen-split {
@@ -1335,29 +1349,28 @@ const chromeHidden = computed(() => focusMode.value || zenMode.value)
 .lumen-split-handle {
   width: 6px;
   cursor: col-resize;
-  background: var(--border, rgba(0, 0, 0, .08));
+  background: var(--border);
   position: relative;
-  transition: background 200ms ease;
+  transition: background var(--t-base) ease;
   z-index: 2;
 }
-/* Extend hit area pour faciliter le drag (±10px) tout en gardant le visuel fin */
 .lumen-split-handle::before {
   content: '';
   position: absolute;
   inset: 0 -10px;
 }
 .lumen-split-handle:hover {
-  background: rgba(180, 83, 9, 0.4);
+  background: var(--accent);
 }
 
 /* ── Drop overlay ────────────────────────────────────────────────────── */
 .lumen-drop-overlay {
   position: absolute;
   inset: 0;
-  background: rgba(245, 158, 11, 0.12);
+  background: var(--bg-active);
   backdrop-filter: blur(3px);
-  border: 3px dashed #b45309;
-  border-radius: 12px;
+  border: 2px dashed var(--accent);
+  border-radius: var(--radius-lg);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1370,7 +1383,7 @@ const chromeHidden = computed(() => focusMode.value || zenMode.value)
   flex-direction: column;
   align-items: center;
   gap: 12px;
-  color: #b45309;
+  color: var(--accent-light);
   font-weight: 600;
 }
 .lumen-drop-msg p { margin: 0; }

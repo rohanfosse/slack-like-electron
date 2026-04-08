@@ -136,7 +136,7 @@ function onTextClick(e: MouseEvent) {
       <!-- Texte - mode lecture -->
       <template v-if="!editing">
         <!-- eslint-disable vue/no-v-html -->
-        <p class="msg-text" v-html="content" @click="onTextClick" />
+        <div class="msg-text" v-html="content" @click="onTextClick" />
         <!-- eslint-enable vue/no-v-html -->
 
         <!-- Prévisualisation image inline (bare URL hors markdown, ex. lien collé) -->

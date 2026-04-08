@@ -43,10 +43,10 @@ defineEmits<Emits>()
 .lumen-toolbar {
   display: flex;
   align-items: center;
-  gap: 1px;
+  gap: 2px;
   padding: 6px 20px;
-  background: var(--bg, #f8fafc);
-  border-bottom: 1px solid var(--border, rgba(0, 0, 0, .08));
+  background: var(--bg-sidebar);
+  border-bottom: 1px solid var(--border);
   flex-shrink: 0;
   overflow-x: auto;
   scrollbar-width: none;
@@ -57,21 +57,21 @@ defineEmits<Emits>()
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 36px; height: 36px;
-  border-radius: 7px;
+  width: 30px; height: 30px;
+  border-radius: var(--radius-sm);
   border: none;
   background: transparent;
-  color: var(--text-2, #64748b);
+  color: var(--text-secondary);
   cursor: pointer;
-  transition: all 150ms ease;
+  transition: all var(--t-fast) ease;
   flex-shrink: 0;
 }
 .lumen-tb-btn:hover {
-  background: var(--bg-card, #fff);
-  color: #b45309;
+  background: var(--bg-hover);
+  color: var(--text-primary);
 }
 .lumen-tb-btn:focus-visible {
-  outline: 2px solid #b45309;
+  outline: var(--focus-ring);
   outline-offset: 1px;
   z-index: 1;
 }
@@ -86,7 +86,7 @@ defineEmits<Emits>()
 .lumen-tb-sep {
   width: 1px;
   height: 18px;
-  background: var(--border, rgba(0, 0, 0, .1));
+  background: var(--border);
   margin: 0 5px;
   flex-shrink: 0;
 }

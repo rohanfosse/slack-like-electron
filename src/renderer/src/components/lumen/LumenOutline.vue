@@ -73,8 +73,8 @@ const headings = computed<Heading[]>(() => {
 .lumen-outline {
   width: 240px;
   flex-shrink: 0;
-  border-left: 1px solid var(--border, rgba(0, 0, 0, .08));
-  background: var(--bg, #f8fafc);
+  border-left: 1px solid var(--border);
+  background: var(--bg-sidebar);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -85,12 +85,12 @@ const headings = computed<Heading[]>(() => {
   align-items: center;
   gap: 8px;
   padding: 12px 16px;
-  border-bottom: 1px solid var(--border, rgba(0, 0, 0, .08));
-  font-size: 11px;
+  border-bottom: 1px solid var(--border);
+  font-size: var(--text-xs);
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  color: var(--text-3, #94a3b8);
+  color: var(--text-muted);
 }
 
 .lumen-outline-nav {
@@ -107,37 +107,37 @@ const headings = computed<Heading[]>(() => {
   border: none;
   cursor: pointer;
   font-family: inherit;
-  font-size: 13px;
-  color: var(--text-2, #64748b);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
   padding: 5px 16px;
   border-left: 2px solid transparent;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  transition: all 150ms ease;
+  transition: all var(--t-fast) ease;
 }
 
 .lumen-outline-item:hover {
-  background: var(--bg-card, #fff);
-  color: var(--text, #1e293b);
-  border-left-color: rgba(180, 83, 9, 0.5);
+  background: var(--bg-hover);
+  color: var(--text-primary);
+  border-left-color: var(--accent);
 }
 .lumen-outline-item:focus-visible {
-  outline: 2px solid #b45309;
+  outline: var(--focus-ring);
   outline-offset: -2px;
 }
 
-.lumen-outline-item--h1 { font-weight: 700; color: var(--text, #1e293b); }
+.lumen-outline-item--h1 { font-weight: 700; color: var(--text-primary); }
 .lumen-outline-item--h2 { padding-left: 26px; }
 .lumen-outline-item--h3 { padding-left: 36px; font-size: 12px; }
 .lumen-outline-item--h4 { padding-left: 46px; font-size: 12px; }
-.lumen-outline-item--h5 { padding-left: 56px; font-size: 12px; color: var(--text-3, #94a3b8); }
-.lumen-outline-item--h6 { padding-left: 66px; font-size: 12px; color: var(--text-3, #94a3b8); }
+.lumen-outline-item--h5 { padding-left: 56px; font-size: 12px; color: var(--text-muted); }
+.lumen-outline-item--h6 { padding-left: 66px; font-size: 12px; color: var(--text-muted); }
 
 .lumen-outline-empty {
   padding: 24px 16px;
-  font-size: 12px;
-  color: var(--text-3, #94a3b8);
+  font-size: var(--text-sm);
+  color: var(--text-muted);
   text-align: center;
   line-height: 1.5;
 }

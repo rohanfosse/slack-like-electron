@@ -90,7 +90,7 @@ const wrapperClass = computed(() => 'lumen-cm-wrapper')
   height: 100%;
   width: 100%;
   overflow: hidden;
-  background: var(--bg-card, #fff);
+  background: var(--bg-main);
 }
 .lumen-cm-wrapper :deep(.cm-editor) {
   height: 100%;

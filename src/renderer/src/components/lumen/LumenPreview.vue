@@ -55,9 +55,9 @@ defineExpose({ setScrollRatio, getScrollRatio })
 
 <style scoped>
 .lumen-preview {
-  background: var(--bg, #f8fafc);
+  background: var(--bg-sidebar);
   overflow-y: auto;
-  border-left: 1px solid var(--border, rgba(0, 0, 0, .08));
+  border-left: 1px solid var(--border);
   height: 100%;
 }
 
@@ -68,108 +68,115 @@ defineExpose({ setScrollRatio, getScrollRatio })
 }
 
 .lumen-preview-title {
-  font-size: 30px;
+  font-size: 28px;
   font-weight: 800;
   letter-spacing: -0.025em;
-  margin: 0 0 28px;
+  margin: 0 0 24px;
   padding-bottom: 12px;
-  border-bottom: 1px solid var(--border, rgba(0, 0, 0, .1));
+  border-bottom: 1px solid var(--border);
   line-height: 1.15;
+  color: var(--text-primary);
 }
 
 .lumen-preview-empty {
-  color: var(--text-3, #cbd5e1);
+  color: var(--text-muted);
   text-align: center;
   margin-top: 80px;
-  font-size: 14px;
+  font-size: var(--text-base);
 }
 
 /* ── Prose (markdown rendu) ─────────────────────────────────────────── */
 .lumen-prose {
-  font-size: 16px;
-  line-height: 1.75;
-  color: var(--text, #1e293b);
-  font-family: var(--font, 'Plus Jakarta Sans', sans-serif);
+  font-size: var(--text-md);
+  line-height: 1.7;
+  color: var(--text-primary);
+  font-family: var(--font);
 }
 
 .lumen-prose :deep(h1) {
-  font-size: 28px;
+  font-size: 26px;
   font-weight: 800;
   letter-spacing: -0.02em;
   margin: 32px 0 14px;
   line-height: 1.2;
+  color: var(--text-primary);
 }
 .lumen-prose :deep(h1):first-child { margin-top: 0; }
 
 .lumen-prose :deep(h2) {
-  font-size: 22px;
+  font-size: 21px;
   font-weight: 700;
   letter-spacing: -0.01em;
   margin: 28px 0 12px;
   line-height: 1.25;
   padding-bottom: 6px;
-  border-bottom: 1px solid var(--border, rgba(0, 0, 0, .08));
+  border-bottom: 1px solid var(--border);
+  color: var(--text-primary);
 }
 
 .lumen-prose :deep(h3) {
-  font-size: 18px;
+  font-size: 17px;
   font-weight: 700;
   margin: 22px 0 10px;
+  color: var(--text-primary);
 }
 
 .lumen-prose :deep(h4) {
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 700;
   margin: 18px 0 8px;
-  color: var(--text-2, #64748b);
+  color: var(--text-secondary);
 }
 
-.lumen-prose :deep(p) { margin: 0 0 16px; }
+.lumen-prose :deep(p) { margin: 0 0 14px; }
 .lumen-prose :deep(ul),
-.lumen-prose :deep(ol) { margin: 0 0 16px; padding-left: 26px; }
-.lumen-prose :deep(li) { margin: 5px 0; }
+.lumen-prose :deep(ol) { margin: 0 0 14px; padding-left: 24px; }
+.lumen-prose :deep(li) { margin: 4px 0; }
 .lumen-prose :deep(li > ul),
 .lumen-prose :deep(li > ol) { margin: 6px 0 0; }
 
 .lumen-prose :deep(a) {
-  color: #b45309;
+  color: var(--accent);
   text-decoration: underline;
   text-decoration-thickness: 1.5px;
   text-underline-offset: 2px;
 }
-.lumen-prose :deep(a:hover) { color: #92400e; }
+.lumen-prose :deep(a:hover) { color: var(--accent-hover); }
 
 .lumen-prose :deep(blockquote) {
-  margin: 16px 0;
-  padding: 10px 18px;
-  border-left: 3px solid #b45309;
-  background: rgba(245, 158, 11, 0.06);
-  border-radius: 0 6px 6px 0;
-  color: #475569;
+  margin: 14px 0;
+  padding: 8px 16px;
+  border-left: 3px solid var(--accent);
+  background: var(--accent-subtle);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  color: var(--text-secondary);
 }
 .lumen-prose :deep(blockquote p:last-child) { margin-bottom: 0; }
 
 .lumen-prose :deep(code) {
   font-family: 'JetBrains Mono', ui-monospace, monospace;
   font-size: 0.88em;
-  padding: 2px 6px;
-  border-radius: 4px;
-  background: rgba(217, 119, 6, 0.1);
-  color: #92400e;
+  padding: 1px 6px;
+  border-radius: var(--radius-xs);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-input);
+  color: var(--text-primary);
 }
 
 .lumen-prose :deep(pre.lumen-code) {
-  margin: 16px 0;
-  padding: 16px 20px;
-  border-radius: 10px;
-  background: #0f172a;
-  color: #e2e8f0;
+  margin: 14px 0;
+  padding: 14px 18px;
+  border-radius: var(--radius);
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  color: var(--text-primary);
   overflow-x: auto;
-  font-size: 13px;
+  font-size: var(--text-sm);
   line-height: 1.6;
 }
 .lumen-prose :deep(pre.lumen-code code) {
   background: transparent;
+  border: none;
   padding: 0;
   color: inherit;
   font-size: inherit;
@@ -177,31 +184,32 @@ defineExpose({ setScrollRatio, getScrollRatio })
 
 .lumen-prose :deep(table) {
   border-collapse: collapse;
-  margin: 16px 0;
+  margin: 14px 0;
   width: 100%;
-  font-size: 14px;
+  font-size: var(--text-base);
 }
 .lumen-prose :deep(th),
 .lumen-prose :deep(td) {
   padding: 8px 14px;
-  border: 1px solid var(--border, rgba(0, 0, 0, .1));
+  border: 1px solid var(--border);
   text-align: left;
 }
 .lumen-prose :deep(th) {
-  background: rgba(245, 158, 11, 0.06);
+  background: var(--bg-elevated);
   font-weight: 700;
+  color: var(--text-primary);
 }
 
 .lumen-prose :deep(hr) {
   border: none;
-  border-top: 1px solid var(--border, rgba(0, 0, 0, .12));
+  border-top: 1px solid var(--border);
   margin: 28px 0;
 }
 
 .lumen-prose :deep(img) {
   max-width: 100%;
-  border-radius: 8px;
-  margin: 16px 0;
+  border-radius: var(--radius);
+  margin: 14px 0;
   display: block;
 }
 </style>

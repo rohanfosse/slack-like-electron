@@ -221,9 +221,9 @@ const iconMap = {
 .lumen-cmd-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(15, 23, 42, 0.4);
-  backdrop-filter: blur(4px);
-  z-index: 100;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(3px);
+  z-index: var(--z-modal);
   display: flex;
   align-items: flex-start;
   justify-content: center;
@@ -233,11 +233,11 @@ const iconMap = {
 .lumen-cmd-panel {
   width: 560px;
   max-width: 92vw;
-  background: var(--bg-card, #fff);
-  border-radius: 14px;
-  box-shadow: 0 20px 60px rgba(15, 23, 42, 0.35);
+  background: var(--bg-modal);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
   overflow: hidden;
-  border: 1px solid var(--border, rgba(0, 0, 0, 0.08));
+  border: 1px solid var(--border);
   display: flex;
   flex-direction: column;
   max-height: 70vh;
@@ -248,11 +248,11 @@ const iconMap = {
   align-items: center;
   gap: 10px;
   padding: 14px 18px;
-  border-bottom: 1px solid var(--border, rgba(0, 0, 0, 0.08));
+  border-bottom: 1px solid var(--border);
 }
 
 .lumen-cmd-search-icon {
-  color: var(--text-3, #94a3b8);
+  color: var(--text-muted);
   flex-shrink: 0;
 }
 
@@ -261,20 +261,20 @@ const iconMap = {
   border: none;
   background: transparent;
   font-family: inherit;
-  font-size: 15px;
-  color: var(--text, #1e293b);
+  font-size: var(--text-md);
+  color: var(--text-primary);
   outline: none;
 }
-.lumen-cmd-input::placeholder { color: var(--text-3, #94a3b8); }
+.lumen-cmd-input::placeholder { color: var(--text-muted); }
 
 .lumen-cmd-kbd {
   font-family: 'JetBrains Mono', ui-monospace, monospace;
   font-size: 10px;
   padding: 2px 6px;
-  border-radius: 4px;
-  background: var(--bg, #f8fafc);
-  color: var(--text-3, #94a3b8);
-  border: 1px solid var(--border, rgba(0, 0, 0, 0.1));
+  border-radius: var(--radius-xs);
+  background: var(--bg-hover);
+  color: var(--text-muted);
+  border: 1px solid var(--border);
 }
 
 .lumen-cmd-list {
@@ -293,23 +293,23 @@ const iconMap = {
   background: transparent;
   text-align: left;
   font-family: inherit;
-  font-size: 14px;
-  color: var(--text, #1e293b);
+  font-size: var(--text-base);
+  color: var(--text-primary);
   cursor: pointer;
-  border-radius: 8px;
-  transition: background 120ms ease;
+  border-radius: var(--radius);
+  transition: background var(--t-fast) ease;
 }
 
 .lumen-cmd-item--active {
-  background: rgba(245, 158, 11, 0.1);
+  background: var(--bg-active);
 }
 
 .lumen-cmd-item-icon {
   flex-shrink: 0;
-  color: var(--text-3, #94a3b8);
+  color: var(--text-muted);
 }
 
-.lumen-cmd-item--active .lumen-cmd-item-icon { color: #d97706; }
+.lumen-cmd-item--active .lumen-cmd-item-icon { color: var(--accent-light); }
 
 .lumen-cmd-item-label {
   flex: 1;
@@ -319,26 +319,26 @@ const iconMap = {
 }
 
 .lumen-cmd-item-hint {
-  font-size: 11px;
-  color: var(--text-3, #94a3b8);
+  font-size: var(--text-xs);
+  color: var(--text-muted);
   flex-shrink: 0;
 }
 
 .lumen-cmd-empty {
   text-align: center;
   padding: 40px 20px;
-  color: var(--text-3, #94a3b8);
-  font-size: 13px;
+  color: var(--text-muted);
+  font-size: var(--text-sm);
 }
 
 .lumen-cmd-footer {
   display: flex;
   gap: 16px;
   padding: 10px 18px;
-  border-top: 1px solid var(--border, rgba(0, 0, 0, 0.08));
-  background: var(--bg, #f8fafc);
-  font-size: 11px;
-  color: var(--text-3, #94a3b8);
+  border-top: 1px solid var(--border);
+  background: var(--bg-sidebar);
+  font-size: var(--text-xs);
+  color: var(--text-muted);
 }
 
 .lumen-cmd-hint {
@@ -350,9 +350,9 @@ const iconMap = {
   font-family: 'JetBrains Mono', ui-monospace, monospace;
   font-size: 10px;
   padding: 1px 5px;
-  border-radius: 3px;
-  background: var(--bg-card, #fff);
-  border: 1px solid var(--border, rgba(0, 0, 0, 0.1));
+  border-radius: var(--radius-xs);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
 }
 
 /* Transition */
