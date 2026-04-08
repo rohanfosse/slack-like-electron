@@ -20,7 +20,7 @@ import LumenStatusBar from '@/components/lumen/LumenStatusBar.vue'
 import LumenPreview from '@/components/lumen/LumenPreview.vue'
 import LumenCommandPalette from '@/components/lumen/LumenCommandPalette.vue'
 import type { CursorInfo } from '@/composables/useLumenEditor'
-import type { LumenCourse } from '@/types'
+import type { LumenCourse, Promotion } from '@/types'
 
 const appStore = useAppStore()
 const lumenStore = useLumenStore()
@@ -43,6 +43,12 @@ const cursor          = ref<CursorInfo | null>(null)
 
 // Liste des projets de la promo active (pour le selecteur projet associe)
 const { projects: promoProjects, loadProjects } = useProjects()
+
+// Liste de toutes les promos du prof (pour le selecteur de promo dans la meta row)
+const allPromos = ref<Promotion[]>([])
+// Promo dans laquelle le cours va etre cree (null = nouveau cours non encore sauvegarde)
+// Pour un cours existant, on la derive de lumenStore.currentCourse.promo_id.
+const editorPromoId = ref<number | null>(null)
 
 // ── UI preferences ─────────────────────────────────────────────────────────
 const splitRatio     = ref(0.5)     // 0..1, ratio de l'editeur dans le split
@@ -102,9 +108,26 @@ async function loadCourses() {
   ])
 }
 
+// Charge les projets de la promo selectionnee pour l'edition (peut differer
+// de la promo globale active si le prof gere plusieurs promos).
+async function loadProjectsForEditorPromo() {
+  if (!isTeacher.value || !editorPromoId.value) return
+  await loadProjects(editorPromoId.value)
+}
+
+async function loadAllPromos() {
+  if (!isTeacher.value) return
+  try {
+    const res = await window.api.getPromotions()
+    allPromos.value = res?.ok ? (res.data as Promotion[]) : []
+  } catch { allPromos.value = [] }
+}
+
 watch(promoId, () => { loadCourses() })
+watch(editorPromoId, loadProjectsForEditorPromo)
+
 onMounted(async () => {
-  await loadCourses()
+  await Promise.all([loadCourses(), loadAllPromos()])
   // Deep link : si l'URL contient ?course=ID, on ouvre directement le reader
   // (utilise par les refs lumen:ID dans le chat et le widget dashboard).
   const courseQuery = route.query.course
@@ -158,6 +181,7 @@ async function openEditorEdit(course: LumenCourse) {
   editorSummary.value   = full.summary
   editorContent.value   = full.content
   editorProjectId.value = full.project_id
+  editorPromoId.value   = full.promo_id
   dirty.value           = false
   savedAt.value         = full.updated_at
   mode.value = 'editor'
@@ -170,19 +194,22 @@ function resetEditor() {
   editorSummary.value   = ''
   editorContent.value   = ''
   editorProjectId.value = null
+  // Nouveau cours : on prefille avec la promo globalement active (fallback
+  // sur la premiere promo disponible si aucune n'est active).
+  editorPromoId.value   = promoId.value ?? allPromos.value[0]?.id ?? null
   dirty.value           = false
   savedAt.value         = null
   cursor.value          = null
 }
 
 // ── Dirty tracking ──────────────────────────────────────────────────────────
-watch([editorTitle, editorSummary, editorContent, editorProjectId], () => {
+watch([editorTitle, editorSummary, editorContent, editorProjectId, editorPromoId], () => {
   if (mode.value === 'editor') dirty.value = true
 })
 
 // ── Auto-save (3s apres derniere edition) ──────────────────────────────────
 let autoSaveTimer: ReturnType<typeof setTimeout> | null = null
-watch([editorTitle, editorSummary, editorContent, editorProjectId], () => {
+watch([editorTitle, editorSummary, editorContent, editorProjectId, editorPromoId], () => {
   if (mode.value !== 'editor' || !editorCourseId.value) return
   if (autoSaveTimer) clearTimeout(autoSaveTimer)
   autoSaveTimer = setTimeout(() => { saveCourse(true) }, 3000)
@@ -202,14 +229,17 @@ async function saveCourse(silent = false): Promise<boolean> {
     const content   = editorContent.value
     const projectId = editorProjectId.value
     const courseId  = editorCourseId.value
-    const currentPromoId = promoId.value
+    // Utilise la promo choisie dans l'editeur (pas forcement la promo
+    // globalement active) — permet au prof de creer un cours pour une
+    // autre de ses promos sans switcher de contexte.
+    const targetPromoId = editorPromoId.value
 
     if (!title) {
       if (!silent) showToast('Le titre est requis', 'error')
       return false
     }
-    if (!currentPromoId) {
-      if (!silent) showToast('Aucune promotion active', 'error')
+    if (!targetPromoId) {
+      if (!silent) showToast('Sélectionne une promotion avant d\'enregistrer', 'error')
       return false
     }
     saving.value = true
@@ -227,7 +257,7 @@ async function saveCourse(silent = false): Promise<boolean> {
         }
       } else {
         const created = await lumenStore.createCourse({
-          promoId: currentPromoId, projectId, title, summary, content,
+          promoId: targetPromoId, projectId, title, summary, content,
         })
         if (created) {
           editorCourseId.value = created.id
@@ -364,7 +394,7 @@ async function uploadAndInsertImage(file: File) {
   }
 }
 
-// ── Drag & drop images ────────────────────────────────────────────────────
+// ── Drag & drop images + markdown ─────────────────────────────────────────
 function handleDragOver(e: DragEvent) {
   e.preventDefault()
   if (e.dataTransfer) e.dataTransfer.dropEffect = 'copy'
@@ -378,14 +408,50 @@ function handleDragLeave(e: DragEvent) {
     dropOverlay.value = false
   }
 }
+
+function isMarkdownFile(file: File): boolean {
+  // text/markdown, text/x-markdown, ou extension .md / .markdown
+  if (file.type === 'text/markdown' || file.type === 'text/x-markdown') return true
+  return /\.(md|markdown)$/i.test(file.name)
+}
+
+async function importMarkdownFile(file: File) {
+  let text: string
+  try {
+    text = await file.text()
+  } catch {
+    showToast('Impossible de lire le fichier markdown', 'error')
+    return
+  }
+
+  const hasContent = editorTitle.value.trim() !== '' || editorContent.value.trim() !== ''
+  if (hasContent && !confirm(`Remplacer le contenu actuel par « ${file.name} » ?`)) return
+
+  // Extraction du titre : premiere ligne h1 si presente, sinon nom du fichier.
+  const h1Match = text.match(/^\s*#\s+(.+?)\s*$/m)
+  if (h1Match) {
+    editorTitle.value = h1Match[1]
+    // Retire le h1 du corps pour eviter un double titre dans le reader
+    editorContent.value = text.replace(/^\s*#\s+.+$/m, '').replace(/^\s*\n/, '')
+  } else {
+    editorTitle.value = file.name.replace(/\.(md|markdown)$/i, '')
+    editorContent.value = text
+  }
+  dirty.value = true
+  showToast('Markdown importé — relis et enregistre', 'success')
+}
+
 async function handleDrop(e: DragEvent) {
   e.preventDefault()
   dropOverlay.value = false
   const files = e.dataTransfer?.files
-  if (!files) return
+  if (!files || files.length === 0) return
   for (const file of Array.from(files)) {
     if (file.type.startsWith('image/')) {
       await uploadAndInsertImage(file)
+    } else if (isMarkdownFile(file)) {
+      await importMarkdownFile(file)
+      break // Un seul markdown importe a la fois (ecrase le contenu)
     }
   }
 }
@@ -807,6 +873,24 @@ const chromeHidden = computed(() => focusMode.value || zenMode.value)
               maxlength="500"
             />
             <div class="lumen-meta-project-row">
+              <label class="lumen-meta-promo-label" for="lumen-promo-select">Promotion</label>
+              <select
+                id="lumen-promo-select"
+                v-model.number="editorPromoId"
+                class="lumen-meta-project lumen-meta-promo"
+                :disabled="editorCourseId !== null"
+                :title="editorCourseId ? 'Promotion verrouillée — créer un nouveau cours pour changer de promo' : 'Choisir la promotion cible pour ce cours'"
+              >
+                <option v-if="allPromos.length === 0" :value="null">Aucune promotion</option>
+                <option
+                  v-for="promo in allPromos"
+                  :key="promo.id"
+                  :value="promo.id"
+                >
+                  {{ promo.name }}
+                </option>
+              </select>
+
               <label class="lumen-meta-project-label" for="lumen-project-select">Projet associé</label>
               <select
                 id="lumen-project-select"
@@ -870,7 +954,7 @@ const chromeHidden = computed(() => focusMode.value || zenMode.value)
             <div v-if="dropOverlay" class="lumen-drop-overlay">
               <div class="lumen-drop-msg">
                 <Download :size="32" />
-                <p>Lâcher pour insérer l'image</p>
+                <p>Lâcher pour insérer une image ou importer un .md</p>
               </div>
             </div>
           </Transition>
@@ -1400,13 +1484,21 @@ const chromeHidden = computed(() => focusMode.value || zenMode.value)
   align-items: center;
   gap: 10px;
   margin-top: 6px;
+  flex-wrap: wrap;
 }
-.lumen-meta-project-label {
+.lumen-meta-project-label,
+.lumen-meta-promo-label {
   font-size: var(--text-xs);
   font-weight: 600;
   color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.04em;
+}
+.lumen-meta-promo-label { color: var(--accent); }
+.lumen-meta-promo:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+  background: var(--bg-hover);
 }
 .lumen-meta-project {
   font-family: inherit;
