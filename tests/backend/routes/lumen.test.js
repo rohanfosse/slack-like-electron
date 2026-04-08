@@ -161,3 +161,214 @@ describe('Lumen courses CRUD', () => {
     expect(res.body.data.deleted).toBe(true)
   })
 })
+
+// ─── Routes snapshot (repo git d'exemple) ───────────────────────────────────
+
+describe('Lumen snapshot routes', () => {
+  // Requires charges lazily dans beforeAll pour ne pas capturer le getDb
+  // non-patche (cf. setupTestDb qui patche connection.getDb).
+  let queries, lumenSnapshot
+  const sampleSnapshot = {
+    repo_url: 'https://github.com/owner/repo',
+    default_branch: 'main',
+    commit_sha: 'sha-first',
+    fetched_at: '2026-04-08T12:00:00Z',
+    files: [
+      { path: 'main.py',        size: 5, content_base64: Buffer.from('hello').toString('base64') },
+      { path: 'utils/helpers.py', size: 3, content_base64: Buffer.from('bye').toString('base64') },
+    ],
+    total_size: 8,
+    file_count: 2,
+  }
+
+  let courseWithRepo
+
+  beforeAll(() => {
+    queries = require('../../../server/db/index')
+    lumenSnapshot = require('../../../server/services/lumenSnapshot')
+    // Cree un cours avec un repo_url et un snapshot deja stocke, pour eviter
+    // d'avoir a mocker fetch dans chaque test (on teste le service separement).
+    const course = queries.createLumenCourse({
+      teacherId: 1,
+      promoId: 1,
+      title: 'Cours avec projet',
+      content: '# TP Python',
+    })
+    queries.updateLumenCourse(course.id, { repoUrl: 'https://github.com/owner/repo' })
+    queries.setLumenCourseSnapshot(course.id, {
+      url: sampleSnapshot.repo_url,
+      snapshot: sampleSnapshot,
+      commitSha: sampleSnapshot.commit_sha,
+      defaultBranch: sampleSnapshot.default_branch,
+    })
+    // Publie pour que les etudiants puissent y acceder
+    queries.publishLumenCourse(course.id)
+    courseWithRepo = course.id
+  })
+
+  it('GET /snapshot/tree : teacher recupere l arborescence sans les contenus', async () => {
+    const res = await request(app)
+      .get(`/api/lumen/courses/${courseWithRepo}/snapshot/tree`)
+      .set('Authorization', `Bearer ${teacherToken}`)
+    expect(res.status).toBe(200)
+    expect(res.body.data.file_count).toBe(2)
+    expect(res.body.data.files).toHaveLength(2)
+    // Le tree ne doit PAS contenir les contenus
+    expect(res.body.data.files[0].content_base64).toBeUndefined()
+    expect(res.body.data.files[0].path).toBe('main.py')
+  })
+
+  it('GET /snapshot/tree : student de la promo voit le tree', async () => {
+    const res = await request(app)
+      .get(`/api/lumen/courses/${courseWithRepo}/snapshot/tree`)
+      .set('Authorization', `Bearer ${studentToken}`)
+    expect(res.status).toBe(200)
+    expect(res.body.data.file_count).toBe(2)
+  })
+
+  it('GET /snapshot/tree : student d une autre promo est bloque (403)', async () => {
+    const res = await request(app)
+      .get(`/api/lumen/courses/${courseWithRepo}/snapshot/tree`)
+      .set('Authorization', `Bearer ${otherPromoStudentToken}`)
+    expect(res.status).toBe(403)
+  })
+
+  it('GET /snapshot/file : retourne le contenu base64 d un fichier precis', async () => {
+    const res = await request(app)
+      .get(`/api/lumen/courses/${courseWithRepo}/snapshot/file?path=main.py`)
+      .set('Authorization', `Bearer ${teacherToken}`)
+    expect(res.status).toBe(200)
+    expect(res.body.data.path).toBe('main.py')
+    expect(Buffer.from(res.body.data.content_base64, 'base64').toString()).toBe('hello')
+  })
+
+  it('GET /snapshot/file : 404 sur un path inconnu', async () => {
+    const res = await request(app)
+      .get(`/api/lumen/courses/${courseWithRepo}/snapshot/file?path=nothing.py`)
+      .set('Authorization', `Bearer ${teacherToken}`)
+    expect(res.status).toBe(404)
+  })
+
+  it('GET /snapshot/file : 400 sans param path', async () => {
+    const res = await request(app)
+      .get(`/api/lumen/courses/${courseWithRepo}/snapshot/file`)
+      .set('Authorization', `Bearer ${teacherToken}`)
+    expect(res.status).toBe(400)
+  })
+
+  it('GET /snapshot/download : stream un zip valide', async () => {
+    const res = await request(app)
+      .get(`/api/lumen/courses/${courseWithRepo}/snapshot/download`)
+      .set('Authorization', `Bearer ${studentToken}`)
+      .buffer(true)
+      .parse((resp, cb) => {
+        const chunks = []
+        resp.on('data', (c) => chunks.push(c))
+        resp.on('end', () => cb(null, Buffer.concat(chunks)))
+      })
+    expect(res.status).toBe(200)
+    expect(res.headers['content-type']).toBe('application/zip')
+    expect(res.headers['content-disposition']).toContain('attachment; filename="cours-avec-projet-exemple.zip"')
+    // Signature ZIP
+    expect(Buffer.isBuffer(res.body)).toBe(true)
+    expect(res.body.slice(0, 4).toString('hex')).toBe('504b0304')
+  })
+
+  it('POST /snapshot : rafraichit le snapshot via le service (fetch mocke)', async () => {
+    // Mock buildSnapshot pour retourner un SHA different → changed: true
+    const spy = vi.spyOn(lumenSnapshot, 'buildSnapshot').mockResolvedValue({
+      ...sampleSnapshot,
+      commit_sha: 'sha-updated',
+      fetched_at: '2026-04-08T13:00:00Z',
+    })
+    const res = await request(app)
+      .post(`/api/lumen/courses/${courseWithRepo}/snapshot`)
+      .set('Authorization', `Bearer ${teacherToken}`)
+    expect(res.status).toBe(200)
+    expect(res.body.data.commit_sha).toBe('sha-updated')
+    expect(res.body.data.changed).toBe(true)
+    spy.mockRestore()
+  })
+
+  it('POST /snapshot : refuse si aucun repo_url attache', async () => {
+    const noRepoCourse = queries.createLumenCourse({
+      teacherId: 1, promoId: 1, title: 'Pas de repo',
+    })
+    const res = await request(app)
+      .post(`/api/lumen/courses/${noRepoCourse.id}/snapshot`)
+      .set('Authorization', `Bearer ${teacherToken}`)
+    expect(res.status).toBe(400)
+    expect(res.body.code).toBe('NO_REPO_URL')
+  })
+
+  it('POST /snapshot : mappe les erreurs du service en HTTP', async () => {
+    const spy = vi.spyOn(lumenSnapshot, 'buildSnapshot').mockRejectedValue(
+      new lumenSnapshot.SnapshotError(
+        lumenSnapshot.ErrorCodes.REPO_NOT_FOUND,
+        'Repo introuvable.',
+      )
+    )
+    const res = await request(app)
+      .post(`/api/lumen/courses/${courseWithRepo}/snapshot`)
+      .set('Authorization', `Bearer ${teacherToken}`)
+    expect(res.status).toBe(404)
+    expect(res.body.code).toBe('REPO_NOT_FOUND')
+    spy.mockRestore()
+  })
+
+  it('POST /publish : declenche un snapshot si repo_url defini et pas de snapshot', async () => {
+    const freshCourse = queries.createLumenCourse({
+      teacherId: 1, promoId: 1, title: 'Fresh avec repo',
+    })
+    queries.updateLumenCourse(freshCourse.id, { repoUrl: 'https://github.com/owner/repo' })
+    // Au moment de publish, il n'y a PAS de snapshot — le route doit fetcher
+    const spy = vi.spyOn(lumenSnapshot, 'buildSnapshot').mockResolvedValue(sampleSnapshot)
+    const res = await request(app)
+      .post(`/api/lumen/courses/${freshCourse.id}/publish`)
+      .set('Authorization', `Bearer ${teacherToken}`)
+    expect(res.status).toBe(200)
+    expect(spy).toHaveBeenCalledWith('https://github.com/owner/repo')
+    spy.mockRestore()
+  })
+
+  it('POST /publish : bloque la publication si le snapshot echoue', async () => {
+    const freshCourse = queries.createLumenCourse({
+      teacherId: 1, promoId: 1, title: 'Fresh repo KO',
+    })
+    queries.updateLumenCourse(freshCourse.id, { repoUrl: 'https://github.com/owner/repo' })
+    const spy = vi.spyOn(lumenSnapshot, 'buildSnapshot').mockRejectedValue(
+      new lumenSnapshot.SnapshotError(
+        lumenSnapshot.ErrorCodes.RATE_LIMIT,
+        'Rate limit GitHub.',
+      )
+    )
+    const res = await request(app)
+      .post(`/api/lumen/courses/${freshCourse.id}/publish`)
+      .set('Authorization', `Bearer ${teacherToken}`)
+    expect(res.status).toBe(429)
+    const after = queries.getLumenCourse(freshCourse.id)
+    expect(after.status).toBe('draft')
+    spy.mockRestore()
+  })
+
+  it('PATCH : modifier repo_url efface le snapshot existant', async () => {
+    const course = queries.createLumenCourse({
+      teacherId: 1, promoId: 1, title: 'Change repo',
+    })
+    queries.setLumenCourseSnapshot(course.id, {
+      url: 'https://github.com/old/repo',
+      snapshot: sampleSnapshot,
+      commitSha: 'old-sha',
+      defaultBranch: 'main',
+    })
+    const res = await request(app)
+      .patch(`/api/lumen/courses/${course.id}`)
+      .set('Authorization', `Bearer ${teacherToken}`)
+      .send({ repoUrl: 'https://github.com/new/repo' })
+    expect(res.status).toBe(200)
+    const after = queries.getLumenCourse(course.id)
+    expect(after.repo_url).toBe('https://github.com/new/repo')
+    expect(after.repo_snapshot).toBeNull()
+    expect(after.repo_commit_sha).toBeNull()
+  })
+})
