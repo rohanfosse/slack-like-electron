@@ -5,6 +5,11 @@ import { renderMarkdown, slugifyHeading } from '@/utils/markdown'
 import { formatDate } from '@/utils/date'
 import type { LumenCourse } from '@/types'
 import LumenProjectPanel from '@/components/lumen/LumenProjectPanel.vue'
+import LumenNotePanel from '@/components/lumen/LumenNotePanel.vue'
+import { useAppStore } from '@/stores/app'
+
+const appStore = useAppStore()
+const isStudent = computed(() => !appStore.isTeacher)
 
 interface Props {
   course: LumenCourse
@@ -235,6 +240,12 @@ const nextCourse = computed(() =>
             :course="course"
             :initial-file="initialProjectFile"
             class="reader-project"
+          />
+
+          <!-- Notes privees (etudiants uniquement, jamais pour les profs) -->
+          <LumenNotePanel
+            v-if="isStudent"
+            :course-id="course.id"
           />
 
           <!-- Navigation prev / next -->

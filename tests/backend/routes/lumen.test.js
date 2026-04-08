@@ -372,6 +372,93 @@ describe('Lumen snapshot routes', () => {
     expect(after.repo_commit_sha).toBeNull()
   })
 
+  // ─── Notes privees ──────────────────────────────────────────────────────
+
+  describe('Notes privees etudiant', () => {
+    let notedCourseId
+    beforeAll(async () => {
+      // Publie un cours pour que l'etudiant puisse y acceder
+      const course = queries.createLumenCourse({
+        teacherId: 1, promoId: 1, title: 'Cours avec notes',
+      })
+      queries.publishLumenCourse(course.id)
+      notedCourseId = course.id
+    })
+
+    it('GET /note : 200 null si l etudiant n a pas encore ecrit', async () => {
+      // Reset pour avoir un etat propre
+      queries.deleteLumenCourseNote(1, notedCourseId)
+      const res = await request(app)
+        .get(`/api/lumen/courses/${notedCourseId}/note`)
+        .set('Authorization', `Bearer ${studentToken}`)
+      expect(res.status).toBe(200)
+      expect(res.body.data).toBeNull()
+    })
+
+    it('PUT /note : cree une note pour l etudiant', async () => {
+      const res = await request(app)
+        .put(`/api/lumen/courses/${notedCourseId}/note`)
+        .set('Authorization', `Bearer ${studentToken}`)
+        .send({ content: 'Ma premiere note sur ce cours' })
+      expect(res.status).toBe(200)
+      expect(res.body.data.content).toBe('Ma premiere note sur ce cours')
+      expect(res.body.data.student_id).toBe(1)
+      expect(res.body.data.course_id).toBe(notedCourseId)
+    })
+
+    it('GET /note : retourne la note sauvegardee', async () => {
+      const res = await request(app)
+        .get(`/api/lumen/courses/${notedCourseId}/note`)
+        .set('Authorization', `Bearer ${studentToken}`)
+      expect(res.status).toBe(200)
+      expect(res.body.data.content).toBe('Ma premiere note sur ce cours')
+    })
+
+    it('PUT /note : met a jour une note existante', async () => {
+      const res = await request(app)
+        .put(`/api/lumen/courses/${notedCourseId}/note`)
+        .set('Authorization', `Bearer ${studentToken}`)
+        .send({ content: 'Note mise a jour' })
+      expect(res.status).toBe(200)
+      expect(res.body.data.content).toBe('Note mise a jour')
+    })
+
+    it('DELETE /note : efface la note', async () => {
+      const res = await request(app)
+        .delete(`/api/lumen/courses/${notedCourseId}/note`)
+        .set('Authorization', `Bearer ${studentToken}`)
+      expect(res.status).toBe(200)
+      expect(res.body.data.ok).toBe(true)
+      const after = await request(app)
+        .get(`/api/lumen/courses/${notedCourseId}/note`)
+        .set('Authorization', `Bearer ${studentToken}`)
+      expect(after.body.data).toBeNull()
+    })
+
+    it('teacher NE PEUT PAS acceder aux notes (403)', async () => {
+      const res = await request(app)
+        .get(`/api/lumen/courses/${notedCourseId}/note`)
+        .set('Authorization', `Bearer ${teacherToken}`)
+      expect(res.status).toBe(403)
+    })
+
+    it('student d une autre promo est bloque (403)', async () => {
+      const res = await request(app)
+        .get(`/api/lumen/courses/${notedCourseId}/note`)
+        .set('Authorization', `Bearer ${otherPromoStudentToken}`)
+      expect(res.status).toBe(403)
+    })
+
+    it('PUT refuse un contenu > 10 000 caracteres', async () => {
+      const huge = 'x'.repeat(10_001)
+      const res = await request(app)
+        .put(`/api/lumen/courses/${notedCourseId}/note`)
+        .set('Authorization', `Bearer ${studentToken}`)
+        .send({ content: huge })
+      expect(res.status).toBe(400)
+    })
+  })
+
   it('POST /snapshot : cooldown anti-abuse en prod (429 REFRESH_COOLDOWN)', async () => {
     // Fake "prod" pour activer le check de cooldown
     const prev = { node: process.env.NODE_ENV, vitest: process.env.VITEST }

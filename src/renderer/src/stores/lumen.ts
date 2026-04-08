@@ -47,7 +47,7 @@ export const useLumenStore = defineStore('lumen', () => {
     }
   }
 
-  async function createCourse(payload: { promoId: number; projectId?: number | null; title: string; summary?: string; content?: string }): Promise<LumenCourse | null> {
+  async function createCourse(payload: { promoId: number; projectId?: number | null; title: string; summary?: string; content?: string; repoUrl?: string | null }): Promise<LumenCourse | null> {
     loading.value = true
     try {
       const data = await api<LumenCourse>(() => window.api.createLumenCourse(payload))
@@ -305,10 +305,64 @@ export const useLumenStore = defineStore('lumen', () => {
     return { changed: data.changed, commit_sha: data.commit_sha }
   }
 
+  // ── Notes privees etudiant ───────────────────────────────────────────────
+
+  interface LumenNote {
+    student_id: number
+    course_id: number
+    content: string
+    created_at: string
+    updated_at: string
+  }
+
+  // Cache des notes par cours (pour eviter le refetch a l'ouverture repetee).
+  const notesCache = ref<Map<number, LumenNote | null>>(new Map())
+
+  async function fetchCourseNote(courseId: number): Promise<LumenNote | null> {
+    if (notesCache.value.has(courseId)) {
+      return notesCache.value.get(courseId) ?? null
+    }
+    const data = await api<LumenNote | null>(
+      () => window.api.getLumenCourseNote(courseId),
+      { silent: true },
+    )
+    const next = new Map(notesCache.value)
+    next.set(courseId, data ?? null)
+    notesCache.value = next
+    return data ?? null
+  }
+
+  async function saveCourseNote(courseId: number, content: string): Promise<LumenNote | null> {
+    const data = await api<LumenNote>(
+      () => window.api.saveLumenCourseNote(courseId, content),
+      { silent: true },
+    )
+    if (data) {
+      const next = new Map(notesCache.value)
+      next.set(courseId, data)
+      notesCache.value = next
+    }
+    return data ?? null
+  }
+
+  async function deleteCourseNote(courseId: number): Promise<boolean> {
+    const data = await api<{ ok: true; courseId: number }>(
+      () => window.api.deleteLumenCourseNote(courseId),
+      { silent: true },
+    )
+    if (data?.ok) {
+      const next = new Map(notesCache.value)
+      next.set(courseId, null)
+      notesCache.value = next
+      return true
+    }
+    return false
+  }
+
   return {
     courses, currentCourse, loading,
     unreadCourses, unreadCount,
-    snapshotTrees, fileContentCache,
+    snapshotTrees, fileContentCache, notesCache,
     publishedCourses, draftCourses,
     fetchCoursesForPromo, fetchCourse,
     createCourse, updateCourse,
@@ -316,5 +370,6 @@ export const useLumenStore = defineStore('lumen', () => {
     clearCurrentCourse,
     fetchUnread, markAsRead, resetUnread, onCoursePublished,
     fetchSnapshotTree, fetchFileContent, refreshSnapshot, invalidateSnapshotCache,
+    fetchCourseNote, saveCourseNote, deleteCourseNote,
   }
 })

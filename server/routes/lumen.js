@@ -15,6 +15,7 @@ const createCourseSchema = z.object({
   title:     z.string().min(1, 'Titre requis').max(200),
   summary:   z.string().max(500).optional(),
   content:   z.string().max(200_000).optional(),
+  repoUrl:   z.string().url().max(500).nullable().optional(),
 }).strict()
 
 const updateCourseSchema = z.object({
@@ -175,10 +176,10 @@ router.post('/courses',
   validate(createCourseSchema),
   teacherPromoGuard(promoFromBody),
   wrap((req) => {
-    const { promoId, projectId = null, title, summary = '', content = '' } = req.body
+    const { promoId, projectId = null, title, summary = '', content = '', repoUrl = null } = req.body
     return queries.createLumenCourse({
       teacherId: getTeacherIdFromReq(req),
-      promoId, projectId, title, summary, content,
+      promoId, projectId, title, summary, content, repoUrl,
     })
   })
 )
@@ -490,6 +491,62 @@ router.get('/courses/:id/snapshot/file', snapshotReadGuard, wrap((req) => {
     content_base64: file.content_base64,
   }
 }))
+
+// ─── Notes privees etudiant ────────────────────────────────────────────────
+
+const noteSchema = z.object({
+  content: z.string().max(10_000, 'Note trop longue (max 10 000 caracteres).'),
+}).strict()
+
+/**
+ * Guard strict : seuls les etudiants peuvent acceder a leurs propres notes.
+ * On ne reutilise PAS requireRole('student') qui inclut teachers/admins
+ * dans la hierarchie — la privacy des notes impose une verification exacte.
+ */
+function requireExactStudent(req, res, next) {
+  if (req.user?.type !== 'student') {
+    return res.status(403).json({ ok: false, error: 'Les notes privees sont reservees aux etudiants.' })
+  }
+  next()
+}
+
+// GET /api/lumen/courses/:id/note — recupere la note de l'etudiant courant.
+// 200 avec data=null si pas de note, 200 avec data.content si une existe.
+router.get('/courses/:id/note',
+  requireExactStudent,
+  requirePromo(promoFromCourse),
+  wrap((req) => {
+    const courseId = Number(req.params.id)
+    const studentId = req.user.id
+    return queries.getLumenCourseNote(studentId, courseId)
+  })
+)
+
+// PUT /api/lumen/courses/:id/note — upsert la note (content string).
+// Une chaine vide n'efface pas la note : c'est un upsert avec content=''.
+// Pour effacer, utiliser DELETE (ci-dessous).
+router.put('/courses/:id/note',
+  requireExactStudent,
+  requirePromo(promoFromCourse),
+  validate(noteSchema),
+  wrap((req) => {
+    const courseId = Number(req.params.id)
+    const studentId = req.user.id
+    return queries.upsertLumenCourseNote(studentId, courseId, req.body.content)
+  })
+)
+
+// DELETE /api/lumen/courses/:id/note — efface la note de l'etudiant courant
+router.delete('/courses/:id/note',
+  requireExactStudent,
+  requirePromo(promoFromCourse),
+  wrap((req) => {
+    const courseId = Number(req.params.id)
+    const studentId = req.user.id
+    queries.deleteLumenCourseNote(studentId, courseId)
+    return { ok: true, courseId }
+  })
+)
 
 // GET /api/lumen/courses/:id/snapshot/download — streaming du zip
 router.get('/courses/:id/snapshot/download', snapshotReadGuard, async (req, res, next) => {

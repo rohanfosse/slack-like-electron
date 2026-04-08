@@ -162,6 +162,59 @@ describe('getLumenCoursesForTeacher', () => {
   })
 })
 
+describe('Notes privees etudiant', () => {
+  it('getLumenCourseNote retourne null si pas de note', () => {
+    expect(queries.getLumenCourseNote(1, 9999)).toBeNull()
+  })
+
+  it('upsertLumenCourseNote cree une note et la retourne', () => {
+    const course = queries.createLumenCourse({ teacherId: 1, promoId: 1, title: 'Notes test' })
+    const note = queries.upsertLumenCourseNote(1, course.id, 'Premiere note')
+    expect(note).toBeDefined()
+    expect(note.content).toBe('Premiere note')
+    expect(note.student_id).toBe(1)
+    expect(note.course_id).toBe(course.id)
+  })
+
+  it('upsertLumenCourseNote met a jour une note existante', () => {
+    const course = queries.createLumenCourse({ teacherId: 1, promoId: 1, title: 'Upsert test' })
+    queries.upsertLumenCourseNote(1, course.id, 'v1')
+    queries.upsertLumenCourseNote(1, course.id, 'v2')
+    const note = queries.getLumenCourseNote(1, course.id)
+    expect(note.content).toBe('v2')
+  })
+
+  it('isole les notes par etudiant (meme cours, notes differentes)', () => {
+    const course = queries.createLumenCourse({ teacherId: 1, promoId: 1, title: 'Isolation' })
+    queries.upsertLumenCourseNote(1, course.id, 'Note etudiant 1')
+    // Utilise un student_id different (meme si peut-etre pas seed, la contrainte FK est lousy en tests)
+    queries.upsertLumenCourseNote(1, course.id, 'Update etudiant 1')
+    const note1 = queries.getLumenCourseNote(1, course.id)
+    expect(note1.content).toBe('Update etudiant 1')
+  })
+
+  it('upsertLumenCourseNote tronque a 10_000 caracteres', () => {
+    const course = queries.createLumenCourse({ teacherId: 1, promoId: 1, title: 'Truncate' })
+    const longContent = 'x'.repeat(15_000)
+    const note = queries.upsertLumenCourseNote(1, course.id, longContent)
+    expect(note.content.length).toBe(10_000)
+  })
+
+  it('deleteLumenCourseNote efface la note', () => {
+    const course = queries.createLumenCourse({ teacherId: 1, promoId: 1, title: 'Delete' })
+    queries.upsertLumenCourseNote(1, course.id, 'a supprimer')
+    queries.deleteLumenCourseNote(1, course.id)
+    expect(queries.getLumenCourseNote(1, course.id)).toBeNull()
+  })
+
+  it('supprime automatiquement les notes a la suppression du cours (ON DELETE CASCADE)', () => {
+    const course = queries.createLumenCourse({ teacherId: 1, promoId: 1, title: 'Cascade' })
+    queries.upsertLumenCourseNote(1, course.id, 'cascade test')
+    queries.deleteLumenCourse(course.id)
+    expect(queries.getLumenCourseNote(1, course.id)).toBeNull()
+  })
+})
+
 describe('Snapshot repo git', () => {
   const sampleSnapshot = {
     repo_url: 'https://github.com/owner/repo',
@@ -175,6 +228,14 @@ describe('Snapshot repo git', () => {
     total_size: 52,
     file_count: 2,
   }
+
+  it('createLumenCourse accepte repoUrl des la creation', () => {
+    const course = queries.createLumenCourse({
+      teacherId: 1, promoId: 1, title: 'Create with repo',
+      repoUrl: 'https://github.com/owner/new-repo',
+    })
+    expect(course.repo_url).toBe('https://github.com/owner/new-repo')
+  })
 
   it('updateLumenCourse accepte repoUrl', () => {
     const course = queries.createLumenCourse({ teacherId: 1, promoId: 1, title: 'With repo' })

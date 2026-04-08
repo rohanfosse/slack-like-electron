@@ -1,6 +1,6 @@
 const { getDb } = require('./connection');
 
-const CURRENT_VERSION = 52;
+const CURRENT_VERSION = 53;
 
 // ─── Schema initial ───────────────────────────────────────────────────────────
 // Crée toutes les tables avec leur schéma complet (colonnes UTC, toutes colonnes incluses).
@@ -1083,6 +1083,21 @@ function runMigrations(db) {
       tryAlter(db, `ALTER TABLE lumen_courses ADD COLUMN repo_commit_sha TEXT`);
       tryAlter(db, `ALTER TABLE lumen_courses ADD COLUMN repo_default_branch TEXT`);
       tryAlter(db, `ALTER TABLE lumen_courses ADD COLUMN repo_snapshot_at TEXT`);
+    },
+
+    // v53 : Lumen — notes privees par etudiant sur un cours
+    (db) => {
+      db.exec(`
+        CREATE TABLE IF NOT EXISTS lumen_course_notes (
+          student_id INTEGER NOT NULL REFERENCES students(id) ON DELETE CASCADE,
+          course_id  INTEGER NOT NULL REFERENCES lumen_courses(id) ON DELETE CASCADE,
+          content    TEXT NOT NULL DEFAULT '',
+          created_at TEXT NOT NULL DEFAULT (datetime('now')),
+          updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+          PRIMARY KEY (student_id, course_id)
+        );
+        CREATE INDEX IF NOT EXISTS idx_lumen_notes_student ON lumen_course_notes(student_id);
+      `);
     },
   ];
 

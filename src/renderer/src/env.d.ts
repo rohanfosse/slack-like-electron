@@ -310,7 +310,7 @@ declare global {
       // Lumen (cours markdown)
       getLumenCoursesForPromo(promoId: number): Promise<IpcResponse<import('./types').LumenCourse[]>>
       getLumenCourse(id: number): Promise<IpcResponse<import('./types').LumenCourse>>
-      createLumenCourse(payload: { promoId: number; projectId?: number | null; title: string; summary?: string; content?: string }): Promise<IpcResponse<import('./types').LumenCourse>>
+      createLumenCourse(payload: { promoId: number; projectId?: number | null; title: string; summary?: string; content?: string; repoUrl?: string | null }): Promise<IpcResponse<import('./types').LumenCourse>>
       updateLumenCourse(id: number, payload: { title?: string; summary?: string; content?: string; projectId?: number | null; repoUrl?: string | null }): Promise<IpcResponse<import('./types').LumenCourse>>
       publishLumenCourse(id: number): Promise<IpcResponse<import('./types').LumenCourse>>
       unpublishLumenCourse(id: number): Promise<IpcResponse<import('./types').LumenCourse>>
@@ -318,6 +318,11 @@ declare global {
       getLumenStatsForPromo(promoId: number): Promise<IpcResponse<{ total: number; published: number; drafts: number }>>
       markLumenCourseRead(id: number): Promise<IpcResponse<{ ok: true; courseId: number }>>
       getLumenUnreadForPromo(promoId: number): Promise<IpcResponse<{ count: number; courses: import('./types').LumenCourse[] }>>
+
+      // Lumen notes privees etudiant
+      getLumenCourseNote(id: number): Promise<IpcResponse<{ student_id: number; course_id: number; content: string; created_at: string; updated_at: string } | null>>
+      saveLumenCourseNote(id: number, content: string): Promise<IpcResponse<{ student_id: number; course_id: number; content: string; created_at: string; updated_at: string }>>
+      deleteLumenCourseNote(id: number): Promise<IpcResponse<{ ok: true; courseId: number }>>
 
       // Lumen snapshot (repo git d'exemple)
       refreshLumenSnapshot(id: number): Promise<IpcResponse<{

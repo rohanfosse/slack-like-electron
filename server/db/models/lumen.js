@@ -14,11 +14,11 @@ const LIST_COLS = [
 
 // ─── Cours ───────────────────────────────────────────────────────────────────
 
-function createLumenCourse({ teacherId, promoId, projectId = null, title, summary = '', content = '' }) {
+function createLumenCourse({ teacherId, promoId, projectId = null, title, summary = '', content = '', repoUrl = null }) {
   const db = getDb();
   const res = db.prepare(
-    'INSERT INTO lumen_courses (teacher_id, promo_id, project_id, title, summary, content) VALUES (?, ?, ?, ?, ?, ?)'
-  ).run(teacherId, promoId, projectId, title, summary, content);
+    'INSERT INTO lumen_courses (teacher_id, promo_id, project_id, title, summary, content, repo_url) VALUES (?, ?, ?, ?, ?, ?, ?)'
+  ).run(teacherId, promoId, projectId, title, summary, content, repoUrl);
   return db.prepare('SELECT * FROM lumen_courses WHERE id = ?').get(res.lastInsertRowid);
 }
 
@@ -200,6 +200,46 @@ function countUnreadLumenCoursesForStudent(studentId, promoId) {
   return row?.n ?? 0;
 }
 
+// ─── Notes privees etudiant sur un cours ────────────────────────────────────
+
+/**
+ * Recupere la note d'un etudiant pour un cours. Retourne null si pas de
+ * note encore ecrite (pas une chaine vide — permet au frontend de
+ * distinguer "jamais prise" de "note vide volontairement").
+ */
+function getLumenCourseNote(studentId, courseId) {
+  const row = getDb().prepare(
+    `SELECT student_id, course_id, content, created_at, updated_at
+     FROM lumen_course_notes
+     WHERE student_id = ? AND course_id = ?`
+  ).get(studentId, courseId);
+  return row || null;
+}
+
+/**
+ * Upsert idempotent. Limite a 10_000 caracteres pour eviter les abus.
+ * Le timestamp updated_at est toujours rafraichi pour permettre au
+ * frontend d'afficher "modifie il y a N min".
+ */
+function upsertLumenCourseNote(studentId, courseId, content) {
+  const trimmed = typeof content === 'string' ? content.slice(0, 10_000) : '';
+  const db = getDb();
+  db.prepare(
+    `INSERT INTO lumen_course_notes (student_id, course_id, content, created_at, updated_at)
+     VALUES (?, ?, ?, datetime('now'), datetime('now'))
+     ON CONFLICT(student_id, course_id) DO UPDATE
+       SET content = excluded.content,
+           updated_at = datetime('now')`
+  ).run(studentId, courseId, trimmed);
+  return getLumenCourseNote(studentId, courseId);
+}
+
+function deleteLumenCourseNote(studentId, courseId) {
+  getDb().prepare(
+    'DELETE FROM lumen_course_notes WHERE student_id = ? AND course_id = ?'
+  ).run(studentId, courseId);
+}
+
 module.exports = {
   createLumenCourse,
   getLumenCourse,
@@ -216,4 +256,7 @@ module.exports = {
   markLumenCourseRead,
   getUnreadLumenCoursesForStudent,
   countUnreadLumenCoursesForStudent,
+  getLumenCourseNote,
+  upsertLumenCourseNote,
+  deleteLumenCourseNote,
 };

@@ -336,16 +336,11 @@ async function saveCourse(silent = false): Promise<boolean> {
         }
       } else {
         const created = await lumenStore.createCourse({
-          promoId: targetPromoId, projectId, title, summary, content,
+          promoId: targetPromoId, projectId, title, summary, content, repoUrl,
         })
         if (created) {
           editorCourseId.value = created.id
           savedAt.value = formatTime(created.updated_at)
-          // L'endpoint de creation ne prend pas repoUrl (schema Zod strict) ;
-          // on le patch en second appel si l'enseignant a rempli le champ.
-          if (repoUrl) {
-            await lumenStore.updateCourse(created.id, { repoUrl })
-          }
           if (editorTitle.value.trim() === title && editorSummary.value === summary && editorContent.value === content && editorProjectId.value === projectId && (editorRepoUrl.value.trim() || null) === repoUrl) {
             dirty.value = false
           }
