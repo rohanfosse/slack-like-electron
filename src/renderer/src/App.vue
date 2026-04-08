@@ -10,6 +10,7 @@
   import { useAppListeners } from '@/composables/useAppListeners'
   import { useSwipeNav }    from '@/composables/useSwipeNav'
   import { useModules }     from '@/composables/useModules'
+  import { reportError }    from '@/utils/errorReporter'
   import { MessageSquare, FileText, Camera, Lock, Trash2, Download, UserX, Download as DownloadIcon, RefreshCw, Shield, Scale, Clock, Mail, Globe, Eye, Pencil, ChevronDown, Server } from 'lucide-vue-next'
   import Toast        from '@/components/ui/Toast.vue'
   import ConfirmModal from '@/components/ui/ConfirmModal.vue'
@@ -176,6 +177,7 @@
   // ── Global error handler ──────────────────────────────────────────────────
   onErrorCaptured((err) => {
     console.error('[ErrorBoundary]', err)
+    reportError(err, { source: 'vue' })
     showToast('Une erreur est survenue. Utilisez le bouton de feedback pour la signaler.', 'error')
     return false
   })
@@ -268,10 +270,12 @@
     // Global error handlers
     window.onerror = (_msg, _src, _line, _col, err) => {
       console.error('[GlobalError]', err)
+      reportError(err ?? String(_msg), { source: 'window' })
       showToast('Une erreur est survenue. Utilisez le bouton de feedback pour la signaler.', 'error')
     }
     window.onunhandledrejection = (e: PromiseRejectionEvent) => {
       console.error('[UnhandledRejection]', e.reason)
+      reportError(e.reason, { source: 'unhandled_rejection' })
       showToast('Une erreur est survenue. Utilisez le bouton de feedback pour la signaler.', 'error')
     }
 
