@@ -8,6 +8,7 @@
 import { computed, ref, nextTick } from 'vue'
 import {
   ChevronRight, File, FileCode, FileText, FileJson, Folder, FolderOpen, Image as ImageIcon, Search, X,
+  ChevronsUpDown, ChevronsDownUp,
 } from 'lucide-vue-next'
 import { formatBytes } from '@/utils/format'
 
@@ -73,6 +74,23 @@ function toggle(path: string) {
   const next = new Set(expanded.value)
   if (next.has(path)) next.delete(path); else next.add(path)
   expanded.value = next
+}
+
+function collectFolderPaths(nodes: TreeNode[], acc: string[] = []): string[] {
+  for (const n of nodes) {
+    if (!n.isFile) {
+      acc.push(n.path)
+      collectFolderPaths(n.children, acc)
+    }
+  }
+  return acc
+}
+
+function expandAll() {
+  expanded.value = new Set(collectFolderPaths(root.value))
+}
+function collapseAll() {
+  expanded.value = new Set()
 }
 
 // ── Recherche fuzzy ───────────────────────────────────────────────────────
@@ -291,6 +309,27 @@ function formatSize(bytes: number): string {
           <X :size="12" />
         </button>
       </div>
+      <!-- Toggle expand all / collapse all : visible uniquement hors recherche -->
+      <div v-if="!searchOpen && !isSearching" class="tree-toolbar">
+        <button
+          type="button"
+          class="tree-toolbar-btn"
+          title="Tout deplier"
+          aria-label="Deplier tous les dossiers"
+          @click="expandAll"
+        >
+          <ChevronsUpDown :size="12" />
+        </button>
+        <button
+          type="button"
+          class="tree-toolbar-btn"
+          title="Tout replier"
+          aria-label="Replier tous les dossiers"
+          @click="collapseAll"
+        >
+          <ChevronsDownUp :size="12" />
+        </button>
+      </div>
     </div>
 
     <!-- Resultats de recherche (remplace l'arbre pendant que l'utilisateur tape) -->
@@ -462,6 +501,30 @@ function formatSize(bytes: number): string {
   justify-content: center;
 }
 .tree-search-close:hover { color: var(--text-primary); background: var(--bg-hover); }
+
+.tree-toolbar {
+  display: flex;
+  gap: 4px;
+  margin-top: 6px;
+  justify-content: flex-end;
+}
+.tree-toolbar-btn {
+  background: none;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 3px 5px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 120ms ease;
+}
+.tree-toolbar-btn:hover {
+  color: var(--accent);
+  background: var(--bg-hover);
+  border-color: var(--border);
+}
 
 /* Resultat de recherche : double ligne nom + chemin */
 .search-result-name {

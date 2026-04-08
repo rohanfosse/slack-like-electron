@@ -230,6 +230,116 @@ describe('formatSize', () => {
   })
 })
 
+// Reproduction de la logique de findRootReadme dans LumenProjectPanel :
+// cherche README.md (ou variantes) uniquement a la racine.
+function findRootReadme(files: { path: string }[]): string | null {
+  const priorities = ['readme.md', 'readme.rst', 'readme.txt', 'readme']
+  const rootFiles = files.filter(f => !f.path.includes('/'))
+  for (const target of priorities) {
+    const found = rootFiles.find(f => f.path.toLowerCase() === target)
+    if (found) return found.path
+  }
+  return null
+}
+
+describe('findRootReadme', () => {
+  it('trouve README.md en priorite', () => {
+    const files = [
+      { path: 'src/main.py' },
+      { path: 'README.md' },
+      { path: 'docs/README.md' }, // pas racine
+    ]
+    expect(findRootReadme(files)).toBe('README.md')
+  })
+
+  it('accepte les variantes de casse', () => {
+    expect(findRootReadme([{ path: 'readme.md' }])).toBe('readme.md')
+    expect(findRootReadme([{ path: 'Readme.MD' }])).toBe('Readme.MD')
+  })
+
+  it('fallback sur README.rst si pas de .md', () => {
+    const files = [
+      { path: 'main.py' },
+      { path: 'README.rst' },
+    ]
+    expect(findRootReadme(files)).toBe('README.rst')
+  })
+
+  it('ignore les README dans les sous-dossiers', () => {
+    expect(findRootReadme([{ path: 'src/README.md' }])).toBeNull()
+  })
+
+  it('retourne null si aucun README', () => {
+    expect(findRootReadme([{ path: 'main.py' }])).toBeNull()
+  })
+
+  it('priorise .md sur .rst meme si .rst vient en premier', () => {
+    const files = [
+      { path: 'README.rst' },
+      { path: 'README.md' },
+    ]
+    expect(findRootReadme(files)).toBe('README.md')
+  })
+})
+
+// Reproduction de la logique fuzzy search dans LumenProjectTree
+function fuzzyScore(pattern: string, target: string): number | null {
+  if (!pattern) return 0
+  const p = pattern.toLowerCase()
+  const t = target.toLowerCase()
+
+  const directIdx = t.indexOf(p)
+  if (directIdx !== -1) return 1000 - directIdx
+
+  let ti = 0
+  let matched = 0
+  let score = 0
+  let lastMatchIdx = -1
+  for (let pi = 0; pi < p.length; pi++) {
+    const ch = p[pi]
+    while (ti < t.length && t[ti] !== ch) ti++
+    if (ti >= t.length) return null
+    matched++
+    if (lastMatchIdx !== -1) score -= (ti - lastMatchIdx - 1)
+    lastMatchIdx = ti
+    ti++
+  }
+  if (matched !== p.length) return null
+  return score + (100 - t.length)
+}
+
+describe('fuzzyScore (fuzzy search)', () => {
+  it('match exact contigu a un score maximal', () => {
+    const direct = fuzzyScore('main', 'main.py')!
+    const fuzzy = fuzzyScore('mpy', 'main.py')!
+    expect(direct).toBeGreaterThan(fuzzy)
+  })
+
+  it('match insensible a la casse', () => {
+    expect(fuzzyScore('MAIN', 'main.py')).not.toBeNull()
+    expect(fuzzyScore('main', 'MAIN.PY')).not.toBeNull()
+  })
+
+  it('retourne null quand le pattern est absent', () => {
+    expect(fuzzyScore('xyz', 'main.py')).toBeNull()
+  })
+
+  it('retourne 0 pour un pattern vide (tout matche)', () => {
+    expect(fuzzyScore('', 'anything')).toBe(0)
+  })
+
+  it('favorise le match le plus court quand meme contenu', () => {
+    const short = fuzzyScore('main', 'main.py')!
+    const long = fuzzyScore('main', 'src/lib/deep/main.py')!
+    expect(short).toBeGreaterThan(long)
+  })
+
+  it('match fuzzy avec gaps', () => {
+    expect(fuzzyScore('src', 'source_code')).not.toBeNull()
+    expect(fuzzyScore('utp', 'utils/helpers.py')).not.toBeNull()
+  })
+})
+
 describe('isValidGitHubUrl', () => {
   it('accepte les URLs HTTPS github.com/owner/repo', () => {
     expect(isValidGitHubUrl('https://github.com/owner/repo')).toBe(true)

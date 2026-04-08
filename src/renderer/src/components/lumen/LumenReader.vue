@@ -19,6 +19,20 @@ interface Emits {
 }
 
 const props = withDefaults(defineProps<Props>(), { siblings: () => [], initialProjectFile: null })
+
+// Raccourcis : Alt+← / Alt+→ pour naviguer entre cours publies de la promo
+function onKeyboardNav(e: KeyboardEvent) {
+  if (!e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return
+  const target = e.target as HTMLElement | null
+  if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) return
+  if (e.key === 'ArrowLeft' && prevCourse.value) {
+    e.preventDefault()
+    emit('navigate', prevCourse.value)
+  } else if (e.key === 'ArrowRight' && nextCourse.value) {
+    e.preventDefault()
+    emit('navigate', nextCourse.value)
+  }
+}
 const emit = defineEmits<Emits>()
 
 // ── Rendu HTML : on strip le h1 en tete (le titre du cours est deja
@@ -137,8 +151,12 @@ onMounted(async () => {
   await nextTick()
   updateProgress()
   setupObserver()
+  window.addEventListener('keydown', onKeyboardNav)
 })
-onBeforeUnmount(() => observer?.disconnect())
+onBeforeUnmount(() => {
+  observer?.disconnect()
+  window.removeEventListener('keydown', onKeyboardNav)
+})
 
 // ── Prev / Next dans la liste de cours publies ────────────────────────────
 const published = computed(() =>
