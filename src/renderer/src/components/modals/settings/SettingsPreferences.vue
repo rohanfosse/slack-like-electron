@@ -62,11 +62,11 @@ watch(rememberMe, (v) => {
       </label>
     </div>
 
-    <!-- Documents -->
+    <!-- Ressources -->
     <div class="stg-group">
       <div class="stg-group-header">
         <FileText :size="13" class="stg-group-icon" />
-        <h4 class="stg-group-title">Documents</h4>
+        <h4 class="stg-group-title">Ressources</h4>
       </div>
       <label class="stg-toggle-row">
         <div class="stg-toggle-info">

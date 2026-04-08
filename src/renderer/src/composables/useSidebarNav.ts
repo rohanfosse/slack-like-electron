@@ -82,7 +82,7 @@ export function useSidebarNav(emit: (event: 'navigate') => void) {
   const sectionLabel = computed(() => {
     if (route.name === 'dashboard') return 'Accueil'
     if (route.name === 'devoirs')   return 'Devoirs'
-    if (route.name === 'documents') return 'Documents'
+    if (route.name === 'documents') return 'Ressources'
     return 'Messages'
   })
 

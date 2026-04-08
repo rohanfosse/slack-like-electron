@@ -201,12 +201,12 @@
     <button
       class="nav-btn"
       :class="{ active: route.name === 'documents' }"
-      title="Documents"
-      aria-label="Section Documents"
+      title="Ressources"
+      aria-label="Section Ressources"
       @click="router.push('/documents')"
     >
       <FileText :size="20" />
-      <span class="nav-label">Documents</span>
+      <span class="nav-label">Ressources</span>
     </button>
 
     <!-- Lumen : cours markdown publies (toujours visible si module actif) -->

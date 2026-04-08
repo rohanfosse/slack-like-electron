@@ -179,7 +179,7 @@
         <ul class="auth-feature-list">
           <li><span class="auth-feature-dot" />Messagerie par promotion &amp; canal</li>
           <li><span class="auth-feature-dot" />Suivi des devoirs et rendus</li>
-          <li><span class="auth-feature-dot" />Documents et ressources centralisés</li>
+          <li><span class="auth-feature-dot" />Ressources centralisées par projet</li>
           <li><span class="auth-feature-dot" />Notifications en temps réel</li>
         </ul>
       </div>

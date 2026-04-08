@@ -262,10 +262,10 @@ function onKeydown(e: KeyboardEvent) {
             class="mi-mention-popup"
             :style="popupStyle"
             role="listbox"
-            :aria-label="activeRef === 'command' ? 'Commandes' : activeRef === 'channel' ? 'Canaux' : activeRef === 'devoir' ? 'Devoirs' : 'Documents'"
+            :aria-label="activeRef === 'command' ? 'Commandes' : activeRef === 'channel' ? 'Canaux' : activeRef === 'devoir' ? 'Devoirs' : 'Ressources'"
           >
             <div class="mi-mention-header">
-              {{ activeRef === 'command' ? 'Commandes' : activeRef === 'channel' ? 'Canaux' : activeRef === 'devoir' ? 'Devoirs' : 'Documents' }}
+              {{ activeRef === 'command' ? 'Commandes' : activeRef === 'channel' ? 'Canaux' : activeRef === 'devoir' ? 'Devoirs' : 'Ressources' }}
             </div>
             <!-- Commandes slash -->
             <template v-if="activeRef === 'command'">

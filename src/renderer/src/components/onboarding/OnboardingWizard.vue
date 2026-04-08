@@ -68,7 +68,7 @@ const features = [
   },
   {
     icon: FolderOpen,
-    title: 'Documents',
+    title: 'Ressources',
     description: 'Tous tes supports de cours au meme endroit',
   },
   {

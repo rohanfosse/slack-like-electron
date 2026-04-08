@@ -103,11 +103,11 @@
     <!-- Header -->
     <div class="dp-header">
       <FolderOpen :size="15" class="dp-hicon" />
-      <span class="dp-title">Documents</span>
-      <button class="btn-icon dp-refresh" title="Actualiser" aria-label="Actualiser les documents" @click="load">
+      <span class="dp-title">Fichiers</span>
+      <button class="btn-icon dp-refresh" title="Actualiser" aria-label="Actualiser les fichiers" @click="load">
         <RefreshCw :size="13" />
       </button>
-      <button class="btn-icon dp-close" aria-label="Fermer le panneau documents" @click="emit('close')"><X :size="15" /></button>
+      <button class="btn-icon dp-close" aria-label="Fermer le panneau fichiers" @click="emit('close')"><X :size="15" /></button>
     </div>
 
     <!-- Loading -->

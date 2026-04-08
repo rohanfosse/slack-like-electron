@@ -258,15 +258,15 @@ function formatDateRange(start?: string, end?: string): string {
 
       </section>
 
-      <!-- ── COLONNE SECONDAIRE : Documents + Canaux ────────────────────── -->
+      <!-- ── COLONNE SECONDAIRE : Ressources + Canaux ───────────────────── -->
       <aside class="pf-col-aside">
 
-        <!-- Documents -->
+        <!-- Ressources -->
         <div class="pf-aside-section">
           <div class="pf-section-header">
-            <span>Documents</span>
+            <span>Ressources</span>
             <span class="pf-count">{{ documents.length }}</span>
-            <button class="pf-aside-add-btn" title="Gérer dans la section Documents" @click="goToDocs">
+            <button class="pf-aside-add-btn" title="Gérer dans la section Ressources" @click="goToDocs">
               <ExternalLink :size="12" />
             </button>
           </div>

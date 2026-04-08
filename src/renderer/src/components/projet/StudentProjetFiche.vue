@@ -320,10 +320,10 @@ function fileTypeIcon(name: string): typeof FileText {
         </template>
       </section>
 
-      <!-- ── Colonne secondaire : Documents + Canaux ───────────────────── -->
+      <!-- ── Colonne secondaire : Ressources + Canaux ───────────────────── -->
       <aside class="spf-col-aside">
 
-        <!-- Documents -->
+        <!-- Ressources -->
         <div class="spf-aside-section">
           <div class="spf-aside-header">
             <span>Ressources</span>

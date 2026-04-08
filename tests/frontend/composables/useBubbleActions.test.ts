@@ -51,6 +51,11 @@ vi.mock('@/stores/travaux', () => ({
   useTravauxStore: () => mockTravauxStore,
 }))
 
+const mockLumenStore = { fetchCourse: vi.fn(() => Promise.resolve(null)) }
+vi.mock('@/stores/lumen', () => ({
+  useLumenStore: () => mockLumenStore,
+}))
+
 const mockShowToast = vi.fn()
 vi.mock('@/composables/useToast', () => ({
   useToast: () => ({ showToast: mockShowToast }),

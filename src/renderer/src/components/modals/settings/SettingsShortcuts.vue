@@ -14,7 +14,7 @@ const groups: ShortcutGroup[] = [
       { keys: ['Ctrl', '1'], label: 'Aller au Dashboard' },
       { keys: ['Ctrl', '2'], label: 'Aller aux Messages' },
       { keys: ['Ctrl', '3'], label: 'Aller aux Devoirs' },
-      { keys: ['Ctrl', '4'], label: 'Aller aux Documents' },
+      { keys: ['Ctrl', '4'], label: 'Aller aux Ressources' },
       { keys: ['Ctrl', 'N'], label: 'Ouvrir la palette de commandes' },
       { keys: ['Ctrl', 'K'], label: 'Recherche rapide' },
     ],

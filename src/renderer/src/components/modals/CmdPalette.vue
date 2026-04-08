@@ -82,7 +82,7 @@
   const SECTIONS = [
     { key: 'messages',  label: 'Messages' },
     { key: 'travaux',   label: 'Travaux'  },
-    { key: 'documents', label: 'Documents'},
+    { key: 'documents', label: 'Ressources'},
   ]
 
   type ResultItem =

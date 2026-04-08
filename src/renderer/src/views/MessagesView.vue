@@ -378,14 +378,14 @@
           <span v-if="appStore.activeChannelIsPrivate && appStore.activeChannelMemberCount != null" class="header-member-count">{{ appStore.activeChannelMemberCount }}</span>
         </button>
 
-        <!-- Documents du canal (canal uniquement) -->
+        <!-- Fichiers du canal (canal uniquement) -->
         <button
           v-if="!appStore.activeDmStudentId"
           id="btn-docs"
           class="btn-icon header-panel-btn"
           :class="{ active: rightPanel === 'docs' }"
-          title="Documents du canal"
-          aria-label="Afficher les documents"
+          title="Fichiers du canal"
+          aria-label="Afficher les fichiers du canal"
           @click="togglePanel('docs')"
         >
           <FolderOpen :size="16" />

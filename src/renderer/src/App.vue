@@ -200,7 +200,7 @@
     dashboard: 'Accueil',
     messages: 'Messages',
     devoirs: 'Devoirs',
-    documents: 'Documents',
+    documents: 'Ressources',
     live: 'Spark',
   }
 
