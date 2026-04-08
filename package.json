@@ -46,6 +46,7 @@
     "@codemirror/state": "^6.6.0",
     "@codemirror/view": "^6.41.0",
     "@fontsource-variable/inter": "^5.2.8",
+    "archiver": "^7.0.1",
     "bcryptjs": "^3.0.3",
     "better-sqlite3": "^12.8.0",
     "codemirror": "^6.0.2",
