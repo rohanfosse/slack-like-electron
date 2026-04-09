@@ -25,6 +25,39 @@ const chars = computed(() => props.content.length)
 
 const readingMinutes = computed(() => Math.max(1, Math.ceil(words.value / 200)))
 
+// Compteur de structure : nombre de titres par niveau + nombre de paragraphes
+// non vides. Calcule en parcourant les lignes une seule fois.
+const structure = computed(() => {
+  let h1 = 0, h2 = 0, h3 = 0
+  let paragraphs = 0
+  let inCode = false
+  let lastLineWasEmpty = true
+  for (const line of props.content.split('\n')) {
+    const t = line.trim()
+    if (t.startsWith('```') || t.startsWith('~~~')) { inCode = !inCode; continue }
+    if (inCode) continue
+    if (t === '') { lastLineWasEmpty = true; continue }
+    if (t.startsWith('### ')) h3++
+    else if (t.startsWith('## ')) h2++
+    else if (t.startsWith('# ')) h1++
+    else if (lastLineWasEmpty && !t.startsWith('>') && !t.match(/^[-*+]\s/) && !t.match(/^\d+\.\s/)) {
+      paragraphs++
+    }
+    lastLineWasEmpty = false
+  }
+  return { h1, h2, h3, paragraphs }
+})
+
+const structureLabel = computed(() => {
+  const s = structure.value
+  const parts: string[] = []
+  if (s.h1) parts.push(`${s.h1} H1`)
+  if (s.h2) parts.push(`${s.h2} H2`)
+  if (s.h3) parts.push(`${s.h3} H3`)
+  if (s.paragraphs) parts.push(`${s.paragraphs} ¶`)
+  return parts.join(' · ')
+})
+
 const cursorLabel = computed(() => {
   if (!props.cursor) return 'Ln 1, Col 1'
   const { line, col, selectionLength } = props.cursor
@@ -63,6 +96,9 @@ const saveDot = computed(() => {
       <span class="lumen-sb-item">{{ words }} mots</span>
       <span class="lumen-sb-item">{{ chars }} car.</span>
       <span class="lumen-sb-item">~{{ readingMinutes }} min de lecture</span>
+      <span v-if="structureLabel" class="lumen-sb-item lumen-sb-item--structure" :title="`${structure.h1} H1, ${structure.h2} H2, ${structure.h3} H3, ${structure.paragraphs} paragraphes`">
+        {{ structureLabel }}
+      </span>
     </div>
     <div class="lumen-sb-group lumen-sb-right">
       <span v-if="saveLabel" class="lumen-sb-save">
@@ -151,5 +187,10 @@ const saveDot = computed(() => {
 .lumen-sb-item--lang {
   padding: 2px 6px;
   border-left: 1px solid var(--border);
+}
+.lumen-sb-item--structure {
+  padding-left: 12px;
+  border-left: 1px solid var(--border);
+  opacity: 0.75;
 }
 </style>
