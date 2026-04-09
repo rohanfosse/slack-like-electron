@@ -1,15 +1,32 @@
 <script setup lang="ts">
+import { ref, onMounted, onBeforeUnmount } from 'vue'
 import {
   Bold, Italic, Strikethrough, Code,
   Heading1, Heading2, Heading3,
   List, ListOrdered, Quote, CheckSquare,
   Link2, Image, Table2, Minus,
+  Info, Lightbulb, AlertTriangle, OctagonAlert,
 } from 'lucide-vue-next'
 
 interface Emits {
   (e: 'action', type: string): void
 }
 defineEmits<Emits>()
+
+const admOpen = ref(false)
+const admWrapRef = ref<HTMLDivElement | null>(null)
+
+function toggleAdm() { admOpen.value = !admOpen.value }
+function closeAdm() { admOpen.value = false }
+
+// Fermeture sur clic hors du dropdown
+function onDocClick(e: MouseEvent) {
+  if (!admOpen.value || !admWrapRef.value) return
+  const target = e.target as Node
+  if (!admWrapRef.value.contains(target)) closeAdm()
+}
+onMounted(() => { document.addEventListener('click', onDocClick) })
+onBeforeUnmount(() => { document.removeEventListener('click', onDocClick) })
 </script>
 
 <template>
@@ -36,6 +53,38 @@ defineEmits<Emits>()
     <button class="lumen-tb-btn" aria-label="Image" title="Image" @click="$emit('action', 'image')"><Image :size="15" /></button>
     <button class="lumen-tb-btn" aria-label="Tableau" title="Tableau" @click="$emit('action', 'table')"><Table2 :size="15" /></button>
     <button class="lumen-tb-btn" aria-label="Ligne de séparation" title="Ligne de séparation" @click="$emit('action', 'hr')"><Minus :size="15" /></button>
+    <span class="lumen-tb-sep" aria-hidden="true" />
+
+    <!-- Admonition menu (dropdown avec 4 types) -->
+    <div ref="admWrapRef" class="lumen-tb-adm-wrap">
+      <button
+        class="lumen-tb-btn"
+        aria-label="Bloc d'information"
+        title="Inserer un bloc d'information"
+        :aria-expanded="admOpen"
+        @click="toggleAdm"
+      >
+        <Info :size="15" />
+      </button>
+      <div v-if="admOpen" class="lumen-tb-adm-menu" role="menu">
+        <button class="lumen-tb-adm-item lumen-tb-adm-item--note" @click="() => { $emit('action', 'adm-note'); closeAdm() }">
+          <Info :size="14" />
+          <span>Note</span>
+        </button>
+        <button class="lumen-tb-adm-item lumen-tb-adm-item--tip" @click="() => { $emit('action', 'adm-tip'); closeAdm() }">
+          <Lightbulb :size="14" />
+          <span>Astuce</span>
+        </button>
+        <button class="lumen-tb-adm-item lumen-tb-adm-item--warning" @click="() => { $emit('action', 'adm-warning'); closeAdm() }">
+          <AlertTriangle :size="14" />
+          <span>Attention</span>
+        </button>
+        <button class="lumen-tb-adm-item lumen-tb-adm-item--danger" @click="() => { $emit('action', 'adm-danger'); closeAdm() }">
+          <OctagonAlert :size="14" />
+          <span>Danger</span>
+        </button>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -90,4 +139,49 @@ defineEmits<Emits>()
   margin: 0 5px;
   flex-shrink: 0;
 }
+
+/* Admonition dropdown */
+.lumen-tb-adm-wrap {
+  position: relative;
+  flex-shrink: 0;
+}
+.lumen-tb-adm-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  min-width: 160px;
+  background: var(--bg-primary, #14161a);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+  padding: 4px;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.lumen-tb-adm-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  background: transparent;
+  border: none;
+  border-radius: 3px;
+  color: var(--text-secondary);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: left;
+  transition: background 120ms ease;
+}
+.lumen-tb-adm-item:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+.lumen-tb-adm-item--note    { color: #4a90d9; }
+.lumen-tb-adm-item--tip     { color: #3fb76f; }
+.lumen-tb-adm-item--warning { color: #e6a700; }
+.lumen-tb-adm-item--danger  { color: #d9534f; }
 </style>

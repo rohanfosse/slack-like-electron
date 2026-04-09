@@ -590,6 +590,11 @@ function handleToolbarAction(type: string) {
     case 'image':     triggerImagePick(); break
     case 'table':     ed.insertBlock('| Colonne 1 | Colonne 2 | Colonne 3 |\n| --- | --- | --- |\n| A | B | C |\n| D | E | F |'); break
     case 'hr':        ed.insertBlock('---'); break
+    // Admonitions : insert un bloc blockquote typee pret a remplir
+    case 'adm-note':    ed.insertBlock('> [!NOTE] Titre\n> Contenu de la note'); break
+    case 'adm-tip':     ed.insertBlock('> [!TIP] Titre\n> Astuce utile'); break
+    case 'adm-warning': ed.insertBlock('> [!WARNING] Titre\n> Point d\'attention'); break
+    case 'adm-danger':  ed.insertBlock('> [!DANGER] Titre\n> Danger a eviter'); break
   }
 }
 
