@@ -52,6 +52,48 @@ function injectHeadingIds(html: string): string {
   })
 }
 
+// Mots-cles pedagogiques a mettre en evidence dans le rendu : wrap dans
+// un span stylise avec classe dediee. Detection uniquement en debut de
+// mot (word boundary) et uniquement dans le texte (pas dans les blocs
+// de code pour ne pas colorer les TODO du code source).
+const KEYWORD_PATTERNS: Array<{ word: string; cls: string }> = [
+  { word: 'TODO',    cls: 'lumen-kw-todo' },
+  { word: 'FIXME',   cls: 'lumen-kw-todo' },
+  { word: 'WARNING', cls: 'lumen-kw-warn' },
+  { word: 'ATTENTION', cls: 'lumen-kw-warn' },
+  { word: 'NOTE',    cls: 'lumen-kw-note' },
+  { word: 'INFO',    cls: 'lumen-kw-note' },
+  { word: 'TIP',     cls: 'lumen-kw-tip' },
+  { word: 'IMPORTANT', cls: 'lumen-kw-warn' },
+]
+
+/**
+ * Decore les mots-cles pedagogiques (TODO, NOTE, etc.) avec un span.
+ * Parcourt uniquement les noeuds texte hors <pre><code> pour ne pas
+ * toucher au code source colorise par highlight.js.
+ */
+function highlightKeywords(html: string): string {
+  // On repere les blocs <pre>...</pre> pour les exclure : on les remplace
+  // temporairement par des placeholders, on decore le reste, puis on
+  // restore. Simple et side-effect-free.
+  const placeholders: string[] = []
+  const withoutCode = html.replace(/<pre[\s\S]*?<\/pre>/g, (match) => {
+    const id = placeholders.length
+    placeholders.push(match)
+    return `\u0000PRE_${id}\u0000`
+  })
+  // Applique les remplacements sequentiellement
+  let decorated = withoutCode
+  for (const { word, cls } of KEYWORD_PATTERNS) {
+    // \b ne marche pas sur les ":", on ajoute explicitement le ":" optionnel
+    const re = new RegExp(`\\b(${word})\\b(:?)`, 'g')
+    decorated = decorated.replace(re, `<span class="lumen-kw ${cls}">$1$2</span>`)
+  }
+  // Restore les blocs <pre>
+  decorated = decorated.replace(/\u0000PRE_(\d+)\u0000/g, (_, id) => placeholders[Number(id)] ?? '')
+  return decorated
+}
+
 // Allowlist explicite : seules ces balises peuvent passer le sanitiseur.
 const ALLOWED_TAGS = [
   'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
@@ -88,7 +130,8 @@ export function renderMarkdown(md: string): string {
   if (!md) return ''
   const rawHtml = marked.parse(md, { async: false }) as string
   const withIds = injectHeadingIds(rawHtml)
-  return DOMPurify.sanitize(withIds, {
+  const withKeywords = highlightKeywords(withIds)
+  return DOMPurify.sanitize(withKeywords, {
     ALLOWED_TAGS,
     ALLOWED_ATTR,
   })

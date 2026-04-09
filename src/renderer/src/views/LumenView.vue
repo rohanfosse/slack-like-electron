@@ -191,6 +191,20 @@ async function handleDuplicateCourse(course: LumenCourse) {
   }
 }
 
+/**
+ * Copie un lien markdown au format \[titre](lumen:ID) dans le presse-papier
+ * pour que le prof puisse coller rapidement une ref Lumen dans un message.
+ */
+async function handleCopyLumenLink(course: LumenCourse) {
+  const ref = `\\[${course.title}](lumen:${course.id})`
+  try {
+    await navigator.clipboard.writeText(ref)
+    showToast('Lien copie — colle-le dans un message', 'success')
+  } catch {
+    showToast('Copie echouee', 'error')
+  }
+}
+
 async function handleExportNotes() {
   const result = await window.api.downloadLumenNotesExport()
   if (!result.ok) {
@@ -235,6 +249,14 @@ const readingProgress = computed(() => {
   const percent = Math.round((readCount / publishedCount) * 100)
   return { readCount, publishedCount, percent }
 })
+
+// Detection "frais" : cours publie dans les dernieres 24h (pour highlight
+// visuel sur la course card cote etudiant et enseignant).
+const FRESHNESS_WINDOW_MS = 24 * 3600 * 1000
+function isFreshCourse(course: LumenCourse): boolean {
+  if (course.status !== 'published' || !course.published_at) return false
+  return Date.now() - new Date(course.published_at).getTime() < FRESHNESS_WINDOW_MS
+}
 
 // Stats d'engagement pour les enseignants : nombre total de lectures cumulees
 // et moyenne par cours publie. Utilise la Map readCounts remplie en parallele
@@ -1125,7 +1147,10 @@ const chromeHidden = computed(() => focusMode.value || zenMode.value)
             v-for="course in filteredCourses"
             :key="course.id"
             class="lumen-card"
-            :class="{ 'lumen-card--draft': course.status === 'draft' }"
+            :class="{
+              'lumen-card--draft': course.status === 'draft',
+              'lumen-card--fresh': isFreshCourse(course),
+            }"
             tabindex="0"
             @click="isTeacher ? openEditorEdit(course) : openReader(course)"
             @keydown.enter="isTeacher ? openEditorEdit(course) : openReader(course)"
@@ -1136,6 +1161,7 @@ const chromeHidden = computed(() => focusMode.value || zenMode.value)
                 <Clock v-else :size="11" />
                 {{ course.status === 'published' ? 'Publié' : 'Brouillon' }}
               </span>
+              <span v-if="isFreshCourse(course)" class="lumen-card-fresh" title="Publie dans les dernieres 24h">NEW</span>
               <span class="lumen-card-date">{{ formatDate(course.published_at ?? course.updated_at) }}</span>
             </header>
             <h3 class="lumen-card-title">{{ course.title }}</h3>
@@ -1167,6 +1193,14 @@ const chromeHidden = computed(() => focusMode.value || zenMode.value)
               </button>
               <button v-if="isTeacher" class="lumen-card-link" title="Dupliquer ce cours" @click.stop="handleDuplicateCourse(course)">
                 <Copy :size="13" /> Dupliquer
+              </button>
+              <button
+                v-if="isTeacher && course.status === 'published'"
+                class="lumen-card-link"
+                title="Copier un lien markdown vers ce cours"
+                @click.stop="handleCopyLumenLink(course)"
+              >
+                <Clipboard :size="13" /> Lien
               </button>
             </footer>
           </article>
@@ -1709,6 +1743,29 @@ const chromeHidden = computed(() => focusMode.value || zenMode.value)
   font-family: inherit;
 }
 .lumen-card-link:hover { color: var(--accent); }
+.lumen-card-fresh {
+  display: inline-block;
+  padding: 2px 7px;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  color: var(--bg-primary, #111);
+  background: linear-gradient(135deg, #3fb76f 0%, #2ecc71 100%);
+  border-radius: var(--radius-xl);
+  margin-left: 8px;
+  animation: lumen-card-pulse 2s ease-in-out infinite;
+}
+@keyframes lumen-card-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(63, 183, 111, 0.4); }
+  50%      { box-shadow: 0 0 0 4px rgba(63, 183, 111, 0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .lumen-card-fresh { animation: none; }
+}
+.lumen-card--fresh {
+  border: 1px solid rgba(63, 183, 111, 0.25);
+}
+
 .lumen-card-badges {
   display: flex;
   flex-wrap: wrap;

@@ -570,6 +570,32 @@ const nextCourse = computed(() =>
   border: none;
   border-top: 1px solid var(--border);
 }
+/* Mots-cles pedagogiques (TODO/NOTE/WARNING) decorees par highlightKeywords */
+.reader-prose :deep(.lumen-kw) {
+  display: inline-block;
+  padding: 0 6px;
+  border-radius: 3px;
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 0.82em;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+.reader-prose :deep(.lumen-kw-todo) {
+  background: rgba(217, 83, 79, 0.15);
+  color: #d9534f;
+}
+.reader-prose :deep(.lumen-kw-warn) {
+  background: rgba(230, 167, 0, 0.15);
+  color: #e6a700;
+}
+.reader-prose :deep(.lumen-kw-note) {
+  background: rgba(74, 144, 217, 0.15);
+  color: #4a90d9;
+}
+.reader-prose :deep(.lumen-kw-tip) {
+  background: rgba(63, 183, 111, 0.15);
+  color: #3fb76f;
+}
 .reader-prose :deep(img) {
   max-width: 100%;
   height: auto;

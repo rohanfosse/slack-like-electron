@@ -123,3 +123,42 @@ describe('renderMarkdown - structures complexes', () => {
     expect(html).toContain('<code>npm install</code>')
   })
 })
+
+describe('renderMarkdown - keyword highlighting', () => {
+  it('decore TODO en rouge (lumen-kw-todo)', () => {
+    const html = renderMarkdown('TODO: ecrire la doc')
+    expect(html).toContain('lumen-kw')
+    expect(html).toContain('lumen-kw-todo')
+  })
+
+  it('decore WARNING et ATTENTION en orange', () => {
+    const h1 = renderMarkdown('WARNING: ne pas faire ca')
+    const h2 = renderMarkdown('ATTENTION au style')
+    expect(h1).toContain('lumen-kw-warn')
+    expect(h2).toContain('lumen-kw-warn')
+  })
+
+  it('decore NOTE et INFO en bleu', () => {
+    const html = renderMarkdown('NOTE: important a retenir')
+    expect(html).toContain('lumen-kw-note')
+  })
+
+  it('decore TIP en vert', () => {
+    const html = renderMarkdown('TIP: utilise ce raccourci')
+    expect(html).toContain('lumen-kw-tip')
+  })
+
+  it('ne decore PAS les mots-cles dans un bloc de code', () => {
+    const md = '```\n// TODO: code fixe\n```'
+    const html = renderMarkdown(md)
+    expect(html).toContain('lumen-code')
+    const preMatch = html.match(/<pre[\s\S]*?<\/pre>/)
+    expect(preMatch).toBeTruthy()
+    expect(preMatch![0]).not.toContain('lumen-kw')
+  })
+
+  it('ne decore pas les occurrences en minuscules', () => {
+    const html = renderMarkdown('une todo rapide')
+    expect(html).not.toContain('lumen-kw')
+  })
+})
