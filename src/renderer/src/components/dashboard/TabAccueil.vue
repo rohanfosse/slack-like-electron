@@ -24,6 +24,8 @@ import WidgetLumenDrafts from './teacher-widgets/WidgetLumenDrafts.vue'
 import WidgetLumenTopRead from './teacher-widgets/WidgetLumenTopRead.vue'
 import WidgetQuickCreate from './teacher-widgets/WidgetQuickCreate.vue'
 import WidgetNotationPending from './teacher-widgets/WidgetNotationPending.vue'
+import WidgetStickyNote from './teacher-widgets/WidgetStickyNote.vue'
+import WidgetPromoVelocity from './teacher-widgets/WidgetPromoVelocity.vue'
 import MultiPromoCard from './MultiPromoCard.vue'
 import { useTeacherBento } from '@/composables/useTeacherBento'
 
@@ -242,6 +244,8 @@ const optWidgetComponents: Record<string, Component> = {
   'lumen-top-read': WidgetLumenTopRead,
   'quick-create': WidgetQuickCreate,
   'notation-pending': WidgetNotationPending,
+  'sticky-note': WidgetStickyNote,
+  'promo-velocity': WidgetPromoVelocity,
 }
 const wideWidgets = new Set([
   'quote', 'quicklinks', 'dm-files', 'week-cal', 'signatures',

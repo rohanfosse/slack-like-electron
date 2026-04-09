@@ -7,7 +7,7 @@ import {
   LayoutDashboard, Percent, Edit3, Award, Wifi, Clock, MessageSquare,
   PlusCircle, Activity, CheckSquare,
   Quote, Timer, Bookmark, CalendarDays, FileBox, Pen,
-  Lightbulb, FileText, BarChart3, TrendingUp,
+  Lightbulb, FileText, BarChart3, TrendingUp, StickyNote,
 } from 'lucide-vue-next'
 import type { WidgetDef, WidgetSize } from '@/types/widgets'
 
@@ -42,6 +42,8 @@ export const TEACHER_TILES: WidgetDef[] = [
   // ── Widgets productivite prof (optionnels) ──
   { id: 'quick-create',     label: 'Creation rapide',  icon: PlusCircle,  description: 'Boutons rapides pour creer devoir / cours / doc',category: 'productivity', sizes: ['1x1', '2x1'],      defaultSize: '1x1', defaultEnabled: false, role: 'teacher' },
   { id: 'notation-pending', label: 'A noter (top)',    icon: Edit3,       description: 'Devoirs avec le plus de rendus en attente de note', category: 'essential', sizes: ['1x1', '2x1'],     defaultSize: '1x1', defaultEnabled: false, role: 'teacher' },
+  { id: 'sticky-note',      label: 'Bloc-notes',       icon: StickyNote,  description: 'Note personnelle rapide (sauvegarde auto locale)',  category: 'productivity', sizes: ['1x1', '2x1'],      defaultSize: '1x1', defaultEnabled: false, role: 'teacher' },
+  { id: 'promo-velocity',   label: 'Activite 7j',      icon: Activity,    description: 'Courbe des rendus soumis sur les 7 derniers jours', category: 'tracking', sizes: ['1x1', '2x1'],      defaultSize: '1x1', defaultEnabled: false, role: 'teacher' },
 ]
 
 const STORAGE_KEY = 'teacher_bento_hidden'
