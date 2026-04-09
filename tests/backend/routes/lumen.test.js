@@ -480,6 +480,87 @@ describe('Lumen snapshot routes', () => {
         .set('Authorization', `Bearer ${teacherToken}`)
       expect(res.status).toBe(403)
     })
+
+    it('GET /my-notes/export : telecharge un .md avec toutes les notes', async () => {
+      // Ajoute une note pour avoir au moins un contenu
+      const c = queries.createLumenCourse({ teacherId: 1, promoId: 1, title: 'Export test course' })
+      queries.publishLumenCourse(c.id)
+      queries.upsertLumenCourseNote(1, c.id, 'Contenu note unique a exporter')
+
+      const res = await request(app)
+        .get('/api/lumen/my-notes/export')
+        .set('Authorization', `Bearer ${studentToken}`)
+      expect(res.status).toBe(200)
+      expect(res.headers['content-type']).toContain('text/markdown')
+      expect(res.headers['content-disposition']).toContain('attachment')
+      expect(res.text).toContain('# Mes notes Lumen')
+      expect(res.text).toContain('## Export test course')
+      expect(res.text).toContain('Contenu note unique a exporter')
+    })
+
+    it('GET /my-notes/export : refuse les teachers', async () => {
+      const res = await request(app)
+        .get('/api/lumen/my-notes/export')
+        .set('Authorization', `Bearer ${teacherToken}`)
+      expect(res.status).toBe(403)
+    })
+
+    it('GET /my-notes/export : retourne un .md vide structure si aucune note', async () => {
+      // Cree un nouveau student artificiellement (id 99) sans aucune note
+      // mais on va juste effacer toutes les notes de student 1 et tester
+      const existingNotes = queries.getStudentNotesWithCourseTitles(1)
+      for (const n of existingNotes) {
+        queries.deleteLumenCourseNote(1, n.course_id)
+      }
+      const res = await request(app)
+        .get('/api/lumen/my-notes/export')
+        .set('Authorization', `Bearer ${studentToken}`)
+      expect(res.status).toBe(200)
+      expect(res.text).toContain('Aucune note pour le moment')
+    })
+  })
+
+  describe('Routes read-all + read-counts', () => {
+    it('POST /courses/read-all/promo/:id : marque tous les cours publies', async () => {
+      const a = queries.createLumenCourse({ teacherId: 1, promoId: 1, title: 'Read all A' })
+      const b = queries.createLumenCourse({ teacherId: 1, promoId: 1, title: 'Read all B' })
+      queries.publishLumenCourse(a.id)
+      queries.publishLumenCourse(b.id)
+
+      const res = await request(app)
+        .post('/api/lumen/courses/read-all/promo/1')
+        .set('Authorization', `Bearer ${studentToken}`)
+      expect(res.status).toBe(200)
+      expect(res.body.data.marked).toBeGreaterThanOrEqual(0)
+
+      // Apres l'appel, aucun cours publie ne doit rester non lu
+      const unreadRes = await request(app)
+        .get('/api/lumen/unread/promo/1')
+        .set('Authorization', `Bearer ${studentToken}`)
+      expect(unreadRes.body.data.count).toBe(0)
+    })
+
+    it('POST /courses/read-all : refuse les teachers (403)', async () => {
+      const res = await request(app)
+        .post('/api/lumen/courses/read-all/promo/1')
+        .set('Authorization', `Bearer ${teacherToken}`)
+      expect(res.status).toBe(403)
+    })
+
+    it('GET /read-counts/promo/:id : retourne un map pour les teachers', async () => {
+      const res = await request(app)
+        .get('/api/lumen/read-counts/promo/1')
+        .set('Authorization', `Bearer ${teacherToken}`)
+      expect(res.status).toBe(200)
+      expect(typeof res.body.data).toBe('object')
+    })
+
+    it('GET /read-counts/promo/:id : refuse les etudiants (403)', async () => {
+      const res = await request(app)
+        .get('/api/lumen/read-counts/promo/1')
+        .set('Authorization', `Bearer ${studentToken}`)
+      expect(res.status).toBe(403)
+    })
   })
 
   it('POST /snapshot : cooldown anti-abuse en prod (429 REFRESH_COOLDOWN)', async () => {

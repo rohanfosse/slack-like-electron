@@ -340,8 +340,10 @@ router.post('/courses/:id/read',
 // POST /api/lumen/courses/read-all/promo/:promoId — marque tous les cours
 // publies d'une promo comme lus pour l'etudiant courant. Retourne le nombre
 // de cours effectivement marques (delta ; idempotent).
+// requireExactStudent (pas requireRole hierarchique) : les teachers n'ont
+// pas a se marquer eux-memes comme ayant lu des cours.
 router.post('/courses/read-all/promo/:promoId',
-  requireRole('student'),
+  requireExactStudent,
   requirePromo(promoFromParam),
   wrap((req) => {
     const promoId = Number(req.params.promoId)
