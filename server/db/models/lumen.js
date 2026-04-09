@@ -168,6 +168,57 @@ function markLumenCourseRead(studentId, courseId) {
 }
 
 /**
+ * Marque tous les cours publies d'une promo comme lus pour un etudiant.
+ * Utilise par le bouton "Tout marquer comme lu" cote etudiant.
+ * Retourne le nombre de cours marques comme lus (delta avant/apres).
+ */
+function markAllLumenCoursesRead(studentId, promoId) {
+  const db = getDb();
+  const res = db.prepare(
+    `INSERT OR IGNORE INTO lumen_course_reads (student_id, course_id, read_at)
+     SELECT ?, c.id, datetime('now')
+     FROM lumen_courses c
+     WHERE c.promo_id = ? AND c.status = 'published'
+       AND NOT EXISTS (
+         SELECT 1 FROM lumen_course_reads r
+         WHERE r.student_id = ? AND r.course_id = c.id
+       )`
+  ).run(studentId, promoId, studentId);
+  return res.changes;
+}
+
+/**
+ * Retourne le nombre de lectures distinctes d'un cours (etudiants uniques
+ * qui l'ont ouvert au moins une fois). Utilise par le dashboard prof
+ * pour voir l'engagement par cours.
+ */
+function getLumenCourseReadCount(courseId) {
+  const row = getDb().prepare(
+    `SELECT COUNT(DISTINCT student_id) AS n
+     FROM lumen_course_reads
+     WHERE course_id = ?`
+  ).get(courseId);
+  return row?.n ?? 0;
+}
+
+/**
+ * Meme chose mais en batch pour eviter N+1 : retourne un map {courseId → count}
+ * pour tous les cours d'une promo.
+ */
+function getLumenReadCountsForPromo(promoId) {
+  const rows = getDb().prepare(
+    `SELECT r.course_id, COUNT(DISTINCT r.student_id) AS n
+     FROM lumen_course_reads r
+     JOIN lumen_courses c ON c.id = r.course_id
+     WHERE c.promo_id = ?
+     GROUP BY r.course_id`
+  ).all(promoId);
+  const out = {};
+  for (const row of rows) out[row.course_id] = row.n;
+  return out;
+}
+
+/**
  * Retourne les cours publies non-lus par un etudiant pour une promo.
  * Exclut les cours dont l'etudiant est (theoriquement) lui-meme auteur — en
  * pratique un etudiant ne publie rien mais on filtre par securite.
@@ -270,6 +321,9 @@ module.exports = {
   getLumenCourseSnapshot,
   clearLumenCourseSnapshot,
   markLumenCourseRead,
+  markAllLumenCoursesRead,
+  getLumenCourseReadCount,
+  getLumenReadCountsForPromo,
   getUnreadLumenCoursesForStudent,
   countUnreadLumenCoursesForStudent,
   getLumenCourseNote,

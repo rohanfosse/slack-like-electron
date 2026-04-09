@@ -534,7 +534,9 @@ contextBridge.exposeInMainWorld('api', {
   deleteLumenCourse:       (id: number)       => del(`/api/lumen/courses/${id}`),
   getLumenStatsForPromo:   (promoId: number)  => get(`/api/lumen/stats/promo/${promoId}`),
   markLumenCourseRead:     (id: number)       => post(`/api/lumen/courses/${id}/read`, {}),
+  markAllLumenCoursesRead: (promoId: number)  => post(`/api/lumen/courses/read-all/promo/${promoId}`, {}),
   getLumenUnreadForPromo:  (promoId: number)  => get(`/api/lumen/unread/promo/${promoId}`),
+  getLumenReadCountsForPromo: (promoId: number) => get(`/api/lumen/read-counts/promo/${promoId}`),
 
   // ── Lumen notes privees etudiant ─────────────────────────────────────────
   getLumenCourseNote:    (id: number) => get(`/api/lumen/courses/${id}/note`),

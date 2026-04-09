@@ -337,6 +337,32 @@ router.post('/courses/:id/read',
   })
 )
 
+// POST /api/lumen/courses/read-all/promo/:promoId — marque tous les cours
+// publies d'une promo comme lus pour l'etudiant courant. Retourne le nombre
+// de cours effectivement marques (delta ; idempotent).
+router.post('/courses/read-all/promo/:promoId',
+  requireRole('student'),
+  requirePromo(promoFromParam),
+  wrap((req) => {
+    const promoId = Number(req.params.promoId)
+    const studentId = req.user.id
+    const marked = queries.markAllLumenCoursesRead(studentId, promoId)
+    return { marked }
+  })
+)
+
+// GET /api/lumen/read-counts/promo/:promoId — retourne un map {courseId: count}
+// avec le nombre d'etudiants uniques ayant lu chaque cours de la promo.
+// Reserve aux teachers/admins (engagement analytics).
+router.get('/read-counts/promo/:promoId',
+  requireRole('teacher'),
+  teacherPromoGuard(promoFromParam),
+  wrap((req) => {
+    const promoId = Number(req.params.promoId)
+    return queries.getLumenReadCountsForPromo(promoId)
+  })
+)
+
 // GET /api/lumen/unread/promo/:promoId — renvoie le compteur + la liste des
 // cours publies non-lus par l'etudiant courant pour la promo donnee. Sert
 // a alimenter le badge de la rail et le widget dashboard "Nouveaux cours".

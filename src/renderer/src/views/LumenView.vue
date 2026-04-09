@@ -5,7 +5,7 @@ import {
   Lightbulb, Plus, Eye, Edit3, Trash2, ArrowLeft, CheckCircle2, Clock,
   Save, Columns, BookOpen, ListTree, Maximize2, Minimize2, Download, Clipboard,
   Command as CommandIcon, Github, RefreshCw, ExternalLink, Package, Search,
-  NotebookPen, X,
+  NotebookPen, X, CheckCheck, Users,
 } from 'lucide-vue-next'
 import { useAppStore } from '@/stores/app'
 import { useLumenStore } from '@/stores/lumen'
@@ -130,6 +130,19 @@ const filteredCourses = computed(() => {
   })
 })
 
+async function handleMarkAllRead() {
+  if (!promoId.value) return
+  const before = lumenStore.unreadCount
+  if (before === 0) {
+    showToast('Tout est deja lu', 'info')
+    return
+  }
+  const marked = await lumenStore.markAllAsRead(promoId.value)
+  if (marked > 0) {
+    showToast(`${marked} cours marques comme lus`, 'success')
+  }
+}
+
 // Compteurs pour les boutons de filtre
 const filterCounts = computed(() => {
   const unreadIds = new Set(lumenStore.unreadCourses.map(c => c.id))
@@ -145,13 +158,13 @@ const filterCounts = computed(() => {
 // ── Data loading ────────────────────────────────────────────────────────────
 async function loadCourses() {
   if (!promoId.value) return
-  // Charge cours + projets + compteurs unread/notes en parallele : le
-  // selecteur projet (cote prof) a besoin de la liste des projets de la
-  // promo, les etudiants ont besoin des IDs non-lus et des IDs annotes
-  // pour afficher les badges et les filtres.
+  // Charge cours + donnees annexes en parallele :
+  // - Enseignant : projets (selecteur) + compteurs de lectures (engagement)
+  // - Etudiant : unread + notedCourseIds pour badges et filtres
   await Promise.all([
     lumenStore.fetchCoursesForPromo(promoId.value),
     isTeacher.value ? loadProjects(promoId.value) : Promise.resolve(),
+    isTeacher.value ? lumenStore.fetchReadCounts(promoId.value) : Promise.resolve(),
     !isTeacher.value ? lumenStore.fetchUnread(promoId.value) : Promise.resolve(),
     !isTeacher.value ? lumenStore.fetchNotedCourseIds() : Promise.resolve(),
   ])
@@ -930,6 +943,17 @@ const chromeHidden = computed(() => focusMode.value || zenMode.value)
                 <span v-if="f.count > 0" class="lumen-list-filter-count">{{ f.count }}</span>
               </button>
             </div>
+            <button
+              v-if="lumenStore.unreadCount > 0"
+              type="button"
+              class="lumen-list-mark-all"
+              title="Marquer tous les cours comme lus"
+              aria-label="Marquer tous les cours comme lus"
+              @click="handleMarkAllRead"
+            >
+              <CheckCheck :size="13" />
+              <span>Tout lu</span>
+            </button>
           </div>
 
           <div v-if="filteredCourses.length === 0" class="lumen-empty lumen-empty--small">
@@ -968,6 +992,14 @@ const chromeHidden = computed(() => focusMode.value || zenMode.value)
               <span v-if="!isTeacher && lumenStore.notedCourseIds.has(course.id)" class="lumen-card-note" title="Tu as pris des notes sur ce cours">
                 <NotebookPen :size="11" />
                 <span>Notes</span>
+              </span>
+              <span
+                v-if="isTeacher && course.status === 'published' && (lumenStore.readCounts.get(course.id) ?? 0) > 0"
+                class="lumen-card-reads"
+                :title="`${lumenStore.readCounts.get(course.id) ?? 0} etudiant(s) ont ouvert ce cours`"
+              >
+                <Users :size="11" />
+                <span>{{ lumenStore.readCounts.get(course.id) ?? 0 }} lu</span>
               </span>
             </div>
             <footer class="lumen-card-actions">
@@ -1527,6 +1559,41 @@ const chromeHidden = computed(() => focusMode.value || zenMode.value)
 .lumen-card-note {
   color: #e6a700;
   background: rgba(230, 167, 0, 0.15);
+}
+.lumen-card-reads {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 9px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  background: var(--bg-hover);
+  border: 1px solid var(--border);
+}
+
+.lumen-list-mark-all {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-left: auto;
+  background: var(--accent-subtle);
+  border: 1px solid var(--accent);
+  color: var(--accent);
+  border-radius: var(--radius-sm);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 6px 12px;
+  transition: all 120ms ease;
+}
+.lumen-list-mark-all:hover {
+  background: var(--accent);
+  color: var(--bg-primary, #111);
 }
 
 /* Barre de filtres + recherche liste */

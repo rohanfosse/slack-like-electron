@@ -228,6 +228,52 @@ describe('Notes privees etudiant', () => {
   })
 })
 
+describe('Lectures — markAll + readCounts', () => {
+  it('markAllLumenCoursesRead marque tous les cours publies non lus', () => {
+    const a = queries.createLumenCourse({ teacherId: 1, promoId: 1, title: 'mark A' })
+    const b = queries.createLumenCourse({ teacherId: 1, promoId: 1, title: 'mark B' })
+    queries.publishLumenCourse(a.id)
+    queries.publishLumenCourse(b.id)
+    // Avant : 2 cours non lus (au moins)
+    const beforeCount = queries.countUnreadLumenCoursesForStudent(1, 1)
+    expect(beforeCount).toBeGreaterThanOrEqual(2)
+    queries.markAllLumenCoursesRead(1, 1)
+    const afterCount = queries.countUnreadLumenCoursesForStudent(1, 1)
+    expect(afterCount).toBe(0)
+  })
+
+  it('markAllLumenCoursesRead ignore les drafts', () => {
+    // Reset : marque tout lu
+    queries.markAllLumenCoursesRead(1, 1)
+    const draft = queries.createLumenCourse({ teacherId: 1, promoId: 1, title: 'draft only' })
+    queries.markAllLumenCoursesRead(1, 1)
+    // Le draft ne doit pas etre dans les reads
+    const exists = queries.getLumenCoursesForPromo(1).find(c => c.id === draft.id)
+    expect(exists).toBeDefined()
+    expect(exists.status).toBe('draft')
+  })
+
+  it('getLumenCourseReadCount compte les lecteurs distincts', () => {
+    const c = queries.createLumenCourse({ teacherId: 1, promoId: 1, title: 'Read count' })
+    queries.publishLumenCourse(c.id)
+    queries.markLumenCourseRead(1, c.id)
+    queries.markLumenCourseRead(1, c.id)  // idempotent, meme student
+    expect(queries.getLumenCourseReadCount(c.id)).toBe(1)
+  })
+
+  it('getLumenReadCountsForPromo retourne un map par courseId', () => {
+    const a = queries.createLumenCourse({ teacherId: 1, promoId: 1, title: 'Batch A' })
+    const b = queries.createLumenCourse({ teacherId: 1, promoId: 1, title: 'Batch B' })
+    queries.publishLumenCourse(a.id)
+    queries.publishLumenCourse(b.id)
+    queries.markLumenCourseRead(1, a.id)
+    // b reste non lu
+    const counts = queries.getLumenReadCountsForPromo(1)
+    expect(counts[a.id]).toBeGreaterThanOrEqual(1)
+    expect(counts[b.id]).toBeUndefined()
+  })
+})
+
 describe('Snapshot repo git', () => {
   const sampleSnapshot = {
     repo_url: 'https://github.com/owner/repo',

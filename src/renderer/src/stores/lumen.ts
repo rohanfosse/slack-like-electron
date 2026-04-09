@@ -149,6 +149,41 @@ export const useLumenStore = defineStore('lumen', () => {
   }
 
   /**
+   * Marque tous les cours publies d'une promo comme lus pour l'etudiant
+   * courant. Mise a jour optimiste : vide la liste unreadCourses
+   * immediatement, puis appelle le backend. Le backend retourne le nombre
+   * reellement marque (en cas d'incoherence cache, on resynchronise).
+   */
+  async function markAllAsRead(promoId: number): Promise<number> {
+    const before = unreadCount.value
+    unreadCourses.value = []
+    unreadCount.value = 0
+    const data = await api<{ marked: number }>(
+      () => window.api.markAllLumenCoursesRead(promoId),
+      { silent: true },
+    )
+    if (!data) {
+      // Rollback : refetch le vrai etat serveur
+      await fetchUnread(promoId)
+      return 0
+    }
+    return data.marked ?? before
+  }
+
+  // Compteurs de lecture par cours (pour le dashboard prof — anonymises)
+  const readCounts = ref<Map<number, number>>(new Map())
+  async function fetchReadCounts(promoId: number): Promise<void> {
+    const data = await api<Record<number, number>>(
+      () => window.api.getLumenReadCountsForPromo(promoId),
+      { silent: true },
+    )
+    if (!data) return
+    const next = new Map<number, number>()
+    for (const [k, v] of Object.entries(data)) next.set(Number(k), v)
+    readCounts.value = next
+  }
+
+  /**
    * Handler socket : un cours vient d'etre publie sur la promo active.
    * Recharge la liste des cours et le compteur de non-lus.
    */
@@ -382,14 +417,15 @@ export const useLumenStore = defineStore('lumen', () => {
 
   return {
     courses, currentCourse, loading,
-    unreadCourses, unreadCount,
+    unreadCourses, unreadCount, readCounts,
     snapshotTrees, fileContentCache, notesCache, notedCourseIds,
     publishedCourses, draftCourses,
     fetchCoursesForPromo, fetchCourse,
     createCourse, updateCourse,
     publishCourse, unpublishCourse, deleteCourse,
     clearCurrentCourse,
-    fetchUnread, markAsRead, resetUnread, onCoursePublished,
+    fetchUnread, markAsRead, markAllAsRead, resetUnread, onCoursePublished,
+    fetchReadCounts,
     fetchSnapshotTree, fetchFileContent, refreshSnapshot, invalidateSnapshotCache,
     fetchCourseNote, saveCourseNote, deleteCourseNote, fetchNotedCourseIds,
   }

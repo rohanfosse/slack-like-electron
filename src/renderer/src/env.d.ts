@@ -317,7 +317,9 @@ declare global {
       deleteLumenCourse(id: number): Promise<IpcResponse<{ id: number; deleted: boolean }>>
       getLumenStatsForPromo(promoId: number): Promise<IpcResponse<{ total: number; published: number; drafts: number }>>
       markLumenCourseRead(id: number): Promise<IpcResponse<{ ok: true; courseId: number }>>
+      markAllLumenCoursesRead(promoId: number): Promise<IpcResponse<{ marked: number }>>
       getLumenUnreadForPromo(promoId: number): Promise<IpcResponse<{ count: number; courses: import('./types').LumenCourse[] }>>
+      getLumenReadCountsForPromo(promoId: number): Promise<IpcResponse<Record<number, number>>>
 
       // Lumen notes privees etudiant
       getLumenCourseNote(id: number): Promise<IpcResponse<{ student_id: number; course_id: number; content: string; created_at: string; updated_at: string } | null>>
