@@ -585,6 +585,41 @@ router.get('/my-noted-courses',
   })
 )
 
+// GET /api/lumen/my-notes/export — telecharge toutes les notes de l'etudiant
+// courant en un seul fichier markdown (structure : un h1 pour "Mes notes",
+// puis un h2 par cours avec le contenu brut dessous).
+router.get('/my-notes/export',
+  requireExactStudent,
+  (req, res, next) => {
+    try {
+      const studentId = req.user.id
+      const notes = queries.getStudentNotesWithCourseTitles(studentId)
+      const lines = [
+        '# Mes notes Lumen',
+        '',
+        `> Export du ${new Date().toISOString().slice(0, 10)}`,
+        `> ${notes.length} note${notes.length > 1 ? 's' : ''} au total`,
+        '',
+        '---',
+        '',
+      ]
+      for (const n of notes) {
+        lines.push(`## ${n.course_title}`)
+        if (n.course_summary) lines.push(`_${n.course_summary}_`, '')
+        lines.push(`*Modifie le ${new Date(n.updated_at).toISOString().slice(0, 10)}*`)
+        lines.push('')
+        lines.push(n.content)
+        lines.push('', '---', '')
+      }
+      if (notes.length === 0) lines.push('_Aucune note pour le moment._', '')
+      const md = lines.join('\n')
+      res.setHeader('Content-Type', 'text/markdown; charset=utf-8')
+      res.setHeader('Content-Disposition', 'attachment; filename="mes-notes-lumen.md"')
+      res.send(md)
+    } catch (err) { next(err) }
+  }
+)
+
 // GET /api/lumen/courses/:id/snapshot/download — streaming du zip
 router.get('/courses/:id/snapshot/download', snapshotReadGuard, async (req, res, next) => {
   try {

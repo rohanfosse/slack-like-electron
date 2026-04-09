@@ -544,6 +544,32 @@ contextBridge.exposeInMainWorld('api', {
   deleteLumenCourseNote: (id: number) => del(`/api/lumen/courses/${id}/note`),
   getLumenNotedCourses:  () => get('/api/lumen/my-noted-courses'),
 
+  /**
+   * Telecharge l'export markdown des notes de l'etudiant dans un fichier
+   * local via le save dialog Electron (reutilise lumen:saveSnapshotZip —
+   * en fait non, on doit avoir un handler separe pour text/markdown).
+   * On passe par un handler IPC dedie qui accepte un string et un nom.
+   */
+  downloadLumenNotesExport: async () => {
+    try {
+      const res = await fetch(`${SERVER_URL}/api/lumen/my-notes/export`, {
+        headers: { Authorization: `Bearer ${jwtToken ?? ''}` },
+      })
+      if (!res.ok) {
+        let errText = `HTTP ${res.status}`
+        try { const j = await res.json(); errText = j?.error ?? errText } catch { /* pas de JSON */ }
+        return { ok: false, error: errText }
+      }
+      const text = await res.text()
+      return await ipcRenderer.invoke('lumen:saveNotesMarkdown', {
+        content: text,
+        suggestedName: 'mes-notes-lumen.md',
+      }) as { ok: boolean; data?: { filename: string; path: string } | null; error?: string }
+    } catch (e) {
+      return { ok: false, error: e instanceof Error ? e.message : 'Erreur export notes' }
+    }
+  },
+
   // ── Lumen snapshot (repo git d'exemple) ──────────────────────────────────
   refreshLumenSnapshot: (id: number) => post(`/api/lumen/courses/${id}/snapshot`, {}),
   getLumenSnapshotTree: (id: number) => get(`/api/lumen/courses/${id}/snapshot/tree`),

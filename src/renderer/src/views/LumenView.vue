@@ -21,6 +21,7 @@ import LumenStatusBar from '@/components/lumen/LumenStatusBar.vue'
 import LumenPreview from '@/components/lumen/LumenPreview.vue'
 import LumenCommandPalette from '@/components/lumen/LumenCommandPalette.vue'
 import LumenReader from '@/components/lumen/LumenReader.vue'
+import LumenKeyboardHelp from '@/components/lumen/LumenKeyboardHelp.vue'
 import type { CursorInfo } from '@/composables/useLumenEditor'
 import type { LumenCourse, Promotion } from '@/types'
 import { relativeTime } from '@/utils/date'
@@ -42,6 +43,21 @@ const listSearch = ref('')
 // Deep link vers un fichier precis du projet d'exemple (via query ?file=)
 // passe au LumenReader qui le transmet au LumenProjectPanel.
 const readerInitialFile = ref<string | null>(null)
+
+// Overlay d'aide clavier (ouvert via ?)
+const keyboardHelpOpen = ref(false)
+function onGlobalKey(e: KeyboardEvent) {
+  // ? = Shift+/ sur clavier FR et US. Ignore dans les inputs/textarea.
+  if (e.key === '?' && !e.ctrlKey && !e.metaKey && !e.altKey) {
+    const target = e.target as HTMLElement | null
+    if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) return
+    e.preventDefault()
+    keyboardHelpOpen.value = true
+  } else if (e.key === 'Escape' && keyboardHelpOpen.value) {
+    e.preventDefault()
+    keyboardHelpOpen.value = false
+  }
+}
 
 // ── Editor state ────────────────────────────────────────────────────────────
 const editorTitle     = ref('')
@@ -129,6 +145,16 @@ const filteredCourses = computed(() => {
     }
   })
 })
+
+async function handleExportNotes() {
+  const result = await window.api.downloadLumenNotesExport()
+  if (!result.ok) {
+    showToast(result.error || 'Export echoue', 'error')
+    return
+  }
+  if (!result.data) return // utilisateur a annule
+  showToast('Notes exportees', 'success')
+}
 
 async function handleMarkAllRead() {
   if (!promoId.value) return
@@ -248,6 +274,7 @@ watch(editorPromoId, loadProjectsForEditorPromo)
 
 onMounted(async () => {
   await Promise.all([loadCourses(), loadAllPromos()])
+  window.addEventListener('keydown', onGlobalKey)
   // Deep link : si l'URL contient ?course=ID, on ouvre directement le reader
   // (utilise par les refs lumen:ID dans le chat et le widget dashboard).
   // Si ?file=path est present, on le transmet au panneau projet.
@@ -260,6 +287,10 @@ onMounted(async () => {
       openReader(course)
     }
   }
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('keydown', onGlobalKey)
 })
 
 // Reagit aux changements de query (navigation interne via clic sur ref)
@@ -943,17 +974,30 @@ const chromeHidden = computed(() => focusMode.value || zenMode.value)
                 <span v-if="f.count > 0" class="lumen-list-filter-count">{{ f.count }}</span>
               </button>
             </div>
-            <button
-              v-if="lumenStore.unreadCount > 0"
-              type="button"
-              class="lumen-list-mark-all"
-              title="Marquer tous les cours comme lus"
-              aria-label="Marquer tous les cours comme lus"
-              @click="handleMarkAllRead"
-            >
-              <CheckCheck :size="13" />
-              <span>Tout lu</span>
-            </button>
+            <div class="lumen-list-toolbar-actions">
+              <button
+                v-if="lumenStore.notedCourseIds.size > 0"
+                type="button"
+                class="lumen-list-action"
+                title="Telecharger toutes mes notes en .md"
+                aria-label="Exporter mes notes"
+                @click="handleExportNotes"
+              >
+                <Download :size="13" />
+                <span>Export notes</span>
+              </button>
+              <button
+                v-if="lumenStore.unreadCount > 0"
+                type="button"
+                class="lumen-list-action lumen-list-action--primary"
+                title="Marquer tous les cours comme lus"
+                aria-label="Marquer tous les cours comme lus"
+                @click="handleMarkAllRead"
+              >
+                <CheckCheck :size="13" />
+                <span>Tout lu</span>
+              </button>
+            </div>
           </div>
 
           <div v-if="filteredCourses.length === 0" class="lumen-empty lumen-empty--small">
@@ -1261,6 +1305,13 @@ const chromeHidden = computed(() => focusMode.value || zenMode.value)
         :commands="paletteCommands"
         :on-course-select="onCmdCourseSelect"
         @close="showCmdPalette = false"
+      />
+
+      <!-- Overlay aide clavier (?) -->
+      <LumenKeyboardHelp
+        :open="keyboardHelpOpen"
+        :mode="mode"
+        @close="keyboardHelpOpen = false"
       />
     </div>
   </ErrorBoundary>
@@ -1575,14 +1626,18 @@ const chromeHidden = computed(() => focusMode.value || zenMode.value)
   border: 1px solid var(--border);
 }
 
-.lumen-list-mark-all {
+.lumen-list-toolbar-actions {
+  display: flex;
+  gap: 6px;
+  margin-left: auto;
+}
+.lumen-list-action {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  margin-left: auto;
-  background: var(--accent-subtle);
-  border: 1px solid var(--accent);
-  color: var(--accent);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
   border-radius: var(--radius-sm);
   font-family: inherit;
   font-size: 12px;
@@ -1591,7 +1646,16 @@ const chromeHidden = computed(() => focusMode.value || zenMode.value)
   padding: 6px 12px;
   transition: all 120ms ease;
 }
-.lumen-list-mark-all:hover {
+.lumen-list-action:hover {
+  color: var(--text-primary);
+  border-color: var(--text-muted);
+}
+.lumen-list-action--primary {
+  background: var(--accent-subtle);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.lumen-list-action--primary:hover {
   background: var(--accent);
   color: var(--bg-primary, #111);
 }

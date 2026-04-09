@@ -307,6 +307,22 @@ function getStudentNotedCourseIds(studentId) {
   return rows.map(r => r.course_id);
 }
 
+/**
+ * Retourne toutes les notes non vides d'un etudiant avec le titre du cours
+ * associe, triees par date de mise a jour. Utilise pour l'export .md.
+ */
+function getStudentNotesWithCourseTitles(studentId) {
+  return getDb().prepare(
+    `SELECT n.course_id, n.content, n.created_at, n.updated_at,
+            c.title AS course_title, c.summary AS course_summary
+     FROM lumen_course_notes n
+     JOIN lumen_courses c ON c.id = n.course_id
+     WHERE n.student_id = ?
+       AND length(trim(n.content)) > 0
+     ORDER BY n.updated_at DESC`
+  ).all(studentId);
+}
+
 module.exports = {
   createLumenCourse,
   getLumenCourse,
@@ -330,4 +346,5 @@ module.exports = {
   upsertLumenCourseNote,
   deleteLumenCourseNote,
   getStudentNotedCourseIds,
+  getStudentNotesWithCourseTitles,
 };

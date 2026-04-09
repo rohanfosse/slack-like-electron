@@ -326,6 +326,7 @@ declare global {
       saveLumenCourseNote(id: number, content: string): Promise<IpcResponse<{ student_id: number; course_id: number; content: string; created_at: string; updated_at: string }>>
       deleteLumenCourseNote(id: number): Promise<IpcResponse<{ ok: true; courseId: number }>>
       getLumenNotedCourses(): Promise<IpcResponse<{ course_ids: number[] }>>
+      downloadLumenNotesExport(): Promise<{ ok: boolean; data?: { filename: string; path: string } | null; error?: string }>
 
       // Lumen snapshot (repo git d'exemple)
       refreshLumenSnapshot(id: number): Promise<IpcResponse<{

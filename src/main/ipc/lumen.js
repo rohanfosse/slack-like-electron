@@ -37,6 +37,29 @@ function register() {
   })
 
   /**
+   * Sauvegarde un export markdown (notes etudiant) sur le disque via save
+   * dialog natif + filtre .md/.txt.
+   */
+  ipcMain.handle('lumen:saveNotesMarkdown', async (_event, payload) => {
+    try {
+      const { content, suggestedName } = payload ?? {}
+      if (typeof content !== 'string') return { ok: false, error: 'Contenu invalide.' }
+      const { canceled, filePath: dest } = await dialog.showSaveDialog({
+        defaultPath: suggestedName || 'mes-notes-lumen.md',
+        filters: [
+          { name: 'Markdown', extensions: ['md'] },
+          { name: 'Texte', extensions: ['txt'] },
+        ],
+      })
+      if (canceled || !dest) return { ok: true, data: null }
+      fs.writeFileSync(dest, content, 'utf8')
+      return { ok: true, data: { filename: path.basename(dest), path: dest } }
+    } catch (err) {
+      return { ok: false, error: err?.message ?? 'Erreur lors de la sauvegarde.' }
+    }
+  })
+
+  /**
    * Ouvre le dossier contenant le zip sauvegarde (appele apres saveSnapshotZip).
    * Permet a l'etudiant d'aller directement chercher son fichier.
    */
