@@ -1230,13 +1230,32 @@ const chromeHidden = computed(() => focusMode.value || zenMode.value)
             @keydown.enter="isTeacher ? openEditorEdit(course) : openReader(course)"
           >
             <header class="lumen-card-head">
-              <span class="lumen-pill" :class="course.status === 'published' ? 'lumen-pill--ok' : 'lumen-pill--draft'">
+              <span
+                class="lumen-pill"
+                :class="{
+                  'lumen-pill--ok': course.status === 'published',
+                  'lumen-pill--draft': course.status === 'draft' && !course.scheduled_publish_at,
+                  'lumen-pill--scheduled': course.status === 'draft' && !!course.scheduled_publish_at,
+                }"
+              >
                 <CheckCircle2 v-if="course.status === 'published'" :size="11" />
                 <Clock v-else :size="11" />
-                {{ course.status === 'published' ? 'Publié' : 'Brouillon' }}
+                {{
+                  course.status === 'published'
+                    ? 'Publié'
+                    : course.scheduled_publish_at
+                      ? 'Programmé'
+                      : 'Brouillon'
+                }}
               </span>
               <span v-if="isFreshCourse(course)" class="lumen-card-fresh" title="Publie dans les dernieres 24h">NEW</span>
-              <span class="lumen-card-date">{{ formatDate(course.published_at ?? course.updated_at) }}</span>
+              <span class="lumen-card-date">
+                {{
+                  course.scheduled_publish_at
+                    ? `Publication ${formatDate(course.scheduled_publish_at)}`
+                    : formatDate(course.published_at ?? course.updated_at)
+                }}
+              </span>
             </header>
             <h3 class="lumen-card-title">{{ course.title }}</h3>
             <p v-if="course.summary" class="lumen-card-summary">{{ course.summary }}</p>
@@ -1835,6 +1854,10 @@ const chromeHidden = computed(() => focusMode.value || zenMode.value)
 }
 .lumen-pill--ok    { background: rgba(46, 204, 113, .16); color: var(--color-success); }
 .lumen-pill--draft { background: var(--bg-hover); color: var(--text-secondary); }
+.lumen-pill--scheduled {
+  background: rgba(74, 144, 217, 0.16);
+  color: #4a90d9;
+}
 
 .lumen-card-date { font-size: var(--text-xs); color: var(--text-muted); }
 .lumen-card-title { margin: 0; font-size: var(--text-lg); font-weight: 700; letter-spacing: -0.01em; line-height: 1.3; color: var(--text-primary); }
