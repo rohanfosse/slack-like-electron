@@ -39,6 +39,9 @@ export const TEACHER_TILES: WidgetDef[] = [
   { id: 'lumen-my-courses', label: 'Mes cours Lumen',  icon: Lightbulb,   description: 'Cours Lumen publies avec leurs lectures',         category: 'tracking',  sizes: ['1x1', '2x1', '2x2'],  defaultSize: '2x1', defaultEnabled: false, role: 'teacher' },
   { id: 'lumen-drafts',     label: 'Brouillons Lumen', icon: FileText,    description: 'Cours Lumen en brouillon a finaliser',            category: 'productivity', sizes: ['1x1', '2x1'],      defaultSize: '1x1', defaultEnabled: false, role: 'teacher' },
   { id: 'lumen-top-read',   label: 'Top cours lus',    icon: BarChart3,   description: 'Top 3 des cours Lumen les plus lus',              category: 'tracking',  sizes: ['1x1', '2x1'],         defaultSize: '2x1', defaultEnabled: false, role: 'teacher' },
+  // ── Widgets productivite prof (optionnels) ──
+  { id: 'quick-create',     label: 'Creation rapide',  icon: PlusCircle,  description: 'Boutons rapides pour creer devoir / cours / doc',category: 'productivity', sizes: ['1x1', '2x1'],      defaultSize: '1x1', defaultEnabled: false, role: 'teacher' },
+  { id: 'notation-pending', label: 'A noter (top)',    icon: Edit3,       description: 'Devoirs avec le plus de rendus en attente de note', category: 'essential', sizes: ['1x1', '2x1'],     defaultSize: '1x1', defaultEnabled: false, role: 'teacher' },
 ]
 
 const STORAGE_KEY = 'teacher_bento_hidden'
