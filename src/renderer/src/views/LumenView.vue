@@ -23,6 +23,8 @@ import LumenCommandPalette from '@/components/lumen/LumenCommandPalette.vue'
 import LumenReader from '@/components/lumen/LumenReader.vue'
 import LumenKeyboardHelp from '@/components/lumen/LumenKeyboardHelp.vue'
 import LumenTrashModal from '@/components/lumen/LumenTrashModal.vue'
+import DateTimePicker from '@/components/ui/DateTimePicker.vue'
+import Modal from '@/components/ui/Modal.vue'
 import type { CursorInfo } from '@/composables/useLumenEditor'
 import type { LumenCourse, Promotion } from '@/types'
 import { relativeTime } from '@/utils/date'
@@ -562,6 +564,52 @@ async function unpublishFromEditor() {
   if (ok) showToast('Cours repassé en brouillon', 'info')
 }
 
+// ── Publication programmee (UI) ──────────────────────────────────────────
+const scheduleModalOpen = ref(false)
+const scheduledAtDraft = ref<string | null>(null)
+
+const currentScheduledAt = computed(() => {
+  if (!editorCourseId.value) return null
+  const course = lumenStore.courses.find(c => c.id === editorCourseId.value)
+  return course?.scheduled_publish_at ?? null
+})
+
+async function openScheduleModal() {
+  // Sauvegarde avant ouverture pour s'assurer que le cours existe en DB
+  if (!editorCourseId.value) {
+    const ok = await saveCourse(true)
+    if (!ok) {
+      showToast('Enregistre le cours d\'abord.', 'error')
+      return
+    }
+  }
+  scheduledAtDraft.value = currentScheduledAt.value
+  scheduleModalOpen.value = true
+}
+
+async function handleSchedule(scheduledAt: string | null) {
+  if (!editorCourseId.value) return
+  const res = await window.api.scheduleLumenCourse(editorCourseId.value, scheduledAt)
+  if (!res?.ok) {
+    showToast(res?.error ?? 'Echec de la planification', 'error')
+    return
+  }
+  // Met a jour le cours dans le store
+  const data = res.data
+  if (data) {
+    const idx = lumenStore.courses.findIndex(c => c.id === editorCourseId.value)
+    if (idx !== -1) {
+      lumenStore.courses[idx] = { ...lumenStore.courses[idx], scheduled_publish_at: data.scheduled_publish_at }
+    }
+  }
+  if (scheduledAt === null) {
+    showToast('Planification annulee', 'info')
+  } else {
+    showToast(`Publication programmee le ${new Date(scheduledAt).toLocaleString('fr-FR')}`, 'success')
+  }
+  scheduleModalOpen.value = false
+}
+
 async function deleteFromEditor() {
   if (!editorCourseId.value) return
   if (!confirm('Supprimer définitivement ce cours ?')) return
@@ -1007,6 +1055,15 @@ const chromeHidden = computed(() => focusMode.value || zenMode.value)
             </button>
             <button v-if="editorIsPublished" class="lumen-btn lumen-btn--ghost" @click="unpublishFromEditor">
               Dépublier
+            </button>
+            <button
+              v-if="!editorIsPublished"
+              class="lumen-btn lumen-btn--ghost"
+              :title="currentScheduledAt ? `Publication prevue le ${new Date(currentScheduledAt).toLocaleString('fr-FR')}` : 'Programmer la publication'"
+              @click="openScheduleModal"
+            >
+              <Clock :size="14" />
+              {{ currentScheduledAt ? 'Modifier planification' : 'Programmer' }}
             </button>
             <button class="lumen-btn lumen-btn--primary" :disabled="saving" @click="saveAndPublish">
               {{ editorIsPublished ? 'Mettre à jour' : 'Publier' }}
@@ -1495,6 +1552,52 @@ const chromeHidden = computed(() => focusMode.value || zenMode.value)
         :open="trashModalOpen"
         @close="trashModalOpen = false"
       />
+
+      <!-- Modal planification publication -->
+      <Modal
+        v-model="scheduleModalOpen"
+        title="Programmer la publication"
+        max-width="480px"
+      >
+        <div class="lumen-schedule-body">
+          <p class="lumen-schedule-desc">
+            Choisis la date et l'heure de publication automatique. Le cours
+            restera en brouillon jusqu'a la date selectionnee.
+          </p>
+          <DateTimePicker
+            v-model="scheduledAtDraft"
+            label="Date et heure de publication"
+            required
+            :min="new Date(Date.now() + 60_000).toISOString()"
+          />
+          <div class="lumen-schedule-actions">
+            <button
+              v-if="currentScheduledAt"
+              type="button"
+              class="lumen-btn lumen-btn--ghost"
+              @click="handleSchedule(null)"
+            >
+              Annuler la planification
+            </button>
+            <span class="lumen-schedule-spacer" />
+            <button
+              type="button"
+              class="lumen-btn lumen-btn--ghost"
+              @click="scheduleModalOpen = false"
+            >
+              Fermer
+            </button>
+            <button
+              type="button"
+              class="lumen-btn lumen-btn--primary"
+              :disabled="!scheduledAtDraft"
+              @click="handleSchedule(scheduledAtDraft)"
+            >
+              Confirmer
+            </button>
+          </div>
+        </div>
+      </Modal>
     </div>
   </ErrorBoundary>
 </template>
@@ -1947,6 +2050,27 @@ const chromeHidden = computed(() => focusMode.value || zenMode.value)
 @media (prefers-reduced-motion: reduce) {
   .lumen-list-progress-fill { transition: none; }
 }
+
+/* Modal de planification */
+.lumen-schedule-body {
+  padding: 18px 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.lumen-schedule-desc {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+.lumen-schedule-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+.lumen-schedule-spacer { flex: 1; }
 
 /* Barre de filtres + recherche liste */
 .lumen-list-toolbar {
