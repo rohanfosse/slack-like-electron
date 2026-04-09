@@ -7,6 +7,7 @@ import {
   LayoutDashboard, Percent, Edit3, Award, Wifi, Clock, MessageSquare,
   PlusCircle, Activity, CheckSquare,
   Quote, Timer, Bookmark, CalendarDays, FileBox, Pen,
+  Lightbulb, FileText, BarChart3, TrendingUp,
 } from 'lucide-vue-next'
 import type { WidgetDef, WidgetSize } from '@/types/widgets'
 
@@ -33,6 +34,11 @@ export const TEACHER_TILES: WidgetDef[] = [
   { id: 'dm-files',     label: 'Fichiers DM',       icon: FileBox,        description: 'Fichiers recus par message direct', category: 'communication', sizes: ['1x1', '2x1'],         defaultSize: '1x1', defaultEnabled: false, role: 'teacher' },
   { id: 'week-cal',     label: 'Semaine',           icon: CalendarDays,   description: 'Vue semaine des echeances',         category: 'productivity',  sizes: ['2x1', '2x2'],         defaultSize: '2x1', defaultEnabled: false, role: 'teacher' },
   { id: 'signatures',   label: 'Signatures',        icon: Pen,            description: 'Feuilles de presence',              category: 'tracking',      sizes: ['1x1', '2x1'],         defaultSize: '1x1', defaultEnabled: false, role: 'teacher' },
+  // ── Widgets Lumen (optionnels, masques par defaut) ──
+  { id: 'lumen-engagement', label: 'Engagement Lumen', icon: Lightbulb,   description: 'Stats d engagement sur les cours Lumen publies', category: 'tracking',  sizes: ['1x1', '2x1'],         defaultSize: '2x1', defaultEnabled: false, role: 'teacher' },
+  { id: 'lumen-my-courses', label: 'Mes cours Lumen',  icon: Lightbulb,   description: 'Cours Lumen publies avec leurs lectures',         category: 'tracking',  sizes: ['1x1', '2x1', '2x2'],  defaultSize: '2x1', defaultEnabled: false, role: 'teacher' },
+  { id: 'lumen-drafts',     label: 'Brouillons Lumen', icon: FileText,    description: 'Cours Lumen en brouillon a finaliser',            category: 'productivity', sizes: ['1x1', '2x1'],      defaultSize: '1x1', defaultEnabled: false, role: 'teacher' },
+  { id: 'lumen-top-read',   label: 'Top cours lus',    icon: BarChart3,   description: 'Top 3 des cours Lumen les plus lus',              category: 'tracking',  sizes: ['1x1', '2x1'],         defaultSize: '2x1', defaultEnabled: false, role: 'teacher' },
 ]
 
 const STORAGE_KEY = 'teacher_bento_hidden'

@@ -8,7 +8,7 @@ import {
   Zap, FolderOpen, Award, FileText, Mic,
   MessageSquare, FileBox, Activity,
   Clock, Quote, CalendarDays, TrendingUp, Bookmark, Timer,
-  Hourglass, Users, Flame, LayoutGrid, Lightbulb,
+  Hourglass, Users, Flame, LayoutGrid, Lightbulb, NotebookPen,
 } from 'lucide-vue-next'
 
 // Re-export pour compatibilite (l'ancien WidgetDef venait d'ici)
@@ -24,6 +24,8 @@ export const STUDENT_WIDGETS: WidgetDef[] = [
   { id: 'feedback',      label: 'Dernier retour',      icon: MessageSquare, description: 'Dernier retour sur un devoir',              category: 'communication',  sizes: ['1x1', '2x1'],                defaultSize: '2x1', defaultEnabled: true,  role: 'student' },
   { id: 'recentDoc',     label: 'Document recent',     icon: FileBox,       description: 'Dernier document partage',                  category: 'communication',  sizes: ['1x1', '2x1'],                defaultSize: '1x1', defaultEnabled: true,  role: 'student' },
   { id: 'lumenCourses',  label: 'Nouveaux cours',      icon: Lightbulb,     description: 'Cours Lumen publies par vos enseignants',   category: 'communication',  sizes: ['1x1', '2x1'],                defaultSize: '2x1', defaultEnabled: true,  role: 'student' },
+  { id: 'lumenProgress', label: 'Progression Lumen',   icon: TrendingUp,    description: 'Ton avancement de lecture des cours Lumen', category: 'tracking',       sizes: ['1x1', '2x1'],                defaultSize: '1x1', defaultEnabled: true,  role: 'student' },
+  { id: 'lumenNotes',    label: 'Mes notes Lumen',     icon: NotebookPen,   description: 'Tes dernieres notes prises sur des cours',  category: 'productivity',   sizes: ['1x1', '2x1', '2x2'],         defaultSize: '2x1', defaultEnabled: false, role: 'student' },
   { id: 'promoActivity', label: 'Activite promo',      icon: Activity,      description: 'Presence et rendus de la promo',            category: 'tracking',       sizes: ['2x1', '4x1'],                defaultSize: '2x1', defaultEnabled: true,  role: 'student' },
   // ── Widgets optionnels (desactives par defaut) ──
   { id: 'clock',         label: 'Horloge',             icon: Clock,         description: 'Heure et date en temps reel',               category: 'fun',            sizes: ['1x1'],                        defaultSize: '1x1', defaultEnabled: false, role: 'both' },

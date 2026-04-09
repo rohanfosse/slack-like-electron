@@ -18,6 +18,10 @@ import WidgetDmFiles from './teacher-widgets/WidgetDmFiles.vue'
 import WidgetWeekCal from './teacher-widgets/WidgetWeekCal.vue'
 import WidgetSignatures from './teacher-widgets/WidgetSignatures.vue'
 import WidgetAtRisk from './teacher-widgets/WidgetAtRisk.vue'
+import WidgetLumenEngagement from './teacher-widgets/WidgetLumenEngagement.vue'
+import WidgetLumenMyCourses from './teacher-widgets/WidgetLumenMyCourses.vue'
+import WidgetLumenDrafts from './teacher-widgets/WidgetLumenDrafts.vue'
+import WidgetLumenTopRead from './teacher-widgets/WidgetLumenTopRead.vue'
 import MultiPromoCard from './MultiPromoCard.vue'
 import { useTeacherBento } from '@/composables/useTeacherBento'
 
@@ -230,8 +234,15 @@ const optWidgetComponents: Record<string, Component> = {
   clock: WidgetClock, quote: WidgetQuote, pomodoro: WidgetPomodoro,
   quicklinks: WidgetQuickLinks, 'dm-files': WidgetDmFiles, 'week-cal': WidgetWeekCal,
   signatures: WidgetSignatures,
+  'lumen-engagement': WidgetLumenEngagement,
+  'lumen-my-courses': WidgetLumenMyCourses,
+  'lumen-drafts': WidgetLumenDrafts,
+  'lumen-top-read': WidgetLumenTopRead,
 }
-const wideWidgets = new Set(['quote', 'quicklinks', 'dm-files', 'week-cal', 'signatures'])
+const wideWidgets = new Set([
+  'quote', 'quicklinks', 'dm-files', 'week-cal', 'signatures',
+  'lumen-engagement', 'lumen-my-courses', 'lumen-top-read',
+])
 
 const draggableOpt = ref([...bento.visibleOptionalTiles.value])
 watch(() => bento.visibleOptionalTiles.value, (v) => { draggableOpt.value = [...v] })
