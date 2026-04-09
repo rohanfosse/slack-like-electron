@@ -1,6 +1,6 @@
 const { getDb } = require('./connection');
 
-const CURRENT_VERSION = 54;
+const CURRENT_VERSION = 55;
 
 // ─── Schema initial ───────────────────────────────────────────────────────────
 // Crée toutes les tables avec leur schéma complet (colonnes UTC, toutes colonnes incluses).
@@ -1104,6 +1104,12 @@ function runMigrations(db) {
     (db) => {
       tryAlter(db, `ALTER TABLE lumen_courses ADD COLUMN deleted_at TEXT`);
       db.exec(`CREATE INDEX IF NOT EXISTS idx_lumen_courses_deleted ON lumen_courses(deleted_at);`);
+    },
+
+    // v55 : Lumen — publication programmee des cours
+    (db) => {
+      tryAlter(db, `ALTER TABLE lumen_courses ADD COLUMN scheduled_publish_at TEXT`);
+      db.exec(`CREATE INDEX IF NOT EXISTS idx_lumen_courses_scheduled ON lumen_courses(scheduled_publish_at) WHERE scheduled_publish_at IS NOT NULL;`);
     },
   ];
 

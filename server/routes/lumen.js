@@ -305,6 +305,42 @@ router.post('/courses/:id/unpublish', requireCourseOwner, wrap((req) => {
   return queries.unpublishLumenCourse(id)
 }))
 
+// POST /api/lumen/courses/:id/schedule — planifie la publication
+// Body : { scheduledAt: ISO datetime | null } — null pour annuler
+const scheduleSchema = z.object({
+  scheduledAt: z.string().datetime().nullable(),
+}).strict()
+
+router.post('/courses/:id/schedule',
+  requireCourseOwner,
+  validate(scheduleSchema),
+  wrap((req) => {
+    const id = Number(req.params.id)
+    const { scheduledAt } = req.body
+    // Accepte uniquement les cours en draft : on ne replanifie pas un deja publie
+    const course = queries.getLumenCourse(id)
+    if (!course) {
+      const err = new Error('Cours introuvable')
+      err.statusCode = 404
+      throw err
+    }
+    if (course.status !== 'draft' && scheduledAt !== null) {
+      const err = new Error('Un cours deja publie ne peut pas etre reprogramme.')
+      err.statusCode = 400
+      throw err
+    }
+    if (scheduledAt !== null) {
+      const ts = new Date(scheduledAt).getTime()
+      if (ts < Date.now()) {
+        const err = new Error('La date de publication doit etre dans le futur.')
+        err.statusCode = 400
+        throw err
+      }
+    }
+    return queries.setLumenCourseScheduledPublish(id, scheduledAt)
+  })
+)
+
 // DELETE /api/lumen/courses/:id — soft delete (corbeille 30 jours)
 router.delete('/courses/:id', requireCourseOwner, wrap((req) => {
   const id = Number(req.params.id)

@@ -310,6 +310,9 @@ export interface LumenCourse {
   created_at: string
   updated_at: string
   published_at: string | null
+  // Publication programmee : scheduled_publish_at est une ISO datetime future
+  // que le scheduler consomme pour publier automatiquement
+  scheduled_publish_at: string | null
   // Metadonnees du snapshot (pas le JSON complet — voir LumenSnapshotTree pour l'arbo)
   repo_url: string | null
   repo_commit_sha: string | null

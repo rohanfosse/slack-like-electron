@@ -198,6 +198,53 @@ describe('Lumen courses CRUD', () => {
     expect(res.body.data.purged).toBe(true)
     expect(queries.getLumenCourse(c.id)).toBeNull()
   })
+
+  it('POST /schedule : planifie une publication future', async () => {
+    const queries = require('../../../server/db/index')
+    const c = queries.createLumenCourse({ teacherId: 1, promoId: 1, title: 'Schedule route' })
+    const future = new Date(Date.now() + 3600_000).toISOString()
+    const res = await request(app)
+      .post(`/api/lumen/courses/${c.id}/schedule`)
+      .set('Authorization', `Bearer ${teacherToken}`)
+      .send({ scheduledAt: future })
+    expect(res.status).toBe(200)
+    expect(res.body.data.scheduled_publish_at).toBe(future)
+  })
+
+  it('POST /schedule : refuse une date passee (400)', async () => {
+    const queries = require('../../../server/db/index')
+    const c = queries.createLumenCourse({ teacherId: 1, promoId: 1, title: 'Past schedule' })
+    const past = new Date(Date.now() - 3600_000).toISOString()
+    const res = await request(app)
+      .post(`/api/lumen/courses/${c.id}/schedule`)
+      .set('Authorization', `Bearer ${teacherToken}`)
+      .send({ scheduledAt: past })
+    expect(res.status).toBe(400)
+  })
+
+  it('POST /schedule : accepte null pour annuler', async () => {
+    const queries = require('../../../server/db/index')
+    const c = queries.createLumenCourse({ teacherId: 1, promoId: 1, title: 'Cancel schedule' })
+    queries.setLumenCourseScheduledPublish(c.id, new Date(Date.now() + 3600_000).toISOString())
+    const res = await request(app)
+      .post(`/api/lumen/courses/${c.id}/schedule`)
+      .set('Authorization', `Bearer ${teacherToken}`)
+      .send({ scheduledAt: null })
+    expect(res.status).toBe(200)
+    expect(res.body.data.scheduled_publish_at).toBeNull()
+  })
+
+  it('POST /schedule : refuse si le cours est deja publie', async () => {
+    const queries = require('../../../server/db/index')
+    const c = queries.createLumenCourse({ teacherId: 1, promoId: 1, title: 'Pub then schedule' })
+    queries.publishLumenCourse(c.id)
+    const future = new Date(Date.now() + 3600_000).toISOString()
+    const res = await request(app)
+      .post(`/api/lumen/courses/${c.id}/schedule`)
+      .set('Authorization', `Bearer ${teacherToken}`)
+      .send({ scheduledAt: future })
+    expect(res.status).toBe(400)
+  })
 })
 
 // ─── Routes snapshot (repo git d'exemple) ───────────────────────────────────

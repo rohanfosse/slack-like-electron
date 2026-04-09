@@ -531,6 +531,7 @@ contextBridge.exposeInMainWorld('api', {
   updateLumenCourse:       (id: number, payload: unknown) => patch(`/api/lumen/courses/${id}`, payload),
   publishLumenCourse:      (id: number)       => post(`/api/lumen/courses/${id}/publish`, {}),
   unpublishLumenCourse:    (id: number)       => post(`/api/lumen/courses/${id}/unpublish`, {}),
+  scheduleLumenCourse:     (id: number, scheduledAt: string | null) => post(`/api/lumen/courses/${id}/schedule`, { scheduledAt }),
   deleteLumenCourse:       (id: number)       => del(`/api/lumen/courses/${id}`),
   restoreLumenCourse:      (id: number)       => post(`/api/lumen/courses/${id}/restore`, {}),
   purgeLumenCourse:        (id: number)       => del(`/api/lumen/courses/${id}/purge`),

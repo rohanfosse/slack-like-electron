@@ -9,6 +9,7 @@ const LIST_COLS = [
   'id', 'teacher_id', 'promo_id', 'project_id',
   'title', 'summary', 'status',
   'created_at', 'updated_at', 'published_at',
+  'scheduled_publish_at',
   'repo_url', 'repo_commit_sha', 'repo_default_branch', 'repo_snapshot_at',
 ].join(', ');
 
@@ -169,6 +170,37 @@ function deleteLumenCourse(id) {
      WHERE id = ? AND deleted_at IS NULL`
   ).run(id);
   return getLumenCourse(id);
+}
+
+/**
+ * Planifie la publication d'un cours a une date future. Le scheduler
+ * (server/services/scheduler.js) verifie toutes les 30s et publie
+ * automatiquement les cours dont scheduled_publish_at est passe.
+ * Passer scheduledAt=null annule la planification.
+ */
+function setLumenCourseScheduledPublish(id, scheduledAt) {
+  const db = getDb();
+  db.prepare(
+    `UPDATE lumen_courses
+       SET scheduled_publish_at = ?,
+           updated_at = datetime('now')
+     WHERE id = ?`
+  ).run(scheduledAt, id);
+  return getLumenCourse(id);
+}
+
+/**
+ * Retourne les cours en draft dont scheduled_publish_at est passe.
+ * Utilise par le scheduler a chaque tick pour publier automatiquement.
+ */
+function getDueScheduledLumenCourses() {
+  return getDb().prepare(
+    `SELECT * FROM lumen_courses
+     WHERE status = 'draft'
+       AND deleted_at IS NULL
+       AND scheduled_publish_at IS NOT NULL
+       AND scheduled_publish_at <= datetime('now')`
+  ).all();
 }
 
 /** Restaure un cours soft-deleted en remettant deleted_at a NULL. */
@@ -385,6 +417,8 @@ module.exports = {
   restoreLumenCourse,
   purgeLumenCourse,
   getTrashedLumenCoursesForTeacher,
+  setLumenCourseScheduledPublish,
+  getDueScheduledLumenCourses,
   getLumenStatsForPromo,
   setLumenCourseSnapshot,
   getLumenCourseSnapshot,

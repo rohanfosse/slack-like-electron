@@ -268,6 +268,52 @@ describe('Notes privees etudiant', () => {
   })
 })
 
+describe('Publication programmee', () => {
+  it('setLumenCourseScheduledPublish stocke une date ISO', () => {
+    const c = queries.createLumenCourse({ teacherId: 1, promoId: 1, title: 'Schedule test' })
+    const future = new Date(Date.now() + 3600_000).toISOString()
+    const updated = queries.setLumenCourseScheduledPublish(c.id, future)
+    expect(updated.scheduled_publish_at).toBe(future)
+  })
+
+  it('setLumenCourseScheduledPublish accepte null pour annuler', () => {
+    const c = queries.createLumenCourse({ teacherId: 1, promoId: 1, title: 'Cancel schedule' })
+    queries.setLumenCourseScheduledPublish(c.id, new Date(Date.now() + 3600_000).toISOString())
+    queries.setLumenCourseScheduledPublish(c.id, null)
+    const after = queries.getLumenCourse(c.id)
+    expect(after.scheduled_publish_at).toBeNull()
+  })
+
+  it('getDueScheduledLumenCourses retourne uniquement les drafts past-due', () => {
+    const past   = queries.createLumenCourse({ teacherId: 1, promoId: 1, title: 'Past due' })
+    const future = queries.createLumenCourse({ teacherId: 1, promoId: 1, title: 'Future' })
+    // Date dans le passe : SQLite va stocker telle quelle et le comparer
+    queries.setLumenCourseScheduledPublish(past.id, '2020-01-01T00:00:00Z')
+    queries.setLumenCourseScheduledPublish(future.id, new Date(Date.now() + 86400_000).toISOString())
+
+    const due = queries.getDueScheduledLumenCourses()
+    const ids = due.map(c => c.id)
+    expect(ids).toContain(past.id)
+    expect(ids).not.toContain(future.id)
+  })
+
+  it('getDueScheduledLumenCourses exclut les cours deja publies', () => {
+    const c = queries.createLumenCourse({ teacherId: 1, promoId: 1, title: 'Already pub' })
+    queries.setLumenCourseScheduledPublish(c.id, '2020-01-01T00:00:00Z')
+    queries.publishLumenCourse(c.id)
+    const due = queries.getDueScheduledLumenCourses()
+    expect(due.find(x => x.id === c.id)).toBeUndefined()
+  })
+
+  it('getDueScheduledLumenCourses exclut les cours soft-deleted', () => {
+    const c = queries.createLumenCourse({ teacherId: 1, promoId: 1, title: 'Deleted scheduled' })
+    queries.setLumenCourseScheduledPublish(c.id, '2020-01-01T00:00:00Z')
+    queries.deleteLumenCourse(c.id)
+    const due = queries.getDueScheduledLumenCourses()
+    expect(due.find(x => x.id === c.id)).toBeUndefined()
+  })
+})
+
 describe('Lectures — markAll + readCounts', () => {
   it('markAllLumenCoursesRead marque tous les cours publies non lus', () => {
     const a = queries.createLumenCourse({ teacherId: 1, promoId: 1, title: 'mark A' })
