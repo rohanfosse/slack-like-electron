@@ -226,6 +226,39 @@ const filterCounts = computed(() => {
   }
 })
 
+// Progression de lecture etudiant : publies - unread = lus.
+// Affiche au-dessus de la toolbar pour donner une vue d'ensemble motivante.
+const readingProgress = computed(() => {
+  const publishedCount = lumenStore.courses.filter(c => c.status === 'published').length
+  if (publishedCount === 0) return null
+  const readCount = publishedCount - lumenStore.unreadCount
+  const percent = Math.round((readCount / publishedCount) * 100)
+  return { readCount, publishedCount, percent }
+})
+
+// Stats d'engagement pour les enseignants : nombre total de lectures cumulees
+// et moyenne par cours publie. Utilise la Map readCounts remplie en parallele
+// des cours au chargement de la liste (cf. loadCourses).
+const teacherEngagement = computed(() => {
+  if (!isTeacher.value) return null
+  const publishedCourses = lumenStore.courses.filter(c => c.status === 'published')
+  if (publishedCourses.length === 0) return null
+  let total = 0
+  let withReads = 0
+  for (const c of publishedCourses) {
+    const count = lumenStore.readCounts.get(c.id) ?? 0
+    total += count
+    if (count > 0) withReads++
+  }
+  const avg = Math.round(total / publishedCourses.length)
+  return {
+    totalReads: total,
+    avgReadsPerCourse: avg,
+    coursesWithReads: withReads,
+    publishedCount: publishedCourses.length,
+  }
+})
+
 // ── Data loading ────────────────────────────────────────────────────────────
 async function loadCourses() {
   if (!promoId.value) return
@@ -977,6 +1010,40 @@ const chromeHidden = computed(() => focusMode.value || zenMode.value)
         </div>
 
         <template v-else>
+          <!-- Stats engagement teacher : total lectures + moyenne par cours -->
+          <div v-if="isTeacher && teacherEngagement" class="lumen-list-stats">
+            <div class="lumen-list-stat">
+              <span class="lumen-list-stat-value">{{ teacherEngagement.publishedCount }}</span>
+              <span class="lumen-list-stat-label">Publies</span>
+            </div>
+            <div class="lumen-list-stat">
+              <span class="lumen-list-stat-value">{{ teacherEngagement.totalReads }}</span>
+              <span class="lumen-list-stat-label">Lectures totales</span>
+            </div>
+            <div class="lumen-list-stat">
+              <span class="lumen-list-stat-value">{{ teacherEngagement.avgReadsPerCourse }}</span>
+              <span class="lumen-list-stat-label">Moyenne / cours</span>
+            </div>
+            <div class="lumen-list-stat">
+              <span class="lumen-list-stat-value">{{ teacherEngagement.coursesWithReads }}/{{ teacherEngagement.publishedCount }}</span>
+              <span class="lumen-list-stat-label">Cours avec lectures</span>
+            </div>
+          </div>
+
+          <!-- Progression de lecture (etudiants uniquement) -->
+          <div v-if="!isTeacher && readingProgress" class="lumen-list-progress">
+            <div class="lumen-list-progress-head">
+              <span class="lumen-list-progress-label">Ta progression</span>
+              <span class="lumen-list-progress-count">
+                {{ readingProgress.readCount }} / {{ readingProgress.publishedCount }} cours lus
+              </span>
+              <span class="lumen-list-progress-percent">{{ readingProgress.percent }}%</span>
+            </div>
+            <div class="lumen-list-progress-bar" role="progressbar" :aria-valuenow="readingProgress.percent" aria-valuemin="0" aria-valuemax="100">
+              <div class="lumen-list-progress-fill" :style="{ width: `${readingProgress.percent}%` }" />
+            </div>
+          </div>
+
           <!-- Barre de filtres + recherche (etudiants uniquement) -->
           <div v-if="!isTeacher" class="lumen-list-toolbar">
             <div class="lumen-list-search">
@@ -1715,6 +1782,89 @@ const chromeHidden = computed(() => focusMode.value || zenMode.value)
 .lumen-list-action--primary:hover {
   background: var(--accent);
   color: var(--bg-primary, #111);
+}
+
+/* Stats engagement teacher */
+.lumen-list-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin: 0 4px 16px;
+}
+.lumen-list-stat {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.lumen-list-stat-value {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+}
+.lumen-list-stat-label {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+}
+@media (max-width: 720px) {
+  .lumen-list-stats { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* Progression de lecture etudiant */
+.lumen-list-progress {
+  margin: 0 4px 16px;
+  padding: 14px 18px;
+  background: linear-gradient(135deg, var(--bg-elevated) 0%, var(--bg-sidebar, var(--bg-elevated)) 100%);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+.lumen-list-progress-head {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+.lumen-list-progress-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+}
+.lumen-list-progress-count {
+  flex: 1;
+  font-size: 13px;
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+.lumen-list-progress-percent {
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}
+.lumen-list-progress-bar {
+  height: 6px;
+  background: var(--bg-input);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.lumen-list-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent), var(--accent-hover, var(--accent)));
+  border-radius: 3px;
+  transition: width 400ms ease-out;
+}
+@media (prefers-reduced-motion: reduce) {
+  .lumen-list-progress-fill { transition: none; }
 }
 
 /* Barre de filtres + recherche liste */
