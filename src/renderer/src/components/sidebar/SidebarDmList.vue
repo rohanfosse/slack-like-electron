@@ -119,11 +119,11 @@
         <button
           v-for="s in dmStudents"
           :key="'all-' + s.id"
-          class="sidebar-item"
+          class="sidebar-item dm-item"
           :class="{ active: appStore.activeDmStudentId === s.id }"
           @click="emit('selectDm', s); emit('update:showAllDmStudents', false)"
         >
-          <span class="channel-prefix">@</span>
+          <span class="dm-avatar" :style="{ background: avatarColor(s.name) }">{{ s.avatar_initials }}</span>
           <span class="channel-name">{{ s.name }}</span>
         </button>
       </nav>

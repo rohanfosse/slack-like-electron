@@ -801,18 +801,20 @@
 /* ── Badge DM non lus ── */
 .dm-unread-badge {
   margin-left: auto;
-  min-width: 18px;
-  height: 18px;
-  padding: 0 5px;
-  border-radius: var(--radius);
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 10px;
   background: var(--accent, #4a90d9);
   color: #fff;
-  font-size: 10px;
+  font-size: 10.5px;
   font-weight: 700;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  letter-spacing: -.3px;
+  box-shadow: 0 1px 4px rgba(74, 144, 217, .3);
 }
 .dm-has-unread .channel-name {
   font-weight: 700;
@@ -845,32 +847,74 @@
   font-weight: 600;
 }
 
-/* ── DM récents ── */
+/* ── DM recents ── */
 .dm-toggle-btn {
-  background: none; border: none; color: var(--text-muted); cursor: pointer;
-  padding: 2px; border-radius: var(--radius-xs); display: flex; align-items: center;
-  opacity: 0; transition: opacity var(--t-base);
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: var(--radius-xs);
+  display: flex;
+  align-items: center;
+  opacity: 0;
+  transition: opacity var(--t-base), color var(--t-fast), background var(--t-fast);
 }
 .sidebar-section-header:hover .dm-toggle-btn { opacity: 1; }
 .dm-toggle-btn:hover { color: var(--accent, #4a90d9); background: var(--bg-hover); }
 .dm-toggle-btn:focus-visible { outline: var(--focus-ring); outline-offset: var(--focus-offset); }
 
 .dm-item {
-  display: flex !important; align-items: center; gap: 6px; padding: 4px 10px 4px 14px !important;
+  display: flex !important;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 10px 6px 12px !important;
+  min-height: 40px;
+  transition: background var(--t-fast);
+}
+.dm-avatar-wrap {
+  position: relative;
+  flex-shrink: 0;
 }
 .dm-avatar {
-  width: 24px; height: 24px; border-radius: var(--radius-full); display: flex; align-items: center; justify-content: center;
-  font-size: 9px; font-weight: 700; color: #fff; flex-shrink: 0; text-transform: uppercase;
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 800;
+  color: #fff;
+  flex-shrink: 0;
+  text-transform: uppercase;
+  letter-spacing: -.3px;
+  transition: transform var(--t-fast);
+}
+.dm-item:hover .dm-avatar {
+  transform: scale(1.06);
 }
 .dm-info {
-  display: flex; flex-direction: column; min-width: 0; flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+  gap: 1px;
 }
 .dm-preview {
-  font-size: 10px; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-  line-height: 1.3; margin-top: 1px;
+  font-size: 11px;
+  color: var(--text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  line-height: 1.3;
+  opacity: .7;
+}
+.dm-item:hover .dm-preview {
+  opacity: .9;
 }
 .dm-avatar-teacher {
-  box-shadow: 0 0 0 2px var(--accent-subtle, rgba(74,144,217,.2));
+  box-shadow: 0 0 0 2px var(--accent-subtle, rgba(74,144,217,.25));
 }
 .dm-teacher-tag {
   font-size: 8px;
@@ -884,37 +928,38 @@
   margin-left: 4px;
   vertical-align: middle;
 }
-.dm-avatar-wrap {
-  position: relative;
-  flex-shrink: 0;
-}
 .presence-dot {
   position: absolute;
-  bottom: -1px;
-  right: -1px;
+  bottom: 0px;
+  right: 0px;
   width: 10px;
   height: 10px;
   border-radius: var(--radius-full);
-  border: 2px solid var(--bg-secondary, #1e1e2e);
+  border: 2.5px solid var(--bg-secondary, #1e1e2e);
+  transition: background var(--t-base);
 }
 .presence-online  { background: #22c55e; }
 .presence-offline { background: #6b7280; }
 .dm-muted-icon {
   font-size: 10px;
-  opacity: .5;
-  margin-left: 2px;
+  opacity: .4;
+  margin-left: 3px;
 }
 .dm-empty {
-  font-size: 11px; color: var(--text-muted); padding: 6px 16px; font-style: italic;
+  font-size: 11px; color: var(--text-muted); padding: 8px 16px; font-style: italic;
 }
 .dm-all-header {
-  font-size: 10px; text-transform: uppercase; letter-spacing: .05em;
-  color: var(--text-muted); padding: 8px 16px 4px; font-weight: 600;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: var(--text-muted);
+  padding: 10px 16px 4px;
+  font-weight: 700;
 }
 
 /* ── Recherche nouveau DM ── */
 .dm-search {
-  padding: 4px 10px 6px;
+  padding: 6px 10px 8px;
 }
 .dm-search-input {
   width: 100%;
@@ -922,11 +967,12 @@
   border: 1px solid var(--border-input, var(--border));
   border-radius: var(--radius-sm);
   color: var(--text-primary);
-  font-size: 12px;
+  font-size: 12.5px;
   font-family: var(--font);
-  padding: 5px 8px;
+  padding: 7px 10px;
   outline: none;
-  margin-bottom: 2px;
+  margin-bottom: 4px;
+  transition: border-color var(--t-fast), box-shadow var(--t-fast);
 }
 .dm-search-input:focus {
   border-color: var(--accent);
@@ -939,8 +985,10 @@
 .dm-search-result {
   display: flex !important;
   align-items: center;
-  gap: 8px;
-  padding: 4px 8px !important;
+  gap: 10px;
+  padding: 5px 10px !important;
+  border-radius: var(--radius-sm);
+  transition: background var(--t-fast);
 }
 
 /* ── Canaux archives ── */
