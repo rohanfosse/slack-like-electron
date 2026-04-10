@@ -596,54 +596,58 @@ function onKeydown(e: KeyboardEvent) {
 .mi-actions-row {
   display: flex;
   align-items: center;
-  gap: 4px;
-  padding: 4px 6px 4px 10px;
+  gap: 2px;
+  padding: 5px 8px;
   border-top: 1px solid var(--border);
   margin-top: 2px;
+  flex-wrap: wrap;
+  min-height: 38px;
 }
 
 /* Groupe de boutons de formatage */
 .mi-fmt-group {
   display: flex;
   align-items: center;
-  gap: 1px;
-  flex-shrink: 0;
+  gap: 2px;
+  flex-wrap: wrap;
+  min-width: 0;
 }
 
 .mi-fmt-btn {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 26px;
-  height: 26px;
+  width: 30px;
+  height: 30px;
   border: none;
   background: transparent;
-  border-radius: 5px;
+  border-radius: 6px;
   cursor: pointer;
   color: var(--text-muted);
   font-family: var(--font);
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 700;
-  transition: background .1s, color .1s;
+  transition: background .12s, color .12s;
   flex-shrink: 0;
 }
 .mi-fmt-btn:hover {
   background: var(--bg-active);
-  color: var(--text-secondary);
+  color: var(--text-primary);
 }
 
 .mi-fmt-mention {
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 800;
-  letter-spacing: -.5px;
+  letter-spacing: -.3px;
 }
 
 .mi-fmt-divider {
   width: 1px;
-  height: 16px;
+  height: 18px;
   background: var(--border);
-  margin: 0 3px;
+  margin: 0 4px;
   flex-shrink: 0;
+  opacity: .6;
 }
 
 /* ── Preview markdown ── */
@@ -700,7 +704,7 @@ function onKeydown(e: KeyboardEvent) {
 .mi-actions-right {
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 6px;
   margin-left: auto;
   flex-shrink: 0;
 }
@@ -709,35 +713,35 @@ function onKeydown(e: KeyboardEvent) {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
+  width: 30px;
+  height: 30px;
   border: none;
   background: transparent;
   border-radius: 6px;
   cursor: pointer;
   color: var(--text-muted);
-  transition: background .1s, color .1s;
+  transition: background .12s, color .12s;
 }
 .mi-icon-btn:hover:not(:disabled) {
   background: var(--bg-active);
-  color: var(--text-secondary);
+  color: var(--text-primary);
 }
-.mi-icon-btn:disabled { opacity: .4; cursor: not-allowed; }
-.mi-icon-btn.active { color: var(--accent); background: rgba(59,130,246,.1); }
+.mi-icon-btn:disabled { opacity: .35; cursor: not-allowed; }
+.mi-icon-btn.active { color: var(--accent); background: rgba(59,130,246,.12); }
 
 /* Bouton Envoyer */
 .mi-char-count {
-  font-size: 10px; color: var(--text-muted); font-variant-numeric: tabular-nums;
+  font-size: 10.5px; color: var(--text-muted); font-variant-numeric: tabular-nums;
   padding: 0 4px;
 }
 .mi-char-count.over { color: #f87171; font-weight: 600; }
 .mi-send-btn {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 5px;
-  padding: 5px 13px 5px 10px;
+  gap: 6px;
+  padding: 6px 14px 6px 11px;
   border: none;
-  border-radius: 7px;
+  border-radius: 8px;
   background: var(--accent, #4a90d9);
   color: #fff;
   font-family: var(--font);
@@ -746,20 +750,20 @@ function onKeydown(e: KeyboardEvent) {
   cursor: pointer;
   transition: opacity .15s, background .15s, transform .12s;
   white-space: nowrap;
+  line-height: 1;
 }
 .mi-send-btn:not(:disabled):hover {
   background: var(--accent-hover, #5a9fe6);
-  transform: scale(1.02);
+  transform: scale(1.03);
+}
+.mi-send-btn:not(:disabled):active {
+  transform: scale(.97);
 }
 .mi-send-btn:disabled {
-  opacity: .38;
+  opacity: .35;
   cursor: not-allowed;
   transform: none;
 }
-.mi-send-label {
-  line-height: 1;
-}
-
 /* ── Hint clavier ── */
 .mi-hint-row { display: flex; align-items: center; justify-content: space-between; margin: 4px 2px 0; }
 .mi-hint {

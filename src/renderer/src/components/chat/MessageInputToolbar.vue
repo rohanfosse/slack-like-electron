@@ -45,29 +45,29 @@
     <!-- Boutons de formatage -->
     <div class="mi-fmt-group" role="toolbar" aria-label="Mise en forme">
       <button class="mi-fmt-btn" title="Gras (Ctrl+B)" aria-label="Gras" @mousedown.prevent="emit('fmtWrap', '**', '**')">
-        <Bold :size="13" />
+        <Bold :size="15" />
       </button>
       <button class="mi-fmt-btn" title="Italique (Ctrl+I)" aria-label="Italique" @mousedown.prevent="emit('fmtWrap', '*', '*')">
-        <Italic :size="13" />
+        <Italic :size="15" />
       </button>
       <button class="mi-fmt-btn" title="Code inline" aria-label="Code inline" @mousedown.prevent="emit('fmtWrap', '`', '`')">
-        <Code :size="13" />
+        <Code :size="15" />
       </button>
       <button class="mi-fmt-btn" title="Bloc de code" aria-label="Bloc de code" @mousedown.prevent="emit('fmtInsertBlock')">
-        <SquareCode :size="13" />
+        <SquareCode :size="15" />
       </button>
       <button class="mi-fmt-btn" title="Barre" aria-label="Barre" @mousedown.prevent="emit('fmtWrap', '~~', '~~')">
-        <Strikethrough :size="13" />
+        <Strikethrough :size="15" />
       </button>
       <div class="mi-fmt-divider" />
       <button class="mi-fmt-btn" title="Citation" aria-label="Citation" @mousedown.prevent="emit('fmtLinePrefix', '> ')">
-        <Quote :size="13" />
+        <Quote :size="15" />
       </button>
       <button class="mi-fmt-btn" title="Liste a puces" aria-label="Liste a puces" @mousedown.prevent="emit('fmtLinePrefix', '- ')">
-        <List :size="13" />
+        <List :size="15" />
       </button>
       <button class="mi-fmt-btn" title="Liste numerotee" aria-label="Liste numerotee" @mousedown.prevent="emit('fmtLinePrefix', '1. ')">
-        <ListOrdered :size="13" />
+        <ListOrdered :size="15" />
       </button>
       <div class="mi-fmt-divider" />
       <button class="mi-fmt-btn mi-fmt-mention" title="Mentionner" aria-label="Mentionner" @mousedown.prevent="emit('triggerMention')">@</button>
@@ -79,7 +79,7 @@
     <div class="mi-actions-right">
       <div class="mi-emoji-wrapper">
         <button class="mi-icon-btn" title="Emoji" aria-label="Emoji" @click="showEmojiPicker = !showEmojiPicker">
-          <Smile :size="14" />
+          <Smile :size="16" />
         </button>
         <div v-if="showEmojiPicker" class="mi-emoji-panel">
           <button
@@ -95,8 +95,8 @@
         aria-label="Apercu"
         @click="emit('update:showPreview', !showPreview)"
       >
-        <EyeOff v-if="showPreview" :size="14" />
-        <Eye v-else :size="14" />
+        <EyeOff v-if="showPreview" :size="16" />
+        <Eye v-else :size="16" />
       </button>
       <button
         class="mi-icon-btn"
@@ -105,8 +105,8 @@
         :disabled="attaching"
         @click="emit('attachFile')"
       >
-        <Loader2 v-if="attaching" :size="14" class="mi-spinner" />
-        <Paperclip v-else :size="14" />
+        <Loader2 v-if="attaching" :size="16" class="mi-spinner" />
+        <Paperclip v-else :size="16" />
       </button>
       <span v-if="showCharCount" class="mi-char-count" :class="{ over: charCountOver }">
         {{ charCount }}/{{ maxMessageLength }}
@@ -119,8 +119,8 @@
         aria-label="Envoyer"
         @click="emit('send')"
       >
-        <Loader2 v-if="sending" :size="14" class="mi-spinner" />
-        <Send v-else :size="14" />
+        <Loader2 v-if="sending" :size="15" class="mi-spinner" />
+        <Send v-else :size="15" />
         <span class="mi-send-label">Envoyer</span>
       </button>
     </div>
