@@ -801,22 +801,20 @@
 /* ── Badge DM non lus ── */
 .dm-unread-badge {
   margin-left: auto;
-  min-width: 20px;
-  height: 20px;
-  padding: 0 6px;
-  border-radius: 10px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 9px;
   background: var(--accent, #4a90d9);
   color: #fff;
-  font-size: 10.5px;
+  font-size: 10px;
   font-weight: 700;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  letter-spacing: -.3px;
-  box-shadow: 0 1px 4px rgba(74, 144, 217, .3);
 }
-.dm-has-unread .channel-name {
+.dm-has-unread .dm-name {
   font-weight: 700;
   color: var(--text-primary);
 }
@@ -867,61 +865,68 @@
 .dm-item {
   display: flex !important;
   align-items: center;
-  gap: 10px;
-  padding: 6px 10px 6px 12px !important;
-  min-height: 40px;
-  transition: background var(--t-fast);
+  gap: 8px;
+  padding: 6px 8px 6px 10px !important;
+  min-height: 38px;
+  border-radius: 6px;
+  transition: background .1s;
 }
 .dm-avatar-wrap {
   position: relative;
   flex-shrink: 0;
 }
 .dm-avatar-wrap .msg-avatar {
-  border-radius: 50% !important;
-  transition: transform var(--t-fast);
-}
-.dm-item:hover .dm-avatar-wrap .msg-avatar {
-  transform: scale(1.06);
+  border-radius: 8px !important;
 }
 .dm-avatar {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  min-width: 30px;
+  border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 11px;
-  font-weight: 800;
+  font-weight: 700;
   color: #fff;
   flex-shrink: 0;
   text-transform: uppercase;
-  letter-spacing: -.3px;
-  transition: transform var(--t-fast);
-}
-.dm-item:hover .dm-avatar {
-  transform: scale(1.06);
+  background-size: cover;
+  background-position: center;
+  overflow: hidden;
 }
 .dm-info {
+  flex: 1;
+  min-width: 0;
   display: flex;
   flex-direction: column;
-  min-width: 0;
-  flex: 1;
   gap: 1px;
 }
+.dm-name {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.dm-email {
+  font-size: 10.5px;
+  color: var(--text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .dm-preview {
-  font-size: 11px;
+  font-size: 10.5px;
   color: var(--text-muted);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   line-height: 1.3;
-  opacity: .7;
-}
-.dm-item:hover .dm-preview {
-  opacity: .9;
 }
 .dm-avatar-teacher {
-  box-shadow: 0 0 0 2px var(--accent-subtle, rgba(74,144,217,.25));
+  box-shadow: 0 0 0 2px var(--accent-subtle, rgba(74,144,217,.2));
 }
 .dm-teacher-tag {
   font-size: 8px;
@@ -937,13 +942,12 @@
 }
 .presence-dot {
   position: absolute;
-  bottom: 0px;
-  right: 0px;
+  bottom: -1px;
+  right: -1px;
   width: 10px;
   height: 10px;
   border-radius: var(--radius-full);
-  border: 2.5px solid var(--bg-secondary, #1e1e2e);
-  transition: background var(--t-base);
+  border: 2px solid var(--bg-secondary, #1e1e2e);
 }
 .presence-online  { background: #22c55e; }
 .presence-offline { background: #6b7280; }
@@ -956,11 +960,11 @@
   font-size: 11px; color: var(--text-muted); padding: 8px 16px; font-style: italic;
 }
 .dm-all-header {
-  font-size: 10px;
+  font-size: 10.5px;
   text-transform: uppercase;
-  letter-spacing: .06em;
+  letter-spacing: .04em;
   color: var(--text-muted);
-  padding: 10px 16px 4px;
+  padding: 10px 14px 4px;
   font-weight: 700;
 }
 
@@ -992,13 +996,13 @@
 .dm-search-result {
   display: flex !important;
   align-items: center;
-  gap: 10px;
-  padding: 5px 10px !important;
-  border-radius: var(--radius-sm);
-  transition: background var(--t-fast);
+  gap: 8px;
+  padding: 6px 8px !important;
+  border-radius: 6px;
+  transition: background .1s;
 }
 .dm-search-result .msg-avatar {
-  border-radius: 50% !important;
+  border-radius: 8px !important;
 }
 
 /* ── Canaux archives ── */

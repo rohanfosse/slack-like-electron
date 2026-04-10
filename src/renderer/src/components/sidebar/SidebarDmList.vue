@@ -82,9 +82,12 @@
         :initials="s.avatar_initials ?? s.name.slice(0, 2).toUpperCase()"
         :color="avatarColor(s.name)"
         :photo-data="s.photo_data"
-        :size="28"
+        :size="30"
       />
-      <span class="channel-name">{{ s.name }}</span>
+      <span class="dm-info">
+        <span class="dm-name">{{ s.name }}</span>
+        <span v-if="s.email" class="dm-email">{{ s.email }}</span>
+      </span>
     </button>
     <EmptyState v-if="newDmQuery.trim() && !newDmFilteredStudents.length" title="Aucun resultat" compact />
   </div>
@@ -108,14 +111,18 @@
             :initials="s.avatar_initials ?? s.name.slice(0, 2).toUpperCase()"
             :color="s.id < 0 ? 'var(--accent)' : avatarColor(s.name)"
             :photo-data="s.photo_data"
-            :size="32"
+            :size="30"
           />
           <span v-if="appStore.isUserOnline(s.name)" class="presence-dot presence-online" title="En ligne" role="img" aria-label="En ligne" />
           <span v-else class="presence-dot presence-offline" title="Hors ligne" role="img" aria-label="Hors ligne" />
         </span>
         <span class="dm-info">
-          <span class="channel-name">{{ s.name }} <span v-if="appStore.isDmMuted(s.name)" class="dm-muted-icon" title="Notifications desactivees" role="img" aria-label="Notifications desactivees">&#x1F507;</span></span>
+          <span class="dm-name">
+            {{ s.name }}
+            <span v-if="appStore.isDmMuted(s.name)" class="dm-muted-icon" title="Notifications desactivees" role="img" aria-label="Notifications desactivees">&#x1F507;</span>
+          </span>
           <span v-if="getDmPreview(s.name)" class="dm-preview">{{ getDmPreview(s.name) }}</span>
+          <span v-else-if="s.email" class="dm-email">{{ s.email }}</span>
         </span>
         <span v-if="appStore.unreadDms[s.name]" class="dm-unread-badge">
           {{ (appStore.unreadDms[s.name] as number) > 9 ? '9+' : appStore.unreadDms[s.name] }}
@@ -138,9 +145,12 @@
             :initials="s.avatar_initials ?? s.name.slice(0, 2).toUpperCase()"
             :color="avatarColor(s.name)"
             :photo-data="s.photo_data"
-            :size="28"
+            :size="30"
           />
-          <span class="channel-name">{{ s.name }}</span>
+          <span class="dm-info">
+            <span class="dm-name">{{ s.name }}</span>
+            <span v-if="s.email" class="dm-email">{{ s.email }}</span>
+          </span>
         </button>
       </nav>
     </template>
