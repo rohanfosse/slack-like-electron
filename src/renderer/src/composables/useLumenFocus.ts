@@ -1,11 +1,13 @@
 /**
  * Mode focus Lumen : masque la sidebar globale Cursus quand on est dans
- * /lumen pour offrir une experience plein-ecran de lecture. Toggle depuis
- * la topbar Lumen, preference persistee en localStorage.
+ * /lumen pour offrir une experience plein-ecran de lecture. Preference
+ * persistee en localStorage.
  *
- * Pattern Notion/Obsidian : on garde un raccourci visible (bouton avec icone
- * panel) pour ressortir, et on auto-masque seulement si l'utilisateur a
- * explicitement active le mode (default off pour ne pas surprendre).
+ * v2.48 : default = TRUE (focus ON par defaut). Le mode plein-ecran est
+ * l'experience attendue dans Lumen — l'utilisateur peut le desactiver
+ * via le bouton focus (panel) dans la topbar et la pref est persistee.
+ * Le bouton "Cursus" (home) reste toujours present pour ressortir du
+ * module independamment du focus mode.
  */
 import { ref, watch } from 'vue'
 
@@ -13,9 +15,12 @@ const STORAGE_KEY = 'cursus.lumen.focusMode'
 
 function readInitial(): boolean {
   try {
-    return localStorage.getItem(STORAGE_KEY) === '1'
+    const stored = localStorage.getItem(STORAGE_KEY)
+    // Si jamais set explicitement, default = ON (true)
+    if (stored === null) return true
+    return stored === '1'
   } catch {
-    return false
+    return true
   }
 }
 

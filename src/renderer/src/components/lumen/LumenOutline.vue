@@ -1,102 +1,113 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import { ListTree } from 'lucide-vue-next'
+/**
+ * Plan du chapitre (sommaire navigable).
+ *
+ * v2.48 : recoit les headings deja extraits du DOM rendu par LumenChapterViewer
+ * (apres injectHeadingIds et deduplication via slugifyHeading). Emet l'id
+ * cliquable, le parent se charge du scroll. C'est plus robuste que parser
+ * le markdown brut ici — on utilise les memes slugs que le rendu.
+ */
+import { ListTree, ChevronDown, ChevronRight } from 'lucide-vue-next'
+
+interface HeadingEntry {
+  id: string
+  text: string
+  level: number
+}
 
 interface Props {
-  content: string
+  headings: HeadingEntry[]
+  collapsed?: boolean
 }
 interface Emits {
-  (e: 'navigate', line: number): void
+  (e: 'navigate', id: string): void
+  (e: 'toggle'): void
 }
 
-const props = defineProps<Props>()
+defineProps<Props>()
 defineEmits<Emits>()
-
-// Parse le markdown ligne par ligne pour extraire les headers.
-// Ignore les headers dans les blocs de code (entre ```).
-interface Heading {
-  level: number
-  text: string
-  line: number  // 1-indexed
-}
-
-const headings = computed<Heading[]>(() => {
-  const out: Heading[] = []
-  const lines = props.content.split('\n')
-  let inCode = false
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i]
-    const trimmed = line.trim()
-    if (trimmed.startsWith('```') || trimmed.startsWith('~~~')) {
-      inCode = !inCode
-      continue
-    }
-    if (inCode) continue
-    const match = /^(#{1,6})\s+(.+?)(?:\s+#+)?\s*$/.exec(line)
-    if (match) {
-      out.push({
-        level: match[1].length,
-        text: match[2].trim(),
-        line: i + 1,
-      })
-    }
-  }
-  return out
-})
 </script>
 
 <template>
-  <aside class="lumen-outline">
-    <header class="lumen-outline-head">
+  <aside class="lumen-outline" :class="{ 'is-collapsed': collapsed }">
+    <button
+      type="button"
+      class="lumen-outline-head"
+      :aria-expanded="!collapsed"
+      @click="$emit('toggle')"
+    >
+      <component :is="collapsed ? ChevronRight : ChevronDown" :size="12" />
       <ListTree :size="13" />
-      <span>Plan du cours</span>
-    </header>
-    <nav v-if="headings.length > 0" class="lumen-outline-nav">
+      <span>Plan</span>
+      <span v-if="headings.length" class="lumen-outline-count">{{ headings.length }}</span>
+    </button>
+    <nav v-if="!collapsed && headings.length > 0" class="lumen-outline-nav">
       <button
         v-for="h in headings"
-        :key="`${h.line}-${h.text}`"
+        :key="h.id"
         class="lumen-outline-item"
         :class="`lumen-outline-item--h${h.level}`"
         :title="h.text"
-        @click="$emit('navigate', h.line)"
+        @click="$emit('navigate', h.id)"
       >
         {{ h.text }}
       </button>
     </nav>
-    <p v-else class="lumen-outline-empty">
-      Ajoute des titres (# Titre) pour générer le plan.
+    <p v-else-if="!collapsed" class="lumen-outline-empty">
+      Ajoute des titres (## Titre) pour générer le plan.
     </p>
   </aside>
 </template>
 
 <style scoped>
 .lumen-outline {
-  width: 240px;
+  width: 220px;
   flex-shrink: 0;
   border-left: 1px solid var(--border);
   background: var(--bg-sidebar);
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  transition: width var(--t-fast) ease;
 }
+.lumen-outline.is-collapsed { width: 36px; }
 
 .lumen-outline-head {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 12px 16px;
+  gap: 6px;
+  padding: 10px 12px;
+  border: none;
+  background: transparent;
   border-bottom: 1px solid var(--border);
-  font-size: var(--text-xs);
+  font-size: 10.5px;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.07em;
   color: var(--text-muted);
+  cursor: pointer;
+  text-align: left;
+  width: 100%;
+  font-family: inherit;
+}
+.lumen-outline-head:hover { color: var(--text-primary); }
+.is-collapsed .lumen-outline-head { padding: 10px 8px; }
+.is-collapsed .lumen-outline-head span { display: none; }
+
+.lumen-outline-count {
+  margin-left: auto;
+  font-size: 9px;
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  padding: 0 5px;
+  border-radius: 8px;
+  font-variant-numeric: tabular-nums;
 }
 
 .lumen-outline-nav {
   flex: 1;
   overflow-y: auto;
-  padding: 8px 0;
+  padding: 6px 0;
 }
 
 .lumen-outline-item {
@@ -107,36 +118,36 @@ const headings = computed<Heading[]>(() => {
   border: none;
   cursor: pointer;
   font-family: inherit;
-  font-size: var(--text-sm);
+  font-size: 12px;
   color: var(--text-secondary);
-  padding: 5px 16px;
+  padding: 4px 12px;
   border-left: 2px solid transparent;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  line-height: 1.4;
   transition: all var(--t-fast) ease;
 }
-
 .lumen-outline-item:hover {
   background: var(--bg-hover);
   color: var(--text-primary);
   border-left-color: var(--accent);
 }
 .lumen-outline-item:focus-visible {
-  outline: var(--focus-ring);
+  outline: 2px solid var(--accent);
   outline-offset: -2px;
 }
 
-.lumen-outline-item--h1 { font-weight: 700; color: var(--text-primary); }
-.lumen-outline-item--h2 { padding-left: 26px; }
-.lumen-outline-item--h3 { padding-left: 36px; font-size: 12px; }
-.lumen-outline-item--h4 { padding-left: 46px; font-size: 12px; }
-.lumen-outline-item--h5 { padding-left: 56px; font-size: 12px; color: var(--text-muted); }
-.lumen-outline-item--h6 { padding-left: 66px; font-size: 12px; color: var(--text-muted); }
+.lumen-outline-item--h1 { font-weight: 700; color: var(--text-primary); padding-left: 12px; }
+.lumen-outline-item--h2 { padding-left: 18px; }
+.lumen-outline-item--h3 { padding-left: 28px; font-size: 11.5px; }
+.lumen-outline-item--h4 { padding-left: 36px; font-size: 11.5px; }
+.lumen-outline-item--h5 { padding-left: 44px; font-size: 11px; color: var(--text-muted); }
+.lumen-outline-item--h6 { padding-left: 52px; font-size: 11px; color: var(--text-muted); }
 
 .lumen-outline-empty {
-  padding: 24px 16px;
-  font-size: var(--text-sm);
+  padding: 18px 12px;
+  font-size: 11px;
   color: var(--text-muted);
   text-align: center;
   line-height: 1.5;

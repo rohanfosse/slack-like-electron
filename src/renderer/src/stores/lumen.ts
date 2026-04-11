@@ -15,7 +15,6 @@ import type {
   LumenChapterContent,
   LumenChapterNote,
   LumenGithubStatus,
-  LumenRead,
 } from '@/types'
 
 function chapterKey(repoId: number, path: string): string {
@@ -41,10 +40,13 @@ export const useLumenStore = defineStore('lumen', () => {
   /** Cache des notes privees : clef = `${repoId}::${path}`. */
   const chapterNotes = ref<Map<string, LumenChapterNote | null>>(new Map())
 
-  /** Lectures de l'etudiant courant : Set de `${repoId}::${path}`. */
-  const readChapters = ref<Set<string>>(new Set())
-
-  /** Compteurs de lecture par prof : Map `${repoId}::${path}` -> nb lecteurs. */
+  /**
+   * Compteurs de lecture par prof (legacy v2.46) : Map `${repoId}::${path}` -> nb lecteurs.
+   * @deprecated v2.48 — l'accuse de lecture cote etudiant est supprime, ce compteur
+   * ne s'incremente plus. Le ref reste declare pour ne pas casser les imports
+   * historiques mais le contenu sera toujours vide jusqu'a une eventuelle
+   * suppression complete dans une migration future.
+   */
   const readCounts = ref<Map<string, number>>(new Map())
 
   // ── Computed ─────────────────────────────────────────────────────────────
@@ -281,22 +283,11 @@ export const useLumenStore = defineStore('lumen', () => {
   }
 
   // ── Actions : tracking lecture ────────────────────────────────────────────
-
-  async function markChapterRead(repoId: number, path: string): Promise<void> {
-    await api(() => window.api.markLumenChapterRead(repoId, path), { silent: true })
-    readChapters.value.add(chapterKey(repoId, path))
-    readChapters.value = new Set(readChapters.value)
-  }
-
-  async function fetchMyReads(): Promise<void> {
-    const data = await api<{ reads: LumenRead[] }>(
-      () => window.api.getLumenMyReads(),
-      { silent: true },
-    )
-    const set = new Set<string>()
-    for (const r of data?.reads ?? []) set.add(chapterKey(r.repo_id, r.path))
-    readChapters.value = set
-  }
+  //
+  // L'accuse de lecture est supprime cote etudiant en v2.48 — pas de
+  // markChapterRead, pas de fetchMyReads. Les compteurs cote teacher restent
+  // techniquement disponibles via les endpoints suivants mais ne s'incrementent
+  // plus. Conserves pour compatibilite descendante avec l'admin.
 
   async function fetchReadCountsForRepo(repoId: number): Promise<void> {
     const data = await api<{ counts: Array<{ path: string; readers: number }> }>(
@@ -356,7 +347,6 @@ export const useLumenStore = defineStore('lumen', () => {
     currentChapterPath.value = null
     chapterContents.value = new Map()
     chapterNotes.value = new Map()
-    readChapters.value = new Set()
     readCounts.value = new Map()
     promoOrg.value = null
   }
@@ -372,7 +362,6 @@ export const useLumenStore = defineStore('lumen', () => {
     syncing,
     chapterContents,
     chapterNotes,
-    readChapters,
     readCounts,
     // computed
     reposWithManifest,
@@ -395,8 +384,6 @@ export const useLumenStore = defineStore('lumen', () => {
     selectRepo,
     fetchChapterContent,
     selectChapter,
-    markChapterRead,
-    fetchMyReads,
     fetchReadCountsForRepo,
     fetchReadCountsForPromo,
     fetchChapterNote,

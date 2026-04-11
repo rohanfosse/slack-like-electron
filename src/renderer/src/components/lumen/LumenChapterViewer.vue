@@ -7,16 +7,19 @@
  *  - liens relatifs vers d'autres .md interceptes en navigation interne
  *  - liens http/https ouverts dans le navigateur systeme
  *  - copy button sur chaque bloc de code
- * Auto-marque comme lu au bout de 3 secondes d'affichage visible.
+ * v2.48 : l'accuse de lecture a ete supprime (plus de timer 3s). Ajout
+ * du breadcrumbs, de la banner stale content, et du panneau Outline
+ * auto-genere depuis les headings du DOM rendu.
  */
-import { computed, onMounted, onBeforeUnmount, ref, watch, nextTick } from 'vue'
+import { computed, onMounted, ref, watch, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
-import { Loader2, FileText, Clock, User, ChevronLeft, ChevronRight, Copy, Check, FolderGit2, ClipboardList, Plus, Calendar } from 'lucide-vue-next'
+import { Loader2, FileText, Clock, User, ChevronLeft, ChevronRight, Copy, Check, FolderGit2, ClipboardList, Plus, Calendar, RefreshCw, ChevronRight as CrumbSep } from 'lucide-vue-next'
 import { renderMarkdown } from '@/utils/markdown'
 import { useToast } from '@/composables/useToast'
 import { useAppStore } from '@/stores/app'
 import { relativeTime } from '@/utils/date'
 import LumenLinkDevoirModal from '@/components/lumen/LumenLinkDevoirModal.vue'
+import LumenOutline from '@/components/lumen/LumenOutline.vue'
 import type { LumenChapter, LumenRepo, LumenLinkedTravail } from '@/types'
 
 interface Props {
@@ -24,15 +27,15 @@ interface Props {
   chapter: LumenChapter
   content: string | null
   loading: boolean
-  isRead: boolean
   prevChapter: LumenChapter | null
   nextChapter: LumenChapter | null
+  cached?: boolean
 }
 interface Emits {
-  (e: 'read'): void
   (e: 'navigate-chapter', path: string): void
   (e: 'navigate-prev'): void
   (e: 'navigate-next'): void
+  (e: 'resync'): void
 }
 
 const props = defineProps<Props>()
@@ -88,15 +91,72 @@ const html = computed(() => {
   return renderMarkdown(props.content, { chapterPath: props.chapter.path })
 })
 
-// ── Auto mark-as-read ──────────────────────────────────────────────────────
+// ── Outline (plan du chapitre) + breadcrumbs + stale indicator ────────────
 
-let readTimer: ReturnType<typeof setTimeout> | null = null
-
-function scheduleAutoRead() {
-  if (readTimer) clearTimeout(readTimer)
-  if (props.isRead || !props.content) return
-  readTimer = setTimeout(() => emit('read'), 3000)
+interface HeadingEntry {
+  id: string
+  text: string
+  level: number
 }
+
+const headings = ref<HeadingEntry[]>([])
+const outlineOpen = ref(true)
+
+/**
+ * Extrait les headings du DOM rendu pour alimenter l'outline. Les ids sont
+ * deja dedupliques par injectHeadingIds (markdown.ts). On exclut les
+ * headings imbriques dans une admonition (.lumen-admonition) pour eviter
+ * de polluer le plan avec les titres des callouts (Note / Warning / etc.).
+ */
+function extractHeadings(root: HTMLElement): HeadingEntry[] {
+  const nodes = root.querySelectorAll<HTMLElement>('h1, h2, h3, h4, h5, h6')
+  const result: HeadingEntry[] = []
+  nodes.forEach((el) => {
+    if (!el.id) return
+    if (el.closest('.lumen-admonition')) return
+    result.push({
+      id: el.id,
+      text: el.textContent?.trim() ?? '',
+      level: Number(el.tagName.slice(1)),
+    })
+  })
+  return result
+}
+
+function scrollToHeading(id: string) {
+  const el = bodyRef.value?.querySelector<HTMLElement>(`#${CSS.escape(id)}`)
+  if (!el) return
+  el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+}
+
+// SQLite `datetime('now')` renvoie "YYYY-MM-DD HH:MM:SS" (separateur espace,
+// sans timezone). Safari / WebKit retourne NaN sur `new Date("2026-04-11 15:30:00Z")`
+// a cause du separateur non-ISO. Electron tourne sous Chromium donc ca marche
+// mais on normalise quand meme pour la portabilite (web shim, tests Node).
+function parseSqlTimestamp(raw: string | null): number | null {
+  if (!raw) return null
+  const iso = raw.includes('T') ? raw : raw.replace(' ', 'T')
+  const withTz = /Z|[+-]\d{2}:?\d{2}$/.test(iso) ? iso : iso + 'Z'
+  const ts = new Date(withTz).getTime()
+  return Number.isNaN(ts) ? null : ts
+}
+
+// Banner stale : true si on lit du cache OU si le repo n'a pas ete sync
+// depuis plus d'une heure. Invite l'utilisateur a resync pour etre sur
+// d'avoir la derniere version du chapitre.
+const STALE_THRESHOLD_MS = 60 * 60 * 1000  // 1 heure
+const isStaleContent = computed<boolean>(() => {
+  if (props.cached) return true
+  const syncedAt = parseSqlTimestamp(props.repo.lastSyncedAt)
+  if (syncedAt === null) return false
+  return Date.now() - syncedAt > STALE_THRESHOLD_MS
+})
+
+const staleRelative = computed(() => {
+  const syncedAt = parseSqlTimestamp(props.repo.lastSyncedAt)
+  if (syncedAt === null) return 'jamais'
+  return relativeTime(syncedAt)
+})
 
 // ── Enrichissement post-render (copy buttons + click handlers) ────────────
 
@@ -191,6 +251,7 @@ async function enrichRender() {
   await nextTick()
   if (!bodyRef.value) return
   injectCopyButtons(bodyRef.value)
+  headings.value = extractHeadings(bodyRef.value)
   // Scroll en premier pour eviter que l'utilisateur voie un saut de layout
   // apres que mermaid remplace les <pre> par des SVG plus grands.
   if (bodyRef.value.scrollTo) bodyRef.value.scrollTo({ top: 0 })
@@ -198,17 +259,12 @@ async function enrichRender() {
 }
 
 onMounted(() => {
-  scheduleAutoRead()
   enrichRender()
   loadLinkedTravaux()
 })
 watch(() => [props.content, props.chapter?.path], () => {
-  scheduleAutoRead()
   enrichRender()
   loadLinkedTravaux()
-})
-onBeforeUnmount(() => {
-  if (readTimer) clearTimeout(readTimer)
 })
 </script>
 
@@ -236,11 +292,26 @@ onBeforeUnmount(() => {
         <span v-if="repo.manifest?.author" class="lumen-viewer-chip">
           <User :size="11" /> {{ repo.manifest.author }}
         </span>
-        <span v-if="isRead" class="lumen-viewer-chip read">
-          <Check :size="11" /> Lu
-        </span>
       </div>
+      <!-- Breadcrumbs : orientation rapide via project / section / chapitre -->
+      <nav class="lumen-breadcrumbs" aria-label="Fil d'ariane">
+        <span class="lumen-breadcrumbs-seg">{{ repo.manifest?.project ?? repo.fullName }}</span>
+        <CrumbSep v-if="chapter.section" :size="10" class="lumen-breadcrumbs-sep" />
+        <span v-if="chapter.section" class="lumen-breadcrumbs-seg">{{ chapter.section }}</span>
+        <CrumbSep :size="10" class="lumen-breadcrumbs-sep" />
+        <span class="lumen-breadcrumbs-seg lumen-breadcrumbs-current">{{ chapter.title }}</span>
+      </nav>
     </header>
+
+    <!-- Banner stale : contenu potentiellement obsolete (cache > 1h ou lecture
+         depuis cache offline). Un clic declenche un resync de la promo. -->
+    <div v-if="isStaleContent && !loading && content" class="lumen-stale-banner">
+      <Clock :size="12" />
+      <span>Contenu potentiellement obsolete — derniere synchronisation {{ staleRelative }}</span>
+      <button type="button" class="lumen-stale-refresh" @click="emit('resync')">
+        <RefreshCw :size="11" /> Resynchroniser
+      </button>
+    </div>
 
     <div v-if="loading" class="lumen-viewer-loading">
       <Loader2 :size="20" class="spin" />
@@ -251,12 +322,21 @@ onBeforeUnmount(() => {
       <p>Contenu indisponible</p>
     </div>
     <template v-else>
-      <div
-        ref="bodyRef"
-        class="lumen-viewer-body markdown-body"
-        @click="handleBodyClick"
-        v-html="html"
-      />
+      <div class="lumen-viewer-main">
+        <div
+          ref="bodyRef"
+          class="lumen-viewer-body markdown-body"
+          @click="handleBodyClick"
+          v-html="html"
+        />
+        <LumenOutline
+          v-if="headings.length > 0"
+          :headings="headings"
+          :collapsed="!outlineOpen"
+          @toggle="outlineOpen = !outlineOpen"
+          @navigate="scrollToHeading"
+        />
+      </div>
 
       <!-- Devoirs lies a ce chapitre : toujours visible s'il y en a,
            + bouton "Lier un devoir" pour le teacher meme si vide -->
@@ -421,14 +501,85 @@ button.lumen-viewer-chip {
 .spin { animation: spin 1s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
+/* Wrapper flex : body markdown a gauche, outline a droite. Prend toute
+   la hauteur dispo, le body scroll verticalement independamment. */
+.lumen-viewer-main {
+  flex: 1;
+  display: flex;
+  flex-direction: row;
+  min-height: 0;
+  overflow: hidden;
+}
+
 .lumen-viewer-body {
   flex: 1;
   overflow-y: auto;
-  padding: 24px 48px 16px;
+  padding: 20px 48px 16px;
   max-width: 820px;
   width: 100%;
   margin: 0 auto;
 }
+
+/* Breadcrumbs : fil d'ariane discret sous la meta du header */
+.lumen-breadcrumbs {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 6px;
+  font-size: 10.5px;
+  color: var(--text-muted);
+  flex-wrap: wrap;
+}
+.lumen-breadcrumbs-seg {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 240px;
+}
+.lumen-breadcrumbs-current {
+  color: var(--text-secondary);
+  font-weight: 600;
+  max-width: 420px;
+}
+.lumen-breadcrumbs-sep {
+  color: var(--text-muted);
+  opacity: 0.6;
+  flex-shrink: 0;
+}
+
+/* Banner stale content : visible quand le contenu vient du cache ou est
+   plus vieux que 1h. Non dismissable : incite au resync. */
+.lumen-stale-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 8px 48px 0;
+  padding: 6px 12px;
+  background: rgba(217, 138, 0, 0.09);
+  border: 1px solid rgba(217, 138, 0, 0.3);
+  border-radius: 6px;
+  font-size: 11px;
+  color: var(--warning, #d98a00);
+  flex-shrink: 0;
+}
+.lumen-stale-banner svg { flex-shrink: 0; }
+.lumen-stale-refresh {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  background: transparent;
+  border: 1px solid currentColor;
+  border-radius: 4px;
+  color: inherit;
+  font-family: inherit;
+  font-size: 10.5px;
+  font-weight: 500;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.lumen-stale-refresh:hover { background: rgba(217, 138, 0, 0.12); }
 
 /* Footer "Devoirs lies" sous le contenu markdown */
 .lumen-linked-travaux {

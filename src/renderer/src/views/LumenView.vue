@@ -14,13 +14,14 @@ import { useRoute, useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import {
   BookOpen, RefreshCw, Github, LogOut, Settings, AlertCircle, Loader2, FolderGit2, Plus,
-  PanelLeftClose, PanelLeftOpen,
+  PanelLeftClose, PanelLeftOpen, LayoutGrid,
 } from 'lucide-vue-next'
 import { useLumenStore } from '@/stores/lumen'
 import { useAppStore } from '@/stores/app'
 import { useToast } from '@/composables/useToast'
 import { useConfirm } from '@/composables/useConfirm'
 import { useLumenFocus } from '@/composables/useLumenFocus'
+import { useLumenLastChapter } from '@/composables/useLumenLastChapter'
 import { relativeTime } from '@/utils/date'
 import LumenGithubConnect from '@/components/lumen/LumenGithubConnect.vue'
 import LumenRepoSidebar from '@/components/lumen/LumenRepoSidebar.vue'
@@ -34,10 +35,11 @@ const router     = useRouter()
 const { showToast } = useToast()
 const { confirm } = useConfirm()
 const { lumenFocusMode, toggle: toggleLumenFocus } = useLumenFocus()
+const lastChapter = useLumenLastChapter()
 
 const {
   githubStatus, promoOrg, repos, currentRepo, currentChapterPath,
-  loading, syncing, chapterContents, chapterNotes, readChapters,
+  loading, syncing, chapterContents, chapterNotes,
 } = storeToRefs(lumenStore)
 
 // ── Derived ────────────────────────────────────────────────────────────────
@@ -72,9 +74,10 @@ const currentContent = computed<string | null>(() => {
   return chapterContents.value.get(key)?.content ?? null
 })
 
-const isCurrentRead = computed<boolean>(() => {
+const currentContentCached = computed<boolean>(() => {
   if (!currentRepo.value || !currentChapterPath.value) return false
-  return readChapters.value.has(`${currentRepo.value.id}::${currentChapterPath.value}`)
+  const key = `${currentRepo.value.id}::${currentChapterPath.value}`
+  return chapterContents.value.get(key)?.cached ?? false
 })
 
 const notedChaptersSet = computed<Set<string>>(() => {
@@ -181,13 +184,18 @@ async function boot() {
   await Promise.all([
     lumenStore.fetchGithubStatus(),
     pid ? lumenStore.fetchReposForPromo(pid) : Promise.resolve(),
-    pid ? lumenStore.fetchMyReads() : Promise.resolve(),
   ])
 }
 
 onMounted(async () => {
   await boot()
   applyUrlSelection()
+  // Auto-resume : si aucune query param n'a selectionne un chapitre, on
+  // restaure le dernier chapitre lu dans cette promo (v2.48). Zero clic
+  // pour reprendre la lecture. Le deep-link URL reste prioritaire.
+  if (!currentRepo.value || !currentChapterPath.value) {
+    applyAutoResume()
+  }
   // Auto-sync si le cache est stale (> 15 min) ET qu'on est connecte
   // a GitHub ET qu'une org est configuree. Reveille l'utilisateur avec
   // du contenu frais sans qu'il ait a cliquer "Sync".
@@ -205,6 +213,9 @@ onMounted(async () => {
 watch(activePromoId, async () => {
   await boot()
   applyUrlSelection()
+  if (!currentRepo.value || !currentChapterPath.value) {
+    applyAutoResume()
+  }
 })
 
 onBeforeUnmount(() => {
@@ -257,6 +268,11 @@ async function handleSelectChapter(payload: { repoId: number; path: string }) {
   currentRepo.value = repo
   currentChapterPath.value = payload.path
 
+  // Memorise pour l'auto-resume a la prochaine session (v2.48).
+  if (activePromoId.value) {
+    lastChapter.set(activePromoId.value, repo.id, payload.path)
+  }
+
   // Reflete la selection dans l'URL pour permettre le deep-link et la
   // restauration a l'ouverture. `replace` plutot que `push` pour eviter
   // de polluer l'historique de navigation avec chaque chapitre lu.
@@ -278,6 +294,16 @@ async function handleSelectChapter(payload: { repoId: number; path: string }) {
 }
 
 /**
+ * Ressortir du module Lumen vers le dashboard. Bouton toujours visible
+ * dans la topbar Lumen, independamment du focus mode. Offre une issue
+ * claire aux etudiants qui ne savent pas d'ou ils viennent quand le rail
+ * Cursus est masque (v2.48).
+ */
+function handleCursusHome() {
+  router.push({ name: 'dashboard' })
+}
+
+/**
  * Applique la query URL (?repo=X&chapter=Y) si elle est presente et que
  * les donnees sont chargees. Appele apres chaque boot() et chaque sync
  * pour restaurer la selection au cold-start.
@@ -296,6 +322,23 @@ function applyUrlSelection() {
 }
 
 /**
+ * Restaure le dernier chapitre lu de la promo courante si aucun deep-link
+ * n'a pre-selectionne un chapitre. Appele apres boot() et applyUrlSelection().
+ * Si le dernier chapitre a ete supprime (renommage manifest, prune), fallback
+ * silencieux : l'utilisateur tombera sur l'etat vide habituel.
+ */
+function applyAutoResume() {
+  if (!activePromoId.value) return
+  const last = lastChapter.get(activePromoId.value)
+  if (!last) return
+  const repo = repos.value.find((r) => r.id === last.repoId)
+  if (!repo) return
+  const stillExists = repo.manifest?.chapters.some((c) => c.path === last.chapterPath)
+  if (!stillExists) return
+  handleSelectChapter({ repoId: last.repoId, path: last.chapterPath })
+}
+
+/**
  * Raccourcis clavier pour la lecture : ArrowLeft = prev, ArrowRight =
  * next. Desactives dans les inputs/textarea pour ne pas casser
  * l'edition de notes.
@@ -311,11 +354,6 @@ function handleKeydown(e: KeyboardEvent) {
     e.preventDefault()
     handleNavigateNext()
   }
-}
-
-async function handleAutoRead() {
-  if (!currentRepo.value || !currentChapterPath.value) return
-  await lumenStore.markChapterRead(currentRepo.value.id, currentChapterPath.value)
 }
 
 function handleNavigatePrev() {
@@ -349,6 +387,15 @@ function handleNavigateChapter(path: string) {
   <div class="lumen-view">
     <header class="lumen-topbar">
       <div class="lumen-brand">
+        <button
+          type="button"
+          class="lumen-btn ghost lumen-btn-icon lumen-home-btn"
+          title="Retour a Cursus (dashboard)"
+          aria-label="Retour au dashboard Cursus"
+          @click="handleCursusHome"
+        >
+          <LayoutGrid :size="14" />
+        </button>
         <BookOpen :size="18" />
         <span class="lumen-brand-name">Lumen</span>
         <span v-if="promoOrg" class="lumen-brand-org">
@@ -360,8 +407,8 @@ function handleNavigateChapter(path: string) {
         <button
           type="button"
           class="lumen-btn ghost lumen-btn-icon"
-          :title="lumenFocusMode ? 'Quitter le mode focus (afficher la barre laterale)' : 'Mode focus (masquer la barre laterale Cursus)'"
-          :aria-label="lumenFocusMode ? 'Quitter le mode focus' : 'Activer le mode focus'"
+          :title="lumenFocusMode ? 'Afficher la barre laterale Cursus' : 'Masquer la barre laterale Cursus (focus)'"
+          :aria-label="lumenFocusMode ? 'Afficher la barre laterale Cursus' : 'Masquer la barre laterale Cursus'"
           :aria-pressed="lumenFocusMode"
           @click="toggleLumenFocus"
         >
@@ -429,7 +476,6 @@ function handleNavigateChapter(path: string) {
             :repos="repos"
             :current-repo-id="currentRepo?.id ?? null"
             :current-chapter-path="currentChapterPath"
-            :read-chapters="readChapters"
             :noted-chapters="notedChaptersSet"
             :can-toggle-visibility="isTeacher"
             @select="handleSelectChapter"
@@ -479,13 +525,13 @@ function handleNavigateChapter(path: string) {
             :chapter="currentChapter"
             :content="currentContent"
             :loading="loadingChapter"
-            :is-read="isCurrentRead"
             :prev-chapter="prevChapter"
             :next-chapter="nextChapter"
-            @read="handleAutoRead"
+            :cached="currentContentCached"
             @navigate-prev="handleNavigatePrev"
             @navigate-next="handleNavigateNext"
             @navigate-chapter="handleNavigateChapter"
+            @resync="handleSync"
           />
         </main>
 
@@ -717,6 +763,11 @@ function handleNavigateChapter(path: string) {
   background: var(--bg-hover);
   color: var(--accent);
 }
+.lumen-home-btn {
+  margin-right: 4px;
+  color: var(--text-muted);
+}
+.lumen-home-btn:hover { color: var(--text-primary); }
 
 .spin { animation: spin 1s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
