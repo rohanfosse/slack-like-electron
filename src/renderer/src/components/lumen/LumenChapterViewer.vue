@@ -11,7 +11,7 @@
  * du breadcrumbs, de la banner stale content, et du panneau Outline
  * auto-genere depuis les headings du DOM rendu.
  */
-import { computed, onMounted, ref, watch, nextTick } from 'vue'
+import { computed, onMounted, onBeforeUnmount, ref, watch, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { Loader2, FileText, Clock, User, ChevronLeft, ChevronRight, Copy, Check, FolderGit2, ClipboardList, Plus, Calendar, RefreshCw, ChevronRight as CrumbSep, Presentation } from 'lucide-vue-next'
 import { renderMarkdown } from '@/utils/markdown'
@@ -55,6 +55,29 @@ const isTeacher = computed(() => appStore.currentUser?.type === 'teacher' || app
 const linkedTravaux = ref<LumenLinkedTravail[]>([])
 const linkedTravauxLoading = ref(false)
 const linkDevoirModalOpen = ref(false)
+// Popover "devoirs lies" : ferme par defaut pour ne pas encombrer la lecture.
+// L'utilisateur l'ouvre via un chip dans le header. Auto-fermeture sur Esc
+// et au clic exterieur.
+const linkedPopoverOpen = ref(false)
+const linkedPopoverRef = ref<HTMLElement | null>(null)
+function toggleLinkedPopover(): void {
+  linkedPopoverOpen.value = !linkedPopoverOpen.value
+}
+function closeLinkedPopover(): void {
+  linkedPopoverOpen.value = false
+}
+function onDocumentClick(ev: MouseEvent): void {
+  if (!linkedPopoverOpen.value) return
+  const target = ev.target as Node | null
+  if (linkedPopoverRef.value && target && !linkedPopoverRef.value.contains(target)) {
+    linkedPopoverOpen.value = false
+  }
+}
+function onDocumentKey(ev: KeyboardEvent): void {
+  if (ev.key === 'Escape' && linkedPopoverOpen.value) {
+    linkedPopoverOpen.value = false
+  }
+}
 
 async function loadLinkedTravaux() {
   if (!props.chapter?.path) return
@@ -290,6 +313,13 @@ async function enrichRender() {
 onMounted(() => {
   enrichRender()
   loadLinkedTravaux()
+  document.addEventListener('mousedown', onDocumentClick)
+  document.addEventListener('keydown', onDocumentKey)
+})
+
+onBeforeUnmount(() => {
+  document.removeEventListener('mousedown', onDocumentClick)
+  document.removeEventListener('keydown', onDocumentKey)
 })
 watch(() => [props.content, props.chapter?.path], () => {
   enrichRender()
@@ -324,6 +354,58 @@ watch(() => [props.content, props.chapter?.path], () => {
         <span v-if="repo.manifest?.author" class="lumen-viewer-chip">
           <User :size="11" /> {{ repo.manifest.author }}
         </span>
+
+        <!-- Devoirs lies : chip + popover. Cache par defaut, accessible via clic. -->
+        <div
+          v-if="linkedTravaux.length > 0 || isTeacher"
+          ref="linkedPopoverRef"
+          class="lumen-linked-popover-wrap"
+        >
+          <button
+            type="button"
+            class="lumen-viewer-chip lumen-viewer-chip--link"
+            :class="{ active: linkedPopoverOpen }"
+            :aria-expanded="linkedPopoverOpen"
+            :title="linkedTravaux.length ? `${linkedTravaux.length} devoir(s) lie(s)` : 'Aucun devoir lie'"
+            @click="toggleLinkedPopover"
+          >
+            <ClipboardList :size="11" />
+            <span>Devoirs</span>
+            <span v-if="linkedTravaux.length" class="llt-count">{{ linkedTravaux.length }}</span>
+          </button>
+          <div v-if="linkedPopoverOpen" class="lumen-linked-popover" role="dialog" aria-label="Devoirs lies a ce chapitre">
+            <header class="llt-head">
+              <div class="llt-title">
+                <ClipboardList :size="13" />
+                <span>Devoirs lies</span>
+                <span v-if="linkedTravaux.length" class="llt-count">{{ linkedTravaux.length }}</span>
+              </div>
+              <button
+                v-if="isTeacher"
+                type="button"
+                class="llt-link-btn"
+                @click="linkDevoirModalOpen = true; closeLinkedPopover()"
+              >
+                <Plus :size="12" />
+                Lier
+              </button>
+            </header>
+            <ul v-if="linkedTravaux.length > 0" class="llt-list">
+              <li v-for="t in linkedTravaux" :key="t.id">
+                <button type="button" class="llt-item" @click="openTravail(t); closeLinkedPopover()">
+                  <span class="llt-item-title">{{ t.title }}</span>
+                  <span v-if="t.category" class="llt-item-cat">{{ t.category }}</span>
+                  <span v-if="t.deadline" class="llt-item-deadline">
+                    <Calendar :size="10" /> {{ relativeTime(t.deadline) }}
+                  </span>
+                </button>
+              </li>
+            </ul>
+            <p v-else-if="isTeacher" class="llt-empty">
+              Ce chapitre n'est encore lie a aucun devoir.
+            </p>
+          </div>
+        </div>
       </div>
       <!-- Breadcrumbs : orientation rapide via project / section / chapitre -->
       <nav class="lumen-breadcrumbs" aria-label="Fil d'ariane">
@@ -376,72 +458,31 @@ watch(() => [props.content, props.chapter?.path], () => {
         />
       </div>
 
-      <!-- Devoirs lies a ce chapitre : toujours visible s'il y en a,
-           + bouton "Lier un devoir" pour le teacher meme si vide -->
-      <section
-        v-if="linkedTravaux.length > 0 || isTeacher"
-        class="lumen-linked-travaux"
-      >
-        <header class="llt-head">
-          <div class="llt-title">
-            <ClipboardList :size="13" />
-            <span>Devoirs lies</span>
-            <span v-if="linkedTravaux.length" class="llt-count">{{ linkedTravaux.length }}</span>
-          </div>
-          <button
-            v-if="isTeacher"
-            type="button"
-            class="llt-link-btn"
-            @click="linkDevoirModalOpen = true"
-          >
-            <Plus :size="12" />
-            Lier un devoir
-          </button>
-        </header>
-        <ul v-if="linkedTravaux.length > 0" class="llt-list">
-          <li v-for="t in linkedTravaux" :key="t.id">
-            <button type="button" class="llt-item" @click="openTravail(t)">
-              <span class="llt-item-title">{{ t.title }}</span>
-              <span v-if="t.category" class="llt-item-cat">{{ t.category }}</span>
-              <span v-if="t.deadline" class="llt-item-deadline">
-                <Calendar :size="10" /> {{ relativeTime(t.deadline) }}
-              </span>
-            </button>
-          </li>
-        </ul>
-        <p v-else-if="isTeacher" class="llt-empty">
-          Ce chapitre n'est encore lie a aucun devoir. Lie-le pour que les etudiants voient le lien depuis leur vue devoir.
-        </p>
-      </section>
-
-      <footer class="lumen-viewer-nav">
+      <!-- Navigation prev/next : 2 boutons flottants en bordures du contenu.
+           Apparaissent au hover du viewer, gardent l'espace disponible pour
+           le contenu en permanence (cf. demande utilisateur v2.61). -->
+      <div v-if="!isMarp && (prevChapter || nextChapter)" class="lumen-floating-nav">
         <button
+          v-if="prevChapter"
           type="button"
-          class="lumen-nav-btn"
-          :disabled="!prevChapter"
-          :aria-label="prevChapter ? `Chapitre precedent : ${prevChapter.title}` : 'Aucun chapitre precedent'"
+          class="lumen-floating-nav-btn lumen-floating-nav-btn--prev"
+          :title="`Precedent : ${prevChapter.title}`"
+          :aria-label="`Chapitre precedent : ${prevChapter.title}`"
           @click="emit('navigate-prev')"
         >
-          <ChevronLeft :size="14" />
-          <span class="lumen-nav-label">
-            <span class="lumen-nav-direction">Precedent</span>
-            <span v-if="prevChapter" class="lumen-nav-title">{{ prevChapter.title }}</span>
-          </span>
+          <ChevronLeft :size="18" />
         </button>
         <button
+          v-if="nextChapter"
           type="button"
-          class="lumen-nav-btn next"
-          :disabled="!nextChapter"
-          :aria-label="nextChapter ? `Chapitre suivant : ${nextChapter.title}` : 'Aucun chapitre suivant'"
+          class="lumen-floating-nav-btn lumen-floating-nav-btn--next"
+          :title="`Suivant : ${nextChapter.title}`"
+          :aria-label="`Chapitre suivant : ${nextChapter.title}`"
           @click="emit('navigate-next')"
         >
-          <span class="lumen-nav-label">
-            <span class="lumen-nav-direction">Suivant</span>
-            <span v-if="nextChapter" class="lumen-nav-title">{{ nextChapter.title }}</span>
-          </span>
-          <ChevronRight :size="14" />
+          <ChevronRight :size="18" />
         </button>
-      </footer>
+      </div>
     </template>
 
     <LumenLinkDevoirModal
@@ -561,6 +602,7 @@ button.lumen-viewer-chip:focus-visible {
   flex-direction: row;
   min-height: 0;
   overflow: hidden;
+  position: relative;
 }
 .lumen-viewer-main--slides {
   flex-direction: column;
@@ -640,24 +682,42 @@ button.lumen-viewer-chip:focus-visible {
 }
 .lumen-stale-refresh:hover { background: rgba(217, 138, 0, 0.12); }
 
-/* Footer "Devoirs lies" sous le contenu markdown */
-.lumen-linked-travaux {
-  max-width: 820px;
-  width: 100%;
-  margin: 0 auto;
-  padding: 16px 48px 0;
-  flex-shrink: 0;
+/* Popover "Devoirs lies" depuis le chip header. Cache par defaut, ne prend
+   pas de place verticale dans le contenu (cf. demande utilisateur v2.61). */
+.lumen-linked-popover-wrap {
+  position: relative;
+  display: inline-flex;
+}
+.lumen-viewer-chip.active {
+  background: rgba(var(--accent-rgb), .14);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.lumen-linked-popover {
+  position: absolute;
+  top: calc(100% + var(--space-xs));
+  right: 0;
+  width: min(360px, calc(100vw - 40px));
+  background: var(--bg-modal);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--elevation-3);
+  padding: var(--space-md);
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
 }
 .llt-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 10px;
+  gap: var(--space-sm);
 }
 .llt-title {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--space-xs);
   font-size: 11px;
   font-weight: 700;
   text-transform: uppercase;
@@ -665,51 +725,56 @@ button.lumen-viewer-chip:focus-visible {
   color: var(--text-muted);
 }
 .llt-count {
-  background: var(--bg-secondary);
-  color: var(--text-muted);
+  background: rgba(var(--accent-rgb), .14);
+  color: var(--accent);
   padding: 1px 7px;
   border-radius: 10px;
   font-size: 10px;
   font-variant-numeric: tabular-nums;
   text-transform: none;
   letter-spacing: 0;
+  font-weight: 700;
 }
 .llt-link-btn {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  padding: 5px 10px;
+  gap: var(--space-xs);
+  padding: var(--space-xs) var(--space-sm);
   background: var(--accent);
   color: white;
   border: none;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   font-size: 11px;
-  font-weight: 500;
+  font-weight: 600;
   cursor: pointer;
   font-family: inherit;
+  transition: filter var(--motion-fast) var(--ease-out);
 }
-.llt-link-btn:hover { opacity: 0.9; }
+.llt-link-btn:hover { filter: brightness(1.1); }
 .llt-list {
   list-style: none;
   margin: 0;
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: var(--space-xs);
+  max-height: 320px;
+  overflow-y: auto;
 }
 .llt-item {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: var(--space-sm);
   width: 100%;
-  padding: 8px 12px;
-  background: var(--bg-secondary);
+  padding: var(--space-sm) var(--space-md);
+  background: var(--bg-elevated);
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
   font-family: inherit;
   text-align: left;
-  transition: all var(--t-fast, 150ms) ease;
+  transition: background var(--motion-fast) var(--ease-out),
+              border-color var(--motion-fast) var(--ease-out);
 }
 .llt-item:hover {
   border-color: var(--accent);
@@ -727,7 +792,7 @@ button.lumen-viewer-chip:focus-visible {
 .llt-item-cat {
   font-size: 10px;
   color: var(--text-muted);
-  background: var(--bg-primary);
+  background: var(--bg-main);
   padding: 1px 6px;
   border-radius: 8px;
   flex-shrink: 0;
@@ -742,78 +807,61 @@ button.lumen-viewer-chip:focus-visible {
 }
 .llt-empty {
   margin: 0;
-  padding: 12px 14px;
-  font-size: 11.5px;
+  padding: var(--space-md);
+  font-size: 12px;
   color: var(--text-muted);
-  background: var(--bg-secondary);
+  background: var(--bg-elevated);
   border: 1px dashed var(--border);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   line-height: 1.5;
+  text-align: center;
 }
 
-/* Navigation bas-de-page (prev/next chapitre) */
-.lumen-viewer-nav {
-  display: flex;
-  gap: 12px;
-  padding: 16px 48px 24px;
-  border-top: 1px solid var(--border);
-  max-width: 820px;
-  width: 100%;
-  margin: 0 auto;
-  flex-shrink: 0;
-}
-.lumen-nav-btn {
-  flex: 1;
+/* Navigation flottante prev/next : 2 boutons en bordure du contenu, opacite
+   reduite au repos, opacite pleine au hover du viewer. */
+.lumen-floating-nav {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 12px 14px;
-  background: var(--bg-secondary);
+  justify-content: space-between;
+  padding: 0 var(--space-md);
+  z-index: 5;
+}
+.lumen-floating-nav-btn {
+  pointer-events: auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  background: var(--bg-elevated);
   border: 1px solid var(--border);
-  border-radius: 8px;
-  color: var(--text-primary);
+  color: var(--text-secondary);
   cursor: pointer;
-  font-family: inherit;
-  text-align: left;
-  transition: all var(--t-fast, 150ms) ease;
-  min-height: 52px;
+  box-shadow: var(--elevation-2);
+  opacity: 0;
+  transform: translateY(0);
+  transition: opacity var(--motion-base) var(--ease-out),
+              background var(--motion-fast) var(--ease-out),
+              color var(--motion-fast) var(--ease-out),
+              transform var(--motion-fast) var(--ease-out);
 }
-.lumen-nav-btn:hover:not(:disabled) {
-  background: var(--bg-hover);
-  border-color: var(--accent);
+.lumen-viewer-main:hover .lumen-floating-nav-btn,
+.lumen-floating-nav-btn:focus-visible {
+  opacity: .85;
 }
-.lumen-nav-btn:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
+.lumen-floating-nav-btn:hover {
+  opacity: 1;
+  background: var(--accent);
+  color: #fff;
+  transform: scale(1.05);
 }
-.lumen-nav-btn:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
-.lumen-nav-btn.next {
-  flex-direction: row-reverse;
-  text-align: right;
-}
-.lumen-nav-label {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  min-width: 0;
-}
-.lumen-nav-direction {
-  font-size: 10px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--text-muted);
-}
-.lumen-nav-title {
-  font-size: 13px;
-  font-weight: 600;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+.lumen-floating-nav-btn:focus-visible {
+  outline: none;
+  box-shadow: var(--elevation-2), var(--focus-ring);
 }
 </style>
 
