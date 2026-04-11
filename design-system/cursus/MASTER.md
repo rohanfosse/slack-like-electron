@@ -189,23 +189,46 @@ ce token. Plus de `outline: 2px solid var(--accent)` ad-hoc.
 
 Dossier cible : `src/renderer/src/components/ui/`.
 
-### Existants
+### Existants (v2.53+)
 
-- `Modal.vue` — base modale (a etendre, beaucoup contournent encore)
+- `Modal.vue` — base modale (a etendre, certaines modales contournent encore)
+- `ConfirmModal.vue` — confirmation destructive
 - `ErrorBoundary.vue` — capture d'erreur de section
-- `Toast` (composable `useToast`)
+- `Toast.vue` (+ composable `useToast`)
+- `EmptyState.vue` — etat vide unifie (sm/md/lg + tones, v2.53.0)
+- `UiPageHeader.vue` — en-tete de section partage (slots leading/title/actions, v2.53.0)
+- `UiCard.vue` — carte unifiee (interactive/tone/elevated, v2.53.0)
+- `UiButton.vue` — wrapper boutons avec loading et a11y (v2.53.0)
+- `UiPill.vue` — pill/badge semantique (v2.53.0)
 
-### A creer (priorite)
+### Migrations realisees
+
+| Site | Version | Composant utilise |
+|---|---|---|
+| `DevoirsHeader.vue` | v2.53.0 | `UiPageHeader` |
+| `LumenView.vue` (lumen-topbar) | v2.53.0 | `UiPageHeader` |
+| `AgendaView.vue` | v2.53.0 | `UiPageHeader` (wrap) |
+| `DocumentsView.vue` | v2.53.0 | `UiPageHeader` (wrap) |
+| `TeacherProjectHome.vue` empty + pills | v2.54-55 | `EmptyState` + `UiPill` |
+| `StudentDevoirsView.vue` empty + pills | v2.54-55 | `EmptyState` + `UiPill` |
+| `MessageList.vue` 4 etats vides | v2.54.0 | `EmptyState` |
+
+### Reste a creer (P1/P2)
 
 | Composant | Remplace | Priorite |
 |---|---|---|
-| `UiPageHeader.vue` | `.devoirs-header`, `.agenda-header`, `.lumen-topbar`, `.docs-header`, `.channel-header` | P0 |
-| `UiCard.vue` | `.dv-proj-card`, `.sa-card`, `.travail-card`, `.doc-card`, `.dv-next-card`, `.identity-card`, `.tp-card-header`, `.mpc-promo-header` | P0 |
-| `UiEmptyState.vue` | `.dv-empty`, `.welcome-icon-wrapper`, `.empty-icon-wrap` | P0 |
-| `UiButton.vue` | wraper sur `.btn-primary/.btn-ghost/.btn-danger` (a11y, loading) | P1 |
 | `UiInput.vue` | wrapper `.form-input` (label + helper + error inline) | P1 |
-| `UiPill.vue` | `.dv-stat-pill`, `.devoir-type-badge` | P2 |
 | `UiSectionTitle.vue` | `.dv-section-title`, `.db-section-title`, `.sa-section-label` | P2 |
+
+### Reste a migrer
+
+- `MessagesView.vue` `.welcome-icon-wrapper` (welcome screen avec tips custom — bloc unique, faible priorite)
+- `FilesView.vue` `.fv-empty-icon-wrap` (idem, specifique)
+- `.dv-proj-card` consumers (refacto vers `UiCard` — gros impact visuel mais
+  necessite preserver le contenu interne, a faire progressivement)
+- `.dv-next-card` (TeacherProjectHome / StudentDevoirsView)
+- `.devoir-type-badge` : SPECIALISE — conserve tel quel (type-livrable/cctl/etc.
+  est plus expressif que generic tone)
 
 ### Conventions
 

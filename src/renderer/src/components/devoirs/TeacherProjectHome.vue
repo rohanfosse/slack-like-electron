@@ -15,6 +15,7 @@ import { deadlineClass, deadlineLabel, formatDate } from '@/utils/date'
 import { typeLabel, extractDuration } from '@/utils/devoir'
 import DevoirsProjectCard from './DevoirsProjectCard.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
+import UiPill from '@/components/ui/UiPill.vue'
 import type { GanttRow } from '@/types'
 
 const props = defineProps<{
@@ -99,22 +100,22 @@ const nextSoutenance = computed(() =>
 
       <!-- ── Résumé promo ──────────────────────────────────────────── -->
       <div class="dv-stats-row">
-        <div class="dv-stat-pill">
-          <BookOpen :size="14" />
-          <strong>{{ travauxStore.ganttData.length }}</strong> devoirs
-        </div>
-        <div class="dv-stat-pill dv-stat-pill--success">
-          <BarChart2 :size="14" />
-          <strong>{{ travauxStore.ganttData.filter(t => t.is_published).length }}</strong> publiés
-        </div>
-        <div v-if="globalToGrade > 0" class="dv-stat-pill dv-stat-pill--warn">
-          <AlertTriangle :size="14" />
-          <strong>{{ globalToGrade }}</strong> à noter
-        </div>
-        <div v-if="globalDrafts > 0" class="dv-stat-pill dv-stat-pill--muted">
-          <FileText :size="14" />
-          <strong>{{ globalDrafts }}</strong> brouillons
-        </div>
+        <UiPill size="md" tone="neutral">
+          <template #leading><BookOpen :size="14" /></template>
+          <strong>{{ travauxStore.ganttData.length }}</strong>&nbsp;devoirs
+        </UiPill>
+        <UiPill size="md" tone="success">
+          <template #leading><BarChart2 :size="14" /></template>
+          <strong>{{ travauxStore.ganttData.filter(t => t.is_published).length }}</strong>&nbsp;publiés
+        </UiPill>
+        <UiPill v-if="globalToGrade > 0" size="md" tone="warning">
+          <template #leading><AlertTriangle :size="14" /></template>
+          <strong>{{ globalToGrade }}</strong>&nbsp;à noter
+        </UiPill>
+        <UiPill v-if="globalDrafts > 0" size="md" tone="muted">
+          <template #leading><FileText :size="14" /></template>
+          <strong>{{ globalDrafts }}</strong>&nbsp;brouillons
+        </UiPill>
       </div>
 
       <!-- ── Prochains événements par type ─────────────────────────── -->

@@ -20,6 +20,7 @@ import { useModules }        from '@/composables/useModules'
 import StudentDevoirGroup    from './StudentDevoirGroup.vue'
 import DevoirsProjectCard    from './DevoirsProjectCard.vue'
 import EmptyState            from '@/components/ui/EmptyState.vue'
+import UiPill                from '@/components/ui/UiPill.vue'
 
 const props = defineProps<{
   now: number
@@ -161,22 +162,22 @@ const kanbanExpanded = ref<Record<number, boolean>>({})
 
     <!-- ── Stat pills ──────────────────────────────────────────────── -->
     <div class="dv-stats-row">
-      <div class="dv-stat-pill">
-        <BookOpen :size="14" />
-        <strong>{{ studentStats.total }}</strong> devoirs
-      </div>
-      <div class="dv-stat-pill dv-stat-pill--success">
-        <CheckCircle2 :size="14" />
-        <strong>{{ studentStats.submitted }}</strong> rendu{{ studentStats.submitted > 1 ? 's' : '' }}
-      </div>
-      <div v-if="studentStats.pending > 0" class="dv-stat-pill dv-stat-pill--warn">
-        <Clock :size="14" />
-        <strong>{{ studentStats.pending }}</strong> à rendre
-      </div>
-      <div v-if="studentStats.urgent > 0" class="dv-stat-pill dv-stat-pill--danger">
-        <AlertTriangle :size="14" />
-        <strong>{{ studentStats.urgent }}</strong> urgent{{ studentStats.urgent > 1 ? 's' : '' }}
-      </div>
+      <UiPill size="md" tone="neutral">
+        <template #leading><BookOpen :size="14" /></template>
+        <strong>{{ studentStats.total }}</strong>&nbsp;devoirs
+      </UiPill>
+      <UiPill size="md" tone="success">
+        <template #leading><CheckCircle2 :size="14" /></template>
+        <strong>{{ studentStats.submitted }}</strong>&nbsp;rendu{{ studentStats.submitted > 1 ? 's' : '' }}
+      </UiPill>
+      <UiPill v-if="studentStats.pending > 0" size="md" tone="warning">
+        <template #leading><Clock :size="14" /></template>
+        <strong>{{ studentStats.pending }}</strong>&nbsp;à rendre
+      </UiPill>
+      <UiPill v-if="studentStats.urgent > 0" size="md" tone="danger">
+        <template #leading><AlertTriangle :size="14" /></template>
+        <strong>{{ studentStats.urgent }}</strong>&nbsp;urgent{{ studentStats.urgent > 1 ? 's' : '' }}
+      </UiPill>
     </div>
 
     <!-- ── Prochaines échéances ────────────────────────────────────── -->
