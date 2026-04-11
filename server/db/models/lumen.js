@@ -324,6 +324,67 @@ function getLumenReadCountsForPromo(promoId) {
   `).all(promoId)
 }
 
+// ─── Liaison devoirs <-> chapitres ──────────────────────────────────────────
+
+/**
+ * Associe un chapitre a un devoir. Idempotent via INSERT OR IGNORE :
+ * appeler plusieurs fois avec les memes args ne provoque pas d'erreur.
+ */
+function linkChapterToTravail(travailId, repoId, chapterPath) {
+  getDb().prepare(`
+    INSERT OR IGNORE INTO lumen_chapter_travaux (travail_id, repo_id, chapter_path)
+    VALUES (?, ?, ?)
+  `).run(travailId, repoId, chapterPath)
+}
+
+function unlinkChapterFromTravail(travailId, repoId, chapterPath) {
+  getDb().prepare(`
+    DELETE FROM lumen_chapter_travaux
+     WHERE travail_id = ? AND repo_id = ? AND chapter_path = ?
+  `).run(travailId, repoId, chapterPath)
+}
+
+/**
+ * Liste les devoirs lies a un chapitre donne, avec leurs metadonnees
+ * essentielles (id, titre, deadline, type). Utilise pour afficher
+ * "Ce chapitre est utilise dans X devoirs" sous LumenChapterViewer.
+ */
+function getTravauxForChapter(repoId, chapterPath) {
+  return getDb().prepare(`
+    SELECT t.id, t.title, t.deadline, t.type, t.category, t.promo_id, t.published
+      FROM lumen_chapter_travaux lct
+      JOIN travaux t ON t.id = lct.travail_id
+     WHERE lct.repo_id = ? AND lct.chapter_path = ?
+     ORDER BY t.deadline ASC NULLS LAST
+  `).all(repoId, chapterPath)
+}
+
+/**
+ * Liste les chapitres lies a un devoir, avec les metadonnees du repo
+ * (owner, repo, manifest_json) pour permettre au frontend d'afficher
+ * le titre humain du chapitre depuis le manifest.
+ */
+function getChaptersForTravail(travailId) {
+  return getDb().prepare(`
+    SELECT lct.travail_id, lct.repo_id, lct.chapter_path, lct.created_at,
+           r.owner, r.repo, r.manifest_json
+      FROM lumen_chapter_travaux lct
+      JOIN lumen_repos r ON r.id = lct.repo_id
+     WHERE lct.travail_id = ?
+     ORDER BY r.owner, r.repo, lct.chapter_path
+  `).all(travailId)
+}
+
+/** Compte des devoirs lies par chapitre pour un repo (widget / stats). */
+function getChapterTravailCountsForRepo(repoId) {
+  return getDb().prepare(`
+    SELECT chapter_path, COUNT(*) AS count
+      FROM lumen_chapter_travaux
+     WHERE repo_id = ?
+     GROUP BY chapter_path
+  `).all(repoId)
+}
+
 // ─── Stats ──────────────────────────────────────────────────────────────────
 
 function getLumenStatsForPromo(promoId) {
@@ -374,6 +435,12 @@ module.exports = {
   getStudentLumenReads,
   getLumenReadCountsForRepo,
   getLumenReadCountsForPromo,
+  // chapter-travaux liaison
+  linkChapterToTravail,
+  unlinkChapterFromTravail,
+  getTravauxForChapter,
+  getChaptersForTravail,
+  getChapterTravailCountsForRepo,
   // stats
   getLumenStatsForPromo,
 }

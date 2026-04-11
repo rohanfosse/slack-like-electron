@@ -11,7 +11,7 @@ const router = require('express').Router()
 const { z } = require('zod')
 const wrap = require('../utils/wrap')
 const authMiddleware = require('../middleware/auth')
-const { requireRole, requirePromo, requirePromoAdmin, promoFromParam } = require('../middleware/authorize')
+const { requireRole, requirePromo, requirePromoAdmin, promoFromParam, promoFromTravail } = require('../middleware/authorize')
 const { validate } = require('../middleware/validate')
 const { AppError, NotFoundError, ForbiddenError } = require('../utils/errors')
 const { buildClientForUser, validateToken, mapOctokitError } = require('../services/githubClient')
@@ -41,6 +41,11 @@ const {
   getStudentLumenReads,
   getLumenReadCountsForRepo,
   getLumenReadCountsForPromo,
+  // chapter-travaux
+  linkChapterToTravail,
+  unlinkChapterFromTravail,
+  getTravauxForChapter,
+  getChaptersForTravail,
   // stats
   getLumenStatsForPromo,
 } = require('../db/models/lumen')
@@ -429,6 +434,84 @@ router.get(
   requireRole('student'),
   wrap(async (req) => {
     return { items: getStudentNotedChapters(req.user.id) }
+  }),
+)
+
+// ─── Liaison devoirs <-> chapitres ──────────────────────────────────────────
+
+const chapterTravailBodySchema = z.object({
+  travailId: z.number().int().positive(),
+  repoId: z.number().int().positive(),
+  chapterPath: z.string().min(1).max(500),
+}).strict()
+
+/**
+ * Liste les devoirs lies a un chapitre. Appele depuis LumenChapterViewer
+ * pour afficher "Devoirs lies" en footer. Auth : requirePromo via le
+ * repo (acces a son chapitre = acces au lien).
+ */
+router.get(
+  '/repos/:id/chapters/travaux',
+  requirePromo(promoFromRepoParam),
+  wrap(async (req) => {
+    const repoId = Number(req.params.id)
+    const path = String(req.query.path ?? '').trim()
+    if (!path) throw new AppError('Parametre path requis', 400)
+    const travaux = getTravauxForChapter(repoId, path)
+    return { travaux }
+  }),
+)
+
+/**
+ * Liste les chapitres lies a un devoir. Appele depuis la vue devoir
+ * pour afficher "Chapitres a revoir". Auth : requirePromo via travail.
+ */
+router.get(
+  '/travaux/:id/chapters',
+  requirePromo(promoFromTravail),
+  wrap(async (req) => {
+    const travailId = Number(req.params.id)
+    const chapters = getChaptersForTravail(travailId)
+    return { chapters }
+  }),
+)
+
+/**
+ * Associe un chapitre a un devoir. Teacher/admin uniquement, verifie
+ * que travail et repo appartiennent a la meme promo (impossible de
+ * lier un chapitre promo A a un devoir promo B).
+ */
+router.post(
+  '/chapters/travaux',
+  requireRole('teacher', 'admin'),
+  validate(chapterTravailBodySchema),
+  wrap(async (req) => {
+    const { travailId, repoId, chapterPath } = req.body
+    const db = getDb()
+    const travail = db.prepare('SELECT promo_id FROM travaux WHERE id = ?').get(travailId)
+    const repo = getLumenRepo(repoId)
+    if (!travail) throw new NotFoundError('Devoir introuvable')
+    if (!repo) throw new NotFoundError('Repo introuvable')
+    if (travail.promo_id !== repo.promo_id) {
+      throw new AppError('Devoir et repo doivent appartenir a la meme promo', 400)
+    }
+    // Verifie que le chapitre est declare dans le manifest du repo
+    const manifest = parseManifestField(repo)
+    const exists = manifest?.chapters?.some((c) => c.path === chapterPath)
+    if (!exists) throw new NotFoundError('Chapitre non declare dans cursus.yaml')
+    linkChapterToTravail(travailId, repoId, chapterPath)
+    return { ok: true }
+  }),
+)
+
+router.delete(
+  '/chapters/travaux',
+  requireRole('teacher', 'admin'),
+  validate(chapterTravailBodySchema),
+  wrap(async (req) => {
+    const { travailId, repoId, chapterPath } = req.body
+    unlinkChapterFromTravail(travailId, repoId, chapterPath)
+    return { ok: true }
   }),
 )
 

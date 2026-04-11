@@ -1,6 +1,6 @@
 const { getDb } = require('./connection');
 
-const CURRENT_VERSION = 56;
+const CURRENT_VERSION = 57;
 
 // ─── Schema initial ───────────────────────────────────────────────────────────
 // Crée toutes les tables avec leur schéma complet (colonnes UTC, toutes colonnes incluses).
@@ -1197,6 +1197,24 @@ function runMigrations(db) {
           PRIMARY KEY (student_id, repo_id, path)
         );
         CREATE INDEX IF NOT EXISTS idx_lumen_chapter_reads_repo ON lumen_chapter_reads(repo_id);
+      `);
+    },
+
+    // v57 : Lumen — liaison devoirs <-> chapitres (N:M)
+    // Un devoir peut pointer vers un ou plusieurs chapitres Lumen comme
+    // prerequis / reference. Un chapitre peut etre reference par plusieurs
+    // devoirs. L'UI affiche les deux directions.
+    (db) => {
+      db.exec(`
+        CREATE TABLE IF NOT EXISTS lumen_chapter_travaux (
+          travail_id   INTEGER NOT NULL REFERENCES travaux(id) ON DELETE CASCADE,
+          repo_id      INTEGER NOT NULL REFERENCES lumen_repos(id) ON DELETE CASCADE,
+          chapter_path TEXT NOT NULL,
+          created_at   TEXT NOT NULL DEFAULT (datetime('now')),
+          PRIMARY KEY (travail_id, repo_id, chapter_path)
+        );
+        CREATE INDEX IF NOT EXISTS idx_lct_repo_chapter ON lumen_chapter_travaux(repo_id, chapter_path);
+        CREATE INDEX IF NOT EXISTS idx_lct_travail ON lumen_chapter_travaux(travail_id);
       `);
     },
   ];
