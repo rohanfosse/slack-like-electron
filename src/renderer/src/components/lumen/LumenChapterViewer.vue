@@ -13,7 +13,7 @@
  */
 import { computed, onMounted, onBeforeUnmount, ref, watch, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
-import { Loader2, FileText, Clock, User, ChevronLeft, ChevronRight, Copy, Check, FolderGit2, ClipboardList, Plus, Calendar, RefreshCw, ChevronRight as CrumbSep, Presentation, Pencil, Save, X } from 'lucide-vue-next'
+import { Loader2, FileText, Clock, User, ChevronLeft, ChevronRight, Copy, Check, FolderGit2, ClipboardList, Plus, Calendar, RefreshCw, ChevronRight as CrumbSep, Presentation, Pencil, Save, X, Eye, EyeOff, Columns2 } from 'lucide-vue-next'
 import { renderMarkdown } from '@/utils/markdown'
 import { resolveAnchorTarget } from '@/utils/lumenDevoirLinks'
 import { parseChapterContent } from '@/utils/lumenFrontmatter'
@@ -165,6 +165,13 @@ const editModalOpen = ref(false)
 const editDraft = ref('')
 const editMessage = ref('')
 const editSaving = ref(false)
+// Live preview (v2.69) : split-view markdown source + rendu HTML a droite.
+// Toggle pour les petites fenetres ou quand le prof veut maximiser l'editeur.
+const editPreviewOpen = ref(true)
+const editPreviewHtml = computed(() => {
+  if (!editPreviewOpen.value || !editDraft.value) return ''
+  return renderMarkdown(editDraft.value, { chapterPath: props.chapter.path })
+})
 const lumenStore = useLumenStore()
 
 function openEditModal(): void {
@@ -743,30 +750,56 @@ watch(() => [props.content, props.chapter?.path], () => {
       @changed="loadLinkedTravaux"
     />
 
-    <!-- Modale d'edition de chapitre (v2.67) — teacher only, markdown only -->
-    <Modal v-model="editModalOpen" max-width="960px">
+    <!-- Modale d'edition de chapitre (v2.67) — teacher only, markdown only.
+         v2.69 : split-view avec preview live a droite. -->
+    <Modal v-model="editModalOpen" :max-width="editPreviewOpen ? '1400px' : '960px'">
       <div class="lumen-edit-modal">
         <header class="lumen-edit-head">
           <div class="lumen-edit-title-block">
             <h2 class="lumen-edit-title">Modifier · {{ chapter.title }}</h2>
             <p class="lumen-edit-path">{{ chapter.path }}</p>
           </div>
-          <button
-            type="button"
-            class="lumen-edit-close"
-            aria-label="Fermer"
-            :disabled="editSaving"
-            @click="closeEditModal"
-          >
-            <X :size="16" />
-          </button>
+          <div class="lumen-edit-head-actions">
+            <button
+              type="button"
+              class="lumen-edit-preview-toggle"
+              :class="{ active: editPreviewOpen }"
+              :aria-label="editPreviewOpen ? 'Masquer la preview' : 'Afficher la preview'"
+              :title="editPreviewOpen ? 'Masquer la preview' : 'Afficher la preview'"
+              :disabled="editSaving"
+              @click="editPreviewOpen = !editPreviewOpen"
+            >
+              <Columns2 :size="14" />
+              <span>{{ editPreviewOpen ? 'Preview' : 'Preview' }}</span>
+            </button>
+            <button
+              type="button"
+              class="lumen-edit-close"
+              aria-label="Fermer"
+              :disabled="editSaving"
+              @click="closeEditModal"
+            >
+              <X :size="16" />
+            </button>
+          </div>
         </header>
-        <div class="lumen-edit-body">
-          <UiCodeEditor
-            v-model="editDraft"
-            language="markdown"
-            height="60vh"
-          />
+        <div class="lumen-edit-body" :class="{ 'lumen-edit-body--split': editPreviewOpen }">
+          <div class="lumen-edit-pane">
+            <div class="lumen-edit-pane-label">
+              <Pencil :size="11" /> Source markdown
+            </div>
+            <UiCodeEditor
+              v-model="editDraft"
+              language="markdown"
+              height="60vh"
+            />
+          </div>
+          <div v-if="editPreviewOpen" class="lumen-edit-pane lumen-edit-pane--preview">
+            <div class="lumen-edit-pane-label">
+              <Eye :size="11" /> Preview
+            </div>
+            <div class="lumen-edit-preview markdown-body" v-html="editPreviewHtml" />
+          </div>
         </div>
         <footer class="lumen-edit-foot">
           <input
@@ -884,11 +917,11 @@ button.lumen-viewer-chip:focus-visible {
   border-color: var(--accent);
 }
 
-/* Modale d'edition de chapitre (v2.67) */
+/* Modale d'edition de chapitre (v2.67 + v2.69 split preview) */
 .lumen-edit-modal {
   display: flex;
   flex-direction: column;
-  width: min(960px, 92vw);
+  width: min(1400px, 94vw);
   max-height: 90vh;
 }
 .lumen-edit-head {
@@ -898,6 +931,12 @@ button.lumen-viewer-chip:focus-visible {
   gap: var(--space-md);
   padding: var(--space-lg) var(--space-xl) var(--space-md);
   border-bottom: 1px solid var(--border);
+}
+.lumen-edit-head-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  flex-shrink: 0;
 }
 .lumen-edit-title-block { flex: 1; min-width: 0; }
 .lumen-edit-title {
@@ -918,6 +957,35 @@ button.lumen-viewer-chip:focus-visible {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+.lumen-edit-preview-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: 6px var(--space-md);
+  height: 32px;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text-muted);
+  cursor: pointer;
+  font-family: var(--font);
+  font-size: 12px;
+  font-weight: 600;
+  transition: background var(--motion-fast) var(--ease-out),
+              color var(--motion-fast) var(--ease-out),
+              border-color var(--motion-fast) var(--ease-out);
+}
+.lumen-edit-preview-toggle:hover:not(:disabled) {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+.lumen-edit-preview-toggle.active {
+  background: rgba(var(--accent-rgb), .14);
+  color: var(--accent);
+  border-color: rgba(var(--accent-rgb), .35);
+}
+.lumen-edit-preview-toggle:disabled { opacity: .4; cursor: not-allowed; }
+
 .lumen-edit-close {
   display: inline-flex;
   align-items: center;
@@ -945,6 +1013,39 @@ button.lumen-viewer-chip:focus-visible {
   padding: var(--space-md) var(--space-xl);
   overflow: hidden;
   display: flex;
+  gap: var(--space-md);
+}
+/* Split view : 2 colonnes egales. CodeMirror a gauche, preview a droite. */
+.lumen-edit-body--split .lumen-edit-pane {
+  flex: 1 1 50%;
+  min-width: 0;
+}
+.lumen-edit-pane {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  min-width: 0;
+}
+.lumen-edit-pane-label {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: var(--text-muted);
+  padding: 0 var(--space-xs);
+}
+.lumen-edit-pane--preview {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: var(--space-md) var(--space-lg);
+  overflow-y: auto;
+}
+.lumen-edit-preview {
+  padding: 0;
 }
 
 .lumen-edit-foot {
