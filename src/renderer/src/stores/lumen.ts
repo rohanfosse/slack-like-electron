@@ -137,6 +137,48 @@ export const useLumenStore = defineStore('lumen', () => {
     }
   }
 
+  /**
+   * Recupere les repos lies a un projet Cursus identifie par son nom.
+   * Resolu cote serveur avec la meme normalisation que le sync manifest
+   * (case + trim + Unicode NFD).
+   */
+  async function fetchReposByProjectName(promoId: number, projectName: string): Promise<LumenRepo[]> {
+    const data = await api<{ repos: LumenRepo[] }>(
+      () => window.api.getLumenReposByProjectName(promoId, projectName),
+      { silent: true },
+    )
+    return data?.repos ?? []
+  }
+
+  /** Liste les repos d'une promo non encore lies a un projet (picker UI teacher). */
+  async function fetchUnlinkedReposForPromo(promoId: number): Promise<LumenRepo[]> {
+    const data = await api<{ repos: LumenRepo[] }>(
+      () => window.api.getLumenUnlinkedReposForPromo(promoId),
+      { silent: true },
+    )
+    return data?.repos ?? []
+  }
+
+  /**
+   * Associe un repo a un projet (UI fallback teacher). Refuse cote serveur
+   * si le manifest declare deja un cursusProject.
+   */
+  async function linkRepoToProject(repoId: number, projectId: number | null): Promise<LumenRepo | null> {
+    const data = await api<LumenRepo>(
+      () => window.api.setLumenRepoProject(repoId, projectId),
+    )
+    if (data) {
+      // Met a jour l'entree dans repos.value si presente
+      const idx = repos.value.findIndex((r) => r.id === repoId)
+      if (idx !== -1) {
+        const next = [...repos.value]
+        next[idx] = data
+        repos.value = next
+      }
+    }
+    return data ?? null
+  }
+
   function selectRepo(repoId: number | null): void {
     if (repoId == null) {
       currentRepo.value = null
@@ -283,6 +325,9 @@ export const useLumenStore = defineStore('lumen', () => {
     setPromoOrgAction,
     fetchReposForPromo,
     syncReposForPromo,
+    fetchReposByProjectName,
+    fetchUnlinkedReposForPromo,
+    linkRepoToProject,
     selectRepo,
     fetchChapterContent,
     selectChapter,

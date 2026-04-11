@@ -322,6 +322,11 @@ declare global {
       syncLumenReposForPromo(promoId: number): Promise<IpcResponse<{ synced: number; errors: Array<{ repo: string; error: string }>; repos: import('./types').LumenRepo[] }>>
       getLumenRepo(id: number): Promise<IpcResponse<import('./types').LumenRepo>>
 
+      // Integration projets Cursus
+      getLumenReposByProjectName(promoId: number, name: string): Promise<IpcResponse<{ repos: import('./types').LumenRepo[] }>>
+      getLumenUnlinkedReposForPromo(promoId: number): Promise<IpcResponse<{ repos: import('./types').LumenRepo[] }>>
+      setLumenRepoProject(repoId: number, projectId: number | null): Promise<IpcResponse<import('./types').LumenRepo>>
+
       // Chapitres
       getLumenChapterContent(repoId: number, path: string): Promise<IpcResponse<import('./types').LumenChapterContent>>
 

@@ -540,6 +540,14 @@ contextBridge.exposeInMainWorld('api', {
   syncLumenReposForPromo:   (promoId: number)       => post(`/api/lumen/repos/sync/promo/${promoId}`, {}),
   getLumenRepo:             (id: number)            => get(`/api/lumen/repos/${id}`),
 
+  // Integration projets Cursus
+  getLumenReposByProjectName: (promoId: number, name: string) =>
+    get(`/api/lumen/repos/by-project-name?promoId=${promoId}&name=${encodeURIComponent(name)}`),
+  getLumenUnlinkedReposForPromo: (promoId: number) =>
+    get(`/api/lumen/repos/promo/${promoId}/unlinked`),
+  setLumenRepoProject:      (repoId: number, projectId: number | null) =>
+    put(`/api/lumen/repos/${repoId}/project`, { projectId }),
+
   // Chapitres
   getLumenChapterContent:   (repoId: number, path: string) =>
     get(`/api/lumen/repos/${repoId}/content?path=${encodeURIComponent(path)}`),

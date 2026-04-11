@@ -317,6 +317,8 @@ export interface LumenManifest {
   module?: string
   author?: string
   summary?: string
+  /** Nom du projet Cursus auquel ce cours est rattache (optionnel). */
+  cursusProject?: string
   chapters: LumenChapter[]
   resources?: LumenResource[]
 }
@@ -333,6 +335,7 @@ export interface LumenRepo {
   lastCommitSha: string | null
   lastSyncedAt: string | null
   projectId: number | null
+  projectName: string | null
 }
 
 export interface LumenGithubStatus {

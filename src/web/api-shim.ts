@@ -510,6 +510,12 @@ async function importStudentsBrowser(promoId: number): Promise<unknown> {
   getLumenReposForPromo:      (promoId: number)       => get(`/api/lumen/repos/promo/${promoId}`),
   syncLumenReposForPromo:     (promoId: number)       => post(`/api/lumen/repos/sync/promo/${promoId}`, {}),
   getLumenRepo:               (id: number)            => get(`/api/lumen/repos/${id}`),
+  getLumenReposByProjectName: (promoId: number, name: string) =>
+    get(`/api/lumen/repos/by-project-name?promoId=${promoId}&name=${encodeURIComponent(name)}`),
+  getLumenUnlinkedReposForPromo: (promoId: number) =>
+    get(`/api/lumen/repos/promo/${promoId}/unlinked`),
+  setLumenRepoProject:        (repoId: number, projectId: number | null) =>
+    put(`/api/lumen/repos/${repoId}/project`, { projectId }),
   getLumenChapterContent:     (repoId: number, p: string) => get(`/api/lumen/repos/${repoId}/content?path=${encodeURIComponent(p)}`),
   markLumenChapterRead:       (repoId: number, p: string) => post(`/api/lumen/repos/${repoId}/read`, { path: p }),
   getLumenMyReads:            ()                      => get('/api/lumen/my-reads'),
