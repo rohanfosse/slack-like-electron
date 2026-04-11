@@ -16,11 +16,13 @@
  */
 import { ref, computed, watch } from 'vue'
 import { storeToRefs } from 'pinia'
-import { FileText, FileDown, FileCode, AlertTriangle, StickyNote, Search, X, Eye, EyeOff, Sparkles, BookOpen, Presentation, Home, Lightbulb, Wrench, Hammer, Folder, Users, User } from 'lucide-vue-next'
+import { FileText, FileDown, FileCode, AlertTriangle, StickyNote, Search, X, Eye, EyeOff, Sparkles, BookOpen, Presentation, Home, Lightbulb, Wrench, Hammer, Folder, Users, User, Plus, Loader2 } from 'lucide-vue-next'
 import type { Component } from 'vue'
 import { useLumenStore } from '@/stores/lumen'
+import { useToast } from '@/composables/useToast'
 import { chapterKey } from '@/utils/lumenDevoirLinks'
 import type { LumenRepo, LumenChapter, LumenSearchResult, LumenRepoKind } from '@/types'
+import Modal from '@/components/ui/Modal.vue'
 
 interface Props {
   repos: LumenRepo[]
@@ -272,6 +274,130 @@ function handleToggleVisibility(repo: LumenRepo, e: Event) {
 function handleSelectSearchResult(r: LumenSearchResult) {
   emit('select', { repoId: r.repoId, path: r.chapterPath })
 }
+
+// ── Nouveau chapitre (v2.68) ──────────────────────────────────────────────
+// Modale accessible via un bouton "+" en regard de chaque section (teacher
+// only). Permet de creer un .md dans le meme dossier que les autres
+// chapitres de la section. Le commit est pose via l'IPC createLumenChapterFile.
+const { showToast } = useToast()
+
+interface NewChapterContext {
+  repo: LumenRepo
+  sectionTitle: string
+  sectionDir: string   // derive du 1er chapitre de la section
+}
+
+const newChapterOpen = ref(false)
+const newChapterCtx = ref<NewChapterContext | null>(null)
+const newTitle = ref('')
+const newFilename = ref('')
+const newMessage = ref('')
+const newFilenameManual = ref(false)  // user a edite manuellement le filename
+const newSaving = ref(false)
+
+/**
+ * Retourne le dossier d'une section — derive du premier chapitre de la
+ * section. Un section sans chapitre est impossible (on ne peut creer dans
+ * un dossier vide qu'on ne voit pas).
+ */
+function dirOfSection(group: SectionGroup): string {
+  const firstPath = group.chapters[0]?.path ?? ''
+  const slash = firstPath.lastIndexOf('/')
+  return slash === -1 ? '' : firstPath.slice(0, slash)
+}
+
+/**
+ * Slugify un titre en filename : lowercase, espaces -> -, supprime
+ * les caracteres non [a-z0-9-]. Suffix .md. Retourne '' si le titre est
+ * vide pour laisser le bouton Creer desactive.
+ */
+function slugifyTitleToFilename(title: string): string {
+  const slug = title
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')   // retire les accents
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+  if (!slug) return ''
+  return `${slug}.md`
+}
+
+function openNewChapterModal(repo: LumenRepo, group: SectionGroup): void {
+  newChapterCtx.value = {
+    repo,
+    sectionTitle: group.title,
+    sectionDir: dirOfSection(group),
+  }
+  newTitle.value = ''
+  newFilename.value = ''
+  newFilenameManual.value = false
+  newMessage.value = ''
+  newChapterOpen.value = true
+}
+
+function closeNewChapterModal(): void {
+  if (newSaving.value) return
+  newChapterOpen.value = false
+  newChapterCtx.value = null
+}
+
+watch(newTitle, (t) => {
+  if (newFilenameManual.value) return
+  newFilename.value = slugifyTitleToFilename(t)
+})
+function onFilenameInput(): void { newFilenameManual.value = true }
+
+const newChapterPath = computed<string>(() => {
+  if (!newChapterCtx.value) return ''
+  const dir = newChapterCtx.value.sectionDir
+  const name = newFilename.value.trim()
+  if (!name) return ''
+  return dir ? `${dir}/${name}` : name
+})
+
+const canCreateChapter = computed<boolean>(() => {
+  return !newSaving.value
+    && newTitle.value.trim().length > 0
+    && /\.md$/i.test(newFilename.value)
+    && newChapterPath.value.length > 0
+})
+
+async function saveNewChapter(): Promise<void> {
+  if (!canCreateChapter.value || !newChapterCtx.value) return
+  const { repo, sectionTitle } = newChapterCtx.value
+  const path = newChapterPath.value
+  const title = newTitle.value.trim()
+  // Skeleton minimal — le prof completera ensuite via "Modifier"
+  const content = `# ${title}\n\nContenu du chapitre.\n`
+  const message = newMessage.value.trim() || `docs: add ${path}`
+
+  newSaving.value = true
+  try {
+    const resp = await window.api.createLumenChapterFile(repo.id, {
+      path, content, message,
+    }) as { ok: boolean; error?: string }
+    if (!resp?.ok) {
+      const msg = resp?.error || 'Echec de la creation'
+      showToast(msg, 'error')
+      return
+    }
+    showToast(`Chapitre cree : ${title}`, 'success')
+    newChapterOpen.value = false
+    newChapterCtx.value = null
+    // Re-sync le repo pour que l'auto-manifest decouvre le nouveau fichier
+    try {
+      await lumenStore.syncReposForPromo(repo.promoId)
+    } catch { /* si sync echoue, le prochain sync manuel prendra le relais */ }
+    // Selectionne le nouveau chapitre pour ouvrir immediatement le viewer
+    emit('select', { repoId: repo.id, path })
+    void sectionTitle  // lint suppress (l'info est dans le toast)
+  } catch (err) {
+    const msg = (err as { message?: string })?.message || 'Erreur reseau'
+    showToast(msg, 'error')
+  } finally {
+    newSaving.value = false
+  }
+}
 </script>
 
 <template>
@@ -404,14 +530,26 @@ function handleSelectSearchResult(r: LumenSearchResult) {
 
           <div class="lumen-repo-body">
             <div v-for="group in groups" :key="group.title" class="lumen-section">
-              <p class="lumen-section-title">
-                <span v-if="splitSectionTitle(group.title).parent" class="lumen-section-parent">
-                  {{ splitSectionTitle(group.title).parent }}
-                </span>
-                <span class="lumen-section-child">
-                  {{ splitSectionTitle(group.title).child }}
-                </span>
-              </p>
+              <div class="lumen-section-row">
+                <p class="lumen-section-title">
+                  <span v-if="splitSectionTitle(group.title).parent" class="lumen-section-parent">
+                    {{ splitSectionTitle(group.title).parent }}
+                  </span>
+                  <span class="lumen-section-child">
+                    {{ splitSectionTitle(group.title).child }}
+                  </span>
+                </p>
+                <button
+                  v-if="canToggleVisibility"
+                  type="button"
+                  class="lumen-section-add"
+                  title="Nouveau chapitre dans cette section"
+                  aria-label="Ajouter un chapitre a cette section"
+                  @click="openNewChapterModal(repo, group)"
+                >
+                  <Plus :size="11" />
+                </button>
+              </div>
               <ul class="lumen-chapter-list">
                 <li v-for="ch in group.chapters" :key="ch.path">
                   <button
@@ -456,6 +594,77 @@ function handleSelectSearchResult(r: LumenSearchResult) {
         </section>
       </div>
     </nav>
+
+    <!-- Modale "Nouveau chapitre" (v2.68) — teacher only, via le + de section -->
+    <Modal v-model="newChapterOpen" max-width="520px">
+      <div class="lumen-new-chapter">
+        <header class="lumen-new-head">
+          <div>
+            <h2 class="lumen-new-title">Nouveau chapitre</h2>
+            <p v-if="newChapterCtx" class="lumen-new-sub">
+              dans <strong>{{ newChapterCtx.sectionTitle }}</strong>
+            </p>
+          </div>
+          <button
+            type="button"
+            class="lumen-new-close"
+            aria-label="Fermer"
+            :disabled="newSaving"
+            @click="closeNewChapterModal"
+          >
+            <X :size="16" />
+          </button>
+        </header>
+        <div class="lumen-new-body">
+          <label class="lumen-new-label">
+            Titre du chapitre
+            <input
+              v-model="newTitle"
+              type="text"
+              class="form-input"
+              placeholder="Ex: Introduction aux routeurs"
+              maxlength="200"
+              @keydown.enter.prevent="saveNewChapter"
+            />
+          </label>
+          <label class="lumen-new-label">
+            Nom de fichier
+            <input
+              v-model="newFilename"
+              type="text"
+              class="form-input"
+              placeholder="introduction-routeurs.md"
+              maxlength="200"
+              @input="onFilenameInput"
+            />
+          </label>
+          <p v-if="newChapterPath" class="lumen-new-path">
+            <span class="lumen-new-path-label">Chemin complet :</span>
+            <code>{{ newChapterPath }}</code>
+          </p>
+          <label class="lumen-new-label">
+            Message de commit (optionnel)
+            <input
+              v-model="newMessage"
+              type="text"
+              class="form-input"
+              :placeholder="`docs: add ${newChapterPath || 'nouveau-chapitre.md'}`"
+              maxlength="200"
+            />
+          </label>
+        </div>
+        <footer class="lumen-new-foot">
+          <button type="button" class="btn-ghost" :disabled="newSaving" @click="closeNewChapterModal">
+            Annuler
+          </button>
+          <button type="button" class="btn-primary" :disabled="!canCreateChapter" @click="saveNewChapter">
+            <Loader2 v-if="newSaving" :size="14" class="spin" />
+            <Plus v-else :size="14" />
+            {{ newSaving ? 'Creation...' : 'Creer' }}
+          </button>
+        </footer>
+      </div>
+    </Modal>
   </div>
 </template>
 
@@ -729,12 +938,48 @@ function handleSelectSearchResult(r: LumenSearchResult) {
 .lumen-section {
   margin-top: 2px;
 }
-.lumen-section-title {
-  margin: var(--space-xs) 0 1px;
+/* Section row : titre a gauche + bouton "+" a droite pour teacher (v2.68) */
+.lumen-section-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
   padding: 0 var(--space-sm) 0 26px;
+  margin: var(--space-xs) 0 1px;
+}
+.lumen-section-title {
+  margin: 0;
+  padding: 0;
   display: flex;
   flex-direction: column;
   gap: 1px;
+  flex: 1;
+  min-width: 0;
+}
+.lumen-section-add {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  flex-shrink: 0;
+  opacity: 0;
+  transition: opacity var(--motion-fast) var(--ease-out),
+              background var(--motion-fast) var(--ease-out),
+              color var(--motion-fast) var(--ease-out);
+}
+.lumen-section-row:hover .lumen-section-add,
+.lumen-section-add:focus-visible {
+  opacity: 1;
+}
+.lumen-section-add:hover {
+  background: rgba(var(--accent-rgb), .14);
+  color: var(--accent);
+  border-color: rgba(var(--accent-rgb), .35);
 }
 /* Parent dossier affiche en tres petit + muted en prefix. Evite la
    repetition visuelle quand plusieurs sections partagent le meme parent
@@ -867,4 +1112,110 @@ function handleSelectSearchResult(r: LumenSearchResult) {
 .lumen-kind-section .lumen-repo-list {
   margin-top: var(--space-xs);
 }
+
+/* ── Modale Nouveau chapitre (v2.68) ──────────────────────────────────── */
+.lumen-new-chapter {
+  display: flex;
+  flex-direction: column;
+}
+.lumen-new-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-md);
+  padding: var(--space-lg) var(--space-xl) var(--space-md);
+  border-bottom: 1px solid var(--border);
+}
+.lumen-new-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0 0 4px;
+}
+.lumen-new-sub {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin: 0;
+}
+.lumen-new-sub strong {
+  color: var(--accent);
+  font-weight: 700;
+}
+.lumen-new-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius);
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background var(--motion-fast) var(--ease-out),
+              color var(--motion-fast) var(--ease-out);
+}
+.lumen-new-close:hover:not(:disabled) {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+.lumen-new-close:disabled { opacity: .4; cursor: not-allowed; }
+
+.lumen-new-body {
+  padding: var(--space-lg) var(--space-xl);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+.lumen-new-label {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: var(--text-secondary);
+}
+.lumen-new-label .form-input {
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 400;
+}
+.lumen-new-path {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-sm) var(--space-md);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  margin: 0;
+}
+.lumen-new-path-label {
+  color: var(--text-muted);
+  font-weight: 600;
+  flex-shrink: 0;
+}
+.lumen-new-path code {
+  font-family: 'JetBrains Mono', Menlo, Consolas, monospace;
+  color: var(--accent);
+  font-size: 11px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.lumen-new-foot {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-sm);
+  padding: var(--space-md) var(--space-xl) var(--space-lg);
+  border-top: 1px solid var(--border);
+}
+.spin { animation: spin 1s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
 </style>
