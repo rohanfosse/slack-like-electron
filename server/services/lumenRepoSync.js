@@ -595,6 +595,61 @@ async function createRepoWithScaffold(octokit, { org, slug, blocTitle }) {
   return { owner, repo, defaultBranch }
 }
 
+/**
+ * Ecrit ou cree un fichier dans un repo Lumen via l'API Contents (v2.67).
+ * Utilise pour permettre au prof d'editer rapidement un chapitre depuis
+ * Cursus sans passer par GitHub.com.
+ *
+ * Comportement :
+ *  - Si `sha` est fourni → mise a jour atomique (GitHub renvoie 409 si le
+ *    sha ne correspond plus a la version courante, on surface le conflit)
+ *  - Si `sha` est absent → creation pure (GitHub renvoie 422 si le fichier
+ *    existe deja, on surface une erreur claire)
+ *  - Le commit est fait par l'octokit du prof connecte (avec son auteur)
+ *  - Le cache local + l'index FTS sont invalides apres ecriture pour eviter
+ *    de servir l'ancienne version au prochain fetch
+ *
+ * @param {Octokit} octokit
+ * @param {object} dbRepo                 Le row SQLite du repo (id, owner, repo, default_branch)
+ * @param {object} params
+ * @param {string} params.path            Chemin du fichier dans le repo (ex: "guides/scrum.md")
+ * @param {string} params.content         Contenu UTF-8 du fichier (sera encode base64)
+ * @param {string} params.message         Message de commit
+ * @param {string=} params.sha            SHA du blob courant (requis pour update, omit pour create)
+ * @returns {Promise<{ content: string, sha: string, commitSha: string }>}
+ */
+async function writeChapterFile(octokit, dbRepo, { path, content, message, sha }) {
+  const { owner, repo, default_branch: defaultBranch, id: repoId } = dbRepo
+  const contentBase64 = Buffer.from(content, 'utf8').toString('base64')
+
+  const params = {
+    owner,
+    repo,
+    path,
+    message: message || (sha ? `docs: edit ${path}` : `docs: add ${path}`),
+    content: contentBase64,
+    branch: defaultBranch,
+  }
+  if (sha) params.sha = sha
+
+  const { data } = await octokit.rest.repos.createOrUpdateFileContents(params)
+
+  // Invalide le cache local : le prochain fetch repassera par GitHub.
+  // On ne re-fetch pas ici pour eviter un round-trip inutile (le client
+  // appellera getLumenChapterContent juste apres pour rafraichir l'UI).
+  try {
+    const { deleteLumenCachedFile, deleteLumenChapterFts } = require('../db/models/lumen')
+    if (typeof deleteLumenCachedFile === 'function') deleteLumenCachedFile(repoId, path)
+    if (typeof deleteLumenChapterFts === 'function') deleteLumenChapterFts(repoId, path)
+  } catch { /* noop : si pas dispo, le cache repop au prochain fetch */ }
+
+  return {
+    content,
+    sha: data.content?.sha ?? '',
+    commitSha: data.commit?.sha ?? '',
+  }
+}
+
 module.exports = {
   listOrgRepos,
   fetchFile,
@@ -604,4 +659,5 @@ module.exports = {
   fetchChapterContent,
   getCachedChapter,
   createRepoWithScaffold,
+  writeChapterFile,
 }

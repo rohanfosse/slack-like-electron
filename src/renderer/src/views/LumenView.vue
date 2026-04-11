@@ -81,6 +81,16 @@ const currentContentCached = computed<boolean>(() => {
   return chapterContents.value.get(key)?.cached ?? false
 })
 
+// SHA du blob courant — necessaire pour l'edition atomique (PUT /file).
+// Fourni par le serveur lors du dernier fetch et stocke avec le contenu
+// dans le store. Sans ce sha, on ne peut pas envoyer un update qui
+// detecte les conflits.
+const currentContentSha = computed<string | null>(() => {
+  if (!currentRepo.value || !currentChapterPath.value) return null
+  const key = `${currentRepo.value.id}::${currentChapterPath.value}`
+  return chapterContents.value.get(key)?.sha ?? null
+})
+
 const notedChaptersSet = computed<Set<string>>(() => {
   const set = new Set<string>()
   for (const [key, note] of chapterNotes.value.entries()) {
@@ -563,6 +573,7 @@ function handleNavigateChapter(path: string) {
             :repo="currentRepo"
             :chapter="currentChapter"
             :content="currentContent"
+            :content-sha="currentContentSha"
             :loading="loadingChapter"
             :prev-chapter="prevChapter"
             :next-chapter="nextChapter"

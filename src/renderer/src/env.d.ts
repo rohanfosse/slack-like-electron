@@ -339,6 +339,16 @@ declare global {
       // Chapitres
       getLumenChapterContent(repoId: number, path: string): Promise<IpcResponse<import('./types').LumenChapterContent>>
 
+      // Edition de chapitre (v2.67) — teacher / admin only
+      updateLumenChapterFile(
+        repoId: number,
+        body: { path: string; content: string; sha: string; message?: string },
+      ): Promise<IpcResponse<{ ok: true; content: string; sha: string; commitSha: string }>>
+      createLumenChapterFile(
+        repoId: number,
+        body: { path: string; content: string; message?: string },
+      ): Promise<IpcResponse<{ ok: true; content: string; sha: string; commitSha: string }>>
+
       // Tracking lecture
       markLumenChapterRead(repoId: number, path: string): Promise<IpcResponse<{ ok: true }>>
       getLumenMyReads(): Promise<IpcResponse<{ reads: import('./types').LumenRead[] }>>

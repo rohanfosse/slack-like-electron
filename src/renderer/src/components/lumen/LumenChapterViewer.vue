@@ -13,22 +13,27 @@
  */
 import { computed, onMounted, onBeforeUnmount, ref, watch, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
-import { Loader2, FileText, Clock, User, ChevronLeft, ChevronRight, Copy, Check, FolderGit2, ClipboardList, Plus, Calendar, RefreshCw, ChevronRight as CrumbSep, Presentation } from 'lucide-vue-next'
+import { Loader2, FileText, Clock, User, ChevronLeft, ChevronRight, Copy, Check, FolderGit2, ClipboardList, Plus, Calendar, RefreshCw, ChevronRight as CrumbSep, Presentation, Pencil, Save, X } from 'lucide-vue-next'
 import { renderMarkdown } from '@/utils/markdown'
 import { resolveAnchorTarget } from '@/utils/lumenDevoirLinks'
 import { parseChapterContent } from '@/utils/lumenFrontmatter'
 import { useToast } from '@/composables/useToast'
 import { useAppStore } from '@/stores/app'
+import { useLumenStore } from '@/stores/lumen'
 import { relativeTime } from '@/utils/date'
 import LumenLinkDevoirModal from '@/components/lumen/LumenLinkDevoirModal.vue'
 import LumenOutline from '@/components/lumen/LumenOutline.vue'
 import LumenSlideDeck from '@/components/lumen/LumenSlideDeck.vue'
+import Modal from '@/components/ui/Modal.vue'
+import UiCodeEditor from '@/components/ui/UiCodeEditor.vue'
 import type { LumenChapter, LumenRepo, LumenLinkedTravail } from '@/types'
 
 interface Props {
   repo: LumenRepo
   chapter: LumenChapter
   content: string | null
+  /** SHA git du blob courant. Necessaire pour l'edition atomique (v2.67). */
+  contentSha?: string | null
   loading: boolean
   prevChapter: LumenChapter | null
   nextChapter: LumenChapter | null
@@ -152,6 +157,68 @@ const accueilToc = computed<AccueilTocSection[]>(() => {
 function openAccueilChapter(ch: LumenChapter) {
   emit('navigate-chapter', ch.path)
 }
+
+// ── Edition de chapitre par le prof (v2.67) ───────────────────────────────
+// Bouton "Modifier" dans le header : ouvre une modale avec CodeMirror,
+// le prof modifie, on commit via le serveur, on refetch le chapitre.
+const editModalOpen = ref(false)
+const editDraft = ref('')
+const editMessage = ref('')
+const editSaving = ref(false)
+const lumenStore = useLumenStore()
+
+function openEditModal(): void {
+  if (!isTeacher.value || isPdf.value || isTex.value || isMarp.value) return
+  if (props.content == null) return
+  editDraft.value = props.content
+  editMessage.value = ''
+  editModalOpen.value = true
+}
+
+function closeEditModal(): void {
+  if (editSaving.value) return  // ne ferme pas pendant un save en cours
+  editModalOpen.value = false
+}
+
+async function saveEdit(): Promise<void> {
+  if (editSaving.value) return
+  if (!props.contentSha) {
+    showToast('SHA du fichier introuvable, recharge le chapitre', 'error')
+    return
+  }
+  editSaving.value = true
+  try {
+    const message = editMessage.value.trim() || `docs: edit ${props.chapter.path}`
+    const resp = await window.api.updateLumenChapterFile(props.repo.id, {
+      path: props.chapter.path,
+      content: editDraft.value,
+      sha: props.contentSha,
+      message,
+    }) as { ok: boolean; error?: string }
+    if (!resp?.ok) {
+      const msg = resp?.error || 'Echec de la sauvegarde'
+      showToast(msg, 'error')
+      return
+    }
+    showToast('Chapitre enregistre', 'success')
+    editModalOpen.value = false
+    // Refetch via le store pour rafraichir le viewer + recuperer le nouveau SHA
+    await lumenStore.fetchChapterContent(props.repo.id, props.chapter.path)
+  } catch (err) {
+    const msg = (err as { message?: string })?.message || 'Erreur reseau'
+    showToast(msg, 'error')
+  } finally {
+    editSaving.value = false
+  }
+}
+
+const canEdit = computed(() =>
+  isTeacher.value
+  && chapterKind.value === 'markdown'
+  && !isMarp.value
+  && props.content != null
+  && Boolean(props.contentSha),
+)
 
 // Detection du format de chapitre (v2.64). Le `kind` peut venir du manifest
 // (auto-manifest le pose, cursus.yaml peut le surcharger), sinon on infere
@@ -463,6 +530,15 @@ watch(() => [props.content, props.chapter?.path], () => {
         <span class="lumen-viewer-title">{{ chapter.title }}</span>
       </div>
       <div class="lumen-viewer-info">
+        <button
+          v-if="canEdit"
+          type="button"
+          class="lumen-viewer-chip lumen-viewer-chip--edit"
+          title="Modifier ce chapitre (commit GitHub)"
+          @click="openEditModal"
+        >
+          <Pencil :size="11" /> Modifier
+        </button>
         <span v-if="isMarp" class="lumen-viewer-chip lumen-viewer-chip--marp">
           <Presentation :size="11" /> Slides
         </span>
@@ -668,6 +744,51 @@ watch(() => [props.content, props.chapter?.path], () => {
       @close="linkDevoirModalOpen = false"
       @changed="loadLinkedTravaux"
     />
+
+    <!-- Modale d'edition de chapitre (v2.67) — teacher only, markdown only -->
+    <Modal v-model="editModalOpen" max-width="960px">
+      <div class="lumen-edit-modal">
+        <header class="lumen-edit-head">
+          <div class="lumen-edit-title-block">
+            <h2 class="lumen-edit-title">Modifier · {{ chapter.title }}</h2>
+            <p class="lumen-edit-path">{{ chapter.path }}</p>
+          </div>
+          <button
+            type="button"
+            class="lumen-edit-close"
+            aria-label="Fermer"
+            :disabled="editSaving"
+            @click="closeEditModal"
+          >
+            <X :size="16" />
+          </button>
+        </header>
+        <div class="lumen-edit-body">
+          <UiCodeEditor
+            v-model="editDraft"
+            language="markdown"
+            height="60vh"
+          />
+        </div>
+        <footer class="lumen-edit-foot">
+          <input
+            v-model="editMessage"
+            type="text"
+            class="form-input lumen-edit-message"
+            :placeholder="`docs: edit ${chapter.path}`"
+            maxlength="200"
+          />
+          <button type="button" class="btn-ghost" :disabled="editSaving" @click="closeEditModal">
+            Annuler
+          </button>
+          <button type="button" class="btn-primary" :disabled="editSaving" @click="saveEdit">
+            <Loader2 v-if="editSaving" :size="14" class="spin" />
+            <Save v-else :size="14" />
+            {{ editSaving ? 'Enregistrement...' : 'Enregistrer' }}
+          </button>
+        </footer>
+      </div>
+    </Modal>
   </article>
 </template>
 
@@ -752,6 +873,92 @@ button.lumen-viewer-chip:focus-visible {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: .06em;
+}
+.lumen-viewer-chip--edit {
+  color: var(--accent);
+  border-color: rgba(var(--accent-rgb), .35);
+  background: transparent;
+  font-weight: 600;
+}
+.lumen-viewer-chip--edit:hover {
+  background: rgba(var(--accent-rgb), .14);
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+/* Modale d'edition de chapitre (v2.67) */
+.lumen-edit-modal {
+  display: flex;
+  flex-direction: column;
+  width: min(960px, 92vw);
+  max-height: 90vh;
+}
+.lumen-edit-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-md);
+  padding: var(--space-lg) var(--space-xl) var(--space-md);
+  border-bottom: 1px solid var(--border);
+}
+.lumen-edit-title-block { flex: 1; min-width: 0; }
+.lumen-edit-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0 0 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.lumen-edit-path {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin: 0;
+  font-family: 'JetBrains Mono', Menlo, Consolas, monospace;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.lumen-edit-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius);
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background var(--motion-fast) var(--ease-out),
+              color var(--motion-fast) var(--ease-out);
+}
+.lumen-edit-close:hover:not(:disabled) {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+.lumen-edit-close:disabled { opacity: .4; cursor: not-allowed; }
+
+.lumen-edit-body {
+  flex: 1;
+  min-height: 0;
+  padding: var(--space-md) var(--space-xl);
+  overflow: hidden;
+  display: flex;
+}
+
+.lumen-edit-foot {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-md) var(--space-xl) var(--space-lg);
+  border-top: 1px solid var(--border);
+}
+.lumen-edit-message {
+  flex: 1;
+  font-size: 13px;
 }
 
 .lumen-viewer-loading,

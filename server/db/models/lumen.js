@@ -309,6 +309,16 @@ function pruneLumenFileCacheForRepo(repoId, keepPaths) {
 }
 
 /**
+ * Supprime une entree precise du cache. Utilise apres une ecriture par le
+ * prof (writeChapterFile) pour invalider la version locale et forcer un
+ * re-fetch a la prochaine consultation.
+ */
+function deleteLumenCachedFile(repoId, path) {
+  getDb().prepare('DELETE FROM lumen_file_cache WHERE repo_id = ? AND path = ?')
+    .run(repoId, path)
+}
+
+/**
  * Purge les entrees du cache globalement obsoletes (> 30 jours).
  * Appele periodiquement (au syncPromoRepos par exemple) pour eviter
  * une croissance non-bornee sur des repos actifs ou des chapitres
@@ -366,6 +376,16 @@ function pruneLumenChapterFtsForRepo(repoId, keepPaths) {
   const placeholders = keepPaths.map(() => '?').join(',')
   db.prepare(`DELETE FROM lumen_chapter_fts WHERE repo_id = ? AND chapter_path NOT IN (${placeholders})`)
     .run(repoId, ...keepPaths)
+}
+
+/**
+ * Supprime une entree precise de l'index FTS. Utilise apres une ecriture
+ * pour eviter qu'une recherche fulltext renvoie l'ancien contenu — l'entree
+ * sera re-indexee au prochain fetch.
+ */
+function deleteLumenChapterFts(repoId, chapterPath) {
+  getDb().prepare('DELETE FROM lumen_chapter_fts WHERE repo_id = ? AND chapter_path = ?')
+    .run(repoId, chapterPath)
 }
 
 /**
@@ -611,10 +631,12 @@ module.exports = {
   upsertLumenCachedFile,
   clearLumenFileCacheForRepo,
   pruneLumenFileCacheForRepo,
+  deleteLumenCachedFile,
   purgeStaleLumenFileCache,
   // FTS5 fulltext search (v59)
   upsertLumenChapterFts,
   pruneLumenChapterFtsForRepo,
+  deleteLumenChapterFts,
   searchLumenChapters,
   // notes
   getLumenChapterNote,

@@ -571,6 +571,18 @@ contextBridge.exposeInMainWorld('api', {
   getLumenChapterContent:   (repoId: number, path: string) =>
     get(`/api/lumen/repos/${repoId}/content?path=${encodeURIComponent(path)}`),
 
+  // Edition de chapitre (v2.67) — teacher / admin only.
+  // updateLumenChapterFile : modifie un fichier existant. SHA requis.
+  // createLumenChapterFile : cree un nouveau fichier. Pas de SHA.
+  updateLumenChapterFile: (
+    repoId: number,
+    body: { path: string; content: string; sha: string; message?: string },
+  ) => put(`/api/lumen/repos/${repoId}/file`, body),
+  createLumenChapterFile: (
+    repoId: number,
+    body: { path: string; content: string; message?: string },
+  ) => post(`/api/lumen/repos/${repoId}/file`, body),
+
   // Tracking lecture
   markLumenChapterRead:     (repoId: number, path: string) =>
     post(`/api/lumen/repos/${repoId}/read`, { path }),

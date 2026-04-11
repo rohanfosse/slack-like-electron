@@ -16,7 +16,7 @@ const { validate } = require('../middleware/validate')
 const { AppError, NotFoundError, ForbiddenError } = require('../utils/errors')
 const { buildClientForUser, validateToken, mapOctokitError } = require('../services/githubClient')
 const { safeAuthorType } = require('../utils/roles')
-const { syncPromoRepos, fetchChapterContent, getCachedChapter, createRepoWithScaffold } = require('../services/lumenRepoSync')
+const { syncPromoRepos, fetchChapterContent, getCachedChapter, createRepoWithScaffold, writeChapterFile } = require('../services/lumenRepoSync')
 const {
   // auth
   getLumenGithubAuth,
@@ -549,6 +549,68 @@ router.get(
     const cached = getCachedChapter(repo.id, path)
     if (!cached) throw new AppError('Compte GitHub non connecte et pas de cache disponible', 401)
     return cached
+  }),
+)
+
+// ─── Edition de fichier (v2.67) ──────────────────────────────────────────
+//
+// Reserve aux profs/admins. Permet de modifier un chapitre existant ou de
+// creer un nouveau fichier dans un repo Lumen, directement depuis Cursus,
+// sans passer par GitHub.com. Utilise l'octokit du prof connecte.
+//
+// Ces routes acceptent UNIQUEMENT des fichiers .md, .pdf et .tex (alignes
+// sur ce que la sidebar / le viewer savent rendre). Les autres extensions
+// sont rejetees pour eviter d'utiliser Lumen comme un client git generique.
+
+const writeFileBodySchema = z.object({
+  path: z.string().min(1).max(500).regex(
+    /\.(md|pdf|tex)$/i,
+    'Extension doit etre .md, .pdf ou .tex',
+  ),
+  content: z.string().max(2_000_000),  // 2 MB raw, garde-fou anti-bourrage
+  message: z.string().max(200).optional(),
+  sha: z.string().max(80).optional(),  // omit pour create, requis pour update
+})
+
+async function writeFileWithAuth(req, expectedSha) {
+  const repo = repoOrThrow(Number(req.params.id))
+  const octokit = await requireGithubClient(req)
+  try {
+    const result = await writeChapterFile(octokit, repo, {
+      path: req.body.path,
+      content: req.body.content,
+      message: req.body.message,
+      sha: expectedSha,
+    })
+    return { ok: true, ...result }
+  } catch (err) {
+    // 409 = conflit de SHA (qqn a edite entre temps)
+    // 422 = creation refusee (file existe deja, ou path invalide)
+    if (err.status === 409) throw new AppError('Conflit : le fichier a ete modifie depuis votre derniere lecture. Recharge le chapitre et reessaie.', 409)
+    if (err.status === 422) throw new AppError(err.message ?? 'Operation refusee par GitHub', 422)
+    throw await handleOctokit(err)
+  }
+}
+
+router.put(
+  '/repos/:id/file',
+  requireRole('teacher', 'admin'),
+  requirePromoAdmin(promoFromRepoParam),
+  validate(writeFileBodySchema),
+  wrap(async (req) => {
+    if (!req.body.sha) throw new AppError('SHA requis pour une modification (sinon utiliser POST pour creer)', 400)
+    return writeFileWithAuth(req, req.body.sha)
+  }),
+)
+
+router.post(
+  '/repos/:id/file',
+  requireRole('teacher', 'admin'),
+  requirePromoAdmin(promoFromRepoParam),
+  validate(writeFileBodySchema),
+  wrap(async (req) => {
+    if (req.body.sha) throw new AppError('SHA interdit pour une creation (sinon utiliser PUT pour modifier)', 400)
+    return writeFileWithAuth(req, undefined)
   }),
 )
 
