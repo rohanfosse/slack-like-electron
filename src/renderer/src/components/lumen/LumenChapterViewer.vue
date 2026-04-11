@@ -172,6 +172,43 @@ const chapterKind = computed<'markdown' | 'pdf' | 'tex'>(() => {
 const isPdf = computed(() => chapterKind.value === 'pdf')
 const isTex = computed(() => chapterKind.value === 'tex')
 
+// Pour le rendu PDF on convertit la data URL renvoyee par le serveur en
+// Blob URL local. Avantages :
+//  - le DOM ne contient pas une string base64 enorme (clean inspector)
+//  - blob: est natif Chromium et ne souffre pas des limitations CSP de data:
+//  - Chromium streame le PDF au lieu de tout decoder en memoire d'un coup
+// Le Blob URL est revoque a chaque changement de chapitre pour eviter les
+// fuites memoire (un PDF de plusieurs MB rest sinon retenu indefiniment).
+const pdfBlobUrl = ref<string | null>(null)
+function revokeCurrentPdfUrl() {
+  if (pdfBlobUrl.value) {
+    URL.revokeObjectURL(pdfBlobUrl.value)
+    pdfBlobUrl.value = null
+  }
+}
+watch(
+  [() => props.content, isPdf],
+  ([content, pdf]) => {
+    revokeCurrentPdfUrl()
+    if (!pdf || !content) return
+    // Le serveur renvoie une string `data:application/pdf;base64,XXXX`.
+    // On la decode en Uint8Array puis on cree un Blob + URL locale.
+    const m = content.match(/^data:application\/pdf;base64,(.+)$/)
+    if (!m) return
+    try {
+      const binary = atob(m[1])
+      const bytes = new Uint8Array(binary.length)
+      for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i)
+      const blob = new Blob([bytes], { type: 'application/pdf' })
+      pdfBlobUrl.value = URL.createObjectURL(blob)
+    } catch {
+      pdfBlobUrl.value = null
+    }
+  },
+  { immediate: true },
+)
+onBeforeUnmount(revokeCurrentPdfUrl)
+
 // Detection Marp via frontmatter `marp: true`. Si detecte, on bascule sur
 // LumenSlideDeck (rendu en slides) au lieu du rendu Markdown long-form.
 // Marp ne s'applique qu'aux chapitres markdown — un .pdf ou .tex ne peut
@@ -526,13 +563,21 @@ watch(() => [props.content, props.chapter?.path], () => {
       <p>Contenu indisponible</p>
     </div>
     <template v-else>
-      <!-- Rendu PDF natif : iframe data: URL fetchee depuis le serveur (v2.64) -->
+      <!-- Rendu PDF natif : iframe Blob URL local (v2.64, fix CSP v2.67).
+           La data: URL renvoyee par le serveur est convertie en Blob locale
+           pour contourner les restrictions CSP frame-src + ne pas bloater
+           le DOM avec une string base64 multi-MB. -->
       <div v-if="isPdf" class="lumen-viewer-main lumen-viewer-main--pdf">
         <iframe
-          :src="content ?? ''"
+          v-if="pdfBlobUrl"
+          :src="pdfBlobUrl"
           class="lumen-pdf-frame"
           :title="chapter.title"
         />
+        <div v-else class="lumen-viewer-empty">
+          <FileText :size="32" />
+          <p>Impossible de rendre le PDF</p>
+        </div>
       </div>
 
       <!-- Rendu source LaTeX : code block colorise via highlight.js (v2.64) -->
