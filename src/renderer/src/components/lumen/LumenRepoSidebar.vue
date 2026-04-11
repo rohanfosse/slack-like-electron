@@ -14,7 +14,7 @@
  * - Toggle visibilite etudiant (teacher/admin uniquement) : eye icon
  * - Badge "auto" quand le manifest est genere automatiquement
  */
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, nextTick } from 'vue'
 import { storeToRefs } from 'pinia'
 import { FileText, FileDown, FileCode, AlertTriangle, StickyNote, Search, X, Eye, EyeOff, Sparkles, BookOpen, Presentation, Home, Lightbulb, Wrench, Hammer, Folder, Users, User, Plus, Loader2 } from 'lucide-vue-next'
 import type { Component } from 'vue'
@@ -41,6 +41,29 @@ const props = defineProps<Props>()
 const emit = defineEmits<Emits>()
 
 const filter = ref('')
+const searchInputRef = ref<HTMLInputElement | null>(null)
+
+/**
+ * Focus le champ de recherche. Expose via defineExpose pour que LumenView
+ * puisse y attacher un raccourci global "/" (v2.73).
+ */
+function focusSearch(): void {
+  searchInputRef.value?.focus()
+  searchInputRef.value?.select()
+}
+defineExpose({ focusSearch })
+
+// v2.73 : scroll l'item actif en vue quand il change (ex: navigation
+// prev/next, ou clic sur un lien cross-repo lumen://). Sans ca, on peut
+// cliquer Next plusieurs fois et perdre l'element selectionne hors
+// viewport de la sidebar.
+watch(() => [props.currentRepoId, props.currentChapterPath], async () => {
+  await nextTick()
+  const active = document.querySelector<HTMLElement>('.lumen-chapter-item.is-active')
+  if (active) {
+    active.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
+  }
+})
 
 /**
  * Extrait le prefixe numerique d'un nom de repo, ex: "0-Mathematiques" -> 0,
@@ -408,9 +431,10 @@ async function saveNewChapter(): Promise<void> {
     <div v-if="sortedRepos.length >= 2" class="lumen-sidebar-filter">
       <Search :size="12" />
       <input
+        ref="searchInputRef"
         v-model="filter"
         type="text"
-        placeholder="Rechercher dans les cours..."
+        placeholder="Rechercher dans les cours... (/)"
         aria-label="Rechercher dans les cours"
       />
       <button

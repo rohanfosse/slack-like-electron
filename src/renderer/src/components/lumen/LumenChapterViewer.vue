@@ -118,21 +118,10 @@ function onLumenKeyboard(ev: KeyboardEvent): void {
   // du navigateur et de l'app. Shift est accepte (pour shift+? = ?).
   if (ev.ctrlKey || ev.metaKey || ev.altKey) return
 
-  // Navigation chapitre
-  if (ev.key === 'ArrowLeft') {
-    if (props.prevChapter) {
-      ev.preventDefault()
-      emit('navigate-prev')
-    }
-    return
-  }
-  if (ev.key === 'ArrowRight') {
-    if (props.nextChapter) {
-      ev.preventDefault()
-      emit('navigate-next')
-    }
-    return
-  }
+  // Note v2.73 : ArrowLeft/ArrowRight sont geres par LumenView
+  // (handleKeydown a un niveau plus haut), on ne duplique pas ici.
+  // On gere seulement 'e' qui est contextuel au viewer.
+
   // 'e' ouvre l'edition (teacher only, markdown only)
   if (ev.key === 'e' || ev.key === 'E') {
     if (canEdit.value) {
@@ -474,7 +463,19 @@ interface HeadingEntry {
 }
 
 const headings = ref<HeadingEntry[]>([])
-const outlineOpen = ref(true)
+// v2.73 : l'etat ouvert/ferme de l'outline est persiste en localStorage
+// pour que le prof qui a masque l'outline ne doive pas le refermer a
+// chaque changement de chapitre. Cle globale (pas per-repo).
+const OUTLINE_STATE_KEY = 'lumen.outlineOpen'
+const outlineOpen = ref<boolean>((() => {
+  try {
+    const v = localStorage.getItem(OUTLINE_STATE_KEY)
+    return v === null ? true : v === '1'
+  } catch { return true }
+})())
+watch(outlineOpen, (v) => {
+  try { localStorage.setItem(OUTLINE_STATE_KEY, v ? '1' : '0') } catch { /* noop */ }
+})
 
 /**
  * Extrait les headings du DOM rendu pour alimenter l'outline. Les ids sont

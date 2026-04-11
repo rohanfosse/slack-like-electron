@@ -118,6 +118,10 @@ const STALE_THRESHOLD_MS = 15 * 60 * 1000  // 15 minutes
 
 const loadingChapter = ref(false)
 
+// Ref vers le composant sidebar pour pouvoir lui demander de focus son
+// champ de recherche depuis un shortcut clavier "/" (v2.73).
+const sidebarRef = ref<InstanceType<typeof LumenRepoSidebar> | null>(null)
+
 // Ancre cible quand on arrive via deep-link `?anchor=section-id` (par
 // exemple depuis un devoir lie). Consume-once : remise a null des qu'elle
 // est passee au viewer pour eviter de re-scroller a chaque resync ou
@@ -391,14 +395,27 @@ function applyAutoResume() {
  */
 function handleKeydown(e: KeyboardEvent) {
   const target = e.target as HTMLElement | null
+  // Ignore si l'utilisateur tape dans un champ (y compris CodeMirror wrapper)
   if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) return
+  if (target && target instanceof HTMLElement && target.closest('.cm-editor')) return
   if (e.ctrlKey || e.metaKey || e.altKey) return
+
+  // Navigation prev/next
   if (e.key === 'ArrowLeft' && prevChapter.value) {
     e.preventDefault()
     handleNavigatePrev()
-  } else if (e.key === 'ArrowRight' && nextChapter.value) {
+    return
+  }
+  if (e.key === 'ArrowRight' && nextChapter.value) {
     e.preventDefault()
     handleNavigateNext()
+    return
+  }
+  // v2.73 : "/" focus la barre de recherche de la sidebar (pattern GitHub).
+  if (e.key === '/') {
+    e.preventDefault()
+    sidebarRef.value?.focusSearch()
+    return
   }
 }
 
@@ -542,6 +559,7 @@ function handleNavigateLumenLink(payload: { repoName: string; path: string }) {
           </header>
 
           <LumenRepoSidebar
+            ref="sidebarRef"
             :repos="repos"
             :current-repo-id="currentRepo?.id ?? null"
             :current-chapter-path="currentChapterPath"
