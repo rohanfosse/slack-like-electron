@@ -131,9 +131,12 @@ const GROUP_SECTION_ALIASES = {
  * "guides/php" -> "Guides · PHP", "mini-projet" -> "Mini projet".
  * Les sections "standard" des repos groupes (LIVRABLES, PROSIT, ...) sont
  * normalisees vers leur forme canonique francaise.
+ *
+ * v2.67.2 : "Racine" renomme en "Documents" — plus naturel pour un prof
+ * CESI que le terme technique "racine".
  */
 function humanizeDirPath(dirPath) {
-  if (!dirPath) return 'Racine'
+  if (!dirPath) return 'Documents'
   return dirPath
     .split('/')
     .map((seg) => {

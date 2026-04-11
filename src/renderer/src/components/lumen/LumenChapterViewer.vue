@@ -524,11 +524,9 @@ watch(() => [props.content, props.chapter?.path], () => {
 <template>
   <article class="lumen-viewer">
     <header class="lumen-viewer-head">
-      <div class="lumen-viewer-meta">
-        <span class="lumen-viewer-project">{{ repo.manifest?.project ?? repo.fullName }}</span>
-        <span class="lumen-viewer-sep">/</span>
-        <span class="lumen-viewer-title">{{ chapter.title }}</span>
-      </div>
+      <!-- Header condensed v2.67.2 : le bloc .lumen-viewer-meta qui dupliquait
+           "project / chapter" est supprime. Le titre est maintenant porte par
+           le breadcrumb "current" (plus bas), qui contient deja l'info section. -->
       <div class="lumen-viewer-info">
         <button
           v-if="canEdit"
@@ -1135,13 +1133,13 @@ button.lumen-viewer-chip:focus-visible {
   font-weight: 500;
 }
 
-/* Breadcrumbs : fil d'ariane discret sous la meta du header */
+/* Breadcrumbs : fil d'ariane du header. Porte maintenant le titre du
+   chapitre (v2.67.2) puisque le bloc meta redondant a ete supprime. */
 .lumen-breadcrumbs {
   display: flex;
   align-items: center;
-  gap: 4px;
-  margin-top: 6px;
-  font-size: 10.5px;
+  gap: var(--space-xs);
+  font-size: 12px;
   color: var(--text-muted);
   flex-wrap: wrap;
 }
@@ -1152,13 +1150,14 @@ button.lumen-viewer-chip:focus-visible {
   max-width: 240px;
 }
 .lumen-breadcrumbs-current {
-  color: var(--text-secondary);
-  font-weight: 600;
-  max-width: 420px;
+  color: var(--text-primary);
+  font-weight: 700;
+  font-size: 15px;
+  max-width: 520px;
 }
 .lumen-breadcrumbs-sep {
   color: var(--text-muted);
-  opacity: 0.6;
+  opacity: 0.5;
   flex-shrink: 0;
 }
 

@@ -79,6 +79,18 @@ interface SectionGroup {
 }
 
 /**
+ * Decompose un titre de section "A · B · C" en { parent: "A · B", child: "C" }.
+ * Utilise pour afficher le parent en prefixe muted plus petit et le child
+ * en label principal (v2.67.2) — evite la repetition visuelle dans la
+ * sidebar quand plusieurs sections partagent le meme parent dossier.
+ */
+function splitSectionTitle(title: string): { parent: string; child: string } {
+  const idx = title.lastIndexOf(' · ')
+  if (idx === -1) return { parent: '', child: title }
+  return { parent: title.slice(0, idx), child: title.slice(idx + 3) }
+}
+
+/**
  * Groupe une liste de chapitres par section. Les sections sont triees par
  * leur prefixe numerique (si present) puis alphabetiquement — evite que
  * "02 Labs" passe avant "01 Fundamentals" quand l'ordre des fichiers dans
@@ -392,7 +404,14 @@ function handleSelectSearchResult(r: LumenSearchResult) {
 
           <div class="lumen-repo-body">
             <div v-for="group in groups" :key="group.title" class="lumen-section">
-              <p class="lumen-section-title">{{ group.title }}</p>
+              <p class="lumen-section-title">
+                <span v-if="splitSectionTitle(group.title).parent" class="lumen-section-parent">
+                  {{ splitSectionTitle(group.title).parent }}
+                </span>
+                <span class="lumen-section-child">
+                  {{ splitSectionTitle(group.title).child }}
+                </span>
+              </p>
               <ul class="lumen-chapter-list">
                 <li v-for="ch in group.chapters" :key="ch.path">
                   <button
@@ -711,14 +730,35 @@ function handleSelectSearchResult(r: LumenSearchResult) {
   margin-top: 2px;
 }
 .lumen-section-title {
-  margin: 4px 0 1px;
-  padding: 0 10px 0 26px;
-  font-size: 9.5px;
+  margin: var(--space-xs) 0 1px;
+  padding: 0 var(--space-sm) 0 26px;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+/* Parent dossier affiche en tres petit + muted en prefix. Evite la
+   repetition visuelle quand plusieurs sections partagent le meme parent
+   (ex: "02 Labs And Exercises · Lab01" + "... · Lab02"). v2.67.2. */
+.lumen-section-parent {
+  font-size: 9px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+  opacity: 0.6;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.lumen-section-child {
+  font-size: 10px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.07em;
-  color: var(--text-muted);
-  opacity: 0.75;
+  color: var(--text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .lumen-chapter-item {
