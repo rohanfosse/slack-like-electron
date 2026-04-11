@@ -118,3 +118,51 @@ chapters: not-an-array
     expect(r.ok).toBe(false)
   })
 })
+
+describe('parseManifest : champ cursusProject optionnel', () => {
+  it('accepte un manifest sans cursusProject', () => {
+    const r = parseManifest(`
+project: Projet Test
+chapters:
+  - title: Intro
+    path: cours/01.md
+`)
+    expect(r.ok).toBe(true)
+    expect(r.manifest.cursusProject).toBeUndefined()
+  })
+
+  it('accepte un manifest avec cursusProject', () => {
+    const r = parseManifest(`
+project: Cours Python
+cursusProject: "API Meteo en Python"
+chapters:
+  - title: Intro
+    path: cours/01.md
+`)
+    expect(r.ok).toBe(true)
+    expect(r.manifest.cursusProject).toBe('API Meteo en Python')
+  })
+
+  it('rejette un cursusProject non-string', () => {
+    const r = parseManifest(`
+project: Cours
+cursusProject: 42
+chapters:
+  - title: Intro
+    path: cours/01.md
+`)
+    expect(r.ok).toBe(false)
+  })
+
+  it('rejette un cursusProject trop long (> 200 chars)', () => {
+    const longName = 'x'.repeat(201)
+    const r = parseManifest(`
+project: Cours
+cursusProject: "${longName}"
+chapters:
+  - title: Intro
+    path: cours/01.md
+`)
+    expect(r.ok).toBe(false)
+  })
+})
