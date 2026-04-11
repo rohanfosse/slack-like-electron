@@ -11,11 +11,13 @@
  */
 import { computed, onMounted, onBeforeUnmount, ref, watch, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
-import { Loader2, FileText, Clock, User, ChevronLeft, ChevronRight, Copy, Check, FolderGit2 } from 'lucide-vue-next'
+import { Loader2, FileText, Clock, User, ChevronLeft, ChevronRight, Copy, Check, FolderGit2, ClipboardList, Plus, Calendar } from 'lucide-vue-next'
 import { renderMarkdown } from '@/utils/markdown'
 import { useToast } from '@/composables/useToast'
 import { useAppStore } from '@/stores/app'
-import type { LumenChapter, LumenRepo } from '@/types'
+import { relativeTime } from '@/utils/date'
+import LumenLinkDevoirModal from '@/components/lumen/LumenLinkDevoirModal.vue'
+import type { LumenChapter, LumenRepo, LumenLinkedTravail } from '@/types'
 
 interface Props {
   repo: LumenRepo
@@ -38,6 +40,34 @@ const emit = defineEmits<Emits>()
 const { showToast } = useToast()
 const router = useRouter()
 const appStore = useAppStore()
+
+const isTeacher = computed(() => appStore.currentUser?.type === 'teacher' || appStore.currentUser?.type === 'admin')
+
+// ── Devoirs lies a ce chapitre ────────────────────────────────────────────
+const linkedTravaux = ref<LumenLinkedTravail[]>([])
+const linkedTravauxLoading = ref(false)
+const linkDevoirModalOpen = ref(false)
+
+async function loadLinkedTravaux() {
+  if (!props.chapter?.path) return
+  linkedTravauxLoading.value = true
+  try {
+    const resp = await window.api.getLumenTravauxForChapter(props.repo.id, props.chapter.path) as {
+      ok: boolean
+      data?: { travaux: LumenLinkedTravail[] }
+    }
+    linkedTravaux.value = resp?.ok && resp.data ? resp.data.travaux : []
+  } finally {
+    linkedTravauxLoading.value = false
+  }
+}
+
+function openTravail(travail: LumenLinkedTravail) {
+  // Navigation vers la vue devoir : on set le projet actif par category
+  // et on route vers /devoirs qui affichera le projet contenant le devoir.
+  if (travail.category) appStore.activeProject = travail.category
+  router.push({ name: 'devoirs' })
+}
 
 /**
  * Clic sur le chip projet dans le header : set le projet actif de Cursus
@@ -127,10 +157,12 @@ async function enrichRender() {
 onMounted(() => {
   scheduleAutoRead()
   enrichRender()
+  loadLinkedTravaux()
 })
 watch(() => [props.content, props.chapter?.path], () => {
   scheduleAutoRead()
   enrichRender()
+  loadLinkedTravaux()
 })
 onBeforeUnmount(() => {
   if (readTimer) clearTimeout(readTimer)
@@ -182,6 +214,45 @@ onBeforeUnmount(() => {
         @click="handleBodyClick"
         v-html="html"
       />
+
+      <!-- Devoirs lies a ce chapitre : toujours visible s'il y en a,
+           + bouton "Lier un devoir" pour le teacher meme si vide -->
+      <section
+        v-if="linkedTravaux.length > 0 || isTeacher"
+        class="lumen-linked-travaux"
+      >
+        <header class="llt-head">
+          <div class="llt-title">
+            <ClipboardList :size="13" />
+            <span>Devoirs lies</span>
+            <span v-if="linkedTravaux.length" class="llt-count">{{ linkedTravaux.length }}</span>
+          </div>
+          <button
+            v-if="isTeacher"
+            type="button"
+            class="llt-link-btn"
+            @click="linkDevoirModalOpen = true"
+          >
+            <Plus :size="12" />
+            Lier un devoir
+          </button>
+        </header>
+        <ul v-if="linkedTravaux.length > 0" class="llt-list">
+          <li v-for="t in linkedTravaux" :key="t.id">
+            <button type="button" class="llt-item" @click="openTravail(t)">
+              <span class="llt-item-title">{{ t.title }}</span>
+              <span v-if="t.category" class="llt-item-cat">{{ t.category }}</span>
+              <span v-if="t.deadline" class="llt-item-deadline">
+                <Calendar :size="10" /> {{ relativeTime(t.deadline) }}
+              </span>
+            </button>
+          </li>
+        </ul>
+        <p v-else-if="isTeacher" class="llt-empty">
+          Ce chapitre n'est encore lie a aucun devoir. Lie-le pour que les etudiants voient le lien depuis leur vue devoir.
+        </p>
+      </section>
+
       <footer class="lumen-viewer-nav">
         <button
           type="button"
@@ -211,6 +282,16 @@ onBeforeUnmount(() => {
         </button>
       </footer>
     </template>
+
+    <LumenLinkDevoirModal
+      v-if="linkDevoirModalOpen && isTeacher"
+      :repo-id="repo.id"
+      :chapter-path="chapter.path"
+      :chapter-title="chapter.title"
+      :promo-id="repo.promoId"
+      @close="linkDevoirModalOpen = false"
+      @changed="loadLinkedTravaux"
+    />
   </article>
 </template>
 
@@ -304,6 +385,117 @@ button.lumen-viewer-chip {
   max-width: 820px;
   width: 100%;
   margin: 0 auto;
+}
+
+/* Footer "Devoirs lies" sous le contenu markdown */
+.lumen-linked-travaux {
+  max-width: 820px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 16px 48px 0;
+  flex-shrink: 0;
+}
+.llt-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+.llt-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+}
+.llt-count {
+  background: var(--bg-secondary);
+  color: var(--text-muted);
+  padding: 1px 7px;
+  border-radius: 10px;
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+  text-transform: none;
+  letter-spacing: 0;
+}
+.llt-link-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 10px;
+  background: var(--accent);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: inherit;
+}
+.llt-link-btn:hover { opacity: 0.9; }
+.llt-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.llt-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 12px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  cursor: pointer;
+  font-family: inherit;
+  text-align: left;
+  transition: all var(--t-fast, 150ms) ease;
+}
+.llt-item:hover {
+  border-color: var(--accent);
+  background: var(--bg-hover);
+}
+.llt-item-title {
+  flex: 1;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.llt-item-cat {
+  font-size: 10px;
+  color: var(--text-muted);
+  background: var(--bg-primary);
+  padding: 1px 6px;
+  border-radius: 8px;
+  flex-shrink: 0;
+}
+.llt-item-deadline {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 11px;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+.llt-empty {
+  margin: 0;
+  padding: 12px 14px;
+  font-size: 11.5px;
+  color: var(--text-muted);
+  background: var(--bg-secondary);
+  border: 1px dashed var(--border);
+  border-radius: 6px;
+  line-height: 1.5;
 }
 
 /* Navigation bas-de-page (prev/next chapitre) */
