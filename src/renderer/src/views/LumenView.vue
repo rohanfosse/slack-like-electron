@@ -9,7 +9,8 @@
  * Design : editorial/content-first. Typo serif pour les titres du markdown, sans-serif
  * pour le chrome, fond legerement chaud pour la reading surface.
  */
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import {
   BookOpen, RefreshCw, Github, LogOut, Settings, AlertCircle, Loader2, FolderGit2,
@@ -25,6 +26,8 @@ import LumenNotePanel from '@/components/lumen/LumenNotePanel.vue'
 
 const lumenStore = useLumenStore()
 const appStore   = useAppStore()
+const route      = useRoute()
+const router     = useRouter()
 const { showToast } = useToast()
 const { confirm } = useConfirm()
 
@@ -106,8 +109,20 @@ async function boot() {
   ])
 }
 
-onMounted(boot)
-watch(activePromoId, boot)
+onMounted(async () => {
+  await boot()
+  applyUrlSelection()
+  window.addEventListener('keydown', handleKeydown)
+})
+
+watch(activePromoId, async () => {
+  await boot()
+  applyUrlSelection()
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('keydown', handleKeydown)
+})
 
 // ── Actions ────────────────────────────────────────────────────────────────
 async function handleSync() {
@@ -127,6 +142,10 @@ async function handleSync() {
   } else {
     showToast(`${res.synced} repos synchronises`, 'success')
   }
+  // Apres sync, re-applique l'URL selection au cas ou le repo/chapitre
+  // cible vient juste d'etre charge (premier sync post cold-start avec
+  // deep link en entree).
+  applyUrlSelection()
 }
 
 async function handleDisconnect() {
@@ -142,6 +161,14 @@ async function handleSelectChapter(payload: { repoId: number; path: string }) {
   currentRepo.value = repo
   currentChapterPath.value = payload.path
 
+  // Reflete la selection dans l'URL pour permettre le deep-link et la
+  // restauration a l'ouverture. `replace` plutot que `push` pour eviter
+  // de polluer l'historique de navigation avec chaque chapitre lu.
+  router.replace({
+    name: 'lumen',
+    query: { ...route.query, repo: String(repo.id), chapter: payload.path },
+  })
+
   const key = `${repo.id}::${payload.path}`
   if (!chapterContents.value.has(key)) {
     loadingChapter.value = true
@@ -152,6 +179,42 @@ async function handleSelectChapter(payload: { repoId: number; path: string }) {
     }
   }
   lumenStore.fetchChapterNote(repo.id, payload.path)
+}
+
+/**
+ * Applique la query URL (?repo=X&chapter=Y) si elle est presente et que
+ * les donnees sont chargees. Appele apres chaque boot() et chaque sync
+ * pour restaurer la selection au cold-start.
+ */
+function applyUrlSelection() {
+  const repoIdStr = route.query.repo
+  const chapterPath = route.query.chapter
+  if (typeof repoIdStr !== 'string' || typeof chapterPath !== 'string') return
+  const repoId = Number(repoIdStr)
+  if (!repoId) return
+  const repo = repos.value.find((r) => r.id === repoId)
+  if (!repo) return
+  const chapterExists = repo.manifest?.chapters.some((c) => c.path === chapterPath)
+  if (!chapterExists) return
+  handleSelectChapter({ repoId, path: chapterPath })
+}
+
+/**
+ * Raccourcis clavier pour la lecture : ArrowLeft = prev, ArrowRight =
+ * next. Desactives dans les inputs/textarea pour ne pas casser
+ * l'edition de notes.
+ */
+function handleKeydown(e: KeyboardEvent) {
+  const target = e.target as HTMLElement | null
+  if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) return
+  if (e.ctrlKey || e.metaKey || e.altKey) return
+  if (e.key === 'ArrowLeft' && prevChapter.value) {
+    e.preventDefault()
+    handleNavigatePrev()
+  } else if (e.key === 'ArrowRight' && nextChapter.value) {
+    e.preventDefault()
+    handleNavigateNext()
+  }
 }
 
 async function handleAutoRead() {
