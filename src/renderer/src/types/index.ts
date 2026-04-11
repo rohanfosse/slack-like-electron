@@ -296,43 +296,71 @@ export interface RexStats {
   participationTrend: { sessionId: number; title: string; endedAt: string; participants: number; enrolled: number }[]
 }
 
-// ─── Lumen (cours markdown) ──────────────────────────────────────────────────
+// ─── Lumen (liseuse de cours adossee a GitHub) ──────────────────────────────
 
-export interface LumenCourse {
-  id: number
-  teacher_id: number
-  promo_id: number
-  project_id: number | null
+export interface LumenChapter {
   title: string
-  summary: string
+  path: string
+  duration?: number
+  summary?: string
+  prerequis?: string[]
+}
+
+export interface LumenResource {
+  path: string
+  kind?: string
+  title?: string
+}
+
+export interface LumenManifest {
+  project: string
+  module?: string
+  author?: string
+  summary?: string
+  chapters: LumenChapter[]
+  resources?: LumenResource[]
+}
+
+export interface LumenRepo {
+  id: number
+  promoId: number
+  owner: string
+  repo: string
+  fullName: string
+  defaultBranch: string
+  manifest: LumenManifest | null
+  manifestError: string | null
+  lastCommitSha: string | null
+  lastSyncedAt: string | null
+  projectId: number | null
+}
+
+export interface LumenGithubStatus {
+  connected: boolean
+  login?: string
+  scopes?: string
+}
+
+export interface LumenChapterContent {
   content: string
-  status: 'draft' | 'published'
+  sha: string
+  cached?: boolean
+  fetchedAt?: string
+}
+
+export interface LumenChapterNote {
+  student_id: number
+  repo_id: number
+  path: string
+  content: string
   created_at: string
   updated_at: string
-  published_at: string | null
-  // Publication programmee : scheduled_publish_at est une ISO datetime future
-  // que le scheduler consomme pour publier automatiquement
-  scheduled_publish_at: string | null
-  // Metadonnees du snapshot (pas le JSON complet — voir LumenSnapshotTree pour l'arbo)
-  repo_url: string | null
-  repo_commit_sha: string | null
-  repo_default_branch: string | null
-  repo_snapshot_at: string | null
 }
 
-export interface LumenSnapshotTreeFile {
+export interface LumenRead {
+  repo_id: number
   path: string
-  size: number
-}
-
-export interface LumenSnapshotTree {
-  repo_url: string
-  default_branch: string
-  commit_sha: string | null
-  fetched_at: string
-  file_count: number
-  total_size: number
-  files: LumenSnapshotTreeFile[]
+  read_at: string
 }
 
 // ─── Kanban ──────────────────────────────────────────────────────────────────

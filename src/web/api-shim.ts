@@ -137,8 +137,11 @@ async function apiFetch(path: string, options: RequestInit = {}, retries = MAX_R
 
 const get  = (p: string)              => apiFetch(p)
 const post = (p: string, b: unknown)  => apiFetch(p, { method: 'POST',   body: JSON.stringify(b) })
+const put  = (p: string, b: unknown)  => apiFetch(p, { method: 'PUT',    body: JSON.stringify(b) })
 const patch = (p: string, b: unknown) => apiFetch(p, { method: 'PATCH',  body: JSON.stringify(b) })
-const del  = (p: string)              => apiFetch(p, { method: 'DELETE' })
+const del  = (p: string, b?: unknown) => apiFetch(p, b !== undefined
+  ? { method: 'DELETE', body: JSON.stringify(b) }
+  : { method: 'DELETE' })
 
 // ─── Utilitaires browser ─────────────────────────────────────────────────────
 
@@ -498,15 +501,26 @@ async function importStudentsBrowser(promoId: number): Promise<unknown> {
   },
   getRexStatsForPromo:    (promoId: number) => get(`/api/rex/sessions/promo/${promoId}/stats`),
 
-  // Lumen (cours markdown)
-  getLumenCoursesForPromo: (promoId: number) => get(`/api/lumen/courses/promo/${promoId}`),
-  getLumenCourse:          (id: number)       => get(`/api/lumen/courses/${id}`),
-  createLumenCourse:       (payload: unknown) => post('/api/lumen/courses', payload),
-  updateLumenCourse:       (id: number, payload: unknown) => patch(`/api/lumen/courses/${id}`, payload),
-  publishLumenCourse:      (id: number)       => post(`/api/lumen/courses/${id}/publish`, {}),
-  unpublishLumenCourse:    (id: number)       => post(`/api/lumen/courses/${id}/unpublish`, {}),
-  deleteLumenCourse:       (id: number)       => del(`/api/lumen/courses/${id}`),
-  getLumenStatsForPromo:   (promoId: number)  => get(`/api/lumen/stats/promo/${promoId}`),
+  // Lumen (liseuse GitHub)
+  getLumenGithubStatus:       ()                      => get('/api/lumen/github/me'),
+  connectLumenGithub:         (token: string)         => post('/api/lumen/github/connect', { token }),
+  disconnectLumenGithub:      ()                      => del('/api/lumen/github/disconnect'),
+  getLumenPromoOrg:           (promoId: number)       => get(`/api/lumen/promos/${promoId}/github-org`),
+  setLumenPromoOrg:           (promoId: number, org: string | null) => put(`/api/lumen/promos/${promoId}/github-org`, { org }),
+  getLumenReposForPromo:      (promoId: number)       => get(`/api/lumen/repos/promo/${promoId}`),
+  syncLumenReposForPromo:     (promoId: number)       => post(`/api/lumen/repos/sync/promo/${promoId}`, {}),
+  getLumenRepo:               (id: number)            => get(`/api/lumen/repos/${id}`),
+  getLumenChapterContent:     (repoId: number, p: string) => get(`/api/lumen/repos/${repoId}/content?path=${encodeURIComponent(p)}`),
+  markLumenChapterRead:       (repoId: number, p: string) => post(`/api/lumen/repos/${repoId}/read`, { path: p }),
+  getLumenMyReads:            ()                      => get('/api/lumen/my-reads'),
+  getLumenReadCountsForRepo:  (repoId: number)        => get(`/api/lumen/repos/${repoId}/read-counts`),
+  getLumenReadCountsForPromo: (promoId: number)       => get(`/api/lumen/read-counts/promo/${promoId}`),
+  getLumenChapterNote:        (repoId: number, p: string) => get(`/api/lumen/repos/${repoId}/note?path=${encodeURIComponent(p)}`),
+  saveLumenChapterNote:       (repoId: number, p: string, content: string) => put(`/api/lumen/repos/${repoId}/note`, { path: p, content }),
+  deleteLumenChapterNote:     (repoId: number, p: string) => del(`/api/lumen/repos/${repoId}/note`, { path: p }),
+  getLumenMyNotes:            ()                      => get('/api/lumen/my-notes'),
+  getLumenMyNotedChapters:    ()                      => get('/api/lumen/my-noted-chapters'),
+  getLumenStatsForPromo:      (promoId: number)       => get(`/api/lumen/stats/promo/${promoId}`),
 
   // Kanban
   getKanbanCards:   (travailId: number, groupId: number)                   => get(`/api/kanban/travaux/${travailId}/groups/${groupId}`),

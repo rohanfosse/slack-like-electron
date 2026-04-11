@@ -307,44 +307,38 @@ declare global {
       // Grade notifications
       onGradeNew(cb: (data: { devoirTitle: string; note: string | null; feedback: string | null; devoirId: number; category: string | null }) => void): () => void
 
-      // Lumen (cours markdown)
-      getLumenCoursesForPromo(promoId: number): Promise<IpcResponse<import('./types').LumenCourse[]>>
-      getLumenCourse(id: number): Promise<IpcResponse<import('./types').LumenCourse>>
-      createLumenCourse(payload: { promoId: number; projectId?: number | null; title: string; summary?: string; content?: string; repoUrl?: string | null }): Promise<IpcResponse<import('./types').LumenCourse>>
-      updateLumenCourse(id: number, payload: { title?: string; summary?: string; content?: string; projectId?: number | null; repoUrl?: string | null }): Promise<IpcResponse<import('./types').LumenCourse>>
-      publishLumenCourse(id: number): Promise<IpcResponse<import('./types').LumenCourse>>
-      unpublishLumenCourse(id: number): Promise<IpcResponse<import('./types').LumenCourse>>
-      scheduleLumenCourse(id: number, scheduledAt: string | null): Promise<IpcResponse<import('./types').LumenCourse>>
-      deleteLumenCourse(id: number): Promise<IpcResponse<{ id: number; deleted: boolean; soft?: boolean }>>
-      restoreLumenCourse(id: number): Promise<IpcResponse<{ id: number; restored: boolean; course: import('./types').LumenCourse }>>
-      purgeLumenCourse(id: number): Promise<IpcResponse<{ id: number; purged: boolean }>>
-      getLumenTrash(): Promise<IpcResponse<Array<import('./types').LumenCourse & { deleted_at: string }>>>
-      getLumenStatsForPromo(promoId: number): Promise<IpcResponse<{ total: number; published: number; drafts: number }>>
-      markLumenCourseRead(id: number): Promise<IpcResponse<{ ok: true; courseId: number }>>
-      markAllLumenCoursesRead(promoId: number): Promise<IpcResponse<{ marked: number }>>
-      getLumenUnreadForPromo(promoId: number): Promise<IpcResponse<{ count: number; courses: import('./types').LumenCourse[] }>>
-      getLumenReadCountsForPromo(promoId: number): Promise<IpcResponse<Record<number, number>>>
+      // Lumen (liseuse de cours adossee a GitHub)
+      // GitHub auth
+      getLumenGithubStatus(): Promise<IpcResponse<import('./types').LumenGithubStatus>>
+      connectLumenGithub(token: string): Promise<IpcResponse<{ login: string; name: string; avatarUrl: string }>>
+      disconnectLumenGithub(): Promise<IpcResponse<{ disconnected: boolean }>>
 
-      // Lumen notes privees etudiant
-      getLumenCourseNote(id: number): Promise<IpcResponse<{ student_id: number; course_id: number; content: string; created_at: string; updated_at: string } | null>>
-      saveLumenCourseNote(id: number, content: string): Promise<IpcResponse<{ student_id: number; course_id: number; content: string; created_at: string; updated_at: string }>>
-      deleteLumenCourseNote(id: number): Promise<IpcResponse<{ ok: true; courseId: number }>>
-      getLumenNotedCourses(): Promise<IpcResponse<{ course_ids: number[] }>>
+      // Promo <-> org
+      getLumenPromoOrg(promoId: number): Promise<IpcResponse<{ org: string | null }>>
+      setLumenPromoOrg(promoId: number, org: string | null): Promise<IpcResponse<{ org: string | null }>>
+
+      // Repos
+      getLumenReposForPromo(promoId: number): Promise<IpcResponse<{ repos: import('./types').LumenRepo[]; org: string | null }>>
+      syncLumenReposForPromo(promoId: number): Promise<IpcResponse<{ synced: number; errors: Array<{ repo: string; error: string }>; repos: import('./types').LumenRepo[] }>>
+      getLumenRepo(id: number): Promise<IpcResponse<import('./types').LumenRepo>>
+
+      // Chapitres
+      getLumenChapterContent(repoId: number, path: string): Promise<IpcResponse<import('./types').LumenChapterContent>>
+
+      // Tracking lecture
+      markLumenChapterRead(repoId: number, path: string): Promise<IpcResponse<{ ok: true }>>
+      getLumenMyReads(): Promise<IpcResponse<{ reads: import('./types').LumenRead[] }>>
+      getLumenReadCountsForRepo(repoId: number): Promise<IpcResponse<{ counts: Array<{ path: string; readers: number }> }>>
+      getLumenReadCountsForPromo(promoId: number): Promise<IpcResponse<{ counts: Array<{ repo_id: number; path: string; readers: number }> }>>
+
+      // Notes privees etudiant
+      getLumenChapterNote(repoId: number, path: string): Promise<IpcResponse<{ note: import('./types').LumenChapterNote | null }>>
+      saveLumenChapterNote(repoId: number, path: string, content: string): Promise<IpcResponse<{ note: import('./types').LumenChapterNote }>>
+      deleteLumenChapterNote(repoId: number, path: string): Promise<IpcResponse<{ ok: true }>>
+      getLumenMyNotes(): Promise<IpcResponse<{ notes: Array<import('./types').LumenChapterNote & { owner: string; repo: string; manifest_json: string | null }> }>>
+      getLumenMyNotedChapters(): Promise<IpcResponse<{ items: Array<{ repo_id: number; path: string }> }>>
+      getLumenStatsForPromo(promoId: number): Promise<IpcResponse<{ repos: number; reads: number }>>
       downloadLumenNotesExport(): Promise<{ ok: boolean; data?: { filename: string; path: string } | null; error?: string }>
-
-      // Lumen snapshot (repo git d'exemple)
-      refreshLumenSnapshot(id: number): Promise<IpcResponse<{
-        commit_sha: string | null
-        default_branch: string
-        file_count: number
-        total_size: number
-        fetched_at: string
-        changed: boolean
-      }>>
-      getLumenSnapshotTree(id: number): Promise<IpcResponse<import('./types').LumenSnapshotTree>>
-      getLumenSnapshotFile(id: number, path: string): Promise<IpcResponse<{ path: string; size: number; content_base64: string }>>
-      downloadLumenSnapshot(id: number, suggestedName: string): Promise<{ ok: boolean; data?: { filename: string; path: string } | null; error?: string }>
-      revealLumenSnapshotFile(filePath: string): Promise<{ ok: boolean; error?: string }>
 
       // Kanban
       getKanbanCards(travailId: number, groupId: number): Promise<IpcResponse<import('./types').KanbanCard[]>>

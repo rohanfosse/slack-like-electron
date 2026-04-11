@@ -189,8 +189,13 @@ async function apiFetch(path: string, options: RequestInit = {}, retries = MAX_R
 
 function get(path: string)                      { return apiFetch(path) }
 function post(path: string, body: unknown)      { return apiFetch(path, { method: 'POST',   body: JSON.stringify(body) }) }
+function put(path: string, body: unknown)       { return apiFetch(path, { method: 'PUT',    body: JSON.stringify(body) }) }
 function patch(path: string, body: unknown)     { return apiFetch(path, { method: 'PATCH',  body: JSON.stringify(body) }) }
-function del(path: string)                      { return apiFetch(path, { method: 'DELETE' }) }
+function del(path: string, body?: unknown)      {
+  return apiFetch(path, body !== undefined
+    ? { method: 'DELETE', body: JSON.stringify(body) }
+    : { method: 'DELETE' })
+}
 
 // ─── IPC local (fenêtre, dialogs, shell, fs) ─────────────────────────────────
 function invoke(channel: string, ...args: unknown[]): Promise<unknown> {
@@ -524,88 +529,70 @@ contextBridge.exposeInMainWorld('api', {
   },
   getRexStatsForPromo:    (promoId: number) => get(`/api/rex/sessions/promo/${promoId}/stats`),
 
-  // ── Lumen (cours markdown) ─────────────────────────────────────────────────
-  getLumenCoursesForPromo: (promoId: number) => get(`/api/lumen/courses/promo/${promoId}`),
-  getLumenCourse:          (id: number)       => get(`/api/lumen/courses/${id}`),
-  createLumenCourse:       (payload: unknown) => post('/api/lumen/courses', payload),
-  updateLumenCourse:       (id: number, payload: unknown) => patch(`/api/lumen/courses/${id}`, payload),
-  publishLumenCourse:      (id: number)       => post(`/api/lumen/courses/${id}/publish`, {}),
-  unpublishLumenCourse:    (id: number)       => post(`/api/lumen/courses/${id}/unpublish`, {}),
-  scheduleLumenCourse:     (id: number, scheduledAt: string | null) => post(`/api/lumen/courses/${id}/schedule`, { scheduledAt }),
-  deleteLumenCourse:       (id: number)       => del(`/api/lumen/courses/${id}`),
-  restoreLumenCourse:      (id: number)       => post(`/api/lumen/courses/${id}/restore`, {}),
-  purgeLumenCourse:        (id: number)       => del(`/api/lumen/courses/${id}/purge`),
-  getLumenTrash:           ()                 => get('/api/lumen/trash'),
-  getLumenStatsForPromo:   (promoId: number)  => get(`/api/lumen/stats/promo/${promoId}`),
-  markLumenCourseRead:     (id: number)       => post(`/api/lumen/courses/${id}/read`, {}),
-  markAllLumenCoursesRead: (promoId: number)  => post(`/api/lumen/courses/read-all/promo/${promoId}`, {}),
-  getLumenUnreadForPromo:  (promoId: number)  => get(`/api/lumen/unread/promo/${promoId}`),
-  getLumenReadCountsForPromo: (promoId: number) => get(`/api/lumen/read-counts/promo/${promoId}`),
+  // ── Lumen (liseuse cours GitHub) ───────────────────────────────────────────
+  // GitHub auth
+  getLumenGithubStatus:     ()                      => get('/api/lumen/github/me'),
+  connectLumenGithub:       (token: string)         => post('/api/lumen/github/connect', { token }),
+  disconnectLumenGithub:    ()                      => del('/api/lumen/github/disconnect'),
 
-  // ── Lumen notes privees etudiant ─────────────────────────────────────────
-  getLumenCourseNote:    (id: number) => get(`/api/lumen/courses/${id}/note`),
-  saveLumenCourseNote:   (id: number, content: string) => apiFetch(`/api/lumen/courses/${id}/note`, { method: 'PUT', body: JSON.stringify({ content }) }),
-  deleteLumenCourseNote: (id: number) => del(`/api/lumen/courses/${id}/note`),
-  getLumenNotedCourses:  () => get('/api/lumen/my-noted-courses'),
+  // Promo <-> org mapping
+  getLumenPromoOrg:         (promoId: number)       => get(`/api/lumen/promos/${promoId}/github-org`),
+  setLumenPromoOrg:         (promoId: number, org: string | null) =>
+    put(`/api/lumen/promos/${promoId}/github-org`, { org }),
 
-  /**
-   * Telecharge l'export markdown des notes de l'etudiant dans un fichier
-   * local via le save dialog Electron (reutilise lumen:saveSnapshotZip —
-   * en fait non, on doit avoir un handler separe pour text/markdown).
-   * On passe par un handler IPC dedie qui accepte un string et un nom.
-   */
+  // Repos
+  getLumenReposForPromo:    (promoId: number)       => get(`/api/lumen/repos/promo/${promoId}`),
+  syncLumenReposForPromo:   (promoId: number)       => post(`/api/lumen/repos/sync/promo/${promoId}`, {}),
+  getLumenRepo:             (id: number)            => get(`/api/lumen/repos/${id}`),
+
+  // Chapitres
+  getLumenChapterContent:   (repoId: number, path: string) =>
+    get(`/api/lumen/repos/${repoId}/content?path=${encodeURIComponent(path)}`),
+
+  // Tracking lecture
+  markLumenChapterRead:     (repoId: number, path: string) =>
+    post(`/api/lumen/repos/${repoId}/read`, { path }),
+  getLumenMyReads:          ()                      => get('/api/lumen/my-reads'),
+  getLumenReadCountsForRepo:(repoId: number)        => get(`/api/lumen/repos/${repoId}/read-counts`),
+  getLumenReadCountsForPromo:(promoId: number)      => get(`/api/lumen/read-counts/promo/${promoId}`),
+
+  // Notes privees etudiant
+  getLumenChapterNote:      (repoId: number, path: string) =>
+    get(`/api/lumen/repos/${repoId}/note?path=${encodeURIComponent(path)}`),
+  saveLumenChapterNote:     (repoId: number, path: string, content: string) =>
+    put(`/api/lumen/repos/${repoId}/note`, { path, content }),
+  deleteLumenChapterNote:   (repoId: number, path: string) =>
+    del(`/api/lumen/repos/${repoId}/note`, { path }),
+  getLumenMyNotes:          ()                      => get('/api/lumen/my-notes'),
+  getLumenMyNotedChapters:  ()                      => get('/api/lumen/my-noted-chapters'),
+
+  // Stats (prof)
+  getLumenStatsForPromo:    (promoId: number)       => get(`/api/lumen/stats/promo/${promoId}`),
+
+  // Export notes en markdown local via save dialog Electron
   downloadLumenNotesExport: async () => {
     try {
-      const res = await fetch(`${SERVER_URL}/api/lumen/my-notes/export`, {
-        headers: { Authorization: `Bearer ${jwtToken ?? ''}` },
-      })
-      if (!res.ok) {
-        let errText = `HTTP ${res.status}`
-        try { const j = await res.json(); errText = j?.error ?? errText } catch { /* pas de JSON */ }
-        return { ok: false, error: errText }
-      }
-      const text = await res.text()
+      const resp = await get('/api/lumen/my-notes') as { ok: boolean; data?: { notes: Array<{ owner: string; repo: string; path: string; content: string; manifest_json: string | null }> } }
+      if (!resp?.ok) return { ok: false, error: 'Impossible de recuperer les notes' }
+      const notes = resp.data?.notes ?? []
+      if (!notes.length) return { ok: false, error: 'Aucune note a exporter' }
+      const md = notes.map((n) => {
+        let title = n.path
+        try {
+          const m = JSON.parse(n.manifest_json ?? 'null')
+          const ch = m?.chapters?.find((c: { path: string; title: string }) => c.path === n.path)
+          if (ch?.title) title = ch.title
+        } catch { /* fallback sur path */ }
+        return `## ${n.owner}/${n.repo} — ${title}\n\n${n.content}\n`
+      }).join('\n---\n\n')
       return await ipcRenderer.invoke('lumen:saveNotesMarkdown', {
-        content: text,
+        content: `# Mes notes Lumen\n\n${md}`,
         suggestedName: 'mes-notes-lumen.md',
       }) as { ok: boolean; data?: { filename: string; path: string } | null; error?: string }
     } catch (e) {
       return { ok: false, error: e instanceof Error ? e.message : 'Erreur export notes' }
     }
   },
-
-  // ── Lumen snapshot (repo git d'exemple) ──────────────────────────────────
-  refreshLumenSnapshot: (id: number) => post(`/api/lumen/courses/${id}/snapshot`, {}),
-  getLumenSnapshotTree: (id: number) => get(`/api/lumen/courses/${id}/snapshot/tree`),
-  getLumenSnapshotFile: (id: number, path: string) =>
-    get(`/api/lumen/courses/${id}/snapshot/file?path=${encodeURIComponent(path)}`),
-
-  /**
-   * Telecharge le zip du snapshot d'un cours et ouvre un save dialog natif
-   * pour que l'etudiant choisisse ou le sauvegarder. Resout avec le chemin
-   * du fichier ecrit, ou null si l'utilisateur annule.
-   */
-  downloadLumenSnapshot: async (id: number, suggestedName: string) => {
-    try {
-      const res = await fetch(`${SERVER_URL}/api/lumen/courses/${id}/snapshot/download`, {
-        headers: { Authorization: `Bearer ${jwtToken ?? ''}` },
-      })
-      if (!res.ok) {
-        let errText = `HTTP ${res.status}`
-        try { const j = await res.json(); errText = j?.error ?? errText } catch { /* pas de JSON */ }
-        return { ok: false, error: errText }
-      }
-      const arrayBuffer = await res.arrayBuffer()
-      return await ipcRenderer.invoke('lumen:saveSnapshotZip', {
-        buffer: new Uint8Array(arrayBuffer),
-        suggestedName,
-      }) as { ok: boolean; data?: { filename: string; path: string } | null; error?: string }
-    } catch (e) {
-      return { ok: false, error: e instanceof Error ? e.message : 'Erreur telechargement zip' }
-    }
-  },
-
-  revealLumenSnapshotFile: (filePath: string) => invoke('lumen:revealSnapshot', filePath),
 
   // ── Kanban ─────────────────────────────────────────────────────────────────
   getKanbanCards:   (travailId: number, groupId: number)                       => get(`/api/kanban/travaux/${travailId}/groups/${groupId}`),
