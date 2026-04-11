@@ -219,7 +219,7 @@ const promoSummary = computed(() => {
 }
 .sb-project-rich-bar-fill {
   height: 100%; border-radius: 2px;
-  transition: width .3s ease;
+  transition: width var(--motion-slow) var(--ease-out);
 }
 .sb-project-rich-sub {
   font-size: 10px; color: var(--text-muted); white-space: nowrap;

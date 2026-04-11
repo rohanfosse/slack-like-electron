@@ -240,7 +240,7 @@
 .dp-chevron {
   color: var(--text-muted);
   flex-shrink: 0;
-  transition: transform .18s ease;
+  transition: transform var(--motion-fast) var(--ease-out);
 }
 .dp-chevron.rotated { transform: rotate(-90deg); }
 .dp-cat-name {

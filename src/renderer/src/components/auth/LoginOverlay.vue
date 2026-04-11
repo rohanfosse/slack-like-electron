@@ -570,7 +570,7 @@
   font-size: 14px;
   font-family: var(--font);
   outline: none;
-  transition: border-color .25s ease, box-shadow .25s ease, background .25s ease;
+  transition: border-color var(--motion-base) var(--ease-out), box-shadow var(--motion-base) var(--ease-out), background var(--motion-base) var(--ease-out);
   box-sizing: border-box;
 }
 .auth-input:focus-visible { outline: 2px solid var(--accent); outline-offset: -1px; }
@@ -825,8 +825,8 @@
 .auth-back-btn:hover { background: var(--bg-hover); color: var(--text-primary); }
 
 /* ── Transitions ── */
-.auth-slide-enter-active { transition: opacity .2s ease, transform .2s ease; }
-.auth-slide-leave-active { transition: opacity .15s ease, transform .15s ease; }
+.auth-slide-enter-active { transition: opacity var(--motion-base) var(--ease-out), transform var(--motion-base) var(--ease-out); }
+.auth-slide-leave-active { transition: opacity var(--motion-fast) var(--ease-out), transform var(--motion-fast) var(--ease-out); }
 .auth-slide-enter-from   { opacity: 0; transform: translateX(16px); }
 .auth-slide-leave-to     { opacity: 0; transform: translateX(-12px); }
 

@@ -469,7 +469,7 @@ function onKeydown(e: KeyboardEvent) {
 
 /* Transition quote */
 .quote-slide-enter-active,
-.quote-slide-leave-active { transition: all .15s ease; }
+.quote-slide-leave-active { transition: all var(--motion-fast) var(--ease-out); }
 .quote-slide-enter-from,
 .quote-slide-leave-to     { opacity: 0; transform: translateY(-4px); max-height: 0; }
 

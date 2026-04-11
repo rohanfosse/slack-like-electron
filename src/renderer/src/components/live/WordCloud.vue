@@ -87,7 +87,7 @@
   transition: all .5s cubic-bezier(.34,1.56,.64,1);
 }
 .word-fade-leave-active {
-  transition: all .3s ease;
+  transition: all var(--motion-slow) var(--ease-out);
 }
 .word-fade-enter-from {
   opacity: 0;

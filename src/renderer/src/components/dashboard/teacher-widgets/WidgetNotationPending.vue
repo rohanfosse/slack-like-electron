@@ -127,7 +127,7 @@ function goToDevoirs() { router.push('/assignments') }
   border-radius: 3px;
   border-left: 2px solid var(--color-danger, #d9534f);
   cursor: pointer;
-  transition: all 120ms ease;
+  transition: all var(--motion-fast) var(--ease-out);
 }
 .wnp-item:hover { background: var(--bg-hover); }
 .wnp-item:focus-visible {

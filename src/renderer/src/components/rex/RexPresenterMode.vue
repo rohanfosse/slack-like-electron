@@ -312,7 +312,7 @@
 .rex-presenter-progress-fill {
   height: 100%; border-radius: 2px;
   background: linear-gradient(90deg, #0d9488, #14b8a6);
-  transition: width .4s ease;
+  transition: width var(--motion-slow) var(--ease-out);
 }
 
 /* ── Timer ── */

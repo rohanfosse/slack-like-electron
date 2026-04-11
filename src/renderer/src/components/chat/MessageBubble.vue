@@ -529,7 +529,7 @@ function onTextClick(e: MouseEvent) {
   gap: 1px;
   opacity: 0;
   pointer-events: none;
-  transition: opacity .12s ease, transform .12s ease;
+  transition: opacity var(--motion-fast) var(--ease-out), transform var(--motion-fast) var(--ease-out);
   transform: translateY(4px);
   background: var(--bg-modal);
   border: 1px solid var(--border);
@@ -652,10 +652,10 @@ function onTextClick(e: MouseEvent) {
   cursor: pointer;
   /* transition douce sur plusieurs propriétés */
   transition:
-    background .12s ease,
-    border-color .12s ease,
+    background var(--motion-fast) var(--ease-out),
+    border-color var(--motion-fast) var(--ease-out),
     transform .15s cubic-bezier(.34, 1.56, .64, 1),
-    box-shadow .12s ease;
+    box-shadow var(--motion-fast) var(--ease-out);
   line-height: 1;
   box-shadow: 0 1px 3px rgba(0,0,0,.2);
 }

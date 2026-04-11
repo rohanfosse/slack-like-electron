@@ -56,7 +56,7 @@
   height: 100%;
   border-radius: inherit;
   background: var(--accent);
-  transition: width 0.3s ease;
+  transition: width var(--motion-slow) var(--ease-out);
 }
 
 .pb-label {

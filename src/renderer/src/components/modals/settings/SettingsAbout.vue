@@ -309,7 +309,7 @@ function installUpdate() { window.api.updaterQuitAndInstall() }
 .stg-progress-fill {
   height: 100%; border-radius: 4px;
   background: linear-gradient(90deg, var(--accent), color-mix(in srgb, var(--accent) 80%, #fff));
-  transition: width .3s ease;
+  transition: width var(--motion-slow) var(--ease-out);
   position: relative;
 }
 .stg-progress-fill::after {

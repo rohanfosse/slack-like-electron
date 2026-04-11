@@ -247,7 +247,7 @@ const emit = defineEmits<{
   display: flex; align-items: center; gap: 10px;
   padding: 8px 12px; background: var(--bg-elevated, rgba(255,255,255,.04));
   border: 1px solid var(--border); border-left: 3px solid var(--accent);
-  border-radius: 8px; cursor: pointer; transition: all .15s ease;
+  border-radius: 8px; cursor: pointer; transition: all var(--motion-fast) var(--ease-out);
   width: 100%; text-align: left; font-family: var(--font);
 }
 .db-unread-item:hover { background: var(--bg-hover); }
@@ -269,7 +269,7 @@ const emit = defineEmits<{
   display: flex; align-items: flex-start; gap: 10px;
   padding: 10px 12px; background: var(--bg-elevated, rgba(255,255,255,.04));
   border: 1px solid var(--border); border-radius: 8px;
-  cursor: pointer; transition: all .15s ease;
+  cursor: pointer; transition: all var(--motion-fast) var(--ease-out);
 }
 .db-saved-item:hover { background: var(--bg-hover); }
 .db-saved-avatar {

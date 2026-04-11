@@ -186,7 +186,7 @@ const fontSizePreview: Record<string, string> = { small: '13px', default: '14px'
   border-radius: var(--radius-sm, 8px);
   color: var(--text-secondary);
   line-height: 1.5;
-  transition: font-size 0.2s ease;
+  transition: font-size var(--motion-base) var(--ease-out);
 }
 
 /* ── Preview border-radius ── */
@@ -201,6 +201,6 @@ const fontSizePreview: Record<string, string> = { small: '13px', default: '14px'
   color: #fff;
   font-size: 12px;
   font-weight: 600;
-  transition: border-radius 0.2s ease;
+  transition: border-radius var(--motion-base) var(--ease-out);
 }
 </style>

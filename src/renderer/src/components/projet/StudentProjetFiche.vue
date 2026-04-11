@@ -584,7 +584,7 @@ function fileTypeIcon(name: string): typeof FileText {
   height: 100%;
   border-radius: 3px;
   background: #9B87F5;
-  transition: width .4s ease;
+  transition: width var(--motion-slow) var(--ease-out);
   opacity: .8;
 }
 .spf-global-fill.fill-good     { opacity: 1; }

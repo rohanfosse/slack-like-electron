@@ -926,7 +926,7 @@
 }
 .da-progress-fill {
   height: 100%; background: var(--accent); border-radius: 3px;
-  transition: width .3s ease;
+  transition: width var(--motion-slow) var(--ease-out);
 }
 .da-progress-text {
   display: block; margin-top: 4px;

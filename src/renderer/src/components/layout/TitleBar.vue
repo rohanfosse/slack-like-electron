@@ -118,7 +118,7 @@ onUnmounted(() => { unsubMaximize?.() })
   background: transparent;
   color: var(--text-muted);
   cursor: pointer;
-  transition: background .12s ease, color .12s ease;
+  transition: background var(--motion-fast) var(--ease-out), color var(--motion-fast) var(--ease-out);
   -webkit-app-region: no-drag;
   padding: 0;
   border-radius: 0;

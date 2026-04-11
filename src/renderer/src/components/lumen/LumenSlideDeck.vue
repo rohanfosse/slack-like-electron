@@ -20,6 +20,7 @@ import { computed, onMounted, onBeforeUnmount, ref, watch } from 'vue'
 import { Marp } from '@marp-team/marp-core'
 import { ChevronLeft, ChevronRight, Maximize2, Minimize2, AlertTriangle } from 'lucide-vue-next'
 import DOMPurify from 'dompurify'
+import { MARP_CURSUS_THEME } from '@/utils/marpCursusTheme'
 
 interface Props {
   /** Markdown brut (frontmatter incluse — Marp la consomme nativement) */
@@ -60,6 +61,9 @@ function renderDeck(): void {
       math: 'katex',
       inlineSVG: true,
     })
+    // Theme custom Cursus enregistre une fois par instance Marp.
+    // Les auteurs y accedent via `theme: cursus` dans leur frontmatter.
+    marp.themeSet.add(MARP_CURSUS_THEME)
     const { html, css } = marp.render(props.source)
     // Marp emet <section ...>...</section> ; on les separe.
     // On utilise un parser DOM plutot qu'une regex pour gerer les sections

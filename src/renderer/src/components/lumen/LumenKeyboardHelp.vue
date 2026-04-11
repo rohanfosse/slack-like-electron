@@ -223,7 +223,7 @@ const SHORTCUTS: Record<string, Shortcut[]> = {
 }
 
 .khelp-fade-enter-active,
-.khelp-fade-leave-active { transition: opacity 150ms ease; }
+.khelp-fade-leave-active { transition: opacity var(--motion-fast) var(--ease-out); }
 .khelp-fade-enter-from,
 .khelp-fade-leave-to { opacity: 0; }
 

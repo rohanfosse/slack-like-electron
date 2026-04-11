@@ -72,7 +72,7 @@ function openDocuments() {
   font-family: inherit;
   font-size: 11px;
   font-weight: 600;
-  transition: all 120ms ease;
+  transition: all var(--motion-fast) var(--ease-out);
   min-height: 56px;
 }
 .wqc-btn:hover {

@@ -75,8 +75,8 @@ function cycleSize() {
   transition:
     grid-column 0.3s cubic-bezier(0.4, 0, 0.2, 1),
     grid-row 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-    box-shadow 0.25s ease,
-    transform 0.2s ease;
+    box-shadow var(--motion-base) var(--ease-out),
+    transform var(--motion-base) var(--ease-out);
 }
 
 /* ── Hierarchie visuelle par taille (Fix #4) ── */
@@ -96,11 +96,11 @@ function cycleSize() {
   border: 2px dashed transparent;
   cursor: grab;
   transition:
-    border-color 0.15s ease,
+    border-color var(--motion-fast) var(--ease-out),
     grid-column 0.3s cubic-bezier(0.4, 0, 0.2, 1),
     grid-row 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-    box-shadow 0.25s ease,
-    transform 0.2s ease;
+    box-shadow var(--motion-base) var(--ease-out),
+    transform var(--motion-base) var(--ease-out);
 }
 .ws-shell--editing:hover {
   border-color: rgba(74, 144, 217, 0.3);
@@ -127,7 +127,7 @@ function cycleSize() {
   color: var(--text-muted);
   cursor: grab;
   opacity: 0;
-  transition: opacity 0.15s ease, color 0.1s;
+  transition: opacity var(--motion-fast) var(--ease-out), color 0.1s;
 }
 .ws-shell--editing:hover .ws-drag-handle {
   opacity: 0.7;
@@ -161,7 +161,7 @@ function cycleSize() {
   font-family: var(--font);
   cursor: pointer;
   opacity: 0;
-  transition: opacity 0.15s ease, background 0.1s;
+  transition: opacity var(--motion-fast) var(--ease-out), background 0.1s;
 }
 .ws-shell--editing:hover .ws-resize-btn,
 .ws-resize-btn:focus-visible {

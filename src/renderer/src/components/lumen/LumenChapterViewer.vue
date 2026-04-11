@@ -920,7 +920,7 @@ button.lumen-viewer-chip:focus-visible {
   color: var(--text-muted);
   cursor: pointer;
   opacity: 0;
-  transition: all 150ms ease;
+  transition: all var(--motion-fast) var(--ease-out);
   padding: 0;
 }
 .lumen-viewer .markdown-body pre.lumen-code:hover .lumen-copy-btn,

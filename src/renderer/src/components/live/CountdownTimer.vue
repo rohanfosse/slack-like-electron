@@ -95,7 +95,7 @@
   height: 100%;
 }
 .ring-fill {
-  transition: stroke-dashoffset 0.3s linear, stroke 0.3s ease;
+  transition: stroke-dashoffset 0.3s linear, stroke var(--motion-slow) var(--ease-out);
 }
 .timer-number {
   position: absolute;

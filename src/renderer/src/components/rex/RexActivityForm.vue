@@ -181,7 +181,7 @@
   font-size: 13px;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.4s ease;
+  transition: all var(--motion-slow) var(--ease-out);
   font-family: var(--font, inherit);
 }
 .rex-type-btn:hover {
@@ -202,7 +202,7 @@
   font-size: 14px;
   font-family: var(--font, inherit);
   outline: none;
-  transition: border-color 0.4s ease;
+  transition: border-color var(--motion-slow) var(--ease-out);
 }
 .rex-form-input:focus {
   border-color: #0d9488;
@@ -229,7 +229,7 @@
   font-size: 12px;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.4s ease;
+  transition: all var(--motion-slow) var(--ease-out);
   font-family: var(--font, inherit);
 }
 .rex-form-option-btns button.active {
@@ -246,7 +246,7 @@
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.4s ease;
+  transition: all var(--motion-slow) var(--ease-out);
   font-family: var(--font, inherit);
 }
 .rex-form-submit:hover:not(:disabled) {

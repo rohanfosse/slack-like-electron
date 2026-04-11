@@ -1,5 +1,6 @@
 <script setup lang="ts">
   import ErrorBoundary from '@/components/ui/ErrorBoundary.vue'
+  import EmptyState from '@/components/ui/EmptyState.vue'
   import { computed, watch, ref, nextTick, onMounted, onUnmounted } from 'vue'
   import { Search, X as XIcon, ClipboardList, BookCheck, FileText, FolderPlus, X as Close, CalendarRange, Users, FolderOpen, Menu, MessageSquare, Megaphone, Paperclip, Image as ImageIcon, ExternalLink } from 'lucide-vue-next'
   import { useAppStore }      from '@/stores/app'
@@ -530,33 +531,31 @@
 
     <!-- Aucun canal sélectionné - écran d'accueil -->
     <div v-else class="no-channel-hint" id="no-channel-hint">
-      <div class="welcome-icon-wrapper">
-        <MessageSquare :size="32" class="welcome-icon" />
-      </div>
-      <h3 class="welcome-heading">
-        Bienvenue{{ appStore.currentUser ? ', ' + appStore.currentUser.name.split(' ')[0] : '' }} !
-      </h3>
-      <p class="welcome-sub">
-        Sélectionnez un salon dans la barre latérale pour commencer à échanger.
-      </p>
-      <div v-if="appStore.isStudent" class="welcome-tips">
-        <div class="welcome-tip">
-          <MessageSquare :size="16" class="welcome-tip-icon" />
-          <span><strong>Salons</strong> - Échangez avec votre promo dans les salons à gauche</span>
+      <EmptyState
+        size="lg"
+        :icon="MessageSquare"
+        :title="`Bienvenue${appStore.currentUser ? ', ' + appStore.currentUser.name.split(' ')[0] : ''} !`"
+        subtitle="Sélectionnez un salon dans la barre latérale pour commencer à échanger."
+      >
+        <div v-if="appStore.isStudent" class="welcome-tips">
+          <div class="welcome-tip">
+            <MessageSquare :size="16" class="welcome-tip-icon" />
+            <span><strong>Salons</strong> - Échangez avec votre promo dans les salons à gauche</span>
+          </div>
+          <div class="welcome-tip">
+            <ClipboardList :size="16" class="welcome-tip-icon" />
+            <span><strong>Devoirs</strong> - Consultez et rendez vos travaux dans l'onglet Devoirs</span>
+          </div>
+          <div class="welcome-tip">
+            <Users :size="16" class="welcome-tip-icon" />
+            <span><strong>Messages directs</strong> - Cliquez sur un nom dans le chat pour lui écrire en privé</span>
+          </div>
+          <div class="welcome-tip">
+            <FileText :size="16" class="welcome-tip-icon" />
+            <span><strong>Recherche</strong> - Utilisez <kbd class="welcome-kbd">Ctrl+K</kbd> pour rechercher partout</span>
+          </div>
         </div>
-        <div class="welcome-tip">
-          <ClipboardList :size="16" class="welcome-tip-icon" />
-          <span><strong>Devoirs</strong> - Consultez et rendez vos travaux dans l'onglet Devoirs</span>
-        </div>
-        <div class="welcome-tip">
-          <Users :size="16" class="welcome-tip-icon" />
-          <span><strong>Messages directs</strong> - Cliquez sur un nom dans le chat pour lui écrire en privé</span>
-        </div>
-        <div class="welcome-tip">
-          <FileText :size="16" class="welcome-tip-icon" />
-          <span><strong>Recherche</strong> - Utilisez <kbd style="font-size:10px;padding:1px 4px;border-radius:3px;background:var(--bg-active);border:1px solid var(--border)">Ctrl+K</kbd> pour rechercher partout</span>
-        </div>
-      </div>
+      </EmptyState>
     </div>
 
     <!-- Overlay drag & drop -->

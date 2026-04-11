@@ -132,7 +132,7 @@
 </template>
 
 <style scoped>
-.modal-fade-enter-active, .modal-fade-leave-active { transition: opacity .15s ease; }
+.modal-fade-enter-active, .modal-fade-leave-active { transition: opacity var(--motion-fast) var(--ease-out); }
 .modal-fade-enter-from,  .modal-fade-leave-to      { opacity: 0; }
 
 .cp-modal {

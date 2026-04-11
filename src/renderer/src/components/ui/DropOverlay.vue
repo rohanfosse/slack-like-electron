@@ -110,8 +110,8 @@ watch(() => props.pendingFile, (f) => {
 
 .drop-fade-enter-active, .drop-fade-leave-active { transition: opacity .2s; }
 .drop-fade-enter-from, .drop-fade-leave-to { opacity: 0; }
-.drop-bar-enter-active { transition: all .2s ease; }
-.drop-bar-leave-active { transition: all .15s ease; }
+.drop-bar-enter-active { transition: all var(--motion-base) var(--ease-out); }
+.drop-bar-leave-active { transition: all var(--motion-fast) var(--ease-out); }
 .drop-bar-enter-from { opacity: 0; transform: translateY(-8px); }
 .drop-bar-leave-to { opacity: 0; transform: translateY(-8px); }
 </style>

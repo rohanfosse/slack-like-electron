@@ -637,7 +637,7 @@
   letter-spacing: 4px;
   text-transform: uppercase;
   outline: none;
-  transition: border-color 0.4s ease;
+  transition: border-color var(--motion-slow) var(--ease-out);
 }
 .rex-join-input:focus { border-color: #0d9488; }
 
@@ -647,7 +647,7 @@
   padding: 10px 18px; border-radius: 8px; border: none;
   background: #0d9488; color: #fff;
   font-size: 13px; font-weight: 600; cursor: pointer;
-  transition: all 0.4s ease; font-family: var(--font, inherit);
+  transition: all var(--motion-slow) var(--ease-out); font-family: var(--font, inherit);
 }
 .rex-btn-primary:hover:not(:disabled) { background: #14b8a6; }
 .rex-btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
@@ -657,7 +657,7 @@
   border: 1px solid var(--border, rgba(255,255,255,.08));
   background: transparent; color: var(--text-secondary, #aaa);
   font-size: 12px; font-weight: 600; cursor: pointer;
-  transition: all 0.4s ease; font-family: var(--font, inherit);
+  transition: all var(--motion-slow) var(--ease-out); font-family: var(--font, inherit);
 }
 .rex-btn-ghost:hover { background: var(--bg-hover); color: var(--text-primary, #fff); }
 
@@ -740,7 +740,7 @@
   font-size: 14px;
   font-family: var(--font, inherit);
   outline: none;
-  transition: border-color 0.4s ease;
+  transition: border-color var(--motion-slow) var(--ease-out);
 }
 .rex-respond-input:focus { border-color: #0d9488; }
 .rex-respond-textarea {
@@ -753,7 +753,7 @@
   font-family: var(--font, inherit);
   outline: none;
   resize: vertical;
-  transition: border-color 0.4s ease;
+  transition: border-color var(--motion-slow) var(--ease-out);
 }
 .rex-respond-textarea:focus { border-color: #0d9488; }
 
@@ -768,7 +768,7 @@
   border: none;
   cursor: pointer;
   color: rgba(13, 148, 136, 0.25);
-  transition: all 0.4s ease;
+  transition: all var(--motion-slow) var(--ease-out);
   padding: 4px;
 }
 .rex-star-btn.filled {
@@ -807,7 +807,7 @@
 }
 .rex-thanks-icon {
   color: #0d9488;
-  animation: rex-check-in 0.4s ease;
+  animation: rex-check-in var(--motion-slow) var(--ease-out);
 }
 @keyframes rex-check-in {
   from { transform: scale(0); opacity: 0; }

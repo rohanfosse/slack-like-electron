@@ -585,7 +585,7 @@
   font-size: 14px;
   font-family: var(--font, inherit);
   outline: none;
-  transition: border-color 0.4s ease;
+  transition: border-color var(--motion-slow) var(--ease-out);
 }
 .rex-input:focus { border-color: #0d9488; }
 .rex-select {
@@ -605,7 +605,7 @@
   padding: 10px 18px; border-radius: 8px; border: none;
   background: #0d9488; color: #fff;
   font-size: 13px; font-weight: 600; cursor: pointer;
-  transition: all 0.4s ease; font-family: var(--font, inherit);
+  transition: all var(--motion-slow) var(--ease-out); font-family: var(--font, inherit);
 }
 .rex-btn-primary:hover:not(:disabled) { background: #14b8a6; }
 .rex-btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
@@ -614,7 +614,7 @@
   padding: 10px 18px; border-radius: 8px; border: none;
   background: rgba(239, 68, 68, 0.15); color: #ef4444;
   font-size: 13px; font-weight: 600; cursor: pointer;
-  transition: all 0.4s ease; font-family: var(--font, inherit);
+  transition: all var(--motion-slow) var(--ease-out); font-family: var(--font, inherit);
 }
 .rex-btn-danger:hover { background: rgba(239, 68, 68, 0.25); }
 .rex-btn-ghost {
@@ -623,14 +623,14 @@
   border: 1px solid var(--border, rgba(255,255,255,.08));
   background: transparent; color: var(--text-secondary, #aaa);
   font-size: 12px; font-weight: 600; cursor: pointer;
-  transition: all 0.4s ease; font-family: var(--font, inherit);
+  transition: all var(--motion-slow) var(--ease-out); font-family: var(--font, inherit);
 }
 .rex-btn-ghost:hover { background: var(--bg-hover); color: var(--text-primary, #fff); }
 .rex-btn-sm {
   display: inline-flex; align-items: center; gap: 4px;
   padding: 5px 10px; border-radius: 6px; border: none;
   font-size: 11px; font-weight: 600; cursor: pointer;
-  transition: all 0.4s ease; font-family: var(--font, inherit);
+  transition: all var(--motion-slow) var(--ease-out); font-family: var(--font, inherit);
 }
 .rex-btn-teal {
   background: #0d9488; color: #fff;
@@ -701,7 +701,7 @@
   cursor: pointer;
   text-align: left;
   font-family: var(--font, inherit);
-  transition: background 0.4s ease;
+  transition: background var(--motion-slow) var(--ease-out);
 }
 .rex-export-menu button:hover { background: var(--bg-hover); }
 
@@ -787,7 +787,7 @@
   background: var(--bg-elevated, #1e1f21);
   border: 1px solid var(--border, rgba(255,255,255,.08));
   border-radius: 10px;
-  transition: all 0.4s ease;
+  transition: all var(--motion-slow) var(--ease-out);
 }
 .rex-act-icon { color: #14b8a6; flex-shrink: 0; }
 .rex-act-title {
@@ -829,7 +829,7 @@
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.4s ease;
+  transition: all var(--motion-slow) var(--ease-out);
   font-family: var(--font, inherit);
   align-self: flex-start;
 }

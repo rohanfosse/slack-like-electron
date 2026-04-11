@@ -132,7 +132,7 @@ function pick(entry: PickerEntry): void {
   align-items: center;
   justify-content: center;
   z-index: 110;
-  animation: fade-in 150ms ease-out;
+  animation: fade-in var(--motion-fast) var(--ease-out);
 }
 @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
 
@@ -144,7 +144,7 @@ function pick(entry: PickerEntry): void {
   display: flex;
   flex-direction: column;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
-  animation: slide-up 200ms ease-out;
+  animation: slide-up var(--motion-base) var(--ease-out);
 }
 @keyframes slide-up {
   from { opacity: 0; transform: translateY(12px); }

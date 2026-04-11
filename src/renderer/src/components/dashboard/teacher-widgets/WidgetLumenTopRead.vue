@@ -148,7 +148,7 @@ const maxReaders = computed(() => top.value[0]?.readers ?? 1)
 .wltr-bar {
   background: var(--accent);
   height: 100%;
-  transition: width 400ms ease-out;
+  transition: width var(--motion-slow) var(--ease-out);
 }
 .wltr-readers {
   font-size: 12px;

@@ -395,7 +395,7 @@
 </template>
 
 <style scoped>
-.modal-fade-enter-active, .modal-fade-leave-active { transition: opacity .15s ease; }
+.modal-fade-enter-active, .modal-fade-leave-active { transition: opacity var(--motion-fast) var(--ease-out); }
 .modal-fade-enter-from,  .modal-fade-leave-to      { opacity: 0; }
 
 .classe-modal {
@@ -450,8 +450,8 @@
   border-bottom: 1px solid var(--border);
   flex-shrink: 0;
 }
-.chart-slide-enter-active { transition: opacity .2s ease, max-height .2s ease; max-height: 200px; }
-.chart-slide-leave-active { transition: opacity .15s ease, max-height .15s ease; }
+.chart-slide-enter-active { transition: opacity var(--motion-base) var(--ease-out), max-height var(--motion-base) var(--ease-out); max-height: 200px; }
+.chart-slide-leave-active { transition: opacity var(--motion-fast) var(--ease-out), max-height var(--motion-fast) var(--ease-out); }
 .chart-slide-enter-from, .chart-slide-leave-to { opacity: 0; max-height: 0; }
 
 /* ── Toolbar ── */
@@ -605,7 +605,7 @@
 .classe-bar-fill {
   height: 100%;
   border-radius: 3px;
-  transition: width .3s ease;
+  transition: width var(--motion-slow) var(--ease-out);
 }
 .fill-done   { background: var(--color-success); }
 .fill-ok     { background: var(--accent); }
@@ -643,8 +643,8 @@
 .classe-activity-icon { flex-shrink: 0; }
 
 /* ── Panneau profil ── */
-.profile-slide-enter-active { transition: opacity .2s ease, transform .2s ease; }
-.profile-slide-leave-active { transition: opacity .15s ease, transform .15s ease; }
+.profile-slide-enter-active { transition: opacity var(--motion-base) var(--ease-out), transform var(--motion-base) var(--ease-out); }
+.profile-slide-leave-active { transition: opacity var(--motion-fast) var(--ease-out), transform var(--motion-fast) var(--ease-out); }
 .profile-slide-enter-from, .profile-slide-leave-to { opacity: 0; transform: translateX(16px); }
 
 .classe-profile {

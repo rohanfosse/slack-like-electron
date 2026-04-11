@@ -1386,7 +1386,7 @@ button { font-family: var(--font); }
   height: 100%;
   border-radius: var(--radius-xs);
   background: var(--accent);
-  transition: width .4s ease;
+  transition: width var(--motion-slow) var(--ease-out);
 }
 
 /* Ressources */

@@ -339,7 +339,7 @@
 <style scoped>
 /* ── Transition overlay ── */
 .cmd-fade-enter-active,
-.cmd-fade-leave-active { transition: opacity .12s ease; }
+.cmd-fade-leave-active { transition: opacity var(--motion-fast) var(--ease-out); }
 .cmd-fade-enter-from,
 .cmd-fade-leave-to     { opacity: 0; }
 

@@ -205,7 +205,7 @@ function scoreLabel(score: number): string {
 }
 .te-col-score { display: flex; align-items: center; gap: 6px; }
 .te-score-bar { flex: 1; height: 6px; border-radius: 3px; background: rgba(255,255,255,.06); overflow: hidden; }
-.te-score-fill { height: 100%; border-radius: 3px; transition: width .4s ease; min-width: 2px; }
+.te-score-fill { height: 100%; border-radius: 3px; transition: width var(--motion-slow) var(--ease-out); min-width: 2px; }
 .te-score-value { font-size: 12px; font-weight: 700; font-family: 'JetBrains Mono', monospace; min-width: 32px; }
 .te-score-label { font-size: 10px; color: var(--text-muted); }
 .te-col-stat { display: flex; align-items: center; gap: 4px; font-size: 12px; }

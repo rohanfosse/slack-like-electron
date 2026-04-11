@@ -67,7 +67,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  animation: rex-char-pop 0.4s ease both;
+  animation: rex-char-pop var(--motion-slow) var(--ease-out) both;
 }
 @keyframes rex-char-pop {
   from { transform: scale(0.6); opacity: 0; }
@@ -85,7 +85,7 @@
   color: #14b8a6;
   border: 1px solid rgba(13, 148, 136, 0.25);
   cursor: pointer;
-  transition: all 0.4s ease;
+  transition: all var(--motion-slow) var(--ease-out);
 }
 .rex-code-copy:hover {
   background: rgba(13, 148, 136, 0.18);

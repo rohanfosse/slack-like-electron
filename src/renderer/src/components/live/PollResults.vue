@@ -64,7 +64,7 @@
   transition: all .4s cubic-bezier(.34,1.56,.64,1);
 }
 .poll-item-leave-active {
-  transition: all .2s ease;
+  transition: all var(--motion-base) var(--ease-out);
 }
 .poll-item-enter-from {
   opacity: 0;

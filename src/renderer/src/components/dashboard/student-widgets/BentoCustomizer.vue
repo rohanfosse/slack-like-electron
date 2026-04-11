@@ -235,7 +235,7 @@ function onToggle(id: string) {
 
 /* Toggle animation */
 .wpc-card--just-toggled {
-  animation: wpc-pop .3s ease;
+  animation: wpc-pop var(--motion-slow) var(--ease-out);
 }
 @keyframes wpc-pop {
   0% { transform: scale(1); }

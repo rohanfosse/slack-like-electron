@@ -87,7 +87,7 @@ const hasText = computed(() => goal.value.text.trim().length > 0)
 
 <style scoped>
 .wdg-card {
-  transition: background 200ms ease;
+  transition: background var(--motion-base) var(--ease-out);
 }
 .wdg-card--done {
   background: linear-gradient(135deg, rgba(63, 183, 111, 0.05) 0%, rgba(63, 183, 111, 0.02) 100%);
@@ -107,7 +107,7 @@ const hasText = computed(() => goal.value.text.trim().length > 0)
   padding: 6px;
   box-sizing: border-box;
   min-height: 60px;
-  transition: opacity 200ms ease;
+  transition: opacity var(--motion-base) var(--ease-out);
 }
 .wdg-textarea::placeholder {
   color: var(--text-muted);
@@ -134,7 +134,7 @@ const hasText = computed(() => goal.value.text.trim().length > 0)
   align-items: center;
   justify-content: center;
   color: transparent;
-  transition: all 150ms ease;
+  transition: all var(--motion-fast) var(--ease-out);
 }
 .wdg-check:hover { border-color: var(--accent); }
 .wdg-check--done {

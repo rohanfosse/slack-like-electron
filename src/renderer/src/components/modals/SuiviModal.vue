@@ -326,7 +326,7 @@
   height: 100%;
   background: var(--accent);
   border-radius: 4px;
-  transition: width .4s ease;
+  transition: width var(--motion-slow) var(--ease-out);
 }
 
 /* ── Loading ── */

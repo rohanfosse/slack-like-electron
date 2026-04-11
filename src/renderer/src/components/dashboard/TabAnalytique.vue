@@ -151,7 +151,7 @@ function setRange(range: '7d' | '30d' | 'all') {
 .analytics-bar-label { width: 40px; flex-shrink: 0; font-size: 11px; color: var(--text-muted); text-align: right; }
 .analytics-bar-label-wide { width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .analytics-bar-track { flex: 1; height: 18px; background: var(--bg-hover); border-radius: 4px; overflow: hidden; }
-.analytics-bar-fill { height: 100%; border-radius: 4px; transition: width .4s ease; }
+.analytics-bar-fill { height: 100%; border-radius: 4px; transition: width var(--motion-slow) var(--ease-out); }
 .analytics-bar-count { width: 32px; flex-shrink: 0; font-size: 11px; color: var(--text-secondary); text-align: right; font-variant-numeric: tabular-nums; }
 .analytics-trend-chart { display: flex; gap: 8px; align-items: flex-end; padding: 12px 4px 0; height: 120px; }
 .analytics-trend-col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; height: 100%; }
@@ -164,7 +164,7 @@ function setRange(range: '7d' | '30d' | 'all') {
 .analytics-trend-bar-fill {
   width: 100%;
   background: linear-gradient(to top, var(--accent), color-mix(in srgb, var(--accent) 60%, #fff));
-  border-radius: 4px; min-height: 3px; transition: height .3s ease;
+  border-radius: 4px; min-height: 3px; transition: height var(--motion-slow) var(--ease-out);
 }
 .analytics-trend-label { font-size: 10px; color: var(--text-muted); text-transform: capitalize; }
 

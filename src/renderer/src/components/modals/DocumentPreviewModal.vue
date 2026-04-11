@@ -403,7 +403,7 @@ function openWith() {
 .preview-image {
   max-width: 100%; max-height: 100%;
   object-fit: contain; border-radius: var(--radius-sm);
-  transition: transform .2s ease;
+  transition: transform var(--motion-base) var(--ease-out);
   transform-origin: center center;
 }
 

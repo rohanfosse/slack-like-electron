@@ -338,7 +338,7 @@ function assignedSummary(taId: number): string {
 
 .iv-chevron {
   margin-left: auto;
-  transition: transform .18s ease;
+  transition: transform var(--motion-fast) var(--ease-out);
 }
 .iv-chevron.rotated { transform: rotate(180deg); }
 
@@ -492,7 +492,7 @@ function assignedSummary(taId: number): string {
 }
 
 .iv-expand-icon {
-  transition: transform .18s ease;
+  transition: transform var(--motion-fast) var(--ease-out);
 }
 .iv-expand-icon.rotated { transform: rotate(90deg); }
 
@@ -581,11 +581,11 @@ function assignedSummary(taId: number): string {
 
 /* ── Transitions ── */
 .iv-slide-enter-active,
-.iv-slide-leave-active { transition: opacity .15s ease, transform .15s ease; overflow: hidden; }
+.iv-slide-leave-active { transition: opacity var(--motion-fast) var(--ease-out), transform var(--motion-fast) var(--ease-out); overflow: hidden; }
 .iv-slide-enter-from,
 .iv-slide-leave-to     { opacity: 0; transform: translateY(-6px); }
 
-.iv-expand-enter-active { transition: opacity .15s ease; }
+.iv-expand-enter-active { transition: opacity var(--motion-fast) var(--ease-out); }
 .iv-expand-leave-active { transition: opacity .1s ease; }
 .iv-expand-enter-from,
 .iv-expand-leave-to     { opacity: 0; }

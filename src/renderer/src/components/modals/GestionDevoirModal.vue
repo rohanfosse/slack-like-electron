@@ -455,7 +455,7 @@
 .gd-rubrique-summary::-webkit-details-marker { display: none; }
 .gd-rubrique-summary::before {
   content: '\25B6'; font-size: 9px; color: var(--text-muted);
-  transition: transform .15s ease;
+  transition: transform var(--motion-fast) var(--ease-out);
 }
 .gd-rubrique-details[open] > .gd-rubrique-summary::before { transform: rotate(90deg); }
 .gd-rubrique-count {

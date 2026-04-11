@@ -915,7 +915,7 @@ function onOptDragEnd() { bento.reorderOptional(draggableOpt.value) }
 
 .bento-tile--editing {
   border: 2px dashed transparent;
-  animation: bento-jiggle .3s ease infinite alternate;
+  animation: bento-jiggle var(--motion-slow) var(--ease-out) infinite alternate;
 }
 .bento-tile--editing:hover { border-color: rgba(74, 144, 217, .3); }
 

@@ -107,7 +107,7 @@ defineProps<{
   display: flex; align-items: center; gap: 10px;
   padding: 10px 12px; background: var(--bg-elevated, rgba(255,255,255,.04));
   border: 1px solid var(--border); border-radius: 10px;
-  cursor: pointer; transition: all .15s ease; text-align: left; width: 100%;
+  cursor: pointer; transition: all var(--motion-fast) var(--ease-out); text-align: left; width: 100%;
 }
 .db-action-item:hover { background: var(--bg-hover); border-color: var(--accent); }
 .db-action-critical { border-left: 3px solid #ef4444; }
@@ -156,6 +156,6 @@ defineProps<{
   background: var(--bg-hover); border-radius: 3px;
   display: flex; align-items: flex-end; overflow: hidden;
 }
-.db-trend-bar-fill { width: 100%; background: var(--accent); border-radius: 3px; min-height: 2px; transition: height .3s ease; }
+.db-trend-bar-fill { width: 100%; background: var(--accent); border-radius: 3px; min-height: 2px; transition: height var(--motion-slow) var(--ease-out); }
 .db-trend-label { font-size: 9px; color: var(--text-muted); text-transform: capitalize; }
 </style>

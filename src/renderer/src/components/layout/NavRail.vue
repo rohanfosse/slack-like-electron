@@ -513,7 +513,7 @@
 }
 
 /* Transition panneau */
-.notif-panel-fade-enter-active { transition: opacity .12s ease, transform .12s ease; }
+.notif-panel-fade-enter-active { transition: opacity var(--motion-fast) var(--ease-out), transform var(--motion-fast) var(--ease-out); }
 .notif-panel-fade-leave-active { transition: opacity .09s ease, transform .09s ease; }
 .notif-panel-fade-enter-from,
 .notif-panel-fade-leave-to     { opacity: 0; transform: translateX(-6px); }

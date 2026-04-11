@@ -141,7 +141,7 @@ const emit = defineEmits<{
                 stroke-linecap="round"
                 :stroke-dasharray="ringDash(promoStats.get(p.id)?.avgSubmission ?? 0)"
                 :stroke-dashoffset="ringCirc * 0.25"
-                style="transition: stroke-dasharray .4s ease"
+                style="transition: stroke-dasharray var(--motion-slow) var(--ease-out)"
               />
             </svg>
             <span class="tp-ring-label">{{ promoStats.get(p.id)?.avgSubmission ?? 0 }}%</span>
@@ -310,7 +310,7 @@ const emit = defineEmits<{
   color: var(--text-muted);
   border: 1.5px dashed var(--border-input); border-radius: 20px;
   background: none; cursor: pointer; font-family: var(--font);
-  transition: all .15s ease; align-self: flex-start;
+  transition: all var(--motion-fast) var(--ease-out); align-self: flex-start;
 }
 .tp-add-btn:hover { color: var(--accent); border-color: var(--accent); background: rgba(74,144,217,.07); }
 

@@ -174,7 +174,7 @@
 /* ── Liste dépliée ── */
 .pinned-expand-enter-active,
 .pinned-expand-leave-active {
-  transition: max-height .2s ease, opacity .15s ease;
+  transition: max-height var(--motion-base) var(--ease-out), opacity var(--motion-fast) var(--ease-out);
   overflow: hidden;
 }
 .pinned-expand-enter-from,

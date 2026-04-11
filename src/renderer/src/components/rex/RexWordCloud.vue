@@ -62,7 +62,7 @@
 .rex-cloud-item {
   font-weight: 700;
   line-height: 1.2;
-  transition: all 0.4s ease;
+  transition: all var(--motion-slow) var(--ease-out);
   display: inline-block;
 }
 .rex-cloud-word-enter-from {
@@ -70,10 +70,10 @@
   transform: scale(0.5);
 }
 .rex-cloud-word-enter-active {
-  transition: all 0.4s ease;
+  transition: all var(--motion-slow) var(--ease-out);
 }
 .rex-cloud-word-leave-active {
-  transition: all 0.4s ease;
+  transition: all var(--motion-slow) var(--ease-out);
 }
 .rex-cloud-word-leave-to {
   opacity: 0;

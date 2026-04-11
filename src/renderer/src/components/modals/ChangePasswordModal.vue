@@ -348,7 +348,7 @@ function tryClose() {
 .cpw-strength-fill {
   height: 100%;
   border-radius: 2px;
-  transition: width .3s ease, background .3s ease;
+  transition: width var(--motion-slow) var(--ease-out), background var(--motion-slow) var(--ease-out);
 }
 
 .cpw-strength-label {
@@ -390,10 +390,10 @@ function tryClose() {
 }
 
 /* Transitions */
-.modal-enter-active, .modal-leave-active { transition: opacity .15s ease; }
+.modal-enter-active, .modal-leave-active { transition: opacity var(--motion-fast) var(--ease-out); }
 .modal-enter-from, .modal-leave-to       { opacity: 0; }
 .modal-enter-active .cpw-box,
-.modal-leave-active .cpw-box             { transition: transform .15s ease; }
+.modal-leave-active .cpw-box             { transition: transform var(--motion-fast) var(--ease-out); }
 .modal-enter-from .cpw-box,
 .modal-leave-to .cpw-box                 { transform: translateY(-10px) scale(.97); }
 </style>

@@ -141,7 +141,7 @@ function isExpired(deadline: string | null | undefined): boolean {
 }
 
 .group-header--clickable { cursor: pointer; user-select: none; }
-.group-chevron { transition: transform .2s ease; margin-left: auto; }
+.group-chevron { transition: transform var(--motion-base) var(--ease-out); margin-left: auto; }
 .group-chevron--collapsed { transform: rotate(-90deg); }
 .group-header--danger  { color: var(--color-danger); }
 .group-header--warning { color: var(--color-warning); }

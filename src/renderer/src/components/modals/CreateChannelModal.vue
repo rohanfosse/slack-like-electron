@@ -559,7 +559,7 @@
 }
 
 /* ── Transition expand ── */
-.cc-expand-enter-active { transition: max-height .2s ease, opacity .15s ease; max-height: 300px; overflow: hidden; }
-.cc-expand-leave-active { transition: max-height .15s ease, opacity .12s ease; overflow: hidden; }
+.cc-expand-enter-active { transition: max-height var(--motion-base) var(--ease-out), opacity var(--motion-fast) var(--ease-out); max-height: 300px; overflow: hidden; }
+.cc-expand-leave-active { transition: max-height var(--motion-fast) var(--ease-out), opacity var(--motion-fast) var(--ease-out); overflow: hidden; }
 .cc-expand-enter-from, .cc-expand-leave-to { max-height: 0 !important; opacity: 0; }
 </style>

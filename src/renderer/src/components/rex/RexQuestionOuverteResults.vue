@@ -65,7 +65,7 @@
   background: var(--bg-elevated, #1e1f21);
   border: 1px solid var(--border, rgba(255,255,255,.08));
   border-radius: 10px;
-  transition: all 0.4s ease;
+  transition: all var(--motion-slow) var(--ease-out);
 }
 .rex-qo-card.pinned {
   border-left: 3px solid #0d9488;
@@ -98,7 +98,7 @@
   background: transparent;
   color: var(--text-muted, #888);
   cursor: pointer;
-  transition: all 0.4s ease;
+  transition: all var(--motion-slow) var(--ease-out);
 }
 .rex-qo-pin:hover {
   background: rgba(13, 148, 136, 0.12);

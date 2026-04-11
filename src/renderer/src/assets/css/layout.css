@@ -699,42 +699,31 @@ nav[aria-label="Messages directs"] {
   text-align: center;
   padding: 20px;
 }
-.welcome-icon-wrapper {
-  width: 64px;
-  height: 64px;
-  border-radius: var(--radius-xl);
-  background: rgba(var(--accent-rgb), .08);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: var(--space-lg);
-}
-.welcome-icon { color: var(--accent); opacity: .6; }
-.welcome-heading {
-  font-size: 17px;
-  font-weight: 700;
-  color: var(--text-primary);
-  margin-bottom: 4px;
-}
-.welcome-sub {
-  font-size: 13.5px;
-  color: var(--text-muted);
-  margin-bottom: 20px;
-  max-width: 360px;
-  line-height: 1.55;
-}
+/* welcome-icon-wrapper / welcome-heading / welcome-sub : supprimes en v2.60.0,
+   le welcome screen utilise maintenant <EmptyState> (cf. MASTER.md §7).
+   Les classes .welcome-tips / .welcome-tip / .welcome-tip-icon / .welcome-kbd
+   restent comme illustrations contextuelles dans le slot par defaut. */
 .welcome-tips {
-  display: flex; flex-direction: column; gap: 8px;
+  display: flex; flex-direction: column; gap: var(--space-sm);
   text-align: left; max-width: 400px;
+  margin-top: var(--space-md);
 }
 .welcome-tip {
-  display: flex; align-items: flex-start; gap: 8px;
+  display: flex; align-items: flex-start; gap: var(--space-sm);
   font-size: 13px; color: var(--text-secondary);
-  padding: 8px 12px; border-radius: var(--radius);
+  padding: var(--space-sm) var(--space-md); border-radius: var(--radius);
   background: var(--bg-elevated);
 }
 .welcome-tip-icon { flex-shrink: 0; color: var(--accent); opacity: .7; }
 .welcome-tip strong { color: var(--text-primary); }
+.welcome-kbd {
+  font-size: 10px;
+  padding: 1px 4px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-active);
+  border: 1px solid var(--border);
+  font-family: var(--font);
+}
 
 /* ── Zone de saisie ──────────────────────────────────────────────────────── */
 .message-input-area {

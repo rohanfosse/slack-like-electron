@@ -279,7 +279,7 @@ const enabledCount = computed(() => props.widgets.filter(w => props.isVisible(w.
   border: 1px solid var(--border);
   border-radius: 10px;
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: all var(--motion-fast) var(--ease-out);
 }
 .wp-preset-card:hover {
   background: var(--bg-hover);
@@ -340,7 +340,7 @@ const enabledCount = computed(() => props.widgets.filter(w => props.isVisible(w.
   border: 1px solid var(--border);
   border-radius: 10px;
   padding: 10px 12px;
-  transition: all 0.15s ease;
+  transition: all var(--motion-fast) var(--ease-out);
 }
 .wp-card--active {
   background: var(--bg-elevated, rgba(255, 255, 255, 0.04));

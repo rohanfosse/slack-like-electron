@@ -280,7 +280,7 @@ const dateGroups = computed<DateGroup[]>(() => {
 
 /* ── Animation d'entrée - nouveaux messages seulement ── */
 .msg-fade-enter-active {
-  transition: opacity .18s ease-out, transform .18s ease-out;
+  transition: opacity var(--motion-fast) var(--ease-out), transform var(--motion-fast) var(--ease-out);
 }
 .msg-fade-enter-from {
   opacity: 0;
@@ -370,8 +370,8 @@ const dateGroups = computed<DateGroup[]>(() => {
   animation: spin .7s linear infinite;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
-.skel-fade-enter-active { transition: opacity .2s ease; }
-.skel-fade-leave-active { transition: opacity .15s ease; position: absolute; width: 100%; top: 0; left: 0; }
+.skel-fade-enter-active { transition: opacity var(--motion-base) var(--ease-out); }
+.skel-fade-leave-active { transition: opacity var(--motion-fast) var(--ease-out); position: absolute; width: 100%; top: 0; left: 0; }
 .skel-fade-enter-from, .skel-fade-leave-to { opacity: 0; }
 
 /* ── Bouton scroll-to-bottom ── */

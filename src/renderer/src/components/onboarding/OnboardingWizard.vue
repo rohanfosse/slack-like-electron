@@ -349,7 +349,7 @@ async function savePhoto() {
   background: var(--border);
   cursor: default;
   padding: 0;
-  transition: background 0.2s ease, transform 0.2s ease;
+  transition: background var(--motion-base) var(--ease-out), transform var(--motion-base) var(--ease-out);
 }
 
 .ob-dot.active {
@@ -542,7 +542,7 @@ async function savePhoto() {
   border-radius: 12px;
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid var(--border);
-  transition: border-color 0.15s ease;
+  transition: border-color var(--motion-fast) var(--ease-out);
 }
 
 .ob-feature-card:hover {
@@ -587,7 +587,7 @@ async function savePhoto() {
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
-  transition: opacity 0.15s ease, transform 0.1s ease;
+  transition: opacity var(--motion-fast) var(--ease-out), transform 0.1s ease;
 }
 
 .ob-btn-primary:hover {
@@ -616,7 +616,7 @@ async function savePhoto() {
   font-size: 13px;
   font-weight: 500;
   cursor: pointer;
-  transition: background 0.15s ease;
+  transition: background var(--motion-fast) var(--ease-out);
 }
 
 .ob-btn-secondary:hover {
@@ -634,7 +634,7 @@ async function savePhoto() {
   border-radius: 8px;
   font-size: 13px;
   cursor: pointer;
-  transition: color 0.15s ease;
+  transition: color var(--motion-fast) var(--ease-out);
 }
 
 .ob-btn-ghost:hover {
@@ -649,7 +649,7 @@ async function savePhoto() {
   cursor: pointer;
   text-decoration: underline;
   padding: 8px 12px;
-  transition: color 0.15s ease;
+  transition: color var(--motion-fast) var(--ease-out);
 }
 
 .ob-btn-link:hover {
@@ -676,7 +676,7 @@ async function savePhoto() {
 .slide-left-leave-active,
 .slide-right-enter-active,
 .slide-right-leave-active {
-  transition: transform 0.25s ease, opacity 0.25s ease;
+  transition: transform var(--motion-base) var(--ease-out), opacity var(--motion-base) var(--ease-out);
 }
 
 .slide-left-enter-from {

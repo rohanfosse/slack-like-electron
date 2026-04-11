@@ -903,7 +903,7 @@ function handleNavigateChapter(path: string) {
   align-items: center;
   justify-content: center;
   z-index: 100;
-  animation: fade-in 150ms ease-out;
+  animation: fade-in var(--motion-fast) var(--ease-out);
 }
 @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
 
@@ -913,7 +913,7 @@ function handleNavigateChapter(path: string) {
   padding: 24px;
   width: min(440px, calc(100% - 32px));
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
-  animation: slide-up 200ms ease-out;
+  animation: slide-up var(--motion-base) var(--ease-out);
 }
 @keyframes slide-up {
   from { opacity: 0; transform: translateY(12px); }

@@ -63,7 +63,7 @@ const menuStyle = computed(() => {
   border-radius: 8px;
   box-shadow: 0 8px 24px rgba(0,0,0,.35);
   padding: 4px 0;
-  animation: ctxFade .12s ease;
+  animation: ctxFade var(--motion-fast) var(--ease-out);
 }
 @keyframes ctxFade {
   from { opacity: 0; transform: scale(.96); }

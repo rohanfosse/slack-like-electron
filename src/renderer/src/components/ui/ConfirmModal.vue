@@ -109,10 +109,10 @@ useFocusTrap(cfmBoxRef, visible)
 .cfm-confirm.warning { background: #e67e22; }
 .cfm-confirm.warning:hover { background: #d35400; }
 
-.confirm-fade-enter-active, .confirm-fade-leave-active { transition: opacity .15s ease; }
+.confirm-fade-enter-active, .confirm-fade-leave-active { transition: opacity var(--motion-fast) var(--ease-out); }
 .confirm-fade-enter-from, .confirm-fade-leave-to       { opacity: 0; }
 .confirm-fade-enter-active .cfm-box,
-.confirm-fade-leave-active .cfm-box { transition: transform .15s ease; }
+.confirm-fade-leave-active .cfm-box { transition: transform var(--motion-fast) var(--ease-out); }
 .confirm-fade-enter-from .cfm-box,
 .confirm-fade-leave-to .cfm-box     { transform: translateY(-8px) scale(.97); }
 </style>

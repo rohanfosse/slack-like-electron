@@ -395,7 +395,7 @@ onBeforeUnmount(() => {
 }
 .dtp-preset:hover { background: rgba(74,144,217,.08); border-color: var(--accent); color: var(--accent); }
 
-.dtp-pop-enter-active { transition: opacity .15s ease, transform .15s ease; }
+.dtp-pop-enter-active { transition: opacity var(--motion-fast) var(--ease-out), transform var(--motion-fast) var(--ease-out); }
 .dtp-pop-leave-active { transition: opacity .1s ease, transform .1s ease; }
 .dtp-pop-enter-from { opacity: 0; transform: translateY(-4px) scale(.97); }
 .dtp-pop-leave-to { opacity: 0; transform: translateY(-4px) scale(.97); }

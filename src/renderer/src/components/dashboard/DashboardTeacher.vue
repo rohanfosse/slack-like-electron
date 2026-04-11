@@ -367,7 +367,7 @@ function setTab(tab: DashTabType) {
   width: fit-content; margin: 0 auto;
   box-shadow: 0 2px 12px rgba(0,0,0,.2), 0 0 0 1px rgba(255,255,255,.03);
   z-index: 5;
-  opacity: .35; transition: opacity .25s ease;
+  opacity: .35; transition: opacity var(--motion-base) var(--ease-out);
 }
 .db-fab-bar:hover { opacity: 1; }
 .db-fab {
@@ -375,7 +375,7 @@ function setTab(tab: DashTabType) {
   height: 30px; padding: 0 12px; font-size: 12px; font-weight: 600;
   background: var(--accent); color: #fff;
   border: none; border-radius: 8px; cursor: pointer;
-  transition: filter .12s ease, transform .1s ease; font-family: var(--font);
+  transition: filter var(--motion-fast) var(--ease-out), transform .1s ease; font-family: var(--font);
   letter-spacing: .01em; white-space: nowrap;
 }
 .db-fab:hover { filter: brightness(1.12); }
@@ -391,7 +391,7 @@ function setTab(tab: DashTabType) {
   width: 30px; height: 30px; padding: 0;
   background: transparent; color: var(--text-muted);
   border: none; border-radius: 8px; cursor: pointer;
-  transition: background .12s ease, color .12s ease, transform .1s ease;
+  transition: background var(--motion-fast) var(--ease-out), color var(--motion-fast) var(--ease-out), transform .1s ease;
   flex-shrink: 0;
 }
 .db-fab-ghost:hover { background: var(--bg-hover); color: var(--text-primary); }
@@ -407,7 +407,7 @@ function setTab(tab: DashTabType) {
   padding: 3px 8px; border-radius: 5px; white-space: nowrap;
   border: 1px solid var(--border);
   pointer-events: none; opacity: 0;
-  transition: opacity .15s ease, transform .15s ease;
+  transition: opacity var(--motion-fast) var(--ease-out), transform var(--motion-fast) var(--ease-out);
   box-shadow: 0 2px 6px rgba(0,0,0,.2);
 }
 .db-fab-ghost:hover::after { opacity: 1; transform: translateX(-50%) translateY(0); }

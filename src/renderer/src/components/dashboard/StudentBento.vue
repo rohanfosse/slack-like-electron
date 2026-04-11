@@ -244,7 +244,7 @@ function onReset() {
 
 /* ── Customizer transition ── */
 .sb-customizer-enter-active { transition: all .25s cubic-bezier(.4,0,.2,1); }
-.sb-customizer-leave-active { transition: all .15s ease; }
+.sb-customizer-leave-active { transition: all var(--motion-fast) var(--ease-out); }
 .sb-customizer-enter-from { opacity: 0; transform: translateY(12px); }
 .sb-customizer-leave-to { opacity: 0; transform: translateY(8px); }
 

@@ -571,7 +571,7 @@ function formatDateRange(start?: string, end?: string): string {
   height: 100%;
   border-radius: 2px;
   background: var(--accent);
-  transition: width .3s ease;
+  transition: width var(--motion-slow) var(--ease-out);
   opacity: .7;
 }
 .pf-progress-fill.fill-good     { opacity: .9; }

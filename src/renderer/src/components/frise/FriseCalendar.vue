@@ -170,7 +170,7 @@ function dotClassForGroup(group: PositionedGroup) {
 .fc-milestone {
   position: absolute; top: 50%;
   display: flex; flex-direction: column; align-items: center; gap: 3px;
-  cursor: pointer; z-index: 2; transition: transform .15s ease;
+  cursor: pointer; z-index: 2; transition: transform var(--motion-fast) var(--ease-out);
 }
 .fc-milestone--expanded { z-index: 10; }
 .fc-ms-labels {

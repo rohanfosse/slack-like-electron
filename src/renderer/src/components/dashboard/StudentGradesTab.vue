@@ -338,7 +338,7 @@ function toggleExpand(id: number) {
 }
 .sgt-chart-bar {
   width: 100%; border-radius: 3px 3px 0 0;
-  transition: height .4s ease;
+  transition: height var(--motion-slow) var(--ease-out);
   min-height: 2px;
 }
 .sgt-chart-label {
