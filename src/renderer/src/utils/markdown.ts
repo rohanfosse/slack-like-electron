@@ -1,7 +1,10 @@
-/** Markdown renderer pour Lumen — marked + DOMPurify pour eviter XSS. */
+/** Markdown renderer pour Lumen — marked + DOMPurify pour eviter XSS.
+ *  Enrichi avec KaTeX (maths $...$ et $$...$$) et placeholder Mermaid pour
+ *  les schemas (rendus cote viewer apres injection DOM). */
 import { marked } from 'marked'
 import DOMPurify from 'dompurify'
 import hljs from 'highlight.js'
+import katex from 'katex'
 
 // Configuration de marked : code highlighting + breaks + GFM
 marked.setOptions({
@@ -9,21 +12,113 @@ marked.setOptions({
   breaks: true,
 })
 
-// Hook pour highlight.js sur les blocs de code
+// Hook pour highlight.js sur les blocs de code + wrapper avec badge langue.
+// Cas special : `mermaid` est passe tel-quel (echappe) dans un <pre> marque,
+// le viewer se charge du rendu SVG apres montage.
 marked.use({
   renderer: {
     code(token) {
       const code = typeof token === 'string' ? token : token.text
       const lang = typeof token === 'string' ? '' : (token.lang ?? '')
+      if (lang === 'mermaid') {
+        // Placeholder : la source est conservee en textContent, rendue
+        // cote Vue par mermaid.render apres v-html.
+        return `<pre class="lumen-mermaid-src">${escapeHtml(code)}</pre>`
+      }
       const validLang = lang && hljs.getLanguage(lang)
       const highlighted = validLang
         ? hljs.highlight(code, { language: lang }).value
         : hljs.highlightAuto(code).value
       const cls = validLang ? `language-${lang}` : ''
-      return `<pre class="lumen-code"><code class="hljs ${cls}">${highlighted}</code></pre>`
+      const label = (validLang ? lang : (lang || 'text')).toUpperCase()
+      return (
+        `<div class="lumen-codeblock">` +
+          `<div class="lumen-codeblock-header">` +
+            `<span class="lumen-codeblock-lang">${escapeHtml(label)}</span>` +
+          `</div>` +
+          `<pre class="lumen-code"><code class="hljs ${cls}">${highlighted}</code></pre>` +
+        `</div>`
+      )
     },
   },
 })
+
+// ── KaTeX : extraction des maths avant parsing markdown ─────────────────────
+//
+// On extrait d'abord `$$...$$` (display) et `$...$` (inline, flanque de
+// non-espace) en remplacant par un token textuel unique. Le markdown est
+// ensuite parse / sanitise normalement, puis les tokens sont remplaces par
+// le HTML KaTeX rendu (qui contient beaucoup de spans / attributs que
+// DOMPurify n'aime pas — d'ou la substitution post-sanitisation).
+//
+// Les regions de code (```...``` et `...`) sont protegees pour eviter de
+// coloriser un "$" dans du code source.
+
+// Delimiteurs en Private Use Area (U+E000/U+E001) : valides Unicode,
+// preserves par marked/DOMPurify, jamais generes par une saisie clavier
+// donc zero risque de collision avec du contenu utilisateur reel.
+const MATH_TOKEN_RE = /\uE000LMATH(\d+)\uE001/g
+function mathToken(i: number): string {
+  return `\uE000LMATH${i}\uE001`
+}
+
+// Cache global des formules deja rendues : identique `$x$` ou `$n$` reviennent
+// souvent et renderToString est synchrone + couteux.
+const katexCache = new Map<string, string>()
+
+function safeRenderKatex(tex: string, display: boolean): string {
+  const key = `${display ? 'd' : 'i'}:${tex}`
+  const cached = katexCache.get(key)
+  if (cached !== undefined) return cached
+  let html: string
+  try {
+    html = katex.renderToString(tex, {
+      displayMode: display,
+      throwOnError: false,
+      output: 'html',
+      strict: 'ignore',
+    })
+  } catch {
+    html = `<code class="lumen-math-error">${escapeHtml(tex)}</code>`
+  }
+  katexCache.set(key, html)
+  return html
+}
+
+function extractMath(md: string, store: string[]): string {
+  // Protege les blocs / inline code d'abord
+  const codeParts: string[] = []
+  let work = md.replace(/```[\s\S]*?```|`[^`\n]+`/g, (m) => {
+    const i = codeParts.length
+    codeParts.push(m)
+    return `\u0000CODEPROT${i}\u0000`
+  })
+
+  // Display math : $$...$$ (multi-ligne autorise)
+  work = work.replace(/\$\$([\s\S]+?)\$\$/g, (_, tex: string) => {
+    const html = safeRenderKatex(tex.trim(), true)
+    const i = store.length
+    store.push(html)
+    return mathToken(i)
+  })
+
+  // Inline math : $...$ (pas de saut de ligne, flanque de non-espace,
+  // evite les "$10" / "$100" en n'acceptant pas un chiffre apres le $ final)
+  work = work.replace(/(?<![\\$])\$(?!\s)([^\n$]+?)(?<![\s\\])\$(?!\d)/g, (_, tex: string) => {
+    const html = safeRenderKatex(tex, false)
+    const i = store.length
+    store.push(html)
+    return mathToken(i)
+  })
+
+  // Restore les blocs de code
+  work = work.replace(/\u0000CODEPROT(\d+)\u0000/g, (_, i) => codeParts[Number(i)] ?? '')
+  return work
+}
+
+function reinsertMath(html: string, store: string[]): string {
+  return html.replace(MATH_TOKEN_RE, (_, i) => store[Number(i)] ?? '')
+}
 
 // Slug : transforme un titre en identifiant stable (minuscules, accents retires,
 // espaces -> tirets). Utilise par le TOC du reader pour l'ancrage.
@@ -273,18 +368,24 @@ export interface RenderMarkdownOptions {
  */
 export function renderMarkdown(md: string, options: RenderMarkdownOptions = {}): string {
   if (!md) return ''
-  const withAdmonitions = preprocessAdmonitions(md)
+  const mathStore: string[] = []
+  const withMath = extractMath(md, mathStore)
+  const withAdmonitions = preprocessAdmonitions(withMath)
   const rawHtml = marked.parse(withAdmonitions, { async: false }) as string
   const withIds = injectHeadingIds(rawHtml)
   const withKeywords = highlightKeywords(withIds)
   const withLinks = options.chapterPath
     ? rewriteLinksForLumen(withKeywords, options.chapterPath)
     : withKeywords
-  return DOMPurify.sanitize(withLinks, {
+  const sanitized = DOMPurify.sanitize(withLinks, {
     ALLOWED_TAGS,
     ALLOWED_ATTR,
     // Autorise les data URIs sur img (necessaire pour les images
     // inlinees par le backend Lumen) et les fragments internes (#...)
     ALLOWED_URI_REGEXP: /^(?:(?:https?|mailto|tel|ftp):|[^a-z]|[a-z+.-]+(?:[^a-z+.\-:]|$))|^(?:data:image\/(?:png|jpe?g|gif|webp|svg\+xml);base64,)|^#/i,
   })
+  // Re-insertion des maths KaTeX apres sanitisation (KaTeX produit du HTML
+  // structurellement complexe que DOMPurify retirerait — on lui fait
+  // confiance car l'entree TeX est echappee par KaTeX).
+  return reinsertMath(sanitized, mathStore)
 }

@@ -147,11 +147,54 @@ function handleBodyClick(e: MouseEvent) {
   }
 }
 
+// Import dynamique de mermaid (~500kb) uniquement si un chapitre contient
+// un schema. Le flag d'init est module-scope car mermaid est un singleton
+// global partage entre toutes les instances du viewer.
+let mermaidInitialized = false
+async function renderMermaidBlocks(root: HTMLElement) {
+  const blocks = root.querySelectorAll('pre.lumen-mermaid-src')
+  if (!blocks.length) return
+  try {
+    const { default: mermaid } = await import('mermaid')
+    if (!mermaidInitialized) {
+      mermaid.initialize({
+        startOnLoad: false,
+        theme: 'dark',
+        securityLevel: 'strict',
+        fontFamily: 'inherit',
+      })
+      mermaidInitialized = true
+    }
+    let i = 0
+    for (const pre of Array.from(blocks)) {
+      const src = (pre as HTMLElement).textContent ?? ''
+      const id = `lumen-mermaid-${Date.now()}-${i++}`
+      try {
+        const { svg } = await mermaid.render(id, src)
+        const wrapper = document.createElement('div')
+        wrapper.className = 'lumen-mermaid'
+        wrapper.innerHTML = svg
+        pre.replaceWith(wrapper)
+      } catch (err) {
+        const errBox = document.createElement('div')
+        errBox.className = 'lumen-mermaid-error'
+        errBox.textContent = `Schema Mermaid invalide : ${(err as Error).message}`
+        pre.replaceWith(errBox)
+      }
+    }
+  } catch {
+    // mermaid indisponible : on laisse les pres en place (visibles comme texte)
+  }
+}
+
 async function enrichRender() {
   await nextTick()
   if (!bodyRef.value) return
   injectCopyButtons(bodyRef.value)
+  // Scroll en premier pour eviter que l'utilisateur voie un saut de layout
+  // apres que mermaid remplace les <pre> par des SVG plus grands.
   if (bodyRef.value.scrollTo) bodyRef.value.scrollTo({ top: 0 })
+  renderMermaidBlocks(bodyRef.value).catch(() => { /* deja gere par bloc */ })
 }
 
 onMounted(() => {
@@ -566,6 +609,89 @@ button.lumen-viewer-chip {
 
 <!-- Styles globaux additionnels pour le body markdown : copy button injecte dynamiquement -->
 <style>
+/* ── Wrapper de bloc de code avec header (badge langue) ────────────────── */
+.lumen-viewer .markdown-body .lumen-codeblock {
+  margin: 16px 0;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+  background: #282c34; /* atom-one-dark base */
+}
+.lumen-viewer .markdown-body .lumen-codeblock-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 12px;
+  background: rgba(255, 255, 255, 0.04);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+.lumen-viewer .markdown-body .lumen-codeblock-lang {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.55);
+  font-family: 'JetBrains Mono', Menlo, Consolas, monospace;
+}
+.lumen-viewer .markdown-body .lumen-codeblock pre.lumen-code {
+  margin: 0;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  padding: 14px 16px;
+  overflow-x: auto;
+  font-size: 13px;
+  line-height: 1.55;
+}
+.lumen-viewer .markdown-body .lumen-codeblock pre.lumen-code code {
+  font-family: 'JetBrains Mono', Menlo, Consolas, monospace;
+  font-size: 13px;
+}
+
+/* ── Mermaid : SVG centre avec fond doux ──────────────────────────────── */
+.lumen-viewer .markdown-body .lumen-mermaid {
+  display: flex;
+  justify-content: center;
+  padding: 16px;
+  margin: 16px 0;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow-x: auto;
+}
+.lumen-viewer .markdown-body .lumen-mermaid svg {
+  max-width: 100%;
+  height: auto;
+}
+.lumen-viewer .markdown-body .lumen-mermaid-error {
+  padding: 12px 14px;
+  margin: 16px 0;
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 6px;
+  color: var(--danger, #ef4444);
+  font-size: 12px;
+  font-family: 'JetBrains Mono', Menlo, Consolas, monospace;
+  white-space: pre-wrap;
+}
+
+/* ── KaTeX : display math centre, inline dans le flux ─────────────────── */
+.lumen-viewer .markdown-body .katex-display {
+  margin: 18px 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 4px 0;
+}
+.lumen-viewer .markdown-body .katex {
+  font-size: 1.05em;
+}
+.lumen-viewer .markdown-body .lumen-math-error {
+  color: var(--danger, #ef4444);
+  background: rgba(239, 68, 68, 0.1);
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+
 .lumen-viewer .markdown-body pre.lumen-code {
   position: relative;
 }

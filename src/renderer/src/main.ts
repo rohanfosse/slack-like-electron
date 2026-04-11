@@ -13,6 +13,7 @@ import '@css/components.css'
 import '@css/devoirs-shared.css'
 import '@css/dashboard-shared.css'
 import 'highlight.js/styles/atom-one-dark.css'
+import 'katex/dist/katex.min.css'
 
 const app = createApp(App)
 

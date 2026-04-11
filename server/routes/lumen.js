@@ -15,6 +15,7 @@ const { requireRole, requirePromo, requirePromoAdmin, promoFromParam, promoFromT
 const { validate } = require('../middleware/validate')
 const { AppError, NotFoundError, ForbiddenError } = require('../utils/errors')
 const { buildClientForUser, validateToken, mapOctokitError } = require('../services/githubClient')
+const { safeAuthorType } = require('../utils/roles')
 const { syncPromoRepos, fetchChapterContent, getCachedChapter } = require('../services/lumenRepoSync')
 const {
   // auth
@@ -56,10 +57,17 @@ router.use(authMiddleware)
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
-/** Normalisation : les JWT enseignants stockent id en negatif. */
+// Normalise 'admin' / 'ta' vers 'teacher' via safeAuthorType : ces roles
+// partagent la meme table teachers et le meme namespace d'id (stocke negatif
+// dans le JWT), donc un seul row dans lumen_github_auth par humain.
 function userKey(req) {
-  if (req.user?.type === 'teacher') return { userType: 'teacher', userId: Math.abs(req.user.id) }
-  if (req.user?.type === 'student') return { userType: 'student', userId: req.user.id }
+  const type = req.user?.type
+  if (!type) return null
+  try {
+    const normalized = safeAuthorType(type)
+    if (normalized === 'teacher') return { userType: 'teacher', userId: Math.abs(req.user.id) }
+    if (normalized === 'student') return { userType: 'student', userId: req.user.id }
+  } catch { /* type inconnu */ }
   return null
 }
 
