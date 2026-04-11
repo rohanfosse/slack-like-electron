@@ -3,7 +3,7 @@
  * Verifie l'acceptation des formats valides et le rejet clair des formats
  * invalides, pour que l'UI puisse afficher des messages actionnables.
  */
-const { parseManifest } = require('../../../server/services/lumenManifest')
+const { parseManifest, inferRepoKind, KIND_VALUES } = require('../../../server/services/lumenManifest')
 
 describe('parseManifest : entrees valides', () => {
   it('manifest minimal (project + chapters)', () => {
@@ -164,5 +164,136 @@ chapters:
     path: cours/01.md
 `)
     expect(r.ok).toBe(false)
+  })
+})
+
+// ── Categorisation v2.63 (kind / audience / groupName) ────────────────────
+
+describe('parseManifest : champ kind', () => {
+  const KINDS = ['course', 'prosit', 'workshop', 'miniproject', 'project', 'readme', 'group']
+
+  KINDS.forEach((kind) => {
+    it(`accepte kind: ${kind}`, () => {
+      const r = parseManifest(`
+project: Cours
+kind: ${kind}
+chapters:
+  - title: Intro
+    path: cours/01.md
+`)
+      expect(r.ok).toBe(true)
+      expect(r.manifest.kind).toBe(kind)
+    })
+  })
+
+  it('rejette une valeur kind invalide', () => {
+    const r = parseManifest(`
+project: Cours
+kind: invalid_kind
+chapters:
+  - title: Intro
+    path: cours/01.md
+`)
+    expect(r.ok).toBe(false)
+    expect(r.error).toMatch(/kind/i)
+  })
+
+  it('accepte un manifest sans kind (defaut undefined)', () => {
+    const r = parseManifest(`
+project: Cours
+chapters:
+  - title: Intro
+    path: cours/01.md
+`)
+    expect(r.ok).toBe(true)
+    expect(r.manifest.kind).toBeUndefined()
+  })
+
+  it('accepte audience promo et group avec groupName', () => {
+    const r = parseManifest(`
+project: Rendu Equipe A
+kind: group
+audience: group
+groupName: "Equipe A"
+chapters:
+  - title: README
+    path: README.md
+`)
+    expect(r.ok).toBe(true)
+    expect(r.manifest.audience).toBe('group')
+    expect(r.manifest.groupName).toBe('Equipe A')
+  })
+
+  it('rejette une audience invalide', () => {
+    const r = parseManifest(`
+project: Cours
+audience: nope
+chapters:
+  - title: Intro
+    path: cours/01.md
+`)
+    expect(r.ok).toBe(false)
+  })
+})
+
+describe('inferRepoKind : heuristique de classification', () => {
+  it('detecte readme', () => {
+    expect(inferRepoKind('promo-readme')).toBe('readme')
+    expect(inferRepoKind('readme-php')).toBe('readme')
+    expect(inferRepoKind('README')).toBe('readme')
+    expect(inferRepoKind('.github')).toBe('readme')
+  })
+
+  it('detecte prosit', () => {
+    expect(inferRepoKind('prosit-mvc')).toBe('prosit')
+    expect(inferRepoKind('prosits-php')).toBe('prosit')
+    expect(inferRepoKind('p1-prosit-bdd')).toBe('prosit')
+  })
+
+  it('detecte workshop / atelier', () => {
+    expect(inferRepoKind('workshop-1')).toBe('workshop')
+    expect(inferRepoKind('atelier-react')).toBe('workshop')
+  })
+
+  it('detecte mini-projet (toutes les variantes orthographiques)', () => {
+    expect(inferRepoKind('mini-projet-bdd')).toBe('miniproject')
+    expect(inferRepoKind('miniproject-1')).toBe('miniproject')
+    expect(inferRepoKind('mini_projet_php')).toBe('miniproject')
+    expect(inferRepoKind('mini-project-react')).toBe('miniproject')
+  })
+
+  it('detecte cours / course', () => {
+    expect(inferRepoKind('cours-php')).toBe('course')
+    expect(inferRepoKind('course-react')).toBe('course')
+  })
+
+  it('detecte groupe etudiant', () => {
+    expect(inferRepoKind('groupe-equipe-a')).toBe('group')
+    expect(inferRepoKind('team-1')).toBe('group')
+    expect(inferRepoKind('group-react')).toBe('group')
+    expect(inferRepoKind('rendu-equipe-b')).toBe('group')
+  })
+
+  it('detecte projet (apres group pour ne pas confondre group-project)', () => {
+    expect(inferRepoKind('projet-final')).toBe('project')
+    expect(inferRepoKind('project-2024')).toBe('project')
+  })
+
+  it('defaut prudent : course pour les noms ambigus', () => {
+    expect(inferRepoKind('random-name')).toBe('course')
+    expect(inferRepoKind('truc')).toBe('course')
+  })
+
+  it('robuste aux entrees invalides', () => {
+    expect(inferRepoKind(null)).toBe('course')
+    expect(inferRepoKind(undefined)).toBe('course')
+    expect(inferRepoKind(42)).toBe('course')
+  })
+
+  it('toutes les valeurs retournees sont dans KIND_VALUES', () => {
+    const samples = ['readme', 'prosit-x', 'workshop-1', 'mini-projet', 'cours', 'groupe-a', 'project', 'rand']
+    for (const s of samples) {
+      expect(KIND_VALUES).toContain(inferRepoKind(s))
+    }
   })
 })

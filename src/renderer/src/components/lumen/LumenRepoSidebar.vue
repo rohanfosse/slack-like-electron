@@ -16,10 +16,11 @@
  */
 import { ref, computed, watch } from 'vue'
 import { storeToRefs } from 'pinia'
-import { FileText, AlertTriangle, StickyNote, Search, X, Eye, EyeOff, Sparkles, BookOpen, Presentation } from 'lucide-vue-next'
+import { FileText, AlertTriangle, StickyNote, Search, X, Eye, EyeOff, Sparkles, BookOpen, Presentation, Home, Lightbulb, Wrench, Hammer, Folder, Users } from 'lucide-vue-next'
+import type { Component } from 'vue'
 import { useLumenStore } from '@/stores/lumen'
 import { chapterKey } from '@/utils/lumenDevoirLinks'
-import type { LumenRepo, LumenChapter, LumenSearchResult } from '@/types'
+import type { LumenRepo, LumenChapter, LumenSearchResult, LumenRepoKind } from '@/types'
 
 interface Props {
   repos: LumenRepo[]
@@ -92,6 +93,77 @@ const filteredRepos = computed<FilteredRepo[]>(() => {
   }
   return out
 })
+
+// ── Groupement par kind (v2.63) ──────────────────────────────────────────
+// Les repos sont regroupes par categorie (cours, prosits, workshops...)
+// dans un ordre canonique. README en premier (epingle "Accueil promo"),
+// puis cours/prosits/workshops/mini-projets/projets/groupes.
+
+const KIND_ORDER: LumenRepoKind[] = [
+  'readme',
+  'course',
+  'prosit',
+  'workshop',
+  'miniproject',
+  'project',
+  'group',
+]
+
+const KIND_LABELS: Record<LumenRepoKind, string> = {
+  readme:      'Accueil promo',
+  course:      'Cours',
+  prosit:      'Prosits',
+  workshop:    'Workshops',
+  miniproject: 'Mini-projets',
+  project:     'Projets',
+  group:       'Groupes etudiants',
+}
+
+const KIND_ICONS: Record<LumenRepoKind, Component> = {
+  readme:      Home,
+  course:      BookOpen,
+  prosit:      Lightbulb,
+  workshop:    Wrench,
+  miniproject: Hammer,
+  project:     Folder,
+  group:       Users,
+}
+
+interface RepoSection {
+  kind: LumenRepoKind
+  label: string
+  icon: Component
+  repos: FilteredRepo[]
+}
+
+const groupedRepos = computed<RepoSection[]>(() => {
+  // Buckets par kind. Defaut 'course' si manquant (couvre les anciens
+  // manifests pre-v2.63 jusqu'au prochain sync).
+  const buckets = new Map<LumenRepoKind, FilteredRepo[]>()
+  for (const fr of filteredRepos.value) {
+    const k: LumenRepoKind = fr.repo.manifest?.kind ?? 'course'
+    if (!buckets.has(k)) buckets.set(k, [])
+    buckets.get(k)!.push(fr)
+  }
+  return KIND_ORDER
+    .filter((k) => buckets.has(k))
+    .map((k) => ({
+      kind: k,
+      label: KIND_LABELS[k],
+      icon: KIND_ICONS[k],
+      repos: buckets.get(k)!,
+    }))
+})
+
+// Sections collapsible : etat persiste en memoire (pas de localStorage —
+// le user a explicitement demande "categories simples" sans sur-config).
+const collapsedKinds = ref<Set<LumenRepoKind>>(new Set())
+function toggleKind(k: LumenRepoKind): void {
+  const next = new Set(collapsedKinds.value)
+  if (next.has(k)) next.delete(k)
+  else next.add(k)
+  collapsedKinds.value = next
+}
 
 // Note v2.48 : sidebar flat (pas de collapse).
 
@@ -206,13 +278,30 @@ function handleSelectSearchResult(r: LumenSearchResult) {
       <p v-else-if="filteredRepos.length === 0" class="lumen-sidebar-empty">
         Aucun resultat pour "{{ filter }}".
       </p>
-      <ul v-else class="lumen-repo-list">
-        <li
-          v-for="{ repo, groups } in filteredRepos"
-          :key="repo.id"
-          class="lumen-repo-item"
-          :class="{ 'is-hidden-repo': canToggleVisibility && !repo.isVisible }"
+      <div v-else class="lumen-kind-sections">
+        <section
+          v-for="section in groupedRepos"
+          :key="section.kind"
+          class="lumen-kind-section"
+          :class="{ 'is-collapsed': collapsedKinds.has(section.kind) }"
         >
+          <button
+            type="button"
+            class="lumen-kind-header"
+            :aria-expanded="!collapsedKinds.has(section.kind)"
+            @click="toggleKind(section.kind)"
+          >
+            <component :is="section.icon" :size="13" class="lumen-kind-icon" />
+            <span class="lumen-kind-label">{{ section.label }}</span>
+            <span class="lumen-kind-count">{{ section.repos.length }}</span>
+          </button>
+          <ul v-show="!collapsedKinds.has(section.kind)" class="lumen-repo-list">
+            <li
+              v-for="{ repo, groups } in section.repos"
+              :key="repo.id"
+              class="lumen-repo-item"
+              :class="{ 'is-hidden-repo': canToggleVisibility && !repo.isVisible }"
+            >
           <div class="lumen-repo-row">
             <div
               class="lumen-repo-header"
@@ -273,8 +362,10 @@ function handleSelectSearchResult(r: LumenSearchResult) {
               </ul>
             </div>
           </div>
-        </li>
-      </ul>
+            </li>
+          </ul>
+        </section>
+      </div>
     </nav>
   </div>
 </template>
@@ -596,4 +687,72 @@ function handleSelectSearchResult(r: LumenSearchResult) {
 .lumen-chapter-noted { color: var(--accent); flex-shrink: 0; }
 .lumen-chapter-icon { flex-shrink: 0; }
 .lumen-chapter-icon--marp { color: var(--accent); }
+
+/* ── Sections par kind (v2.63) ─────────────────────────────────────────── */
+.lumen-kind-sections {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+.lumen-kind-section {
+  display: flex;
+  flex-direction: column;
+}
+.lumen-kind-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  width: 100%;
+  padding: var(--space-xs) var(--space-md);
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-family: inherit;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  text-align: left;
+  transition: color var(--motion-fast) var(--ease-out),
+              background var(--motion-fast) var(--ease-out);
+  border-radius: var(--radius-sm);
+}
+.lumen-kind-header:hover {
+  color: var(--text-primary);
+  background: var(--bg-hover);
+}
+.lumen-kind-header:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+.lumen-kind-icon {
+  flex-shrink: 0;
+  color: var(--accent);
+}
+.lumen-kind-label {
+  flex: 1;
+  min-width: 0;
+}
+.lumen-kind-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  padding: 1px 6px;
+  background: rgba(var(--accent-rgb), .14);
+  color: var(--accent);
+  border-radius: 10px;
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 700;
+}
+.lumen-kind-section.is-collapsed .lumen-kind-header {
+  color: var(--text-secondary);
+}
+.lumen-kind-section .lumen-repo-list {
+  margin-top: var(--space-xs);
+}
 </style>

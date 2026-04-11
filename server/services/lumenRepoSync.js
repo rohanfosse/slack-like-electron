@@ -13,7 +13,7 @@
  *   2. Si absent ou sha different, fetch raw via Octokit
  *   3. Stocker dans le cache et retourner le contenu
  */
-const { parseManifest, MANIFEST_FILENAME } = require('./lumenManifest')
+const { parseManifest, MANIFEST_FILENAME, inferRepoKind } = require('./lumenManifest')
 const { generateAutoManifest } = require('./lumenAutoManifest')
 const { buildScaffoldFiles } = require('./lumenScaffold')
 const {
@@ -267,6 +267,14 @@ async function syncRepo(octokit, dbRepo) {
     } else if (found.code === 'ambiguous') {
       warnings.push(`Projet Cursus "${parsed.manifest.cursusProject}" ambigu (${found.matches.length} projets portent ce nom, renomme l'un d'eux)`)
     }
+  }
+
+  // Categorisation v2.63 : si l'auteur n'a pas declare `kind` dans son
+  // cursus.yaml, on infere depuis le nom du repo. L'auteur peut toujours
+  // override en mettant kind: explicite. La valeur est ecrite dans le
+  // manifest persiste pour que la sidebar puisse grouper sans recalcul.
+  if (!parsed.manifest.kind) {
+    parsed.manifest.kind = inferRepoKind(repo)
   }
 
   // Auto-manifest tronque (repo > 100k entrees GitHub) : warning lisible

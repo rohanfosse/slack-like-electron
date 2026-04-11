@@ -36,6 +36,12 @@ const { z } = require('zod')
 
 const MANIFEST_FILENAME = 'cursus.yaml'
 
+/**
+ * Categories de repo Lumen (v2.63). Determine le bucket dans le sommaire
+ * et l'icone affichee. Inferable depuis le nom du repo si non explicite.
+ */
+const KIND_VALUES = ['course', 'prosit', 'workshop', 'miniproject', 'project', 'readme', 'group']
+
 const chapterSchema = z.object({
   title: z.string().min(1).max(200),
   path: z.string().min(1).max(500).regex(/\.md$/i, 'path doit pointer vers un .md'),
@@ -75,7 +81,48 @@ const manifestSchema = z.object({
   // true quand l'arbre source de l'auto-manifest a ete tronque par GitHub
   // (>100k entrees). Le manifest est incomplet — sync surface un warning.
   truncated: z.boolean().optional(),
+  // Categorisation v2.63 : determine le bucket dans le sommaire (Cours,
+  // Prosits, Workshops, Mini-projets, Projets, README, Groupes etudiants).
+  // Si absent, le serveur infere depuis le nom du repo via inferRepoKind().
+  kind: z.enum(KIND_VALUES).optional(),
+  // Audience cible : 'promo' (defaut, visible par tous) ou 'group' (rendu
+  // d'un groupe etudiant specifique). Combine avec groupName pour identifier.
+  audience: z.enum(['promo', 'group']).optional(),
+  // Nom du groupe quand audience='group' (ex: "Equipe A").
+  groupName: z.string().max(100).optional(),
 }).strict()
+
+/**
+ * Infere la categorie d'un repo depuis son nom. Heuristique simple basee
+ * sur les conventions de nommage CESI. L'auteur peut toujours override
+ * en mettant `kind:` explicite dans cursus.yaml.
+ *
+ * Ordre des regles : du plus specifique au plus generique. Les noms
+ * ambigus tombent dans 'course' (defaut prudent — la majorite du contenu
+ * pedagogique est du cours).
+ *
+ * @param {string} repoName  Nom court du repo (sans owner/)
+ * @returns {string}         Une des valeurs de KIND_VALUES
+ */
+function inferRepoKind(repoName) {
+  if (typeof repoName !== 'string') return 'course'
+  const n = repoName.toLowerCase()
+  // README en premier : "promo-readme", ".github", "readme-php"
+  if (n === 'readme' || n.startsWith('readme-') || n.endsWith('-readme') || n === '.github') return 'readme'
+  // Prosit : "prosit-mvc", "prosits-php", "p1-prosit"
+  if (n.includes('prosit')) return 'prosit'
+  // Workshop / atelier
+  if (n.includes('workshop') || n.includes('atelier')) return 'workshop'
+  // Mini-projet : "mini-projet-bdd", "miniproject-1", "mini_projet"
+  if (n.includes('mini-projet') || n.includes('miniproject') || n.includes('mini_projet') || n.includes('mini-project')) return 'miniproject'
+  // Cours : "cours-php", "course-react", "cm-1"
+  if (n.includes('cours') || n.includes('course')) return 'course'
+  // Groupe etudiant : "groupe-equipe-a", "team-1", "group-react"
+  if (/(?:^|[-_])(?:groupe?|equipe|team)(?:[-_]|$)/i.test(n)) return 'group'
+  // Projet (apres groupe car "group-project" doit etre group)
+  if (n.includes('projet') || n.includes('project')) return 'project'
+  return 'course'
+}
 
 /**
  * Parse et valide le contenu YAML du manifest.
@@ -100,4 +147,4 @@ function parseManifest(yamlText) {
   return { ok: true, manifest: parsed.data }
 }
 
-module.exports = { parseManifest, MANIFEST_FILENAME }
+module.exports = { parseManifest, MANIFEST_FILENAME, inferRepoKind, KIND_VALUES }
