@@ -13,6 +13,7 @@ const wrap = require('../utils/wrap')
 const authMiddleware = require('../middleware/auth')
 const { requireRole, requirePromo, requirePromoAdmin, promoFromParam } = require('../middleware/authorize')
 const { validate } = require('../middleware/validate')
+const { AppError, NotFoundError, ForbiddenError } = require('../utils/errors')
 const { buildClientForUser, validateToken, mapOctokitError } = require('../services/githubClient')
 const { syncPromoRepos, fetchChapterContent, getCachedChapter } = require('../services/lumenRepoSync')
 const {
@@ -54,17 +55,9 @@ function userKey(req) {
 
 async function requireGithubClient(req) {
   const key = userKey(req)
-  if (!key) {
-    const err = new Error('GitHub non autorise pour ce type de compte')
-    err.statusCode = 403
-    throw err
-  }
+  if (!key) throw new ForbiddenError('GitHub non autorise pour ce type de compte')
   const octokit = await buildClientForUser(key.userType, key.userId)
-  if (!octokit) {
-    const err = new Error('Compte GitHub non connecte')
-    err.statusCode = 401
-    throw err
-  }
+  if (!octokit) throw new AppError('Compte GitHub non connecte', 401)
   return octokit
 }
 
@@ -82,11 +75,7 @@ function promoFromIdParam(req) {
 
 function repoOrThrow(id) {
   const repo = getLumenRepo(id)
-  if (!repo) {
-    const err = new Error('Repo Lumen introuvable')
-    err.statusCode = 404
-    throw err
-  }
+  if (!repo) throw new NotFoundError('Repo Lumen introuvable')
   return repo
 }
 
@@ -113,9 +102,7 @@ function serializeRepo(repo) {
 
 async function handleOctokit(err) {
   const mapped = await mapOctokitError(err)
-  const wrapped = new Error(mapped.message)
-  wrapped.statusCode = mapped.status
-  return wrapped
+  return new AppError(mapped.message, mapped.status)
 }
 
 // ─── Schemas Zod ────────────────────────────────────────────────────────────
@@ -140,11 +127,7 @@ router.get('/github/me', wrap(async (req) => {
 
 router.post('/github/connect', validate(tokenSchema), wrap(async (req) => {
   const key = userKey(req)
-  if (!key) {
-    const err = new Error('GitHub non autorise pour ce type de compte')
-    err.statusCode = 403
-    throw err
-  }
+  if (!key) throw new ForbiddenError('GitHub non autorise pour ce type de compte')
   let info
   try {
     info = await validateToken(req.body.token)
@@ -203,11 +186,7 @@ router.post(
   wrap(async (req) => {
     const promoId = Number(req.params.promoId)
     const org = getPromoGithubOrg(promoId)
-    if (!org) {
-      const err = new Error('Aucune organisation GitHub configuree pour cette promo')
-      err.statusCode = 400
-      throw err
-    }
+    if (!org) throw new AppError('Aucune organisation GitHub configuree pour cette promo', 400)
     const octokit = await requireGithubClient(req)
     let result
     try {
@@ -237,50 +216,31 @@ router.get(
   wrap(async (req) => {
     const repo = repoOrThrow(Number(req.params.id))
     const path = String(req.query.path ?? '').trim()
-    if (!path) {
-      const err = new Error('Parametre path requis')
-      err.statusCode = 400
-      throw err
-    }
+    if (!path) throw new AppError('Parametre path requis', 400)
 
-    // Verifie que le chapitre est declare dans le manifest (securite :
-    // empeche de fetcher un fichier arbitraire du repo via Lumen).
+    // Securite : empeche de fetcher un fichier arbitraire du repo via
+    // Lumen — seuls les chapitres declares dans cursus.yaml sont servis.
     const manifest = parseManifestField(repo)
     const inManifest = manifest?.chapters?.some((c) => c.path === path)
-    if (!inManifest) {
-      const err = new Error('Chapitre non declare dans cursus.yaml')
-      err.statusCode = 404
-      throw err
-    }
+    if (!inManifest) throw new NotFoundError('Chapitre non declare dans cursus.yaml')
 
-    // Fetch en ligne si connecte, sinon fallback cache
     const key = userKey(req)
     const octokit = key ? await buildClientForUser(key.userType, key.userId) : null
     if (octokit) {
       try {
         const file = await fetchChapterContent(octokit, repo, path)
-        if (!file) {
-          const err = new Error('Fichier introuvable dans le repo')
-          err.statusCode = 404
-          throw err
-        }
+        if (!file) throw new NotFoundError('Fichier introuvable dans le repo')
         return { content: file.content, sha: file.sha, cached: false }
       } catch (err) {
         if (err.statusCode) throw err
-        // Fallback cache si l'appel GitHub echoue
         const cached = getCachedChapter(repo.id, path)
         if (cached) return cached
         throw await handleOctokit(err)
       }
     }
 
-    // Pas de client (user deconnecte) : uniquement le cache
     const cached = getCachedChapter(repo.id, path)
-    if (!cached) {
-      const err = new Error('Compte GitHub non connecte et pas de cache disponible')
-      err.statusCode = 401
-      throw err
-    }
+    if (!cached) throw new AppError('Compte GitHub non connecte et pas de cache disponible', 401)
     return cached
   }),
 )
@@ -336,11 +296,7 @@ router.get(
   wrap(async (req) => {
     const repoId = Number(req.params.id)
     const path = String(req.query.path ?? '').trim()
-    if (!path) {
-      const err = new Error('Parametre path requis')
-      err.statusCode = 400
-      throw err
-    }
+    if (!path) throw new AppError('Parametre path requis', 400)
     const note = getLumenChapterNote(req.user.id, repoId, path)
     return { note: note ?? null }
   }),

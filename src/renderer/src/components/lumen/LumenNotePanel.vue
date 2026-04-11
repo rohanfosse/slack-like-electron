@@ -6,7 +6,7 @@
  *
  * Un seul etudiant voit sa propre note (aucune visibilite prof / pair).
  */
-import { ref, watch, onMounted } from 'vue'
+import { ref, watch, onMounted, onBeforeUnmount } from 'vue'
 import { NotebookPen, Trash2, Check, Loader2 } from 'lucide-vue-next'
 import { useLumenStore } from '@/stores/lumen'
 import { useToast } from '@/composables/useToast'
@@ -44,6 +44,10 @@ onMounted(loadNote)
 watch(() => [props.repoId, props.path], loadNote)
 
 let debounceTimer: ReturnType<typeof setTimeout> | null = null
+
+onBeforeUnmount(() => {
+  if (debounceTimer) clearTimeout(debounceTimer)
+})
 
 watch(draft, (newVal) => {
   if (!initialized.value) return

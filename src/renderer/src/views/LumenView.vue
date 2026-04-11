@@ -81,11 +81,11 @@ async function saveOrg() {
 
 // ── Boot ────────────────────────────────────────────────────────────────────
 async function boot() {
-  await lumenStore.fetchGithubStatus()
-  if (!activePromoId.value) return
+  const pid = activePromoId.value
   await Promise.all([
-    lumenStore.fetchReposForPromo(activePromoId.value),
-    lumenStore.fetchMyReads(),
+    lumenStore.fetchGithubStatus(),
+    pid ? lumenStore.fetchReposForPromo(pid) : Promise.resolve(),
+    pid ? lumenStore.fetchMyReads() : Promise.resolve(),
   ])
 }
 

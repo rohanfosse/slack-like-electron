@@ -105,24 +105,35 @@ async function syncRepo(octokit, dbRepo) {
 
 /**
  * Synchronise tous les repos d'une organisation pour une promo donnee.
+ * Les appels GitHub sont parallelises par batch de 5 pour eviter de
+ * taper le rate limit secondaire tout en restant bien plus rapide que
+ * le mode sequentiel (O(n) round-trips → ceil(n/5)).
  * @returns {Promise<{synced: number, errors: Array<{repo: string, error: string}>}>}
  */
+const SYNC_CONCURRENCY = 5
+
 async function syncPromoRepos(octokit, { promoId, org }) {
   const orgRepos = await listOrgRepos(octokit, org)
-  const keepIds = []
+
+  const dbRepos = orgRepos.map((r) => upsertLumenRepo({
+    promoId,
+    owner: r.owner,
+    repo: r.repo,
+    defaultBranch: r.defaultBranch,
+  }))
+  const keepIds = dbRepos.map((r) => r.id)
+
   const errors = []
-
-  for (const r of orgRepos) {
-    const dbRepo = upsertLumenRepo({
-      promoId,
-      owner: r.owner,
-      repo: r.repo,
-      defaultBranch: r.defaultBranch,
+  for (let i = 0; i < dbRepos.length; i += SYNC_CONCURRENCY) {
+    const batch = dbRepos.slice(i, i + SYNC_CONCURRENCY)
+    const results = await Promise.all(batch.map((repo) =>
+      syncRepo(octokit, repo).catch((err) => ({ ok: false, error: err.message ?? 'sync_failed' })),
+    ))
+    results.forEach((result, j) => {
+      if (!result.ok) {
+        errors.push({ repo: `${batch[j].owner}/${batch[j].repo}`, error: result.error })
+      }
     })
-    keepIds.push(dbRepo.id)
-
-    const result = await syncRepo(octokit, dbRepo)
-    if (!result.ok) errors.push({ repo: `${r.owner}/${r.repo}`, error: result.error })
   }
 
   pruneLumenReposForPromo(promoId, keepIds)
