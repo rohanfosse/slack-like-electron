@@ -357,6 +357,16 @@ export interface LumenChapterContent {
   fetchedAt?: string
 }
 
+export interface LumenSearchResult {
+  repoId: number
+  repoName: string
+  chapterPath: string
+  chapterTitle: string
+  /** Snippet HTML contextualise avec `<mark>` autour des termes matchants. */
+  snippet: string
+  rank: number
+}
+
 export interface LumenChapterNote {
   student_id: number
   repo_id: number

@@ -1,13 +1,14 @@
 /**
  * Modele DB Lumen — liseuse de cours adossee a GitHub.
  *
- * Schema (v58) :
+ * Schema (v59) :
  *   lumen_github_auth     — token d'acces GitHub par utilisateur (chiffre AES-GCM)
  *   lumen_repos           — un repo de cours liee a une promo (+ is_visible v58)
  *   lumen_file_cache      — cache local des fichiers markdown fetches
  *   lumen_chapter_notes   — notes privees etudiant (cle : student_id, repo_id, path)
- *   lumen_chapter_reads   — tracking de lecture par chapitre
+ *   lumen_chapter_reads   — tracking de lecture par chapitre (deprecated v2.48)
  *   lumen_chapter_travaux — liaison N:M chapitres <-> devoirs (v57)
+ *   lumen_chapter_fts     — index fulltext FTS5 pour recherche in-content (v59)
  */
 const { getDb } = require('../connection')
 const { encrypt, decrypt } = require('../../utils/crypto')
@@ -318,6 +319,111 @@ function purgeStaleLumenFileCache(days = 30) {
     .run(`-${days} days`)
 }
 
+// ─── FTS5 index (recherche fulltext) ────────────────────────────────────────
+//
+// Table virtuelle lumen_chapter_fts alimentee lazily quand un chapitre est
+// fetched (cf. lumenRepoSync.fetchChapterContent). Key logique = (repo_id,
+// chapter_path). FTS5 n'a pas de PK native — on DELETE + INSERT pour
+// simuler un upsert idempotent.
+//
+// `title` et `content` sont indexes. `repo_id` et `chapter_path` sont stockes
+// mais non indexes (UNINDEXED) — on filtre dessus via WHERE classique.
+
+/**
+ * Insere ou met a jour un chapitre dans l'index FTS5. Idempotent : un
+ * re-fetch (nouveau sha) remplace le contenu indexe par le nouveau.
+ *
+ * @param {number} repoId
+ * @param {string} chapterPath
+ * @param {string} title
+ * @param {string} plainContent — markdown converti en texte plat (sans
+ *   blocs de code, sans HTML, sans images) pour eviter de polluer l'index
+ *   avec du bruit non-recherchable
+ */
+function upsertLumenChapterFts(repoId, chapterPath, title, plainContent) {
+  const db = getDb()
+  db.transaction(() => {
+    db.prepare('DELETE FROM lumen_chapter_fts WHERE repo_id = ? AND chapter_path = ?')
+      .run(repoId, chapterPath)
+    db.prepare(`
+      INSERT INTO lumen_chapter_fts (repo_id, chapter_path, title, content)
+      VALUES (?, ?, ?, ?)
+    `).run(repoId, chapterPath, title, plainContent)
+  })()
+}
+
+/**
+ * Supprime du FTS les chapitres qui n'existent plus dans le manifest courant.
+ * Appele en synchronisation avec pruneLumenFileCacheForRepo pour garder
+ * l'index coherent avec le cache.
+ */
+function pruneLumenChapterFtsForRepo(repoId, keepPaths) {
+  const db = getDb()
+  if (!keepPaths.length) {
+    db.prepare('DELETE FROM lumen_chapter_fts WHERE repo_id = ?').run(repoId)
+    return
+  }
+  const placeholders = keepPaths.map(() => '?').join(',')
+  db.prepare(`DELETE FROM lumen_chapter_fts WHERE repo_id = ? AND chapter_path NOT IN (${placeholders})`)
+    .run(repoId, ...keepPaths)
+}
+
+/**
+ * Recherche fulltext dans l'index FTS5. Retourne les N premiers resultats
+ * ordonnes par rank FTS5. Le snippet est echappe HTML cote serveur — le
+ * contenu indexe peut contenir des caracteres dangereux (entites HTML
+ * encodees, fragments de code source). FTS5 snippet() concatene RAW les
+ * marks et les tokens, sans escape.
+ *
+ * Strategie XSS-safe :
+ *   1. snippet() avec des sentinels Unicode tres improbables (\u0001 / \u0002)
+ *   2. on echappe le resultat HTML (incluant les sentinels qui passent
+ *      a travers tels quels car non-HTML)
+ *   3. on replace les sentinels par <mark>...</mark> apres l'escape
+ *
+ * Resultat : le client peut afficher le snippet en v-html sans risque.
+ *
+ * @param {Object} opts
+ * @param {number[]} opts.repoIds — filtre sur les repos autorises (visibility scoping)
+ * @param {string} opts.query — MATCH query FTS5 (sera pre-echappe par l'appelant)
+ * @param {number} [opts.limit=50]
+ * @returns {Array<{ repo_id, chapter_path, title, snippet, rank }>}
+ */
+const FTS_MARK_START = '\u0001LUMENMARK\u0001'
+const FTS_MARK_END = '\u0002LUMENMARK\u0002'
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, (c) => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+  }[c]))
+}
+
+function searchLumenChapters({ repoIds, query, limit = 50 }) {
+  if (!repoIds.length || !query) return []
+  const placeholders = repoIds.map(() => '?').join(',')
+  // La fonction snippet() prend : (table, column_index, start_mark, end_mark,
+  // ellipsis, nb_tokens). column 3 = content (0=repo_id, 1=chapter_path, 2=title, 3=content).
+  const sql = `
+    SELECT repo_id, chapter_path, title,
+           snippet(lumen_chapter_fts, 3, ?, ?, '…', 20) AS snippet,
+           rank
+      FROM lumen_chapter_fts
+     WHERE repo_id IN (${placeholders})
+       AND lumen_chapter_fts MATCH ?
+     ORDER BY rank
+     LIMIT ?
+  `
+  const rows = getDb().prepare(sql).all(FTS_MARK_START, FTS_MARK_END, ...repoIds, query, limit)
+  // Sanitize cote serveur pour que le client puisse v-html sans risque XSS
+  return rows.map((r) => ({
+    ...r,
+    title: escapeHtml(r.title),
+    snippet: escapeHtml(r.snippet)
+      .split(escapeHtml(FTS_MARK_START)).join('<mark>')
+      .split(escapeHtml(FTS_MARK_END)).join('</mark>'),
+  }))
+}
+
 // ─── Notes ──────────────────────────────────────────────────────────────────
 
 const NOTE_MAX_LEN = 10_000
@@ -506,6 +612,10 @@ module.exports = {
   clearLumenFileCacheForRepo,
   pruneLumenFileCacheForRepo,
   purgeStaleLumenFileCache,
+  // FTS5 fulltext search (v59)
+  upsertLumenChapterFts,
+  pruneLumenChapterFtsForRepo,
+  searchLumenChapters,
   // notes
   getLumenChapterNote,
   upsertLumenChapterNote,

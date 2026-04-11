@@ -15,6 +15,7 @@ import type {
   LumenChapterContent,
   LumenChapterNote,
   LumenGithubStatus,
+  LumenSearchResult,
 } from '@/types'
 
 function chapterKey(repoId: number, path: string): string {
@@ -282,6 +283,24 @@ export const useLumenStore = defineStore('lumen', () => {
     currentChapterPath.value = path
   }
 
+  // ── Actions : recherche fulltext (v2.49 / FTS5) ───────────────────────────
+
+  /**
+   * Recherche fulltext dans les chapitres de la promo. Debounce a gerer
+   * cote composant (pas ici — le store est un singleton, on ne veut pas
+   * que deux vues concurrentes se marchent dessus).
+   * @returns liste vide si q trop court ou erreur — le composant affiche
+   * un etat "aucun resultat" dans les deux cas, c'est ok.
+   */
+  async function searchChapters(promoId: number, q: string, limit?: number): Promise<LumenSearchResult[]> {
+    if (!q || q.trim().length < 2) return []
+    const data = await api<{ results: LumenSearchResult[] }>(
+      () => window.api.searchLumenChapters(promoId, q.trim(), limit),
+      { silent: true },
+    )
+    return data?.results ?? []
+  }
+
   // ── Actions : tracking lecture ────────────────────────────────────────────
   //
   // L'accuse de lecture est supprime cote etudiant en v2.48 — pas de
@@ -384,6 +403,7 @@ export const useLumenStore = defineStore('lumen', () => {
     selectRepo,
     fetchChapterContent,
     selectChapter,
+    searchChapters,
     fetchReadCountsForRepo,
     fetchReadCountsForPromo,
     fetchChapterNote,

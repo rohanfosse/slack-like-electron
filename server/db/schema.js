@@ -1,6 +1,6 @@
 const { getDb } = require('./connection');
 
-const CURRENT_VERSION = 58;
+const CURRENT_VERSION = 59;
 
 // ─── Schema initial ───────────────────────────────────────────────────────────
 // Crée toutes les tables avec leur schéma complet (colonnes UTC, toutes colonnes incluses).
@@ -1228,6 +1228,25 @@ function runMigrations(db) {
     (db) => {
       tryAlter(db, `ALTER TABLE lumen_repos ADD COLUMN is_visible INTEGER NOT NULL DEFAULT 0`);
       db.exec(`UPDATE lumen_repos SET is_visible = 1 WHERE is_visible = 0`);
+    },
+
+    // v59 : Lumen — index fulltext SQLite FTS5 pour la recherche dans le
+    // contenu des chapitres. Table virtuelle alimentee lazily au fetch
+    // chapitre (dans fetchChapterContent). Repo_id et chapter_path sont
+    // UNINDEXED : on les stocke pour les retrouver, mais on ne cherche pas
+    // dessus. Tokenize unicode61 + remove_diacritics pour matcher les
+    // accents francais (promesse == promesse). Snippet built-in pour
+    // afficher un extrait contextualise des resultats.
+    (db) => {
+      db.exec(`
+        CREATE VIRTUAL TABLE IF NOT EXISTS lumen_chapter_fts USING fts5(
+          repo_id UNINDEXED,
+          chapter_path UNINDEXED,
+          title,
+          content,
+          tokenize='unicode61 remove_diacritics 2'
+        );
+      `);
     },
   ];
 

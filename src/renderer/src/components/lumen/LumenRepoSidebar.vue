@@ -14,9 +14,10 @@
  * - Toggle visibilite etudiant (teacher/admin uniquement) : eye icon
  * - Badge "auto" quand le manifest est genere automatiquement
  */
-import { ref, computed } from 'vue'
-import { FileText, AlertTriangle, StickyNote, Search, X, Eye, EyeOff, Sparkles } from 'lucide-vue-next'
-import type { LumenRepo, LumenChapter } from '@/types'
+import { ref, computed, watch } from 'vue'
+import { FileText, AlertTriangle, StickyNote, Search, X, Eye, EyeOff, Sparkles, BookOpen } from 'lucide-vue-next'
+import { useLumenStore } from '@/stores/lumen'
+import type { LumenRepo, LumenChapter, LumenSearchResult } from '@/types'
 
 interface Props {
   repos: LumenRepo[]
@@ -24,6 +25,8 @@ interface Props {
   currentChapterPath: string | null
   notedChapters: Set<string>
   canToggleVisibility?: boolean
+  /** Promo courante — necessaire pour la recherche fulltext FTS5 (v2.49). */
+  promoId?: number | null
 }
 interface Emits {
   (e: 'select', payload: { repoId: number; path: string }): void
@@ -92,35 +95,110 @@ const filteredRepos = computed<FilteredRepo[]>(() => {
   return out
 })
 
-// Note v2.48 : sidebar flat (pas de collapse). Le watch sur filter qui
-// reset le collapsed est devenu inutile depuis qu'on a vire le toggle.
+// Note v2.48 : sidebar flat (pas de collapse).
+
+// ── Recherche fulltext FTS5 (v2.49) ──────────────────────────────────────
+// Le champ filter a double usage :
+//   1. Filtrage local instantane sur les TITRES de chapitres (ancien pattern)
+//   2. Recherche fulltext sur le CONTENU via FTS5, debouncee 300ms, cross-repos
+// Les deux jeux de resultats s'affichent cote a cote : la recherche fulltext
+// apparait au-dessus de la liste filtree quand un query est actif.
+
+const lumenStore = useLumenStore()
+const searchResults = ref<LumenSearchResult[]>([])
+const searchInFlight = ref(false)
+let searchDebounce: ReturnType<typeof setTimeout> | null = null
+
+watch([filter, () => props.promoId], ([needle, pid]) => {
+  if (searchDebounce) clearTimeout(searchDebounce)
+  if (!pid || !needle || needle.trim().length < 2) {
+    searchResults.value = []
+    searchInFlight.value = false
+    return
+  }
+  searchInFlight.value = true
+  searchDebounce = setTimeout(async () => {
+    try {
+      searchResults.value = await lumenStore.searchChapters(pid, needle.trim(), 20)
+    } finally {
+      searchInFlight.value = false
+    }
+  }, 300)
+})
 
 function handleToggleVisibility(repo: LumenRepo, e: Event) {
   e.stopPropagation()
   emit('toggle-visibility', { repoId: repo.id, visible: !repo.isVisible })
 }
+
+function handleSelectSearchResult(r: LumenSearchResult) {
+  emit('select', { repoId: r.repoId, path: r.chapterPath })
+}
 </script>
 
 <template>
   <div class="lumen-sidebar-nav">
-    <div v-if="sortedRepos.length >= 5" class="lumen-sidebar-filter">
+    <!-- Champ recherche : filtre titres + recherche fulltext FTS5 (v2.49).
+         Toujours visible quand au moins 2 repos (ancien seuil >= 5 obsolete :
+         la recherche fulltext apporte de la valeur meme avec peu de repos). -->
+    <div v-if="sortedRepos.length >= 2" class="lumen-sidebar-filter">
       <Search :size="12" />
       <input
         v-model="filter"
         type="text"
-        placeholder="Filtrer..."
-        aria-label="Filtrer les cours"
+        placeholder="Rechercher dans les cours..."
+        aria-label="Rechercher dans les cours"
       />
       <button
         v-if="filter"
         type="button"
         class="lumen-sidebar-clear"
-        aria-label="Effacer le filtre"
+        aria-label="Effacer la recherche"
         @click="filter = ''"
       >
         <X :size="12" />
       </button>
     </div>
+
+    <!-- Resultats recherche fulltext : visible uniquement quand un query
+         actif a retourne des matches. L'utilisateur voit directement les
+         snippets contextualises, peut cliquer pour ouvrir le chapitre. -->
+    <section
+      v-if="filter.trim().length >= 2 && searchResults.length > 0"
+      class="lumen-search-results"
+      aria-label="Resultats de recherche"
+    >
+      <header class="lumen-search-head">
+        <BookOpen :size="11" />
+        <span>Resultats ({{ searchResults.length }})</span>
+      </header>
+      <ul class="lumen-search-list">
+        <li v-for="r in searchResults" :key="`${r.repoId}::${r.chapterPath}`">
+          <button
+            type="button"
+            class="lumen-search-item"
+            :class="{
+              'is-active': currentRepoId === r.repoId && currentChapterPath === r.chapterPath,
+            }"
+            @click="handleSelectSearchResult(r)"
+          >
+            <span class="lumen-search-item-repo">{{ r.repoName }}</span>
+            <span class="lumen-search-item-title">{{ r.chapterTitle }}</span>
+            <!-- Le snippet est echappe HTML cote serveur via la strategie
+                 sentinel : FTS5 utilise des sentinels Unicode invisibles,
+                 le serveur escape() puis substitue par <mark>. v-html safe. -->
+            <span class="lumen-search-item-snippet" v-html="r.snippet" />
+          </button>
+        </li>
+      </ul>
+    </section>
+
+    <p
+      v-else-if="filter.trim().length >= 2 && !searchInFlight && searchResults.length === 0 && promoId"
+      class="lumen-search-empty"
+    >
+      Aucun resultat dans le contenu des cours.
+    </p>
 
     <nav class="lumen-sidebar-repos" aria-label="Cours">
       <p v-if="sortedRepos.length === 0" class="lumen-sidebar-empty">
@@ -247,6 +325,104 @@ function handleToggleVisibility(repo: LumenRepo, e: Event) {
   padding: 4px 0;
   overflow-y: auto;
   flex: 1;
+}
+
+/* ── Resultats recherche fulltext FTS5 (v2.49) ──────────────────────────── */
+.lumen-search-results {
+  margin: 4px 10px;
+  padding: 6px 0;
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  max-height: 45vh;
+  overflow-y: auto;
+  flex-shrink: 0;
+}
+.lumen-search-head {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px 6px;
+  font-size: 9.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--border);
+}
+.lumen-search-list {
+  list-style: none;
+  margin: 0;
+  padding: 4px 0;
+}
+.lumen-search-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 100%;
+  padding: 6px 10px;
+  background: none;
+  border: none;
+  border-left: 2px solid transparent;
+  cursor: pointer;
+  text-align: left;
+  font-family: inherit;
+  transition: all var(--t-fast) ease;
+}
+.lumen-search-item:hover {
+  background: var(--bg-hover);
+  border-left-color: var(--accent);
+}
+.lumen-search-item.is-active {
+  background: var(--bg-selected, var(--bg-hover));
+  border-left-color: var(--accent);
+}
+.lumen-search-item-repo {
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.lumen-search-item-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.lumen-search-item-snippet {
+  font-size: 11px;
+  color: var(--text-secondary);
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.lumen-search-item-snippet :deep(mark) {
+  background: rgba(255, 200, 0, 0.3);
+  color: inherit;
+  padding: 0 1px;
+  border-radius: 2px;
+  font-weight: 600;
+}
+
+.lumen-search-empty {
+  margin: 4px 10px;
+  padding: 12px;
+  text-align: center;
+  font-size: 11px;
+  color: var(--text-muted);
+  background: var(--bg-primary);
+  border: 1px dashed var(--border);
+  border-radius: 6px;
+  flex-shrink: 0;
 }
 
 .lumen-sidebar-empty {

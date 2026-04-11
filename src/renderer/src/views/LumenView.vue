@@ -478,6 +478,7 @@ function handleNavigateChapter(path: string) {
             :current-chapter-path="currentChapterPath"
             :noted-chapters="notedChaptersSet"
             :can-toggle-visibility="isTeacher"
+            :promo-id="activePromoId"
             @select="handleSelectChapter"
             @toggle-visibility="handleToggleVisibility"
           />

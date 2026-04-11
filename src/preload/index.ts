@@ -541,6 +541,11 @@ contextBridge.exposeInMainWorld('api', {
   getLumenRepo:             (id: number)            => get(`/api/lumen/repos/${id}`),
   createLumenRepoFromScaffold: (promoId: number, slug: string, blocTitle: string) =>
     post(`/api/lumen/promos/${promoId}/repos`, { slug, blocTitle }),
+  searchLumenChapters: (promoId: number, q: string, limit?: number) => {
+    const params = new URLSearchParams({ q })
+    if (limit) params.set('limit', String(limit))
+    return get(`/api/lumen/promos/${promoId}/search?${params.toString()}`)
+  },
 
   // Integration projets Cursus
   getLumenReposByProjectName: (promoId: number, name: string) =>

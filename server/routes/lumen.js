@@ -30,6 +30,8 @@ const {
   getLumenRepo,
   setLumenRepoProject,
   setLumenRepoVisibility,
+  // search (FTS5 v59)
+  searchLumenChapters,
   getLumenReposByProjectName,
   getUnlinkedLumenReposForPromo,
   // notes
@@ -314,6 +316,101 @@ router.get(
       throw new NotFoundError('Repo Lumen introuvable')
     }
     return serializeRepo(repo)
+  }),
+)
+
+// ─── Recherche fulltext FTS5 (v59) ──────────────────────────────────────────
+
+/**
+ * Echappe la query utilisateur pour FTS5. FTS5 a un mini-DSL (AND/OR/NOT,
+ * quotes, prefix *, ...). Les caracteres speciaux non-echappes font planter
+ * la query avec "fts5: syntax error". On transforme la saisie libre en une
+ * serie de tokens entre guillemets + prefix match sur le dernier, ce qui
+ * donne une experience "search-as-you-type" raisonnable sans exposer le
+ * DSL FTS5 a l'utilisateur final.
+ *
+ *   "hello world"      -> "hello" AND "world"*
+ *   "classe héritage"  -> "classe" AND "héritage"*
+ *   ""                 -> null (pas de query)
+ */
+function buildFtsQuery(raw) {
+  if (!raw || typeof raw !== 'string') return null
+  // Tokenize sur les espaces et caracteres non-word (hors accents). Lower-case
+  // inutile : FTS5 tokenize + normalise via unicode61 (cf. migration v59).
+  const tokens = raw
+    .split(/[\s,;.:!?()[\]{}<>"']+/)
+    .map((t) => t.trim())
+    .filter((t) => t.length > 0)
+  if (!tokens.length) return null
+  // Echappe les guillemets internes en les remplacant par des espaces
+  // (on encadre chaque token entre " apres nettoyage).
+  const clean = tokens.map((t) => `"${t.replace(/"/g, ' ').trim()}"`).filter((t) => t.length > 2)
+  if (!clean.length) return null
+  // Le dernier token est pris en prefix-match (search-as-you-type).
+  clean[clean.length - 1] = clean[clean.length - 1].replace(/"$/, '"*')
+  return clean.join(' AND ')
+}
+
+const searchQuerySchema = z.object({
+  q: z.string().min(2).max(200),
+  limit: z.coerce.number().int().positive().max(100).optional(),
+}).strict()
+
+/**
+ * Recherche cross-repos dans une promo. Scope les repos selon la visibilite
+ * etudiant (filter is_visible=1) et retourne les N premiers resultats
+ * ordonnes par rank FTS5. Chaque resultat contient un snippet contextualise
+ * avec les termes matchants encadres par <mark>...</mark> (le client doit
+ * les echapper ou les rendre tels quels selon sa politique XSS).
+ */
+router.get(
+  '/promos/:promoId/search',
+  requirePromo(promoFromParam),
+  wrap(async (req) => {
+    const promoId = Number(req.params.promoId)
+    const parsed = searchQuerySchema.safeParse(req.query)
+    if (!parsed.success) {
+      throw new AppError('Parametre q invalide (2-200 chars)', 400)
+    }
+    const ftsQuery = buildFtsQuery(parsed.data.q)
+    if (!ftsQuery) return { results: [] }
+
+    // Scope : repos visibles pour un student, tous les repos pour teacher/admin
+    const repos = getLumenReposForPromo(promoId, { visibleOnly: isStudent(req) })
+    const repoIds = repos.map((r) => r.id)
+    if (!repoIds.length) return { results: [] }
+
+    // Map repo_id -> fullName pour enrichir les resultats cote UI
+    const repoNames = new Map()
+    for (const r of repos) {
+      const manifest = parseManifestField(r)
+      repoNames.set(r.id, manifest?.project ?? `${r.owner}/${r.repo}`)
+    }
+
+    let rows
+    try {
+      rows = searchLumenChapters({
+        repoIds,
+        query: ftsQuery,
+        limit: parsed.data.limit ?? 50,
+      })
+    } catch (err) {
+      // fts5 MATCH parsing errors (cas edge des caracteres speciaux non
+      // echappes par buildFtsQuery) : return empty au lieu de crash.
+      if (/fts5/i.test(err.message)) return { results: [] }
+      throw err
+    }
+
+    return {
+      results: rows.map((r) => ({
+        repoId: r.repo_id,
+        repoName: repoNames.get(r.repo_id) ?? 'Repo inconnu',
+        chapterPath: r.chapter_path,
+        chapterTitle: r.title,
+        snippet: r.snippet,
+        rank: r.rank,
+      })),
+    }
   }),
 )
 

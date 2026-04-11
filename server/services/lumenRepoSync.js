@@ -26,6 +26,8 @@ const {
   upsertLumenCachedFile,
   pruneLumenFileCacheForRepo,
   purgeStaleLumenFileCache,
+  upsertLumenChapterFts,
+  pruneLumenChapterFtsForRepo,
 } = require('../db/models/lumen')
 const { findProjectByNormalizedName } = require('../db/models/projects')
 
@@ -289,10 +291,13 @@ async function syncRepo(octokit, dbRepo) {
     hasCursusProjectField: Boolean(parsed.manifest.cursusProject),
   })
 
-  // Supprime du cache les fichiers qui ne sont plus referencees par le
-  // manifest courant (chapitres supprimes/renomes cote prof).
+  // Supprime du cache et de l'index FTS les fichiers qui ne sont plus
+  // referencees par le manifest courant (chapitres supprimes/renomes cote
+  // prof). Les deux sont synchronises pour eviter que la recherche tombe
+  // sur des chapitres fantomes.
   const validPaths = parsed.manifest.chapters.map((c) => c.path)
   pruneLumenFileCacheForRepo(id, validPaths)
+  pruneLumenChapterFtsForRepo(id, validPaths)
 
   return { ok: true, manifest: parsed.manifest, warnings }
 }
@@ -345,11 +350,51 @@ async function syncPromoRepos(octokit, { promoId, org }) {
 }
 
 /**
+ * Convertit un markdown en texte plain exploitable par FTS5. Strip :
+ *   - blocs de code (triple backtick OU tilde)
+ *   - inline code (simple backtick)
+ *   - images ![alt](...)
+ *   - liens : conserve le texte, drop l'URL
+ *   - HTML tags
+ *   - formatting markers (**bold**, *italic*, _emph_)
+ *   - headers : on garde le texte mais drop le # pour que "Introduction"
+ *     soit indexe meme si ecrit "# Introduction"
+ *
+ * Cap a 200KB pour eviter le ReDoS sur des markdown bombs (alternations
+ * non-greedy `[\s\S]*?` peuvent backtracker sur des entrees malformees).
+ * Un chapitre normal fait < 50KB.
+ */
+const PLAIN_TEXT_MAX_INPUT = 200_000
+
+function markdownToPlainText(md) {
+  if (!md) return ''
+  const capped = md.length > PLAIN_TEXT_MAX_INPUT ? md.slice(0, PLAIN_TEXT_MAX_INPUT) : md
+  return capped
+    .replace(/```[\s\S]*?```|~~~[\s\S]*?~~~/g, ' ')  // blocs de code
+    .replace(/`[^`\n]*`/g, ' ')                        // inline code
+    .replace(/!\[[^\]]*\]\([^)]*\)/g, ' ')             // images
+    .replace(/\[([^\]]+)\]\([^)]*\)/g, '$1')           // liens : garde le texte
+    .replace(/<[^>]+>/g, ' ')                          // HTML tags
+    .replace(/^#{1,6}\s+/gm, '')                       // header markers
+    .replace(/[*_~]{1,3}/g, '')                        // bold/italic/strike
+    .replace(/^\s*>\s?/gm, '')                         // blockquotes
+    .replace(/^\s*[-*+]\s+/gm, '')                     // list bullets
+    .replace(/\s+/g, ' ')                              // whitespace collapse
+    .trim()
+}
+
+/**
  * Fetch un chapitre (fichier .md) avec cache par sha.
  * Si le cache contient deja le meme sha, on retourne directement le contenu
  * stocke. Sinon on fetch, on inline les images referencees en data URIs
  * puis on met a jour le cache. Les images privees sont ainsi disponibles
  * sans que le renderer ait besoin de gerer l'auth GitHub.
+ *
+ * Effet de bord : alimente l'index FTS5 (lumen_chapter_fts) avec le texte
+ * plat du chapitre. C'est de l'indexation lazy — on index uniquement les
+ * chapitres effectivement lus par au moins un utilisateur. Pour forcer
+ * l'indexation complete d'un cours, il faudrait pre-fetch tous les chapitres
+ * (pas fait ici : cout API GitHub eleve pour un gain marginal).
  */
 async function fetchChapterContent(octokit, dbRepo, path) {
   const { id: repoId } = dbRepo
@@ -358,11 +403,31 @@ async function fetchChapterContent(octokit, dbRepo, path) {
 
   const cached = getLumenCachedFile(repoId, path)
   if (cached && cached.sha === file.sha) {
+    // Cache hit : l'index FTS est deja a jour (pose au precedent fetch)
     return { content: cached.content, sha: file.sha }
   }
 
   const enriched = await inlineImages(octokit, dbRepo, path, file.content)
   upsertLumenCachedFile(repoId, path, file.sha, enriched)
+
+  // Index FTS5 : on utilise le MD brut avant inline d'images (plus leger
+  // et on n'a pas besoin des images pour la recherche texte). Titre pioche
+  // depuis le manifest si possible, sinon depuis le path. On log les
+  // erreurs au lieu de les avaler silencieusement pour reperer un drift
+  // schema (ex: table FTS5 absente apres restore d'un backup).
+  try {
+    const manifest = dbRepo.manifest_json ? JSON.parse(dbRepo.manifest_json) : null
+    const chapter = manifest?.chapters?.find((c) => c.path === path)
+    const title = chapter?.title || path
+    upsertLumenChapterFts(repoId, path, title, markdownToPlainText(file.content))
+  } catch (err) {
+    try {
+      require('../utils/logger').warn('lumen_fts_upsert_failed', {
+        repoId, path, error: err.message,
+      })
+    } catch { /* logger module unavailable in some test contexts */ }
+  }
+
   return { content: enriched, sha: file.sha }
 }
 
