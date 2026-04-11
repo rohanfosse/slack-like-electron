@@ -621,14 +621,24 @@ button { font-family: var(--font); }
    TRAVAUX - cartes
 ════════════════════════════════════════════ */
 .travail-card {
-  background: var(--bg-sidebar);
+  background: var(--bg-elevated);
   border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 14px;
+  border-radius: var(--radius-lg);
+  padding: var(--space-md);
   cursor: pointer;
-  transition: border-color var(--t-base), background var(--t-base);
+  box-shadow: var(--elevation-1);
+  transition:
+    transform var(--motion-base) var(--ease-out),
+    border-color var(--motion-fast) var(--ease-out),
+    background var(--motion-fast) var(--ease-out),
+    box-shadow var(--motion-base) var(--ease-out);
 }
-.travail-card:hover { border-color: rgba(var(--accent-rgb),.4); background: var(--bg-elevated); }
+.travail-card:hover {
+  border-color: var(--accent);
+  background: rgba(var(--accent-rgb), .04);
+  transform: translateY(-2px);
+  box-shadow: var(--elevation-2);
+}
 
 .travail-title {
   font-weight: 700;
@@ -925,15 +935,20 @@ button { font-family: var(--font); }
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 6px;
-  padding: 12px 8px;
+  gap: var(--space-xs);
+  padding: var(--space-md) var(--space-sm);
   background: var(--bg-hover);
   border: 2px solid transparent;
   border-radius: var(--radius);
   cursor: pointer;
-  transition: border-color var(--t-base), background var(--t-base);
+  transition:
+    border-color var(--motion-fast) var(--ease-out),
+    background var(--motion-fast) var(--ease-out),
+    transform var(--motion-base) var(--ease-out);
   text-align: center;
 }
+.identity-card:hover { transform: translateY(-1px); }
+.identity-card:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 .identity-card:hover          { background: var(--bg-active); border-color: var(--border-input); }
 .identity-card.selected       { border-color: var(--accent); background: rgba(var(--accent-rgb),.12); }
 .identity-card-name  { font-size: 13px; font-weight: 600; color: var(--text-primary); }
