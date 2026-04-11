@@ -27,6 +27,9 @@ const {
   // repos
   getLumenReposForPromo,
   getLumenRepo,
+  setLumenRepoProject,
+  getLumenReposByProjectName,
+  getUnlinkedLumenReposForPromo,
   // notes
   getLumenChapterNote,
   upsertLumenChapterNote,
@@ -41,6 +44,8 @@ const {
   // stats
   getLumenStatsForPromo,
 } = require('../db/models/lumen')
+const { getProjectById } = require('../db/models/projects')
+const { getDb } = require('../db/connection')
 
 router.use(authMiddleware)
 
@@ -85,6 +90,14 @@ function parseManifestField(repo) {
 }
 
 function serializeRepo(repo) {
+  // repo.project_name peut etre present si la query a fait le JOIN ; sinon
+  // on lookup a la demande (cout : 1 SELECT par serialisation quand le repo
+  // a un project_id). Pour les listes lourdes, preferer une query avec JOIN.
+  let projectName = repo.project_name ?? null
+  if (!projectName && repo.project_id) {
+    const p = getProjectById(repo.project_id)
+    projectName = p?.name ?? null
+  }
   return {
     id: repo.id,
     promoId: repo.promo_id,
@@ -97,6 +110,7 @@ function serializeRepo(repo) {
     lastCommitSha: repo.last_commit_sha ?? null,
     lastSyncedAt: repo.last_synced_at ?? null,
     projectId: repo.project_id ?? null,
+    projectName,
   }
 }
 
@@ -205,6 +219,82 @@ router.get(
   wrap(async (req) => {
     const repo = repoOrThrow(Number(req.params.id))
     return serializeRepo(repo)
+  }),
+)
+
+// ─── Repos lies a un projet (integration bidirectionnelle) ──────────────────
+
+/**
+ * Liste les repos Lumen lies a un projet identifie par son nom (+ promoId).
+ * Utilise cette version par-nom car le frontend Cursus manipule les projets
+ * par category/name (legacy), pas par id numerique. Le matching reutilise
+ * la normalisation findProjectByNormalizedName (case + trim + NFD).
+ */
+router.get(
+  '/repos/by-project-name',
+  requirePromo((req) => Number(req.query.promoId) || null),
+  wrap(async (req) => {
+    const promoId = Number(req.query.promoId)
+    const name = String(req.query.name ?? '').trim()
+    if (!name) return { repos: [] }
+    const repos = getLumenReposByProjectName(promoId, name).map(serializeRepo)
+    return { repos }
+  }),
+)
+
+/**
+ * Liste les repos d'une promo non encore lies a un projet. Utilise par le
+ * picker UI fallback (teacher) pour proposer les candidats a la liaison.
+ */
+router.get(
+  '/repos/promo/:promoId/unlinked',
+  requireRole('teacher', 'admin'),
+  requirePromoAdmin(promoFromParam),
+  wrap(async (req) => {
+    const promoId = Number(req.params.promoId)
+    const repos = getUnlinkedLumenReposForPromo(promoId).map(serializeRepo)
+    return { repos }
+  }),
+)
+
+/**
+ * Setter UI fallback : associe un repo a un projet. Teacher/admin uniquement.
+ * Refuse si le manifest du repo declare deja un cursusProject (le yaml gagne).
+ * Body : { projectId: number | null } — null pour delier.
+ */
+const setRepoProjectSchema = z.object({
+  projectId: z.number().int().positive().nullable(),
+}).strict()
+
+router.put(
+  '/repos/:id/project',
+  requireRole('teacher', 'admin'),
+  requirePromoAdmin(promoFromRepoParam),
+  validate(setRepoProjectSchema),
+  wrap(async (req) => {
+    const repo = repoOrThrow(Number(req.params.id))
+
+    // Protection : si le manifest declare deja un cursusProject, le yaml est
+    // maitre et l'UI ne doit pas pouvoir ecraser la valeur.
+    const manifest = parseManifestField(repo)
+    if (manifest?.cursusProject) {
+      throw new AppError(
+        `Le manifest cursus.yaml declare deja cursusProject: "${manifest.cursusProject}". Pour delier ou changer, edite le yaml.`,
+        409,
+      )
+    }
+
+    // Verifie que le projectId appartient bien a la meme promo (securite).
+    if (req.body.projectId !== null) {
+      const project = getProjectById(req.body.projectId)
+      if (!project || project.promo_id !== repo.promo_id) {
+        throw new NotFoundError('Projet introuvable dans cette promo')
+      }
+    }
+
+    setLumenRepoProject(repo.id, req.body.projectId)
+    const updated = getLumenRepo(repo.id)
+    return serializeRepo(updated)
   }),
 )
 
