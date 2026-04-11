@@ -3,6 +3,8 @@
  * Couvre : github auth, promo org, repos CRUD, file cache,
  * chapter notes, chapter reads, stats.
  */
+// Set JWT_SECRET avant le require des modules qui dependent de crypto
+process.env.JWT_SECRET = process.env.JWT_SECRET || 'test-jwt-secret-for-testing-only-32chars!!'
 const { setupTestDb, teardownTestDb, getTestDb } = require('../helpers/setup')
 
 let queries
@@ -15,20 +17,41 @@ beforeAll(() => {
 afterAll(() => teardownTestDb())
 
 describe('Lumen GitHub auth', () => {
-  it('saveLumenGithubAuth + getLumenGithubAuth round-trip', () => {
+  it('saveLumenGithubAuth + getLumenGithubAuth round-trip (chiffre en DB, clair en lecture)', () => {
     queries.saveLumenGithubAuth('student', 1, {
       githubLogin: 'alice',
-      accessToken: 'ghp_abc',
+      accessToken: 'ghp_abc_secret_token',
       scopes: 'repo,read:org',
     })
     const auth = queries.getLumenGithubAuth('student', 1)
+    // L'API renvoie le token en clair
     expect(auth).toMatchObject({
       user_type: 'student',
       user_id: 1,
       github_login: 'alice',
-      access_token: 'ghp_abc',
+      access_token: 'ghp_abc_secret_token',
       scopes: 'repo,read:org',
     })
+    // Mais en base, le token est chiffre (prefixe enc:)
+    const raw = getTestDb().prepare('SELECT access_token FROM lumen_github_auth WHERE user_id = ?').get(1)
+    expect(raw.access_token.startsWith('enc:')).toBe(true)
+    expect(raw.access_token).not.toBe('ghp_abc_secret_token')
+  })
+
+  it('migration lazy : un token legacy en clair est re-chiffre au premier get', () => {
+    getTestDb().prepare('INSERT OR REPLACE INTO lumen_github_auth (user_type, user_id, github_login, access_token, scopes) VALUES (?,?,?,?,?)')
+      .run('teacher', 42, 'bob', 'ghp_legacy_plain', 'repo')
+    // Avant get : clair en DB
+    const before = getTestDb().prepare('SELECT access_token FROM lumen_github_auth WHERE user_id = ?').get(42)
+    expect(before.access_token).toBe('ghp_legacy_plain')
+    // Read -> decrypt passthrough + migration
+    const auth = queries.getLumenGithubAuth('teacher', 42)
+    expect(auth.access_token).toBe('ghp_legacy_plain')
+    // Apres get : chiffre en DB
+    const after = getTestDb().prepare('SELECT access_token FROM lumen_github_auth WHERE user_id = ?').get(42)
+    expect(after.access_token.startsWith('enc:')).toBe(true)
+    // Deuxieme read : toujours clair
+    expect(queries.getLumenGithubAuth('teacher', 42).access_token).toBe('ghp_legacy_plain')
   })
 
   it('upsert: second save updates in place', () => {

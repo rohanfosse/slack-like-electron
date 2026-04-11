@@ -2,26 +2,43 @@
  * Modele DB Lumen — liseuse de cours adossee a GitHub.
  *
  * Schema (v56) :
- *   lumen_github_auth   — token d'acces GitHub par utilisateur
+ *   lumen_github_auth   — token d'acces GitHub par utilisateur (chiffre AES-GCM)
  *   lumen_repos         — un repo de cours liee a une promo
  *   lumen_file_cache    — cache local des fichiers markdown fetches
  *   lumen_chapter_notes — notes privees etudiant (cle : student_id, repo_id, path)
  *   lumen_chapter_reads — tracking de lecture par chapitre
  */
 const { getDb } = require('../connection')
+const { encrypt, decrypt } = require('../../utils/crypto')
 
 // ─── GitHub auth ────────────────────────────────────────────────────────────
+//
+// Les tokens d'acces GitHub sont sensibles : ils donnent acces a tous les
+// repos de l'utilisateur dans le scope du PAT. On les chiffre avec AES-GCM
+// (server/utils/crypto, derive de JWT_SECRET via pbkdf2). Le format
+// stocke est `enc:<base64>` — les tokens en clair legacy (v2.32.x) sont
+// detectes a la lecture et migres lazily au prochain write.
 
 function getLumenGithubAuth(userType, userId) {
-  return getDb().prepare(`
+  const row = getDb().prepare(`
     SELECT user_type, user_id, github_login, access_token, scopes,
            created_at, updated_at
       FROM lumen_github_auth
      WHERE user_type = ? AND user_id = ?
   `).get(userType, userId) ?? null
+  if (!row) return null
+  const plainToken = decrypt(row.access_token)
+  // Migration lazy : si le token etait en clair (legacy), on re-ecrit
+  // la version chiffree en base.
+  if (row.access_token && !row.access_token.startsWith('enc:') && plainToken === row.access_token) {
+    getDb().prepare('UPDATE lumen_github_auth SET access_token = ? WHERE user_type = ? AND user_id = ?')
+      .run(encrypt(plainToken), userType, userId)
+  }
+  return { ...row, access_token: plainToken }
 }
 
 function saveLumenGithubAuth(userType, userId, { githubLogin, accessToken, scopes = '' }) {
+  const ciphertext = encrypt(accessToken)
   getDb().prepare(`
     INSERT INTO lumen_github_auth (user_type, user_id, github_login, access_token, scopes, updated_at)
     VALUES (?, ?, ?, ?, ?, datetime('now'))
@@ -30,7 +47,7 @@ function saveLumenGithubAuth(userType, userId, { githubLogin, accessToken, scope
       access_token = excluded.access_token,
       scopes       = excluded.scopes,
       updated_at   = datetime('now')
-  `).run(userType, userId, githubLogin, accessToken, scopes)
+  `).run(userType, userId, githubLogin, ciphertext, scopes)
 }
 
 function deleteLumenGithubAuth(userType, userId) {

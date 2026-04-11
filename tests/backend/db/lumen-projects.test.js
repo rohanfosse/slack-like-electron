@@ -6,6 +6,7 @@
  * - getLumenReposByProjectName (lookup cote frontend)
  * - getUnlinkedLumenReposForPromo (picker UI)
  */
+process.env.JWT_SECRET = process.env.JWT_SECRET || 'test-jwt-secret-for-testing-only-32chars!!'
 const { setupTestDb, teardownTestDb, getTestDb } = require('../helpers/setup')
 
 let lumen
