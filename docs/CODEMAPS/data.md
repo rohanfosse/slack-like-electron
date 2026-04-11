@@ -1,6 +1,6 @@
-<!-- Generated: 2026-04-09 | Cursus v2.31.0 | Token estimate: ~510 -->
+<!-- Generated: 2026-04-11 | Cursus v2.42.0 | Token estimate: ~520 -->
 
-# Database Schema (SQLite v53)
+# Database Schema (SQLite v57)
 
 ## Core Tables
 
@@ -176,22 +176,27 @@ channels
 | v44 | Error reports (monitoring) |
 | v45 | Student onboarding flag |
 | v47 | Channel archiving |
-| v50 | Lumen — cours markdown publies par les enseignants |
-| v51 | Lumen — lien projet optionnel + tracking lecture etudiant |
-| v52 | Lumen — snapshot repo git d'exemple (repo_url, repo_snapshot, repo_commit_sha, repo_default_branch, repo_snapshot_at) |
-| v53 | Lumen — notes privees etudiant (lumen_course_notes PK composite student+course) |
+| v50-v55 | Lumen v1 (deprecated) — cours stockes en DB, drafts/published, snapshot repo read-only |
+| v56 | **Lumen pivot GitHub** — DROP lumen_courses/notes/reads, CREATE lumen_github_auth + lumen_repos + lumen_file_cache + lumen_chapter_notes + lumen_chapter_reads, ALTER promotions ADD github_org |
+| v57 | Lumen — liaison N:M devoirs <-> chapitres (lumen_chapter_travaux) |
 
-## Lumen Tables (v50-v53)
+## Lumen Tables (v56-v57, post-pivot GitHub)
 
 | Table | Key Columns | Purpose | References |
 |-------|------------|---------|-----------|
-| `lumen_courses` | id, teacher_id, promo_id, project_id, title, summary, content, status (draft/published), created_at, updated_at, published_at, repo_url, repo_snapshot (JSON), repo_commit_sha, repo_default_branch, repo_snapshot_at | Cours markdown publies par les profs + snapshot repo d'exemple | lumen_course_reads, lumen_course_notes, projects |
-| `lumen_course_reads` | student_id, course_id, read_at | Tracking lecture etudiant (idempotent upsert) | (pivot) |
-| `lumen_course_notes` | student_id, course_id, content, created_at, updated_at | Notes privees etudiant (max 10 000 chars) | (pivot, ON DELETE CASCADE) |
+| `lumen_github_auth` | (user_type, user_id) PK composite, github_login, access_token (chiffre `enc:...` AES-GCM), scopes | Token PAT GitHub par utilisateur (chiffre via server/utils/crypto, migration lazy des legacy plain) | — |
+| `lumen_repos` | id, promo_id, owner, repo, default_branch, manifest_json, manifest_error, last_commit_sha, last_synced_at, project_id (FK projects ON DELETE SET NULL), UNIQUE(promo_id, owner, repo) | Un repo GitHub par promo, avec manifest cursus.yaml parse | lumen_file_cache, lumen_chapter_notes, lumen_chapter_reads, lumen_chapter_travaux, projects |
+| `lumen_file_cache` | (repo_id, path) PK composite, sha, content, fetched_at | Cache markdown avec images inlinees en data URIs (fetched via octokit). Pruned apres sync + purge > 30j. | (pivot, ON DELETE CASCADE) |
+| `lumen_chapter_notes` | (student_id, repo_id, path) PK composite, content (max 10k chars), updated_at | Notes privees etudiant par chapitre (cle par path, pas par id) | (pivot, ON DELETE CASCADE) |
+| `lumen_chapter_reads` | (student_id, repo_id, path) PK composite, read_at | Tracking de lecture par chapitre | (pivot, ON DELETE CASCADE) |
+| `lumen_chapter_travaux` | (travail_id, repo_id, chapter_path) PK composite, created_at | Liaison N:M devoir <-> chapitre Lumen (ajoute en v57) | (pivot, ON DELETE CASCADE vers travaux + lumen_repos) |
+
+**Promo mapping** : `promotions.github_org TEXT` (ajoute en v56) — 1 promo = 1 organisation GitHub.
 
 ## Encryption Status
 
 - **Passwords**: bcrypt SHA-256 (v16+)
 - **Tokens**: JWT signed with APP_JWT_SECRET
-- **DMs**: AES-256-GCM groundwork (future v48+)
+- **DMs**: AES-256-GCM (`server/utils/crypto.js`, prefix `enc:`)
+- **Lumen GitHub tokens**: AES-256-GCM same helpers (v2.42.0+), lazy migration of legacy plain
 - **Files**: No encryption (access via JWT bearer token)
