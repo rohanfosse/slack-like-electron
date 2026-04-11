@@ -4,11 +4,6 @@
 const log = require('../utils/logger')
 const { getDueScheduledMessages, markScheduledSent } = require('../db/models/admin')
 const { getDueScheduledDevoirs, publishScheduledDevoir } = require('../db/models/assignments')
-const {
-  getDueScheduledLumenCourses,
-  publishLumenCourse,
-  setLumenCourseScheduledPublish,
-} = require('../db/models/lumen')
 
 module.exports = function startScheduler(io, queries) {
   return setInterval(() => {
@@ -90,28 +85,5 @@ module.exports = function startScheduler(io, queries) {
       log.error('scheduled_devoirs_failed', { error: err.message })
     }
 
-    // ── Publication programmee des cours Lumen ────────────────────────
-    try {
-      const dueCourses = getDueScheduledLumenCourses()
-      for (const course of dueCourses) {
-        try {
-          publishLumenCourse(course.id)
-          // Annule la planification (marqueur consomme)
-          setLumenCourseScheduledPublish(course.id, null)
-
-          if (course.promo_id) {
-            io.to(`promo:${course.promo_id}`).emit('lumen:course-published', {
-              promoId: course.promo_id,
-              courseId: course.id,
-            })
-          }
-          log.info('scheduled_lumen_published', { id: course.id, title: course.title })
-        } catch (err) {
-          log.error('scheduled_lumen_failed', { id: course.id, error: err.message })
-        }
-      }
-    } catch (err) {
-      log.error('scheduled_lumen_courses_failed', { error: err.message })
-    }
   }, 30000)
 }

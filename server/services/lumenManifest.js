@@ -1,0 +1,78 @@
+/**
+ * Parsing et validation du fichier `cursus.yaml` racine d'un repo de cours.
+ *
+ * Le manifest est la source de verite pour Lumen : c'est lui qui decide
+ * quels fichiers .md composent le cours, leur ordre, leur titre et leurs
+ * metadonnees. Si le manifest est absent ou invalide, le repo s'affiche
+ * avec un message d'erreur clair dans l'UI et aucun chapitre n'est listé.
+ *
+ * Format attendu (cursus.yaml) :
+ *
+ *   project: "Projet 01 — Python pour debutants"
+ *   module: "Fondamentaux Python"
+ *   author: "Rohan Fosse"
+ *   summary: "Cours d'introduction ..."
+ *   chapters:
+ *     - title: "Introduction"
+ *       path: "cours/01-intro.md"
+ *       duration: 30
+ *     - title: "Variables"
+ *       path: "cours/02-variables.md"
+ *       duration: 45
+ *       prerequis: ["01-intro"]
+ *   resources:
+ *     - path: "ressources/cheatsheet.pdf"
+ *       kind: "pdf"
+ */
+const YAML = require('js-yaml')
+const { z } = require('zod')
+
+const MANIFEST_FILENAME = 'cursus.yaml'
+
+const chapterSchema = z.object({
+  title: z.string().min(1).max(200),
+  path: z.string().min(1).max(500).regex(/\.md$/i, 'path doit pointer vers un .md'),
+  duration: z.number().int().positive().max(600).optional(),
+  summary: z.string().max(500).optional(),
+  prerequis: z.array(z.string()).optional(),
+}).strict()
+
+const resourceSchema = z.object({
+  path: z.string().min(1).max(500),
+  kind: z.string().max(50).optional(),
+  title: z.string().max(200).optional(),
+}).strict()
+
+const manifestSchema = z.object({
+  project: z.string().min(1).max(200),
+  module: z.string().max(200).optional(),
+  author: z.string().max(200).optional(),
+  summary: z.string().max(1000).optional(),
+  chapters: z.array(chapterSchema).min(1).max(200),
+  resources: z.array(resourceSchema).max(200).optional(),
+}).strict()
+
+/**
+ * Parse et valide le contenu YAML du manifest.
+ * @param {string} yamlText
+ * @returns {{ ok: true, manifest: object } | { ok: false, error: string }}
+ */
+function parseManifest(yamlText) {
+  if (typeof yamlText !== 'string' || !yamlText.trim()) {
+    return { ok: false, error: 'Fichier cursus.yaml vide' }
+  }
+  let raw
+  try {
+    raw = YAML.load(yamlText)
+  } catch (err) {
+    return { ok: false, error: `YAML invalide : ${err.message}` }
+  }
+  const parsed = manifestSchema.safeParse(raw)
+  if (!parsed.success) {
+    const first = parsed.error.issues[0]
+    return { ok: false, error: `Schema invalide : ${first.path.join('.')} — ${first.message}` }
+  }
+  return { ok: true, manifest: parsed.data }
+}
+
+module.exports = { parseManifest, MANIFEST_FILENAME }

@@ -1,711 +1,400 @@
-/** Routes API Lumen — cours markdown publies par les enseignants. */
-const router  = require('express').Router()
-const { z }   = require('zod')
-const queries = require('../db/index')
-const { validate } = require('../middleware/validate')
-const wrap    = require('../utils/wrap')
+/**
+ * Routes API Lumen — liseuse de cours adossee a GitHub.
+ *
+ * Modele : 1 promo = 1 organisation GitHub, 1 projet pedagogique = 1 repo,
+ * un fichier `cursus.yaml` a la racine decrit les chapitres. Lumen stocke
+ * uniquement des metadonnees (orga lookup, manifest parse, cache de fichiers,
+ * notes privees etudiant, tracking lecture) ; le contenu des cours vit
+ * dans GitHub.
+ */
+const router = require('express').Router()
+const { z } = require('zod')
+const wrap = require('../utils/wrap')
+const authMiddleware = require('../middleware/auth')
 const { requireRole, requirePromo, requirePromoAdmin, promoFromParam } = require('../middleware/authorize')
-const { getDb } = require('../db/connection')
+const { validate } = require('../middleware/validate')
+const { buildClientForUser, validateToken, mapOctokitError } = require('../services/githubClient')
+const { syncPromoRepos, fetchChapterContent, getCachedChapter } = require('../services/lumenRepoSync')
+const {
+  // auth
+  getLumenGithubAuth,
+  saveLumenGithubAuth,
+  deleteLumenGithubAuth,
+  // promo org
+  getPromoGithubOrg,
+  setPromoGithubOrg,
+  // repos
+  getLumenReposForPromo,
+  getLumenRepo,
+  // notes
+  getLumenChapterNote,
+  upsertLumenChapterNote,
+  deleteLumenChapterNote,
+  getStudentLumenNotes,
+  getStudentNotedChapters,
+  // reads
+  markLumenChapterRead,
+  getStudentLumenReads,
+  getLumenReadCountsForRepo,
+  getLumenReadCountsForPromo,
+  // stats
+  getLumenStatsForPromo,
+} = require('../db/models/lumen')
 
-// ─── Schemas Zod (strict : refuse les champs inconnus) ──────────────────────
+router.use(authMiddleware)
 
-const createCourseSchema = z.object({
-  promoId:   z.number().int().positive('promoId requis'),
-  projectId: z.number().int().positive().nullable().optional(),
-  title:     z.string().min(1, 'Titre requis').max(200),
-  summary:   z.string().max(500).optional(),
-  content:   z.string().max(200_000).optional(),
-  repoUrl:   z.string().url().max(500).nullable().optional(),
-}).strict()
+// ─── Helpers ────────────────────────────────────────────────────────────────
 
-const updateCourseSchema = z.object({
-  title:     z.string().min(1).max(200).optional(),
-  summary:   z.string().max(500).optional(),
-  content:   z.string().max(200_000).optional(),
-  projectId: z.number().int().positive().nullable().optional(),
-  repoUrl:   z.string().url().max(500).nullable().optional(),
-}).strict()
-
-// Service snapshot (fetch GitHub + validation + zip)
-const lumenSnapshot = require('../services/lumenSnapshot')
-const lumenZip      = require('../services/lumenZip')
-
-// Debounce anti-abuse : pas plus d'un refresh par cours par minute pour
-// eviter qu'un prof qui clique frenetiquement sur "Resynchroniser" ne
-// tape contre le rate limit GitHub (60 req/h par IP non-authentifiee).
-// Stockage in-memory — acceptable car le cas d'usage est "un prof qui
-// teste pendant la preparation" ; les redemarrages serveur sont rares.
-const REFRESH_COOLDOWN_MS = 60_000
-const lastRefreshByCourse = new Map()
-
-function checkRefreshCooldown(courseId) {
-  // Desactive en environnement de test : les tests font plusieurs refresh
-  // du meme cours en < 1s (normal pour valider les differents edge cases).
-  if (process.env.NODE_ENV === 'test' || process.env.VITEST) return null
-  const last = lastRefreshByCourse.get(courseId)
-  if (!last) return null
-  const elapsed = Date.now() - last
-  if (elapsed < REFRESH_COOLDOWN_MS) {
-    return Math.ceil((REFRESH_COOLDOWN_MS - elapsed) / 1000)
-  }
+/** Normalisation : les JWT enseignants stockent id en negatif. */
+function userKey(req) {
+  if (req.user?.type === 'teacher') return { userType: 'teacher', userId: Math.abs(req.user.id) }
+  if (req.user?.type === 'student') return { userType: 'student', userId: req.user.id }
   return null
 }
 
-/**
- * Mappe une SnapshotError vers une reponse HTTP structuree.
- * Les codes sont stables, utilisables cote frontend pour afficher des
- * messages actionables.
- */
-function snapshotErrorToResponse(err) {
-  const status = lumenSnapshot.httpStatusFor[err.code] ?? 500
-  return {
-    status,
-    body: {
-      ok: false,
-      error: err.message,
-      code: err.code,
-      details: err.details,
-    },
+async function requireGithubClient(req) {
+  const key = userKey(req)
+  if (!key) {
+    const err = new Error('GitHub non autorise pour ce type de compte')
+    err.statusCode = 403
+    throw err
   }
+  const octokit = await buildClientForUser(key.userType, key.userId)
+  if (!octokit) {
+    const err = new Error('Compte GitHub non connecte')
+    err.statusCode = 401
+    throw err
+  }
+  return octokit
 }
 
-/**
- * Build-and-store : orchestre le fetch du snapshot et la persistance.
- * Retourne le snapshot meta (pas le JSON complet) et le cours mis a jour.
- * Throw SnapshotError si le fetch echoue (a mapper par le handler).
- */
-async function buildAndStoreSnapshot(courseId, repoUrl) {
-  const snapshot = await lumenSnapshot.buildSnapshot(repoUrl)
-  queries.setLumenCourseSnapshot(courseId, {
-    url: snapshot.repo_url,
-    snapshot,
-    commitSha: snapshot.commit_sha,
-    defaultBranch: snapshot.default_branch,
-  })
-  return snapshot
-}
-
-// ─── Helpers ─────────────────────────────────────────────────────────────────
-
-/** Lookup : courseId → promo_id (pour requirePromo) */
-function promoFromCourse(req) {
+function promoFromRepoParam(req) {
   const id = Number(req.params.id)
   if (!id) return null
-  const c = getDb().prepare('SELECT promo_id FROM lumen_courses WHERE id = ?').get(id)
-  return c?.promo_id ?? null
+  const repo = getLumenRepo(id)
+  return repo?.promo_id ?? null
 }
 
-/** Lookup : promoId depuis le body (pour requirePromoAdmin sur POST /courses) */
-function promoFromBody(req) {
-  return Number(req.body?.promoId) || null
+/** Lookup promoId depuis `:id` (cas des routes /promos/:id/...). */
+function promoFromIdParam(req) {
+  return Number(req.params.id) || null
 }
 
-/** Normalisation : les JWT enseignants stockent id en negatif. */
-function getTeacherIdFromReq(req) {
-  return Math.abs(req.user.id)
+function repoOrThrow(id) {
+  const repo = getLumenRepo(id)
+  if (!repo) {
+    const err = new Error('Repo Lumen introuvable')
+    err.statusCode = 404
+    throw err
+  }
+  return repo
 }
 
-/** requirePromoAdmin uniquement pour les teachers ; passe pour les students. */
-function teacherPromoGuard(getPromoId) {
-  const inner = requirePromoAdmin(getPromoId)
-  return (req, res, next) => {
-    if (req.user?.type === 'student') return next()
-    return inner(req, res, next)
-  }
+function parseManifestField(repo) {
+  if (!repo.manifest_json) return null
+  try { return JSON.parse(repo.manifest_json) } catch { return null }
 }
 
-/** Verifie que le user enseignant est l'auteur du cours OU admin. */
-function requireCourseOwner(req, res, next) {
-  if (req.user?.type === 'admin') return next()
-  if (req.user?.type !== 'teacher') {
-    return res.status(403).json({ ok: false, error: 'Accès réservé aux enseignants.' })
-  }
-  const id = Number(req.params.id)
-  if (!id) return res.status(400).json({ ok: false, error: 'ID cours manquant.' })
-  const course = getDb().prepare('SELECT teacher_id FROM lumen_courses WHERE id = ?').get(id)
-  if (!course) return res.status(404).json({ ok: false, error: 'Cours introuvable.' })
-  if (course.teacher_id !== getTeacherIdFromReq(req)) {
-    return res.status(403).json({ ok: false, error: 'Vous n\'êtes pas l\'auteur de ce cours.' })
-  }
-  next()
-}
-
-// ─── Liste des cours ─────────────────────────────────────────────────────────
-
-// GET /api/lumen/courses/promo/:promoId — liste les cours d'une promo
-// Student : uniquement sa promo (requirePromo) + filtre publies
-// Teacher : uniquement ses promos affectees (requirePromoAdmin) + drafts + publies
-router.get('/courses/promo/:promoId',
-  requirePromo(promoFromParam),
-  teacherPromoGuard(promoFromParam),
-  wrap((req) => {
-    const promoId = Number(req.params.promoId)
-    const onlyPublished = req.user?.type === 'student'
-    return queries.getLumenCoursesForPromo(promoId, { onlyPublished })
-  })
-)
-
-// GET /api/lumen/courses/:id — recuperer un cours complet (avec content markdown)
-// Etudiant : uniquement si publie et meme promo
-router.get('/courses/:id',
-  requirePromo(promoFromCourse),
-  teacherPromoGuard(promoFromCourse),
-  wrap((req) => {
-    const id = Number(req.params.id)
-    const course = queries.getLumenCourse(id)
-    if (!course) {
-      const err = new Error('Cours introuvable')
-      err.statusCode = 404
-      throw err
-    }
-    if (req.user?.type === 'student' && course.status !== 'published') {
-      const err = new Error('Cours non publié')
-      err.statusCode = 404
-      throw err
-    }
-    return course
-  })
-)
-
-// ─── Mutations (enseignants uniquement) ──────────────────────────────────────
-
-// POST /api/lumen/courses — creer un cours (draft)
-// requirePromoAdmin verifie que le teacher appartient bien a la promo cible
-router.post('/courses',
-  requireRole('teacher'),
-  validate(createCourseSchema),
-  teacherPromoGuard(promoFromBody),
-  wrap((req) => {
-    const { promoId, projectId = null, title, summary = '', content = '', repoUrl = null } = req.body
-    return queries.createLumenCourse({
-      teacherId: getTeacherIdFromReq(req),
-      promoId, projectId, title, summary, content, repoUrl,
-    })
-  })
-)
-
-// PATCH /api/lumen/courses/:id — modifier un cours
-router.patch('/courses/:id', requireCourseOwner, validate(updateCourseSchema), wrap((req) => {
-  const id = Number(req.params.id)
-  // Si l'URL du repo change ou est effacee, le snapshot existant devient
-  // obsolete : on le nettoie pour eviter que l'etudiant voie le vieux projet.
-  if (Object.prototype.hasOwnProperty.call(req.body, 'repoUrl')) {
-    const current = queries.getLumenCourse(id)
-    if (current && current.repo_url !== req.body.repoUrl) {
-      queries.clearLumenCourseSnapshot(id)
-    }
-  }
-  return queries.updateLumenCourse(id, req.body)
-}))
-
-// POST /api/lumen/courses/:id/publish — publier un cours
-// A la PREMIERE publication (published_at etait NULL), poste un message
-// systeme dans le canal du projet associe (si projet et channel definis)
-// et emet un evenement socket pour rafraichir les compteurs cote clients.
-// En cas d'echec du side-effect, la publication reste valide (best-effort).
-router.post('/courses/:id/publish', requireCourseOwner, async (req, res, next) => {
-  try {
-    const id = Number(req.params.id)
-    const before = queries.getLumenCourse(id)
-    if (!before) {
-      return res.status(404).json({ ok: false, error: 'Cours introuvable.' })
-    }
-
-    // Si un repo git est attache et qu'aucun snapshot n'a encore ete fait
-    // (ou si l'URL a change), on snapshotte avant de publier. Un echec de
-    // snapshot bloque la publication : on ne veut pas exposer un cours qui
-    // reference un projet fantome cote etudiants.
-    if (before.repo_url && !before.repo_snapshot_at) {
-      try {
-        await buildAndStoreSnapshot(id, before.repo_url)
-      } catch (err) {
-        if (err instanceof lumenSnapshot.SnapshotError) {
-          const { status, body } = snapshotErrorToResponse(err)
-          return res.status(status).json(body)
-        }
-        throw err
-      }
-    }
-
-    const { course, isFirstPublish } = queries.publishLumenCourse(id)
-    if (isFirstPublish) {
-      try {
-        notifyCoursePublished(req, course)
-      } catch (err) {
-        // Notification non bloquante : on log et on retourne le cours.
-        // eslint-disable-next-line no-console
-        console.warn('[lumen] notification publish failed:', err.message)
-      }
-    }
-    res.json({ ok: true, data: course })
-  } catch (err) {
-    next(err)
-  }
-})
-
-/**
- * Side-effect de premiere publication : poste un message systeme dans le
- * canal du projet associe (s'il en existe un avec un channel_id) et emet
- * lumen:course-published sur la room promo pour que les clients connectes
- * rafraichissent leur badge / widget de cours non-lus.
- */
-function notifyCoursePublished(req, course) {
-  if (!course) return
-
-  // Pas de projet → publication silencieuse cote chat (decision produit).
-  // Le badge rail et le widget dashboard fonctionneront quand meme via
-  // l'evenement socket ci-dessous.
-  const project = course.project_id ? queries.getProjectById(course.project_id) : null
-  const channelId = project?.channel_id ?? null
-
-  if (channelId) {
-    // Convention : auteur 'Cursus' avec type 'teacher' (pas de valeur 'system'
-    // dans la CHECK constraint actuelle de messages.author_type). Le frontend
-    // identifiera le bot par author_name === 'Cursus'.
-    const content = `Nouveau cours publie : \\[${course.title}](lumen:${course.id})`
-    const result = queries.sendMessage({
-      channelId,
-      authorName: 'Cursus',
-      authorType: 'teacher',
-      content,
-    })
-    const messageId = Number(result.lastInsertRowid)
-    const message = queries.getMessageById(messageId)
-
-    const io = req.app.get('io')
-    if (io && message) {
-      const pushPayload = {
-        channelId,
-        dmStudentId: null,
-        authorName: 'Cursus',
-        channelName: null,
-        promoId: course.promo_id,
-        preview: content.replace(/[*_`>#[\]!\\]/g, '').slice(0, 80),
-        mentionEveryone: false,
-        mentionNames: [],
-      }
-      io.to(`promo:${course.promo_id}`).emit('msg:new', pushPayload)
-    }
-  }
-
-  // Toujours emettre l'evenement Lumen pour les surfaces hors chat
-  // (badge rail + widget dashboard), meme sans projet/canal.
-  const io = req.app.get('io')
-  if (io) {
-    io.to(`promo:${course.promo_id}`).emit('lumen:course-published', {
-      promoId: course.promo_id,
-      courseId: course.id,
-    })
+function serializeRepo(repo) {
+  return {
+    id: repo.id,
+    promoId: repo.promo_id,
+    owner: repo.owner,
+    repo: repo.repo,
+    fullName: `${repo.owner}/${repo.repo}`,
+    defaultBranch: repo.default_branch,
+    manifest: parseManifestField(repo),
+    manifestError: repo.manifest_error ?? null,
+    lastCommitSha: repo.last_commit_sha ?? null,
+    lastSyncedAt: repo.last_synced_at ?? null,
+    projectId: repo.project_id ?? null,
   }
 }
 
-// POST /api/lumen/courses/:id/unpublish — repasser en draft
-router.post('/courses/:id/unpublish', requireCourseOwner, wrap((req) => {
-  const id = Number(req.params.id)
-  return queries.unpublishLumenCourse(id)
-}))
+async function handleOctokit(err) {
+  const mapped = await mapOctokitError(err)
+  const wrapped = new Error(mapped.message)
+  wrapped.statusCode = mapped.status
+  return wrapped
+}
 
-// POST /api/lumen/courses/:id/schedule — planifie la publication
-// Body : { scheduledAt: ISO datetime | null } — null pour annuler
-const scheduleSchema = z.object({
-  scheduledAt: z.string().datetime().nullable(),
+// ─── Schemas Zod ────────────────────────────────────────────────────────────
+
+const tokenSchema = z.object({ token: z.string().min(10).max(200) }).strict()
+const orgSchema = z.object({ org: z.string().min(1).max(100).nullable() }).strict()
+const chapterPathSchema = z.object({ path: z.string().min(1).max(500) }).strict()
+const noteSchema = z.object({
+  path: z.string().min(1).max(500),
+  content: z.string().max(10_000),
 }).strict()
 
-router.post('/courses/:id/schedule',
-  requireCourseOwner,
-  validate(scheduleSchema),
-  wrap((req) => {
-    const id = Number(req.params.id)
-    const { scheduledAt } = req.body
-    // Accepte uniquement les cours en draft : on ne replanifie pas un deja publie
-    const course = queries.getLumenCourse(id)
-    if (!course) {
-      const err = new Error('Cours introuvable')
-      err.statusCode = 404
-      throw err
-    }
-    if (course.status !== 'draft' && scheduledAt !== null) {
-      const err = new Error('Un cours deja publie ne peut pas etre reprogramme.')
+// ─── GitHub auth ────────────────────────────────────────────────────────────
+
+router.get('/github/me', wrap(async (req) => {
+  const key = userKey(req)
+  if (!key) return { connected: false }
+  const auth = getLumenGithubAuth(key.userType, key.userId)
+  if (!auth) return { connected: false }
+  return { connected: true, login: auth.github_login, scopes: auth.scopes ?? '' }
+}))
+
+router.post('/github/connect', validate(tokenSchema), wrap(async (req) => {
+  const key = userKey(req)
+  if (!key) {
+    const err = new Error('GitHub non autorise pour ce type de compte')
+    err.statusCode = 403
+    throw err
+  }
+  let info
+  try {
+    info = await validateToken(req.body.token)
+  } catch (err) {
+    throw await handleOctokit(err)
+  }
+  saveLumenGithubAuth(key.userType, key.userId, {
+    githubLogin: info.login,
+    accessToken: req.body.token,
+    scopes: info.scopes,
+  })
+  return { login: info.login, name: info.name, avatarUrl: info.avatarUrl }
+}))
+
+router.delete('/github/disconnect', wrap(async (req) => {
+  const key = userKey(req)
+  if (!key) return { disconnected: false }
+  deleteLumenGithubAuth(key.userType, key.userId)
+  return { disconnected: true }
+}))
+
+// ─── Promo GitHub org mapping (admin/teacher seulement) ─────────────────────
+
+router.get('/promos/:id/github-org', requirePromo(promoFromIdParam), wrap(async (req) => {
+  const promoId = Number(req.params.id)
+  return { org: getPromoGithubOrg(promoId) }
+}))
+
+router.put(
+  '/promos/:id/github-org',
+  requireRole('teacher', 'admin'),
+  requirePromoAdmin(promoFromIdParam),
+  validate(orgSchema),
+  wrap(async (req) => {
+    const promoId = Number(req.params.id)
+    setPromoGithubOrg(promoId, req.body.org)
+    return { org: getPromoGithubOrg(promoId) }
+  }),
+)
+
+// ─── Repos : lister / sync ──────────────────────────────────────────────────
+
+router.get(
+  '/repos/promo/:promoId',
+  requirePromo(promoFromParam),
+  wrap(async (req) => {
+    const promoId = Number(req.params.promoId)
+    const repos = getLumenReposForPromo(promoId).map(serializeRepo)
+    return { repos, org: getPromoGithubOrg(promoId) }
+  }),
+)
+
+router.post(
+  '/repos/sync/promo/:promoId',
+  requirePromo(promoFromParam),
+  wrap(async (req) => {
+    const promoId = Number(req.params.promoId)
+    const org = getPromoGithubOrg(promoId)
+    if (!org) {
+      const err = new Error('Aucune organisation GitHub configuree pour cette promo')
       err.statusCode = 400
       throw err
     }
-    if (scheduledAt !== null) {
-      const ts = new Date(scheduledAt).getTime()
-      if (ts < Date.now()) {
-        const err = new Error('La date de publication doit etre dans le futur.')
-        err.statusCode = 400
-        throw err
-      }
-    }
-    return queries.setLumenCourseScheduledPublish(id, scheduledAt)
-  })
-)
-
-// DELETE /api/lumen/courses/:id — soft delete (corbeille 30 jours)
-router.delete('/courses/:id', requireCourseOwner, wrap((req) => {
-  const id = Number(req.params.id)
-  queries.deleteLumenCourse(id)
-  return { id, deleted: true, soft: true }
-}))
-
-// POST /api/lumen/courses/:id/restore — restore d'un cours soft-deleted
-router.post('/courses/:id/restore', requireCourseOwner, wrap((req) => {
-  const id = Number(req.params.id)
-  const course = queries.restoreLumenCourse(id)
-  return { id, restored: true, course }
-}))
-
-// DELETE /api/lumen/courses/:id/purge — suppression definitive (hard delete)
-// Ne passe pas par la corbeille. Utilise pour vider manuellement ou apres
-// cooldown de 30 jours.
-router.delete('/courses/:id/purge', requireCourseOwner, wrap((req) => {
-  const id = Number(req.params.id)
-  queries.purgeLumenCourse(id)
-  return { id, purged: true }
-}))
-
-// GET /api/lumen/trash — liste les cours en corbeille du teacher courant
-// Chemin separe de /courses/:id pour eviter le conflit de routing Express
-// (/:id interprete "trash" comme un id NaN).
-router.get('/trash', requireRole('teacher'), wrap((req) => {
-  const teacherId = getTeacherIdFromReq(req)
-  return queries.getTrashedLumenCoursesForTeacher(teacherId)
-}))
-
-// GET /api/lumen/stats/promo/:promoId — stats pour le dashboard enseignant
-router.get('/stats/promo/:promoId',
-  requireRole('teacher'),
-  teacherPromoGuard(promoFromParam),
-  wrap((req) => {
-    const promoId = Number(req.params.promoId)
-    return queries.getLumenStatsForPromo(promoId)
-  })
-)
-
-// ─── Tracking lecture etudiant ──────────────────────────────────────────────
-
-// POST /api/lumen/courses/:id/read — marque un cours comme lu par l'etudiant
-// courant. Idempotent : rappeler ne fait que mettre a jour read_at.
-router.post('/courses/:id/read',
-  requireRole('student'),
-  requirePromo(promoFromCourse),
-  wrap((req) => {
-    const courseId = Number(req.params.id)
-    const studentId = req.user.id
-    queries.markLumenCourseRead(studentId, courseId)
-    return { ok: true, courseId }
-  })
-)
-
-// POST /api/lumen/courses/read-all/promo/:promoId — marque tous les cours
-// publies d'une promo comme lus pour l'etudiant courant. Retourne le nombre
-// de cours effectivement marques (delta ; idempotent).
-// requireExactStudent (pas requireRole hierarchique) : les teachers n'ont
-// pas a se marquer eux-memes comme ayant lu des cours.
-router.post('/courses/read-all/promo/:promoId',
-  requireExactStudent,
-  requirePromo(promoFromParam),
-  wrap((req) => {
-    const promoId = Number(req.params.promoId)
-    const studentId = req.user.id
-    const marked = queries.markAllLumenCoursesRead(studentId, promoId)
-    return { marked }
-  })
-)
-
-// GET /api/lumen/read-counts/promo/:promoId — retourne un map {courseId: count}
-// avec le nombre d'etudiants uniques ayant lu chaque cours de la promo.
-// Reserve aux teachers/admins (engagement analytics).
-router.get('/read-counts/promo/:promoId',
-  requireRole('teacher'),
-  teacherPromoGuard(promoFromParam),
-  wrap((req) => {
-    const promoId = Number(req.params.promoId)
-    return queries.getLumenReadCountsForPromo(promoId)
-  })
-)
-
-// GET /api/lumen/unread/promo/:promoId — renvoie le compteur + la liste des
-// cours publies non-lus par l'etudiant courant pour la promo donnee. Sert
-// a alimenter le badge de la rail et le widget dashboard "Nouveaux cours".
-router.get('/unread/promo/:promoId',
-  requireRole('student'),
-  requirePromo(promoFromParam),
-  wrap((req) => {
-    const promoId = Number(req.params.promoId)
-    const studentId = req.user.id
-    const courses = queries.getUnreadLumenCoursesForStudent(studentId, promoId)
-    return { count: courses.length, courses }
-  })
-)
-
-// ─── Snapshot repo git d'exemple ─────────────────────────────────────────────
-
-/**
- * Middleware : valide qu'un etudiant peut lire le snapshot d'un cours.
- * Un etudiant accede uniquement aux snapshots des cours publies de sa promo.
- * Les teachers/admins passent via requireCourseOwner (pour mutation) ou
- * requirePromo (pour lecture). Ici on combine les deux modes.
- */
-function snapshotReadGuard(req, res, next) {
-  const id = Number(req.params.id)
-  const course = queries.getLumenCourse(id)
-  if (!course) return res.status(404).json({ ok: false, error: 'Cours introuvable.' })
-
-  if (req.user?.type === 'student') {
-    if (course.status !== 'published') {
-      return res.status(404).json({ ok: false, error: 'Cours non publié.' })
-    }
-    if (req.user.promo_id !== course.promo_id) {
-      return res.status(403).json({ ok: false, error: 'Cours hors de votre promotion.' })
-    }
-  } else if (req.user?.type === 'teacher') {
-    // Un teacher peut lire les snapshots des cours de ses promos
-    if (course.teacher_id !== getTeacherIdFromReq(req)) {
-      // Fallback : verifie qu'il est au moins rattache a la promo
-      const authorized = requirePromoAdmin(() => course.promo_id)
-      return authorized(req, res, () => { req._lumenCourse = course; next() })
-    }
-  } else if (req.user?.type !== 'admin') {
-    return res.status(403).json({ ok: false, error: 'Accès non autorisé.' })
-  }
-  req._lumenCourse = course
-  next()
-}
-
-// POST /api/lumen/courses/:id/snapshot — cree ou rafraichit le snapshot.
-// Utilise par le bouton "Resynchroniser" cote prof et implicitement au publish.
-router.post('/courses/:id/snapshot', requireCourseOwner, async (req, res, next) => {
-  try {
-    const id = Number(req.params.id)
-    const course = queries.getLumenCourse(id)
-    if (!course) return res.status(404).json({ ok: false, error: 'Cours introuvable.' })
-    if (!course.repo_url) {
-      return res.status(400).json({
-        ok: false,
-        error: 'Aucune URL de repo attachee a ce cours.',
-        code: 'NO_REPO_URL',
-      })
-    }
-
-    // Anti-abuse : au moins 60s entre deux refresh du meme cours
-    const waitSec = checkRefreshCooldown(id)
-    if (waitSec) {
-      return res.status(429).json({
-        ok: false,
-        error: `Patience : reessaie dans ${waitSec}s (cooldown anti-abus).`,
-        code: 'REFRESH_COOLDOWN',
-        details: { retry_after_seconds: waitSec },
-      })
-    }
-
-    const previousSha = course.repo_commit_sha
-    let snapshot
+    const octokit = await requireGithubClient(req)
+    let result
     try {
-      snapshot = await buildAndStoreSnapshot(id, course.repo_url)
-      lastRefreshByCourse.set(id, Date.now())
+      result = await syncPromoRepos(octokit, { promoId, org })
     } catch (err) {
-      if (err instanceof lumenSnapshot.SnapshotError) {
-        const { status, body } = snapshotErrorToResponse(err)
-        return res.status(status).json(body)
-      }
+      throw await handleOctokit(err)
+    }
+    const repos = getLumenReposForPromo(promoId).map(serializeRepo)
+    return { synced: result.synced, errors: result.errors, repos }
+  }),
+)
+
+router.get(
+  '/repos/:id',
+  requirePromo(promoFromRepoParam),
+  wrap(async (req) => {
+    const repo = repoOrThrow(Number(req.params.id))
+    return serializeRepo(repo)
+  }),
+)
+
+// ─── Chapitres : contenu markdown ───────────────────────────────────────────
+
+router.get(
+  '/repos/:id/content',
+  requirePromo(promoFromRepoParam),
+  wrap(async (req) => {
+    const repo = repoOrThrow(Number(req.params.id))
+    const path = String(req.query.path ?? '').trim()
+    if (!path) {
+      const err = new Error('Parametre path requis')
+      err.statusCode = 400
       throw err
     }
 
-    res.json({
-      ok: true,
-      data: {
-        commit_sha: snapshot.commit_sha,
-        default_branch: snapshot.default_branch,
-        file_count: snapshot.file_count,
-        total_size: snapshot.total_size,
-        fetched_at: snapshot.fetched_at,
-        changed: previousSha !== snapshot.commit_sha,
-      },
-    })
-  } catch (err) {
-    next(err)
-  }
-})
+    // Verifie que le chapitre est declare dans le manifest (securite :
+    // empeche de fetcher un fichier arbitraire du repo via Lumen).
+    const manifest = parseManifestField(repo)
+    const inManifest = manifest?.chapters?.some((c) => c.path === path)
+    if (!inManifest) {
+      const err = new Error('Chapitre non declare dans cursus.yaml')
+      err.statusCode = 404
+      throw err
+    }
 
-// GET /api/lumen/courses/:id/snapshot/tree — retourne uniquement l'arborescence
-// (paths + sizes) sans les contenus. Sert au rendu cote reader etudiant.
-router.get('/courses/:id/snapshot/tree', snapshotReadGuard, wrap((req) => {
-  const snapshot = queries.getLumenCourseSnapshot(Number(req.params.id))
-  if (!snapshot) {
-    const err = new Error('Aucun snapshot disponible')
-    err.statusCode = 404
-    throw err
-  }
-  return {
-    repo_url: snapshot.repo_url,
-    default_branch: snapshot.default_branch,
-    commit_sha: snapshot.commit_sha,
-    fetched_at: snapshot.fetched_at,
-    file_count: snapshot.file_count,
-    total_size: snapshot.total_size,
-    files: snapshot.files.map(f => ({ path: f.path, size: f.size })),
-  }
-}))
-
-// GET /api/lumen/courses/:id/snapshot/file?path=... — retourne le contenu
-// base64 d'un fichier individuel. Lazy loading cote reader : on ne charge
-// qu'au clic de l'etudiant, pas en eager.
-router.get('/courses/:id/snapshot/file', snapshotReadGuard, wrap((req) => {
-  const requestedPath = typeof req.query.path === 'string' ? req.query.path : null
-  if (!requestedPath) {
-    const err = new Error('Parametre path requis')
-    err.statusCode = 400
-    throw err
-  }
-  const snapshot = queries.getLumenCourseSnapshot(Number(req.params.id))
-  if (!snapshot) {
-    const err = new Error('Aucun snapshot disponible')
-    err.statusCode = 404
-    throw err
-  }
-  // Comparaison stricte : pas de normalisation (pas de .. possible puisque
-  // les paths du snapshot viennent directement de l'API GitHub et n'ont
-  // jamais de segments relatifs).
-  const file = snapshot.files.find(f => f.path === requestedPath)
-  if (!file) {
-    const err = new Error('Fichier introuvable dans le snapshot')
-    err.statusCode = 404
-    throw err
-  }
-  return {
-    path: file.path,
-    size: file.size,
-    content_base64: file.content_base64,
-  }
-}))
-
-// ─── Notes privees etudiant ────────────────────────────────────────────────
-
-const noteSchema = z.object({
-  content: z.string().max(10_000, 'Note trop longue (max 10 000 caracteres).'),
-}).strict()
-
-/**
- * Guard strict : seuls les etudiants peuvent acceder a leurs propres notes.
- * On ne reutilise PAS requireRole('student') qui inclut teachers/admins
- * dans la hierarchie — la privacy des notes impose une verification exacte.
- */
-function requireExactStudent(req, res, next) {
-  if (req.user?.type !== 'student') {
-    return res.status(403).json({ ok: false, error: 'Les notes privees sont reservees aux etudiants.' })
-  }
-  next()
-}
-
-// GET /api/lumen/courses/:id/note — recupere la note de l'etudiant courant.
-// 200 avec data=null si pas de note, 200 avec data.content si une existe.
-router.get('/courses/:id/note',
-  requireExactStudent,
-  requirePromo(promoFromCourse),
-  wrap((req) => {
-    const courseId = Number(req.params.id)
-    const studentId = req.user.id
-    return queries.getLumenCourseNote(studentId, courseId)
-  })
-)
-
-// PUT /api/lumen/courses/:id/note — upsert la note (content string).
-// Une chaine vide n'efface pas la note : c'est un upsert avec content=''.
-// Pour effacer, utiliser DELETE (ci-dessous).
-router.put('/courses/:id/note',
-  requireExactStudent,
-  requirePromo(promoFromCourse),
-  validate(noteSchema),
-  wrap((req) => {
-    const courseId = Number(req.params.id)
-    const studentId = req.user.id
-    return queries.upsertLumenCourseNote(studentId, courseId, req.body.content)
-  })
-)
-
-// DELETE /api/lumen/courses/:id/note — efface la note de l'etudiant courant
-router.delete('/courses/:id/note',
-  requireExactStudent,
-  requirePromo(promoFromCourse),
-  wrap((req) => {
-    const courseId = Number(req.params.id)
-    const studentId = req.user.id
-    queries.deleteLumenCourseNote(studentId, courseId)
-    return { ok: true, courseId }
-  })
-)
-
-// GET /api/lumen/my-noted-courses — liste des course_id annotes par
-// l'etudiant courant. Utilise pour afficher un indicateur sur les cards
-// sans charger le contenu des notes (qui reste prive).
-router.get('/my-noted-courses',
-  requireExactStudent,
-  wrap((req) => {
-    const studentId = req.user.id
-    return { course_ids: queries.getStudentNotedCourseIds(studentId) }
-  })
-)
-
-// GET /api/lumen/my-notes/export — telecharge toutes les notes de l'etudiant
-// courant en un seul fichier markdown (structure : un h1 pour "Mes notes",
-// puis un h2 par cours avec le contenu brut dessous).
-router.get('/my-notes/export',
-  requireExactStudent,
-  (req, res, next) => {
-    try {
-      const studentId = req.user.id
-      const notes = queries.getStudentNotesWithCourseTitles(studentId)
-      const lines = [
-        '# Mes notes Lumen',
-        '',
-        `> Export du ${new Date().toISOString().slice(0, 10)}`,
-        `> ${notes.length} note${notes.length > 1 ? 's' : ''} au total`,
-        '',
-        '---',
-        '',
-      ]
-      for (const n of notes) {
-        lines.push(`## ${n.course_title}`)
-        if (n.course_summary) lines.push(`_${n.course_summary}_`, '')
-        lines.push(`*Modifie le ${new Date(n.updated_at).toISOString().slice(0, 10)}*`)
-        lines.push('')
-        lines.push(n.content)
-        lines.push('', '---', '')
+    // Fetch en ligne si connecte, sinon fallback cache
+    const key = userKey(req)
+    const octokit = key ? await buildClientForUser(key.userType, key.userId) : null
+    if (octokit) {
+      try {
+        const file = await fetchChapterContent(octokit, repo, path)
+        if (!file) {
+          const err = new Error('Fichier introuvable dans le repo')
+          err.statusCode = 404
+          throw err
+        }
+        return { content: file.content, sha: file.sha, cached: false }
+      } catch (err) {
+        if (err.statusCode) throw err
+        // Fallback cache si l'appel GitHub echoue
+        const cached = getCachedChapter(repo.id, path)
+        if (cached) return cached
+        throw await handleOctokit(err)
       }
-      if (notes.length === 0) lines.push('_Aucune note pour le moment._', '')
-      const md = lines.join('\n')
-      res.setHeader('Content-Type', 'text/markdown; charset=utf-8')
-      res.setHeader('Content-Disposition', 'attachment; filename="mes-notes-lumen.md"')
-      res.send(md)
-    } catch (err) { next(err) }
-  }
+    }
+
+    // Pas de client (user deconnecte) : uniquement le cache
+    const cached = getCachedChapter(repo.id, path)
+    if (!cached) {
+      const err = new Error('Compte GitHub non connecte et pas de cache disponible')
+      err.statusCode = 401
+      throw err
+    }
+    return cached
+  }),
 )
 
-// GET /api/lumen/courses/:id/snapshot/download — streaming du zip
-router.get('/courses/:id/snapshot/download', snapshotReadGuard, async (req, res, next) => {
-  try {
-    const id = Number(req.params.id)
-    const snapshot = queries.getLumenCourseSnapshot(id)
-    if (!snapshot) return res.status(404).json({ ok: false, error: 'Aucun snapshot disponible.' })
+// ─── Reads tracking ─────────────────────────────────────────────────────────
 
-    const course = req._lumenCourse
-    const slug = (course.title || 'cours')
-      .toLowerCase()
-      .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-      .replace(/[^\w\s-]/g, '')
-      .trim()
-      .replace(/\s+/g, '-')
-      .slice(0, 60) || 'cours'
-    const filename = `${slug}-exemple.zip`
+router.post(
+  '/repos/:id/read',
+  requireRole('student'),
+  requirePromo(promoFromRepoParam),
+  validate(chapterPathSchema),
+  wrap(async (req) => {
+    const repoId = Number(req.params.id)
+    markLumenChapterRead(req.user.id, repoId, req.body.path)
+    return { ok: true }
+  }),
+)
 
-    res.setHeader('Content-Type', 'application/zip')
-    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`)
+router.get(
+  '/my-reads',
+  requireRole('student'),
+  wrap(async (req) => {
+    return { reads: getStudentLumenReads(req.user.id) }
+  }),
+)
 
-    await lumenZip.streamZipFromSnapshot(snapshot, res)
-  } catch (err) {
-    next(err)
-  }
-})
+router.get(
+  '/repos/:id/read-counts',
+  requireRole('teacher', 'admin'),
+  requirePromoAdmin(promoFromRepoParam),
+  wrap(async (req) => {
+    const repoId = Number(req.params.id)
+    return { counts: getLumenReadCountsForRepo(repoId) }
+  }),
+)
+
+router.get(
+  '/read-counts/promo/:promoId',
+  requireRole('teacher', 'admin'),
+  requirePromoAdmin(promoFromParam),
+  wrap(async (req) => {
+    const promoId = Number(req.params.promoId)
+    return { counts: getLumenReadCountsForPromo(promoId) }
+  }),
+)
+
+// ─── Notes privees etudiant ─────────────────────────────────────────────────
+
+router.get(
+  '/repos/:id/note',
+  requireRole('student'),
+  requirePromo(promoFromRepoParam),
+  wrap(async (req) => {
+    const repoId = Number(req.params.id)
+    const path = String(req.query.path ?? '').trim()
+    if (!path) {
+      const err = new Error('Parametre path requis')
+      err.statusCode = 400
+      throw err
+    }
+    const note = getLumenChapterNote(req.user.id, repoId, path)
+    return { note: note ?? null }
+  }),
+)
+
+router.put(
+  '/repos/:id/note',
+  requireRole('student'),
+  requirePromo(promoFromRepoParam),
+  validate(noteSchema),
+  wrap(async (req) => {
+    const repoId = Number(req.params.id)
+    const note = upsertLumenChapterNote(req.user.id, repoId, req.body.path, req.body.content)
+    return { note }
+  }),
+)
+
+router.delete(
+  '/repos/:id/note',
+  requireRole('student'),
+  requirePromo(promoFromRepoParam),
+  validate(chapterPathSchema),
+  wrap(async (req) => {
+    const repoId = Number(req.params.id)
+    deleteLumenChapterNote(req.user.id, repoId, req.body.path)
+    return { ok: true }
+  }),
+)
+
+router.get(
+  '/my-notes',
+  requireRole('student'),
+  wrap(async (req) => {
+    return { notes: getStudentLumenNotes(req.user.id) }
+  }),
+)
+
+router.get(
+  '/my-noted-chapters',
+  requireRole('student'),
+  wrap(async (req) => {
+    return { items: getStudentNotedChapters(req.user.id) }
+  }),
+)
+
+// ─── Stats ──────────────────────────────────────────────────────────────────
+
+router.get(
+  '/stats/promo/:promoId',
+  requireRole('teacher', 'admin'),
+  requirePromoAdmin(promoFromParam),
+  wrap(async (req) => {
+    return getLumenStatsForPromo(Number(req.params.promoId))
+  }),
+)
 
 module.exports = router
