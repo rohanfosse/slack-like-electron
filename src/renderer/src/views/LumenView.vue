@@ -96,17 +96,17 @@ watch(activePromoId, boot)
 async function handleSync() {
   if (!activePromoId.value) return
   if (!githubStatus.value.connected) {
-    showToast('Connecte ton compte GitHub d\'abord', 'warning')
+    showToast('Connecte ton compte GitHub d\'abord', 'info')
     return
   }
   if (!promoOrg.value) {
-    showToast('Aucune organisation GitHub configuree pour cette promo', 'warning')
+    showToast('Aucune organisation GitHub configuree pour cette promo', 'info')
     if (isTeacher.value) openSettings()
     return
   }
   const res = await lumenStore.syncReposForPromo(activePromoId.value)
   if (res.errors.length) {
-    showToast(`Sync ok (${res.synced} repos) avec ${res.errors.length} erreurs de manifest`, 'warning')
+    showToast(`Sync ok (${res.synced} repos) avec ${res.errors.length} erreurs de manifest`, 'info')
   } else {
     showToast(`${res.synced} repos synchronises`, 'success')
   }

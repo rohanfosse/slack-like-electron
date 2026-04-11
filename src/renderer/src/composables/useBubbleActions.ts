@@ -9,7 +9,6 @@ import { useMessagesStore } from '@/stores/messages'
 import { useModalsStore }   from '@/stores/modals'
 import { useDocumentsStore } from '@/stores/documents'
 import { useTravauxStore }  from '@/stores/travaux'
-import { useLumenStore }    from '@/stores/lumen'
 import { useToast }         from '@/composables/useToast'
 import { authUrl }          from '@/utils/auth'
 import { useOpenExternal }  from '@/composables/useOpenExternal'
@@ -25,7 +24,6 @@ export function useBubbleActions(msg: () => Message) {
   const modals        = useModalsStore()
   const documentsStore = useDocumentsStore()
   const travauxStore  = useTravauxStore()
-  const lumenStore    = useLumenStore()
   const { openExternal } = useOpenExternal()
   const { showToast }    = useToast()
 
@@ -159,24 +157,12 @@ export function useBubbleActions(msg: () => Message) {
       }
       return
     }
-    // Lumen ref → ouvrir le cours dans le reader Lumen. Si data-lumen-file
-    // est present, le panneau projet auto-selectionnera ce fichier.
-    const lumenRef = (e.target as HTMLElement).closest('.lumen-ref[data-lumen-id]') as HTMLElement | null
+    // Lumen ref → ouvrir la vue Lumen (le deep-link par repo/chapitre
+    // pourra etre ajoute plus tard si le parser markdown emet ces refs).
+    const lumenRef = (e.target as HTMLElement).closest('.lumen-ref') as HTMLElement | null
     if (lumenRef) {
       e.preventDefault()
-      const courseId = Number(lumenRef.dataset.lumenId)
-      const filePath = lumenRef.dataset.lumenFile ?? undefined
-      if (courseId) {
-        lumenStore.fetchCourse(courseId).then((course) => {
-          if (course) {
-            const query: Record<string, string> = { course: String(courseId) }
-            if (filePath) query.file = filePath
-            router.push({ name: 'lumen', query })
-          } else {
-            showToast('Cours introuvable.', 'error')
-          }
-        }).catch(() => { showToast('Impossible de charger le cours.', 'error') })
-      }
+      router.push({ name: 'lumen' })
       return
     }
     // Document ref → ouvrir le document (aperçu ou lien externe)

@@ -20,7 +20,6 @@ import WidgetSignatures from './teacher-widgets/WidgetSignatures.vue'
 import WidgetAtRisk from './teacher-widgets/WidgetAtRisk.vue'
 import WidgetLumenEngagement from './teacher-widgets/WidgetLumenEngagement.vue'
 import WidgetLumenMyCourses from './teacher-widgets/WidgetLumenMyCourses.vue'
-import WidgetLumenDrafts from './teacher-widgets/WidgetLumenDrafts.vue'
 import WidgetLumenTopRead from './teacher-widgets/WidgetLumenTopRead.vue'
 import WidgetQuickCreate from './teacher-widgets/WidgetQuickCreate.vue'
 import WidgetNotationPending from './teacher-widgets/WidgetNotationPending.vue'
@@ -240,7 +239,6 @@ const optWidgetComponents: Record<string, Component> = {
   signatures: WidgetSignatures,
   'lumen-engagement': WidgetLumenEngagement,
   'lumen-my-courses': WidgetLumenMyCourses,
-  'lumen-drafts': WidgetLumenDrafts,
   'lumen-top-read': WidgetLumenTopRead,
   'quick-create': WidgetQuickCreate,
   'notation-pending': WidgetNotationPending,
