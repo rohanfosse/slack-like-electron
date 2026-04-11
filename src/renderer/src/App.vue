@@ -10,6 +10,7 @@
   import { useAppListeners } from '@/composables/useAppListeners'
   import { useSwipeNav }    from '@/composables/useSwipeNav'
   import { useModules }     from '@/composables/useModules'
+  import { useLumenFocus }  from '@/composables/useLumenFocus'
   import { reportError }    from '@/utils/errorReporter'
   import { MessageSquare, FileText, Camera, Lock, Trash2, Download, UserX, Download as DownloadIcon, RefreshCw, Shield, Scale, Clock, Mail, Globe, Eye, Pencil, ChevronDown, Server } from 'lucide-vue-next'
   import Toast        from '@/components/ui/Toast.vue'
@@ -49,6 +50,7 @@
   const { getPref } = usePrefs()
   const { showToast } = useToast()
   const { loadModules } = useModules()
+  const { lumenFocusMode } = useLumenFocus()
 
   // ── Listeners extraits dans useAppListeners ────────────────────────────────
   const { initListeners, cleanupListeners, liveInvite, updateState, updateVersion, dismissLiveInvite } = useAppListeners()
@@ -198,6 +200,11 @@
 
   // ── Titre dynamique de l'onglet navigateur ────────────────────────────────
   const route = useRoute()
+
+  // Mode focus Lumen : sidebar globale masquee quand on est dans /lumen ET que
+  // l'utilisateur a active le mode depuis la topbar (preference persistee).
+  const isLumenFocus = computed(() => route.name === 'lumen' && lumenFocusMode.value)
+
   const ROUTE_LABELS: Record<string, string> = {
     dashboard: 'Accueil',
     messages: 'Messages',
@@ -394,7 +401,11 @@
     <!-- Backdrop mobile pour fermer le drawer sidebar -->
     <div class="sidebar-backdrop" :class="{ visible: sidebarOpen }" @click="closeSidebar" />
 
-    <aside class="sidebar-wrapper" :class="{ 'sidebar-with-banner': appStore.isSimulating || !appStore.isOnline, 'mobile-open': sidebarOpen }">
+    <aside
+      v-show="!isLumenFocus"
+      class="sidebar-wrapper"
+      :class="{ 'sidebar-with-banner': appStore.isSimulating || !appStore.isOnline, 'mobile-open': sidebarOpen }"
+    >
       <SidebarWrapper @navigate="closeSidebar" />
     </aside>
 

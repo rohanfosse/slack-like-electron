@@ -14,11 +14,13 @@ import { useRoute, useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import {
   BookOpen, RefreshCw, Github, LogOut, Settings, AlertCircle, Loader2, FolderGit2, Plus,
+  PanelLeftClose, PanelLeftOpen,
 } from 'lucide-vue-next'
 import { useLumenStore } from '@/stores/lumen'
 import { useAppStore } from '@/stores/app'
 import { useToast } from '@/composables/useToast'
 import { useConfirm } from '@/composables/useConfirm'
+import { useLumenFocus } from '@/composables/useLumenFocus'
 import { relativeTime } from '@/utils/date'
 import LumenGithubConnect from '@/components/lumen/LumenGithubConnect.vue'
 import LumenRepoSidebar from '@/components/lumen/LumenRepoSidebar.vue'
@@ -31,6 +33,7 @@ const route      = useRoute()
 const router     = useRouter()
 const { showToast } = useToast()
 const { confirm } = useConfirm()
+const { lumenFocusMode, toggle: toggleLumenFocus } = useLumenFocus()
 
 const {
   githubStatus, promoOrg, repos, currentRepo, currentChapterPath,
@@ -354,6 +357,16 @@ function handleNavigateChapter(path: string) {
         </span>
       </div>
       <div class="lumen-topbar-actions">
+        <button
+          type="button"
+          class="lumen-btn ghost lumen-btn-icon"
+          :title="lumenFocusMode ? 'Quitter le mode focus (afficher la barre laterale)' : 'Mode focus (masquer la barre laterale Cursus)'"
+          :aria-label="lumenFocusMode ? 'Quitter le mode focus' : 'Activer le mode focus'"
+          :aria-pressed="lumenFocusMode"
+          @click="toggleLumenFocus"
+        >
+          <component :is="lumenFocusMode ? PanelLeftOpen : PanelLeftClose" :size="14" />
+        </button>
         <span
           v-if="githubStatus.connected && lastSyncedAt"
           class="lumen-last-sync"
@@ -695,12 +708,21 @@ function handleNavigateChapter(path: string) {
   font-size: 11px;
   min-height: 26px;
 }
+.lumen-btn-icon {
+  padding: 7px 8px;
+  width: 32px;
+  justify-content: center;
+}
+.lumen-btn-icon[aria-pressed="true"] {
+  background: var(--bg-hover);
+  color: var(--accent);
+}
 
 .spin { animation: spin 1s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
 .lumen-sidebar {
-  width: 280px;
+  width: 244px;
   flex-shrink: 0;
   border-right: 1px solid var(--border);
   background: var(--bg-sidebar, var(--bg-secondary));

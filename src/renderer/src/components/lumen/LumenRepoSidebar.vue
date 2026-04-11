@@ -122,7 +122,7 @@ function handleToggleVisibility(repo: LumenRepo, e: Event) {
 
 <template>
   <div class="lumen-sidebar-nav">
-    <div v-if="sortedRepos.length > 2" class="lumen-sidebar-filter">
+    <div v-if="sortedRepos.length >= 5" class="lumen-sidebar-filter">
       <Search :size="12" />
       <input
         v-model="filter"
@@ -236,12 +236,12 @@ function handleToggleVisibility(repo: LumenRepo, e: Event) {
 .lumen-sidebar-filter {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 8px 12px;
-  margin: 8px 12px 4px;
+  gap: 5px;
+  padding: 5px 9px;
+  margin: 6px 10px 2px;
   background: var(--bg-primary);
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: 5px;
   color: var(--text-muted);
   flex-shrink: 0;
 }
@@ -273,7 +273,7 @@ function handleToggleVisibility(repo: LumenRepo, e: Event) {
 .lumen-sidebar-clear:hover { color: var(--text-primary); background: var(--bg-hover); }
 
 .lumen-sidebar-repos {
-  padding: 6px 0;
+  padding: 4px 0;
   overflow-y: auto;
   flex: 1;
 }
@@ -288,7 +288,7 @@ function handleToggleVisibility(repo: LumenRepo, e: Event) {
 .lumen-repo-list { list-style: none; margin: 0; padding: 0; }
 .lumen-chapter-list { list-style: none; margin: 0; padding: 0; }
 
-.lumen-repo-item { margin-bottom: 4px; }
+.lumen-repo-item { margin-bottom: 1px; }
 .lumen-repo-item.is-hidden-repo {
   opacity: 0.55;
 }
@@ -309,14 +309,14 @@ function handleToggleVisibility(repo: LumenRepo, e: Event) {
 .lumen-repo-header {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
   flex: 1;
-  padding: 7px 6px 7px 14px;
+  padding: 4px 4px 4px 10px;
   background: none;
   border: none;
   cursor: pointer;
   color: var(--text-primary);
-  font-size: 13px;
+  font-size: 12.5px;
   font-weight: 600;
   text-align: left;
   transition: background var(--t-fast) ease;
@@ -341,15 +341,21 @@ function handleToggleVisibility(repo: LumenRepo, e: Event) {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 30px;
-  padding: 0 8px;
+  width: 24px;
+  padding: 0 6px;
   background: none;
   border: none;
   cursor: pointer;
   color: var(--text-muted);
   flex-shrink: 0;
-  border-radius: 4px;
+  border-radius: 3px;
   transition: all var(--t-fast) ease;
+  opacity: 0;
+}
+.lumen-repo-row:hover .lumen-repo-visibility,
+.lumen-repo-visibility.is-visible,
+.lumen-repo-visibility:focus-visible {
+  opacity: 1;
 }
 .lumen-repo-visibility:hover {
   background: var(--bg-hover);
@@ -366,17 +372,19 @@ function handleToggleVisibility(repo: LumenRepo, e: Event) {
 .lumen-repo-progress {
   margin-left: auto;
   flex-shrink: 0;
-  font-size: 10px;
+  font-size: 9.5px;
   font-variant-numeric: tabular-nums;
   font-weight: 500;
   color: var(--text-muted);
-  background: var(--bg-primary);
-  border: 1px solid var(--border);
-  padding: 1px 6px;
-  border-radius: 8px;
+  background: transparent;
+  border: none;
+  padding: 0 2px;
   letter-spacing: 0;
   text-transform: none;
+  opacity: 0.7;
+  transition: opacity var(--t-fast) ease;
 }
+.lumen-repo-row:hover .lumen-repo-progress { opacity: 1; }
 .lumen-repo-progress.is-done {
   color: var(--success, #4caf50);
   border-color: var(--success, #4caf50);
@@ -400,29 +408,32 @@ function handleToggleVisibility(repo: LumenRepo, e: Event) {
 }
 
 .lumen-section {
-  margin-top: 4px;
+  margin-top: 2px;
 }
 .lumen-section-title {
-  margin: 6px 0 2px;
-  padding: 0 14px 0 34px;
-  font-size: 10px;
+  margin: 4px 0 1px;
+  padding: 0 10px 0 26px;
+  font-size: 9.5px;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.07em;
   color: var(--text-muted);
+  opacity: 0.75;
 }
 
 .lumen-chapter-item {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
   width: 100%;
-  padding: 6px 14px 6px 34px;
+  padding: 4px 10px 4px 26px;
+  /* WCAG 2.5.5 minimum tactile : 4 + 4 + 12 * 1.4 = ~24.8px */
   background: none;
   border: none;
   cursor: pointer;
   color: var(--text-secondary);
-  font-size: 12.5px;
+  font-size: 12px;
+  line-height: 1.4;
   text-align: left;
   border-left: 2px solid transparent;
   transition: all var(--t-fast) ease;
