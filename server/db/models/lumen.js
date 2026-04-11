@@ -101,6 +101,66 @@ function deleteLumenRepo(id) {
   getDb().prepare('DELETE FROM lumen_repos WHERE id = ?').run(id)
 }
 
+/**
+ * Ecrit project_id apres parsing du manifest.
+ * - Si hasCursusProjectField est true, ecrit la valeur resolue (ou NULL
+ *   si pas de match). Le manifest est maitre.
+ * - Si hasCursusProjectField est false, on NE TOUCHE PAS project_id :
+ *   il peut avoir ete pose via l'UI fallback, et l'absence du champ
+ *   dans le yaml n'est pas une demande de deliaison (c'est juste un
+ *   repo qui ne declare rien).
+ */
+function setLumenRepoProjectFromManifest(id, { projectId, hasCursusProjectField }) {
+  if (!hasCursusProjectField) return
+  getDb().prepare('UPDATE lumen_repos SET project_id = ?, updated_at = datetime(\'now\') WHERE id = ?')
+    .run(projectId, id)
+}
+
+/**
+ * Setter UI fallback : un teacher associe manuellement un repo a un
+ * projet depuis la vue projet. N'est pas appele si le manifest declare
+ * deja un cursusProject (protection cote route).
+ */
+function setLumenRepoProject(id, projectId) {
+  getDb().prepare('UPDATE lumen_repos SET project_id = ?, updated_at = datetime(\'now\') WHERE id = ?')
+    .run(projectId, id)
+}
+
+/**
+ * Liste les repos d'une promo lies a un projet donne (par nom).
+ * Le matching utilise la meme normalisation que findProjectByNormalizedName.
+ * Retourne aussi le manifest JSON parse pour que le frontend puisse
+ * afficher les chapitres directement.
+ */
+function getLumenReposByProjectName(promoId, projectName) {
+  const { normalizeProjectName } = require('./projects')
+  const normalized = normalizeProjectName(projectName)
+  if (!normalized) return []
+  const rows = getDb().prepare(`
+    SELECT r.id, r.promo_id, r.owner, r.repo, r.default_branch,
+           r.manifest_json, r.manifest_error, r.last_commit_sha,
+           r.last_synced_at, r.project_id, r.created_at, r.updated_at,
+           p.name AS project_name
+      FROM lumen_repos r
+      JOIN projects p ON p.id = r.project_id
+     WHERE r.promo_id = ?
+     ORDER BY r.owner, r.repo
+  `).all(promoId)
+  return rows.filter((r) => normalizeProjectName(r.project_name) === normalized)
+}
+
+/** Liste les repos d'une promo non encore lies a un projet (pour picker UI). */
+function getUnlinkedLumenReposForPromo(promoId) {
+  return getDb().prepare(`
+    SELECT id, promo_id, owner, repo, default_branch,
+           manifest_json, manifest_error, last_commit_sha, last_synced_at,
+           project_id, created_at, updated_at
+      FROM lumen_repos
+     WHERE promo_id = ? AND project_id IS NULL
+     ORDER BY owner, repo
+  `).all(promoId)
+}
+
 /** Supprime les repos d'une promo absents de la liste fournie (housekeeping apres sync). */
 function pruneLumenReposForPromo(promoId, keepIds) {
   if (!keepIds.length) {
@@ -274,6 +334,10 @@ module.exports = {
   getLumenRepo,
   upsertLumenRepo,
   updateLumenRepoManifest,
+  setLumenRepoProjectFromManifest,
+  setLumenRepoProject,
+  getLumenReposByProjectName,
+  getUnlinkedLumenReposForPromo,
   deleteLumenRepo,
   pruneLumenReposForPromo,
   // file cache

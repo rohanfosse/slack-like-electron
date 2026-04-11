@@ -17,12 +17,14 @@ const { parseManifest, MANIFEST_FILENAME } = require('./lumenManifest')
 const {
   upsertLumenRepo,
   updateLumenRepoManifest,
+  setLumenRepoProjectFromManifest,
   pruneLumenReposForPromo,
   getLumenCachedFile,
   upsertLumenCachedFile,
   pruneLumenFileCacheForRepo,
   purgeStaleLumenFileCache,
 } = require('../db/models/lumen')
+const { findProjectByNormalizedName } = require('../db/models/projects')
 
 /**
  * Liste tous les repos d'une organisation GitHub (paginated).
@@ -196,10 +198,39 @@ async function syncRepo(octokit, dbRepo) {
     return { ok: false, error: parsed.error }
   }
 
+  // Resout l'optionnel cursusProject du manifest contre projects.name.
+  // Si match ok => ecrit project_id, effacer toute erreur prealable.
+  // Si pas de champ OU pas de match => remet project_id a NULL (le
+  // manifest est maitre : son absence doit delier).
+  // En cas d'ambiguite ou introuvable, on stocke un avertissement dans
+  // manifestError mais on continue (le sync du manifest reste valide).
+  let projectWarning = null
+  let resolvedProjectId = null
+  if (parsed.manifest.cursusProject) {
+    const found = findProjectByNormalizedName(dbRepo.promo_id, parsed.manifest.cursusProject)
+    if (found.ok) {
+      resolvedProjectId = found.project.id
+    } else if (found.code === 'not_found') {
+      projectWarning = `Projet Cursus "${parsed.manifest.cursusProject}" introuvable dans la promo`
+    } else if (found.code === 'ambiguous') {
+      projectWarning = `Projet Cursus "${parsed.manifest.cursusProject}" ambigu (${found.matches.length} projets portent ce nom, renomme l'un d'eux)`
+    }
+  }
+
   updateLumenRepoManifest(id, {
     manifestJson: JSON.stringify(parsed.manifest),
-    manifestError: null,
+    manifestError: projectWarning,
     lastCommitSha: commitSha,
+  })
+
+  // Le manifest est toujours maitre pour project_id. Si le champ est
+  // absent OU ne resout pas, on remet project_id a NULL (efface le
+  // lien precedent, y compris un lien pose manuellement via l'UI
+  // fallback). Si le prof veut un lien manuel persistant, il doit ne
+  // PAS declarer cursusProject dans le yaml.
+  setLumenRepoProjectFromManifest(id, {
+    projectId: resolvedProjectId,
+    hasCursusProjectField: Boolean(parsed.manifest.cursusProject),
   })
 
   // Supprime du cache les fichiers qui ne sont plus referencees par le
@@ -207,7 +238,7 @@ async function syncRepo(octokit, dbRepo) {
   const validPaths = parsed.manifest.chapters.map((c) => c.path)
   pruneLumenFileCacheForRepo(id, validPaths)
 
-  return { ok: true, manifest: parsed.manifest }
+  return { ok: true, manifest: parsed.manifest, projectWarning }
 }
 
 /**

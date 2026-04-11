@@ -48,6 +48,13 @@ const manifestSchema = z.object({
   module: z.string().max(200).optional(),
   author: z.string().max(200).optional(),
   summary: z.string().max(1000).optional(),
+  /**
+   * Nom du projet Cursus auquel ce cours est rattache. Resolu au sync
+   * contre `projects.name` dans la promo du repo (matching case-insensitive
+   * + trim + Unicode NFD pour les accents). Si present et match, le lien
+   * apparait dans l'onglet Cours du projet et dans le chip LumenChapterViewer.
+   */
+  cursusProject: z.string().max(200).optional(),
   chapters: z.array(chapterSchema).min(1).max(200),
   resources: z.array(resourceSchema).max(200).optional(),
 }).strict()

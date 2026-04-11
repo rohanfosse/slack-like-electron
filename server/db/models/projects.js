@@ -35,6 +35,37 @@ function deleteProject(id) {
   return getDb().prepare('DELETE FROM projects WHERE id = ?').run(id)
 }
 
+/**
+ * Normalise un nom de projet pour le matching Lumen <-> projects :
+ * trim + lowercase + decomposition Unicode NFD (retire les accents).
+ * Exposee pour qu'elle puisse etre utilisee cote SQL et cote JS avec
+ * la meme semantique.
+ */
+function normalizeProjectName(name) {
+  if (typeof name !== 'string') return ''
+  return name.trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+}
+
+/**
+ * Cherche un projet dans une promo par son nom normalise.
+ * Retourne :
+ *  - { ok: true, project: {...} } si exactement un match
+ *  - { ok: false, code: 'not_found' } si aucun match
+ *  - { ok: false, code: 'ambiguous', matches: [...] } si plusieurs
+ *    projets ont le meme nom normalise (projects.name n'est pas unique
+ *    dans le schema — on refuse explicitement le match ambigu pour eviter
+ *    de choisir silencieusement un projet au hasard).
+ */
+function findProjectByNormalizedName(promoId, name) {
+  const normalized = normalizeProjectName(name)
+  if (!normalized) return { ok: false, code: 'not_found' }
+  const all = getDb().prepare('SELECT * FROM projects WHERE promo_id = ?').all(promoId)
+  const matches = all.filter((p) => normalizeProjectName(p.name) === normalized)
+  if (matches.length === 0) return { ok: false, code: 'not_found' }
+  if (matches.length > 1) return { ok: false, code: 'ambiguous', matches }
+  return { ok: true, project: matches[0] }
+}
+
 // ── Liaison travaux ───────────────────────────────────────────────────────────
 
 function addTravailToProject(projectId, travailId) {
@@ -130,6 +161,8 @@ module.exports = {
   createProject,
   updateProject,
   deleteProject,
+  normalizeProjectName,
+  findProjectByNormalizedName,
   addTravailToProject,
   removeTravailFromProject,
   getProjectTravaux,
