@@ -22,7 +22,7 @@ body.theme-transitioning *::after {
   --bg-main:    #232425;   /* Zone principale - gris pur */
   --bg-input:   #1a1b1d;   /* Zone de saisie */
   --bg-hover:   rgba(255,255,255,.05);
-  --bg-active:  rgba(74,144,217,.16);
+  --bg-active:  rgba(var(--accent-rgb), .16);
   --bg-modal:   #1e1f21;
   --bg-elevated: #2c2d2f;  /* Cartes / éléments en relief */
 
@@ -43,7 +43,8 @@ body.theme-transitioning *::after {
   --accent-hover:  #5da3f0;
   --accent-dark:   #2e6dae;
   --accent-light:  #7EB8FF;
-  --accent-subtle: rgba(74,144,217,.14);
+  --accent-rgb:    74,144,217;
+  --accent-subtle: rgba(var(--accent-rgb), .14);
 
   /* Ombres - légères, modernes */
   --shadow-sm: 0 1px 2px rgba(0,0,0,.2);
@@ -186,6 +187,7 @@ body.light {
   --accent-hover:  #d4892f;
   --accent-dark:   #a06420;
   --accent-light:  #e8a84c;
+  --accent-rgb:    194,124,44;
   --accent-subtle: rgba(194,124,44,.12);
 
   /* Bordures */
@@ -273,6 +275,7 @@ body.marine {
   --accent-hover:  #72bcf7;
   --accent-dark:   #3886cc;
   --accent-light:  #90CAFF;
+  --accent-rgb:    90,171,240;
   --accent-subtle: rgba(90,171,240,.16);
 
   --border:       rgba(80,140,200,.1);
@@ -317,6 +320,7 @@ body.cursus {
   --accent-hover:  #2563eb;
   --accent-dark:   #1d4ed8;
   --accent-light:  #60a5fa;
+  --accent-rgb:    59,130,246;
   --accent-subtle: rgba(59,130,246,.1);
 
   /* Bordures */

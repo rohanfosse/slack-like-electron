@@ -155,7 +155,7 @@
 }
 
 .nav-btn.active {
-  background: rgba(74,144,217,.18);
+  background: rgba(var(--accent-rgb),.18);
   color: var(--accent-light);
 }
 
@@ -358,7 +358,7 @@ nav[aria-label="Messages directs"] {
 }
 
 .sidebar-item.active {
-  background: rgba(74,144,217,.18);
+  background: rgba(var(--accent-rgb),.18);
   color: #fff;
   font-weight: 700;
   border-radius: var(--radius-sm);
@@ -502,17 +502,21 @@ nav[aria-label="Messages directs"] {
 }
 
 /* ── En-tête canal ───────────────────────────────────────────────────────── */
+/* Base unifie pour tous les headers de section (canaux, devoirs, agenda, lumen, admin).
+   Les classes specifiques (.channel-header, .devoirs-header, .agenda-header, etc.)
+   sont des alias pour compatibilite — memes metriques, meme poids visuel. */
+.page-header,
 .channel-header {
   min-height: var(--header-height);
   flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 8px 20px;
-  gap: 12px;
+  padding: 0 var(--space-xl);
+  gap: var(--space-md);
   background: var(--bg-main);
-  border-bottom: 1.5px solid var(--border);
-  box-shadow: 0 1px 0 rgba(255,255,255,.04), 0 2px 12px rgba(0,0,0,.25);
+  border-bottom: 1px solid var(--border);
+  box-shadow: 0 1px 0 rgba(255,255,255,.04), 0 2px 12px rgba(0,0,0,.2);
   z-index: 10;
 }
 
@@ -561,7 +565,7 @@ nav[aria-label="Messages directs"] {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: .5px;
-  background: rgba(74,144,217,.15);
+  background: rgba(var(--accent-rgb),.15);
   color: var(--accent);
   padding: 2px 7px;
   border-radius: var(--radius-xl);
@@ -601,7 +605,7 @@ nav[aria-label="Messages directs"] {
 .search-wrapper:focus-within {
   border-color: var(--accent);
   background: var(--bg-hover);
-  box-shadow: 0 0 0 2px rgba(74,144,217,.15);
+  box-shadow: 0 0 0 2px rgba(var(--accent-rgb),.15);
 }
 
 .search-input {
@@ -699,11 +703,11 @@ nav[aria-label="Messages directs"] {
   width: 64px;
   height: 64px;
   border-radius: var(--radius-xl);
-  background: rgba(74,144,217,.08);
+  background: rgba(var(--accent-rgb), .08);
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 16px;
+  margin-bottom: var(--space-lg);
 }
 .welcome-icon { color: var(--accent); opacity: .6; }
 .welcome-heading {
@@ -766,9 +770,9 @@ nav[aria-label="Messages directs"] {
 }
 
 .message-input-wrapper:focus-within {
-  border-color: rgba(74,144,217,.55);
+  border-color: rgba(var(--accent-rgb),.55);
   background: var(--bg-hover);
-  box-shadow: 0 0 0 3px rgba(74,144,217,.09), 0 2px 12px rgba(0,0,0,.2);
+  box-shadow: 0 0 0 3px rgba(var(--accent-rgb),.09), 0 2px 12px rgba(0,0,0,.2);
 }
 
 .message-input {
@@ -814,8 +818,8 @@ nav[aria-label="Messages directs"] {
 .empty-icon-wrap {
   width: 64px; height: 64px; border-radius: var(--radius-xl);
   display: flex; align-items: center; justify-content: center;
-  background: rgba(74,144,217,.1); color: var(--accent);
-  margin-bottom: 12px;
+  background: rgba(var(--accent-rgb), .1); color: var(--accent);
+  margin-bottom: var(--space-md);
 }
 .empty-icon-wrap--search { background: rgba(243,156,18,.1); color: var(--color-warning); }
 .empty-icon-wrap--dm { background: rgba(46,204,113,.1); color: var(--color-success); }
@@ -1050,7 +1054,7 @@ body.light .nav-btn.active .nav-label { color: var(--accent); }
 body.light .sidebar-wrapper       { border-right-color: rgba(0,0,0,.09); box-shadow: 2px 0 12px rgba(0,0,0,.06); }
 body.light .channel-header        { box-shadow: 0 2px 8px rgba(0,0,0,.07); }
 body.light .message-input-wrapper { background: rgba(0,0,0,.035); border-color: rgba(0,0,0,.12); }
-body.light .message-input-wrapper:focus-within { background: rgba(0,0,0,.05); box-shadow: 0 0 0 3px rgba(74,144,217,.14); }
+body.light .message-input-wrapper:focus-within { background: rgba(0,0,0,.05); box-shadow: 0 0 0 3px rgba(var(--accent-rgb),.14); }
 body.light .nav-promo-btn         { background: rgba(0,0,0,.03); border-color: rgba(0,0,0,.08); }
 body.light .nav-promo-btn:hover   { background: rgba(0,0,0,.06); border-color: rgba(0,0,0,.15); }
 body.light .nav-promo-btn.active  { background: color-mix(in srgb, var(--promo-color, var(--accent)) 12%, transparent); border-color: var(--promo-color, var(--accent)); }

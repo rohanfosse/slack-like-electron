@@ -220,14 +220,17 @@ watch(() => promoId.value, load)
 
 /* ── Header ── */
 .agenda-header {
-  height: var(--header-height, 52px);
+  min-height: var(--header-height, 52px);
   flex-shrink: 0;
   display: flex;
   align-items: center;
-  gap: 16px;
-  padding: 0 20px;
+  gap: var(--space-lg);
+  padding: 0 var(--space-xl);
+  background: var(--bg-main);
   border-bottom: 1px solid var(--border);
+  box-shadow: 0 1px 0 rgba(255,255,255,.04), 0 2px 12px rgba(0,0,0,.2);
   flex-wrap: wrap;
+  z-index: 10;
 }
 .agenda-header-left {
   display: flex; align-items: center; gap: 8px;

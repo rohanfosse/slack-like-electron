@@ -42,14 +42,17 @@ const modals   = useModalsStore()
 
 <style scoped>
 .devoirs-header {
-  height: var(--header-height);
+  min-height: var(--header-height);
   flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 20px;
-  gap: 12px;
+  padding: 0 var(--space-xl);
+  gap: var(--space-md);
+  background: var(--bg-main);
   border-bottom: 1px solid var(--border);
+  box-shadow: 0 1px 0 rgba(255,255,255,.04), 0 2px 12px rgba(0,0,0,.2);
+  z-index: 10;
 }
 
 .devoirs-header-title {

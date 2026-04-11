@@ -478,12 +478,15 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  padding: 14px 20px;
+  gap: var(--space-md);
+  min-height: var(--header-height);
+  padding: var(--space-sm) var(--space-xl);
   background: var(--bg-main);
   border-bottom: 1px solid var(--border);
+  box-shadow: 0 1px 0 rgba(255,255,255,.04), 0 2px 12px rgba(0,0,0,.2);
   flex-shrink: 0;
   flex-wrap: wrap;
+  z-index: 10;
 }
 
 .docs-header-left {
