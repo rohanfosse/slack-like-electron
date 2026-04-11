@@ -127,10 +127,12 @@
   .toast-close-btn:hover { opacity: 1; background: rgba(255,255,255,.1); }
 
   .toast-enter-active {
-    transition: opacity 0.25s ease, transform 0.25s cubic-bezier(.34,1.56,.64,1);
+    transition: opacity var(--motion-base) var(--ease-out),
+                transform var(--motion-base) var(--ease-spring);
   }
   .toast-leave-active {
-    transition: opacity 0.18s ease, transform 0.18s ease;
+    transition: opacity var(--motion-fast) var(--ease-in),
+                transform var(--motion-fast) var(--ease-in);
   }
   .toast-enter-from {
     opacity: 0;

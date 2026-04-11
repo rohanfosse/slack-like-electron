@@ -658,7 +658,7 @@
 
 /* ── Transition panel latéral ── */
 .panel-slide-enter-active,
-.panel-slide-leave-active { transition: width .2s ease, opacity .15s ease; overflow: hidden; }
+.panel-slide-leave-active { transition: width var(--motion-base) var(--ease-out), opacity var(--motion-fast) var(--ease-out); overflow: hidden; }
 .panel-slide-enter-from,
 .panel-slide-leave-to     { width: 0 !important; opacity: 0; min-width: 0 !important; }
 
@@ -696,13 +696,13 @@
 
 /* Transition */
 .drop-fade-enter-active,
-.drop-fade-leave-active { transition: opacity .15s ease; }
+.drop-fade-leave-active { transition: opacity var(--motion-fast) var(--ease-out); }
 .drop-fade-enter-from,
 .drop-fade-leave-to     { opacity: 0; }
 
 /* ── Transition bannière ── */
-.banner-slide-enter-active { transition: all .2s ease; }
-.banner-slide-leave-active { transition: all .18s ease; }
+.banner-slide-enter-active { transition: all var(--motion-base) var(--ease-out); }
+.banner-slide-leave-active { transition: all var(--motion-fast) var(--ease-in); }
 .banner-slide-enter-from, .banner-slide-leave-to { opacity: 0; transform: translateY(-6px); max-height: 0; }
 
 /* ── Amélioration bannière ── */

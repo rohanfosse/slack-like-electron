@@ -46,7 +46,10 @@
 <style scoped>
   .modal-enter-active,
   .modal-leave-active {
-    transition: opacity 0.15s ease;
+    transition: opacity var(--motion-base) var(--ease-out);
+  }
+  .modal-leave-active {
+    transition: opacity var(--motion-fast) var(--ease-in);
   }
   .modal-enter-from,
   .modal-leave-to {
@@ -54,7 +57,10 @@
   }
   .modal-enter-active .modal-box,
   .modal-leave-active .modal-box {
-    transition: transform 0.15s ease;
+    transition: transform var(--motion-base) var(--ease-spring);
+  }
+  .modal-leave-active .modal-box {
+    transition: transform var(--motion-fast) var(--ease-in);
   }
   .modal-enter-from .modal-box,
   .modal-leave-to .modal-box {

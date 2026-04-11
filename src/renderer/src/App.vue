@@ -829,7 +829,7 @@
     padding: 12px 14px;
     background: var(--bg-elevated);
     border: none; cursor: pointer;
-    transition: background .15s ease;
+    transition: background var(--motion-fast) var(--ease-out);
   }
   .privacy-section-toggle:hover { background: color-mix(in srgb, var(--accent) 5%, var(--bg-elevated)); }
   .privacy-section-toggle:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
@@ -847,7 +847,7 @@
 
   .privacy-chevron {
     color: var(--text-muted);
-    transition: transform .2s ease;
+    transition: transform var(--motion-base) var(--ease-out);
     flex-shrink: 0;
   }
   .privacy-chevron.open { transform: rotate(180deg); }
