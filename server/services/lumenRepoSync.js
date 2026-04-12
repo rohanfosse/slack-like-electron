@@ -4,8 +4,8 @@
  * Cycle de sync d'une promo :
  *   1. Lister les repos de l'organisation (`GET /orgs/:org/repos`)
  *   2. Pour chaque repo : upsert dans `lumen_repos`
- *   3. Pour chaque repo : fetch `cursus.yaml`, parser, valider, stocker
- *      dans `lumen_repos.manifest_json` + `last_commit_sha`
+ *   3. Pour chaque repo : generer un manifest automatique depuis l'arbre
+ *      GitHub, stocker dans `lumen_repos.manifest_json` + `last_commit_sha`
  *   4. Prune : supprimer les lignes DB qui ne sont plus dans l'org
  *
  * Fetch d'un chapitre a la demande :
@@ -13,7 +13,7 @@
  *   2. Si absent ou sha different, fetch raw via Octokit
  *   3. Stocker dans le cache et retourner le contenu
  */
-const { parseManifest, MANIFEST_FILENAME, inferRepoKind } = require('./lumenManifest')
+const { inferRepoKind } = require('./lumenManifest')
 const { generateAutoManifest } = require('./lumenAutoManifest')
 const { buildScaffoldFiles } = require('./lumenScaffold')
 const {
@@ -218,36 +218,21 @@ async function syncRepo(octokit, dbRepo) {
   const { owner, repo, default_branch: defaultBranch, id } = dbRepo
   const commitSha = await getLatestCommitSha(octokit, { owner, repo, defaultBranch })
 
-  const manifestFile = await fetchFile(octokit, { owner, repo, path: MANIFEST_FILENAME, ref: defaultBranch })
-
-  // Pas de cursus.yaml : on genere un manifest automatique depuis l'arbre
-  // du repo. Le prof peut toujours ajouter un cursus.yaml pour reprendre
-  // la main (il aura priorite au prochain sync).
+  // Detection automatique pure : le manifest est toujours genere depuis
+  // l'arbre du repo. Pas de cursus.yaml — convention over configuration.
   let parsed
-  if (!manifestFile) {
-    try {
-      const autoManifest = await generateAutoManifest(octokit, {
-        owner, repo, ref: defaultBranch, projectName: repo,
-      })
-      parsed = { ok: true, manifest: autoManifest }
-    } catch (err) {
-      updateLumenRepoManifest(id, {
-        manifestJson: null,
-        manifestError: `Auto-manifest impossible : ${err.message ?? err}`,
-        lastCommitSha: commitSha,
-      })
-      return { ok: false, error: 'auto_manifest_failed' }
-    }
-  } else {
-    parsed = parseManifest(manifestFile.content)
-    if (!parsed.ok) {
-      updateLumenRepoManifest(id, {
-        manifestJson: null,
-        manifestError: parsed.error,
-        lastCommitSha: commitSha,
-      })
-      return { ok: false, error: parsed.error }
-    }
+  try {
+    const autoManifest = await generateAutoManifest(octokit, {
+      owner, repo, ref: defaultBranch, projectName: repo,
+    })
+    parsed = { ok: true, manifest: autoManifest }
+  } catch (err) {
+    updateLumenRepoManifest(id, {
+      manifestJson: null,
+      manifestError: `Auto-manifest impossible : ${err.message ?? err}`,
+      lastCommitSha: commitSha,
+    })
+    return { ok: false, error: 'auto_manifest_failed' }
   }
 
   // Resout l'optionnel cursusProject du manifest contre projects.name.
@@ -269,10 +254,9 @@ async function syncRepo(octokit, dbRepo) {
     }
   }
 
-  // Categorisation v2.63 : si l'auteur n'a pas declare `kind` dans son
-  // cursus.yaml, on infere depuis le nom du repo. L'auteur peut toujours
-  // override en mettant kind: explicite. La valeur est ecrite dans le
-  // manifest persiste pour que la sidebar puisse grouper sans recalcul.
+  // Categorisation v2.63 : on infere `kind` depuis le nom du repo.
+  // La valeur est ecrite dans le manifest persiste pour que la sidebar
+  // puisse grouper sans recalcul.
   if (!parsed.manifest.kind) {
     parsed.manifest.kind = inferRepoKind(repo)
   }
@@ -289,11 +273,9 @@ async function syncRepo(octokit, dbRepo) {
     lastCommitSha: commitSha,
   })
 
-  // Le manifest est toujours maitre pour project_id. Si le champ est
-  // absent OU ne resout pas, on remet project_id a NULL (efface le
-  // lien precedent, y compris un lien pose manuellement via l'UI
-  // fallback). Si le prof veut un lien manuel persistant, il doit ne
-  // PAS declarer cursusProject dans le yaml.
+  // Le manifest est toujours maitre pour project_id. Si le champ
+  // cursusProject est absent OU ne resout pas, on remet project_id
+  // a NULL (efface le lien precedent).
   setLumenRepoProjectFromManifest(id, {
     projectId: resolvedProjectId,
     hasCursusProjectField: Boolean(parsed.manifest.cursusProject),

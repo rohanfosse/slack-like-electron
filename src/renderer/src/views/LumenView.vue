@@ -455,7 +455,7 @@ function handleNavigateChapter(path: string) {
   if (!currentRepo.value) return
   const target = currentRepo.value.manifest?.chapters.find((c) => c.path === path)
   if (!target) {
-    showToast(`Chapitre introuvable dans cursus.yaml : ${path}`, 'error')
+    showToast(`Chapitre introuvable dans le manifest : ${path}`, 'error')
     return
   }
   handleSelectChapter({ repoId: currentRepo.value.id, path })

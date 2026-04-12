@@ -1,8 +1,8 @@
 /**
  * Store Lumen — liseuse de cours adossee a GitHub.
  *
- * Modele : 1 promo = 1 organisation GitHub, 1 projet = 1 repo, un
- * fichier cursus.yaml a la racine declare les chapitres. Le store cache
+ * Modele : 1 promo = 1 organisation GitHub, 1 projet = 1 repo, le
+ * manifest est genere automatiquement depuis l'arbre du repo. Le store cache
  * les repos, les manifests parses, les contenus de chapitres et les
  * metadonnees utilisateur (notes, lectures, connexion GitHub).
  */

@@ -1,22 +1,18 @@
 /**
- * Auto-manifest Lumen : genere un manifest synthetique a partir de l'arbre
- * d'un repo GitHub, quand aucun `cursus.yaml` n'est present a la racine.
+ * Manifest Lumen : genere un manifest depuis l'arbre d'un repo GitHub.
  *
  * Convention (pas de configuration) :
  *   - `README.md` racine -> premier chapitre "Accueil"
  *   - Top-level directories -> sections (ex: prosits/, workshops/, guides/)
  *   - Sous-dossiers -> prefixes dans le titre de section ("Guides · PHP")
- *   - Fichiers .md -> chapitres, ordonnes par prefixe numerique (01-, 1-, 2-)
- *     puis alphabetique
+ *   - Fichiers .md/.pdf/.tex -> chapitres, ordonnes par prefixe numerique
+ *     (01-, 1-, 2-) puis alphabetique
  *   - Titre derive du nom de fichier (sans prefixe numerique, ponctuation
  *     normalisee) — on n'ouvre PAS chaque fichier pour lire son H1, trop
  *     couteux (1 round-trip par chapitre).
- *   - Fichiers non-.md (pdf, zip, images) -> `resources`
+ *   - Fichiers non-chapitre (zip, images) -> `resources`
  *   - Dossiers caches (.github, .vscode), node_modules, vendor, dist,
  *     build -> ignores
- *
- * Le prof qui veut du controle fin ajoute un cursus.yaml a la racine, qui
- * prend systematiquement le pas sur l'auto-manifest.
  */
 
 const IGNORED_DIRS = new Set([

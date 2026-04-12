@@ -2,7 +2,7 @@
  * Routes API Lumen — liseuse de cours adossee a GitHub.
  *
  * Modele : 1 promo = 1 organisation GitHub, 1 projet pedagogique = 1 repo,
- * un fichier `cursus.yaml` a la racine decrit les chapitres. Lumen stocke
+ * le manifest est genere automatiquement depuis l'arbre du repo. Lumen stocke
  * uniquement des metadonnees (orga lookup, manifest parse, cache de fichiers,
  * notes privees etudiant, tracking lecture) ; le contenu des cours vit
  * dans GitHub.
@@ -492,7 +492,7 @@ router.put(
     const manifest = parseManifestField(repo)
     if (manifest?.cursusProject) {
       throw new AppError(
-        `Le manifest cursus.yaml declare deja cursusProject: "${manifest.cursusProject}". Pour delier ou changer, edite le yaml.`,
+        `Le manifest declare deja cursusProject: "${manifest.cursusProject}".`,
         409,
       )
     }
@@ -525,9 +525,8 @@ router.get(
     if (!path) throw new AppError('Parametre path requis', 400)
 
     // Securite : empeche de fetcher un fichier arbitraire du repo via
-    // Lumen — seuls les chapitres declares dans le manifest (cursus.yaml
-    // OU auto-genere) sont servis, PLUS leurs compagnons .pdf/.tex
-    // (v2.71) pour permettre le toggle "voir le PDF" cote viewer.
+    // Lumen — seuls les chapitres declares dans le manifest sont servis,
+    // PLUS leurs compagnons .pdf/.tex (v2.71) pour le toggle PDF/TeX.
     const manifest = parseManifestField(repo)
     const inManifest = manifest?.chapters?.some((c) =>
       c.path === path || c.companionPdf === path || c.companionTex === path,
@@ -775,7 +774,7 @@ router.post(
     // Verifie que le chapitre est declare dans le manifest du repo
     const manifest = parseManifestField(repo)
     const exists = manifest?.chapters?.some((c) => c.path === chapterPath)
-    if (!exists) throw new NotFoundError('Chapitre non declare dans cursus.yaml')
+    if (!exists) throw new NotFoundError('Chapitre non declare dans le manifest')
     linkChapterToTravail(travailId, repoId, chapterPath)
     return { ok: true }
   }),

@@ -303,8 +303,8 @@ async function copyChapterLink() {
   }
 }
 
-// Detection du format de chapitre (v2.64). Le `kind` peut venir du manifest
-// (auto-manifest le pose, cursus.yaml peut le surcharger), sinon on infere
+// Detection du format de chapitre (v2.64). Le `kind` vient du manifest
+// auto-genere, sinon on infere
 // depuis l'extension du path. Branches de rendu :
 //  - pdf : iframe data: URL (PDF natif)
 //  - tex : source LaTeX colorisee via highlight.js

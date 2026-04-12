@@ -1114,7 +1114,7 @@ function runMigrations(db) {
 
     // v56 : Lumen — pivot GitHub (table rase)
     // Lumen devient une liseuse de cours adossee a GitHub.
-    // 1 promo = 1 org, 1 projet pedagogique = 1 repo, un fichier cursus.yaml decrit les chapitres.
+    // 1 promo = 1 org, 1 projet pedagogique = 1 repo, manifest auto-genere depuis l'arbre GitHub.
     // Les cours markdown ne vivent plus en DB : ils sont fetches depuis GitHub et mis en cache.
     (db) => {
       // Table rase : anciens cours en DB = brouillons jetables

@@ -1,7 +1,6 @@
 /**
  * Tests pour buildManifestFromTree — la fonction qui genere un manifest
- * synthetique a partir de l'arborescence d'un repo (fallback quand pas de
- * cursus.yaml).
+ * depuis l'arborescence d'un repo GitHub.
  *
  * Ne teste pas listRepoTree (necessite Octokit mocke). buildManifestFromTree
  * est exposee separement pour ces tests purs sur structure.
@@ -9,15 +8,16 @@
 process.env.JWT_SECRET = process.env.JWT_SECRET || 'test-jwt-secret-for-testing-only-32chars!!'
 
 const { buildManifestFromTree, humanizeDirPath } = require('../../../server/services/lumenAutoManifest')
-const { parseManifest } = require('../../../server/services/lumenManifest')
-const yaml = require('js-yaml')
+const { manifestSchema } = require('../../../server/services/lumenManifest')
 
-/** Helper : valide qu'un manifest passe le schema Zod (round-trip via yaml) */
+/** Helper : valide qu'un manifest passe le schema Zod directement */
 function validateAgainstSchema(manifest) {
-  const yamlText = yaml.dump(manifest)
-  const parsed = parseManifest(yamlText)
-  if (!parsed.ok) throw new Error(`Schema invalide : ${parsed.error}`)
-  return parsed.manifest
+  const parsed = manifestSchema.safeParse(manifest)
+  if (!parsed.success) {
+    const first = parsed.error.issues[0]
+    throw new Error(`Schema invalide : ${first.path.join('.')} — ${first.message}`)
+  }
+  return parsed.data
 }
 
 describe('buildManifestFromTree', () => {
@@ -256,35 +256,30 @@ describe('buildManifestFromTree : PDF et TeX (v2.64)', () => {
   })
 
   it('schema accepte chapter avec kind explicite et compagnons', () => {
-    const yamlText = `
-project: Test
-chapters:
-  - title: Guide Scrum
-    path: guides/scrum.md
-    kind: markdown
-    companionPdf: guides/scrum.pdf
-  - title: QCM Equadiff
-    path: sujets/qcm-equadiff.pdf
-    kind: pdf
-    companionTex: sujets/qcm-equadiff.tex
-`
-    const r = parseManifest(yamlText)
-    expect(r.ok).toBe(true)
-    expect(r.manifest.chapters[0].kind).toBe('markdown')
-    expect(r.manifest.chapters[0].companionPdf).toBe('guides/scrum.pdf')
-    expect(r.manifest.chapters[1].kind).toBe('pdf')
-    expect(r.manifest.chapters[1].companionTex).toBe('sujets/qcm-equadiff.tex')
+    const manifest = {
+      project: 'Test',
+      chapters: [
+        { title: 'Guide Scrum', path: 'guides/scrum.md', kind: 'markdown', companionPdf: 'guides/scrum.pdf' },
+        { title: 'QCM Equadiff', path: 'sujets/qcm-equadiff.pdf', kind: 'pdf', companionTex: 'sujets/qcm-equadiff.tex' },
+      ],
+    }
+    const r = manifestSchema.safeParse(manifest)
+    expect(r.success).toBe(true)
+    expect(r.data.chapters[0].kind).toBe('markdown')
+    expect(r.data.chapters[0].companionPdf).toBe('guides/scrum.pdf')
+    expect(r.data.chapters[1].kind).toBe('pdf')
+    expect(r.data.chapters[1].companionTex).toBe('sujets/qcm-equadiff.tex')
   })
 
   it('schema rejette kind invalide', () => {
-    const r = parseManifest(`
-project: Test
-chapters:
-  - title: A
-    path: a.md
-    kind: invalid_kind
-`)
-    expect(r.ok).toBe(false)
+    const manifest = {
+      project: 'Test',
+      chapters: [
+        { title: 'A', path: 'a.md', kind: 'invalid_kind' },
+      ],
+    }
+    const r = manifestSchema.safeParse(manifest)
+    expect(r.success).toBe(false)
   })
 })
 

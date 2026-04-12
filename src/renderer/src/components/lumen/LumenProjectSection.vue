@@ -104,8 +104,7 @@ async function handleLinked(repoId: number) {
       <Link2 :size="24" />
       <p>Aucun cours lie a ce projet pour l'instant.</p>
       <p class="lps-empty-hint">
-        Ajoute <code>cursusProject: "{{ projectName }}"</code> dans le <code>cursus.yaml</code>
-        du repo, ou clique sur "Lier un cours" pour l'associer manuellement.
+        Clique sur "Lier un cours" pour associer un repo Lumen a ce projet.
       </p>
     </div>
 
