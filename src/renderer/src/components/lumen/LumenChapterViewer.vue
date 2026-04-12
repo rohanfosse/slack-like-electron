@@ -1503,17 +1503,13 @@ button.lumen-viewer-chip:focus-visible {
   flex-direction: column;
   background: var(--bg-rail);
   padding: 0;
-  position: relative;
-  /* Force l'iframe a remplir tout l'espace disponible */
   flex: 1;
   min-height: 0;
-  overflow: hidden;
 }
 .lumen-pdf-frame {
-  position: absolute;
-  inset: 0;
+  flex: 1;
   width: 100%;
-  height: 100%;
+  min-height: 0;
   border: none;
   background: #fff;
 }
