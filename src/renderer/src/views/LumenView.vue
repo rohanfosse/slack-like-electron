@@ -387,13 +387,24 @@ function handleAnchorConsumed() {
  */
 function applyAutoResume() {
   if (!activePromoId.value) return
+  // 1. Tente de restaurer le dernier chapitre lu
   const last = lastChapter.get(activePromoId.value)
-  if (!last) return
-  const repo = repos.value.find((r) => r.id === last.repoId)
-  if (!repo) return
-  const stillExists = repo.manifest?.chapters.some((c) => c.path === last.chapterPath)
-  if (!stillExists) return
-  handleSelectChapter({ repoId: last.repoId, path: last.chapterPath })
+  if (last) {
+    const repo = repos.value.find((r) => r.id === last.repoId)
+    if (repo) {
+      const stillExists = repo.manifest?.chapters.some((c) => c.path === last.chapterPath)
+      if (stillExists) {
+        handleSelectChapter({ repoId: last.repoId, path: last.chapterPath })
+        return
+      }
+    }
+  }
+  // 2. Fallback : ouvre le README du repo .github (page d'accueil promo)
+  const readmeRepo = repos.value.find((r) => r.manifest?.kind === 'readme')
+  const firstChapter = readmeRepo?.manifest?.chapters[0]
+  if (readmeRepo && firstChapter) {
+    handleSelectChapter({ repoId: readmeRepo.id, path: firstChapter.path })
+  }
 }
 
 /**
