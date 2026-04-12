@@ -247,6 +247,18 @@ watch(activePromoId, async () => {
   }
 })
 
+// La sidebar navigue via router.push({ query: { repo, chapter } }).
+// Ce watcher detecte le changement d'URL et applique la selection.
+// Guard : ne re-applique pas si on est deja sur le bon chapitre
+// (evite la boucle handleSelectChapter → router.replace → watcher).
+watch(() => route.query, (q) => {
+  const qRepo = typeof q.repo === 'string' ? Number(q.repo) : null
+  const qChapter = typeof q.chapter === 'string' ? q.chapter : null
+  if (qRepo && qChapter && (qRepo !== currentRepo.value?.id || qChapter !== currentChapterPath.value)) {
+    applyUrlSelection()
+  }
+})
+
 onBeforeUnmount(() => {
   window.removeEventListener('keydown', handleKeydown)
 })
