@@ -506,7 +506,9 @@ const OUTLINE_STATE_KEY = 'lumen.outlineOpen'
 const outlineOpen = ref<boolean>((() => {
   try {
     const v = localStorage.getItem(OUTLINE_STATE_KEY)
-    return v === null ? true : v === '1'
+    if (v !== null) return v === '1'
+    // Auto-collapse sur ecrans etroits (< 1400px) pour ne pas ecraser le contenu
+    return typeof window !== 'undefined' ? window.innerWidth >= 1400 : true
   } catch { return true }
 })())
 watch(outlineOpen, (v) => {

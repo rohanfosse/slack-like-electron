@@ -569,6 +569,12 @@ async function saveNewChapter(): Promise<void> {
       <p v-if="sortedRepos.length === 0" class="lumen-sidebar-empty">
         Aucun repo synchronise.
       </p>
+      <p v-else-if="filteredRepos.length === 0 && filter.trim().length >= 2" class="lumen-sidebar-empty">
+        Aucun cours ne correspond a "{{ filter }}".
+        <template v-if="searchResults.length > 0">
+          Consulte les resultats dans le contenu ci-dessus.
+        </template>
+      </p>
       <p v-else-if="filteredRepos.length === 0" class="lumen-sidebar-empty">
         Aucun resultat pour "{{ filter }}".
       </p>
