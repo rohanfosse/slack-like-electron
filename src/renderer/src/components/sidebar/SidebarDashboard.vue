@@ -1,11 +1,10 @@
-/** SidebarDashboard — section dashboard de la sidebar. */
+/** SidebarDashboard — redesign style Lumen v2.114. */
 <script setup lang="ts">
-import { computed } from 'vue'
+import { ref, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { Plus, FolderOpen, Layers, BookOpen, BarChart2, CalendarDays, Calendar, Paperclip } from 'lucide-vue-next'
+import { Plus, Search, X, FolderOpen, BarChart2, ChevronRight, Check } from 'lucide-vue-next'
 import { useAppStore }     from '@/stores/app'
 import { useModalsStore }  from '@/stores/modals'
-import { useTravauxStore } from '@/stores/travaux'
 import { useModules }      from '@/composables/useModules'
 import { parseCategoryIcon } from '@/utils/categoryIcon'
 import NewProjectModal from '@/components/modals/NewProjectModal.vue'
@@ -23,222 +22,173 @@ const emit = defineEmits<{
   projectCreated: [key: string]
 }>()
 
-const appStore     = useAppStore()
-const modals       = useModalsStore()
-const travauxStore = useTravauxStore()
-const route        = useRoute()
-const router       = useRouter()
+const appStore  = useAppStore()
+const modals    = useModalsStore()
+const route     = useRoute()
+const router    = useRouter()
 const { isEnabled } = useModules()
 
-const promoSummary = computed(() => {
-  const gantt = travauxStore.ganttData
-  const published = gantt.filter(t => t.published)
-  let depots = 0, expected = 0
-  for (const t of published) {
-    depots   += t.depots_count  ?? 0
-    expected += t.students_total ?? 0
-  }
-  return {
-    studentCount: 0, // simplified - parent should pass this
-    devoirCount: published.length,
-    submissionPct: expected > 0 ? Math.round((depots / expected) * 100) : 0,
-  }
+const filter = ref('')
+
+const filteredProjects = computed(() => {
+  const q = filter.value.toLowerCase().trim()
+  if (!q) return props.allProjects
+  return props.allProjects.filter((p) => parseCategoryIcon(p).label.toLowerCase().includes(q))
 })
+
+function projectPct(proj: string): number {
+  const s = props.projectStats[proj]
+  if (!s || s.expected === 0) return 0
+  return Math.round((s.depots / s.expected) * 100)
+}
+
+function isProjectDone(proj: string): boolean {
+  const s = props.projectStats[proj]
+  return !!s && s.expected > 0 && s.depots >= s.expected
+}
 </script>
 
 <template>
-  <!-- Résumé promo (prof) -->
-  <div v-if="appStore.isTeacher && activePromoObj" class="sb-promo-card">
-    <div class="sb-promo-card-header">
-      <span class="sb-promo-card-dot" :style="{ background: activePromoObj.color }" />
-      <span class="sb-promo-card-name">{{ activePromoObj.name }}</span>
-    </div>
-    <div class="sb-promo-card-stats">
-      <span>{{ promoSummary.devoirCount }} devoirs</span>
-      <span class="sb-promo-card-sep">&middot;</span>
-      <span>{{ promoSummary.submissionPct }}% soumis</span>
-    </div>
+  <!-- Promo card (prof) -->
+  <div v-if="appStore.isTeacher && activePromoObj" class="sb-dash-promo">
+    <span class="sb-dash-promo-dot" :style="{ background: activePromoObj.color }" />
+    <span class="sb-dash-promo-name">{{ activePromoObj.name }}</span>
   </div>
 
-  <!-- Onglets -->
-  <div class="sidebar-section-header">
-    <span>Tableau de bord</span>
-  </div>
-  <nav aria-label="Onglets du tableau de bord">
-    <button class="sidebar-item" :class="{ active: !route.query.tab || route.query.tab === 'projets' }" @click="router.push('/dashboard')">
-      <FolderOpen :size="13" class="project-icon" />
-      <span class="channel-name">Accueil</span>
+  <!-- Tabs -->
+  <div class="sb-dash-tabs">
+    <button
+      class="sb-dash-tab"
+      :class="{ active: !route.query.tab || route.query.tab === 'projets' }"
+      @click="router.push('/dashboard')"
+    >
+      <FolderOpen :size="12" /> Accueil
     </button>
-    <button v-if="isEnabled('frise')" class="sidebar-item" :class="{ active: route.query.tab === 'frise' }" @click="router.push({ path: '/dashboard', query: { tab: 'frise' } })">
-      <BarChart2 :size="13" class="project-icon" />
-      <span class="channel-name">Frise chronologique</span>
+    <button
+      v-if="isEnabled('frise')"
+      class="sb-dash-tab"
+      :class="{ active: route.query.tab === 'frise' }"
+      @click="router.push({ path: '/dashboard', query: { tab: 'frise' } })"
+    >
+      <BarChart2 :size="12" /> Frise
     </button>
-  </nav>
-
-  <!-- Raccourcis -->
-  <div class="sidebar-section-header" style="margin-top:8px">
-    <span>Raccourcis</span>
   </div>
-  <nav aria-label="Raccourcis">
-    <template v-if="appStore.isTeacher">
-      <button class="sidebar-item" @click="modals.classe = true">
-        <Layers :size="13" class="project-icon" />
-        <span class="channel-name">Vue Classe</span>
-      </button>
-      <button class="sidebar-item" @click="modals.echeancier = true">
-        <CalendarDays :size="13" class="project-icon" />
-        <span class="channel-name">Échéancier</span>
-      </button>
-      <button class="sidebar-item" @click="router.push('/devoirs')">
-        <BookOpen :size="13" class="project-icon" />
-        <span class="channel-name">Tous les devoirs</span>
-      </button>
-      <button class="sidebar-item" :class="{ active: (route.name as string) === 'agenda' }" @click="router.push('/agenda')">
-        <Calendar :size="13" class="project-icon" />
-        <span class="channel-name">Calendrier</span>
-      </button>
-      <button class="sidebar-item" :class="{ active: (route.name as string) === 'fichiers' }" @click="router.push('/fichiers')">
-        <Paperclip :size="13" class="project-icon" />
-        <span class="channel-name">Fichiers partagés</span>
-      </button>
-    </template>
-    <template v-else-if="appStore.isStudent">
-      <button class="sidebar-item" @click="modals.studentTimeline = true">
-        <CalendarDays :size="13" class="project-icon" />
-        <span class="channel-name">Ma timeline</span>
-      </button>
-      <button class="sidebar-item" @click="router.push('/devoirs')">
-        <BookOpen :size="13" class="project-icon" />
-        <span class="channel-name">Mes devoirs</span>
-      </button>
-      <button class="sidebar-item" :class="{ active: (route.name as string) === 'agenda' }" @click="router.push('/agenda')">
-        <Calendar :size="13" class="project-icon" />
-        <span class="channel-name">Calendrier</span>
-      </button>
-    </template>
-  </nav>
 
   <!-- Projets -->
-  <template v-if="allProjects.length">
-    <div class="sidebar-section-header" style="margin-top:8px">
-      <span>{{ appStore.isStaff ? 'Projets' : 'Mes projets' }}</span>
-      <button v-if="appStore.isTeacher" class="btn-icon" title="Nouveau projet" aria-label="Nouveau projet" style="padding:2px" @click="modals.newProject = true">
-        <Plus :size="14" />
+  <div class="sb-dash-section">
+    <div class="sb-dash-section-head">
+      <span class="sb-dash-section-title">Projets</span>
+      <span v-if="allProjects.length" class="sb-dash-section-count">{{ allProjects.length }}</span>
+      <button v-if="appStore.isTeacher" type="button" class="sb-dash-add" title="Nouveau projet" @click="modals.newProject = true">
+        <Plus :size="12" />
       </button>
     </div>
-    <nav aria-label="Filtrer par projet">
-      <button v-for="proj in allProjects" :key="proj" class="sidebar-item sb-project-rich" @click="emit('selectProject', proj)">
-        <div class="sb-project-rich-top">
-          <span class="project-color-dot" :style="{ background: getProjectColor(proj) }" />
-          <component v-if="parseCategoryIcon(proj).icon" :is="parseCategoryIcon(proj).icon!" :size="13" class="project-icon" />
-          <span v-else class="project-bullet" />
-          <span class="channel-name">{{ parseCategoryIcon(proj).label }}</span>
-        </div>
-        <div v-if="projectStats[proj]" class="sb-project-rich-bar-wrap">
-          <div class="sb-project-rich-bar">
-            <div class="sb-project-rich-bar-fill" :style="{ width: (projectStats[proj].expected > 0 ? Math.round(projectStats[proj].depots / projectStats[proj].expected * 100) : 0) + '%', background: getProjectColor(proj) }" />
-          </div>
-          <span class="sb-project-rich-sub">{{ projectStats[proj].depots }}/{{ projectStats[proj].expected }} soumis</span>
-        </div>
-      </button>
-    </nav>
-  </template>
 
-  <!-- Activité récente (prof) -->
-  <template v-if="appStore.isTeacher && recentActivity.length">
-    <div class="sidebar-section-header" style="margin-top:8px">
-      <span>Activité récente</span>
+    <!-- Search -->
+    <div v-if="allProjects.length >= 4" class="sb-dash-search">
+      <Search :size="11" class="sb-dash-search-icon" />
+      <input v-model="filter" type="text" class="sb-dash-search-input" placeholder="Rechercher un projet..." />
+      <button v-if="filter" type="button" class="sb-dash-search-clear" @click="filter = ''"><X :size="10" /></button>
     </div>
-    <div class="sb-recent-list">
-      <div v-for="item in recentActivity" :key="item.id" class="sb-recent-item">
-        <span class="sb-recent-text">{{ item.text }}</span>
-        <span class="sb-recent-time">{{ item.time }}</span>
-      </div>
+
+    <div class="sb-dash-projects">
+      <button
+        v-for="proj in filteredProjects"
+        :key="proj"
+        type="button"
+        class="sb-dash-project"
+        :class="{ 'is-active': appStore.activeProject === proj, 'is-done': isProjectDone(proj) }"
+        @click="emit('selectProject', proj)"
+      >
+        <span class="sb-dash-project-dot" :style="{ background: getProjectColor(proj) }" />
+        <span class="sb-dash-project-name">{{ parseCategoryIcon(proj).label }}</span>
+        <Check v-if="isProjectDone(proj)" :size="11" class="sb-dash-project-check" />
+        <span v-else-if="projectStats[proj]" class="sb-dash-project-pct">{{ projectPct(proj) }}%</span>
+      </button>
+      <div v-if="filteredProjects.length === 0" class="sb-dash-empty">Aucun projet</div>
     </div>
-  </template>
+  </div>
 
   <NewProjectModal v-model="modals.newProject" @created="(k: string) => emit('projectCreated', k)" />
 </template>
 
 <style scoped>
-/* ── Résumé promo card ── */
-.sb-promo-card {
-  margin: 6px 10px 4px;
-  padding: 8px 10px;
-  border-radius: 8px;
-  background: var(--bg-elevated);
-  border: 1px solid var(--border);
-}
-.sb-promo-card-header {
+/* Promo card */
+.sb-dash-promo {
   display: flex; align-items: center; gap: 6px;
-  margin-bottom: 4px;
+  margin: 6px 10px 2px; padding: 8px 10px;
+  background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 8px;
 }
-.sb-promo-card-dot {
-  width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
-}
-.sb-promo-card-name {
-  font-size: 12px; font-weight: 700; color: var(--text-primary);
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-}
-.sb-promo-card-stats {
-  font-size: 10.5px; color: var(--text-muted);
-  display: flex; flex-wrap: wrap; gap: 2px;
-}
-.sb-promo-card-sep { margin: 0 2px; }
+.sb-dash-promo-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.sb-dash-promo-name { font-size: 12px; font-weight: 700; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-/* ── Icônes et points de projet ── */
-.project-icon { flex-shrink: 0; opacity: .8; }
-.project-bullet {
-  width: 6px; height: 6px; border-radius: 50%;
-  background: #9B87F5; flex-shrink: 0;
-  margin-left: 4px; margin-right: 2px; opacity: .7;
+/* Tabs */
+.sb-dash-tabs {
+  display: flex; gap: 2px; margin: 6px 10px 4px;
+  background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 6px; padding: 2px;
 }
-.project-color-dot {
-  width: 7px; height: 7px; border-radius: 50%;
-  flex-shrink: 0; opacity: .8;
+.sb-dash-tab {
+  flex: 1; display: flex; align-items: center; justify-content: center; gap: 5px;
+  padding: 5px 8px; border-radius: 4px; border: none; background: transparent;
+  color: var(--text-muted); font-size: 11px; font-weight: 600; font-family: inherit; cursor: pointer;
+  transition: all 0.12s;
 }
+.sb-dash-tab:hover { color: var(--text-primary); }
+.sb-dash-tab.active { background: var(--accent); color: white; }
 
-/* ── Enriched project items ── */
-.sb-project-rich {
-  flex-direction: column !important;
-  align-items: flex-start !important;
-  gap: 3px !important;
-  padding-top: 5px !important;
-  padding-bottom: 5px !important;
+/* Section */
+.sb-dash-section { padding: 4px 10px; }
+.sb-dash-section-head {
+  display: flex; align-items: center; gap: 4px; margin-bottom: 4px;
 }
-.sb-project-rich-top {
+.sb-dash-section-title { font-size: 11px; font-weight: 700; color: var(--text-muted); flex: 1; }
+.sb-dash-section-count {
+  font-size: 9px; font-weight: 700; color: var(--accent);
+  background: rgba(var(--accent-rgb), .14); padding: 1px 5px; border-radius: 8px;
+}
+.sb-dash-add {
+  display: flex; align-items: center; justify-content: center;
+  width: 20px; height: 20px; border-radius: 4px; border: none;
+  background: transparent; color: var(--text-muted); cursor: pointer;
+}
+.sb-dash-add:hover { background: var(--bg-hover); color: var(--accent); }
+
+/* Search */
+.sb-dash-search {
+  display: flex; align-items: center; gap: 4px;
+  padding: 5px 7px; margin-bottom: 4px;
+  background: var(--bg-primary); border: 1px solid var(--border); border-radius: 5px;
+}
+.sb-dash-search:focus-within { border-color: var(--accent); }
+.sb-dash-search-icon { color: var(--text-muted); flex-shrink: 0; }
+.sb-dash-search-input {
+  flex: 1; background: transparent; border: none; color: var(--text-primary);
+  font-size: 11px; font-family: inherit; outline: none;
+}
+.sb-dash-search-input::placeholder { color: var(--text-muted); }
+.sb-dash-search-clear { background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 1px; }
+
+/* Project items */
+.sb-dash-projects { display: flex; flex-direction: column; gap: 1px; }
+.sb-dash-project {
   display: flex; align-items: center; gap: 6px; width: 100%;
+  padding: 6px 8px; border-radius: 6px; border: none; border-left: 2px solid transparent;
+  background: transparent; cursor: pointer; text-align: left; transition: all 0.1s;
 }
-.sb-project-rich-bar-wrap {
-  display: flex; align-items: center; gap: 6px;
-  width: 100%; padding-left: 20px;
+.sb-dash-project:hover { background: var(--bg-hover); }
+.sb-dash-project.is-active {
+  background: var(--bg-active, rgba(var(--accent-rgb), .16));
+  border-left-color: var(--accent);
 }
-.sb-project-rich-bar {
-  flex: 1; height: 3px; border-radius: 2px;
-  background: var(--bg-active); overflow: hidden;
+.sb-dash-project.is-done { opacity: 0.5; }
+.sb-dash-project-dot { width: 8px; height: 8px; border-radius: 3px; flex-shrink: 0; }
+.sb-dash-project-name {
+  flex: 1; font-size: 12px; font-weight: 500; color: var(--text-primary);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
-.sb-project-rich-bar-fill {
-  height: 100%; border-radius: 2px;
-  transition: width var(--motion-slow) var(--ease-out);
-}
-.sb-project-rich-sub {
-  font-size: 10px; color: var(--text-muted); white-space: nowrap;
-}
+.sb-dash-project.is-active .sb-dash-project-name { font-weight: 600; }
+.sb-dash-project-check { color: var(--success, #4caf50); flex-shrink: 0; }
+.sb-dash-project-pct { font-size: 10px; color: var(--text-muted); flex-shrink: 0; font-variant-numeric: tabular-nums; }
 
-/* ── Activité récente ── */
-.sb-recent-list { padding: 0 10px 4px; }
-.sb-recent-item {
-  display: flex; justify-content: space-between; align-items: baseline;
-  gap: 6px; padding: 3px 0;
-  border-bottom: 1px solid var(--border);
-}
-.sb-recent-item:last-child { border-bottom: none; }
-.sb-recent-text {
-  font-size: 10.5px; color: var(--text-secondary);
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-  flex: 1; min-width: 0;
-}
-.sb-recent-time {
-  font-size: 9.5px; color: var(--text-muted); white-space: nowrap; flex-shrink: 0;
-}
+.sb-dash-empty { font-size: 11px; color: var(--text-muted); padding: 8px 4px; }
 </style>
