@@ -87,16 +87,18 @@ const filteredRepos = computed(() => {
 })
 
 async function linkRepo(repo: LumenRepo) {
-  if (!projectId.value) return
-  // Protection cote UI : refuse si le repo declare deja cursusProject
-  if (repo.manifest?.cursusProject) {
-    showToast('Ce repo declare deja cursusProject dans son yaml — edite le yaml pour le lier ailleurs', 'error')
+  if (!projectId.value) {
+    showToast('Projet non resolu. Recharge la page et reessaie.', 'error')
     return
   }
   linkingRepoId.value = repo.id
   try {
     const updated = await lumenStore.linkRepoToProject(repo.id, projectId.value)
-    if (updated) emit('linked', repo.id)
+    if (updated) {
+      emit('linked', repo.id)
+    } else {
+      showToast('La liaison a echoue. Verifie que le repo est toujours accessible.', 'error')
+    }
   } finally {
     linkingRepoId.value = null
   }
