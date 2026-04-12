@@ -323,7 +323,18 @@ function toggleAllSections(): void {
 // apparait au-dessus de la liste filtree quand un query est actif.
 
 const lumenStore = useLumenStore()
-const { marpChapters } = storeToRefs(lumenStore)
+const { marpChapters, myReads } = storeToRefs(lumenStore)
+
+function repoReadProgress(repo: LumenRepo): { read: number; total: number } {
+  const chapters = repo.manifest?.chapters ?? []
+  const total = chapters.length
+  if (!total) return { read: 0, total: 0 }
+  let read = 0
+  for (const ch of chapters) {
+    if (myReads.value.has(`${repo.id}::${ch.path}`)) read++
+  }
+  return { read, total }
+}
 const searchResults = ref<LumenSearchResult[]>([])
 const searchInFlight = ref(false)
 let searchDebounce: ReturnType<typeof setTimeout> | null = null
@@ -590,6 +601,11 @@ async function saveNewChapter(): Promise<void> {
               :class="{ 'has-error': repo.manifestError }"
             >
               <span class="lumen-repo-name">{{ displayRepoName(repo) }}</span>
+              <span
+                v-if="repoReadProgress(repo).total > 0"
+                class="lumen-repo-progress"
+                :title="`${repoReadProgress(repo).read}/${repoReadProgress(repo).total} chapitres lus`"
+              >{{ repoReadProgress(repo).read }}/{{ repoReadProgress(repo).total }}</span>
               <AlertTriangle v-if="repo.manifestError" :size="13" class="lumen-repo-warning" />
             </div>
             <button
@@ -647,6 +663,7 @@ async function saveNewChapter(): Promise<void> {
                     class="lumen-chapter-item"
                     :class="{
                       'is-active': currentRepoId === repo.id && currentChapterPath === ch.path,
+                      'is-read': myReads.has(`${repo.id}::${ch.path}`),
                     }"
                     @click="emit('select', { repoId: repo.id, path: ch.path })"
                   >
@@ -963,6 +980,13 @@ async function saveNewChapter(): Promise<void> {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+.lumen-repo-progress {
+  flex-shrink: 0;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
 }
 
 .lumen-repo-visibility {
