@@ -18,8 +18,10 @@
   import SidebarProjects    from './SidebarProjects.vue'
   import SidebarDocProjects from './SidebarDocProjects.vue'
   import SidebarDmList      from './SidebarDmList.vue'
+  import LumenRepoSidebar   from '@/components/lumen/LumenRepoSidebar.vue'
   import SkeletonLoader     from '@/components/ui/SkeletonLoader.vue'
   import { avatarColor }  from '@/utils/format'
+  import { useLumenStore }  from '@/stores/lumen'
 
   import { useSidebarData }     from '@/composables/useSidebarData'
   import { useSidebarDm }       from '@/composables/useSidebarDm'
@@ -29,11 +31,12 @@
 
   const emit = defineEmits<{ navigate: [] }>()
 
-  const appStore = useAppStore()
-  const modals   = useModalsStore()
-  const docStore = useDocumentsStore()
-  const route    = useRoute()
-  const router   = useRouter()
+  const appStore   = useAppStore()
+  const modals     = useModalsStore()
+  const docStore   = useDocumentsStore()
+  const lumenStore = useLumenStore()
+  const route      = useRoute()
+  const router     = useRouter()
 
   // ── Composables ───────────────────────────────────────────────────────────
   const {
@@ -72,6 +75,23 @@
     editingProject, getProjectMeta, saveProjectMeta, deleteProject, getProjectColor,
     projectTimePct, isProjectDone,
   } = useSidebarProjects(visibleChannels)
+
+  // ── Lumen sidebar (v2.101) ─────────────────────────────────────────────────
+  const lumenNotedChapters = computed<Set<string>>(() => {
+    const set = new Set<string>()
+    for (const [key, note] of lumenStore.chapterNotes.entries()) {
+      if (note && note.content?.trim()) set.add(key)
+    }
+    return set
+  })
+
+  function handleLumenSelect(payload: { repoId: number; path: string }) {
+    router.push({ name: 'lumen', query: { repo: String(payload.repoId), chapter: payload.path } })
+  }
+
+  async function handleLumenVisibility(payload: { repoId: number; visible: boolean }) {
+    await lumenStore.setRepoVisibility(payload.repoId, payload.visible)
+  }
 
   // ── Canaux archives (staff only) ──────────────────────────────────────────
   const archivedChannels  = ref<import('@/types').Channel[]>([])
@@ -290,6 +310,20 @@
           :project-doc-counts="projectDocCounts"
           :doc-categories="docCategories"
           :doc-cat-counts="docCatCounts"
+        />
+      </template>
+
+      <!-- Cours Lumen (sidebar unifiee v2.101) -->
+      <template v-else-if="route.name === 'lumen'">
+        <LumenRepoSidebar
+          :repos="lumenStore.repos"
+          :current-repo-id="lumenStore.currentRepo?.id ?? null"
+          :current-chapter-path="lumenStore.currentChapterPath"
+          :noted-chapters="lumenNotedChapters"
+          :can-toggle-visibility="appStore.isTeacher"
+          :promo-id="appStore.activePromoId"
+          @select="handleLumenSelect"
+          @toggle-visibility="handleLumenVisibility"
         />
       </template>
 

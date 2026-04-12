@@ -25,7 +25,6 @@ import { useLumenLastChapter } from '@/composables/useLumenLastChapter'
 import { relativeTime } from '@/utils/date'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
 import LumenGithubConnect from '@/components/lumen/LumenGithubConnect.vue'
-import LumenRepoSidebar from '@/components/lumen/LumenRepoSidebar.vue'
 import LumenChapterViewer from '@/components/lumen/LumenChapterViewer.vue'
 import LumenKeyboardHelp from '@/components/lumen/LumenKeyboardHelp.vue'
 import LumenNotePanel from '@/components/lumen/LumenNotePanel.vue'
@@ -125,10 +124,6 @@ const staleMs = computed<number | null>(() => {
 const STALE_THRESHOLD_MS = 15 * 60 * 1000  // 15 minutes
 
 const loadingChapter = ref(false)
-
-// Ref vers le composant sidebar pour pouvoir lui demander de focus son
-// champ de recherche depuis un shortcut clavier "/" (v2.73).
-const sidebarRef = ref<InstanceType<typeof LumenRepoSidebar> | null>(null)
 
 // Modale d'aide sur les raccourcis clavier (v2.75). Ouverte via la touche ?
 const keyboardHelpOpen = ref(false)
@@ -279,15 +274,6 @@ async function handleSync() {
   applyUrlSelection()
 }
 
-async function handleToggleVisibility({ repoId, visible }: { repoId: number; visible: boolean }) {
-  try {
-    await lumenStore.setRepoVisibility(repoId, visible)
-    showToast(visible ? 'Cours publie pour les etudiants' : 'Cours masque aux etudiants', 'success')
-  } catch {
-    showToast('Impossible de changer la visibilite', 'error')
-  }
-}
-
 async function handleDisconnect() {
   if (!(await confirm('Deconnecter ton compte GitHub de Lumen ?', 'danger', 'Deconnecter'))) return
   await lumenStore.disconnectGithub()
@@ -429,7 +415,7 @@ function handleKeydown(e: KeyboardEvent) {
   // v2.73 : "/" focus la barre de recherche de la sidebar (pattern GitHub).
   if (e.key === '/') {
     e.preventDefault()
-    sidebarRef.value?.focusSearch()
+    // Le "/" focus la recherche dans la sidebar app (geree par Sidebar.vue)
     return
   }
   // v2.75 : "?" (shift+/) ouvre la modale d'aide sur les raccourcis.
@@ -588,33 +574,6 @@ function handleNavigateLumenLink(payload: { repoName: string; path: string }) {
       <LumenGithubConnect v-if="!githubStatus.connected" />
 
       <template v-else>
-        <aside class="lumen-sidebar">
-          <header class="lumen-sidebar-head">
-            <span class="lumen-sidebar-label">Cours</span>
-            <span v-if="repos.length" class="lumen-sidebar-count">{{ repos.length }}</span>
-          </header>
-
-          <LumenRepoSidebar
-            ref="sidebarRef"
-            :repos="repos"
-            :current-repo-id="currentRepo?.id ?? null"
-            :current-chapter-path="currentChapterPath"
-            :noted-chapters="notedChaptersSet"
-            :can-toggle-visibility="isTeacher"
-            :promo-id="activePromoId"
-            @select="handleSelectChapter"
-            @toggle-visibility="handleToggleVisibility"
-          />
-
-          <footer v-if="promoOrg && !repos.length && !loading" class="lumen-sidebar-footer">
-            <p>Aucun cours synchronise.</p>
-            <button type="button" class="lumen-btn tiny" @click="handleSync">
-              <RefreshCw :size="12" />
-              Lancer la synchro
-            </button>
-          </footer>
-        </aside>
-
         <main class="lumen-main">
           <div v-if="!promoOrg" class="lumen-empty-state">
             <AlertCircle :size="32" />
@@ -899,55 +858,6 @@ function handleNavigateLumenLink(payload: { repoName: string; path: string }) {
 
 .spin { animation: spin 1s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
-
-.lumen-sidebar {
-  width: 244px;
-  flex-shrink: 0;
-  border-right: 1px solid var(--border);
-  background: var(--bg-sidebar, var(--bg-secondary));
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-
-.lumen-sidebar-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 12px 16px;
-  border-bottom: 1px solid var(--border);
-  flex-shrink: 0;
-}
-.lumen-sidebar-label {
-  font-size: 11px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--text-muted);
-}
-.lumen-sidebar-count {
-  font-size: 11px;
-  color: var(--text-muted);
-  background: var(--bg-primary);
-  padding: 2px 7px;
-  border-radius: 10px;
-  font-variant-numeric: tabular-nums;
-}
-
-.lumen-sidebar-footer {
-  padding: 16px;
-  border-top: 1px solid var(--border);
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  align-items: flex-start;
-  flex-shrink: 0;
-}
-.lumen-sidebar-footer p {
-  margin: 0;
-  font-size: 12px;
-  color: var(--text-muted);
-}
 
 .lumen-main {
   flex: 1;
