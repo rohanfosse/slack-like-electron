@@ -10,6 +10,7 @@ import {
 import { useAppStore } from '@/stores/app'
 import { useDocumentsStore } from '@/stores/documents'
 import { useModalsStore } from '@/stores/modals'
+import { useFichiersStore } from '@/stores/fichiers'
 import { useApi }      from '@/composables/useApi'
 import { relativeTime } from '@/utils/date'
 import { authUrl }      from '@/utils/auth'
@@ -17,6 +18,7 @@ import { authUrl }      from '@/utils/auth'
 const appStore = useAppStore()
 const documentsStore = useDocumentsStore()
 const modals   = useModalsStore()
+const fichiersStore = useFichiersStore()
 const router   = useRouter()
 const { api }  = useApi()
 
@@ -40,19 +42,17 @@ function formatFileSize(bytes: number | null | undefined): string {
   return (bytes / 1048576).toFixed(1) + ' Mo'
 }
 
-const files       = ref<DmFile[]>([])
-const loading     = ref(true)
+const files       = computed(() => fichiersStore.files)
+const loading     = computed(() => fichiersStore.loading)
 const search      = ref('')
-const filterType  = ref<'all' | 'images' | 'docs'>('all')
-const filterStudent = ref<number | null>(null)
+const filterType  = computed(() => fichiersStore.filterType)
+const filterStudent = computed(() => fichiersStore.selectedStudentId)
 const viewMode    = ref<'grid' | 'list'>('grid')
 const lightboxUrl = ref<string | null>(null)
 const collapsedStudents = ref<Set<number>>(new Set())
 
-onMounted(async () => {
-  const res = await api(() => window.api.getDmFiles())
-  files.value = Array.isArray(res) ? (res as DmFile[]) : []
-  loading.value = false
+onMounted(() => {
+  if (fichiersStore.files.length === 0) fichiersStore.fetchFiles()
 })
 
 const students = computed(() => {

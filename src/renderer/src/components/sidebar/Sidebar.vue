@@ -18,11 +18,13 @@
   import SidebarProjects    from './SidebarProjects.vue'
   import SidebarDocProjects from './SidebarDocProjects.vue'
   import SidebarAgenda      from './SidebarAgenda.vue'
+  import SidebarFichiers    from './SidebarFichiers.vue'
   import SidebarDmList      from './SidebarDmList.vue'
   import LumenRepoSidebar   from '@/components/lumen/LumenRepoSidebar.vue'
   import SkeletonLoader     from '@/components/ui/SkeletonLoader.vue'
   import { avatarColor }  from '@/utils/format'
   import { useLumenStore }  from '@/stores/lumen'
+  import { useFichiersStore } from '@/stores/fichiers'
 
   import { useSidebarData }     from '@/composables/useSidebarData'
   import { useSidebarDm }       from '@/composables/useSidebarDm'
@@ -35,7 +37,8 @@
   const appStore   = useAppStore()
   const modals     = useModalsStore()
   const docStore   = useDocumentsStore()
-  const lumenStore = useLumenStore()
+  const lumenStore    = useLumenStore()
+  const fichiersStore = useFichiersStore()
   const route      = useRoute()
   const router     = useRouter()
 
@@ -311,6 +314,17 @@
           :project-doc-counts="projectDocCounts"
           :doc-categories="docCategories"
           :doc-cat-counts="docCatCounts"
+        />
+      </template>
+
+      <!-- Fichiers partages (sidebar etudiants, prof only) -->
+      <template v-else-if="route.name === 'fichiers'">
+        <SidebarFichiers
+          :files="fichiersStore.files"
+          :loading="fichiersStore.loading"
+          :selected-student-id="fichiersStore.selectedStudentId"
+          @select-student="(id: number | null) => fichiersStore.selectStudent(id)"
+          @filter-type="(t: 'all' | 'images' | 'docs') => fichiersStore.setFilterType(t)"
         />
       </template>
 
