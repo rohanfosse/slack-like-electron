@@ -1,7 +1,7 @@
 <script setup lang="ts">
   import { computed, ref, watch } from 'vue'
   import { useRouter, useRoute } from 'vue-router'
-  import { MessageSquare, BookOpen, FileText, LayoutDashboard, Bell, Flame, Search, Shield, Bug, Zap, HeartPulse, Paperclip, Lightbulb } from 'lucide-vue-next'
+  import { MessageSquare, BookOpen, FileText, LayoutDashboard, Bell, Flame, Search, Shield, Bug, Zap, HeartPulse, Paperclip, Lightbulb, Calendar } from 'lucide-vue-next'
   import logoUrl from '@/assets/logo.png'
   import { useAppStore }    from '@/stores/app'
   import { useModalsStore } from '@/stores/modals'
@@ -196,28 +196,43 @@
       </div>
     </button>
 
+    <!-- Calendrier (v2.96) : acces direct aux deadlines et planning -->
     <button
       class="nav-btn"
-      :class="{ active: route.name === 'documents' }"
-      title="Ressources"
-      aria-label="Section Ressources"
-      @click="router.push('/documents')"
+      :class="{ active: route.name === 'agenda' }"
+      title="Calendrier"
+      aria-label="Calendrier"
+      @click="router.push('/agenda')"
     >
-      <FileText :size="20" />
-      <span class="nav-label">Ressources</span>
+      <Calendar :size="20" />
+      <span class="nav-label">Calendrier</span>
     </button>
 
-    <!-- Lumen : cours markdown publies (toujours visible si module actif) -->
+    <!-- Cours (ex-Lumen) : liseuse de cours GitHub -->
     <button
       v-if="isEnabled('lumen')"
       class="nav-btn"
       :class="{ active: route.name === 'lumen' }"
-      title="Lumen — Cours"
-      aria-label="Section Lumen"
+      title="Cours"
+      aria-label="Section Cours"
       @click="router.push('/lumen')"
     >
       <Lightbulb :size="20" />
-      <span class="nav-label">Lumen</span>
+      <span class="nav-label">Cours</span>
+    </button>
+
+    <!-- Ressources/Documents (staff uniquement — les etudiants accedent
+         aux documents via la recherche Ctrl+K ou les liens dans les devoirs) -->
+    <button
+      v-if="appStore.isStaff"
+      class="nav-btn"
+      :class="{ active: route.name === 'documents' }"
+      title="Documents"
+      aria-label="Section Documents"
+      @click="router.push('/documents')"
+    >
+      <FileText :size="20" />
+      <span class="nav-label">Documents</span>
     </button>
 
     <!-- Fichiers partagés (prof uniquement) -->

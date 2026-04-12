@@ -5,7 +5,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { LayoutDashboard, MessageSquare, BookOpen, FileText, Zap } from 'lucide-vue-next'
+import { LayoutDashboard, MessageSquare, BookOpen, Lightbulb, Zap } from 'lucide-vue-next'
 import { useAppStore }    from '@/stores/app'
 import { useTravauxStore } from '@/stores/travaux'
 import { useLiveStore }   from '@/stores/live'
@@ -57,12 +57,13 @@ const showLive     = computed(() =>
     </button>
 
     <button
+      v-if="isEnabled('lumen')"
       class="mobile-nav-btn"
-      :class="{ active: route.name === 'documents' }"
-      @click="router.push('/documents')"
+      :class="{ active: route.name === 'lumen' }"
+      @click="router.push('/lumen')"
     >
-      <FileText :size="20" />
-      <span>Docs</span>
+      <Lightbulb :size="20" />
+      <span>Cours</span>
     </button>
 
     <button
