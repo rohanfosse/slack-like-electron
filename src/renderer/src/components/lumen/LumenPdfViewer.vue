@@ -9,11 +9,11 @@
  */
 import { ref, watch, onBeforeUnmount, nextTick, computed } from 'vue'
 import { ZoomIn, ZoomOut, Maximize, FileText } from 'lucide-vue-next'
-import * as pdfjsLib from 'pdfjs-dist'
+// Legacy build : evite Uint8Array.toHex() absent dans Electron 35 sandbox
+import * as pdfjsLib from 'pdfjs-dist/legacy/build/pdf.mjs'
 
-// Worker pdf.js — charge le worker inline via la version bundled
 pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
-  'pdfjs-dist/build/pdf.worker.min.mjs',
+  'pdfjs-dist/legacy/build/pdf.worker.min.mjs',
   import.meta.url,
 ).toString()
 

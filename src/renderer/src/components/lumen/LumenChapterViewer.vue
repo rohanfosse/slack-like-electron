@@ -15,6 +15,7 @@ import { computed, onMounted, onBeforeUnmount, ref, watch, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { Loader2, FileText, FileDown, FileCode, Clock, User, ChevronLeft, ChevronRight, Copy, Check, ClipboardList, Plus, Calendar, RefreshCw, ChevronRight as CrumbSep, Presentation, Pencil, Save, X, Eye, EyeOff, Columns2, Link2, Printer } from 'lucide-vue-next'
 import { renderMarkdown } from '@/utils/markdown'
+import { renderTex } from '@/utils/texRenderer'
 import { resolveAnchorTarget } from '@/utils/lumenDevoirLinks'
 import { parseChapterContent } from '@/utils/lumenFrontmatter'
 import { useToast } from '@/composables/useToast'
@@ -25,7 +26,6 @@ import LumenLinkDevoirModal from '@/components/lumen/LumenLinkDevoirModal.vue'
 import LumenOutline from '@/components/lumen/LumenOutline.vue'
 import LumenPdfViewer from '@/components/lumen/LumenPdfViewer.vue'
 import LumenSlideDeck from '@/components/lumen/LumenSlideDeck.vue'
-import Modal from '@/components/ui/Modal.vue'
 import UiCodeEditor from '@/components/ui/UiCodeEditor.vue'
 import type { LumenChapter, LumenRepo, LumenLinkedTravail } from '@/types'
 
@@ -111,7 +111,7 @@ function isTypingInField(target: EventTarget | null): boolean {
 function onLumenKeyboard(ev: KeyboardEvent): void {
   // Si une modale est ouverte (edit ou link-devoir), on laisse la modale
   // gerer ses propres raccourcis et on ne reagit pas aux globaux.
-  if (editModalOpen.value || linkDevoirModalOpen.value || linkedPopoverOpen.value) return
+  if (editMode.value || linkDevoirModalOpen.value || linkedPopoverOpen.value) return
   // Si l'utilisateur tape dans un champ, on laisse passer (ex: la search
   // sidebar).
   if (isTypingInField(ev.target)) return
@@ -127,7 +127,7 @@ function onLumenKeyboard(ev: KeyboardEvent): void {
   if (ev.key === 'e' || ev.key === 'E') {
     if (canEdit.value) {
       ev.preventDefault()
-      openEditModal()
+      enterEditMode()
     }
     return
   }
@@ -206,33 +206,32 @@ function openAccueilChapter(ch: LumenChapter) {
   emit('navigate-chapter', ch.path)
 }
 
-// ── Edition de chapitre par le prof (v2.67) ───────────────────────────────
-// Bouton "Modifier" dans le header : ouvre une modale avec CodeMirror,
-// le prof modifie, on commit via le serveur, on refetch le chapitre.
-const editModalOpen = ref(false)
+// ── Edition inline de chapitre par le prof (v2.104) ──────────────────────
+// Toggle lecture/edition dans le viewer. Le prof modifie directement dans
+// le contenu, sans modale. Split-view optionnel avec preview live.
+const editMode = ref(false)
 const editDraft = ref('')
 const editMessage = ref('')
 const editSaving = ref(false)
-// Live preview (v2.69) : split-view markdown source + rendu HTML a droite.
-// Toggle pour les petites fenetres ou quand le prof veut maximiser l'editeur.
 const editPreviewOpen = ref(true)
 const editPreviewHtml = computed(() => {
   if (!editPreviewOpen.value || !editDraft.value) return ''
+  if (chapterKind.value === 'tex') return renderTex(editDraft.value)
   return renderMarkdown(editDraft.value, { chapterPath: props.chapter.path })
 })
 const lumenStore = useLumenStore()
 
-function openEditModal(): void {
-  if (!isTeacher.value || isPdf.value || isTex.value || isMarp.value) return
+function enterEditMode(): void {
+  if (!canEdit.value) return
   if (props.content == null) return
   editDraft.value = props.content
   editMessage.value = ''
-  editModalOpen.value = true
+  editMode.value = true
 }
 
-function closeEditModal(): void {
-  if (editSaving.value) return  // ne ferme pas pendant un save en cours
-  editModalOpen.value = false
+function exitEditMode(): void {
+  if (editSaving.value) return
+  editMode.value = false
 }
 
 async function saveEdit(): Promise<void> {
@@ -256,8 +255,7 @@ async function saveEdit(): Promise<void> {
       return
     }
     showToast('Chapitre enregistre', 'success')
-    editModalOpen.value = false
-    // Refetch via le store pour rafraichir le viewer + recuperer le nouveau SHA
+    editMode.value = false
     await lumenStore.fetchChapterContent(props.repo.id, props.chapter.path)
   } catch (err) {
     const msg = (err as { message?: string })?.message || 'Erreur reseau'
@@ -269,7 +267,7 @@ async function saveEdit(): Promise<void> {
 
 const canEdit = computed(() =>
   isTeacher.value
-  && chapterKind.value === 'markdown'
+  && (chapterKind.value === 'markdown' || chapterKind.value === 'tex')
   && !isMarp.value
   && props.content != null
   && Boolean(props.contentSha),
@@ -338,13 +336,9 @@ const html = computed(() => {
   return renderMarkdown(props.content, { chapterPath: props.chapter.path })
 })
 
-// Pour les .tex : on rend le source via highlight.js (mode latex). On
-// reutilise le pipeline markdown + un fenced block ```latex pour beneficier
-// du wrapper .lumen-codeblock standard (header + scroll + theming).
 const texHtml = computed(() => {
   if (!isTex.value || !props.content) return ''
-  const fenced = '```latex\n' + props.content + '\n```'
-  return renderMarkdown(fenced, { chapterPath: props.chapter.path })
+  return renderTex(props.content)
 })
 
 // ── Companion PDF/TeX toggle (v2.71) ──────────────────────────────────────
@@ -738,7 +732,7 @@ watch(() => [props.content, props.chapter?.path], () => {
             type="button"
             class="lumen-viewer-chip lumen-viewer-chip--edit"
             title="Modifier ce chapitre (raccourci : E)"
-            @click="openEditModal"
+            @click="enterEditMode"
           >
             <Pencil :size="11" /> Modifier
             <kbd class="lumen-viewer-chip-kbd">E</kbd>
@@ -892,14 +886,63 @@ watch(() => [props.content, props.chapter?.path], () => {
       <!-- Rendu PDF via pdf.js (v2.103 — remplace l'iframe + plugin Chromium) -->
       <LumenPdfViewer v-else-if="isPdf" :content="content" />
 
-      <!-- Rendu source LaTeX : code block colorise via highlight.js (v2.64) -->
-      <div v-else-if="isTex" class="lumen-viewer-main lumen-viewer-main--tex">
+      <!-- Rendu TeX avec KaTeX (v2.104) -->
+      <div v-else-if="isTex && !editMode" class="lumen-viewer-main lumen-viewer-main--tex">
         <div class="lumen-viewer-body markdown-body" v-html="texHtml" />
       </div>
 
       <!-- Rendu Marp : slide deck dedie quand `marp: true` dans la frontmatter -->
       <div v-else-if="isMarp" class="lumen-viewer-main lumen-viewer-main--slides">
         <LumenSlideDeck :source="content ?? ''" :title="chapter.title" />
+      </div>
+
+      <!-- Edition inline (v2.104) : remplace la vue lecture par l'editeur -->
+      <div v-else-if="editMode" class="lumen-viewer-main lumen-edit-inline">
+        <div class="lumen-edit-body" :class="{ 'lumen-edit-body--split': editPreviewOpen }">
+          <div class="lumen-edit-pane">
+            <div class="lumen-edit-pane-label">
+              <Pencil :size="11" /> Source {{ chapterKind === 'tex' ? 'LaTeX' : 'markdown' }}
+            </div>
+            <UiCodeEditor
+              v-model="editDraft"
+              :language="chapterKind === 'tex' ? 'plaintext' : 'markdown'"
+              height="100%"
+            />
+          </div>
+          <div v-if="editPreviewOpen" class="lumen-edit-pane lumen-edit-pane--preview">
+            <div class="lumen-edit-pane-label">
+              <Eye :size="11" /> Preview
+            </div>
+            <div class="lumen-edit-preview markdown-body" v-html="editPreviewHtml" />
+          </div>
+        </div>
+        <footer class="lumen-edit-foot">
+          <input
+            v-model="editMessage"
+            type="text"
+            class="form-input lumen-edit-message"
+            :placeholder="`docs: edit ${chapter.path}`"
+            maxlength="200"
+          />
+          <button
+            type="button"
+            class="lumen-edit-preview-toggle"
+            :class="{ active: editPreviewOpen }"
+            :title="editPreviewOpen ? 'Masquer la preview' : 'Afficher la preview'"
+            :disabled="editSaving"
+            @click="editPreviewOpen = !editPreviewOpen"
+          >
+            <Columns2 :size="14" />
+          </button>
+          <button type="button" class="btn-ghost" :disabled="editSaving" @click="exitEditMode">
+            Annuler
+          </button>
+          <button type="button" class="btn-primary" :disabled="editSaving" @click="saveEdit">
+            <Loader2 v-if="editSaving" :size="14" class="spin" />
+            <Save v-else :size="14" />
+            {{ editSaving ? 'Enregistrement...' : 'Enregistrer' }}
+          </button>
+        </footer>
       </div>
 
       <!-- Rendu Markdown standard sinon -->
@@ -911,9 +954,6 @@ watch(() => [props.content, props.chapter?.path], () => {
           @click="handleBodyClick"
         >
           <div v-html="html" />
-          <!-- Sommaire du bloc (v2.66) : affiche apres le contenu README
-               quand on est sur l'Accueil. Liste les autres chapitres du
-               repo en cards cliquables groupees par section. -->
           <section v-if="isAccueilChapter && accueilToc.length > 0" class="lumen-bloc-toc">
             <h2 class="lumen-bloc-toc-title">Sommaire du bloc</h2>
             <div v-for="section in accueilToc" :key="section.title" class="lumen-bloc-toc-section">
@@ -988,76 +1028,6 @@ watch(() => [props.content, props.chapter?.path], () => {
       @changed="loadLinkedTravaux"
     />
 
-    <!-- Modale d'edition de chapitre (v2.67) — teacher only, markdown only.
-         v2.69 : split-view avec preview live a droite. -->
-    <Modal v-model="editModalOpen" :max-width="editPreviewOpen ? '1400px' : '960px'">
-      <div class="lumen-edit-modal">
-        <header class="lumen-edit-head">
-          <div class="lumen-edit-title-block">
-            <h2 class="lumen-edit-title">Modifier · {{ chapter.title }}</h2>
-            <p class="lumen-edit-path">{{ chapter.path }}</p>
-          </div>
-          <div class="lumen-edit-head-actions">
-            <button
-              type="button"
-              class="lumen-edit-preview-toggle"
-              :class="{ active: editPreviewOpen }"
-              :aria-label="editPreviewOpen ? 'Masquer la preview' : 'Afficher la preview'"
-              :title="editPreviewOpen ? 'Masquer la preview' : 'Afficher la preview'"
-              :disabled="editSaving"
-              @click="editPreviewOpen = !editPreviewOpen"
-            >
-              <Columns2 :size="14" />
-              <span>{{ editPreviewOpen ? 'Preview' : 'Preview' }}</span>
-            </button>
-            <button
-              type="button"
-              class="lumen-edit-close"
-              aria-label="Fermer"
-              :disabled="editSaving"
-              @click="closeEditModal"
-            >
-              <X :size="16" />
-            </button>
-          </div>
-        </header>
-        <div class="lumen-edit-body" :class="{ 'lumen-edit-body--split': editPreviewOpen }">
-          <div class="lumen-edit-pane">
-            <div class="lumen-edit-pane-label">
-              <Pencil :size="11" /> Source markdown
-            </div>
-            <UiCodeEditor
-              v-model="editDraft"
-              language="markdown"
-              height="60vh"
-            />
-          </div>
-          <div v-if="editPreviewOpen" class="lumen-edit-pane lumen-edit-pane--preview">
-            <div class="lumen-edit-pane-label">
-              <Eye :size="11" /> Preview
-            </div>
-            <div class="lumen-edit-preview markdown-body" v-html="editPreviewHtml" />
-          </div>
-        </div>
-        <footer class="lumen-edit-foot">
-          <input
-            v-model="editMessage"
-            type="text"
-            class="form-input lumen-edit-message"
-            :placeholder="`docs: edit ${chapter.path}`"
-            maxlength="200"
-          />
-          <button type="button" class="btn-ghost" :disabled="editSaving" @click="closeEditModal">
-            Annuler
-          </button>
-          <button type="button" class="btn-primary" :disabled="editSaving" @click="saveEdit">
-            <Loader2 v-if="editSaving" :size="14" class="spin" />
-            <Save v-else :size="14" />
-            {{ editSaving ? 'Enregistrement...' : 'Enregistrer' }}
-          </button>
-        </footer>
-      </div>
-    </Modal>
   </article>
 </template>
 
@@ -1235,45 +1205,11 @@ button.lumen-viewer-chip:focus-visible {
   color: var(--text-primary);
 }
 
-/* Modale d'edition de chapitre (v2.67 + v2.69 split preview) */
-.lumen-edit-modal {
+/* Edition inline (v2.104) */
+.lumen-edit-inline {
   display: flex;
   flex-direction: column;
-  width: min(1400px, 94vw);
-  max-height: 90vh;
-}
-.lumen-edit-head {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: var(--space-md);
-  padding: var(--space-lg) var(--space-xl) var(--space-md);
-  border-bottom: 1px solid var(--border);
-}
-.lumen-edit-head-actions {
-  display: flex;
-  align-items: center;
-  gap: var(--space-sm);
-  flex-shrink: 0;
-}
-.lumen-edit-title-block { flex: 1; min-width: 0; }
-.lumen-edit-title {
-  font-size: 16px;
-  font-weight: 700;
-  color: var(--text-primary);
-  margin: 0 0 4px;
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.lumen-edit-path {
-  font-size: 12px;
-  color: var(--text-muted);
-  margin: 0;
-  font-family: 'JetBrains Mono', Menlo, Consolas, monospace;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 .lumen-edit-preview-toggle {
   display: inline-flex;
@@ -1303,27 +1239,6 @@ button.lumen-viewer-chip:focus-visible {
   border-color: rgba(var(--accent-rgb), .35);
 }
 .lumen-edit-preview-toggle:disabled { opacity: .4; cursor: not-allowed; }
-
-.lumen-edit-close {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  border-radius: var(--radius);
-  background: transparent;
-  border: 1px solid var(--border);
-  color: var(--text-muted);
-  cursor: pointer;
-  flex-shrink: 0;
-  transition: background var(--motion-fast) var(--ease-out),
-              color var(--motion-fast) var(--ease-out);
-}
-.lumen-edit-close:hover:not(:disabled) {
-  background: var(--bg-hover);
-  color: var(--text-primary);
-}
-.lumen-edit-close:disabled { opacity: .4; cursor: not-allowed; }
 
 .lumen-edit-body {
   flex: 1;
@@ -1414,12 +1329,44 @@ button.lumen-viewer-chip:focus-visible {
 }
 
 
-/* Mode TeX (v2.64) : on reuse le wrapper markdown-body pour profiter du
-   styling .lumen-codeblock standard, mais le contenu est uniquement un
-   bloc <pre><code class="language-latex"> rendu par le pipeline. */
 .lumen-viewer-main--tex .lumen-viewer-body {
   padding: var(--space-xl) var(--space-2xl, 32px);
-  max-width: none;
+  max-width: 800px;
+  margin: 0 auto;
+}
+.lumen-tex-title {
+  font-size: 24px;
+  font-weight: 700;
+  margin: 0 0 8px;
+  color: var(--text-primary);
+}
+.lumen-tex-meta {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin: 0 0 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border);
+}
+.lumen-tex-img-placeholder {
+  padding: 24px;
+  text-align: center;
+  background: var(--bg-secondary);
+  border: 1px dashed var(--border);
+  border-radius: 6px;
+  color: var(--text-muted);
+  font-size: 12px;
+  margin: 16px 0;
+}
+.lumen-tex-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 16px 0;
+}
+.lumen-tex-table td,
+.lumen-tex-table th {
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  font-size: 13px;
 }
 
 .lumen-viewer-body {
