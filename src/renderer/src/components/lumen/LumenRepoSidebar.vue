@@ -1154,18 +1154,18 @@ async function saveNewChapter(): Promise<void> {
 .lumen-repo-body {
   padding-bottom: 4px;
   position: relative;
-  margin-left: 14px;
+  padding-left: 10px;
   animation: sidebar-expand 0.15s ease-out;
 }
 .lumen-repo-body::before {
   content: '';
   position: absolute;
-  left: 0;
+  left: 10px;
   top: 0;
   bottom: 4px;
   width: 1px;
   background: var(--border);
-  opacity: 0.4;
+  opacity: 0.35;
 }
 @keyframes sidebar-expand {
   from { opacity: 0; transform: translateY(-4px); }

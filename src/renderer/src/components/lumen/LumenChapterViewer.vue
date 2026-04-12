@@ -983,7 +983,6 @@ watch(() => [props.content, props.chapter?.path], () => {
             <UiCodeEditor
               v-model="editDraft"
               :language="chapterKind === 'tex' ? 'plaintext' : 'markdown'"
-              height="100%"
             />
           </div>
           <div v-if="editPreviewOpen" class="lumen-edit-pane lumen-edit-pane--preview">
@@ -1370,8 +1369,14 @@ button.lumen-viewer-chip:focus-visible {
 .lumen-edit-pane--editor {
   flex: 1;
   min-width: 0;
+  min-height: 0;
   display: flex;
   flex-direction: column;
+}
+.lumen-edit-pane--editor :deep(.ui-code-editor) {
+  flex: 1;
+  height: auto !important;
+  min-height: 0;
 }
 .lumen-edit-body--split .lumen-edit-pane--editor {
   flex: 1 1 50%;
