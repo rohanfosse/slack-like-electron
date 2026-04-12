@@ -876,7 +876,7 @@ watch(() => [props.content, props.chapter?.path], () => {
     </div>
     <template v-else>
       <!-- Compagnon PDF (v2.103 : rendu pdf.js au lieu d'iframe) -->
-      <LumenPdfViewer v-if="companionMode && companionKind === 'pdf'" :content="companionContent" />
+      <LumenPdfViewer v-if="companionMode && companionKind === 'pdf'" :content="companionContent" :title="chapter.title" />
 
       <!-- Compagnon TeX : source LaTeX du chapitre PDF courant -->
       <div v-else-if="companionMode && companionKind === 'tex'" class="lumen-viewer-main lumen-viewer-main--tex">
@@ -884,7 +884,7 @@ watch(() => [props.content, props.chapter?.path], () => {
       </div>
 
       <!-- Rendu PDF via pdf.js (v2.103 — remplace l'iframe + plugin Chromium) -->
-      <LumenPdfViewer v-else-if="isPdf" :content="content" />
+      <LumenPdfViewer v-else-if="isPdf" :content="content" :title="chapter.title" />
 
       <!-- Rendu TeX avec KaTeX (v2.104) -->
       <div v-else-if="isTex && !editMode" class="lumen-viewer-main lumen-viewer-main--tex">

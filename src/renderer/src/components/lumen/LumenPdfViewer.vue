@@ -8,7 +8,7 @@
  * avec une couche texte selectionnable (TextLayer).
  */
 import { ref, watch, onBeforeUnmount, nextTick, computed } from 'vue'
-import { ZoomIn, ZoomOut, Maximize, FileText } from 'lucide-vue-next'
+import { ZoomIn, ZoomOut, Maximize, FileText, Download } from 'lucide-vue-next'
 // Legacy build : evite Uint8Array.toHex() absent dans Electron 35 sandbox
 import * as pdfjsLib from 'pdfjs-dist/legacy/build/pdf.mjs'
 
@@ -19,6 +19,7 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
 
 interface Props {
   content: string | null
+  title?: string
 }
 
 const props = defineProps<Props>()
@@ -62,6 +63,21 @@ function fitWidth() {
 }
 
 const zoomPercent = computed(() => Math.round(scale.value * 100))
+
+function downloadPdf() {
+  if (!props.content) return
+  const data = decodeBase64Content(props.content)
+  if (!data) return
+  const blob = new Blob([data as BlobPart], { type: 'application/pdf' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `${props.title ?? 'document'}.pdf`
+  document.body.appendChild(a)
+  a.click()
+  document.body.removeChild(a)
+  URL.revokeObjectURL(url)
+}
 
 /**
  * Decode le data URL base64 en Uint8Array.
@@ -197,6 +213,15 @@ onBeforeUnmount(() => {
         @click="fitWidth"
       >
         <Maximize :size="14" />
+      </button>
+      <button
+        type="button"
+        class="lumen-pdf-tool-btn"
+        title="Telecharger le PDF"
+        :disabled="!content"
+        @click="downloadPdf"
+      >
+        <Download :size="14" />
       </button>
       <span v-if="pageCount" class="lumen-pdf-page-count">{{ pageCount }} page{{ pageCount > 1 ? 's' : '' }}</span>
     </div>
