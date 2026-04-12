@@ -274,7 +274,7 @@
 .form-title {
   font-size: 16px;
   font-weight: 700;
-  color: var(--text-primary, #fff);
+  color: var(--text-primary);
 }
 .type-cards {
   display: flex;
@@ -301,8 +301,8 @@
 }
 .type-card.active {
   background: var(--accent-subtle, rgba(74,144,217,.12));
-  border-color: var(--accent, #4a90d9);
-  color: var(--accent, #4a90d9);
+  border-color: var(--accent);
+  color: var(--accent);
 }
 .type-card-label {
   font-size: 14px;
@@ -310,10 +310,10 @@
 }
 .type-card-desc {
   font-size: 11px;
-  color: var(--text-muted, #888);
+  color: var(--text-muted);
 }
 .type-card.active .type-card-desc {
-  color: var(--accent, #4a90d9);
+  color: var(--accent);
   opacity: .7;
 }
 .form-input {
@@ -322,14 +322,14 @@
   border-radius: 8px;
   background: var(--bg-input, var(--border));
   border: 1px solid var(--border-input, var(--bg-hover));
-  color: var(--text-primary, #fff);
+  color: var(--text-primary);
   font-size: 14px;
   font-family: inherit;
   outline: none;
   transition: border-color .15s;
 }
 .form-input:focus {
-  border-color: var(--accent, #4a90d9);
+  border-color: var(--accent);
 }
 .timer-section {
   display: flex;
@@ -348,7 +348,7 @@
 .timer-btn {
   flex: 1;
   height: 44px;
-  border-radius: 10px;
+  border-radius: 8px;
   font-size: 16px;
   font-weight: 700;
   background: var(--bg-hover);
@@ -359,8 +359,8 @@
 }
 .timer-btn.active {
   background: var(--accent-subtle, rgba(74,144,217,.12));
-  border-color: var(--accent, #4a90d9);
-  color: var(--accent, #4a90d9);
+  border-color: var(--accent);
+  color: var(--accent);
 }
 .correct-label {
   font-size: 13px;
@@ -433,7 +433,7 @@
   border-radius: 8px;
   background: var(--bg-elevated);
   border: 1px dashed var(--border-input);
-  color: var(--text-muted, #888);
+  color: var(--text-muted);
   font-size: 13px;
   cursor: pointer;
   transition: all .15s;
@@ -470,8 +470,8 @@
 }
 .max-words-btn.active {
   background: var(--accent-subtle, rgba(74,144,217,.12));
-  border-color: var(--accent, #4a90d9);
-  color: var(--accent, #4a90d9);
+  border-color: var(--accent);
+  color: var(--accent);
 }
 .form-actions {
   display: flex;
@@ -497,7 +497,7 @@
   border-radius: 8px;
   font-size: 13px;
   font-weight: 600;
-  background: var(--accent, #4a90d9);
+  background: var(--accent);
   border: none;
   color: #fff;
   cursor: pointer;
@@ -513,7 +513,7 @@
 /* Vrai/Faux toggle */
 .vf-section { display: flex; flex-direction: column; gap: 8px; }
 .vf-toggle { display: flex; gap: 10px; }
-.vf-btn { flex: 1; padding: 14px; border-radius: 10px; font-size: 15px; font-weight: 700; border: 2px solid var(--border); background: var(--bg-elevated); color: var(--text-secondary); cursor: pointer; transition: all .15s; }
+.vf-btn { flex: 1; padding: 14px; border-radius: 8px; font-size: 15px; font-weight: 700; border: 2px solid var(--border); background: var(--bg-elevated); color: var(--text-secondary); cursor: pointer; transition: all .15s; }
 .vf-vrai.active { background: #22c55e22; border-color: #22c55e; color: #22c55e; }
 .vf-faux.active { background: #ef444422; border-color: #ef4444; color: #ef4444; }
 /* Accepted answers (reponse courte) */

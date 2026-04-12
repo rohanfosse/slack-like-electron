@@ -108,7 +108,7 @@
 <style scoped>
 .rex-stats { display: flex; flex-direction: column; gap: 20px; }
 .rex-stats-empty {
-  text-align: center; color: var(--text-muted, #888); font-size: 14px; padding: 32px 0;
+  text-align: center; color: var(--text-muted); font-size: 14px; padding: 32px 0;
 }
 
 /* ── Summary cards ── */
@@ -117,16 +117,16 @@
   flex: 1; min-width: 120px;
   display: flex; flex-direction: column; align-items: center; gap: 4px;
   padding: 20px 16px; border-radius: 12px;
-  background: var(--bg-elevated, #1e1f21);
-  border: 1px solid var(--border, rgba(255,255,255,.08));
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
 }
 .rex-stat-icon { color: #14b8a6; }
 .rex-stat-value {
-  font-size: 28px; font-weight: 700; color: var(--text-primary, #fff);
+  font-size: 28px; font-weight: 700; color: var(--text-primary);
   line-height: 1;
 }
 .rex-stat-label {
-  font-size: 12px; font-weight: 600; color: var(--text-muted, #888);
+  font-size: 12px; font-weight: 600; color: var(--text-muted);
   text-transform: uppercase; letter-spacing: .5px;
 }
 
@@ -134,12 +134,12 @@
 .rex-stats-section {
   display: flex; flex-direction: column; gap: 12px;
   padding: 16px; border-radius: 12px;
-  background: var(--bg-elevated, #1e1f21);
-  border: 1px solid var(--border, rgba(255,255,255,.08));
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
 }
 .rex-stats-section-title {
   display: flex; align-items: center; gap: 6px;
-  font-size: 13px; font-weight: 700; color: var(--text-primary, #fff); margin: 0;
+  font-size: 13px; font-weight: 700; color: var(--text-primary); margin: 0;
 }
 
 /* ── Type distribution bars ── */
@@ -163,7 +163,7 @@
 }
 .rex-type-bar-count {
   width: 32px; flex-shrink: 0;
-  font-size: 12px; font-weight: 600; color: var(--text-primary, #fff);
+  font-size: 12px; font-weight: 600; color: var(--text-primary);
 }
 
 /* ── Participation trend ── */
@@ -187,7 +187,7 @@
   min-height: 2px;
 }
 .rex-trend-label {
-  font-size: 9px; color: var(--text-muted, #888);
+  font-size: 9px; color: var(--text-muted);
   white-space: nowrap;
 }
 </style>

@@ -106,7 +106,7 @@
 .podium-title {
   font-size: 28px;
   font-weight: 800;
-  color: var(--text-primary, #fff);
+  color: var(--text-primary);
   z-index: 1;
 }
 
@@ -126,7 +126,7 @@
 .podium-name {
   font-size: 16px;
   font-weight: 700;
-  color: var(--text-primary, #fff);
+  color: var(--text-primary);
   text-align: center;
   max-width: 140px;
   overflow: hidden;
@@ -136,7 +136,7 @@
 .podium-pts {
   font-size: 14px;
   font-weight: 600;
-  color: var(--text-muted, #888);
+  color: var(--text-muted);
   font-family: 'JetBrains Mono', 'Fira Code', monospace;
 }
 .podium-block {

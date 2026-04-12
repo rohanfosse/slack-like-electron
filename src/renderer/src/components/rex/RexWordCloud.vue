@@ -81,7 +81,7 @@
 }
 .rex-cloud-empty {
   text-align: center;
-  color: var(--text-muted, #888);
+  color: var(--text-muted);
   font-size: 13px;
   width: 100%;
 }

@@ -26,7 +26,7 @@
 }
 .poll-total {
   font-size: 15px;
-  color: var(--text-muted, #888);
+  color: var(--text-muted);
   font-weight: 600;
   text-align: center;
 }
@@ -41,18 +41,18 @@
   justify-content: space-between;
   padding: 12px 16px;
   background: var(--bg-elevated);
-  border-radius: 10px;
+  border-radius: 8px;
   border: 1px solid var(--border);
 }
 .poll-text {
   font-size: 17px;
   font-weight: 500;
-  color: var(--text-primary, #fff);
+  color: var(--text-primary);
 }
 .poll-badge {
   font-size: 14px;
   font-weight: 800;
-  color: var(--accent, #4a90d9);
+  color: var(--accent);
   background: rgba(74,144,217,.12);
   padding: 4px 12px;
   border-radius: 20px;

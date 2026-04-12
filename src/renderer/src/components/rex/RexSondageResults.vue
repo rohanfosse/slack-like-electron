@@ -46,7 +46,7 @@
 .rex-sondage-label {
   flex: 0 0 140px;
   font-size: 13px;
-  color: var(--text-primary, #fff);
+  color: var(--text-primary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -73,7 +73,7 @@
 }
 .rex-sondage-empty {
   text-align: center;
-  color: var(--text-muted, #888);
+  color: var(--text-muted);
   font-size: 13px;
   padding: 20px 0;
 }

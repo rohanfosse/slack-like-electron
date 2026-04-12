@@ -436,7 +436,7 @@
   width: 100%;
   height: 100%;
   overflow-y: auto;
-  background: var(--bg-main, #111214);
+  background: var(--bg-main);
   padding: 32px;
   display: flex;
   flex-direction: column;
@@ -497,17 +497,17 @@
 .draft-card-title {
   display: block;
   font-size: 14px; font-weight: 600;
-  color: var(--text-primary, #fff);
+  color: var(--text-primary);
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 .draft-card-meta {
   display: block;
-  font-size: 12px; color: var(--text-muted, #888); margin-top: 2px;
+  font-size: 12px; color: var(--text-muted); margin-top: 2px;
 }
 .draft-card-actions { display: flex; gap: 6px; flex-shrink: 0; }
 .btn-draft-clone {
   width: 28px; height: 28px; border-radius: 6px;
-  background: rgba(74,144,217,.08); color: var(--accent, #4a90d9);
+  background: rgba(74,144,217,.08); color: var(--accent);
   border: none; cursor: pointer;
   display: flex; align-items: center; justify-content: center;
   transition: all .15s;
@@ -558,8 +558,8 @@
 .create-card {
   width: 100%;
   padding: 24px;
-  background: var(--bg-elevated, #1e1f21);
-  border: 1px solid var(--border, rgba(255,255,255,.08));
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
   border-radius: var(--radius, 12px);
   display: flex;
   flex-direction: column;
@@ -573,17 +573,17 @@
 .create-input {
   width: 100%;
   padding: 12px 16px;
-  border-radius: 10px;
+  border-radius: 8px;
   background: var(--bg-input, var(--border));
   border: 1px solid var(--border-input, var(--bg-hover));
-  color: var(--text-primary, #fff);
+  color: var(--text-primary);
   font-size: 15px;
   font-family: inherit;
   outline: none;
   transition: border-color .15s;
 }
 .create-input:focus {
-  border-color: var(--accent, #4a90d9);
+  border-color: var(--accent);
 }
 .create-btn {
   display: flex;
@@ -591,10 +591,10 @@
   justify-content: center;
   gap: 8px;
   padding: 12px;
-  border-radius: 10px;
+  border-radius: 8px;
   font-size: 15px;
   font-weight: 700;
-  background: var(--accent, #4a90d9);
+  background: var(--accent);
   color: #fff;
   border: none;
   cursor: pointer;
@@ -625,7 +625,7 @@
 .session-title {
   font-size: 24px;
   font-weight: 800;
-  color: var(--text-primary, #fff);
+  color: var(--text-primary);
 }
 .session-status {
   font-size: 11px;
@@ -657,8 +657,8 @@
 .btn-end:hover { background: rgba(239,68,68,.2); }
 .participant-bar {
   display: flex; align-items: center; gap: 8px;
-  padding: 12px 16px; border-radius: 10px;
-  background: var(--bg-elevated); color: var(--text-muted, #888);
+  padding: 12px 16px; border-radius: 8px;
+  background: var(--bg-elevated); color: var(--text-muted);
   font-size: 14px; font-weight: 600;
 }
 
@@ -676,26 +676,26 @@
 .activities-title {
   font-size: 16px;
   font-weight: 700;
-  color: var(--text-primary, #fff);
+  color: var(--text-primary);
 }
 .btn-add-activity {
   display: flex; align-items: center; gap: 6px;
   padding: 6px 14px; border-radius: 8px; font-size: 13px; font-weight: 600;
   background: var(--accent-subtle, rgba(74,144,217,.12));
-  color: var(--accent, #4a90d9); border: 1px solid rgba(74,144,217,.2);
+  color: var(--accent); border: 1px solid rgba(74,144,217,.2);
   cursor: pointer; transition: all .15s;
 }
 .btn-add-activity:hover { background: rgba(74,144,217,.2); }
 .activity-form-wrapper {
   padding: 20px;
-  background: var(--bg-elevated, #1e1f21);
-  border: 1px solid var(--border, rgba(255,255,255,.08));
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
   border-radius: var(--radius, 12px);
 }
 .no-activities {
   text-align: center;
   padding: 32px;
-  color: var(--text-muted, #888);
+  color: var(--text-muted);
   font-size: 14px;
 }
 .activity-list {
@@ -708,9 +708,9 @@
   align-items: center;
   gap: 12px;
   padding: 14px 16px;
-  background: var(--bg-elevated, #1e1f21);
-  border: 1px solid var(--border, rgba(255,255,255,.08));
-  border-radius: 10px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 8px;
   transition: all .15s;
 }
 .activity-card.closed {
@@ -718,7 +718,7 @@
 }
 .activity-card-icon {
   width: 36px; height: 36px; border-radius: 8px;
-  background: rgba(74,144,217,.12); color: var(--accent, #4a90d9);
+  background: rgba(74,144,217,.12); color: var(--accent);
   display: flex; align-items: center; justify-content: center;
   flex-shrink: 0;
 }
@@ -735,7 +735,7 @@
 }
 .activity-card-title {
   font-size: 14px; font-weight: 600;
-  color: var(--text-primary, #fff);
+  color: var(--text-primary);
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 .activity-card-done {
@@ -755,7 +755,7 @@
 .btn-launch:hover { filter: brightness(1.1); }
 .btn-edit-activity {
   width: 28px; height: 28px; border-radius: 6px;
-  background: rgba(74,144,217,.08); color: var(--accent, #4a90d9);
+  background: rgba(74,144,217,.08); color: var(--accent);
   border: none; cursor: pointer;
   display: flex; align-items: center; justify-content: center;
   transition: all .15s;
@@ -770,7 +770,7 @@
 }
 .btn-delete-activity:hover { background: rgba(239,68,68,.18); }
 .drag-handle {
-  color: var(--text-muted, #888);
+  color: var(--text-muted);
   cursor: grab;
   display: flex; align-items: center;
   flex-shrink: 0;
@@ -793,7 +793,7 @@
 }
 .activity-topbar-info {
   display: flex; align-items: center; gap: 8px;
-  color: var(--accent, #4a90d9);
+  color: var(--accent);
 }
 .activity-topbar-type {
   font-size: 13px; font-weight: 700;
@@ -802,7 +802,7 @@
   flex: 1;
   font-size: 28px;
   font-weight: 800;
-  color: var(--text-primary, #fff);
+  color: var(--text-primary);
 }
 .activity-topbar-actions {
   display: flex; gap: 8px; flex-shrink: 0;
@@ -818,7 +818,7 @@
 .btn-next {
   display: flex; align-items: center; gap: 6px;
   padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 600;
-  background: var(--accent, #4a90d9); color: #fff; border: none;
+  background: var(--accent); color: #fff; border: none;
   cursor: pointer; transition: all .15s;
 }
 .btn-next:hover { filter: brightness(1.1); }
@@ -834,7 +834,7 @@
   flex-direction: column;
   align-items: center;
   gap: 12px;
-  color: var(--text-muted, #888);
+  color: var(--text-muted);
   font-size: 18px;
   font-weight: 600;
 }
@@ -875,10 +875,10 @@
   align-items: center;
   gap: 6px;
   padding: 10px 24px;
-  border-radius: 10px;
+  border-radius: 8px;
   font-size: 15px;
   font-weight: 700;
-  background: var(--accent, #4a90d9);
+  background: var(--accent);
   color: #fff;
   border: none;
   cursor: pointer;
@@ -898,12 +898,12 @@
 }
 .btn-dismiss-podium {
   padding: 10px 32px;
-  border-radius: 10px;
+  border-radius: 8px;
   font-size: 15px;
   font-weight: 700;
-  background: var(--bg-elevated, #1e1f21);
-  border: 1px solid var(--border, rgba(255,255,255,.08));
-  color: var(--text-primary, #fff);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  color: var(--text-primary);
   cursor: pointer;
   transition: all .15s;
   z-index: 1;

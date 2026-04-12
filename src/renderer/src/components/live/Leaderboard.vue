@@ -66,9 +66,9 @@
   align-items: center;
   gap: 12px;
   padding: 12px 16px;
-  background: var(--bg-elevated, #1e1f21);
-  border: 1px solid var(--border, rgba(255,255,255,.08));
-  border-radius: 10px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 8px;
   transition: all 0.4s cubic-bezier(.25,.8,.25,1);
 }
 .lb-row.lb-first {
@@ -86,7 +86,7 @@
   flex: 1;
   font-size: 15px;
   font-weight: 600;
-  color: var(--text-primary, #fff);
+  color: var(--text-primary);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -94,7 +94,7 @@
 .lb-points {
   font-size: 18px;
   font-weight: 800;
-  color: var(--text-primary, #fff);
+  color: var(--text-primary);
   font-family: 'JetBrains Mono', 'Fira Code', monospace;
 }
 .lb-round-pts {

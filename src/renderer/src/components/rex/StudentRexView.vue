@@ -608,12 +608,12 @@
 .rex-join-title {
   font-size: 22px;
   font-weight: 700;
-  color: var(--text-primary, #fff);
+  color: var(--text-primary);
   margin: 0;
 }
 .rex-join-subtitle {
   font-size: 14px;
-  color: var(--text-muted, #888);
+  color: var(--text-muted);
   margin: 0;
   text-align: center;
 }
@@ -626,7 +626,7 @@
 .rex-join-input {
   width: 160px;
   padding: 12px 16px;
-  border-radius: 10px;
+  border-radius: 8px;
   border: 1px solid rgba(13, 148, 136, 0.3);
   background: rgba(13, 148, 136, 0.06);
   color: #0d9488;
@@ -654,12 +654,12 @@
 .rex-btn-ghost {
   display: inline-flex; align-items: center; gap: 6px;
   padding: 8px 14px; border-radius: 8px;
-  border: 1px solid var(--border, rgba(255,255,255,.08));
+  border: 1px solid var(--border);
   background: transparent; color: var(--text-secondary, #aaa);
   font-size: 12px; font-weight: 600; cursor: pointer;
   transition: all var(--motion-slow) var(--ease-out); font-family: var(--font, inherit);
 }
-.rex-btn-ghost:hover { background: var(--bg-hover); color: var(--text-primary, #fff); }
+.rex-btn-ghost:hover { background: var(--bg-hover); color: var(--text-primary); }
 
 /* ── Student header ── */
 .rex-student-header {
@@ -670,7 +670,7 @@
 .rex-student-title {
   font-size: 18px;
   font-weight: 700;
-  color: var(--text-primary, #fff);
+  color: var(--text-primary);
   margin: 0;
 }
 
@@ -695,7 +695,7 @@
 }
 .rex-waiting-text {
   font-size: 15px;
-  color: var(--text-muted, #888);
+  color: var(--text-muted);
 }
 
 /* ── Respond ── */
@@ -722,7 +722,7 @@
 .rex-respond-title {
   font-size: 18px;
   font-weight: 600;
-  color: var(--text-primary, #fff);
+  color: var(--text-primary);
   margin: 0;
 }
 .rex-respond-body {
@@ -733,9 +733,9 @@
 .rex-respond-input {
   padding: 10px 14px;
   border-radius: 8px;
-  border: 1px solid var(--border, rgba(255,255,255,.08));
-  background: var(--bg-elevated, #1e1f21);
-  color: var(--text-primary, #fff);
+  border: 1px solid var(--border);
+  background: var(--bg-elevated);
+  color: var(--text-primary);
   font-size: 14px;
   font-family: var(--font, inherit);
   outline: none;
@@ -745,9 +745,9 @@
 .rex-respond-textarea {
   padding: 10px 14px;
   border-radius: 8px;
-  border: 1px solid var(--border, rgba(255,255,255,.08));
-  background: var(--bg-elevated, #1e1f21);
-  color: var(--text-primary, #fff);
+  border: 1px solid var(--border);
+  background: var(--bg-elevated);
+  color: var(--text-primary);
   font-size: 14px;
   font-family: var(--font, inherit);
   outline: none;
@@ -831,7 +831,7 @@
 .rex-closed-title {
   font-size: 15px;
   font-weight: 600;
-  color: var(--text-primary, #fff);
+  color: var(--text-primary);
   margin: 0;
 }
 
@@ -842,7 +842,7 @@
 }
 .rex-ended-text {
   font-size: 15px;
-  color: var(--text-muted, #888);
+  color: var(--text-muted);
 }
 
 /* ── Async ── */
@@ -860,8 +860,8 @@
 }
 .rex-async-card {
   border-radius: 12px;
-  border: 1px solid var(--border, rgba(255,255,255,.08));
-  background: var(--bg-elevated, #1e1f21);
+  border: 1px solid var(--border);
+  background: var(--bg-elevated);
   overflow: hidden;
   transition: border-color .15s;
 }
@@ -873,10 +873,10 @@
 }
 .rex-async-card.responded .rex-async-card-header { cursor: default; }
 .rex-async-card-title {
-  flex: 1; font-size: 14px; font-weight: 600; color: var(--text-primary, #fff);
+  flex: 1; font-size: 14px; font-weight: 600; color: var(--text-primary);
 }
 .rex-async-done-icon { color: #0d9488; flex-shrink: 0; }
-.rex-async-arrow { color: var(--text-muted, #888); font-size: 11px; }
+.rex-async-arrow { color: var(--text-muted); font-size: 11px; }
 .rex-async-done {
   display: flex; align-items: center; gap: 6px;
   padding: 10px 16px 14px;
@@ -887,7 +887,7 @@
 }
 /* Sondage options */
 .rex-sondage-opts { display: flex; flex-direction: column; gap: 8px; }
-.rex-sondage-opt { padding: 12px 16px; border-radius: 10px; border: 2px solid var(--border); background: var(--bg-elevated); color: var(--text-primary); font-size: 14px; text-align: left; cursor: pointer; transition: all .15s; }
+.rex-sondage-opt { padding: 12px 16px; border-radius: 8px; border: 2px solid var(--border); background: var(--bg-elevated); color: var(--text-primary); font-size: 14px; text-align: left; cursor: pointer; transition: all .15s; }
 .rex-sondage-opt.selected { border-color: #0d9488; background: rgba(13, 148, 136, .1); color: #0d9488; font-weight: 600; }
 /* Humeur emojis */
 .rex-humeur-grid { display: flex; justify-content: center; gap: 12px; }
@@ -895,7 +895,7 @@
 .rex-humeur-btn.selected { border-color: #0d9488; background: rgba(13, 148, 136, .1); transform: scale(1.15); }
 /* Priorite classement */
 .rex-priorite-list { display: flex; flex-direction: column; gap: 6px; }
-.rex-priorite-item { display: flex; align-items: center; gap: 8px; padding: 10px 14px; border-radius: 10px; background: var(--bg-elevated); border: 1px solid var(--border); }
+.rex-priorite-item { display: flex; align-items: center; gap: 8px; padding: 10px 14px; border-radius: 8px; background: var(--bg-elevated); border: 1px solid var(--border); }
 .rex-priorite-rank { font-weight: 700; color: #0d9488; min-width: 20px; }
 .rex-priorite-label { flex: 1; font-size: 14px; color: var(--text-primary); }
 .rex-priorite-btns { display: flex; flex-direction: column; gap: 2px; }

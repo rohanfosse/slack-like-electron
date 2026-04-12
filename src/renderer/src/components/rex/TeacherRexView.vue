@@ -528,10 +528,10 @@
 .rex-draft-title-row { display: flex; align-items: center; gap: 8px; }
 .rex-draft-title {
   font-size: 13px; font-weight: 600;
-  color: var(--text-primary, #fff);
+  color: var(--text-primary);
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
-.rex-draft-meta { display: block; font-size: 11px; color: var(--text-muted, #888); margin-top: 2px; }
+.rex-draft-meta { display: block; font-size: 11px; color: var(--text-muted); margin-top: 2px; }
 .rex-async-badge {
   display: inline-flex; align-items: center; gap: 4px;
   padding: 2px 8px; border-radius: 20px;
@@ -548,7 +548,7 @@
 .rex-input-dt { flex: unset; min-width: 0; width: auto; font-size: 13px; }
 .rex-draft-actions { display: flex; gap: 6px; flex-shrink: 0; }
 .rex-drag-handle {
-  color: var(--text-muted, #888); cursor: grab; display: flex; align-items: center; flex-shrink: 0;
+  color: var(--text-muted); cursor: grab; display: flex; align-items: center; flex-shrink: 0;
 }
 .rex-drag-handle:active { cursor: grabbing; }
 .rex-act-row.rex-act-dragging { opacity: .4; border-style: dashed; }
@@ -567,7 +567,7 @@
 }
 .rex-subtitle {
   font-size: 14px;
-  color: var(--text-muted, #888);
+  color: var(--text-muted);
   margin: 0;
 }
 .rex-create-form {
@@ -581,9 +581,9 @@
   min-width: 200px;
   padding: 10px 14px;
   border-radius: 8px;
-  border: 1px solid var(--border, rgba(255,255,255,.08));
-  background: var(--bg-elevated, #1e1f21);
-  color: var(--text-primary, #fff);
+  border: 1px solid var(--border);
+  background: var(--bg-elevated);
+  color: var(--text-primary);
   font-size: 14px;
   font-family: var(--font, inherit);
   outline: none;
@@ -593,9 +593,9 @@
 .rex-select {
   padding: 10px 14px;
   border-radius: 8px;
-  border: 1px solid var(--border, rgba(255,255,255,.08));
-  background: var(--bg-elevated, #1e1f21);
-  color: var(--text-primary, #fff);
+  border: 1px solid var(--border);
+  background: var(--bg-elevated);
+  color: var(--text-primary);
   font-size: 13px;
   font-family: var(--font, inherit);
   outline: none;
@@ -622,12 +622,12 @@
 .rex-btn-ghost {
   display: inline-flex; align-items: center; gap: 6px;
   padding: 8px 14px; border-radius: 8px;
-  border: 1px solid var(--border, rgba(255,255,255,.08));
+  border: 1px solid var(--border);
   background: transparent; color: var(--text-secondary, #aaa);
   font-size: 12px; font-weight: 600; cursor: pointer;
   transition: all var(--motion-slow) var(--ease-out); font-family: var(--font, inherit);
 }
-.rex-btn-ghost:hover { background: var(--bg-hover); color: var(--text-primary, #fff); }
+.rex-btn-ghost:hover { background: var(--bg-hover); color: var(--text-primary); }
 .rex-btn-sm {
   display: inline-flex; align-items: center; gap: 4px;
   padding: 5px 10px; border-radius: 6px; border: none;
@@ -640,11 +640,11 @@
 .rex-btn-teal:hover { background: #14b8a6; }
 .rex-btn-sm.rex-btn-ghost {
   background: transparent; color: var(--text-secondary, #aaa);
-  border: 1px solid var(--border, rgba(255,255,255,.08));
+  border: 1px solid var(--border);
 }
 .rex-btn-ghost-danger {
-  background: transparent; color: var(--text-muted, #888);
-  border: 1px solid var(--border, rgba(255,255,255,.08));
+  background: transparent; color: var(--text-muted);
+  border: 1px solid var(--border);
 }
 .rex-btn-ghost-danger:hover { color: #ef4444; border-color: rgba(239, 68, 68, 0.3); }
 
@@ -676,7 +676,7 @@
 }
 .rex-status-badge.waiting { background: rgba(13, 148, 136, 0.12); color: #14b8a6; }
 .rex-status-badge.active  { background: rgba(34, 197, 94, 0.12); color: #22c55e; }
-.rex-status-badge.ended   { background: rgba(255, 255, 255, 0.06); color: var(--text-muted, #888); }
+.rex-status-badge.ended   { background: rgba(255, 255, 255, 0.06); color: var(--text-muted); }
 
 /* ── Export ── */
 .rex-export-wrap { position: relative; }
@@ -685,8 +685,8 @@
   top: 100%;
   right: 0;
   margin-top: 4px;
-  background: var(--bg-elevated, #1e1f21);
-  border: 1px solid var(--border, rgba(255,255,255,.08));
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
   border-radius: 8px;
   overflow: hidden;
   z-index: 10;
@@ -697,7 +697,7 @@
   padding: 8px 20px;
   border: none;
   background: transparent;
-  color: var(--text-primary, #fff);
+  color: var(--text-primary);
   font-size: 13px;
   cursor: pointer;
   text-align: left;
@@ -734,7 +734,7 @@
 .rex-live-title {
   font-size: 16px;
   font-weight: 600;
-  color: var(--text-primary, #fff);
+  color: var(--text-primary);
   margin: 0;
 }
 .rex-type-tag {
@@ -762,7 +762,7 @@
 }
 .rex-no-results {
   text-align: center;
-  color: var(--text-muted, #888);
+  color: var(--text-muted);
   font-size: 13px;
   padding: 16px 0;
 }
@@ -777,7 +777,7 @@
 .rex-section-title {
   font-size: 14px;
   font-weight: 700;
-  color: var(--text-primary, #fff);
+  color: var(--text-primary);
   margin: 0;
 }
 .rex-act-row {
@@ -785,9 +785,9 @@
   align-items: center;
   gap: 10px;
   padding: 10px 14px;
-  background: var(--bg-elevated, #1e1f21);
-  border: 1px solid var(--border, rgba(255,255,255,.08));
-  border-radius: 10px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 8px;
   transition: all var(--motion-slow) var(--ease-out);
 }
 .rex-act-icon { color: #14b8a6; flex-shrink: 0; }
@@ -795,11 +795,11 @@
   flex: 1;
   font-size: 13px;
   font-weight: 500;
-  color: var(--text-primary, #fff);
+  color: var(--text-primary);
 }
 .rex-act-type {
   font-size: 11px;
-  color: var(--text-muted, #888);
+  color: var(--text-muted);
 }
 .rex-act-status {
   font-size: 10px;
@@ -808,9 +808,9 @@
   padding: 2px 8px;
   border-radius: 4px;
 }
-.rex-act-status.pending { color: var(--text-muted, #888); background: rgba(255,255,255,.04); }
+.rex-act-status.pending { color: var(--text-muted); background: rgba(255,255,255,.04); }
 .rex-act-status.live    { color: #0d9488; background: rgba(13, 148, 136, 0.1); }
-.rex-act-status.closed  { color: var(--text-muted, #888); background: rgba(255,255,255,.04); }
+.rex-act-status.closed  { color: var(--text-muted); background: rgba(255,255,255,.04); }
 .rex-act-actions {
   display: flex;
   gap: 6px;

@@ -174,9 +174,9 @@
   align-items: center;
   gap: 8px;
   padding: 12px 14px;
-  border-radius: 10px;
-  border: 1px solid var(--border, rgba(255,255,255,.08));
-  background: var(--bg-elevated, #1e1f21);
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg-elevated);
   color: var(--text-secondary, #aaa);
   font-size: 13px;
   font-weight: 500;
@@ -196,9 +196,9 @@
 .rex-form-input {
   padding: 10px 14px;
   border-radius: 8px;
-  border: 1px solid var(--border, rgba(255,255,255,.08));
-  background: var(--bg-elevated, #1e1f21);
-  color: var(--text-primary, #fff);
+  border: 1px solid var(--border);
+  background: var(--bg-elevated);
+  color: var(--text-primary);
   font-size: 14px;
   font-family: var(--font, inherit);
   outline: none;
@@ -223,8 +223,8 @@
 .rex-form-option-btns button {
   padding: 6px 14px;
   border-radius: 6px;
-  border: 1px solid var(--border, rgba(255,255,255,.08));
-  background: var(--bg-elevated, #1e1f21);
+  border: 1px solid var(--border);
+  background: var(--bg-elevated);
   color: var(--text-secondary, #aaa);
   font-size: 12px;
   font-weight: 600;
@@ -264,7 +264,7 @@
 .rex-form-cancel {
   padding: 10px 16px;
   border-radius: 8px;
-  border: 1px solid var(--border, rgba(255,255,255,.08));
+  border: 1px solid var(--border);
   background: transparent;
   color: var(--text-secondary, #aaa);
   font-size: 13px;

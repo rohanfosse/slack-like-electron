@@ -39,14 +39,14 @@
   align-items: center;
   gap: 12px;
   padding: 32px 40px;
-  background: var(--bg-elevated, #1e1f21);
-  border: 1px solid var(--border, rgba(255,255,255,.08));
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
   border-radius: var(--radius, 12px);
 }
 .join-code-label {
   font-size: 13px;
   font-weight: 600;
-  color: var(--text-muted, #888);
+  color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 1px;
 }
@@ -58,10 +58,10 @@
   font-family: 'JetBrains Mono', 'Fira Code', monospace;
   font-size: 48px;
   font-weight: 800;
-  color: var(--text-primary, #fff);
+  color: var(--text-primary);
   background: var(--bg-hover);
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: 8px;
   width: 60px;
   height: 72px;
   display: flex;
@@ -89,7 +89,7 @@
 }
 .join-code-copy:hover {
   background: var(--bg-elevated);
-  color: var(--text-primary, #fff);
+  color: var(--text-primary);
 }
 .join-code-copy.copied {
   color: #22c55e;

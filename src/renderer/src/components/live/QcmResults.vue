@@ -38,7 +38,7 @@
 }
 .qcm-total {
   font-size: 15px;
-  color: var(--text-muted, #888);
+  color: var(--text-muted);
   font-weight: 600;
   text-align: center;
 }
@@ -51,7 +51,7 @@
 .qcm-label {
   font-size: 18px;
   font-weight: 600;
-  color: var(--text-primary, #fff);
+  color: var(--text-primary);
   text-align: right;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -72,13 +72,13 @@
 .qcm-count {
   font-size: 20px;
   font-weight: 800;
-  color: var(--text-primary, #fff);
+  color: var(--text-primary);
   text-align: center;
 }
 .qcm-pct {
   font-size: 14px;
   font-weight: 600;
-  color: var(--text-muted, #888);
+  color: var(--text-muted);
   text-align: center;
 }
 </style>

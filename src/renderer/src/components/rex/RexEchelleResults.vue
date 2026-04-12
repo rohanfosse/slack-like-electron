@@ -74,7 +74,7 @@
 .rex-echelle-avg-sep {
   font-size: 20px;
   font-weight: 600;
-  color: var(--text-muted, #888);
+  color: var(--text-muted);
 }
 .rex-echelle-stars {
   display: flex;
@@ -90,7 +90,7 @@
 }
 .rex-echelle-total {
   font-size: 13px;
-  color: var(--text-muted, #888);
+  color: var(--text-muted);
 }
 .rex-echelle-dist {
   display: flex;

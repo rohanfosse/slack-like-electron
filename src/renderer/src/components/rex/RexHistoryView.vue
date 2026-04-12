@@ -188,30 +188,30 @@
 .rex-filter-search, .rex-filter-dates {
   display: flex; align-items: center; gap: 8px;
 }
-.rex-filter-icon { color: var(--text-muted, #888); flex-shrink: 0; }
+.rex-filter-icon { color: var(--text-muted); flex-shrink: 0; }
 .rex-input {
   padding: 8px 12px; border-radius: 8px;
-  border: 1px solid var(--border, rgba(255,255,255,.08));
-  background: var(--bg-elevated, #1e1f21);
-  color: var(--text-primary, #fff); font-size: 13px;
+  border: 1px solid var(--border);
+  background: var(--bg-elevated);
+  color: var(--text-primary); font-size: 13px;
   font-family: var(--font, inherit); outline: none;
   transition: border-color .4s;
 }
 .rex-input:focus { border-color: #0d9488; }
 .rex-input-date { width: 140px; }
-.rex-filter-sep { color: var(--text-muted, #888); font-size: 12px; }
+.rex-filter-sep { color: var(--text-muted); font-size: 12px; }
 
 /* ── Empty / Loading ── */
 .rex-history-empty {
-  text-align: center; color: var(--text-muted, #888); font-size: 14px; padding: 32px 0;
+  text-align: center; color: var(--text-muted); font-size: 14px; padding: 32px 0;
 }
 
 /* ── Cards ── */
 .rex-history-list { display: flex; flex-direction: column; gap: 8px; }
 .rex-history-card {
-  background: var(--bg-elevated, #1e1f21);
-  border: 1px solid var(--border, rgba(255,255,255,.08));
-  border-radius: 10px; overflow: hidden; transition: border-color .3s;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 8px; overflow: hidden; transition: border-color .3s;
 }
 .rex-history-card:hover { border-color: rgba(13, 148, 136, 0.3); }
 .rex-history-card--expanded { border-color: rgba(13, 148, 136, 0.4); }
@@ -225,11 +225,11 @@
 .rex-history-card-info { flex: 1; min-width: 0; }
 .rex-history-card-title {
   display: block; font-size: 14px; font-weight: 600;
-  color: var(--text-primary, #fff);
+  color: var(--text-primary);
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 .rex-history-card-date {
-  display: block; font-size: 11px; color: var(--text-muted, #888); margin-top: 2px;
+  display: block; font-size: 11px; color: var(--text-muted); margin-top: 2px;
 }
 
 .rex-history-card-stats { display: flex; gap: 14px; flex-shrink: 0; }
@@ -238,7 +238,7 @@
   font-size: 12px; color: var(--text-secondary, #aaa);
 }
 
-.rex-history-chevron { color: var(--text-muted, #888); flex-shrink: 0; }
+.rex-history-chevron { color: var(--text-muted); flex-shrink: 0; }
 
 /* ── Expanded body ── */
 .rex-history-card-body {
@@ -247,7 +247,7 @@
   border-top: 1px solid var(--border, rgba(255,255,255,.06));
 }
 .rex-history-loading {
-  text-align: center; color: var(--text-muted, #888); font-size: 13px; padding: 12px 0;
+  text-align: center; color: var(--text-muted); font-size: 13px; padding: 12px 0;
 }
 
 .rex-history-activity {
@@ -261,7 +261,7 @@
 }
 .rex-act-icon { color: #14b8a6; flex-shrink: 0; }
 .rex-history-act-title {
-  font-size: 13px; font-weight: 600; color: var(--text-primary, #fff); flex: 1;
+  font-size: 13px; font-weight: 600; color: var(--text-primary); flex: 1;
 }
 .rex-type-tag {
   padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: 600;
@@ -269,6 +269,6 @@
 }
 .rex-history-act-results { min-height: 40px; }
 .rex-no-results {
-  text-align: center; color: var(--text-muted, #888); font-size: 12px; padding: 8px 0;
+  text-align: center; color: var(--text-muted); font-size: 12px; padding: 8px 0;
 }
 </style>

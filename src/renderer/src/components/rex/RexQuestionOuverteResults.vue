@@ -62,9 +62,9 @@
 }
 .rex-qo-card {
   padding: 12px 14px;
-  background: var(--bg-elevated, #1e1f21);
-  border: 1px solid var(--border, rgba(255,255,255,.08));
-  border-radius: 10px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 8px;
   transition: all var(--motion-slow) var(--ease-out);
 }
 .rex-qo-card.pinned {
@@ -73,7 +73,7 @@
 }
 .rex-qo-text {
   font-size: 14px;
-  color: var(--text-primary, #fff);
+  color: var(--text-primary);
   line-height: 1.5;
   margin: 0;
 }
@@ -85,7 +85,7 @@
 }
 .rex-qo-time {
   font-size: 11px;
-  color: var(--text-muted, #888);
+  color: var(--text-muted);
 }
 .rex-qo-pin {
   display: flex;
@@ -96,7 +96,7 @@
   border-radius: 6px;
   border: none;
   background: transparent;
-  color: var(--text-muted, #888);
+  color: var(--text-muted);
   cursor: pointer;
   transition: all var(--motion-slow) var(--ease-out);
 }
@@ -109,7 +109,7 @@
 }
 .rex-qo-empty {
   text-align: center;
-  color: var(--text-muted, #888);
+  color: var(--text-muted);
   font-size: 13px;
   padding: 20px 0;
 }

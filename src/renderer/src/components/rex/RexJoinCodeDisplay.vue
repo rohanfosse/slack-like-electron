@@ -61,7 +61,7 @@
   color: #0d9488;
   background: rgba(13, 148, 136, 0.06);
   border: 1px solid rgba(13, 148, 136, 0.2);
-  border-radius: 10px;
+  border-radius: 8px;
   width: 60px;
   height: 72px;
   display: flex;

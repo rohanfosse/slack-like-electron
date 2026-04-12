@@ -56,7 +56,7 @@
 }
 .wordcloud-total {
   font-size: 15px;
-  color: var(--text-muted, #888);
+  color: var(--text-muted);
   font-weight: 600;
 }
 .wordcloud-container {
