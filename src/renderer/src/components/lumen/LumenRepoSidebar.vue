@@ -16,7 +16,7 @@
  */
 import { ref, computed, watch, nextTick } from 'vue'
 import { storeToRefs } from 'pinia'
-import { FileText, FileDown, FileCode, AlertTriangle, StickyNote, Search, X, Eye, EyeOff, BookOpen, Presentation, Lightbulb, Wrench, Hammer, Folder, Plus, Loader2, ChevronsDown, ChevronsUp, ChevronRight } from 'lucide-vue-next'
+import { FileText, FileDown, FileCode, AlertTriangle, StickyNote, Search, X, Eye, EyeOff, BookOpen, Presentation, Lightbulb, Wrench, Hammer, Folder, Plus, Loader2, ChevronsDown, ChevronsUp, ChevronRight, Check } from 'lucide-vue-next'
 import type { Component } from 'vue'
 import { useLumenStore } from '@/stores/lumen'
 import { useToast } from '@/composables/useToast'
@@ -96,11 +96,15 @@ const HIDDEN_KINDS = new Set<LumenRepoKind>(['student', 'group', 'readme'])
 const sortedRepos = computed(() => [...props.repos]
   .filter((r) => !HIDDEN_KINDS.has(r.manifest?.kind as LumenRepoKind))
   .sort((a, b) => {
-    // 1. Prefixe numerique en premier (0-Math, 1-SE, 2-POO, ...)
+    // 1. Cours termines en bas (v2.102)
+    const aDone = isRepoDone(a)
+    const bDone = isRepoDone(b)
+    if (aDone !== bDone) return aDone ? 1 : -1
+    // 2. Prefixe numerique (0-Math, 1-SE, 2-POO, ...)
     const pa = extractRepoNumericPrefix(a)
     const pb = extractRepoNumericPrefix(b)
     if (pa !== pb) return pa - pb
-    // 2. Tie-break alphabetique sur le fullName
+    // 3. Tie-break alphabetique
     return a.fullName.localeCompare(b.fullName)
   }))
 
@@ -333,6 +337,50 @@ function toggleRepo(repoId: number): void {
   else next.add(repoId)
   collapsedRepos.value = next
   saveCollapsedRepos(next)
+}
+
+// ── Sections accordeon (v2.102) ──────────────────────────────────────────
+// Une seule section ouverte par repo (accordeon). Persiste en localStorage.
+const OPEN_SECTION_KEY = 'lumen.sidebar.openSections'
+function loadOpenSections(): Record<number, string | null> {
+  try {
+    const raw = localStorage.getItem(OPEN_SECTION_KEY)
+    return raw ? JSON.parse(raw) : {}
+  } catch { return {} }
+}
+const openSections = ref<Record<number, string | null>>(loadOpenSections())
+function saveOpenSections(): void {
+  try { localStorage.setItem(OPEN_SECTION_KEY, JSON.stringify(openSections.value)) } catch { /* noop */ }
+}
+function toggleSection(repoId: number, sectionTitle: string): void {
+  const current = openSections.value[repoId]
+  openSections.value = {
+    ...openSections.value,
+    [repoId]: current === sectionTitle ? null : sectionTitle,
+  }
+  saveOpenSections()
+}
+function isSectionOpen(repoId: number, sectionTitle: string): boolean {
+  return openSections.value[repoId] === sectionTitle
+}
+
+// Auto-open : quand le chapitre actif change, ouvrir sa section
+watch([() => props.currentRepoId, () => props.currentChapterPath], () => {
+  if (!props.currentRepoId || !props.currentChapterPath) return
+  const repo = props.repos.find(r => r.id === props.currentRepoId)
+  if (!repo?.manifest?.chapters) return
+  const ch = repo.manifest.chapters.find(c => c.path === props.currentChapterPath)
+  if (ch?.section) {
+    openSections.value = { ...openSections.value, [repo.id]: ch.section }
+    saveOpenSections()
+  }
+})
+
+// ── Cours termines (v2.102) ─────────────────────────────────────────────
+function isRepoDone(repo: LumenRepo): boolean {
+  const chapters = repo.manifest?.chapters ?? []
+  if (!chapters.length) return false
+  return chapters.every(ch => myReads.value.has(`${repo.id}::${ch.path}`))
 }
 
 // ── Recherche fulltext FTS5 (v2.49) ──────────────────────────────────────
@@ -620,7 +668,7 @@ async function saveNewChapter(): Promise<void> {
               v-for="{ repo, groups } in section.repos"
               :key="repo.id"
               class="lumen-repo-item"
-              :class="{ 'is-hidden-repo': canToggleVisibility && !repo.isVisible }"
+              :class="{ 'is-hidden-repo': canToggleVisibility && !repo.isVisible, 'is-done': isRepoDone(repo) }"
             >
           <div class="lumen-repo-row">
             <button
@@ -637,6 +685,7 @@ async function saveNewChapter(): Promise<void> {
                 class="lumen-repo-progress"
                 :title="`${repoReadProgress(repo).read}/${repoReadProgress(repo).total} chapitres lus`"
               >{{ repoReadProgress(repo).read }}/{{ repoReadProgress(repo).total }}</span>
+              <Check v-if="isRepoDone(repo)" :size="12" class="lumen-repo-done" />
               <AlertTriangle v-if="repo.manifestError" :size="13" class="lumen-repo-warning" />
             </button>
             <button
@@ -660,34 +709,26 @@ async function saveNewChapter(): Promise<void> {
 
           <div v-show="!collapsedRepos.has(repo.id)" class="lumen-repo-body">
             <div v-for="group in groups" :key="group.title" class="lumen-section">
-              <div class="lumen-section-row">
-                <p class="lumen-section-title">
-                  <span v-if="splitSectionTitle(group.title).parent" class="lumen-section-parent">
-                    {{ splitSectionTitle(group.title).parent }}
-                  </span>
-                  <span class="lumen-section-child">
-                    {{ splitSectionTitle(group.title).child }}
-                  </span>
-                </p>
+              <button
+                type="button"
+                class="lumen-section-row"
+                :aria-expanded="isSectionOpen(repo.id, group.title)"
+                @click="toggleSection(repo.id, group.title)"
+              >
+                <ChevronRight :size="10" class="lumen-section-chevron" :class="{ open: isSectionOpen(repo.id, group.title) }" />
+                <span class="lumen-section-child">
+                  {{ splitSectionTitle(group.title).child }}
+                </span>
+                <span class="lumen-section-count">{{ group.chapters.length }}</span>
                 <span
                   v-if="formatDuration(group.totalDuration)"
                   class="lumen-section-duration"
-                  :title="`Duree totale : ${group.totalDuration} min (${group.chapters.length} chapitres)`"
+                  :title="`Duree totale : ${group.totalDuration} min`"
                 >
                   {{ formatDuration(group.totalDuration) }}
                 </span>
-                <button
-                  v-if="canToggleVisibility"
-                  type="button"
-                  class="lumen-section-add"
-                  title="Nouveau chapitre dans cette section"
-                  aria-label="Ajouter un chapitre a cette section"
-                  @click="openNewChapterModal(repo, group)"
-                >
-                  <Plus :size="11" />
-                </button>
-              </div>
-              <ul class="lumen-chapter-list">
+              </button>
+              <ul v-show="isSectionOpen(repo.id, group.title)" class="lumen-chapter-list">
                 <li v-for="ch in group.chapters" :key="ch.path">
                   <button
                     type="button"
@@ -1022,6 +1063,9 @@ async function saveNewChapter(): Promise<void> {
   overflow: hidden;
   text-overflow: ellipsis;
 }
+.lumen-repo-item.is-done { opacity: 0.5; }
+.lumen-repo-done { flex-shrink: 0; color: var(--success, #4caf50); }
+
 .lumen-repo-progress {
   flex-shrink: 0;
   font-size: 10px;
@@ -1091,13 +1135,38 @@ async function saveNewChapter(): Promise<void> {
 .lumen-section {
   margin-top: 2px;
 }
-/* Section row : titre a gauche + bouton "+" a droite pour teacher (v2.68) */
+/* Section row : accordeon cliquable (v2.102) */
 .lumen-section-row {
   display: flex;
   align-items: center;
-  gap: var(--space-xs);
-  padding: 0 var(--space-sm) 0 26px;
-  margin: var(--space-xs) 0 1px;
+  gap: 4px;
+  width: 100%;
+  padding: 5px 8px 5px 20px;
+  margin: 1px 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  border-radius: 4px;
+  transition: background 0.1s;
+}
+.lumen-section-row:hover { background: var(--bg-hover); }
+
+.lumen-section-chevron {
+  flex-shrink: 0;
+  color: var(--text-muted);
+  transition: transform 0.15s ease;
+}
+.lumen-section-chevron.open { transform: rotate(90deg); }
+
+.lumen-section-count {
+  margin-left: auto;
+  font-size: 9px;
+  font-weight: 600;
+  color: var(--text-muted);
+  background: var(--bg-hover);
+  padding: 0 5px;
+  border-radius: 8px;
 }
 .lumen-section-title {
   margin: 0;
