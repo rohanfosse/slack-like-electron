@@ -855,9 +855,11 @@
   border-radius: var(--radius-xs);
   display: flex;
   align-items: center;
+  margin-left: auto;
   opacity: 0;
   transition: opacity var(--t-base), color var(--t-fast), background var(--t-fast);
 }
+.dm-toggle-btn--visible { opacity: 1; }
 .sidebar-section-header:hover .dm-toggle-btn { opacity: 1; }
 .dm-toggle-btn:hover { color: var(--accent, #4a90d9); background: var(--bg-hover); }
 .dm-toggle-btn:focus-visible { outline: var(--focus-ring); outline-offset: var(--focus-offset); }
@@ -866,8 +868,8 @@
   display: flex !important;
   align-items: center;
   gap: 8px;
-  padding: 6px 8px 6px 10px !important;
-  min-height: 38px;
+  padding: 4px 8px 4px 18px !important;
+  min-height: 28px;
   border-radius: 6px;
   transition: background .1s;
 }
@@ -879,14 +881,14 @@
   border-radius: 8px !important;
 }
 .dm-avatar {
-  width: 30px;
-  height: 30px;
-  min-width: 30px;
-  border-radius: 8px;
+  width: 20px;
+  height: 20px;
+  min-width: 20px;
+  border-radius: 4px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 11px;
+  font-size: 9px;
   font-weight: 700;
   color: #fff;
   flex-shrink: 0;
@@ -903,12 +905,14 @@
   gap: 1px;
 }
 .dm-name {
-  font-size: 12.5px;
-  font-weight: 600;
-  color: var(--text-primary);
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--text-secondary);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  flex: 1;
+  min-width: 0;
 }
 .dm-email {
   font-size: 10.5px;
@@ -942,12 +946,12 @@
 }
 .presence-dot {
   position: absolute;
-  bottom: -1px;
-  right: -1px;
-  width: 10px;
-  height: 10px;
+  bottom: -2px;
+  right: -2px;
+  width: 8px;
+  height: 8px;
   border-radius: var(--radius-full);
-  border: 2px solid var(--bg-secondary, #1e1e2e);
+  border: 1.5px solid var(--bg-secondary, #1e1e2e);
 }
 .presence-online  { background: #22c55e; }
 .presence-offline { background: #6b7280; }

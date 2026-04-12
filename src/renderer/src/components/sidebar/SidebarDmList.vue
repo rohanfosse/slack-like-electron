@@ -47,20 +47,18 @@
     <span>Messages directs</span>
     <button
       v-if="appStore.isStaff"
-      class="dm-toggle-btn"
-      style="margin-left:auto"
+      class="dm-toggle-btn dm-toggle-btn--visible"
       :title="showAllDmStudents ? 'Masquer' : 'Nouvelle conversation'"
       :aria-label="showAllDmStudents ? 'Masquer' : 'Nouvelle conversation'"
       @click.stop="emit('update:showAllDmStudents', !showAllDmStudents)"
-    ><Plus :size="14" /></button>
+    ><Plus :size="13" /></button>
     <button
       v-if="appStore.isStudent"
-      class="dm-toggle-btn"
-      style="margin-left:auto"
+      class="dm-toggle-btn dm-toggle-btn--visible"
       :title="showNewDmSearch ? 'Fermer' : 'Nouveau message'"
       :aria-label="showNewDmSearch ? 'Fermer' : 'Nouveau message'"
       @click.stop="emit('toggleNewDmSearch')"
-    ><UserPlus :size="14" /></button>
+    ><Plus :size="13" /></button>
   </div>
 
   <!-- Recherche nouveau DM (etudiant) -->
@@ -82,12 +80,9 @@
         :initials="s.avatar_initials ?? s.name.slice(0, 2).toUpperCase()"
         :color="avatarColor(s.name)"
         :photo-data="s.photo_data"
-        :size="30"
+        :size="20"
       />
-      <span class="dm-info">
-        <span class="dm-name">{{ s.name }}</span>
-        <span v-if="s.email" class="dm-email">{{ s.email }}</span>
-      </span>
+      <span class="dm-name">{{ s.name }}</span>
     </button>
     <EmptyState v-if="newDmQuery.trim() && !newDmFilteredStudents.length" title="Aucun resultat" compact />
   </div>
@@ -111,18 +106,13 @@
             :initials="s.avatar_initials ?? s.name.slice(0, 2).toUpperCase()"
             :color="s.id < 0 ? 'var(--accent)' : avatarColor(s.name)"
             :photo-data="s.photo_data"
-            :size="30"
+            :size="20"
           />
           <span v-if="appStore.isUserOnline(s.name)" class="presence-dot presence-online" title="En ligne" role="img" aria-label="En ligne" />
-          <span v-else class="presence-dot presence-offline" title="Hors ligne" role="img" aria-label="Hors ligne" />
         </span>
-        <span class="dm-info">
-          <span class="dm-name">
-            {{ s.name }}
-            <span v-if="appStore.isDmMuted(s.name)" class="dm-muted-icon" title="Notifications desactivees" role="img" aria-label="Notifications desactivees">&#x1F507;</span>
-          </span>
-          <span v-if="getDmPreview(s.name)" class="dm-preview">{{ getDmPreview(s.name) }}</span>
-          <span v-else-if="s.email" class="dm-email">{{ s.email }}</span>
+        <span class="dm-name">
+          {{ s.name }}
+          <span v-if="appStore.isDmMuted(s.name)" class="dm-muted-icon" title="Notifications desactivees">&#x1F507;</span>
         </span>
         <span v-if="appStore.unreadDms[s.name]" class="dm-unread-badge">
           {{ (appStore.unreadDms[s.name] as number) > 9 ? '9+' : appStore.unreadDms[s.name] }}
@@ -145,12 +135,9 @@
             :initials="s.avatar_initials ?? s.name.slice(0, 2).toUpperCase()"
             :color="avatarColor(s.name)"
             :photo-data="s.photo_data"
-            :size="30"
+            :size="20"
           />
-          <span class="dm-info">
-            <span class="dm-name">{{ s.name }}</span>
-            <span v-if="s.email" class="dm-email">{{ s.email }}</span>
-          </span>
+          <span class="dm-name">{{ s.name }}</span>
         </button>
       </nav>
     </template>
