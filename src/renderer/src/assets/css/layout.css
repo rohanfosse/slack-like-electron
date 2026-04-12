@@ -207,6 +207,13 @@
   flex-direction: column;
   overflow: hidden;
   box-shadow: 2px 0 12px rgba(0,0,0,.15);
+  transition: width 0.2s ease, min-width 0.2s ease;
+}
+.sidebar-wrapper--collapsed {
+  width: 0 !important;
+  min-width: 0 !important;
+  overflow: hidden;
+  border-right: none;
 }
 
 .sidebar {

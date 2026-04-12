@@ -1,7 +1,7 @@
 <script setup lang="ts">
   import { ref, watch, onMounted, computed } from 'vue'
   import { useRoute, useRouter } from 'vue-router'
-  import { Plus, ChevronDown, FolderOpen, Layers, BookOpen, BarChart2, CalendarDays, Calendar, Pencil, Trash2, UserPlus, Archive, ArchiveRestore } from 'lucide-vue-next'
+  import { Plus, ChevronDown, FolderOpen, Layers, BookOpen, BarChart2, CalendarDays, Calendar, Pencil, Trash2, UserPlus, Archive, ArchiveRestore, Search, X } from 'lucide-vue-next'
   import { useTravauxStore } from '@/stores/travaux'
   import NewProjectModal from '@/components/modals/NewProjectModal.vue'
   import type { ProjectMeta } from '@/components/modals/NewProjectModal.vue'
@@ -33,6 +33,36 @@
   import { useSidebarNav, channelMemberCount } from '@/composables/useSidebarNav'
 
   const emit = defineEmits<{ navigate: [] }>()
+  const channelFilter = ref('')
+
+  // Keyboard navigation : fleches haut/bas dans la sidebar canaux
+  function onSidebarKeydown(ev: KeyboardEvent) {
+    if (ev.key !== 'ArrowUp' && ev.key !== 'ArrowDown') return
+    ev.preventDefault()
+    const items = document.querySelectorAll<HTMLElement>('.sidebar-scroll-list .sidebar-item, .sidebar-scroll-list .channel-drag-wrap [role="button"]')
+    if (!items.length) return
+    const active = document.activeElement as HTMLElement | null
+    const currentIdx = active ? [...items].indexOf(active) : -1
+    let nextIdx: number
+    if (ev.key === 'ArrowDown') {
+      nextIdx = currentIdx < items.length - 1 ? currentIdx + 1 : 0
+    } else {
+      nextIdx = currentIdx > 0 ? currentIdx - 1 : items.length - 1
+    }
+    items[nextIdx]?.focus()
+  }
+
+  /** Channels filtres par la recherche. */
+  const filteredChannelGroups = computed(() => {
+    const q = channelFilter.value.toLowerCase().trim()
+    if (!q) return sortedChannelGroups.value
+    return sortedChannelGroups.value
+      .map((g: any) => ({
+        ...g,
+        channels: g.channels.filter((ch: any) => ch.name.toLowerCase().includes(q)),
+      }))
+      .filter((g: any) => g.channels.length > 0)
+  })
 
   const appStore   = useAppStore()
   const modals     = useModalsStore()
@@ -352,11 +382,18 @@
 
       <!-- Salons groupes par categorie (autres sections) -->
       <template v-else>
-        <!-- Spacer accent -->
-        <div class="sb-accent-spacer">
-          <span class="sb-accent-line" />
-          <span class="sb-accent-dot" />
-          <span class="sb-accent-line" />
+        <!-- Recherche canaux -->
+        <div v-if="visibleChannels.length >= 5" class="sb-channel-search">
+          <Search :size="11" class="sb-channel-search-icon" />
+          <input
+            v-model="channelFilter"
+            type="text"
+            class="sb-channel-search-input"
+            placeholder="Rechercher un canal..."
+          />
+          <button v-if="channelFilter" type="button" class="sb-channel-search-clear" @click="channelFilter = ''">
+            <X :size="10" />
+          </button>
         </div>
 
         <div
@@ -387,9 +424,9 @@
           </button>
         </div>
 
-        <div v-show="!channelsCollapsed" class="sidebar-scroll-list">
+        <div v-show="!channelsCollapsed" class="sidebar-scroll-list" @keydown="onSidebarKeydown">
         <div
-          v-for="group in sortedChannelGroups"
+          v-for="group in filteredChannelGroups"
           :key="group.key"
           class="sidebar-category"
           :class="{ 'drag-over': appStore.isStaff && dragOverCategory === group.key }"
@@ -401,7 +438,7 @@
         >
           <!-- En-tête de catégorie (affiché seulement s'il y a plusieurs groupes) -->
           <div
-            v-if="sortedChannelGroups.length > 1"
+            v-if="filteredChannelGroups.length > 1"
             class="sidebar-category-header-wrap"
           >
             <!-- Renommage inline -->
@@ -714,6 +751,22 @@
   box-shadow: 0 0 0 2px rgba(74,144,217,.2);
 }
 .sidebar-rename-input:focus-visible { outline: 2px solid var(--accent); outline-offset: -1px; }
+
+/* ── Channel search ── */
+.sb-channel-search {
+  display: flex; align-items: center; gap: 4px;
+  margin: 6px 10px 4px; padding: 5px 7px;
+  background: var(--bg-primary); border: 1px solid var(--border); border-radius: 5px;
+}
+.sb-channel-search:focus-within { border-color: var(--accent); }
+.sb-channel-search-icon { color: var(--text-muted); flex-shrink: 0; }
+.sb-channel-search-input {
+  flex: 1; background: transparent; border: none; color: var(--text-primary);
+  font-size: 11px; font-family: inherit; outline: none;
+}
+.sb-channel-search-input::placeholder { color: var(--text-muted); }
+.sb-channel-search-clear { background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 1px; }
+.sb-channel-search-clear:hover { color: var(--text-primary); }
 
 /* ── Accent spacer (etudiants) ── */
 .sb-accent-spacer {

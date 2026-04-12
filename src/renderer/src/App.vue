@@ -96,8 +96,13 @@
 
   // ── Mobile sidebar drawer ──────────────────────────────────────────────────
   const sidebarOpen = ref(false)
+  const sidebarCollapsed = ref(localStorage.getItem('sidebar-collapsed') === '1')
   function toggleSidebar() { sidebarOpen.value = !sidebarOpen.value }
   function closeSidebar()  { sidebarOpen.value = false }
+  function toggleSidebarCollapse() {
+    sidebarCollapsed.value = !sidebarCollapsed.value
+    localStorage.setItem('sidebar-collapsed', sidebarCollapsed.value ? '1' : '0')
+  }
 
   // ── Mobile swipe navigation (ouvre/ferme la sidebar par glissement) ───────
   useSwipeNav(sidebarOpen, toggleSidebar)
@@ -343,7 +348,7 @@
 
     <!-- Colonnes nav + sidebar + main -->
     <div class="app-columns">
-    <NavRail />
+    <NavRail :sidebar-collapsed="sidebarCollapsed" @toggle-sidebar="toggleSidebarCollapse" />
 
     <!-- Bandeau hors-ligne -->
     <div v-if="!appStore.isOnline || isOffline" class="offline-banner offline-banner-yellow">
@@ -404,7 +409,7 @@
     <aside
       v-show="!isLumenFocus"
       class="sidebar-wrapper"
-      :class="{ 'sidebar-with-banner': appStore.isSimulating || !appStore.isOnline, 'mobile-open': sidebarOpen }"
+      :class="{ 'sidebar-with-banner': appStore.isSimulating || !appStore.isOnline, 'mobile-open': sidebarOpen, 'sidebar-wrapper--collapsed': sidebarCollapsed }"
     >
       <SidebarWrapper @navigate="closeSidebar" />
     </aside>

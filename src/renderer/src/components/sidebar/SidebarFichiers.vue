@@ -6,6 +6,7 @@
  */
 import { ref, computed } from 'vue'
 import { Search, X, Image, FileText, Paperclip, Users, ChevronRight } from 'lucide-vue-next'
+import SkeletonLoader from '@/components/ui/SkeletonLoader.vue'
 
 interface DmFile {
   message_id: number
@@ -169,8 +170,13 @@ function avatarColor(name: string): string {
     </button>
 
     <!-- Student list -->
-    <div v-if="loading" class="sb-fich-loading">Chargement...</div>
-    <div v-else-if="filteredStudents.length === 0" class="sb-fich-empty">Aucun etudiant</div>
+    <div v-if="loading" class="sb-fich-loading">
+      <SkeletonLoader variant="sidebar" :rows="5" />
+    </div>
+    <div v-else-if="filteredStudents.length === 0" class="sb-fich-empty">
+      <Paperclip :size="20" style="opacity: 0.3" />
+      <span>{{ filter ? 'Aucun etudiant pour "' + filter + '"' : 'Aucun fichier partage' }}</span>
+    </div>
     <div v-else class="sb-fich-list">
       <button
         v-for="s in filteredStudents"
@@ -305,12 +311,10 @@ function avatarColor(name: string): string {
 .sb-fich-all-btn:hover { border-color: var(--accent); color: var(--accent); }
 
 /* Loading/empty */
-.sb-fich-loading,
+.sb-fich-loading { padding: 0; }
 .sb-fich-empty {
-  font-size: 12px;
-  color: var(--text-muted);
-  padding: 12px 4px;
-  text-align: center;
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  font-size: 11px; color: var(--text-muted); padding: 20px 8px; text-align: center;
 }
 
 /* Student list */

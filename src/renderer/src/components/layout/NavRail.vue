@@ -1,7 +1,7 @@
 <script setup lang="ts">
   import { computed, ref, watch } from 'vue'
   import { useRouter, useRoute } from 'vue-router'
-  import { MessageSquare, BookOpen, FileText, LayoutDashboard, Bell, Flame, Search, Shield, Bug, Zap, HeartPulse, Paperclip, Lightbulb, Calendar } from 'lucide-vue-next'
+  import { MessageSquare, BookOpen, FileText, LayoutDashboard, Bell, Flame, Search, Shield, Bug, Zap, HeartPulse, Paperclip, Lightbulb, Calendar, PanelLeftClose, PanelLeftOpen } from 'lucide-vue-next'
   import logoUrl from '@/assets/logo.png'
   import { useAppStore }    from '@/stores/app'
   import { useModalsStore } from '@/stores/modals'
@@ -23,6 +23,9 @@
   const { isEnabled } = useModules()
   const router      = useRouter()
   const route       = useRoute()
+
+  defineProps<{ sidebarCollapsed?: boolean }>()
+  const emit = defineEmits<{ 'toggle-sidebar': [] }>()
 
   const user = computed(() => appStore.currentUser)
 
@@ -310,6 +313,15 @@
 
     <!-- Espaceur -->
     <div style="flex:1" />
+
+    <!-- Toggle sidebar collapse -->
+    <button
+      class="nav-btn nav-btn--collapse"
+      :title="sidebarCollapsed ? 'Ouvrir la sidebar' : 'Fermer la sidebar'"
+      @click="emit('toggle-sidebar')"
+    >
+      <component :is="sidebarCollapsed ? PanelLeftOpen : PanelLeftClose" :size="18" />
+    </button>
 
     <!-- ── Admin (admin uniquement) ── -->
     <button

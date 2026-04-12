@@ -1,7 +1,7 @@
 <script setup lang="ts">
   // Squelette de chargement reutilisable avec variantes
   defineProps<{
-    variant?: 'list' | 'card' | 'message' | 'avatar' | 'line'
+    variant?: 'list' | 'card' | 'message' | 'avatar' | 'line' | 'sidebar'
     rows?: number
     animated?: boolean
   }>()
@@ -26,6 +26,17 @@
       <div class="sk-msg-body">
         <div class="sk sk-line skel-pulse" :style="{ width: '30%' }" />
         <div class="sk sk-line skel-pulse" :style="{ width: (60 + (i % 3) * 15) + '%' }" />
+      </div>
+    </div>
+  </template>
+
+  <!-- Sidebar skeleton -->
+  <template v-else-if="variant === 'sidebar'">
+    <div class="sk-sidebar" style="padding: 8px 10px">
+      <div class="sk sk-line skel-pulse" style="height: 28px; border-radius: 5px; margin-bottom: 8px" />
+      <div v-for="i in (rows ?? 6)" :key="i" class="sk-sidebar-row">
+        <div class="sk skel-pulse" style="width: 8px; height: 8px; border-radius: 3px" />
+        <div class="sk sk-line skel-pulse" :style="{ width: (40 + (i % 4) * 15) + '%' }" />
       </div>
     </div>
   </template>
@@ -85,6 +96,10 @@
   flex-direction: column;
   gap: 6px;
   flex: 1;
+}
+
+.sk-sidebar-row {
+  display: flex; align-items: center; gap: 8px; padding: 5px 0;
 }
 
 .skel-pulse {
