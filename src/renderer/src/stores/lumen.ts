@@ -18,6 +18,7 @@ import type {
   LumenChapterNote,
   LumenGithubStatus,
   LumenSearchResult,
+  LumenRead,
 } from '@/types'
 
 export const useLumenStore = defineStore('lumen', () => {
@@ -45,6 +46,11 @@ export const useLumenStore = defineStore('lumen', () => {
 
   /** Cache des notes privees : clef = `${repoId}::${path}`. */
   const chapterNotes = ref<Map<string, LumenChapterNote | null>>(new Map())
+
+  /** Chapitres lus par l'etudiant courant. Set de cles `${repoId}::${path}`. */
+  const myReads = ref<Set<string>>(new Set())
+  /** Map repoId::path -> read_at pour trier par date. */
+  const myReadsAt = ref<Map<string, string>>(new Map())
 
   /**
    * Compteurs de lecture par prof (legacy v2.46) : Map `${repoId}::${path}` -> nb lecteurs.
@@ -344,6 +350,37 @@ export const useLumenStore = defineStore('lumen', () => {
     readCounts.value = map
   }
 
+  // ── Actions : tracking lecture etudiant (reactive v2.85) ──────────────────
+
+  async function fetchMyReads(): Promise<void> {
+    const data = await api<{ reads: LumenRead[] }>(
+      () => window.api.getLumenMyReads(),
+      { silent: true },
+    )
+    const set = new Set<string>()
+    const map = new Map<string, string>()
+    for (const r of data?.reads ?? []) {
+      const k = chapterKey(r.repo_id, r.path)
+      set.add(k)
+      map.set(k, r.read_at)
+    }
+    myReads.value = set
+    myReadsAt.value = map
+  }
+
+  async function markChapterRead(repoId: number, path: string): Promise<void> {
+    const k = chapterKey(repoId, path)
+    if (myReads.value.has(k)) return // deja marque
+    myReads.value.add(k)
+    myReads.value = new Set(myReads.value)
+    myReadsAt.value.set(k, new Date().toISOString())
+    myReadsAt.value = new Map(myReadsAt.value)
+    await api<{ ok: true }>(
+      () => window.api.markLumenChapterRead(repoId, path),
+      { silent: true },
+    )
+  }
+
   // ── Actions : notes privees ───────────────────────────────────────────────
 
   async function fetchChapterNote(repoId: number, path: string): Promise<LumenChapterNote | null> {
@@ -383,6 +420,8 @@ export const useLumenStore = defineStore('lumen', () => {
     chapterContents.value = new Map()
     chapterNotes.value = new Map()
     readCounts.value = new Map()
+    myReads.value = new Set()
+    myReadsAt.value = new Map()
     marpChapters.value = new Set()
     promoOrg.value = null
   }
@@ -399,6 +438,8 @@ export const useLumenStore = defineStore('lumen', () => {
     chapterContents,
     chapterNotes,
     readCounts,
+    myReads,
+    myReadsAt,
     marpChapters,
     // computed
     reposWithManifest,
@@ -423,6 +464,8 @@ export const useLumenStore = defineStore('lumen', () => {
     isChapterMarp,
     selectChapter,
     searchChapters,
+    fetchMyReads,
+    markChapterRead,
     fetchReadCountsForRepo,
     fetchReadCountsForPromo,
     fetchChapterNote,

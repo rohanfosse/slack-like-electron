@@ -14,9 +14,8 @@ import { useRoute, useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import {
   BookOpen, RefreshCw, Github, LogOut, Settings, AlertCircle, Loader2, FolderGit2, Plus, Keyboard,
-  PanelLeftClose, PanelLeftOpen, LayoutGrid, Lightbulb, Wrench, Hammer, Folder, Clock,
+  PanelLeftClose, PanelLeftOpen, LayoutGrid,
 } from 'lucide-vue-next'
-import type { Component } from 'vue'
 import { useLumenStore } from '@/stores/lumen'
 import { useAppStore } from '@/stores/app'
 import { useToast } from '@/composables/useToast'
@@ -30,6 +29,7 @@ import LumenRepoSidebar from '@/components/lumen/LumenRepoSidebar.vue'
 import LumenChapterViewer from '@/components/lumen/LumenChapterViewer.vue'
 import LumenKeyboardHelp from '@/components/lumen/LumenKeyboardHelp.vue'
 import LumenNotePanel from '@/components/lumen/LumenNotePanel.vue'
+import LumenWelcome from '@/components/lumen/LumenWelcome.vue'
 
 const lumenStore = useLumenStore()
 const appStore   = useAppStore()
@@ -101,25 +101,11 @@ const notedChaptersSet = computed<Set<string>>(() => {
   return set
 })
 
-/** Repos pedagogiques (cours, prosits, workshops, etc.) pour la grille d'accueil. */
-const HIDDEN_KINDS = new Set(['student', 'group', 'readme'])
-const courseRepos = computed(() =>
-  repos.value.filter((r) => r.manifest && !HIDDEN_KINDS.has(r.manifest.kind ?? '')),
-)
-
-const KIND_META: Record<string, { icon: Component; label: string }> = {
-  course:      { icon: BookOpen,  label: 'Cours' },
-  prosit:      { icon: Lightbulb, label: 'Prosit' },
-  workshop:    { icon: Wrench,    label: 'Workshop' },
-  miniproject: { icon: Hammer,    label: 'Mini-projet' },
-  project:     { icon: Folder,    label: 'Projet' },
-}
-function kindOf(repo: typeof repos.value[number]) {
-  return KIND_META[repo.manifest?.kind ?? 'course'] ?? KIND_META.course
-}
-function totalDuration(repo: typeof repos.value[number]): number {
-  return (repo.manifest?.chapters ?? []).reduce((sum, c) => sum + (c.duration ?? 0), 0)
-}
+/** Dernier chapitre lu pour la promo courante (pour LumenWelcome). */
+const lastRead = computed(() => {
+  if (!activePromoId.value) return null
+  return lastChapter.get(activePromoId.value)
+})
 
 /** Timestamp du sync le plus recent parmi tous les repos de la promo. */
 const lastSyncedAt = computed<string | null>(() => {
@@ -230,6 +216,7 @@ async function boot() {
   await Promise.all([
     lumenStore.fetchGithubStatus(),
     pid ? lumenStore.fetchReposForPromo(pid) : Promise.resolve(),
+    lumenStore.fetchMyReads(),
   ])
 }
 
@@ -354,26 +341,19 @@ async function handleSelectChapter(payload: { repoId: number; path: string }) {
     }
   }
   lumenStore.fetchChapterNote(repo.id, payload.path)
-}
-
-/** Ouvre le premier chapitre d'un repo (utilise par la grille d'accueil). */
-function openRepo(repo: typeof repos.value[number]) {
-  const first = repo.manifest?.chapters[0]
-  if (first) handleSelectChapter({ repoId: repo.id, path: first.path })
+  // Tracking de lecture (v2.85) — marque le chapitre comme lu pour la
+  // progression sur la page d'accueil. Fire-and-forget, ne bloque pas.
+  lumenStore.markChapterRead(repo.id, payload.path)
 }
 
 /**
- * Ouvre le README du repo .github (kind=readme) de l'org courante.
- * Sert de page d'accueil de la promo dans Lumen : presentation generale,
- * liens utiles, planning. Le repo .github est cache de la sidebar (v2.81)
- * mais accessible via ce bouton.
+ * Retour a la page d'accueil Lumen (grille des cours + progression).
+ * Deselectionne le chapitre courant pour afficher LumenWelcome.
  */
 function handleLumenHome() {
-  const readmeRepo = repos.value.find((r) => r.manifest?.kind === 'readme')
-  if (!readmeRepo) return
-  const firstChapter = readmeRepo.manifest?.chapters[0]
-  if (!firstChapter) return
-  handleSelectChapter({ repoId: readmeRepo.id, path: firstChapter.path })
+  currentRepo.value = null
+  currentChapterPath.value = null
+  router.replace({ name: 'lumen' })
 }
 
 /**
@@ -414,24 +394,13 @@ function handleAnchorConsumed() {
  */
 function applyAutoResume() {
   if (!activePromoId.value) return
-  // 1. Tente de restaurer le dernier chapitre lu
   const last = lastChapter.get(activePromoId.value)
-  if (last) {
-    const repo = repos.value.find((r) => r.id === last.repoId)
-    if (repo) {
-      const stillExists = repo.manifest?.chapters.some((c) => c.path === last.chapterPath)
-      if (stillExists) {
-        handleSelectChapter({ repoId: last.repoId, path: last.chapterPath })
-        return
-      }
-    }
-  }
-  // 2. Fallback : ouvre le README du repo .github (page d'accueil promo)
-  const readmeRepo = repos.value.find((r) => r.manifest?.kind === 'readme')
-  const firstChapter = readmeRepo?.manifest?.chapters[0]
-  if (readmeRepo && firstChapter) {
-    handleSelectChapter({ repoId: readmeRepo.id, path: firstChapter.path })
-  }
+  if (!last) return // pas d'historique : on reste sur LumenWelcome
+  const repo = repos.value.find((r) => r.id === last.repoId)
+  if (!repo) return
+  const stillExists = repo.manifest?.chapters.some((c) => c.path === last.chapterPath)
+  if (!stillExists) return
+  handleSelectChapter({ repoId: last.repoId, path: last.chapterPath })
 }
 
 /**
@@ -668,36 +637,13 @@ function handleNavigateLumenLink(payload: { repoName: string; path: string }) {
             </button>
           </div>
 
-          <div v-else-if="!currentRepo || !currentChapter" class="lumen-welcome">
-            <header class="lumen-welcome-head">
-              <BookOpen :size="24" />
-              <h3>Bienvenue sur Lumen</h3>
-              <p v-if="courseRepos.length">{{ courseRepos.length }} cours disponibles</p>
-              <p v-else>Aucun cours synchronise pour le moment.</p>
-            </header>
-            <div v-if="courseRepos.length" class="lumen-welcome-grid">
-              <button
-                v-for="repo in courseRepos"
-                :key="repo.id"
-                type="button"
-                class="lumen-welcome-card"
-                @click="openRepo(repo)"
-              >
-                <span class="lumen-welcome-card-badge">
-                  <component :is="kindOf(repo).icon" :size="12" />
-                  {{ kindOf(repo).label }}
-                </span>
-                <span class="lumen-welcome-card-title">{{ repo.manifest?.project ?? repo.fullName }}</span>
-                <span v-if="repo.manifest?.summary" class="lumen-welcome-card-desc">{{ repo.manifest.summary }}</span>
-                <span class="lumen-welcome-card-meta">
-                  {{ repo.manifest?.chapters.length ?? 0 }} chapitres
-                  <template v-if="totalDuration(repo) > 0">
-                    <Clock :size="10" /> {{ Math.round(totalDuration(repo) / 60) }}h
-                  </template>
-                </span>
-              </button>
-            </div>
-          </div>
+          <LumenWelcome
+            v-else-if="!currentRepo || !currentChapter"
+            :repos="repos"
+            :last-chapter-repo-id="lastRead?.repoId"
+            :last-chapter-path="lastRead?.chapterPath"
+            @open-chapter="handleSelectChapter"
+          />
 
           <LumenChapterViewer
             v-else
@@ -1042,88 +988,6 @@ function handleNavigateLumenLink(payload: { repoName: string; path: string }) {
   padding: 1px 5px;
   background: var(--bg-secondary);
   border-radius: 3px;
-}
-
-/* ── Grille d'accueil Lumen (v2.83) ──────────────────────────────────── */
-.lumen-welcome {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 48px 32px;
-  overflow-y: auto;
-}
-.lumen-welcome-head {
-  text-align: center;
-  margin-bottom: 32px;
-  color: var(--text-muted);
-}
-.lumen-welcome-head h3 {
-  margin: 12px 0 4px;
-  font-size: 22px;
-  font-weight: 700;
-  color: var(--text-primary);
-}
-.lumen-welcome-head p {
-  margin: 0;
-  font-size: 14px;
-  color: var(--text-secondary);
-}
-.lumen-welcome-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 16px;
-  width: 100%;
-  max-width: 800px;
-}
-.lumen-welcome-card {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  padding: 20px;
-  border-radius: 10px;
-  border: 1px solid var(--border);
-  background: var(--bg-primary);
-  cursor: pointer;
-  text-align: left;
-  transition: border-color 0.15s, box-shadow 0.15s;
-}
-.lumen-welcome-card:hover {
-  border-color: var(--accent);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-}
-.lumen-welcome-card-title {
-  font-size: 15px;
-  font-weight: 600;
-  color: var(--text-primary);
-  line-height: 1.3;
-}
-.lumen-welcome-card-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--accent);
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
-}
-.lumen-welcome-card-desc {
-  font-size: 13px;
-  color: var(--text-secondary);
-  line-height: 1.4;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-.lumen-welcome-card-meta {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 12px;
-  color: var(--text-muted);
-  margin-top: auto;
 }
 
 .lumen-modal-backdrop {
