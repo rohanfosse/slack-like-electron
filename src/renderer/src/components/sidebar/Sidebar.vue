@@ -316,7 +316,10 @@
 
       <!-- Agenda (sidebar mini-cal + events, v2.108) -->
       <template v-else-if="route.name === 'agenda'">
-        <SidebarAgenda @new-reminder="router.push({ name: 'agenda', query: { action: 'new-reminder' } })" />
+        <SidebarAgenda
+          @select-date="(d: string) => router.push({ name: 'agenda', query: { date: d } })"
+          @new-reminder="router.push({ name: 'agenda', query: { action: 'new-reminder' } })"
+        />
       </template>
 
       <!-- Cours Lumen (sidebar unifiee v2.101) -->

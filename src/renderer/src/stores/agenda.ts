@@ -1,7 +1,8 @@
-/** Store Agenda — calendrier agrégé : échéances travaux + rappels enseignant. */
+/** Store Agenda — calendrier agrege : echeances travaux + rappels enseignant. */
 import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
 import { useApi } from '@/composables/useApi'
+import { getCategoryColor } from '@/utils/categoryColor'
 import type { CalendarEvent, Reminder } from '@/types'
 
 export const useAgendaStore = defineStore('agenda', () => {
@@ -11,21 +12,40 @@ export const useAgendaStore = defineStore('agenda', () => {
   const ganttRows = ref<any[]>([])
   const loading   = ref(false)
 
+  /** Categories uniques extraites des ganttRows. */
+  const categories = computed<string[]>(() => {
+    const set = new Set<string>()
+    for (const t of ganttRows.value) {
+      if (t.category) set.add(t.category)
+    }
+    return [...set].sort()
+  })
+
   /** Aggregate all events from ganttRows + reminders */
   const events = computed<CalendarEvent[]>(() => {
     const list: CalendarEvent[] = []
+    const now = new Date().toISOString().slice(0, 10)
 
     for (const t of ganttRows.value) {
       if (t.deadline) {
+        const deadlineDate = t.deadline.substring(0, 10)
+        let status: CalendarEvent['submissionStatus'] = 'upcoming'
+        if (t.depot_id != null) status = 'submitted'
+        else if (deadlineDate < now) status = 'late'
+        else status = 'pending'
+
         list.push({
           id:        `deadline-${t.id}`,
-          start:     t.deadline.substring(0, 10),
-          end:       t.deadline.substring(0, 10),
+          start:     deadlineDate,
+          end:       deadlineDate,
           title:     t.title,
-          color:     'blue',
+          color:     getCategoryColor(t.category),
           eventType: 'deadline',
           sourceId:  t.id,
           category:  t.category ?? null,
+          submissionStatus: status,
+          depotsCount: t.depots_count ?? 0,
+          studentsTotal: t.students_total ?? 0,
         })
       }
       if (t.start_date) {
@@ -33,8 +53,8 @@ export const useAgendaStore = defineStore('agenda', () => {
           id:        `start-${t.id}`,
           start:     t.start_date.substring(0, 10),
           end:       t.start_date.substring(0, 10),
-          title:     `Début — ${t.title}`,
-          color:     'orange',
+          title:     t.title,
+          color:     getCategoryColor(t.category),
           eventType: 'start_date',
           sourceId:  t.id,
           category:  t.category ?? null,
@@ -48,7 +68,7 @@ export const useAgendaStore = defineStore('agenda', () => {
         start:     r.date.substring(0, 10),
         end:       r.date.substring(0, 10),
         title:     r.title,
-        color:     'green',
+        color:     '#22c55e',
         eventType: 'reminder',
         sourceId:  r.id,
         category:  r.bloc ?? null,
@@ -100,7 +120,7 @@ export const useAgendaStore = defineStore('agenda', () => {
   }
 
   return {
-    reminders, ganttRows, events, loading,
+    reminders, ganttRows, events, categories, loading,
     fetchEvents, createReminder, updateReminder, deleteReminder,
   }
 })

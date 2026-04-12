@@ -83,3 +83,23 @@ export function relativeTime(input: number | string | Date): string {
   if (days < 7) return `il y a ${days}j`
   return `il y a ${Math.floor(days / 7)} sem.`
 }
+
+/** Numero de semaine ISO 8601 (lundi = debut de semaine). */
+export function getISOWeekNumber(date: Date): number {
+  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()))
+  d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7))
+  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1))
+  return Math.ceil(((d.getTime() - yearStart.getTime()) / 86400000 + 1) / 7)
+}
+
+/** Countdown lisible vers une date future ("2j 5h", "3h 20min", "45min"). */
+export function countdown(target: string | Date): string {
+  const diff = new Date(target).getTime() - Date.now()
+  if (diff <= 0) return 'Passe'
+  const mins = Math.floor(diff / 60000)
+  if (mins < 60) return `${mins}min`
+  const hours = Math.floor(mins / 60)
+  if (hours < 24) return `${hours}h ${mins % 60}min`
+  const days = Math.floor(hours / 24)
+  return `${days}j ${hours % 24}h`
+}

@@ -458,14 +458,17 @@ export interface Reminder {
 }
 
 export interface CalendarEvent {
-  id: string          // unique key
-  start: string       // ISO date or datetime
+  id: string
+  start: string
   end: string
   title: string
-  color: 'blue' | 'green' | 'orange'
+  color: string
   eventType: 'deadline' | 'start_date' | 'reminder'
-  sourceId: number    // travail_id or reminder_id
+  sourceId: number
   category?: string | null
+  submissionStatus?: 'submitted' | 'pending' | 'late' | 'upcoming'
+  depotsCount?: number
+  studentsTotal?: number
 }
 
 // ─── Payloads IPC ────────────────────────────────────────────────────────────
