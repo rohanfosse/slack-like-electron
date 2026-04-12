@@ -1,22 +1,22 @@
 <script setup lang="ts">
-  import { toastState, useToast } from '@/composables/useToast'
+  import { toastState, toastQueue, useToast } from '@/composables/useToast'
   import { AlertTriangle, CheckCircle, Info, X } from 'lucide-vue-next'
 
-  const { dismissToast } = useToast()
+  const { dismissToast, removeToast } = useToast()
 </script>
 
 <template>
   <Teleport to="body">
+    <!-- Legacy single toast (backward compat) -->
     <Transition name="toast">
       <div
-        v-if="toastState.visible"
+        v-if="toastState.visible && toastQueue.length === 0"
         :id="'app-toast'"
         :class="[`toast-${toastState.type}`, { 'toast-has-detail': toastState.detail }]"
         role="status"
         aria-live="polite"
         aria-atomic="true"
       >
-        <!-- Icône contextuelle -->
         <span class="toast-icon">
           <AlertTriangle v-if="toastState.type === 'error'" :size="16" />
           <CheckCircle v-else-if="toastState.type === 'success'" :size="16" />
@@ -36,7 +36,6 @@
           Annuler
         </button>
 
-        <!-- Bouton fermer (surtout utile pour les erreurs longues) -->
         <button class="toast-close-btn" title="Fermer" @click="dismissToast">
           <X :size="14" />
         </button>
@@ -44,6 +43,34 @@
         <span class="toast-progress" :class="{ 'toast-progress--slow': toastState.type === 'error' }" />
       </div>
     </Transition>
+
+    <!-- Stacked toast queue -->
+    <TransitionGroup name="toast-stack" tag="div" class="toast-stack">
+      <div
+        v-for="(entry, idx) in toastQueue"
+        :key="entry.id"
+        class="toast-stack-item"
+        :class="[`toast-${entry.type}`]"
+        :style="{ '--stack-index': idx }"
+        role="status"
+        aria-live="polite"
+      >
+        <span class="toast-icon">
+          <AlertTriangle v-if="entry.type === 'error'" :size="16" />
+          <CheckCircle v-else-if="entry.type === 'success'" :size="16" />
+          <Info v-else :size="16" />
+        </span>
+
+        <div class="toast-content">
+          <span class="toast-msg">{{ entry.message }}</span>
+          <span v-if="entry.detail" class="toast-detail">{{ entry.detail }}</span>
+        </div>
+
+        <button class="toast-close-btn" title="Fermer" @click="removeToast(entry.id)">
+          <X :size="14" />
+        </button>
+      </div>
+    </TransitionGroup>
   </Teleport>
 </template>
 
@@ -54,6 +81,36 @@
     right: 16px;
     z-index: 10000;
     overflow: hidden;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 12px 16px;
+    border-radius: 12px;
+    font-size: 13px;
+    font-weight: 600;
+    font-family: var(--font, sans-serif);
+    color: #fff;
+    background: #2a2b2d;
+    border: 1px solid var(--border);
+    box-shadow: 0 8px 28px rgba(0,0,0,.4), 0 0 0 1px rgba(255,255,255,.04) inset;
+    max-width: 420px;
+    min-width: 280px;
+    backdrop-filter: blur(12px);
+  }
+
+  /* Stack container */
+  .toast-stack {
+    position: fixed;
+    top: 16px;
+    right: 16px;
+    z-index: 10000;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    pointer-events: none;
+  }
+  .toast-stack-item {
+    pointer-events: auto;
     display: flex;
     align-items: flex-start;
     gap: 10px;
@@ -141,6 +198,25 @@
   .toast-leave-to {
     opacity: 0;
     transform: translateX(20px);
+  }
+
+  /* Stack transitions */
+  .toast-stack-enter-active {
+    transition: opacity .3s ease, transform .3s cubic-bezier(.34,1.56,.64,1);
+  }
+  .toast-stack-leave-active {
+    transition: opacity .2s ease, transform .2s ease;
+  }
+  .toast-stack-enter-from {
+    opacity: 0;
+    transform: translateX(30px);
+  }
+  .toast-stack-leave-to {
+    opacity: 0;
+    transform: translateX(20px) scale(.95);
+  }
+  .toast-stack-move {
+    transition: transform .3s ease;
   }
 
   /* Progress bar */

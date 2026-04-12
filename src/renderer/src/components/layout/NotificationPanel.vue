@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import {
-  CheckCheck, X, CheckCircle2, Bell,
+  CheckCheck, X, CheckCircle2, Bell, Trash2, Zap, HeartPulse,
   MessageSquare, AtSign, Mail, Award, Clock, Pen, FileText, ClipboardList, AlertTriangle,
 } from 'lucide-vue-next'
 import { useAppStore }    from '@/stores/app'
@@ -14,18 +14,20 @@ const appStore      = useAppStore()
 const messagesStore = useMessagesStore()
 const router        = useRouter()
 
-type FilterType = 'all' | 'messages' | 'grades' | 'deadlines' | 'other'
+type FilterType = 'all' | 'messages' | 'grades' | 'deadlines' | 'spark' | 'other'
 const filter = ref<FilterType>('all')
 
 const CATEGORY_ICONS: Record<string, object> = {
   message: MessageSquare, mention: AtSign, dm: Mail,
   grade: Award, deadline: Clock, signature: Pen,
   document: FileText, assignment: ClipboardList,
+  spark: Zap, pulse: HeartPulse,
 }
 const CATEGORY_COLORS: Record<string, string> = {
   message: 'var(--text-muted)', mention: 'var(--accent)', dm: 'var(--accent)',
   grade: '#f59e0b', deadline: '#ef4444', signature: '#8b5cf6',
   document: '#059669', assignment: '#3b82f6',
+  spark: '#eab308', pulse: '#14b8a6',
 }
 
 const filtered = computed(() => {
@@ -34,8 +36,15 @@ const filtered = computed(() => {
   if (filter.value === 'messages') return list.filter(n => ['message', 'mention', 'dm'].includes(n.category ?? ''))
   if (filter.value === 'grades') return list.filter(n => n.category === 'grade')
   if (filter.value === 'deadlines') return list.filter(n => n.category === 'deadline')
+  if (filter.value === 'spark') return list.filter(n => ['spark', 'pulse'].includes(n.category ?? ''))
   return list.filter(n => ['signature', 'document', 'assignment'].includes(n.category ?? ''))
 })
+
+// Auto-refresh relative timestamps every 30s
+const tick = ref(0)
+let refreshTimer: ReturnType<typeof setInterval> | null = null
+onMounted(() => { refreshTimer = setInterval(() => { tick.value++ }, 30_000) })
+onUnmounted(() => { if (refreshTimer) clearInterval(refreshTimer) })
 
 // Regroupement par jour
 const grouped = computed(() => {
@@ -61,6 +70,52 @@ const hasAny     = computed(() => appStore.notificationHistory.length > 0)
 const hasUnread  = computed(() => appStore.notificationHistory.some(n => !n.read))
 const unreadCount = computed(() => appStore.notificationHistory.filter(n => !n.read).length)
 
+function clearAll() {
+  appStore.notificationHistory = []
+}
+
+// Notification grouping: batch consecutive same-channel unread messages
+interface GroupedNotif {
+  id: string; entries: typeof appStore.notificationHistory; count: number
+  representative: typeof appStore.notificationHistory[number]
+}
+const groupedFiltered = computed(() => {
+  // Trigger reactivity on tick
+  void tick.value
+  const items = filtered.value
+  const result: GroupedNotif[] = []
+  let i = 0
+  while (i < items.length) {
+    const current = items[i]
+    // Group consecutive unread messages from the same channel
+    if (!current.read && current.category === 'message' && current.channelId) {
+      const group = [current]
+      let j = i + 1
+      while (j < items.length && !items[j].read && items[j].category === 'message' && items[j].channelId === current.channelId) {
+        group.push(items[j])
+        j++
+      }
+      if (group.length >= 2) {
+        result.push({
+          id: `group_${current.channelId}_${current.id}`,
+          entries: group,
+          count: group.length,
+          representative: {
+            ...current,
+            title: `${group.length} messages dans #${current.channelName}`,
+            preview: `Dernier : ${group[0].authorName}`,
+          },
+        })
+        i = j
+        continue
+      }
+    }
+    result.push({ id: current.id, entries: [current], count: 1, representative: current })
+    i++
+  }
+  return result
+})
+
 async function goTo(entry: typeof appStore.notificationHistory[number]) {
   entry.read = true
   emit('close')
@@ -84,6 +139,7 @@ function removeNotif(id: string) {
 }
 
 function formatTime(ts: number): string {
+  void tick.value // trigger reactivity
   const diff = Date.now() - ts
   if (diff < 60_000)     return "A l'instant"
   if (diff < 3_600_000)  return `${Math.floor(diff / 60_000)} min`
@@ -112,6 +168,9 @@ function notifCategory(n: typeof appStore.notificationHistory[number]): string {
         <button v-if="hasUnread" class="notif-mark-all" title="Tout marquer comme lu" @click="appStore.markAllRead()">
           <CheckCheck :size="13" /> Tout lire
         </button>
+        <button v-if="hasAny" class="notif-clear-all" title="Tout effacer" @click="clearAll">
+          <Trash2 :size="13" />
+        </button>
         <button class="notif-close-btn" aria-label="Fermer" @click="emit('close')"><X :size="14" /></button>
       </div>
     </div>
@@ -122,13 +181,15 @@ function notifCategory(n: typeof appStore.notificationHistory[number]): string {
       <button :class="{ active: filter === 'messages' }" @click="filter = 'messages'">Messages</button>
       <button :class="{ active: filter === 'grades' }" @click="filter = 'grades'">Notes</button>
       <button :class="{ active: filter === 'deadlines' }" @click="filter = 'deadlines'">Deadlines</button>
+      <button :class="{ active: filter === 'spark' }" @click="filter = 'spark'">Live</button>
       <button :class="{ active: filter === 'other' }" @click="filter = 'other'">Autre</button>
     </div>
 
     <!-- Vide -->
     <div v-if="!hasAny" class="notif-empty">
       <Bell :size="28" class="notif-empty-icon" />
-      <p>Aucune notification</p>
+      <p class="notif-empty-title">Tout est calme</p>
+      <p class="notif-empty-desc">Les messages, notes et invitations Spark apparaitront ici</p>
     </div>
 
     <!-- Toutes lues -->
@@ -189,6 +250,12 @@ function notifCategory(n: typeof appStore.notificationHistory[number]): string {
   cursor: pointer; padding: 2px 6px; border-radius: 6px; transition: background .1s;
 }
 .notif-mark-all:hover { background: rgba(74,144,217,.12); }
+.notif-clear-all {
+  display: flex; align-items: center; gap: 4px;
+  font-size: 11px; color: var(--text-muted); background: none; border: none;
+  cursor: pointer; padding: 2px 6px; border-radius: 6px; transition: all .1s;
+}
+.notif-clear-all:hover { background: rgba(239,68,68,.12); color: #ef4444; }
 .notif-close-btn {
   background: none; border: none; color: var(--text-muted); cursor: pointer;
   padding: 3px; border-radius: 5px; display: flex; transition: color .1s, background .1s;
@@ -212,8 +279,10 @@ function notifCategory(n: typeof appStore.notificationHistory[number]): string {
   flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
   gap: 8px; padding: 32px 16px; color: var(--text-muted); font-size: 12.5px;
 }
-.notif-empty-icon { opacity: .35; }
+.notif-empty-icon { opacity: .25; }
 .notif-empty p { margin: 0; }
+.notif-empty-title { font-size: 13px; font-weight: 600; color: var(--text-secondary, #aaa); }
+.notif-empty-desc { font-size: 11px; color: var(--text-muted); text-align: center; max-width: 200px; line-height: 1.4; }
 
 /* Scroll */
 .notif-scroll { flex: 1; overflow-y: auto; }

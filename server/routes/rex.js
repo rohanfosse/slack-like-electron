@@ -261,25 +261,45 @@ router.get('/sessions/:id/export', requireRole('teacher'), requirePromo(promoFro
     const format = req.query.format || 'json'
 
     if (format === 'csv') {
-      // Generer un CSV simple
+      const esc = (val) => { const s = String(val ?? ''); return s.includes(',') || s.includes('"') || s.includes('\n') ? '"' + s.replace(/"/g, '""') + '"' : s }
       const lines = []
       lines.push('activite_id,type,titre,statut,reponse,count')
       for (const a of data.activities) {
         const r = a.results
         if (!r) continue
-        if (r.type === 'question_ouverte' && r.responses) {
-          for (const resp of r.responses) {
-            lines.push(`${a.id},${a.type},"${a.title.replace(/"/g, '""')}",${a.status},"${resp.answer.replace(/"/g, '""')}",1`)
+        if (r.type === 'question_ouverte' && r.answers) {
+          for (const resp of r.answers) {
+            lines.push([a.id, a.type, esc(a.title), a.status, esc(resp.answer), 1].join(','))
+          }
+        } else if (r.type === 'humeur' && r.emojis) {
+          for (const e of r.emojis) {
+            lines.push([a.id, a.type, esc(a.title), a.status, esc(e.emoji), e.count].join(','))
+          }
+        } else if (r.type === 'priorite' && r.rankings) {
+          for (const rk of r.rankings) {
+            lines.push([a.id, a.type, esc(a.title), a.status, esc(rk.item), rk.avgRank.toFixed(2)].join(','))
+          }
+        } else if (r.type === 'matrice' && r.criteria) {
+          for (const c of r.criteria) {
+            lines.push([a.id, a.type, esc(a.title), a.status, esc(c.name), c.average.toFixed(2)].join(','))
+          }
+        } else if (r.type === 'echelle' && r.distribution) {
+          for (const d of r.distribution) {
+            lines.push([a.id, a.type, esc(a.title), a.status, d.rating, d.count].join(','))
           }
         } else if (r.counts) {
           for (const c of r.counts) {
-            lines.push(`${a.id},${a.type},"${a.title.replace(/"/g, '""')}",${a.status},"${String(c.answer).replace(/"/g, '""')}",${c.count}`)
+            lines.push([a.id, a.type, esc(a.title), a.status, esc(c.text ?? c.word ?? c.answer ?? ''), c.count].join(','))
+          }
+        } else if (r.freq) {
+          for (const f of r.freq) {
+            lines.push([a.id, a.type, esc(a.title), a.status, esc(f.word), f.count].join(','))
           }
         }
       }
       res.set('Content-Type', 'text/csv; charset=utf-8')
-      res.set('Content-Disposition', `attachment; filename="rex-${data.session.id}.csv"`)
-      return res.send(lines.join('\n'))
+      res.set('Content-Disposition', `attachment; filename="pulse-${data.session.id}.csv"`)
+      return res.send('\uFEFF' + lines.join('\n'))
     }
 
     res.json({ ok: true, data })

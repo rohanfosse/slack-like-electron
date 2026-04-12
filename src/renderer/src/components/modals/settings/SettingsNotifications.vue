@@ -1,6 +1,6 @@
 /** SettingsNotifications — section Notifications du modal Settings. */
 <script setup lang="ts">
-import { BellRing, AtSign, MessageSquare, BookOpen, Megaphone, MoonStar, Clock } from 'lucide-vue-next'
+import { BellRing, AtSign, MessageSquare, BookOpen, Megaphone, MoonStar, Clock, Zap, HeartPulse, Volume2 } from 'lucide-vue-next'
 import { useSettingsPreferences } from '@/composables/useSettingsPreferences'
 
 const {
@@ -8,6 +8,14 @@ const {
   notifMentions, notifDms, notifDevoirs, notifAnnonces,
   dndEnabled, dndStart, dndEnd, isDndActive,
 } = useSettingsPreferences()
+
+function previewSound() {
+  try {
+    const audio = new Audio(new URL('@/assets/sounds/notif.wav', import.meta.url).href)
+    audio.volume = 0.3
+    audio.play().catch(() => {})
+  } catch {}
+}
 </script>
 
 <template>
@@ -38,8 +46,13 @@ const {
           <span class="stg-toggle-label">Son de notification</span>
           <span class="stg-toggle-desc">Jouer un son lors de la reception d'un message.</span>
         </div>
-        <div class="stg-switch" :class="{ on: notifSound }" role="switch" :aria-checked="notifSound" tabindex="0" @click="notifSound = !notifSound" @keydown.enter.prevent="notifSound = !notifSound" @keydown.space.prevent="notifSound = !notifSound">
-          <div class="stg-switch-thumb" />
+        <div style="display:flex;align-items:center;gap:8px">
+          <button v-if="notifSound" class="stg-sound-preview" title="Tester le son" @click.stop="previewSound">
+            <Volume2 :size="13" />
+          </button>
+          <div class="stg-switch" :class="{ on: notifSound }" role="switch" :aria-checked="notifSound" tabindex="0" @click="notifSound = !notifSound" @keydown.enter.prevent="notifSound = !notifSound" @keydown.space.prevent="notifSound = !notifSound">
+            <div class="stg-switch-thumb" />
+          </div>
         </div>
       </label>
     </div>
@@ -86,6 +99,10 @@ const {
           <div class="stg-switch-thumb" />
         </div>
       </label>
+      <div class="stg-info-row">
+        <Zap :size="12" style="color:#eab308;flex-shrink:0" />
+        <span class="stg-toggle-desc">Les invitations Spark et Pulse sont toujours notifiees pour ne pas manquer une session live.</span>
+      </div>
     </div>
 
     <!-- Mode Ne Pas Deranger -->
@@ -170,5 +187,19 @@ const {
   font-size: 11.5px;
   font-weight: 600;
   color: var(--color-warning, #f59e0b);
+}
+.stg-sound-preview {
+  display: flex; align-items: center; justify-content: center;
+  width: 28px; height: 28px; border-radius: 6px;
+  border: 1px solid var(--border); background: transparent;
+  color: var(--text-muted); cursor: pointer; transition: all .15s;
+}
+.stg-sound-preview:hover { background: var(--bg-hover); color: var(--text-primary); }
+.stg-info-row {
+  display: flex; align-items: flex-start; gap: 8px;
+  padding: 8px 12px; margin-top: 4px;
+  background: rgba(234,179,8,.04);
+  border: 1px solid rgba(234,179,8,.1);
+  border-radius: 8px;
 }
 </style>

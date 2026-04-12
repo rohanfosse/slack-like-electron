@@ -1,53 +1,82 @@
 /**
- * Système de toast global (singleton) : affichage de notifications temporaires (error, success, info, undo).
- * Les erreurs restent affichées 8s (au lieu de 4s) et peuvent être fermées manuellement.
+ * Systeme de toast global (singleton) : affichage de notifications temporaires (error, success, info, undo).
+ * Supporte une file d'attente : plusieurs toasts s'affichent en pile.
  */
-import { reactive } from 'vue'
+import { reactive, ref } from 'vue'
 
-// ─── État partagé (singleton) ────────────────────────────────────────────────
+// ─── Types ──────────────────────────────────────────────────────────────────
 
 export type ToastType = 'error' | 'success' | 'info' | 'undo'
 
-interface ToastState {
+export interface ToastEntry {
+  id: string
   message: string
   type: ToastType
-  visible: boolean
   detail?: string
   onUndo?: () => void
+  timer?: ReturnType<typeof setTimeout>
 }
 
-export const toastState = reactive<ToastState>({
+// ─── Etat partage (singleton) ───────────────────────────────────────────────
+
+// Legacy single-toast state (backward compat with Toast.vue)
+export const toastState = reactive<{
+  message: string; type: ToastType; visible: boolean; detail?: string; onUndo?: () => void
+}>({
   message: '',
   type: 'error',
   visible: false,
   detail: undefined,
 })
 
-let _timer: ReturnType<typeof setTimeout> | null = null
+// Queue for stacked toasts
+export const toastQueue = ref<ToastEntry[]>([])
+const MAX_VISIBLE = 3
 
-// ─── Composable ──────────────────────────────────────────────────────────────
+let _legacyTimer: ReturnType<typeof setTimeout> | null = null
+let _idCounter = 0
+
+// ─── Composable ─────────────────────────────────────────────────────────────
 
 export function useToast() {
   function showToast(msg: string, type: Exclude<ToastType, 'undo'> = 'error', detail?: string) {
-    if (_timer) clearTimeout(_timer)
+    // Add to queue
+    const id = `toast_${++_idCounter}_${Date.now()}`
+    const duration = type === 'error' ? 8000 : 4000
+    const entry: ToastEntry = { id, message: msg, type, detail }
+    entry.timer = setTimeout(() => removeToast(id), duration)
+    toastQueue.value = [entry, ...toastQueue.value].slice(0, MAX_VISIBLE)
+
+    // Legacy single-toast (for backward compat)
+    if (_legacyTimer) clearTimeout(_legacyTimer)
     toastState.message = msg
     toastState.type    = type
     toastState.visible = true
     toastState.detail  = detail
     toastState.onUndo  = undefined
-    // Erreurs : 8s. Succès/Info : 4s.
-    const duration = type === 'error' ? 8000 : 4000
-    _timer = setTimeout(() => { toastState.visible = false }, duration)
+    _legacyTimer = setTimeout(() => { toastState.visible = false }, duration)
   }
 
   function dismissToast() {
-    if (_timer) clearTimeout(_timer)
+    if (_legacyTimer) clearTimeout(_legacyTimer)
     toastState.visible = false
+    // Also dismiss first toast in queue
+    if (toastQueue.value.length > 0) {
+      removeToast(toastQueue.value[0].id)
+    }
+  }
+
+  function removeToast(id: string) {
+    const entry = toastQueue.value.find(t => t.id === id)
+    if (entry?.timer) clearTimeout(entry.timer)
+    toastQueue.value = toastQueue.value.filter(t => t.id !== id)
+    // Sync legacy state
+    if (toastQueue.value.length === 0) toastState.visible = false
   }
 
   function showUndoToast(msg: string, duration = 5000): Promise<boolean> {
     return new Promise((resolve) => {
-      if (_timer) clearTimeout(_timer)
+      if (_legacyTimer) clearTimeout(_legacyTimer)
       toastState.message = msg
       toastState.type    = 'undo'
       toastState.visible = true
@@ -57,16 +86,16 @@ export function useToast() {
       toastState.onUndo = () => {
         if (settled) return
         settled = true
-        if (_timer) clearTimeout(_timer)
+        if (_legacyTimer) clearTimeout(_legacyTimer)
         toastState.visible = false
         resolve(true)
       }
 
-      _timer = setTimeout(() => {
+      _legacyTimer = setTimeout(() => {
         if (!settled) { settled = true; toastState.visible = false; resolve(false) }
       }, duration)
     })
   }
 
-  return { showToast, showUndoToast, dismissToast }
+  return { showToast, showUndoToast, dismissToast, removeToast }
 }

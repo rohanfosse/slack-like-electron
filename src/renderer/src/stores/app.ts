@@ -42,7 +42,7 @@ export const useAppStore = defineStore('app', () => {
   // ── Historique de notifications ────────────────────────────────────────────
   interface NotifEntry {
     id:          string
-    category:    'message' | 'mention' | 'dm' | 'grade' | 'deadline' | 'signature' | 'document' | 'assignment'
+    category:    'message' | 'mention' | 'dm' | 'grade' | 'deadline' | 'signature' | 'document' | 'assignment' | 'spark' | 'pulse'
     channelId:   number | null
     channelName: string
     dmStudentId: number | null
