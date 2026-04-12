@@ -1173,6 +1173,9 @@ watch(() => [props.content, props.chapter?.path], () => {
   flex-direction: column;
   overflow: hidden;
   background: var(--bg-primary);
+  /* height: 0 force le flex-basis a 0 pour que le container
+     ne depasse pas la hauteur du parent (necessaire pour les PDFs) */
+  height: 0;
 }
 
 .lumen-viewer-head {
@@ -1500,16 +1503,22 @@ button.lumen-viewer-chip:focus-visible {
    100% du parent — on utilise position absolute + inset 0 plutot que
    flex pour eviter les soucis de % heights dans les flex containers. */
 .lumen-viewer-main--pdf {
-  flex-direction: column;
   background: var(--bg-rail);
   padding: 0;
-  flex: 1;
-  min-height: 0;
+  /* height: 0 + flex-grow force le container a occuper tout l'espace
+     restant, meme quand les parents ne propagent pas une hauteur explicite.
+     C'est plus fiable que min-height: 0 pour les iframes. */
+  height: 0;
+  flex-grow: 1;
+  position: relative;
+  overflow: hidden;
 }
 .lumen-pdf-frame {
-  flex: 1;
+  position: absolute;
+  top: 0;
+  left: 0;
   width: 100%;
-  min-height: 0;
+  height: 100%;
   border: none;
   background: #fff;
 }
