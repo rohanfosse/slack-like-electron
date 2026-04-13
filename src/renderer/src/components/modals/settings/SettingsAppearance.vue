@@ -173,21 +173,6 @@ const fontSizePreview: Record<string, string> = { small: '13px', default: '14px'
       </label>
     </div>
 
-    <!-- Messages -->
-    <div class="stg-group">
-      <div class="stg-group-header">
-        <MessageSquare :size="13" class="stg-group-icon" />
-      <label class="stg-toggle-row">
-        <div class="stg-toggle-info">
-          <span class="stg-toggle-label">Activer les animations</span>
-          <span class="stg-toggle-desc">Desactiver pour reduire les mouvements a l'ecran.</span>
-        </div>
-        <div class="stg-switch" :class="{ on: animationsEnabled }" role="switch" :aria-checked="animationsEnabled" tabindex="0" @click="animationsEnabled = !animationsEnabled" @keydown.enter.prevent="animationsEnabled = !animationsEnabled" @keydown.space.prevent="animationsEnabled = !animationsEnabled">
-          <div class="stg-switch-thumb" />
-        </div>
-      </label>
-    </div>
-
     <!-- Toggles messages -->
     <div class="stg-group">
       <div class="stg-group-header">
