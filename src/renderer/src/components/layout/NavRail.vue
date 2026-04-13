@@ -323,8 +323,8 @@
       <component :is="sidebarCollapsed ? PanelLeftOpen : PanelLeftClose" :size="18" />
     </button>
 
-    <!-- ── Admin (admin uniquement) ── -->
-    <button
+    <!-- ── Admin (masque temporairement) ── -->
+    <!-- <button
       v-if="appStore.isAdmin"
       class="nav-btn nav-admin-btn"
       title="Console d'administration"
@@ -333,10 +333,10 @@
     >
       <Shield :size="20" />
       <span class="nav-label">Admin</span>
-    </button>
+    </button> -->
 
-    <!-- ── Feedback / Bugs ── -->
-    <button
+    <!-- ── Feedback / Bugs (masque temporairement) ── -->
+    <!-- <button
       class="nav-btn"
       title="Signaler un bug / Suggestion"
       aria-label="Feedback"
@@ -344,7 +344,7 @@
     >
       <Bug :size="20" />
       <span class="nav-label">Feedback</span>
-    </button>
+    </button> -->
 
     <!-- ── Avatar / Paramètres ── -->
     <div class="nav-divider" />
