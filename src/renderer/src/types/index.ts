@@ -225,7 +225,10 @@ export interface LiveSession {
 }
 export interface LiveActivity {
   id: number; session_id: number
-  type: 'qcm' | 'vrai_faux' | 'reponse_courte' | 'association' | 'estimation' | 'live_code' | 'board'
+  type:
+    | 'qcm' | 'vrai_faux' | 'reponse_courte' | 'association' | 'estimation'
+    | 'sondage_libre' | 'nuage' | 'echelle' | 'question_ouverte' | 'sondage' | 'humeur' | 'priorite' | 'matrice'
+    | 'live_code' | 'board'
   title: string; options: string[] | string | null; multi: number
   max_words: number; position: number; status: 'pending' | 'live' | 'closed'
   started_at: string | null; closed_at: string | null
@@ -237,14 +240,27 @@ export interface LiveActivity {
   language?: string | null
 }
 export interface LiveResults {
-  activityId: number; type: string; totalResponses: number
-  data: { option?: string; text?: string; word?: string; index?: number; count: number; percent?: number; size?: number }[]
-  // Association / Estimation extended fields (returned by backend aggregation)
+  activityId?: number; type: string; totalResponses?: number; total?: number
+  data?: { option?: string; text?: string; word?: string; index?: number; count: number; percent?: number; size?: number }[]
+  // Spark
   correctCount?: number
   average?: number
   values?: number[]
   target?: number
   margin?: number
+  // Pulse
+  counts?: { text: string; count: number }[] | Record<string, number>
+  freq?: { word: string; count: number }[]
+  distribution?: { rating: number; count: number }[]
+  answers?: { id: number; answer: string; pinned: boolean; created_at: string }[]
+  emojis?: { emoji: string; count: number }[]
+  rankings?: { item: string; avgRank: number }[]
+  criteria?: { name: string; average: number }[]
+  // Code
+  content?: string
+  language?: string
+  // Board
+  cards?: unknown[]
 }
 export interface LeaderboardEntry {
   rank: number; studentId: number; name: string; points: number; pointsThisRound?: number

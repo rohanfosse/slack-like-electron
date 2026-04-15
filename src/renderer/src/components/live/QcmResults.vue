@@ -13,7 +13,7 @@
   const CORRECT_COLOR = '#22c55e'
 
   const maxCount = computed(() =>
-    Math.max(1, ...props.results.data.map(d => d.count)),
+    Math.max(1, ...(props.results.data ?? []).map(d => d.count)),
   )
 
   const correctIndices = computed<number[]>(() => {
@@ -37,8 +37,8 @@
 
 <template>
   <div class="qcm-results">
-    <div class="qcm-total">{{ results.totalResponses }} reponse{{ results.totalResponses > 1 ? 's' : '' }}</div>
-    <div v-for="(row, i) in results.data" :key="row.option ?? i" class="qcm-row" :class="{ 'qcm-correct': isCorrect(row.index ?? i) }">
+    <div class="qcm-total">{{ results.totalResponses ?? 0 }} reponse{{ (results.totalResponses ?? 0) > 1 ? 's' : '' }}</div>
+    <div v-for="(row, i) in (results.data ?? [])" :key="row.option ?? i" class="qcm-row" :class="{ 'qcm-correct': isCorrect(row.index ?? i) }">
       <div class="qcm-label">
         <CheckCircle2 v-if="isCorrect(row.index ?? i)" :size="16" class="qcm-check" />
         {{ row.option ?? `Option ${(row.index ?? i) + 1}` }}

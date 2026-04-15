@@ -1,13 +1,12 @@
 <script setup lang="ts">
   import { computed, ref, watch } from 'vue'
   import { useRouter, useRoute } from 'vue-router'
-  import { MessageSquare, BookOpen, FileText, LayoutDashboard, Bell, Flame, Search, Shield, Bug, Zap, HeartPulse, Paperclip, Lightbulb, Calendar, PanelLeftClose, PanelLeftOpen } from 'lucide-vue-next'
+  import { MessageSquare, BookOpen, FileText, LayoutDashboard, Bell, Flame, Search, Shield, Bug, Zap, Paperclip, Lightbulb, Calendar, PanelLeftClose, PanelLeftOpen } from 'lucide-vue-next'
   import logoUrl from '@/assets/logo.png'
   import { useAppStore }    from '@/stores/app'
   import { useModalsStore } from '@/stores/modals'
   import { useTravauxStore } from '@/stores/travaux'
   import { useLiveStore }   from '@/stores/live'
-  import { useRexStore }    from '@/stores/rex'
   import { useToast }       from '@/composables/useToast'
   import { useModules }     from '@/composables/useModules'
   import { avatarColor }    from '@/utils/format'
@@ -18,7 +17,6 @@
   const modals      = useModalsStore()
   const travauxStore = useTravauxStore()
   const liveStore    = useLiveStore()
-  const rexStore     = useRexStore()
   const { showToast } = useToast()
   const { isEnabled } = useModules()
   const router      = useRouter()
@@ -251,32 +249,18 @@
       <span class="nav-label">Calendrier</span>
     </button>
 
-    <!-- Spark : profs ont toujours acces, etudiants seulement quand session active -->
+    <!-- Live : profs ont toujours acces, etudiants seulement quand session active -->
     <button
       v-if="isEnabled('live') && (appStore.isStaff || (liveStore.currentSession && liveStore.currentSession.status !== 'ended'))"
       class="nav-btn"
       :class="{ active: route.name === 'live' }"
-      title="Spark (quiz interactif)"
-      aria-label="Spark"
+      title="Live (quiz, feedback, code, tableau)"
+      aria-label="Live"
       @click="router.push('/live')"
     >
       <Zap :size="20" />
-      <span class="nav-label">Spark</span>
+      <span class="nav-label">Live</span>
       <span v-if="!appStore.isStaff && liveStore.currentSession" class="nav-live-dot" />
-    </button>
-
-    <!-- Pulse : profs ont toujours acces, etudiants seulement quand session active -->
-    <button
-      v-if="isEnabled('rex') && (appStore.isStaff || (rexStore.currentSession && rexStore.currentSession.status !== 'ended'))"
-      class="nav-btn"
-      :class="{ active: route.name === 'rex' }"
-      title="Pulse (feedback anonyme)"
-      aria-label="Pulse"
-      @click="router.push('/rex')"
-    >
-      <HeartPulse :size="20" />
-      <span class="nav-label">Pulse</span>
-      <span v-if="!appStore.isStaff && rexStore.currentSession" class="nav-rex-dot" />
     </button>
 
     <!-- ── Cloche de notifications ── -->

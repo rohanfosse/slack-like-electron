@@ -23,6 +23,14 @@
   import QuizStatsView        from './QuizStatsView.vue'
   import LiveCodeEditor       from './LiveCodeEditor.vue'
   import LiveBoard            from './LiveBoard.vue'
+  // Pulse results (composants Rex reutilises)
+  import RexQuestionOuverteResults from '@/components/rex/RexQuestionOuverteResults.vue'
+  import RexSondageResults        from '@/components/rex/RexSondageResults.vue'
+  import RexEchelleResults        from '@/components/rex/RexEchelleResults.vue'
+  import RexWordCloud             from '@/components/rex/RexWordCloud.vue'
+  import RexHumeurResults         from '@/components/rex/RexHumeurResults.vue'
+  import RexPrioriteResults       from '@/components/rex/RexPrioriteResults.vue'
+  import RexMatriceResults        from '@/components/rex/RexMatriceResults.vue'
 
   const appStore  = useAppStore()
   const liveStore = useLiveStore()
@@ -33,6 +41,14 @@
     if (Array.isArray(opts)) return opts
     try { const arr = JSON.parse(opts); return Array.isArray(arr) ? arr : [] } catch { return [] }
   }
+
+  /** Normalise les counts Pulse en array { text, count } (pour RexSondageResults). */
+  const pulseSondageCounts = computed<{ text: string; count: number }[]>(() => {
+    const c = liveStore.results?.counts
+    if (!c) return []
+    if (Array.isArray(c)) return c as { text: string; count: number }[]
+    return Object.entries(c).map(([text, count]) => ({ text, count: Number(count) }))
+  })
 
   const activeTab       = ref<'create' | 'history' | 'stats'>('create')
   const newTitle        = ref('')
@@ -107,8 +123,11 @@
 
   // ── Activity management ──────────────────────────────────────────────────
   async function onAddActivity(payload: {
-    type: 'qcm' | 'vrai_faux' | 'reponse_courte' | 'association' | 'estimation' | 'live_code' | 'board'
+    type: 'qcm' | 'vrai_faux' | 'reponse_courte' | 'association' | 'estimation'
+      | 'sondage_libre' | 'nuage' | 'echelle' | 'question_ouverte' | 'sondage' | 'humeur' | 'priorite' | 'matrice'
+      | 'live_code' | 'board'
     title: string; options?: string[] | string
+    max_words?: number; max_rating?: number
     timer_seconds?: number; correct_answers?: number[] | string[]
     language?: string
   }) {
@@ -244,8 +263,11 @@
   async function duplicateActivity(activity: LiveActivity) {
     if (!liveStore.currentSession) return
     const payload: {
-      type: 'qcm' | 'vrai_faux' | 'reponse_courte' | 'association' | 'estimation' | 'live_code' | 'board'
+      type: 'qcm' | 'vrai_faux' | 'reponse_courte' | 'association' | 'estimation'
+        | 'sondage_libre' | 'nuage' | 'echelle' | 'question_ouverte' | 'sondage' | 'humeur' | 'priorite' | 'matrice'
+        | 'live_code' | 'board'
       title: string; options?: string[] | string
+      max_words?: number; max_rating?: number
       timer_seconds?: number; correct_answers?: number[] | string[]
       language?: string
     } = {
@@ -565,6 +587,44 @@
         <PollResults v-else-if="liveStore.currentActivity.type === 'reponse_courte' && liveStore.results" :results="liveStore.results" />
         <AssociationResults v-else-if="liveStore.currentActivity.type === 'association' && liveStore.results" :results="liveStore.results" />
         <EstimationResults v-else-if="liveStore.currentActivity.type === 'estimation' && liveStore.results" :results="liveStore.results" />
+        <!-- Pulse : resultats anonymes (composants Rex reutilises) -->
+        <RexQuestionOuverteResults
+          v-else-if="liveStore.currentActivity.type === 'question_ouverte' && liveStore.results?.answers"
+          :answers="liveStore.results.answers"
+          :is-teacher="true"
+        />
+        <RexSondageResults
+          v-else-if="(liveStore.currentActivity.type === 'sondage' || liveStore.currentActivity.type === 'sondage_libre') && pulseSondageCounts.length"
+          :results="pulseSondageCounts"
+          :total="liveStore.results?.total ?? 0"
+        />
+        <RexEchelleResults
+          v-else-if="liveStore.currentActivity.type === 'echelle' && liveStore.results?.average !== undefined"
+          :average="liveStore.results.average"
+          :max-rating="liveStore.currentActivity.max_rating ?? 5"
+          :distribution="liveStore.results.distribution ?? []"
+          :total="liveStore.results.total ?? 0"
+        />
+        <RexWordCloud
+          v-else-if="liveStore.currentActivity.type === 'nuage' && liveStore.results?.freq"
+          :words="liveStore.results.freq"
+        />
+        <RexHumeurResults
+          v-else-if="liveStore.currentActivity.type === 'humeur' && liveStore.results?.emojis"
+          :emojis="liveStore.results.emojis"
+          :total="liveStore.results.total ?? 0"
+        />
+        <RexPrioriteResults
+          v-else-if="liveStore.currentActivity.type === 'priorite' && liveStore.results?.rankings"
+          :rankings="liveStore.results.rankings"
+          :total="liveStore.results.total ?? 0"
+        />
+        <RexMatriceResults
+          v-else-if="liveStore.currentActivity.type === 'matrice' && liveStore.results?.criteria"
+          :criteria="liveStore.results.criteria"
+          :max-rating="liveStore.currentActivity.max_rating ?? 5"
+          :total="liveStore.results.total ?? 0"
+        />
         <div v-else class="results-waiting">
           <Zap :size="32" class="results-waiting-icon" />
           <span>En attente des reponses...</span>

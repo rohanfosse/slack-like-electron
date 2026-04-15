@@ -10,11 +10,11 @@
   const MAX_SIZE = 56
 
   const maxCount = computed(() =>
-    Math.max(1, ...props.results.data.map(d => d.count)),
+    Math.max(1, ...(props.results.data ?? []).map(d => d.count)),
   )
 
   const words = computed(() =>
-    props.results.data.map((d, i) => ({
+    (props.results.data ?? []).map((d, i) => ({
       text: d.word ?? d.text ?? d.option ?? '-',
       count: d.count,
       size: MIN_SIZE + ((d.count / maxCount.value) * (MAX_SIZE - MIN_SIZE)),
@@ -26,7 +26,7 @@
 
 <template>
   <div class="wordcloud">
-    <div class="wordcloud-total">{{ results.totalResponses }} réponse{{ results.totalResponses > 1 ? 's' : '' }}</div>
+    <div class="wordcloud-total">{{ results.totalResponses ?? 0 }} réponse{{ (results.totalResponses ?? 0) > 1 ? 's' : '' }}</div>
     <div class="wordcloud-container">
       <TransitionGroup name="word-fade">
         <span

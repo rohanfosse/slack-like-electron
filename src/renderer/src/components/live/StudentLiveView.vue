@@ -10,6 +10,7 @@
   import QcmResults           from './QcmResults.vue'
   import LiveCodeViewer       from './LiveCodeViewer.vue'
   import LiveBoard            from './LiveBoard.vue'
+  import LivePulseInput       from './LivePulseInput.vue'
   import PollResults          from './PollResults.vue'
   import AssociationResults   from './AssociationResults.vue'
   import EstimationResults    from './EstimationResults.vue'
@@ -296,6 +297,13 @@
           :activity-id="activity.id"
           :is-teacher="false"
           :columns="parseOptions(activity.options)"
+        />
+
+        <!-- Pulse : inputs anonymes (echelle, humeur, question ouverte, etc.) -->
+        <LivePulseInput
+          v-else-if="['sondage_libre','nuage','echelle','question_ouverte','sondage','humeur','priorite','matrice'].includes(activity.type)"
+          :activity="activity"
+          @submitted="liveStore.hasResponded = true"
         />
 
       </div>

@@ -5,17 +5,15 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { LayoutDashboard, MessageSquare, BookOpen, Lightbulb, Zap, HeartPulse } from 'lucide-vue-next'
+import { LayoutDashboard, MessageSquare, BookOpen, Lightbulb, Zap } from 'lucide-vue-next'
 import { useAppStore }    from '@/stores/app'
 import { useTravauxStore } from '@/stores/travaux'
 import { useLiveStore }   from '@/stores/live'
-import { useRexStore }    from '@/stores/rex'
 import { useModules }     from '@/composables/useModules'
 
 const appStore     = useAppStore()
 const travauxStore = useTravauxStore()
 const liveStore    = useLiveStore()
-const rexStore     = useRexStore()
 const { isEnabled } = useModules()
 const router       = useRouter()
 const route        = useRoute()
@@ -28,9 +26,6 @@ const totalMsgUnread = computed(() => {
 })
 const showLive     = computed(() =>
   isEnabled('live') && !appStore.isStaff && liveStore.currentSession && liveStore.currentSession.status !== 'ended',
-)
-const showPulse    = computed(() =>
-  isEnabled('rex') && !appStore.isStaff && rexStore.currentSession && rexStore.currentSession.status !== 'ended',
 )
 </script>
 
@@ -86,19 +81,8 @@ const showPulse    = computed(() =>
       @click="router.push('/live')"
     >
       <Zap :size="20" />
-      <span>Spark</span>
+      <span>Live</span>
       <span class="mobile-nav-live-dot" />
-    </button>
-
-    <button
-      v-if="showPulse"
-      class="mobile-nav-btn"
-      :class="{ active: route.name === 'rex' }"
-      @click="router.push('/rex')"
-    >
-      <HeartPulse :size="20" />
-      <span>Pulse</span>
-      <span class="mobile-nav-live-dot mobile-nav-live-dot--pulse" />
     </button>
   </nav>
 </template>

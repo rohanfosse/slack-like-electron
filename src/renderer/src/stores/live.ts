@@ -126,8 +126,12 @@ export const useLiveStore = defineStore('live', () => {
   }
 
   async function pushActivity(sessionId: number, payload: {
-    type: 'qcm' | 'vrai_faux' | 'reponse_courte' | 'association' | 'estimation' | 'live_code' | 'board'; title: string
+    type: 'qcm' | 'vrai_faux' | 'reponse_courte' | 'association' | 'estimation'
+      | 'sondage_libre' | 'nuage' | 'echelle' | 'question_ouverte' | 'sondage' | 'humeur' | 'priorite' | 'matrice'
+      | 'live_code' | 'board'
+    title: string
     options?: string[] | string | null; multi?: number
+    max_words?: number; max_rating?: number
     timer_seconds?: number; correct_answers?: number[] | string[]
     language?: string
   }): Promise<boolean> {

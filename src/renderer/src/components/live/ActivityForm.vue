@@ -1,22 +1,31 @@
 <!-- ActivityForm.vue - Formulaire de création/édition d'activité Live (QCM / Sondage / Nuage) -->
 <script setup lang="ts">
   import { ref } from 'vue'
-  import { ListChecks, ToggleLeft, Type, Link2, Hash, Plus, X, Code2, StickyNote } from 'lucide-vue-next'
+  import {
+    ListChecks, ToggleLeft, Type, Link2, Hash, Plus, X,
+    Code2, StickyNote, MessageSquare, Cloud, Star, FileText,
+    BarChart, Smile, ArrowUpDown, Grid3X3,
+  } from 'lucide-vue-next'
   import type { LiveActivity } from '@/types'
 
   const props = defineProps<{ initialData?: LiveActivity | null }>()
 
-  type ActivityType = 'qcm' | 'vrai_faux' | 'reponse_courte' | 'association' | 'estimation' | 'live_code' | 'board'
+  type ActivityType =
+    | 'qcm' | 'vrai_faux' | 'reponse_courte' | 'association' | 'estimation'
+    | 'sondage_libre' | 'nuage' | 'echelle' | 'question_ouverte' | 'sondage' | 'humeur' | 'priorite' | 'matrice'
+    | 'live_code' | 'board'
 
   const emit = defineEmits<{
     save: [payload: {
       type: ActivityType; title: string
-      options?: string[] | string; max_words?: number
+      options?: string[] | string; max_words?: number; max_rating?: number
       timer_seconds?: number; correct_answers?: number[] | string[]
       language?: string
     }]
     cancel: []
   }>()
+
+  const HUMEUR_EMOJIS = ['😊', '🙂', '😐', '😟', '🤯']
 
   const isEditing = !!props.initialData
 
@@ -64,6 +73,15 @@
     { id: 'reponse_courte' as const,   label: 'Réponse courte',  icon: Type,         desc: 'Texte libre noté', category: 'Spark' },
     { id: 'association' as const,      label: 'Association',      icon: Link2,        desc: 'Relier les paires', category: 'Spark' },
     { id: 'estimation' as const,       label: 'Estimation',       icon: Hash,         desc: 'Réponse numérique', category: 'Spark' },
+    // Pulse (feedback anonyme)
+    { id: 'sondage_libre' as const,    label: 'Sondage libre',   icon: MessageSquare, desc: 'Texte libre anonyme', category: 'Pulse' },
+    { id: 'nuage' as const,            label: 'Nuage de mots',   icon: Cloud,         desc: 'Mots-cles anonymes', category: 'Pulse' },
+    { id: 'echelle' as const,          label: 'Echelle',         icon: Star,          desc: 'Note 1 a N', category: 'Pulse' },
+    { id: 'question_ouverte' as const, label: 'Question ouverte',icon: FileText,      desc: 'Reponse longue', category: 'Pulse' },
+    { id: 'sondage' as const,          label: 'Sondage',         icon: BarChart,      desc: 'Choix parmi options', category: 'Pulse' },
+    { id: 'humeur' as const,           label: 'Humeur',          icon: Smile,         desc: 'Emoji ressenti', category: 'Pulse' },
+    { id: 'priorite' as const,         label: 'Priorite',        icon: ArrowUpDown,   desc: 'Classer des items', category: 'Pulse' },
+    { id: 'matrice' as const,          label: 'Matrice',         icon: Grid3X3,       desc: 'Noter des criteres', category: 'Pulse' },
     // Code
     { id: 'live_code' as const,        label: 'Live Code',        icon: Code2,        desc: 'Coder en direct', category: 'Code' },
     // Board
@@ -74,6 +92,25 @@
   const codeLanguage = ref(props.initialData?.language ?? 'javascript')
   // Board activity
   const boardColumns = ref<string[]>(parseBoardColumns(props.initialData))
+
+  // Pulse activities
+  const maxWords = ref(props.initialData?.max_words ?? 2)
+  const maxRating = ref(props.initialData?.max_rating ?? 5)
+  const sondageOptions = ref<string[]>(props.initialData?.type === 'sondage' ? parsePulseOptions(props.initialData) : ['', ''])
+  const prioriteItems = ref<string[]>(props.initialData?.type === 'priorite' ? parsePulseOptions(props.initialData) : ['', '', ''])
+  const matriceCriteria = ref<string[]>(props.initialData?.type === 'matrice' ? parsePulseOptions(props.initialData) : ['', ''])
+
+  function parsePulseOptions(data?: LiveActivity | null): string[] {
+    if (!data?.options) return ['', '']
+    try { const arr = JSON.parse(data.options as unknown as string); return Array.isArray(arr) ? arr : ['', ''] } catch { return ['', ''] }
+  }
+
+  function addSondageOption() { if (sondageOptions.value.length < 8) sondageOptions.value.push('') }
+  function removeSondageOption(i: number) { if (sondageOptions.value.length > 2) sondageOptions.value = sondageOptions.value.filter((_, idx) => idx !== i) }
+  function addPrioriteItem() { if (prioriteItems.value.length < 8) prioriteItems.value.push('') }
+  function removePrioriteItem(i: number) { if (prioriteItems.value.length > 2) prioriteItems.value = prioriteItems.value.filter((_, idx) => idx !== i) }
+  function addMatriceCrit() { if (matriceCriteria.value.length < 8) matriceCriteria.value.push('') }
+  function removeMatriceCrit(i: number) { if (matriceCriteria.value.length > 2) matriceCriteria.value = matriceCriteria.value.filter((_, idx) => idx !== i) }
 
   function parseBoardColumns(data?: LiveActivity | null): string[] {
     if (!data || data.type !== 'board' || !data.options) return ['Idees', 'A approfondir', 'A ecarter']
@@ -112,7 +149,7 @@
     if (!title.value.trim()) return
     const payload: {
       type: ActivityType; title: string
-      options?: string[] | string; max_words?: number
+      options?: string[] | string; max_words?: number; max_rating?: number
       timer_seconds?: number; correct_answers?: number[] | string[]
       language?: string
     } = {
@@ -156,6 +193,35 @@
       if (cols.length === 0) return
       payload.options = JSON.stringify(cols)
     }
+    // ── Pulse types ────────────────────────────────────────────────────
+    if (activityType.value === 'nuage') {
+      payload.max_words = maxWords.value
+    }
+    if (activityType.value === 'echelle') {
+      payload.max_rating = maxRating.value
+    }
+    if (activityType.value === 'sondage' && activityType.value !== 'sondage') {
+      // Placeholder, handled below
+    }
+    if (activityType.value === 'sondage') {
+      const filtered = sondageOptions.value.map(o => o.trim()).filter(Boolean)
+      if (filtered.length < 2) return
+      payload.options = JSON.stringify(filtered)
+    }
+    if (activityType.value === 'humeur') {
+      payload.options = JSON.stringify(HUMEUR_EMOJIS)
+    }
+    if (activityType.value === 'priorite') {
+      const filtered = prioriteItems.value.map(o => o.trim()).filter(Boolean)
+      if (filtered.length < 2) return
+      payload.options = JSON.stringify(filtered)
+    }
+    if (activityType.value === 'matrice') {
+      const filtered = matriceCriteria.value.map(o => o.trim()).filter(Boolean)
+      if (filtered.length < 2) return
+      payload.options = JSON.stringify(filtered)
+      payload.max_rating = maxRating.value
+    }
     emit('save', payload)
   }
 </script>
@@ -187,8 +253,8 @@
       maxlength="200"
     />
 
-    <!-- Timer selector (spark uniquement) -->
-    <div v-if="activityType !== 'live_code' && activityType !== 'board'" class="timer-section">
+    <!-- Timer selector (spark uniquement, pas pulse/code/board) -->
+    <div v-if="['qcm','vrai_faux','reponse_courte','association','estimation'].includes(activityType)" class="timer-section">
       <label class="timer-label">Chronometre</label>
       <div class="timer-btns">
         <button
@@ -268,6 +334,62 @@
       <button v-if="pairs.length < 8" class="add-option-btn" @click="addPair">
         <Plus :size="14" /> Ajouter une paire
       </button>
+    </div>
+
+    <!-- ── Pulse : Nuage (max_words) ──────────────────────────────────── -->
+    <div v-if="activityType === 'nuage'" class="code-section">
+      <label class="correct-label">Nombre de mots max par reponse</label>
+      <div class="timer-btns">
+        <button v-for="n in [1, 2, 3]" :key="n" class="timer-btn" :class="{ active: maxWords === n }" @click="maxWords = n">{{ n }}</button>
+      </div>
+    </div>
+
+    <!-- ── Pulse : Echelle / Matrice (max_rating) ─────────────────────── -->
+    <div v-if="activityType === 'echelle' || activityType === 'matrice'" class="code-section">
+      <label class="correct-label">Type d'echelle</label>
+      <div class="timer-btns">
+        <button class="timer-btn" :class="{ active: maxRating === 5 }" @click="maxRating = 5">5 etoiles</button>
+        <button class="timer-btn" :class="{ active: maxRating === 10 }" @click="maxRating = 10">Slider 1-10</button>
+      </div>
+    </div>
+
+    <!-- ── Pulse : Sondage options ──────────────────────────────────── -->
+    <div v-if="activityType === 'sondage'" class="code-section">
+      <label class="correct-label">Options du sondage</label>
+      <div v-for="(_, i) in sondageOptions" :key="i" class="option-row">
+        <input v-model="sondageOptions[i]" class="form-input option-input" :placeholder="`Option ${i + 1}`" maxlength="100" />
+        <button v-if="sondageOptions.length > 2" class="option-remove" @click="removeSondageOption(i)"><X :size="12" /></button>
+      </div>
+      <button v-if="sondageOptions.length < 8" class="add-option-btn" @click="addSondageOption"><Plus :size="13" /> Option</button>
+    </div>
+
+    <!-- ── Pulse : Priorite items ──────────────────────────────────── -->
+    <div v-if="activityType === 'priorite'" class="code-section">
+      <label class="correct-label">Items a classer</label>
+      <div v-for="(_, i) in prioriteItems" :key="i" class="option-row">
+        <input v-model="prioriteItems[i]" class="form-input option-input" :placeholder="`Item ${i + 1}`" maxlength="100" />
+        <button v-if="prioriteItems.length > 2" class="option-remove" @click="removePrioriteItem(i)"><X :size="12" /></button>
+      </div>
+      <button v-if="prioriteItems.length < 8" class="add-option-btn" @click="addPrioriteItem"><Plus :size="13" /> Item</button>
+    </div>
+
+    <!-- ── Pulse : Matrice criteres ──────────────────────────────────── -->
+    <div v-if="activityType === 'matrice'" class="code-section">
+      <label class="correct-label">Criteres a evaluer</label>
+      <div v-for="(_, i) in matriceCriteria" :key="i" class="option-row">
+        <input v-model="matriceCriteria[i]" class="form-input option-input" :placeholder="`Critere ${i + 1}`" maxlength="100" />
+        <button v-if="matriceCriteria.length > 2" class="option-remove" @click="removeMatriceCrit(i)"><X :size="12" /></button>
+      </div>
+      <button v-if="matriceCriteria.length < 8" class="add-option-btn" @click="addMatriceCrit"><Plus :size="13" /> Critere</button>
+    </div>
+
+    <!-- ── Pulse : Humeur (info only, emojis fixes) ──────────────────── -->
+    <div v-if="activityType === 'humeur'" class="code-section">
+      <label class="correct-label">Emojis disponibles pour les etudiants</label>
+      <div class="humeur-preview">
+        <span v-for="e in HUMEUR_EMOJIS" :key="e" class="humeur-emoji">{{ e }}</span>
+      </div>
+      <p class="code-hint">Les etudiants choisissent un emoji pour exprimer leur ressenti. Anonyme.</p>
     </div>
 
     <!-- Live Code : language selector -->
@@ -357,6 +479,11 @@
   font-size: 11px; color: var(--text-muted); font-style: italic;
   margin-top: 4px;
 }
+.humeur-preview {
+  display: flex; gap: 10px; padding: 8px;
+  background: var(--bg-input); border-radius: 6px;
+}
+.humeur-emoji { font-size: 28px; }
 .type-cards {
   display: flex;
   flex-wrap: wrap;
