@@ -56,7 +56,7 @@ const liveScoresUpdateCallbacks:   Array<(data: LiveScoresUpdatePayload) => void
 
 // Live v2 : code + board
 type LiveCodeUpdatePayload = { activityId: number; content: string; language: string | null }
-type LiveBoardUpdatePayload = { activityId: number; action: 'add' | 'delete' | 'vote'; card?: unknown; cardId?: number; votes?: number }
+type LiveBoardUpdatePayload = { activityId: number; action: 'add' | 'delete' | 'vote' | 'update'; card?: unknown; cardId?: number; votes?: number }
 const liveCodeUpdateCallbacks:  Array<(data: LiveCodeUpdatePayload) => void> = []
 const liveBoardUpdateCallbacks: Array<(data: LiveBoardUpdatePayload) => void> = []
 
@@ -552,6 +552,7 @@ contextBridge.exposeInMainWorld('api', {
   // Board
   getLiveV2BoardCards:  (activityId: number) => get(`/api/live-v2/activities/${activityId}/cards`),
   addLiveV2BoardCard:   (activityId: number, payload: unknown) => post(`/api/live-v2/activities/${activityId}/cards`, payload),
+  updateLiveV2BoardCard: (cardId: number, payload: unknown) => patch(`/api/live-v2/cards/${cardId}`, payload),
   deleteLiveV2BoardCard:(cardId: number) => del(`/api/live-v2/cards/${cardId}`),
   voteLiveV2BoardCard:  (cardId: number, vote: boolean) => post(`/api/live-v2/cards/${cardId}/vote`, { vote }),
 

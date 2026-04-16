@@ -277,11 +277,12 @@ declare global {
       getLiveV2StatsForPromo(promoId: number): Promise<IpcResponse<LiveStats>>
       getLiveV2BoardCards(activityId: number): Promise<IpcResponse<import('./types').BoardCard[]>>
       addLiveV2BoardCard(activityId: number, payload: unknown): Promise<IpcResponse<import('./types').BoardCard>>
+      updateLiveV2BoardCard(cardId: number, payload: { content?: string; columnName?: string }): Promise<IpcResponse<import('./types').BoardCard>>
       deleteLiveV2BoardCard(cardId: number): Promise<IpcResponse<null>>
       voteLiveV2BoardCard(cardId: number, vote: boolean): Promise<IpcResponse<{ voted: boolean }>>
       emitLiveCodeUpdate(activityId: number, promoId: number, content: string, language: string | null): void
       onLiveCodeUpdate(cb: (data: { activityId: number; content: string; language: string | null }) => void): () => void
-      onLiveBoardUpdate(cb: (data: { activityId: number; action: 'add' | 'delete' | 'vote'; card?: unknown; cardId?: number; votes?: number }) => void): () => void
+      onLiveBoardUpdate(cb: (data: { activityId: number; action: 'add' | 'delete' | 'vote' | 'update'; card?: unknown; cardId?: number; votes?: number }) => void): () => void
       getLiveSessionsForPromo(promoId: number): Promise<IpcResponse<LiveSession[]>>
       cloneLiveSession(id: number, payload: unknown): Promise<IpcResponse<LiveSession>>
       reorderLiveActivities(sessionId: number, order: number[]): Promise<IpcResponse<LiveSession>>

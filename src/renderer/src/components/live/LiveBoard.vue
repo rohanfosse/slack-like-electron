@@ -131,11 +131,12 @@ function startEdit(card: BoardCard) {
 async function saveEdit(card: BoardCard) {
   const content = editingContent.value.trim()
   if (!content) return
-  // Optimistic update
-  card.content = content
   editingCardId.value = null
-  // Server update via content field (reuse existing update mechanism)
-  // For now, delete + re-add (no dedicated PATCH for card content)
+  const res = await window.api.updateLiveV2BoardCard(card.id, { content })
+  if (res?.ok && res.data) {
+    const idx = cards.value.findIndex(c => c.id === card.id)
+    if (idx !== -1) cards.value[idx] = { ...cards.value[idx], ...res.data }
+  }
 }
 
 function cancelEdit() {
@@ -159,12 +160,20 @@ function onDragLeaveCol() {
   dragOverColumn.value = null
 }
 
-function onDropCol(col: string) {
+async function onDropCol(col: string) {
   if (dragCardId.value == null) return
   const card = cards.value.find(c => c.id === dragCardId.value)
   if (card && card.column_name !== col) {
-    card.column_name = col
-    // TODO: persist column change via API (for now, client-side only)
+    const oldCol = card.column_name
+    // Optimistic update
+    const idx = cards.value.findIndex(c => c.id === card.id)
+    if (idx !== -1) cards.value[idx] = { ...cards.value[idx], column_name: col }
+    // Persist
+    const res = await window.api.updateLiveV2BoardCard(card.id, { columnName: col })
+    if (!res?.ok) {
+      // Revert on failure
+      if (idx !== -1) cards.value[idx] = { ...cards.value[idx], column_name: oldCol }
+    }
   }
   dragCardId.value = null
   dragOverColumn.value = null
@@ -214,6 +223,10 @@ onMounted(() => {
       if (!cards.value.find(c => c.id === card.id)) cards.value.push(card)
     } else if (data.action === 'delete' && data.cardId) {
       cards.value = cards.value.filter(c => c.id !== data.cardId)
+    } else if (data.action === 'update' && data.card) {
+      const updated = data.card as BoardCard
+      const idx = cards.value.findIndex(c => c.id === updated.id)
+      if (idx !== -1) cards.value[idx] = { ...cards.value[idx], ...updated }
     } else if (data.action === 'vote' && data.cardId && data.votes !== undefined) {
       const c = cards.value.find(c => c.id === data.cardId)
       if (c) c.votes = data.votes

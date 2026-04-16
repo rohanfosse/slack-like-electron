@@ -112,10 +112,14 @@ async function changeLanguage(newLang: string) {
 const lineCount = computed(() => content.value.split('\n').length)
 
 async function copyCode() {
-  await navigator.clipboard.writeText(content.value)
-  copied.value = true
-  showToast('Code copie !', 'success')
-  setTimeout(() => { copied.value = false }, 1500)
+  try {
+    await navigator.clipboard.writeText(content.value)
+    copied.value = true
+    showToast('Code copie !', 'success')
+    setTimeout(() => { copied.value = false }, 1500)
+  } catch {
+    showToast('Impossible de copier', 'error')
+  }
 }
 
 onMounted(() => { initEditor() })

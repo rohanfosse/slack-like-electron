@@ -198,12 +198,16 @@ function highlightMatches() {
   // Apply highlights in reverse to avoid index shifts
   for (let i = nodes.length - 1; i >= 0; i--) {
     const { node, index } = nodes[i]
-    const range = document.createRange()
-    range.setStart(node, index)
-    range.setEnd(node, index + q.length)
-    const mark = document.createElement('mark')
-    mark.className = 'lumen-find-hl'
-    range.surroundContents(mark)
+    try {
+      const range = document.createRange()
+      range.setStart(node, index)
+      range.setEnd(node, index + q.length)
+      const mark = document.createElement('mark')
+      mark.className = 'lumen-find-hl'
+      range.surroundContents(mark)
+    } catch {
+      // surroundContents throws when range crosses element boundaries — skip
+    }
   }
   chapterSearchCount.value = nodes.length
   chapterSearchCurrent.value = nodes.length > 0 ? 1 : 0

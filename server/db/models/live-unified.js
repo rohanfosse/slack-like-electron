@@ -511,6 +511,18 @@ function addBoardCard({ activityId, columnName, content, authorId, authorName, c
   return db.prepare('SELECT * FROM live_board_cards WHERE id = ?').get(res.lastInsertRowid);
 }
 
+function updateBoardCard(id, { content, columnName }) {
+  const db = getDb();
+  const sets = [];
+  const vals = [];
+  if (content !== undefined) { sets.push('content = ?'); vals.push(content); }
+  if (columnName !== undefined) { sets.push('column_name = ?'); vals.push(columnName); }
+  if (sets.length === 0) return db.prepare('SELECT * FROM live_board_cards WHERE id = ?').get(id);
+  vals.push(id);
+  db.prepare(`UPDATE live_board_cards SET ${sets.join(', ')} WHERE id = ?`).run(...vals);
+  return db.prepare('SELECT * FROM live_board_cards WHERE id = ?').get(id);
+}
+
 function deleteBoardCard(id) {
   return getDb().prepare('DELETE FROM live_board_cards WHERE id = ?').run(id);
 }
@@ -680,7 +692,7 @@ module.exports = {
   // Aggregation
   getLiveActivityResultsAggregated,
   // Board
-  getBoardCards, addBoardCard, deleteBoardCard, voteBoardCard, unvoteBoardCard,
+  getBoardCards, addBoardCard, updateBoardCard, deleteBoardCard, voteBoardCard, unvoteBoardCard,
   // Historique / Stats / Export
   getEndedLiveSessionsForPromo, getLiveStatsForPromoV2, exportLiveSessionCsv,
 };

@@ -12,6 +12,7 @@ import python from 'highlight.js/lib/languages/python'
 import xml from 'highlight.js/lib/languages/xml'
 import css from 'highlight.js/lib/languages/css'
 import sql from 'highlight.js/lib/languages/sql'
+import DOMPurify from 'dompurify'
 import { useToast } from '@/composables/useToast'
 
 // Register languages
@@ -41,21 +42,29 @@ const lineCount = computed(() => content.value ? content.value.split('\n').lengt
 const highlighted = computed(() => {
   if (!content.value) return ''
   try {
+    let raw: string
     if (language.value && hljs.getLanguage(language.value)) {
-      return hljs.highlight(content.value, { language: language.value }).value
+      raw = hljs.highlight(content.value, { language: language.value }).value
+    } else {
+      raw = hljs.highlightAuto(content.value).value
     }
-    return hljs.highlightAuto(content.value).value
+    return DOMPurify.sanitize(raw, { ALLOW_DATA_ATTR: false })
   } catch {
-    // fallback : texte brut echappe
-    return content.value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    return DOMPurify.sanitize(
+      content.value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'),
+    )
   }
 })
 
 async function copyCode() {
-  await navigator.clipboard.writeText(content.value)
-  copied.value = true
-  showToast('Code copie !', 'success')
-  setTimeout(() => { copied.value = false }, 1500)
+  try {
+    await navigator.clipboard.writeText(content.value)
+    copied.value = true
+    showToast('Code copie !', 'success')
+    setTimeout(() => { copied.value = false }, 1500)
+  } catch {
+    showToast('Impossible de copier', 'error')
+  }
 }
 
 onMounted(() => {

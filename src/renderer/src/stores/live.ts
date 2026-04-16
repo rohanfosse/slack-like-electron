@@ -18,7 +18,6 @@ export const useLiveStore = defineStore('live', () => {
   const loading          = ref(false)
   const error            = ref<string | null>(null)
   const draftSessions    = ref<LiveSession[]>([])
-  const pastSessions     = ref<LiveSession[]>([])
   const leaderboard      = ref<LeaderboardEntry[]>([])
   const myScore          = ref<LiveScoreResult | null>(null)
   const timerStartedAt   = ref<string | null>(null)
@@ -440,7 +439,7 @@ export const useLiveStore = defineStore('live', () => {
   return {
     // state
     currentSession, currentActivity, results, participantCount,
-    hasResponded, loading, error, draftSessions, pastSessions,
+    hasResponded, loading, error, draftSessions,
     leaderboard, myScore, timerStartedAt,
     historySessions, stats,
     // computed

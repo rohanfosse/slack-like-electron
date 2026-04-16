@@ -141,6 +141,11 @@ function formatIcsDate(iso: string): string {
   return `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}T${pad(d.getHours())}${pad(d.getMinutes())}00`
 }
 
+/** Escape un champ texte selon RFC 5545 */
+function icsEscape(s: string): string {
+  return s.replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\n/g, '\\n')
+}
+
 function exportIcs() {
   const events = filteredEvents.value
   if (events.length === 0) {
@@ -160,7 +165,7 @@ function exportIcs() {
   for (const ev of events) {
     const meta = ev._meta as CalendarEvent
     const uid = `cursus-${meta.id}@cursus.school`
-    const summary = meta.title.replace(/[,;\\]/g, ' ')
+    const summary = icsEscape(meta.title)
     const category = meta.category ? meta.category.replace(/[,;\\]/g, ' ') : ''
     const status = meta.submissionStatus === 'submitted' ? 'COMPLETED' : 'NEEDS-ACTION'
     const description = [
@@ -176,7 +181,7 @@ function exportIcs() {
       `DTSTART:${formatIcsDate(meta.start)}`,
       `DTEND:${formatIcsDate(meta.end)}`,
       `SUMMARY:${summary}`,
-      `DESCRIPTION:${description.replace(/\n/g, '\\n')}`,
+      `DESCRIPTION:${icsEscape(description)}`,
       `STATUS:${status}`,
     )
     if (category) lines.push(`CATEGORIES:${category}`)

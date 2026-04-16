@@ -53,12 +53,14 @@
     expandedId.value = s.id
     loadingExpand.value = true
     try {
-      await liveStore.fetchSession(s.id)
-      expandedSession.value = liveStore.currentSession
+      // Use direct API call to avoid clobbering liveStore.currentSession
+      const sessionRes = await window.api.getLiveV2Session(s.id)
+      if (!sessionRes?.ok || !sessionRes.data) throw new Error('Session introuvable')
+      expandedSession.value = sessionRes.data as LiveSession
       const results: Record<number, LiveResults> = {}
       for (const act of expandedSession.value?.activities ?? []) {
-        await liveStore.fetchResults(act.id)
-        if (liveStore.results) results[act.id] = liveStore.results
+        const resData = await window.api.getLiveV2ActivityResults(act.id)
+        if (resData?.ok && resData.data) results[act.id] = resData.data as LiveResults
       }
       expandedResults.value = results
     } finally {

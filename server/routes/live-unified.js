@@ -16,12 +16,12 @@ const createSessionSchema = z.object({
   title:   z.string().min(1).max(200),
   isAsync: z.boolean().optional(),
   openUntil: z.string().nullable().optional(),
-}).passthrough()
+})
 
 const cloneSessionSchema = z.object({
   promoId: z.number().int().positive(),
   title:   z.string().max(200).optional(),
-}).passthrough()
+})
 
 const addActivitySchema = z.object({
   type:            z.string().min(1),
@@ -34,22 +34,22 @@ const addActivitySchema = z.object({
   timer_seconds:   z.number().int().min(1).optional(),
   correct_answers: z.any().optional(),
   language:        z.string().optional(),
-}).passthrough()
+})
 
-const sessionStatusSchema = z.object({ status: z.enum(['waiting', 'active', 'ended']) }).passthrough()
-const activityStatusSchema = z.object({ status: z.enum(['pending', 'live', 'closed']) }).passthrough()
+const sessionStatusSchema = z.object({ status: z.enum(['waiting', 'active', 'ended']) })
+const activityStatusSchema = z.object({ status: z.enum(['pending', 'live', 'closed']) })
 const respondSchema = z.object({
   answer:  z.any().optional(),
   answers: z.array(z.any()).optional(),
   text:    z.string().optional(),
   words:   z.array(z.string()).optional(),
-}).passthrough()
-const reorderSchema = z.object({ order: z.array(z.number().int()) }).passthrough()
+})
+const reorderSchema = z.object({ order: z.array(z.number().int()) })
 const boardCardSchema = z.object({
   columnName: z.string().optional(),
   content: z.string().min(1).max(500),
   color: z.string().optional(),
-}).passthrough()
+})
 
 // ── Helpers pour authorize ─────────────────────────────────────────────────
 function promoFromSessionV2(req) {
@@ -125,6 +125,10 @@ router.get('/sessions/:id', requirePromo(promoFromSessionV2), wrap((req) => {
 router.get('/sessions/code/:code', wrap((req) => {
   const session = queries.getLiveSessionByCode(req.params.code)
   if (!session) throw new Error('Session introuvable')
+  // Strip correct_answers for non-teachers (prevent answer leaking)
+  if (req.user?.role !== 'teacher' && req.user?.role !== 'admin' && session.activities) {
+    session.activities = session.activities.map(a => ({ ...a, correct_answers: null }))
+  }
   return session
 }))
 
@@ -337,7 +341,37 @@ router.post('/activities/:id/cards', requirePromo(promoFromActivityV2), validate
   } catch (err) { res.status(400).json({ ok: false, error: err.message }) }
 })
 
-router.delete('/cards/:id', requireRole('teacher'), (req, res) => {
+/** Promo check for board card routes */
+function promoFromCardV2(req) {
+  const cardId = Number(req.params.id)
+  if (!cardId) return null
+  const row = getDb().prepare(`
+    SELECT ls.promo_id FROM live_board_cards bc
+    JOIN live_activities_v2 la ON la.id = bc.activity_id
+    JOIN live_sessions_v2 ls ON ls.id = la.session_id
+    WHERE bc.id = ?
+  `).get(cardId)
+  return row?.promo_id ?? null
+}
+
+// PATCH /cards/:id — update card content or column
+router.patch('/cards/:id', requirePromo(promoFromCardV2), (req, res) => {
+  try {
+    const cardId = Number(req.params.id)
+    const card = queries.updateBoardCard(cardId, { content: req.body.content, columnName: req.body.columnName })
+    if (card) {
+      const act = getDb().prepare('SELECT ls.promo_id FROM live_activities_v2 la JOIN live_sessions_v2 ls ON ls.id = la.session_id WHERE la.id = ?').get(card.activity_id)
+      if (act) {
+        req.app.get('io').to(`live:${act.promo_id}`).emit('live:board-update', {
+          activityId: card.activity_id, action: 'update', card,
+        })
+      }
+    }
+    res.json({ ok: true, data: card })
+  } catch (err) { res.status(400).json({ ok: false, error: err.message }) }
+})
+
+router.delete('/cards/:id', requireRole('teacher'), requirePromo(promoFromCardV2), (req, res) => {
   try {
     const cardId = Number(req.params.id)
     const card = getDb().prepare('SELECT activity_id FROM live_board_cards WHERE id = ?').get(cardId)
@@ -354,7 +388,7 @@ router.delete('/cards/:id', requireRole('teacher'), (req, res) => {
   } catch (err) { res.status(400).json({ ok: false, error: err.message }) }
 })
 
-router.post('/cards/:id/vote', (req, res) => {
+router.post('/cards/:id/vote', requirePromo(promoFromCardV2), (req, res) => {
   try {
     const studentId = req.user?.id
     if (!studentId) throw new Error('studentId requis')
