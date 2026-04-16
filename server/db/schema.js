@@ -1,6 +1,6 @@
 const { getDb } = require('./connection');
 
-const CURRENT_VERSION = 62;
+const CURRENT_VERSION = 65;
 
 // ─── Schema initial ───────────────────────────────────────────────────────────
 // Crée toutes les tables avec leur schéma complet (colonnes UTC, toutes colonnes incluses).
@@ -1402,6 +1402,45 @@ function runMigrations(db) {
           expires_at TEXT NOT NULL,
           updated_at TEXT DEFAULT (datetime('now'))
         );
+      `);
+    },
+
+    // v63 : Booking — buffer time entre RDV
+    (db) => {
+      tryAlter(db, "ALTER TABLE booking_event_types ADD COLUMN buffer_minutes INTEGER NOT NULL DEFAULT 0");
+    },
+
+    // v64 : Booking — reminders, reschedule, timezone
+    (db) => {
+      db.exec(`
+        CREATE TABLE IF NOT EXISTS booking_reminders (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          booking_id INTEGER NOT NULL REFERENCES bookings(id) ON DELETE CASCADE,
+          type TEXT NOT NULL DEFAULT 'email_24h',
+          scheduled_at TEXT NOT NULL,
+          sent_at TEXT,
+          UNIQUE(booking_id, type)
+        );
+        CREATE INDEX IF NOT EXISTS idx_booking_reminders_scheduled ON booking_reminders(scheduled_at);
+      `);
+      tryAlter(db, "ALTER TABLE bookings ADD COLUMN rescheduled_from_id INTEGER REFERENCES bookings(id)");
+      tryAlter(db, "ALTER TABLE booking_event_types ADD COLUMN timezone TEXT NOT NULL DEFAULT 'Europe/Paris'");
+    },
+
+    // v65 : Booking — recurrence + availability overrides
+    (db) => {
+      tryAlter(db, "ALTER TABLE bookings ADD COLUMN recurrence_group_id TEXT DEFAULT NULL");
+      db.exec(`
+        CREATE TABLE IF NOT EXISTS booking_availability_overrides (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          event_type_id INTEGER NOT NULL REFERENCES booking_event_types(id) ON DELETE CASCADE,
+          override_date TEXT NOT NULL,
+          start_time TEXT,
+          end_time TEXT,
+          is_blocked INTEGER NOT NULL DEFAULT 0,
+          UNIQUE(event_type_id, override_date, start_time)
+        );
+        CREATE INDEX IF NOT EXISTS idx_booking_overrides_type ON booking_availability_overrides(event_type_id, override_date);
       `);
     },
   ];

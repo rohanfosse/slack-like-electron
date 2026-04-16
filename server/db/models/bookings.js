@@ -21,15 +21,15 @@ function getEventTypeById(id) {
   return getDb().prepare('SELECT * FROM booking_event_types WHERE id = ?').get(id) || null;
 }
 
-function createEventType({ teacherId, title, slug, description, durationMinutes, color, fallbackVisioUrl }) {
+function createEventType({ teacherId, title, slug, description, durationMinutes, color, fallbackVisioUrl, bufferMinutes, timezone }) {
   const res = getDb().prepare(
-    'INSERT INTO booking_event_types (teacher_id, title, slug, description, duration_minutes, color, fallback_visio_url) VALUES (?, ?, ?, ?, ?, ?, ?)'
-  ).run(teacherId, title, slug, description || null, durationMinutes || 30, color || '#3b82f6', fallbackVisioUrl || null);
+    'INSERT INTO booking_event_types (teacher_id, title, slug, description, duration_minutes, color, fallback_visio_url, buffer_minutes, timezone) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
+  ).run(teacherId, title, slug, description || null, durationMinutes || 30, color || '#3b82f6', fallbackVisioUrl || null, bufferMinutes || 0, timezone || 'Europe/Paris');
   return getDb().prepare('SELECT * FROM booking_event_types WHERE id = ?').get(res.lastInsertRowid);
 }
 
 function updateEventType(id, fields) {
-  const allowed = ['title', 'description', 'duration_minutes', 'color', 'fallback_visio_url', 'is_active'];
+  const allowed = ['title', 'description', 'duration_minutes', 'color', 'fallback_visio_url', 'is_active', 'buffer_minutes', 'timezone'];
   const sets = [];
   const vals = [];
   for (const key of allowed) {
@@ -71,6 +71,32 @@ function setAvailabilityRules(teacherId, rules) {
   return getAvailabilityRules(teacherId);
 }
 
+// ── Availability Overrides ─────────────────────────────────────────────
+
+function getAvailabilityOverrides(eventTypeId, fromDate, toDate) {
+  let sql = 'SELECT * FROM booking_availability_overrides WHERE event_type_id = ?';
+  const params = [eventTypeId];
+  if (fromDate) { sql += ' AND override_date >= ?'; params.push(fromDate); }
+  if (toDate) { sql += ' AND override_date <= ?'; params.push(toDate); }
+  sql += ' ORDER BY override_date, start_time';
+  return getDb().prepare(sql).all(...params);
+}
+
+function setAvailabilityOverrides(eventTypeId, overrides) {
+  const db = getDb();
+  const tx = db.transaction(() => {
+    db.prepare('DELETE FROM booking_availability_overrides WHERE event_type_id = ?').run(eventTypeId);
+    const ins = db.prepare(
+      'INSERT INTO booking_availability_overrides (event_type_id, override_date, start_time, end_time, is_blocked) VALUES (?, ?, ?, ?, ?)'
+    );
+    for (const o of overrides) {
+      ins.run(eventTypeId, o.overrideDate, o.startTime || null, o.endTime || null, o.isBlocked ? 1 : 0);
+    }
+  });
+  tx();
+  return getAvailabilityOverrides(eventTypeId);
+}
+
 // ── Booking Tokens ──────────────────────────────────────────────────────
 
 function getOrCreateToken(eventTypeId, studentId) {
@@ -91,7 +117,7 @@ function getTokenData(token) {
   const row = db.prepare(`
     SELECT bt.id, bt.event_type_id, bt.student_id, bt.token, bt.created_at,
            bet.teacher_id, bet.title AS event_title, bet.slug, bet.description,
-           bet.duration_minutes, bet.color, bet.fallback_visio_url,
+           bet.duration_minutes, bet.color, bet.fallback_visio_url, bet.buffer_minutes, bet.timezone,
            bet.is_active AS event_type_active,
            s.name AS student_name, s.email AS student_email, u.name AS teacher_name
     FROM booking_tokens bt
@@ -114,6 +140,33 @@ function createBooking({ eventTypeId, studentId, teacherId, tutorName, tutorEmai
   return getDb().prepare('SELECT * FROM bookings WHERE id = ?').get(res.lastInsertRowid);
 }
 
+/** Atomic check-then-insert in a transaction (TOCTOU-safe) */
+function createBookingAtomic({ eventTypeId, studentId, teacherId, tutorName, tutorEmail, startDatetime, endDatetime }) {
+  const db = getDb();
+  const cancelToken = uuidv4();
+  const tx = db.transaction(() => {
+    const conflicts = db.prepare(`
+      SELECT id FROM bookings
+      WHERE teacher_id = ? AND status = 'confirmed'
+      AND start_datetime < ? AND end_datetime > ?
+    `).all(teacherId, endDatetime, startDatetime);
+    if (conflicts.length > 0) return null;
+    const res = db.prepare(`
+      INSERT INTO bookings (event_type_id, student_id, teacher_id, tutor_name, tutor_email, start_datetime, end_datetime, cancel_token)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(eventTypeId, studentId, teacherId, tutorName, tutorEmail, startDatetime, endDatetime, cancelToken);
+    return db.prepare('SELECT * FROM bookings WHERE id = ?').get(res.lastInsertRowid);
+  });
+  return tx();
+}
+
+/** Update booking with Teams join URL and Outlook event ID after creation */
+function updateBookingTeamsInfo(bookingId, { teamsJoinUrl, outlookEventId }) {
+  getDb().prepare(
+    'UPDATE bookings SET teams_join_url = ?, outlook_event_id = ? WHERE id = ?'
+  ).run(teamsJoinUrl || null, outlookEventId || null, bookingId);
+}
+
 function getBookingByCancelToken(cancelToken) {
   return getDb().prepare(`
     SELECT b.*, bet.title AS event_title, bet.duration_minutes,
@@ -133,8 +186,9 @@ function cancelBooking(id) {
 function getBookingsForTeacher(teacherId, { from, to } = {}) {
   let sql = 'SELECT b.*, bet.title AS event_title FROM bookings b JOIN booking_event_types bet ON bet.id = b.event_type_id WHERE b.teacher_id = ?';
   const params = [teacherId];
-  if (from) { sql += ' AND b.start_datetime >= ?'; params.push(from); }
-  if (to) { sql += ' AND b.start_datetime <= ?'; params.push(to); }
+  // Use overlap check: include bookings that overlap with the [from, to] window
+  if (from) { sql += ' AND b.end_datetime > ?'; params.push(from); }
+  if (to) { sql += ' AND b.start_datetime < ?'; params.push(to); }
   sql += " AND b.status = 'confirmed' ORDER BY b.start_datetime ASC";
   return getDb().prepare(sql).all(...params);
 }
@@ -170,12 +224,63 @@ function deleteMicrosoftToken(teacherId) {
   getDb().prepare('DELETE FROM microsoft_tokens WHERE teacher_id = ?').run(teacherId);
 }
 
+// ── Reminders ──────────────────────────────────────────────────────────
+
+function createBookingReminder(bookingId, type, scheduledAt) {
+  getDb().prepare(
+    'INSERT OR IGNORE INTO booking_reminders (booking_id, type, scheduled_at) VALUES (?, ?, ?)'
+  ).run(bookingId, type, scheduledAt);
+}
+
+function getDueReminders() {
+  return getDb().prepare(`
+    SELECT br.*, b.tutor_name, b.tutor_email, b.start_datetime, b.end_datetime,
+           b.teacher_id, b.teams_join_url, b.status,
+           bet.title AS event_title, u.name AS teacher_name
+    FROM booking_reminders br
+    JOIN bookings b ON b.id = br.booking_id
+    JOIN booking_event_types bet ON bet.id = b.event_type_id
+    JOIN users u ON u.id = b.teacher_id
+    WHERE br.sent_at IS NULL AND br.scheduled_at <= datetime('now')
+    AND b.status = 'confirmed'
+    LIMIT 50
+  `).all();
+}
+
+function markReminderSent(id) {
+  getDb().prepare("UPDATE booking_reminders SET sent_at = datetime('now') WHERE id = ?").run(id);
+}
+
+// ── Reschedule ─────────────────────────────────────────────────────────
+
+function rescheduleBooking(bookingId) {
+  const db = getDb();
+  db.prepare("UPDATE bookings SET status = 'rescheduled' WHERE id = ? AND status = 'confirmed'").run(bookingId);
+  const booking = db.prepare('SELECT * FROM bookings WHERE id = ?').get(bookingId);
+  return booking || null;
+}
+
+function getBookingById(id) {
+  return getDb().prepare(`
+    SELECT b.*, bet.title AS event_title, bet.duration_minutes,
+           s.name AS student_name, s.email AS student_email, u.name AS teacher_name
+    FROM bookings b
+    JOIN booking_event_types bet ON bet.id = b.event_type_id
+    JOIN students s ON s.id = b.student_id
+    JOIN users u ON u.id = b.teacher_id
+    WHERE b.id = ?
+  `).get(id) || null;
+}
+
 module.exports = {
   getEventTypes, getEventTypeBySlug, getEventTypeById,
   createEventType, updateEventType, deleteEventType,
   getAvailabilityRules, setAvailabilityRules,
+  getAvailabilityOverrides, setAvailabilityOverrides,
   getOrCreateToken, getTokenData,
-  createBooking, getBookingByCancelToken, cancelBooking,
+  createBooking, createBookingAtomic, updateBookingTeamsInfo,
+  getBookingByCancelToken, getBookingById, cancelBooking, rescheduleBooking,
   getBookingsForTeacher, getBookingsForSlot,
   getMicrosoftToken, saveMicrosoftToken, deleteMicrosoftToken,
+  createBookingReminder, getDueReminders, markReminderSent,
 };

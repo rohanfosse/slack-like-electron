@@ -60,6 +60,12 @@ type LiveBoardUpdatePayload = { activityId: number; action: 'add' | 'delete' | '
 const liveCodeUpdateCallbacks:  Array<(data: LiveCodeUpdatePayload) => void> = []
 const liveBoardUpdateCallbacks: Array<(data: LiveBoardUpdatePayload) => void> = []
 
+// Booking real-time notifications
+type BookingNewPayload = { bookingId: number; tutorName: string; studentName: string; eventTitle: string; startDatetime: string }
+type BookingCancelledPayload = { bookingId: number; tutorName: string; eventTitle: string }
+const bookingNewCallbacks: Array<(data: BookingNewPayload) => void> = []
+const bookingCancelledCallbacks: Array<(data: BookingCancelledPayload) => void> = []
+
 // REX callbacks
 type RexActivityPushedPayload = { activity: unknown }
 type RexActivityClosedPayload = { activityId: number }
@@ -120,6 +126,8 @@ function connectSocket(token: string): void {
   socket.on('live:scores-update',   (data: LiveScoresUpdatePayload) => liveScoresUpdateCallbacks.forEach(cb => cb(data)))
   socket.on('live:code-update',     (data: LiveCodeUpdatePayload) => liveCodeUpdateCallbacks.forEach(cb => cb(data)))
   socket.on('live:board-update',    (data: LiveBoardUpdatePayload) => liveBoardUpdateCallbacks.forEach(cb => cb(data)))
+  socket.on('booking:new',         (data: BookingNewPayload) => bookingNewCallbacks.forEach(cb => cb(data)))
+  socket.on('booking:cancelled',   (data: BookingCancelledPayload) => bookingCancelledCallbacks.forEach(cb => cb(data)))
   socket.on('rex:activity-pushed', (data: RexActivityPushedPayload) => rexActivityPushedCallbacks.forEach(cb => cb(data)))
   socket.on('rex:activity-closed', (data: RexActivityClosedPayload) => rexActivityClosedCallbacks.forEach(cb => cb(data)))
   socket.on('rex:results-update',  (data: RexResultsUpdatePayload) => rexResultsUpdateCallbacks.forEach(cb => cb(data)))
@@ -228,7 +236,7 @@ contextBridge.exposeInMainWorld('api', {
   async refreshToken(): Promise<{ token: string } | null> {
     if (!jwtToken) return null
     try {
-      const res = await fetch(`${baseUrl}/api/auth/refresh`, {
+      const res = await fetch(`${SERVER_URL}/api/auth/refresh`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${jwtToken}` },
         body: '{}',
@@ -387,7 +395,7 @@ contextBridge.exposeInMainWorld('api', {
   deleteReminder:  (id: number)                 => del(`/api/assignments/reminders/${id}`),
 
   // ── Calendrier (iCal sync) ─────────────────────────────────────────────────
-  getCalendarFeedUrl: ()                         => `${BASE}/api/calendar/feed.ics`,
+  getCalendarFeedUrl: ()                         => `${SERVER_URL}/api/calendar/feed.ics`,
 
   // ── Dépôts ──────────────────────────────────────────────────────────────────
   getDepots:   (travailId: number) => get(`/api/depots?travailId=${travailId}`),
@@ -564,6 +572,7 @@ contextBridge.exposeInMainWorld('api', {
   getBookingAvailability:    ()                          => get('/api/bookings/availability'),
   setBookingAvailability:    (rules: unknown)            => put('/api/bookings/availability', { rules }),
   createBookingToken:        (eventTypeId: number, studentId: number) => post('/api/bookings/tokens', { eventTypeId, studentId }),
+  createBulkBookingTokens:   (eventTypeId: number, promoId: number) => post('/api/bookings/tokens/bulk', { eventTypeId, promoId }),
   getMyBookings:             (from?: string, to?: string) => {
     const qs = new URLSearchParams()
     if (from) qs.set('from', from)
@@ -585,6 +594,16 @@ contextBridge.exposeInMainWorld('api', {
   onLiveBoardUpdate: (cb: (data: LiveBoardUpdatePayload) => void) => {
     liveBoardUpdateCallbacks.push(cb)
     return () => { const i = liveBoardUpdateCallbacks.indexOf(cb); if (i !== -1) liveBoardUpdateCallbacks.splice(i, 1) }
+  },
+
+  // ── Booking real-time ────────────────────────────────────────────────────────
+  onBookingNew: (cb: (data: BookingNewPayload) => void) => {
+    bookingNewCallbacks.push(cb)
+    return () => { const i = bookingNewCallbacks.indexOf(cb); if (i !== -1) bookingNewCallbacks.splice(i, 1) }
+  },
+  onBookingCancelled: (cb: (data: BookingCancelledPayload) => void) => {
+    bookingCancelledCallbacks.push(cb)
+    return () => { const i = bookingCancelledCallbacks.indexOf(cb); if (i !== -1) bookingCancelledCallbacks.splice(i, 1) }
   },
 
   // ── REX (Retour d'Experience) ──────────────────────────────────────────────

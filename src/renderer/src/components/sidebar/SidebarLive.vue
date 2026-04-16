@@ -39,6 +39,7 @@ async function onClone(session: LiveSession) {
 }
 
 async function onDelete(session: LiveSession) {
+  if (!confirm('Supprimer ce brouillon ?')) return
   await liveStore.deleteSession(session.id)
 }
 </script>
@@ -81,10 +82,10 @@ async function onDelete(session: LiveSession) {
           <span class="sb-live-item-meta">{{ s.activities?.length ?? 0 }} activite(s)</span>
         </button>
         <div class="sb-live-item-actions">
-          <button type="button" class="sb-live-action" title="Dupliquer" @click.stop="onClone(s)">
+          <button type="button" class="sb-live-action" title="Dupliquer" aria-label="Dupliquer la session" @click.stop="onClone(s)">
             <Copy :size="11" />
           </button>
-          <button type="button" class="sb-live-action sb-live-action--danger" title="Supprimer" @click.stop="onDelete(s)">
+          <button type="button" class="sb-live-action sb-live-action--danger" title="Supprimer" aria-label="Supprimer le brouillon" @click.stop="onDelete(s)">
             <Trash2 :size="11" />
           </button>
         </div>

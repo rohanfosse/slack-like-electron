@@ -187,7 +187,7 @@
     try {
       const result = await api(
         () => window.api.addChannelDocument({
-          channelId:  appStore.activeChannelId,
+          channelId:  appStore.activeChannelId ?? 0,
           type:       'file',
           name:       docAddName.value.trim() || pendingDoc.value!.name,
           pathOrUrl:  pendingDoc.value!.path,

@@ -47,21 +47,21 @@ declare global {
       // Travaux / Devoirs
       getTravaux(channelId: number): Promise<IpcResponse<Devoir[]>>
       getTravailById(travailId: number): Promise<IpcResponse<Devoir>>
-      createTravail(payload: object): Promise<IpcResponse<{ id: number }>>
+      createTravail(payload: Record<string, unknown> & { title: string }): Promise<IpcResponse<{ id: number }>>
       deleteTravail(id: number): Promise<IpcResponse<null>>
       getTravauxSuivi(travailId: number): Promise<IpcResponse<Depot[]>>
 
       // Dépôts
       getDepots(travailId: number): Promise<IpcResponse<Depot[]>>
-      addDepot(payload: object): Promise<IpcResponse<{ id: number }>>
-      setNote(payload: object): Promise<IpcResponse<null>>
-      setFeedback(payload: object): Promise<IpcResponse<null>>
+      addDepot(payload: Record<string, unknown>): Promise<IpcResponse<{ id: number }>>
+      setNote(payload: { depotId: number; note: string | null }): Promise<IpcResponse<null>>
+      setFeedback(payload: { depotId: number; feedback: string | null }): Promise<IpcResponse<null>>
 
       // Groupes
       getGroups(promoId: number): Promise<IpcResponse<Group[]>>
-      createGroup(payload: object): Promise<IpcResponse<{ id: number }>>
+      createGroup(payload: Record<string, unknown> & { name: string }): Promise<IpcResponse<{ id: number }>>
       getGroupMembers(groupId: number): Promise<IpcResponse<{ student_id: number }[]>>
-      setGroupMembers(payload: object): Promise<IpcResponse<null>>
+      setGroupMembers(payload: Record<string, unknown> & { groupId: number }): Promise<IpcResponse<null>>
 
       // Profil & devoirs étudiant
       getStudentProfile(studentId: number): Promise<IpcResponse<{ student: { id: number; name: string; email: string; avatar_initials: string; photo_data: string | null; promo_name: string }; travaux: unknown[] }>>
@@ -69,21 +69,21 @@ declare global {
 
       // Ressources
       getRessources(travailId: number): Promise<IpcResponse<Ressource[]>>
-      addRessource(payload: object): Promise<IpcResponse<{ id: number }>>
+      addRessource(payload: Record<string, unknown> & { travailId: number; name: string }): Promise<IpcResponse<{ id: number }>>
       deleteRessource(id: number): Promise<IpcResponse<null>>
 
       // Groupes par projet
-      getTravailGroupMembers(travailId: number): Promise<IpcResponse<object[]>>
+      getTravailGroupMembers(travailId: number): Promise<IpcResponse<unknown[]>>
 
       // Brouillon / publication programmee
-      updateTravailPublished(payload: object): Promise<IpcResponse<null>>
+      updateTravailPublished(payload: Record<string, unknown> & { travailId: number; published: boolean }): Promise<IpcResponse<null>>
       updateTravailScheduled(payload: { travailId: number; scheduledAt: string | null }): Promise<IpcResponse<null>>
 
       // Promotions & canaux
-      createPromotion(payload: object): Promise<IpcResponse<{ id: number }>>
+      createPromotion(payload: Record<string, unknown> & { name: string }): Promise<IpcResponse<{ id: number }>>
       deletePromotion(promoId: number): Promise<IpcResponse<null>>
       renamePromotion(promoId: number, name: string, color?: string): Promise<IpcResponse<null>>
-      createChannel(payload: object): Promise<IpcResponse<{ id: number }>>
+      createChannel(payload: Record<string, unknown> & { name: string }): Promise<IpcResponse<{ id: number }>>
       renameChannel(id: number, name: string): Promise<IpcResponse<null>>
       deleteChannel(id: number): Promise<IpcResponse<null>>
       archiveChannel(id: number): Promise<IpcResponse<null>>
@@ -91,13 +91,13 @@ declare global {
       getArchivedChannels(promoId: number): Promise<IpcResponse<Channel[]>>
       renameCategory(promoId: number, oldCategory: string, newCategory: string): Promise<IpcResponse<null>>
       deleteCategory(promoId: number, category: string): Promise<IpcResponse<null>>
-      updateChannelMembers(payload: object): Promise<IpcResponse<null>>
+      updateChannelMembers(payload: Record<string, unknown> & { channelId: number }): Promise<IpcResponse<null>>
       updateChannelCategory(channelId: number, category: string | null): Promise<IpcResponse<null>>
       updateChannelPrivacy(channelId: number, isPrivate: boolean, members?: number[]): Promise<IpcResponse<unknown>>
 
       // Inscription
       getStudentByEmail(email: string): Promise<IpcResponse<Student>>
-      registerStudent(payload: object): Promise<IpcResponse<{ id: number }>>
+      registerStudent(payload: Record<string, unknown> & { name: string; email: string }): Promise<IpcResponse<{ id: number }>>
       importStudents(promoId: number): Promise<IpcResponse<{ imported: number; errors: string[] } | null>>
       bulkImportStudents(promoId: number, rows: Record<string, string>[]): Promise<IpcResponse<{ imported: number; errors: string[] }>>
 
@@ -127,13 +127,13 @@ declare global {
 
       // Documents
       getChannelDocuments(channelId: number): Promise<IpcResponse<AppDocument[]>>
-      addChannelDocument(payload: object): Promise<IpcResponse<{ id: number }>>
+      addChannelDocument(payload: Record<string, unknown> & { channelId: number; name: string }): Promise<IpcResponse<{ id: number }>>
       deleteChannelDocument(id: number): Promise<IpcResponse<null>>
 
       // Documents de projet
       getProjectDocuments(promoId: number, project?: string | null): Promise<IpcResponse<AppDocument[]>>
-      addProjectDocument(payload: object): Promise<IpcResponse<{ id: number }>>
-      updateProjectDocument(id: number, payload: object): Promise<IpcResponse<unknown>>
+      addProjectDocument(payload: Record<string, unknown> & { name: string }): Promise<IpcResponse<{ id: number }>>
+      updateProjectDocument(id: number, payload: Record<string, unknown>): Promise<IpcResponse<unknown>>
       searchDocuments(promoId: number, q: string): Promise<IpcResponse<AppDocument[]>>
       linkDocumentToTravail(docId: number, travailId: number | null): Promise<IpcResponse<unknown>>
 
@@ -142,7 +142,7 @@ declare global {
       getCahierById(id: number): Promise<IpcResponse<import('./stores/cahier').Cahier>>
       getCahierYjsState(id: number): Promise<IpcResponse<string | null>>
       saveCahierYjsState(id: number, base64State: string): Promise<IpcResponse<unknown>>
-      createCahier(payload: object): Promise<IpcResponse<{ id: number }>>
+      createCahier(payload: Record<string, unknown> & { promoId: number; title: string }): Promise<IpcResponse<{ id: number }>>
       renameCahier(id: number, title: string): Promise<IpcResponse<unknown>>
       deleteCahier(id: number): Promise<IpcResponse<unknown>>
 
@@ -159,10 +159,10 @@ declare global {
 
       // Rubrics
       getRubric(travailId: number): Promise<IpcResponse<Rubric | null>>
-      upsertRubric(payload: object): Promise<IpcResponse<number>>
+      upsertRubric(payload: Record<string, unknown> & { travailId: number }): Promise<IpcResponse<number>>
       deleteRubric(travailId: number): Promise<IpcResponse<null>>
       getDepotScores(depotId: number): Promise<IpcResponse<RubricScore[]>>
-      setDepotScores(payload: object): Promise<IpcResponse<null>>
+      setDepotScores(payload: Record<string, unknown> & { depotId: number }): Promise<IpcResponse<null>>
 
       // Actions de masse
       markNonSubmittedAsD(travailId: number): Promise<IpcResponse<null>>
@@ -176,7 +176,7 @@ declare global {
 
       // Intervenants
       getIntervenants(): Promise<IpcResponse<{ id: number; name: string; email: string; role: string }[]>>
-      createIntervenant(payload: object): Promise<IpcResponse<number>>
+      createIntervenant(payload: Record<string, unknown> & { name: string; email: string }): Promise<IpcResponse<number>>
       deleteIntervenant(id: number): Promise<IpcResponse<null>>
       getTeacherChannels(id: number): Promise<IpcResponse<number[]>>
       setTeacherChannels(payload: { teacherId: number; channelIds: number[] }): Promise<IpcResponse<null>>
@@ -184,8 +184,8 @@ declare global {
       // Projets (entite backend)
       getProjectsByPromo(promoId: number): Promise<IpcResponse<unknown[]>>
       getProjectById(id: number): Promise<IpcResponse<unknown>>
-      createProject(payload: object): Promise<IpcResponse<unknown>>
-      updateProject(id: number, payload: object): Promise<IpcResponse<unknown>>
+      createProject(payload: Record<string, unknown> & { promoId: number; name: string }): Promise<IpcResponse<unknown>>
+      updateProject(id: number, payload: Record<string, unknown>): Promise<IpcResponse<unknown>>
       deleteProject(id: number): Promise<IpcResponse<null>>
       addTravailToProject(projectId: number, travailId: number): Promise<IpcResponse<null>>
       removeTravailFromProject(projectId: number, travailId: number): Promise<IpcResponse<null>>
@@ -281,17 +281,22 @@ declare global {
       deleteLiveV2BoardCard(cardId: number): Promise<IpcResponse<null>>
       voteLiveV2BoardCard(cardId: number, vote: boolean): Promise<IpcResponse<{ voted: boolean }>>
       // Booking (mini-Calendly)
-      getBookingEventTypes(): Promise<IpcResponse<{ id: number; title: string; slug: string; description?: string; duration_minutes: number; color: string; fallback_visio_url?: string; is_active: number; created_at: string }[]>>
+      getBookingEventTypes(): Promise<IpcResponse<{ id: number; title: string; slug: string; description?: string; duration_minutes: number; buffer_minutes: number; timezone: string; color: string; fallback_visio_url?: string; is_active: number; created_at: string }[]>>
       createBookingEventType(payload: unknown): Promise<IpcResponse<unknown>>
       updateBookingEventType(id: number, payload: unknown): Promise<IpcResponse<unknown>>
       deleteBookingEventType(id: number): Promise<IpcResponse<null>>
       getBookingAvailability(): Promise<IpcResponse<{ id: number; day_of_week: number; start_time: string; end_time: string }[]>>
       setBookingAvailability(rules: unknown): Promise<IpcResponse<unknown>>
       createBookingToken(eventTypeId: number, studentId: number): Promise<IpcResponse<{ token: string; bookingUrl: string }>>
+      createBulkBookingTokens(eventTypeId: number, promoId: number): Promise<IpcResponse<{ studentId: number; studentName: string; bookingUrl: string }[]>>
       getMyBookings(from?: string, to?: string): Promise<IpcResponse<unknown[]>>
       startBookingOAuth(): Promise<IpcResponse<{ url: string }>>
       getBookingOAuthStatus(): Promise<IpcResponse<{ connected: boolean; expiresAt?: string }>>
       disconnectBookingOAuth(): Promise<IpcResponse<null>>
+
+      // Booking real-time
+      onBookingNew(cb: (data: { bookingId: number; tutorName: string; studentName: string; eventTitle: string; startDatetime: string }) => void): () => void
+      onBookingCancelled(cb: (data: { bookingId: number; tutorName: string; eventTitle: string }) => void): () => void
 
       emitLiveCodeUpdate(activityId: number, promoId: number, content: string, language: string | null): void
       onLiveCodeUpdate(cb: (data: { activityId: number; content: string; language: string | null }) => void): () => void
@@ -434,7 +439,7 @@ declare global {
 
       // Onboarding wizard
       getOnboardingStatus(studentId: number): Promise<boolean>
-      completeOnboarding(studentId: number): Promise<any>
+      completeOnboarding(studentId: number): Promise<IpcResponse<null>>
 
       // Cache offline
       offlineWrite(key: string, data: unknown): Promise<IpcResponse<null>>

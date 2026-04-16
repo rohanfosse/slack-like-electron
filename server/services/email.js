@@ -5,6 +5,8 @@
 const nodemailer = require('nodemailer');
 const log = require('../utils/logger');
 
+const { escHtml } = require('../utils/escHtml');
+
 const SMTP_HOST = process.env.SMTP_HOST || '';
 const SMTP_PORT = parseInt(process.env.SMTP_PORT || '587', 10);
 const SMTP_USER = process.env.SMTP_USER || '';
@@ -44,16 +46,16 @@ async function sendBookingConfirmation({ to, tutorName, teacherName, studentName
     <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px;">
       <div style="background: #3b82f6; color: white; padding: 20px 24px; border-radius: 12px 12px 0 0;">
         <h1 style="margin: 0; font-size: 20px;">RDV confirme</h1>
-        <p style="margin: 4px 0 0; opacity: 0.9; font-size: 14px;">${eventTitle}</p>
+        <p style="margin: 4px 0 0; opacity: 0.9; font-size: 14px;">${escHtml(eventTitle)}</p>
       </div>
       <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-top: none; padding: 24px; border-radius: 0 0 12px 12px;">
-        <p style="margin: 0 0 16px;">Bonjour <strong>${tutorName}</strong>,</p>
+        <p style="margin: 0 0 16px;">Bonjour <strong>${escHtml(tutorName)}</strong>,</p>
         <p style="margin: 0 0 16px;">Votre rendez-vous a bien ete reserve :</p>
         <table style="width: 100%; border-collapse: collapse; margin-bottom: 16px;">
           <tr><td style="padding: 8px 0; color: #64748b; width: 120px;">Date</td><td style="padding: 8px 0; font-weight: 600;">${dateStr}</td></tr>
           <tr><td style="padding: 8px 0; color: #64748b;">Horaire</td><td style="padding: 8px 0; font-weight: 600;">${timeStr} - ${endTime}</td></tr>
-          <tr><td style="padding: 8px 0; color: #64748b;">Enseignant</td><td style="padding: 8px 0;">${teacherName}</td></tr>
-          <tr><td style="padding: 8px 0; color: #64748b;">Etudiant</td><td style="padding: 8px 0;">${studentName}</td></tr>
+          <tr><td style="padding: 8px 0; color: #64748b;">Enseignant</td><td style="padding: 8px 0;">${escHtml(teacherName)}</td></tr>
+          <tr><td style="padding: 8px 0; color: #64748b;">Etudiant</td><td style="padding: 8px 0;">${escHtml(studentName)}</td></tr>
         </table>
         ${teamsJoinUrl ? `
           <a href="${teamsJoinUrl}" style="display: inline-block; background: #6366f1; color: white; text-decoration: none; padding: 12px 24px; border-radius: 8px; font-weight: 600; font-size: 14px; margin-bottom: 16px;">
@@ -99,8 +101,8 @@ async function sendBookingCancellation({ to, tutorName, eventTitle, startDatetim
         <h1 style="margin: 0; font-size: 20px;">RDV annule</h1>
       </div>
       <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-top: none; padding: 24px; border-radius: 0 0 12px 12px;">
-        <p>Bonjour <strong>${tutorName}</strong>,</p>
-        <p>Votre rendez-vous <strong>${eventTitle}</strong> du <strong>${dateStr} a ${timeStr}</strong> a ete annule.</p>
+        <p>Bonjour <strong>${escHtml(tutorName)}</strong>,</p>
+        <p>Votre rendez-vous <strong>${escHtml(eventTitle)}</strong> du <strong>${dateStr} a ${timeStr}</strong> a ete annule.</p>
         ${rebookUrl ? `<p><a href="${rebookUrl}" style="color: #3b82f6; font-weight: 600;">Reserver un nouveau creneau</a></p>` : ''}
       </div>
     </div>
@@ -120,8 +122,77 @@ async function sendBookingCancellation({ to, tutorName, eventTitle, startDatetim
   }
 }
 
+async function sendBookingReminder({ to, tutorName, teacherName, eventTitle, startDatetime, teamsJoinUrl }) {
+  const t = getTransporter();
+  if (!t) return false;
+
+  const startDate = new Date(startDatetime);
+  const dateStr = startDate.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
+  const timeStr = startDate.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+
+  const html = `
+    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px;">
+      <div style="background: #f59e0b; color: white; padding: 20px 24px; border-radius: 12px 12px 0 0;">
+        <h1 style="margin: 0; font-size: 20px;">Rappel RDV demain</h1>
+      </div>
+      <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-top: none; padding: 24px; border-radius: 0 0 12px 12px;">
+        <p>Bonjour <strong>${escHtml(tutorName)}</strong>,</p>
+        <p>Pour rappel, votre rendez-vous <strong>${escHtml(eventTitle)}</strong> avec <strong>${escHtml(teacherName)}</strong> est prevu :</p>
+        <p style="font-size: 16px; font-weight: 700; color: #111827;">${dateStr} a ${timeStr}</p>
+        ${teamsJoinUrl ? `<a href="${teamsJoinUrl}" style="display: inline-block; background: #6366f1; color: white; text-decoration: none; padding: 12px 24px; border-radius: 8px; font-weight: 600; font-size: 14px; margin-top: 8px;">Rejoindre la reunion Teams</a>` : ''}
+      </div>
+    </div>
+  `;
+
+  try {
+    await t.sendMail({
+      from: SMTP_FROM, to,
+      subject: `Rappel : ${escHtml(eventTitle)} demain a ${timeStr}`,
+      html,
+    });
+    return true;
+  } catch (err) {
+    log.warn('Reminder email failed', { error: err.message, to });
+    return false;
+  }
+}
+
+async function sendBookingReschedule({ to, tutorName, eventTitle, oldDatetime, rebookUrl }) {
+  const t = getTransporter();
+  if (!t) return false;
+
+  const oldDate = new Date(oldDatetime);
+  const dateStr = oldDate.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
+  const timeStr = oldDate.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+
+  const html = `
+    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px;">
+      <div style="background: #3b82f6; color: white; padding: 20px 24px; border-radius: 12px 12px 0 0;">
+        <h1 style="margin: 0; font-size: 20px;">RDV reporte</h1>
+      </div>
+      <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-top: none; padding: 24px; border-radius: 0 0 12px 12px;">
+        <p>Bonjour <strong>${escHtml(tutorName)}</strong>,</p>
+        <p>Votre rendez-vous <strong>${escHtml(eventTitle)}</strong> du <strong>${dateStr} a ${timeStr}</strong> a ete reporte.</p>
+        <p><a href="${rebookUrl}" style="display: inline-block; background: #3b82f6; color: white; text-decoration: none; padding: 12px 24px; border-radius: 8px; font-weight: 600;">Choisir un nouveau creneau</a></p>
+      </div>
+    </div>
+  `;
+
+  try {
+    await t.sendMail({
+      from: SMTP_FROM, to,
+      subject: `RDV reporte : ${escHtml(eventTitle)}`,
+      html,
+    });
+    return true;
+  } catch (err) {
+    log.warn('Reschedule email failed', { error: err.message, to });
+    return false;
+  }
+}
+
 function isConfigured() {
   return !!SMTP_HOST;
 }
 
-module.exports = { sendBookingConfirmation, sendBookingCancellation, isConfigured };
+module.exports = { sendBookingConfirmation, sendBookingCancellation, sendBookingReminder, sendBookingReschedule, isConfigured };

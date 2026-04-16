@@ -6,14 +6,11 @@
     Code2, StickyNote, MessageSquare, Cloud, Star, FileText,
     BarChart, Smile, ArrowUpDown, Grid3X3,
   } from 'lucide-vue-next'
-  import type { LiveActivity } from '@/types'
+  import type { LiveActivity, LiveV2ActivityType } from '@/types'
 
   const props = defineProps<{ initialData?: LiveActivity | null; defaultCategory?: string | null }>()
 
-  type ActivityType =
-    | 'qcm' | 'vrai_faux' | 'reponse_courte' | 'association' | 'estimation'
-    | 'sondage_libre' | 'nuage' | 'echelle' | 'question_ouverte' | 'sondage' | 'humeur' | 'priorite' | 'matrice'
-    | 'live_code' | 'board'
+  type ActivityType = LiveV2ActivityType
 
   const emit = defineEmits<{
     save: [payload: {

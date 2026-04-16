@@ -59,11 +59,11 @@
     const q = channelFilter.value.toLowerCase().trim()
     if (!q) return sortedChannelGroups.value
     return sortedChannelGroups.value
-      .map((g: any) => ({
+      .map((g) => ({
         ...g,
-        channels: g.channels.filter((ch: any) => ch.name.toLowerCase().includes(q)),
+        channels: g.channels.filter((ch) => ch.name.toLowerCase().includes(q)),
       }))
-      .filter((g: any) => g.channels.length > 0)
+      .filter((g) => g.channels.length > 0)
   })
 
   const appStore   = useAppStore()

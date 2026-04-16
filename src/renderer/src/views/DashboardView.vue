@@ -49,8 +49,7 @@ const dashTab = ref<DashTab>(
   VALID_TABS.includes(route.query.tab as DashTab) ? (route.query.tab as DashTab) : 'accueil',
 )
 watch(() => route.query.tab, (tab) => {
-  const valid = ['frise', 'planning', 'analytique', 'promotions', 'reglages', 'live', 'rex', 'projets', 'notes', 'suivi', 'engagement'] as const
-  dashTab.value = valid.includes(tab as typeof valid[number]) ? (tab as typeof dashTab.value) : 'accueil'
+  dashTab.value = VALID_TABS.includes(tab as DashTab) ? (tab as DashTab) : 'accueil'
 })
 
 // ── Composables ─────────────────────────────────────────────────────────────

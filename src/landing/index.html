@@ -3,9 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="Messagerie en temps reel, gestion de devoirs, cours GitHub integres, quiz interactifs et feedback anonyme. Open source et gratuit." />
+  <meta name="description" content="Messagerie en temps reel, gestion de devoirs, cours GitHub integres, quiz interactifs, feedback anonyme et prise de rendez-vous. Open source et gratuit." />
   <meta name="theme-color" content="#f9fafb" />
-  <title>Cursus - Messagerie, devoirs et quiz pour promotions post-bac</title>
+  <title>Cursus - Messagerie, devoirs, quiz et rendez-vous pour promotions post-bac</title>
 
   <!-- SEO : Open Graph -->
   <meta property="og:title" content="Cursus - Messagerie, devoirs et quiz pour promotions post-bac" />
@@ -33,7 +33,7 @@
     "@type": "WebApplication",
     "name": "Cursus",
     "url": "https://cursus.school",
-    "description": "Plateforme pedagogique tout-en-un pour les promotions post-bac. Chat, devoirs, documents, quiz et feedback.",
+    "description": "Plateforme pedagogique tout-en-un pour les promotions post-bac. Chat, devoirs, documents, quiz, feedback et prise de rendez-vous.",
     "applicationCategory": "EducationalApplication",
     "operatingSystem": "Windows, macOS, Web",
     "inLanguage": "fr",
@@ -124,8 +124,8 @@
     <div class="container">
       <!-- Badge + headline compact -->
       <div class="hero-intro fade-up">
-        <span class="hero-badge"><span class="hero-badge-mono" id="pill-version">v2.15</span> <span class="sep">&middot;</span> Open source</span>
-        <h1 class="hero-headline">Chat, devoirs et quiz.<br>Un seul endroit.</h1>
+        <span class="hero-badge"><span class="hero-badge-mono" id="pill-version">v2.79</span> <span class="sep">&middot;</span> Open source</span>
+        <h1 class="hero-headline">Chat, devoirs, quiz et RDV.<br>Un seul endroit.</h1>
       </div>
 
       <!-- Bento Grid: 6 cartes interactives -->
@@ -185,18 +185,18 @@
           </div>
         </a>
 
-        <!-- Card 5: Pulse -->
-        <a href="#feat-pulse" class="bento-card" data-color="rex" aria-label="Découvrir Pulse">
+        <!-- Card 5: Rendez-vous -->
+        <a href="#feat-pulse" class="bento-card" data-color="rex" aria-label="Decouvrir les rendez-vous">
           <div class="bento-header">
-            <div class="bento-icon-circle" style="--ic: var(--color-rex)"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 64 64" fill="none"><defs><linearGradient id="bp-g" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#0EA5E9"/><stop offset="50%" stop-color="#06B6D4"/><stop offset="100%" stop-color="#34D399"/></linearGradient></defs><path d="M32 56C32 56 6 40 6 22 6 13.2 13.2 6 22 6 26.8 6 30.8 8.4 32 12 33.2 8.4 37.2 6 42 6 50.8 6 58 13.2 58 22 58 40 32 56 32 56Z" fill="url(#bp-g)" opacity=".15" stroke="url(#bp-g)" stroke-width="2.5" stroke-linejoin="round"/><polyline points="4,34 16,34 20,34 24,26 28,42 32,18 36,38 40,28 44,34 48,34 60,34" fill="none" stroke="url(#bp-g)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
-            <div class="bento-titles"><span class="bento-title">Pulse</span><span class="bento-subtitle">Feedback anonyme</span></div>
+            <div class="bento-icon-circle" style="--ic: var(--color-rex)"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/><path d="m9 16 2 2 4-4"/></svg></div>
+            <div class="bento-titles"><span class="bento-title">Rendez-vous</span><span class="bento-subtitle">Mini-Calendly</span></div>
           </div>
           <div class="bento-demo bento-rex-demo">
-            <div class="bento-rex-q">Comment s'est passé le cours ?</div>
+            <div class="bento-rex-q">Suivi individuel</div>
             <div class="bento-rex-cloud">
-              <span style="font-size:15px;opacity:.9">travail d'équipe</span>
-              <span style="font-size:11px;opacity:.6">autonomie</span>
-              <span style="font-size:13px;opacity:.8">confiance</span>
+              <span style="font-size:13px;opacity:.9">Lun 10:00</span>
+              <span style="font-size:13px;opacity:.7">Mar 14:00</span>
+              <span style="font-size:13px;opacity:.8">Jeu 09:00</span>
             </div>
           </div>
         </a>
@@ -231,7 +231,7 @@
           <span id="gh-stars">Open source</span> sur GitHub
         </a>
         <span class="proof-sep">&middot;</span>
-        <span class="proof-item"><span class="proof-mono" id="test-count">2500+</span> tests</span>
+        <span class="proof-item"><span class="proof-mono" id="test-count">2800+</span> tests</span>
         <span class="proof-sep">&middot;</span>
         <span class="proof-item">Zero install</span>
       </div>
@@ -420,12 +420,13 @@
       <div class="container feature-row">
         <div class="feature-text">
           <div class="feature-icon" style="--fc: var(--color-live)"><svg aria-hidden="true" width="32" height="32" viewBox="0 0 64 64" fill="none"><defs><linearGradient id="fs-g" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#F59E0B"/><stop offset="50%" stop-color="#F97316"/><stop offset="100%" stop-color="#EF4444"/></linearGradient></defs><circle cx="32" cy="32" r="28" fill="url(#fs-g)" opacity=".08"/><path d="M36 4L14 34 28 34 24 60 50 26 34 26Z" fill="url(#fs-g)" opacity=".15" stroke="url(#fs-g)" stroke-width="2.5" stroke-linejoin="round"/><path d="M34.5 10L18 34 29 34 26 54 46 28 34 28Z" fill="none" stroke="url(#fs-g)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/><circle cx="12" cy="18" r="1.8" fill="#FCD34D" opacity=".7"/><circle cx="52" cy="14" r="1.4" fill="#F97316" opacity=".6"/><circle cx="54" cy="44" r="1.8" fill="#FCD34D" opacity=".5"/></svg></div>
-          <h2>Spark : quiz interactifs en temps réel</h2>
-          <p class="feature-desc">L'enseignant lance une question, la classe répond en direct. 5 formats pour évaluer la compréhension sans pression.</p>
+          <h2>Live : 4 modes interactifs en temps reel</h2>
+          <p class="feature-desc">Un module unifie avec 4 categories. Spark (quiz), Pulse (feedback anonyme), Code (live coding) et Board (brainstorming collaboratif).</p>
           <ul class="feature-list">
-            <li>5 formats : QCM, vrai/faux, réponse courte, association, estimation</li>
-            <li>Scores en direct et podium de fin de session</li>
-            <li>Correction automatique et export des résultats</li>
+            <li>Spark : 5 formats de quiz avec scoring et podium</li>
+            <li>Pulse : sondages anonymes, nuage de mots, echelle</li>
+            <li>Code : editeur en direct avec coloration syntaxique</li>
+            <li>Board : post-its collaboratifs avec votes et drag & drop</li>
           </ul>
         </div>
         <div class="mini-demo mini-demo-right" id="demo-live">
@@ -453,40 +454,33 @@
       <div class="container feature-row reverse">
         <div class="feature-text">
           <div class="feature-icon" style="--fc: var(--color-rex)"><svg aria-hidden="true" width="32" height="32" viewBox="0 0 64 64" fill="none"><defs><linearGradient id="fp-g" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#0EA5E9"/><stop offset="50%" stop-color="#06B6D4"/><stop offset="100%" stop-color="#34D399"/></linearGradient></defs><path d="M32 56C32 56 6 40 6 22 6 13.2 13.2 6 22 6 26.8 6 30.8 8.4 32 12 33.2 8.4 37.2 6 42 6 50.8 6 58 13.2 58 22 58 40 32 56 32 56Z" fill="url(#fp-g)" opacity=".15" stroke="url(#fp-g)" stroke-width="2.5" stroke-linejoin="round"/><polyline points="4,34 16,34 20,34 24,26 28,42 32,18 36,38 40,28 44,34 48,34 60,34" fill="none" stroke="url(#fp-g)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
-          <h2>Pulse : feedback anonyme et pulse de promo</h2>
-          <p class="feature-desc">Sondages anonymes en temps réel. L'enseignant capte le ressenti de sa promotion sans qu'aucun étudiant ne soit exposé.</p>
+          <h2>Rendez-vous : mini-Calendly integre</h2>
+          <p class="feature-desc">Les enseignants creent des types de creneaux, partagent un lien et les tuteurs reservent. Sync Microsoft Outlook et Teams automatique.</p>
           <ul class="feature-list">
-            <li>100% anonyme, réponses confidentielles</li>
-            <li>8 formats : nuage de mots, échelle, humeur, sondage, matrice...</li>
-            <li>Résultats en direct et export CSV</li>
+            <li>Types de RDV configurables (duree, couleur, description)</li>
+            <li>Grille de disponibilites hebdomadaire</li>
+            <li>Sync calendrier Outlook et reunion Teams automatique</li>
+            <li>Emails de confirmation et annulation</li>
           </ul>
         </div>
         <div class="mini-demo mini-demo-left" id="demo-rex">
           <div class="demo-window">
-            <div class="demo-titlebar"><span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span><span class="demo-title">Pulse Session</span></div>
+            <div class="demo-titlebar"><span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span><span class="demo-title">Rendez-vous</span></div>
             <div class="demo-rex-body" id="rex-demo">
               <div class="rex-activity-tabs" style="--delay: 0ms">
-                <span class="rex-tab rex-tab--active" data-rex-tab="nuage" role="tab" tabindex="0">Nuage de mots</span>
-                <span class="rex-tab" data-rex-tab="echelle" role="tab" tabindex="0">Échelle</span>
-                <span class="rex-tab" data-rex-tab="ouverte" role="tab" tabindex="0">Question ouverte</span>
+                <span class="rex-tab rex-tab--active" data-rex-tab="nuage" role="tab" tabindex="0">Types</span>
+                <span class="rex-tab" data-rex-tab="echelle" role="tab" tabindex="0">Disponibilites</span>
+                <span class="rex-tab" data-rex-tab="ouverte" role="tab" tabindex="0">Mes RDV</span>
               </div>
 
-              <!-- Contenu dynamique par onglet -->
               <div class="rex-panel rex-panel--active" data-rex-panel="nuage" id="rex-panel-nuage"></div>
               <div class="rex-panel" data-rex-panel="echelle" id="rex-panel-echelle"></div>
               <div class="rex-panel" data-rex-panel="ouverte" id="rex-panel-ouverte"></div>
 
-              <!-- Navigation question -->
-              <div class="rex-nav" id="rex-nav">
-                <button class="rex-nav-btn" id="rex-prev" aria-label="Question précédente">&larr;</button>
-                <span class="rex-nav-count" id="rex-nav-count">1 / 2</span>
-                <button class="rex-nav-btn" id="rex-next" aria-label="Question suivante">&rarr;</button>
-              </div>
-
               <div class="rex-footer" style="--delay: 400ms">
-                <span class="rex-count"><span class="rex-count-num">24</span> réponses</span>
+                <span class="rex-count"><span class="rex-count-num">3</span> creneaux disponibles</span>
                 <span class="rex-live-dot"></span>
-                <span class="rex-live-label">En direct</span>
+                <span class="rex-live-label">Outlook sync</span>
               </div>
             </div>
           </div>

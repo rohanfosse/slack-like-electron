@@ -85,7 +85,7 @@
     if (!r.depot_id) return
     saving.value = true
     try {
-      await api(() => window.api.setNote({ depotId: r.depot_id, note: pendingNote.value.trim() || null }), 'grade')
+      await api(() => window.api.setNote({ depotId: r.depot_id!, note: pendingNote.value.trim() || null }), 'grade')
       r.note           = pendingNote.value.trim() || null
       editingNote.value = null
     } finally {
@@ -97,7 +97,7 @@
     if (!r.depot_id) return
     saving.value = true
     try {
-      await api(() => window.api.setFeedback({ depotId: r.depot_id, feedback: pendingFeedback.value.trim() || null }), 'feedback')
+      await api(() => window.api.setFeedback({ depotId: r.depot_id!, feedback: pendingFeedback.value.trim() || null }), 'feedback')
       r.feedback           = pendingFeedback.value.trim() || null
       editingFeedback.value = null
     } finally {

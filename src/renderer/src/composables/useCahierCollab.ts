@@ -23,7 +23,7 @@ export function useCahierCollab(cahierId: Ref<number | null>) {
   const appStore = useAppStore()
 
   const ydoc = ref<Y.Doc | null>(null)
-  const provider = ref<{ awareness: any; destroy: () => void } | null>(null)
+  const provider = ref<{ awareness: unknown; destroy: () => void } | null>(null)
   const connected = ref(false)
   const saving = ref(false)
   const connectedUsers = ref<CollabUser[]>([])
@@ -66,8 +66,8 @@ export function useCahierCollab(cahierId: Ref<number | null>) {
     awareness.on('change', () => {
       const states = awareness.getStates()
       const users: CollabUser[] = []
-      states.forEach((state: any) => {
-        if (state.user) users.push(state.user)
+      states.forEach((state: Record<string, unknown>) => {
+        if (state.user) users.push(state.user as CollabUser)
       })
       connectedUsers.value = users
     })

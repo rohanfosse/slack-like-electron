@@ -11,7 +11,7 @@
   import type { ActivityCategory } from '@/utils/liveActivity'
   import { useAppStore }  from '@/stores/app'
   import { useLiveStore } from '@/stores/live'
-  import type { LiveActivity, LiveSession } from '@/types'
+  import type { LiveActivity, LiveSession, LiveV2ActivityType } from '@/types'
   import JoinCodeDisplay from './JoinCodeDisplay.vue'
   import ActivityForm    from './ActivityForm.vue'
   import CountdownTimer  from './CountdownTimer.vue'
@@ -114,6 +114,7 @@
   const showActivityForm = ref(false)
   const showLeaderboard  = ref(false)
   const showPodium       = ref(false)
+  const codeEditorRef    = ref<{ getContent: () => string } | null>(null)
   const editingActivity  = ref<LiveActivity | null>(null)
   const promoId          = computed(() => appStore.activePromoId ?? appStore.currentUser?.promo_id ?? 0)
 
@@ -207,9 +208,7 @@
 
   // ── Activity management ──────────────────────────────────────────────────
   async function onAddActivity(payload: {
-    type: 'qcm' | 'vrai_faux' | 'reponse_courte' | 'association' | 'estimation'
-      | 'sondage_libre' | 'nuage' | 'echelle' | 'question_ouverte' | 'sondage' | 'humeur' | 'priorite' | 'matrice'
-      | 'live_code' | 'board'
+    type: LiveV2ActivityType
     title: string; options?: string[] | string
     max_words?: number; max_rating?: number
     timer_seconds?: number; correct_answers?: number[] | string[]
@@ -257,10 +256,9 @@
   async function closeCurrentActivity() {
     if (!liveStore.currentActivity) return
     const activity = liveStore.currentActivity
-    // Save code snapshot before closing
-    if (activity.type === 'live_code') {
-      const editor = document.querySelector('.lce-editor .cm-content')
-      const content = editor?.textContent ?? ''
+    // Save code snapshot before closing (via exposed ref)
+    if (activity.type === 'live_code' && codeEditorRef.value) {
+      const content = codeEditorRef.value.getContent()
       if (content) await window.api.saveLiveV2CodeSnapshot(activity.id, content)
     }
     await liveStore.closeActivity(activity.id)
@@ -359,9 +357,7 @@
   async function duplicateActivity(activity: LiveActivity) {
     if (!liveStore.currentSession) return
     const payload: {
-      type: 'qcm' | 'vrai_faux' | 'reponse_courte' | 'association' | 'estimation'
-        | 'sondage_libre' | 'nuage' | 'echelle' | 'question_ouverte' | 'sondage' | 'humeur' | 'priorite' | 'matrice'
-        | 'live_code' | 'board'
+      type: LiveV2ActivityType
       title: string; options?: string[] | string
       max_words?: number; max_rating?: number
       timer_seconds?: number; correct_answers?: number[] | string[]
@@ -760,6 +756,7 @@
       <div class="results-area">
         <!-- Code : editeur en direct (prof) -->
         <LiveCodeEditor
+          ref="codeEditorRef"
           v-if="liveStore.currentActivity.type === 'live_code' && promoId"
           :activity-id="liveStore.currentActivity.id"
           :promo-id="promoId"

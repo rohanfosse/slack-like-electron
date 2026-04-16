@@ -116,8 +116,8 @@ async function save() {
 
     emit('created', full)
     emit('update:modelValue', false)
-  } catch (e: any) {
-    showToast(e?.message ?? 'Erreur lors de la création.', 'error')
+  } catch (e: unknown) {
+    showToast(e instanceof Error ? e.message : 'Erreur lors de la creation.', 'error')
   } finally {
     saving.value = false
   }

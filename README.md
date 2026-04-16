@@ -6,7 +6,7 @@
 
 <p align="center">
   L'app tout-en-un pour ta promo.<br />
-  Chat, devoirs et documents. Un seul endroit.
+  Chat, devoirs, quiz, cours et rendez-vous. Un seul endroit.
 </p>
 
 <p align="center">
@@ -70,22 +70,22 @@ Les etudiants et enseignants naviguent chaque jour entre 5 a 8 outils : Moodle, 
 | Fonctionnalite | Description |
 |----------------|-------------|
 | **Chat temps reel** | Canaux par promotion (archivables), annonces en lecture seule, DMs etudiant-etudiant, reactions, mentions `@nom` et `@tous`, slash commands `/devoir` `/doc` `/annonce`, recherche plein texte, indicateur de frappe, notifications desktop, offline queue avec retry |
-| **Devoirs et evaluation** | 5 types (livrable, soutenance, CCTL, etude de cas, memoire), brouillon, verrouillage apres deadline, grilles multicriteres, notation A-F, feedback individuel, export CSV |
+| **Devoirs et evaluation** | 5 types (livrable, soutenance, CCTL, etude de cas, memoire), brouillon, verrouillage apres deadline, grilles multicriteres, notation A-D, feedback individuel, export CSV |
 | **Documents et ressources** | Upload avec validation (taille max 50 Mo, extensions bloquees), liens, categorisation, viewers integres (PDF, Word, Excel), drag-and-drop, recherche, liaison aux devoirs |
-| **Dashboard personnalisable** | Widgets reorganisables par drag-and-drop, deadlines proches, dernieres notes, progression, pomodoro, calendrier. Vues differentes enseignant/etudiant |
+| **Dashboard personnalisable** | Widgets reorganisables par drag-and-drop, deadlines proches, dernieres notes, progression, calendrier, onglet RDV. Vues differentes enseignant/etudiant |
 
 ### Enrichissement
 
 | Fonctionnalite | Description |
 |----------------|-------------|
-| **Lumen — Liseuse de cours** | Cours markdown adosses a GitHub (1 promo = 1 organisation, 1 cours = 1 repo). Detection automatique des chapitres depuis l'arbre du repo, scaffold "Nouveau cours" en 1 clic, recherche fulltext FTS5, KaTeX + Mermaid + admonitions, mode focus plein-ecran, auto-resume du dernier chapitre. Visibilite par repo (le prof publie explicitement). |
-| **Quiz en direct** | QCM, sondages, nuages de mots en temps reel pendant le cours |
+| **Lumen -- Liseuse de cours** | Cours markdown adosses a GitHub (1 promo = 1 organisation, 1 cours = 1 repo). Detection automatique des chapitres, scaffold "Nouveau cours" en 1 clic, recherche fulltext FTS5, KaTeX + Mermaid + admonitions, edition inline, notes privees, tracking de lecture, PDF integre (pdf.js). |
+| **Live -- 4 modes interactifs** | Module unifie avec 4 categories : **Spark** (quiz QCM, vrai/faux, association, estimation, reponse courte avec scoring et podium), **Pulse** (feedback anonyme : nuage de mots, echelle, humeur, sondage, matrice, priorite, question ouverte), **Code** (editeur live avec coloration syntaxique), **Board** (brainstorming collaboratif avec post-its, votes, drag & drop, export Markdown) |
+| **Rendez-vous (mini-Calendly)** | Types d'evenements configurables, grille de disponibilites hebdomadaire, lien de reservation par etudiant, sync Microsoft Outlook + reunion Teams automatique, emails de confirmation et annulation, rate limiting sur les routes publiques |
 | **Kanban projet** | Suivi par groupe avec drag-and-drop (a faire, en cours, termine) |
 | **Frise chronologique** | Timeline interactive des devoirs, zoom semaine/mois/trimestre/annee |
-| **REX** | Sessions de retour d'experience avec feedback en temps reel |
 | **Signature PDF** | Circuit de signature en DM avec tampon, reference unique, sauvegarde locale |
-| **Messages prives** | DMs chiffres, indicateur en ligne, envoi de fichiers, cache 60s |
-| **Mode Focus** | Masque les distractions, sidebar proactive avec priorites |
+| **Messages prives** | DMs chiffres AES-256-GCM, indicateur en ligne, envoi de fichiers |
+| **Agenda et calendrier** | Reminders, deadlines, export ICS, sync Outlook |
 | **Mobile PWA** | Navigation tactile, barre inferieure, optimise pour petits ecrans |
 
 <br />
@@ -97,7 +97,7 @@ Les etudiants et enseignants naviguent chaque jour entre 5 a 8 outils : Moodle, 
 | **Isolation promo** | Chaque etudiant n'accede qu'a sa promotion. Middleware `requirePromo` + rooms Socket.IO par promo |
 | **Controle par role** | 4 roles hierarchiques : admin > enseignant > intervenant > etudiant. Permissions centralisees |
 | **DMs confidentiels** | Un etudiant n'accede qu'a ses propres conversations (`requireDmParticipant`) |
-| **Auth et chiffrement** | JWT 7j, bcrypt, validation Zod, CSRF, Content-Security-Policy stricte |
+| **Auth et chiffrement** | JWT 7j, bcrypt, validation Zod, CSRF (OAuth state HMAC), Content-Security-Policy stricte, tokens Microsoft chiffres AES-256-GCM |
 | **IPC securise** | Les handlers Electron verifient role et promo (`handleTeacher`, `handlePromo`) |
 | **RGPD** | Export des donnees personnelles (Art. 20) |
 
@@ -162,6 +162,12 @@ NODE_ENV=production PORT=3001 JWT_SECRET=<secret-32-chars> node server/index.js
 | `DB_PATH` | Chemin SQLite | Auto |
 | `UPLOAD_DIR` | Repertoire uploads | `uploads/` |
 | `VITE_SERVER_URL` | URL serveur pour le frontend | `http://localhost:3001` |
+| `AZURE_TENANT_ID` | Azure AD tenant ID (booking) | - |
+| `AZURE_CLIENT_ID` | Azure AD client ID (booking) | - |
+| `AZURE_CLIENT_SECRET` | Azure AD client secret (booking) | - |
+| `SMTP_HOST` | Serveur SMTP (emails RDV) | - |
+| `SMTP_USER` | Utilisateur SMTP | - |
+| `SMTP_PASS` | Mot de passe SMTP | - |
 
 ### Infrastructure
 
@@ -187,7 +193,8 @@ cursus/
     landing/           Page vitrine
   server/
     db/                SQLite : connexion, schema, migrations, models
-    routes/            API REST (18 domaines + admin modulaire)
+    routes/            API REST (20 domaines + admin modulaire)
+    services/          Email (nodemailer), Microsoft Graph (MSAL)
     middleware/        Auth JWT, validation Zod, autorisation (role + promo)
     public/            Console d'administration
   tests/
@@ -201,7 +208,7 @@ cursus/
 |--------|-------------|
 | Desktop | Electron 29, context isolation, sandbox, auto-update (electron-updater, NSIS) |
 | Frontend | Vue 3 Composition API, TypeScript strict, Pinia, Vue Router |
-| Backend | Express 4, Socket.IO 4, SQLite (Better-SQLite3), JWT, Zod, bcrypt |
+| Backend | Express 4, Socket.IO 4, SQLite (Better-SQLite3), JWT, Zod, bcrypt, MSAL Node, nodemailer |
 | Build | electron-vite, Vite 6, electron-builder |
 | Mobile | PWA, service worker, Web App Manifest |
 | CI/CD | GitHub Actions (tests, deploy Docker, release Win/macOS, Lighthouse, CodeQL) |

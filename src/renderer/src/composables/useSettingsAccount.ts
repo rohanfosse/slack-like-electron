@@ -99,8 +99,8 @@ export function useSettingsAccount(emit: (evt: 'update:modelValue', v: boolean) 
       a.click()
       URL.revokeObjectURL(url)
       showToast('Export téléchargé.', 'success')
-    } catch (e: any) {
-      showToast(e.message ?? 'Erreur lors de l\'export.', 'error')
+    } catch (e: unknown) {
+      showToast(e instanceof Error ? e.message : 'Erreur lors de l\'export.', 'error')
     } finally {
       exporting.value = false
     }

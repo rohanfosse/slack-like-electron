@@ -87,8 +87,8 @@ export function useFileDrop() {
     uploading.value = true
     try {
       const res = await window.api.addChannelDocument({
-        channelId: opts.channelId ?? appStore.activeChannelId,
-        promoId:   opts.promoId ?? appStore.activePromoId,
+        channelId: opts.channelId ?? appStore.activeChannelId ?? 0,
+        promoId:   opts.promoId ?? appStore.activePromoId ?? 0,
         project:   opts.project ?? appStore.activeProject,
         type:      'file',
         name:      opts.name?.trim() || pendingFile.value.name,

@@ -73,7 +73,7 @@ export const useDocumentsStore = defineStore('documents', () => {
     }
   }
 
-  async function addDocument(payload: object) {
+  async function addDocument(payload: Record<string, unknown> & { name: string }) {
     const data = await api(() => window.api.addProjectDocument(payload), 'upload')
     if (data !== null) {
       const pid = appStore.activePromoId ?? appStore.currentUser?.promo_id
@@ -82,7 +82,7 @@ export const useDocumentsStore = defineStore('documents', () => {
     return data !== null
   }
 
-  async function updateDocument(id: number, payload: object): Promise<boolean> {
+  async function updateDocument(id: number, payload: Record<string, unknown>): Promise<boolean> {
     const data = await api(() => window.api.updateProjectDocument(id, payload), 'upload')
     if (data !== null) {
       const pid = appStore.activePromoId ?? appStore.currentUser?.promo_id

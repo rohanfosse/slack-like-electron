@@ -338,8 +338,13 @@
     </div>
   </Transition>
 
+  <!-- Pages publiques (booking) — pas de login requis -->
+  <template v-if="$route.meta?.public">
+    <RouterView />
+  </template>
+
   <!-- Écran de connexion -->
-  <LoginOverlay v-if="!appStore.currentUser" />
+  <LoginOverlay v-else-if="!appStore.currentUser" />
 
   <!-- Shell principal (après connexion) -->
   <div v-else id="app-shell" class="app-shell">

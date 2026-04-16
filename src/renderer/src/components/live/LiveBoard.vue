@@ -94,17 +94,30 @@ async function fetchCards() {
 async function addCard(columnName: string) {
   const content = newCardContent.value.trim()
   if (!content) return
-  const res = await window.api.addLiveV2BoardCard(props.activityId, {
-    columnName, content, color: newCardColor.value,
-  })
-  if (res?.ok) {
-    newCardContent.value = ''
-    newCardColumn.value = ''
+  try {
+    const res = await window.api.addLiveV2BoardCard(props.activityId, {
+      columnName, content, color: newCardColor.value,
+    })
+    if (res?.ok) {
+      newCardContent.value = ''
+      newCardColumn.value = ''
+    } else {
+      showToast(res?.error || 'Erreur lors de l\'ajout', 'error')
+    }
+  } catch {
+    showToast('Erreur lors de l\'ajout du post-it', 'error')
   }
 }
 
 async function deleteCard(card: BoardCard) {
-  await window.api.deleteLiveV2BoardCard(card.id)
+  try {
+    const res = await window.api.deleteLiveV2BoardCard(card.id)
+    if (!res?.ok) {
+      showToast(res?.error || 'Erreur lors de la suppression', 'error')
+    }
+  } catch {
+    showToast('Erreur lors de la suppression', 'error')
+  }
 }
 
 function isOwnCard(card: BoardCard): boolean {
@@ -115,9 +128,19 @@ async function voteCard(card: BoardCard) {
   const currentlyVoted = card.voted_by_me ?? false
   if (!currentlyVoted && isOwnCard(card)) return
   if (!currentlyVoted && !canVote.value) return
-  await window.api.voteLiveV2BoardCard(card.id, !currentlyVoted)
-  card.voted_by_me = !currentlyVoted
-  card.votes = Math.max(0, card.votes + (currentlyVoted ? -1 : 1))
+  try {
+    const res = await window.api.voteLiveV2BoardCard(card.id, !currentlyVoted)
+    if (res?.ok) {
+      // Immutable update
+      cards.value = cards.value.map(c =>
+        c.id === card.id
+          ? { ...c, voted_by_me: !currentlyVoted, votes: Math.max(0, c.votes + (currentlyVoted ? -1 : 1)) }
+          : c,
+      )
+    }
+  } catch {
+    showToast('Erreur lors du vote', 'error')
+  }
 }
 
 // ── Edit inline ─────────────────────────────────────────────────────────
@@ -236,8 +259,9 @@ onMounted(() => {
       const idx = cards.value.findIndex(c => c.id === updated.id)
       if (idx !== -1) cards.value[idx] = { ...cards.value[idx], ...updated }
     } else if (data.action === 'vote' && data.cardId && data.votes !== undefined) {
-      const c = cards.value.find(c => c.id === data.cardId)
-      if (c) c.votes = data.votes
+      cards.value = cards.value.map(c =>
+        c.id === data.cardId ? { ...c, votes: data.votes! } : c,
+      )
     }
   })
 })
@@ -255,11 +279,11 @@ onBeforeUnmount(() => { unsubscribe?.() })
       <span v-if="totalVotes > 0" class="lb-stat lb-stat--accent">{{ totalVotes }} vote{{ totalVotes > 1 ? 's' : '' }}</span>
       <span class="lb-stat"><Users :size="10" /> {{ uniqueAuthors }}</span>
       <div class="lb-header-actions">
-        <button v-if="isTeacher" class="lb-hdr-btn" :class="{ active: anonymousMode }" title="Mode anonyme" @click="anonymousMode = !anonymousMode">
+        <button v-if="isTeacher" class="lb-hdr-btn" :class="{ active: anonymousMode }" title="Mode anonyme" aria-label="Basculer le mode anonyme" @click="anonymousMode = !anonymousMode">
           <EyeOff v-if="anonymousMode" :size="13" />
           <Eye v-else :size="13" />
         </button>
-        <button class="lb-hdr-btn" title="Exporter en Markdown" @click="exportBoard">
+        <button class="lb-hdr-btn" title="Exporter en Markdown" aria-label="Exporter en Markdown" @click="exportBoard">
           <Download :size="13" />
         </button>
       </div>

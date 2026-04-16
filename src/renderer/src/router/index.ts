@@ -7,6 +7,7 @@ declare module 'vue-router' {
   interface RouteMeta {
     requiredRole?: Role
     requiredModule?: ModuleName
+    public?: boolean
   }
 }
 
@@ -31,6 +32,9 @@ const router = createRouter({
     { path: '/lumen',      component: () => import('@/views/LumenView.vue'), name: 'lumen',  meta: { requiredModule: 'lumen' } },
     { path: '/agenda',     component: () => import('@/views/AgendaView.vue'), name: 'agenda' },
     { path: '/fichiers',   component: () => import('@/views/FilesView.vue'),  name: 'fichiers', meta: { requiredRole: 'teacher' } },
+    // Public booking pages (no auth required)
+    { path: '/book/:token',          component: () => import('@/views/BookingPublicView.vue'),  name: 'booking-public', meta: { public: true } },
+    { path: '/book/cancel/:token',   component: () => import('@/views/BookingCancelView.vue'),  name: 'booking-cancel', meta: { public: true } },
     // Catch-all → redirect au dashboard
     { path: '/:pathMatch(.*)*', redirect: '/dashboard' },
   ],

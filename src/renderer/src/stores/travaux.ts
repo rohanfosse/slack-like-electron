@@ -112,22 +112,22 @@ export const useTravauxStore = defineStore('travaux', () => {
   }
 
   // ── Actions ───────────────────────────────────────────────────────────────
-  async function createTravail(payload: object) {
+  async function createTravail(payload: Record<string, unknown> & { title: string }) {
     return await api(() => window.api.createTravail(payload))
   }
 
-  async function addDepot(payload: object) {
+  async function addDepot(payload: Record<string, unknown>) {
     const data = await api(() => window.api.addDepot(payload), 'submit')
     if (data !== null && appStore.currentTravailId) await fetchDepots(appStore.currentTravailId)
     return data !== null
   }
 
-  async function setNote(payload: object) {
+  async function setNote(payload: { depotId: number; note: string | null }) {
     await api(() => window.api.setNote(payload), 'grade')
     if (appStore.currentTravailId) await fetchDepots(appStore.currentTravailId)
   }
 
-  async function setFeedback(payload: object) {
+  async function setFeedback(payload: { depotId: number; feedback: string | null }) {
     await api(() => window.api.setFeedback(payload), 'feedback')
     if (appStore.currentTravailId) await fetchDepots(appStore.currentTravailId)
   }

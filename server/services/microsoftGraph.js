@@ -144,6 +144,10 @@ async function createEventWithTeams(accessToken, {
 
 /** Delete an Outlook calendar event */
 async function deleteEvent(accessToken, eventId) {
+  // Validate eventId format to prevent URL injection
+  if (!eventId || !/^[A-Za-z0-9_+/=-]{10,200}$/.test(eventId)) {
+    throw new Error('Invalid eventId format');
+  }
   const client = getGraphClient(accessToken);
   await client.api(`/me/events/${eventId}`).delete();
 }
