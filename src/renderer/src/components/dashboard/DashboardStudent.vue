@@ -5,7 +5,7 @@
  */
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { FolderOpen, Award, CalendarDays, Home, Menu, Zap, HeartPulse, Settings } from 'lucide-vue-next'
+import { FolderOpen, Award, CalendarDays, Home, Menu, Zap, Settings } from 'lucide-vue-next'
 import type { StudentProjectCard } from '@/composables/useDashboardStudent'
 import type { FriseMilestone, FrisePromo } from '@/composables/useFrise'
 import type { GradedDevoir } from './StudentGradesTab.vue'
@@ -13,6 +13,7 @@ import type { GradedDevoir } from './StudentGradesTab.vue'
 import StudentBento from './StudentBento.vue'
 import StudentProjectsTab from './StudentProjectsTab.vue'
 import StudentGradesTab from './StudentGradesTab.vue'
+import StudentLiveTab from './StudentLiveTab.vue'
 import TabFrise from './TabFrise.vue'
 import { useModules } from '@/composables/useModules'
 import SkeletonLoader from '@/components/ui/SkeletonLoader.vue'
@@ -122,8 +123,8 @@ const emit = defineEmits<{
       <button v-if="isEnabled('frise')" class="db-tab" role="tab" :aria-selected="dashTab === 'planning'" :class="{ active: dashTab === 'planning' }" @click="emit('update:dashTab', 'planning')">
         <CalendarDays :size="13" /> Planning
       </button>
-      <button v-if="isEnabled('live')" class="db-tab db-tab--coming" role="tab" :aria-selected="dashTab === 'quiz'" aria-disabled="true" :class="{ active: dashTab === 'quiz' }" @click="emit('update:dashTab', 'quiz')">
-        <Zap :size="13" /> Live <span class="db-tab-soon">Bientot</span>
+      <button v-if="isEnabled('live')" class="db-tab" role="tab" :aria-selected="dashTab === 'quiz'" :class="{ active: dashTab === 'quiz' }" @click="emit('update:dashTab', 'quiz')">
+        <Zap :size="13" /> Live
       </button>
       <button
         v-if="dashTab === 'accueil'"
@@ -184,14 +185,8 @@ const emit = defineEmits<{
       @update:frise-offset="(val) => emit('update:friseOffset', val)"
     />
 
-    <!-- Tab: Quiz (coming soon) -->
-    <div v-else-if="dashTab === 'quiz'" class="db-coming-placeholder">
-      <Zap :size="40" class="db-coming-icon" />
-      <h3 class="db-coming-title">Live</h3>
-      <p class="db-coming-desc">Quiz, feedback anonyme, live coding et brainstorming collaboratif en temps reel.</p>
-      <span class="db-coming-badge">En cours de developpement</span>
-      <span class="db-coming-badge">En cours de developpement</span>
-    </div>
+    <!-- Tab: Live -->
+    <StudentLiveTab v-else-if="dashTab === 'quiz'" />
   </template>
 </template>
 

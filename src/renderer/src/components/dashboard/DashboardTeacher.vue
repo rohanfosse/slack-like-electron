@@ -8,11 +8,10 @@
 import { ref, computed } from 'vue'
 import {
   PlusCircle, CalendarDays, Settings,
-  LayoutDashboard, Users, BarChart2, TrendingUp, Zap, HeartPulse,
+  LayoutDashboard, Users, BarChart2, TrendingUp, Zap,
   Notebook, Activity, Pencil,
 } from 'lucide-vue-next'
 import { useLiveStore } from '@/stores/live'
-import { useRexStore }  from '@/stores/rex'
 import { useTeacherBento } from '@/composables/useTeacherBento'
 import { useModules }      from '@/composables/useModules'
 
@@ -20,12 +19,10 @@ const bento = useTeacherBento()
 const tabAccueilRef = ref<InstanceType<typeof TabAccueil> | null>(null)
 const isEditingBento = computed(() => tabAccueilRef.value?.editMode ?? false)
 import TeacherLiveView    from '@/components/live/TeacherLiveView.vue'
-import TeacherRexView     from '@/components/rex/TeacherRexView.vue'
 import TabSuiviEtudiants  from './TabSuiviEtudiants.vue'
 import TabEngagement      from './TabEngagement.vue'
 
 const liveStore = useLiveStore()
-const rexStore  = useRexStore()
 const { isEnabled } = useModules()
 import type { Promotion, Depot } from '@/types'
 import type { GanttRow, ProjectCard, Reminder } from '@/composables/useDashboardTeacher'
@@ -103,7 +100,7 @@ const props = defineProps<{
   totalThisWeek: number
 
   // Tabs
-  dashTab: 'accueil' | 'promotions' | 'frise' | 'analytique' | 'reglages' | 'live' | 'rex' | 'suivi' | 'engagement' | 'suivi' | 'engagement'
+  dashTab: 'accueil' | 'promotions' | 'frise' | 'analytique' | 'reglages' | 'live' | 'suivi' | 'engagement' | 'suivi' | 'engagement'
 
   // Analytics
   analyticsStats: { total: number; graded: number; notGraded: number }
@@ -132,7 +129,7 @@ const props = defineProps<{
 // ── Emits ────────────────────────────────────────────────────────────────────
 const emit = defineEmits<{
   'update:activePromoId': [id: number]
-  'update:dashTab': [tab: 'accueil' | 'promotions' | 'frise' | 'analytique' | 'reglages' | 'live' | 'rex' | 'suivi' | 'engagement']
+  'update:dashTab': [tab: 'accueil' | 'promotions' | 'frise' | 'analytique' | 'reglages' | 'live' | 'suivi' | 'engagement']
   'update:renamingPromoId': [id: number | null]
   'update:renamingPromoValue': [val: string]
   'update:friseOffset': [val: number]
@@ -167,7 +164,7 @@ const emit = defineEmits<{
   openDevoirCrossPromo: [travailId: number, promoId: number, channelId: number, channelName: string]
 }>()
 
-type DashTabType = 'accueil' | 'promotions' | 'frise' | 'analytique' | 'reglages' | 'live' | 'rex' | 'suivi' | 'engagement'
+type DashTabType = 'accueil' | 'promotions' | 'frise' | 'analytique' | 'reglages' | 'live' | 'suivi' | 'engagement'
 
 function setTab(tab: DashTabType) {
   emit('update:dashTab', tab)
@@ -218,13 +215,6 @@ function setTab(tab: DashTabType) {
         <span
           v-if="liveStore.currentSession && liveStore.currentSession.status !== 'ended'"
           class="db-tab-live-dot"
-        />
-      </button>
-      <button v-if="isEnabled('rex')" class="db-tab db-tab-rex" :class="{ active: dashTab === 'rex' }" @click="setTab('rex')">
-        <HeartPulse :size="13" /> Pulse
-        <span
-          v-if="rexStore.currentSession && rexStore.currentSession.status !== 'ended'"
-          class="db-tab-rex-dot"
         />
       </button>
       <button class="db-tab" :class="{ active: dashTab === 'reglages' }" @click="setTab('reglages')">
@@ -316,9 +306,6 @@ function setTab(tab: DashTabType) {
       v-else-if="dashTab === 'live'"
     />
 
-    <TeacherRexView
-      v-else-if="dashTab === 'rex'"
-    />
 
     <TabSuiviEtudiants
       v-else-if="dashTab === 'suivi'"
