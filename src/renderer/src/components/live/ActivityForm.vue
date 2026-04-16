@@ -8,7 +8,7 @@
   } from 'lucide-vue-next'
   import type { LiveActivity } from '@/types'
 
-  const props = defineProps<{ initialData?: LiveActivity | null }>()
+  const props = defineProps<{ initialData?: LiveActivity | null; defaultCategory?: string | null }>()
 
   type ActivityType =
     | 'qcm' | 'vrai_faux' | 'reponse_courte' | 'association' | 'estimation'
@@ -95,17 +95,29 @@
     Board: { label: 'Board', desc: 'Brainstorming', color: '#a855f7' },
   }
 
+  const CATEGORY_KEY_MAP: Record<string, string> = { spark: 'Spark', pulse: 'Pulse', code: 'Code', board: 'Board' }
+
   const categories = computed(() => {
     const grouped = new Map<string, typeof typeCards>()
     for (const card of typeCards) {
       if (!grouped.has(card.category)) grouped.set(card.category, [])
       grouped.get(card.category)!.push(card)
     }
-    return [...grouped.entries()].map(([name, cards]) => ({
+    const all = [...grouped.entries()].map(([name, cards]) => ({
       name,
       meta: CATEGORY_META[name],
       cards,
     }))
+    // If a default category is specified, put it first
+    if (props.defaultCategory) {
+      const target = CATEGORY_KEY_MAP[props.defaultCategory] ?? props.defaultCategory
+      const idx = all.findIndex(c => c.name === target)
+      if (idx > 0) {
+        const [cat] = all.splice(idx, 1)
+        all.unshift(cat)
+      }
+    }
+    return all
   })
 
   // Code activity

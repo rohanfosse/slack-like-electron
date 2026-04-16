@@ -19,11 +19,13 @@
   import SidebarDocProjects from './SidebarDocProjects.vue'
   import SidebarAgenda      from './SidebarAgenda.vue'
   import SidebarFichiers    from './SidebarFichiers.vue'
+  import SidebarLive        from './SidebarLive.vue'
   import SidebarDmList      from './SidebarDmList.vue'
   import LumenRepoSidebar   from '@/components/lumen/LumenRepoSidebar.vue'
   import SkeletonLoader     from '@/components/ui/SkeletonLoader.vue'
   import { avatarColor }  from '@/utils/format'
   import { useLumenStore }  from '@/stores/lumen'
+  import { useLiveStore }   from '@/stores/live'
   import { useFichiersStore } from '@/stores/fichiers'
 
   import { useSidebarData }     from '@/composables/useSidebarData'
@@ -68,6 +70,7 @@
   const modals     = useModalsStore()
   const docStore   = useDocumentsStore()
   const lumenStore    = useLumenStore()
+  const liveStore     = useLiveStore()
   const fichiersStore = useFichiersStore()
   const route      = useRoute()
   const router     = useRouter()
@@ -355,6 +358,14 @@
           :selected-student-id="fichiersStore.selectedStudentId"
           @select-student="(id: number | null) => fichiersStore.selectStudent(id)"
           @filter-type="(t: 'all' | 'images' | 'docs') => fichiersStore.setFilterType(t)"
+        />
+      </template>
+
+      <!-- Live (sidebar brouillons + navigation) -->
+      <template v-else-if="route.name === 'live' && appStore.isStaff">
+        <SidebarLive
+          @select-session="(s) => { liveStore.fetchSession(s.id); window.api.emitLiveJoin(s.promo_id) }"
+          @tab="(t) => router.push({ name: 'live', query: { tab: t } })"
         />
       </template>
 

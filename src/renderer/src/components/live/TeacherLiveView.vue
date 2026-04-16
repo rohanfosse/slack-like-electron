@@ -1,12 +1,14 @@
 <!-- TeacherLiveView.vue - Vue enseignant pour le Live Quiz interactif -->
 <script setup lang="ts">
   import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
+  import { useRoute, useRouter } from 'vue-router'
   import {
     Plus, Play, Square, ChevronRight, Trash2, Users, Zap, Clock,
     LogOut, Pencil, GripVertical, Copy, Download,
-    History, BarChart3,
+    History, BarChart3, Sparkles, Activity, Code2, StickyNote, ArrowRight,
   } from 'lucide-vue-next'
-  import { activityIcon, activityTypeLabel, getActivityCategory, isSparkType } from '@/utils/liveActivity'
+  import { ACTIVITY_CATEGORIES, activityIcon, activityTypeLabel, getActivityCategory, isSparkType } from '@/utils/liveActivity'
+  import type { ActivityCategory } from '@/utils/liveActivity'
   import { useAppStore }  from '@/stores/app'
   import { useLiveStore } from '@/stores/live'
   import type { LiveActivity, LiveSession } from '@/types'
@@ -34,6 +36,8 @@
 
   const appStore  = useAppStore()
   const liveStore = useLiveStore()
+  const route     = useRoute()
+  const router    = useRouter()
 
   /** Elapsed time ticker — starts only when a non-Spark activity is live */
   const elapsedTick = ref(0)
@@ -91,7 +95,21 @@
     return Object.entries(c).map(([text, count]) => ({ text, count: Number(count) }))
   })
 
-  const activeTab       = ref<'create' | 'history' | 'stats'>('create')
+  const CATEGORY_ICONS: Record<string, typeof Zap> = {
+    spark: Sparkles,
+    pulse: Activity,
+    code: Code2,
+    board: StickyNote,
+  }
+
+  const activeTab       = ref<'home' | 'history' | 'stats'>('home')
+
+  // Sync tab from route query (sidebar navigation)
+  watch(() => route.query.tab, (t) => {
+    if (t === 'history' || t === 'stats') activeTab.value = t
+    else activeTab.value = 'home'
+  }, { immediate: true })
+
   const newTitle        = ref('')
   const showActivityForm = ref(false)
   const showLeaderboard  = ref(false)
@@ -153,6 +171,20 @@
     window.api.emitLiveJoin(session.promo_id)
   }
 
+  /** Quick-create : cree une session depuis le nom saisi et ouvre le formulaire d'activite */
+  async function quickCreate(category: ActivityCategory) {
+    const cat = ACTIVITY_CATEGORIES[category]
+    const title = newTitle.value.trim() || `Session ${cat.label}`
+    if (!promoId.value) return
+    await liveStore.createSession(title, promoId.value)
+    newTitle.value = ''
+    // Pre-open activity form
+    showActivityForm.value = true
+    preSelectedCategory.value = category
+  }
+
+  const preSelectedCategory = ref<ActivityCategory | null>(null)
+
   async function onCloneSession(session: LiveSession) {
     if (!promoId.value) return
     await liveStore.cloneSession(session.id, promoId.value)
@@ -196,6 +228,7 @@
   function cancelActivityForm() {
     editingActivity.value = null
     showActivityForm.value = false
+    preSelectedCategory.value = null
   }
 
   async function launch(activity: LiveActivity) {
@@ -340,83 +373,77 @@
 
 <template>
   <div class="teacher-live">
-    <!-- ══════════ Pas de session — écran de sélection ══════════ -->
-    <div v-if="!liveStore.currentSession" class="live-empty">
-      <div class="live-hero">
-        <Zap :size="48" class="hero-icon" />
-        <h1 class="hero-title">Live</h1>
-      </div>
+    <!-- ══════════ Pas de session — page d'accueil Live ══════════ -->
+    <div v-if="!liveStore.currentSession" class="live-home">
 
-      <!-- Onglets -->
-      <div class="quiz-tabs">
-        <button class="quiz-tab" :class="{ active: activeTab === 'create' }" @click="activeTab = 'create'">
-          <Plus :size="14" /> Creer
-        </button>
-        <button class="quiz-tab" :class="{ active: activeTab === 'history' }" @click="activeTab = 'history'">
-          <History :size="14" /> Historique
-        </button>
-        <button class="quiz-tab" :class="{ active: activeTab === 'stats' }" @click="activeTab = 'stats'">
-          <BarChart3 :size="14" /> Statistiques
-        </button>
-      </div>
-
-      <!-- Tab: Creer -->
-      <template v-if="activeTab === 'create'">
-        <p class="hero-desc">Preparez votre session a l'avance, puis diffusez-la quand vous etes pret</p>
-
-        <!-- Brouillons existants -->
-        <div v-if="liveStore.draftSessions.length > 0" class="drafts-section">
-          <h3 class="drafts-title">Brouillons</h3>
-          <div class="draft-list">
-            <div
-              v-for="s in liveStore.draftSessions"
-              :key="s.id"
-              class="draft-card"
-            >
-              <div class="draft-card-body" @click="selectSession(s)">
-                <span class="draft-card-title">{{ s.title }}</span>
-                <span class="draft-card-meta">
-                  {{ s.status === 'active' ? 'Active' : 'Brouillon' }}
-                  · {{ s.activities?.length ?? '?' }} activite(s)
-                </span>
-              </div>
-              <div class="draft-card-actions">
-                <button class="btn-draft-clone" title="Dupliquer" @click.stop="onCloneSession(s)">
-                  <Copy :size="14" />
-                </button>
-                <button class="btn-draft-delete" title="Supprimer" @click.stop="onDeleteDraftSession(s)">
-                  <Trash2 :size="14" />
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="create-card">
-          <h3 class="create-label">Nouvelle session</h3>
-          <input
-            v-model="newTitle"
-            class="create-input"
-            placeholder="Titre de la session (ex: Revision chapitre 3)"
-            maxlength="100"
-            @keydown.enter="createSession"
-          />
-          <button
-            class="create-btn"
-            :disabled="!newTitle.trim() || liveStore.loading"
-            @click="createSession"
-          >
-            <Plus :size="16" />
-            {{ liveStore.loading ? 'Creation...' : 'Creer la session' }}
+      <!-- Tab: Historique / Stats (accessible via sidebar) -->
+      <template v-if="activeTab === 'history'">
+        <div class="live-home-sub">
+          <button class="live-home-back" @click="activeTab = 'home'; router.replace({ name: 'live' })">
+            <ArrowRight :size="14" style="transform: rotate(180deg)" /> Accueil Live
           </button>
+          <QuizHistoryView :promo-id="promoId" />
+        </div>
+      </template>
+      <template v-else-if="activeTab === 'stats'">
+        <div class="live-home-sub">
+          <button class="live-home-back" @click="activeTab = 'home'; router.replace({ name: 'live' })">
+            <ArrowRight :size="14" style="transform: rotate(180deg)" /> Accueil Live
+          </button>
+          <QuizStatsView :promo-id="promoId" />
         </div>
       </template>
 
-      <!-- Tab: Historique -->
-      <QuizHistoryView v-else-if="activeTab === 'history'" :promo-id="promoId" />
+      <!-- Tab: Accueil (default) -->
+      <template v-else>
+        <div class="live-hero">
+          <Zap :size="40" class="hero-icon" />
+          <h1 class="hero-title">Live</h1>
+          <p class="hero-desc">Lancez une activite interactive avec vos etudiants</p>
+        </div>
 
-      <!-- Tab: Statistiques -->
-      <QuizStatsView v-else-if="activeTab === 'stats'" :promo-id="promoId" />
+        <!-- Input titre (optionnel) -->
+        <div class="live-home-name">
+          <input
+            v-model="newTitle"
+            class="live-home-input"
+            placeholder="Nom de la session (optionnel)"
+            maxlength="100"
+          />
+        </div>
+
+        <!-- Grille des 4 categories -->
+        <div class="live-cat-grid">
+          <button
+            v-for="(cat, key) in ACTIVITY_CATEGORIES"
+            :key="key"
+            class="live-cat-card"
+            :style="{ '--cat-color': cat.color }"
+            :disabled="liveStore.loading"
+            @click="quickCreate(key as ActivityCategory)"
+          >
+            <div class="live-cat-icon">
+              <component :is="CATEGORY_ICONS[key]" :size="28" />
+            </div>
+            <div class="live-cat-info">
+              <span class="live-cat-label">{{ cat.label }}</span>
+              <span class="live-cat-desc">{{ cat.description }}</span>
+            </div>
+            <div class="live-cat-types">
+              <span v-for="t in cat.types.slice(0, 3)" :key="t" class="live-cat-type">{{ t.replace(/_/g, ' ') }}</span>
+              <span v-if="cat.types.length > 3" class="live-cat-type live-cat-more">+{{ cat.types.length - 3 }}</span>
+            </div>
+            <ArrowRight :size="16" class="live-cat-arrow" />
+          </button>
+        </div>
+
+        <!-- Lien brouillons existants (petit rappel si il y en a) -->
+        <div v-if="liveStore.draftSessions.length > 0" class="live-home-drafts-hint">
+          <span class="live-home-drafts-text">
+            {{ liveStore.draftSessions.length }} brouillon(s) dans la sidebar
+          </span>
+        </div>
+      </template>
     </div>
 
     <!-- ══════════ Podium final ══════════ -->
@@ -492,6 +519,7 @@
         <div v-if="showActivityForm" class="activity-form-wrapper">
           <ActivityForm
             :initial-data="editingActivity"
+            :default-category="preSelectedCategory"
             @save="onAddActivity"
             @cancel="cancelActivityForm"
           />
@@ -720,133 +748,120 @@
   align-items: center;
 }
 
-/* ── Tabs ── */
-/* Tabs — segmented control unifie */
-.quiz-tabs {
-  display: flex; gap: 2px;
-  padding: 2px; border-radius: 8px;
-  background: var(--bg-elevated);
-  border: 1px solid var(--border);
-  width: fit-content;
+/* ── Home / Landing ── */
+.live-home {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 28px;
+  max-width: 680px;
+  width: 100%;
+  margin-top: 48px;
 }
-.quiz-tab {
+.live-home-sub {
+  width: 100%; max-width: 680px;
+  display: flex; flex-direction: column; gap: 16px;
+}
+.live-home-back {
   display: inline-flex; align-items: center; gap: 6px;
-  padding: 6px 16px; border-radius: 6px; border: none;
-  background: transparent; color: var(--text-muted);
-  font-size: 12px; font-weight: 600; cursor: pointer;
-  transition: all .15s; font-family: inherit;
+  font-size: 12px; font-weight: 600; color: var(--text-muted);
+  background: none; border: none; cursor: pointer; font-family: inherit;
+  padding: 4px 0; transition: color .12s;
 }
-.quiz-tab:hover { color: var(--text-primary); }
-.quiz-tab.active { background: var(--accent); color: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.15); }
+.live-home-back:hover { color: var(--accent); }
 
-/* ── Drafts section ── */
-.drafts-section {
-  width: 100%;
-  max-width: 560px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-.drafts-title {
-  font-size: 11px;
-  font-weight: 700;
-  color: var(--text-muted);
-}
-.draft-list {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-.draft-card {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 10px 14px;
-  background: var(--bg-elevated);
-  border: 1px solid var(--border);
-  border-left: 3px solid transparent;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: all .12s;
-}
-.draft-card:hover { background: var(--bg-hover); border-left-color: var(--accent); }
-.draft-card-body { flex: 1; min-width: 0; }
-.draft-card-title {
-  display: block;
-  font-size: 14px; font-weight: 600;
-  color: var(--text-primary);
-  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-}
-.draft-card-meta {
-  display: block;
-  font-size: 12px; color: var(--text-muted); margin-top: 2px;
-}
-.draft-card-actions { display: flex; gap: 6px; flex-shrink: 0; }
-.btn-draft-clone {
-  width: 28px; height: 28px; border-radius: 6px;
-  background: rgba(74,144,217,.08); color: var(--accent);
-  border: none; cursor: pointer;
-  display: flex; align-items: center; justify-content: center;
-  transition: all .15s;
-}
-.btn-draft-clone:hover { background: rgba(74,144,217,.18); }
-.btn-draft-delete {
-  width: 28px; height: 28px; border-radius: 6px;
-  background: rgba(239,68,68,.08); color: #f87171;
-  border: none; cursor: pointer;
-  display: flex; align-items: center; justify-content: center;
-  transition: all .15s;
-}
-.btn-draft-delete:hover { background: rgba(239,68,68,.18); }
-
-/* ── Empty / Create ── */
-.live-empty {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 32px;
-  max-width: 560px;
-  width: 100%;
-  margin-top: 60px;
-}
 .live-hero {
   text-align: center;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
 }
-.hero-icon {
-  color: var(--accent);
-  opacity: .5;
+.hero-icon { color: var(--accent); opacity: .5; }
+.hero-title { font-size: 26px; font-weight: 700; color: var(--text-primary); margin: 0; }
+.hero-desc { font-size: 13px; color: var(--text-muted); max-width: 400px; }
+
+.live-home-name {
+  width: 100%; max-width: 420px;
 }
-.hero-title {
-  font-size: 28px;
-  font-weight: 700;
-  color: var(--text-primary);
-  margin: 0;
+.live-home-input {
+  width: 100%; padding: 10px 16px; border-radius: 8px;
+  background: var(--bg-input, var(--border));
+  border: 1px solid var(--border-input, var(--bg-hover));
+  color: var(--text-primary); font-size: 14px; font-family: inherit;
+  outline: none; transition: border-color .15s; text-align: center;
 }
-.hero-desc {
-  font-size: 13px;
-  color: var(--text-muted);
-  text-align: center;
-  max-width: 400px;
-}
-.create-card {
+.live-home-input:focus { border-color: var(--accent); }
+.live-home-input::placeholder { color: var(--text-muted); }
+
+/* ── Category grid ── */
+.live-cat-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
   width: 100%;
-  padding: 24px;
+}
+.live-cat-card {
+  position: relative;
+  display: flex; flex-direction: column; gap: 12px;
+  padding: 20px;
   background: var(--bg-elevated);
   border: 1px solid var(--border);
-  border-radius: var(--radius, 12px);
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
+  border-radius: 14px;
+  cursor: pointer;
+  text-align: left;
+  transition: all .15s;
+  overflow: hidden;
+  font-family: inherit;
 }
-.create-label {
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--text-secondary, #aaa);
+.live-cat-card::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0; height: 3px;
+  background: var(--cat-color);
+  opacity: 0; transition: opacity .15s;
 }
+.live-cat-card:hover {
+  border-color: var(--cat-color);
+  box-shadow: 0 4px 20px rgba(0,0,0,.06);
+  transform: translateY(-1px);
+}
+.live-cat-card:hover::before { opacity: 1; }
+.live-cat-card:disabled { opacity: .5; cursor: wait; }
+
+.live-cat-icon {
+  width: 48px; height: 48px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--cat-color) 12%, transparent);
+  color: var(--cat-color);
+}
+.live-cat-info { display: flex; flex-direction: column; gap: 2px; }
+.live-cat-label { font-size: 16px; font-weight: 700; color: var(--text-primary); }
+.live-cat-desc { font-size: 12px; color: var(--text-muted); }
+.live-cat-types {
+  display: flex; flex-wrap: wrap; gap: 4px;
+}
+.live-cat-type {
+  font-size: 10px; font-weight: 600;
+  padding: 2px 7px; border-radius: 4px;
+  background: var(--bg-hover); color: var(--text-secondary);
+  text-transform: capitalize;
+}
+.live-cat-more { color: var(--text-muted); }
+.live-cat-arrow {
+  position: absolute; right: 16px; top: 50%; transform: translateY(-50%);
+  color: var(--text-muted); opacity: 0; transition: all .15s;
+}
+.live-cat-card:hover .live-cat-arrow { opacity: 1; color: var(--cat-color); }
+
+.live-home-drafts-hint {
+  text-align: center;
+}
+.live-home-drafts-text {
+  font-size: 12px; color: var(--text-muted);
+}
+
+/* Legacy create-input (still used in session view) */
 .create-input {
   width: 100%;
   padding: 12px 16px;
