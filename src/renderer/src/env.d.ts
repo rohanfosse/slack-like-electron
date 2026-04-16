@@ -280,6 +280,19 @@ declare global {
       updateLiveV2BoardCard(cardId: number, payload: { content?: string; columnName?: string }): Promise<IpcResponse<import('./types').BoardCard>>
       deleteLiveV2BoardCard(cardId: number): Promise<IpcResponse<null>>
       voteLiveV2BoardCard(cardId: number, vote: boolean): Promise<IpcResponse<{ voted: boolean }>>
+      // Booking (mini-Calendly)
+      getBookingEventTypes(): Promise<IpcResponse<{ id: number; title: string; slug: string; description?: string; duration_minutes: number; color: string; fallback_visio_url?: string; is_active: number; created_at: string }[]>>
+      createBookingEventType(payload: unknown): Promise<IpcResponse<unknown>>
+      updateBookingEventType(id: number, payload: unknown): Promise<IpcResponse<unknown>>
+      deleteBookingEventType(id: number): Promise<IpcResponse<null>>
+      getBookingAvailability(): Promise<IpcResponse<{ id: number; day_of_week: number; start_time: string; end_time: string }[]>>
+      setBookingAvailability(rules: unknown): Promise<IpcResponse<unknown>>
+      createBookingToken(eventTypeId: number, studentId: number): Promise<IpcResponse<{ token: string; bookingUrl: string }>>
+      getMyBookings(from?: string, to?: string): Promise<IpcResponse<unknown[]>>
+      startBookingOAuth(): Promise<IpcResponse<{ url: string }>>
+      getBookingOAuthStatus(): Promise<IpcResponse<{ connected: boolean; expiresAt?: string }>>
+      disconnectBookingOAuth(): Promise<IpcResponse<null>>
+
       emitLiveCodeUpdate(activityId: number, promoId: number, content: string, language: string | null): void
       onLiveCodeUpdate(cb: (data: { activityId: number; content: string; language: string | null }) => void): () => void
       onLiveBoardUpdate(cb: (data: { activityId: number; action: 'add' | 'delete' | 'vote' | 'update'; card?: unknown; cardId?: number; votes?: number }) => void): () => void

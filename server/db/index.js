@@ -21,6 +21,7 @@ const projects       = require('./models/projects');
 const lumen          = require('./models/lumen');
 const cahiers        = require('./models/cahiers');
 const liveUnified    = require('./models/live-unified');
+const bookings       = require('./models/bookings');
 
 // Initialisation complète : schema + migrations + seed
 function init() {
@@ -51,4 +52,5 @@ module.exports = {
   ...lumen,
   ...cahiers,
   ...liveUnified,
+  ...bookings,
 };

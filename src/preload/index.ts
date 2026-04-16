@@ -193,6 +193,7 @@ async function apiFetch(path: string, options: RequestInit = {}, retries = MAX_R
 function get(path: string)                      { return apiFetch(path) }
 function post(path: string, body: unknown)      { return apiFetch(path, { method: 'POST',   body: JSON.stringify(body) }) }
 function put(path: string, body: unknown)       { return apiFetch(path, { method: 'PUT',    body: JSON.stringify(body) }) }
+function put(path: string, body: unknown)       { return apiFetch(path, { method: 'PUT',    body: JSON.stringify(body) }) }
 function patch(path: string, body: unknown)     { return apiFetch(path, { method: 'PATCH',  body: JSON.stringify(body) }) }
 function del(path: string, body?: unknown)      {
   return apiFetch(path, body !== undefined
@@ -555,6 +556,25 @@ contextBridge.exposeInMainWorld('api', {
   updateLiveV2BoardCard: (cardId: number, payload: unknown) => patch(`/api/live-v2/cards/${cardId}`, payload),
   deleteLiveV2BoardCard:(cardId: number) => del(`/api/live-v2/cards/${cardId}`),
   voteLiveV2BoardCard:  (cardId: number, vote: boolean) => post(`/api/live-v2/cards/${cardId}/vote`, { vote }),
+
+  // ── Booking (mini-Calendly) ─────────────────────────────────────────────
+  getBookingEventTypes:      ()                          => get('/api/bookings/event-types'),
+  createBookingEventType:    (payload: unknown)          => post('/api/bookings/event-types', payload),
+  updateBookingEventType:    (id: number, payload: unknown) => patch(`/api/bookings/event-types/${id}`, payload),
+  deleteBookingEventType:    (id: number)                => del(`/api/bookings/event-types/${id}`),
+  getBookingAvailability:    ()                          => get('/api/bookings/availability'),
+  setBookingAvailability:    (rules: unknown)            => put('/api/bookings/availability', { rules }),
+  createBookingToken:        (eventTypeId: number, studentId: number) => post('/api/bookings/tokens', { eventTypeId, studentId }),
+  getMyBookings:             (from?: string, to?: string) => {
+    const qs = new URLSearchParams()
+    if (from) qs.set('from', from)
+    if (to) qs.set('to', to)
+    const q = qs.toString()
+    return get(`/api/bookings/my-bookings${q ? '?' + q : ''}`)
+  },
+  startBookingOAuth:         ()                          => get('/api/bookings/oauth/start'),
+  getBookingOAuthStatus:     ()                          => get('/api/bookings/oauth/status'),
+  disconnectBookingOAuth:    ()                          => del('/api/bookings/oauth/disconnect'),
 
   emitLiveCodeUpdate: (activityId: number, promoId: number, content: string, language: string | null) => {
     socket?.emit('live:code-update', { activityId, promoId, content, language })

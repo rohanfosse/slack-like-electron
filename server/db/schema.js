@@ -1,6 +1,6 @@
 const { getDb } = require('./connection');
 
-const CURRENT_VERSION = 61;
+const CURRENT_VERSION = 62;
 
 // ─── Schema initial ───────────────────────────────────────────────────────────
 // Crée toutes les tables avec leur schéma complet (colonnes UTC, toutes colonnes incluses).
@@ -1338,6 +1338,69 @@ function runMigrations(db) {
           card_id INTEGER NOT NULL REFERENCES live_board_cards(id) ON DELETE CASCADE,
           student_id INTEGER NOT NULL,
           UNIQUE(card_id, student_id)
+        );
+      `);
+    },
+
+    // v62 : Booking (mini-Calendly) — RDV visio tuteurs entreprise
+    (db) => {
+      db.exec(`
+        CREATE TABLE IF NOT EXISTS booking_event_types (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          teacher_id INTEGER NOT NULL REFERENCES users(id),
+          title TEXT NOT NULL,
+          slug TEXT NOT NULL UNIQUE,
+          description TEXT,
+          duration_minutes INTEGER NOT NULL DEFAULT 30,
+          color TEXT DEFAULT '#3b82f6',
+          fallback_visio_url TEXT,
+          is_active INTEGER DEFAULT 1,
+          created_at TEXT DEFAULT (datetime('now'))
+        );
+
+        CREATE TABLE IF NOT EXISTS booking_availability_rules (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          teacher_id INTEGER NOT NULL REFERENCES users(id),
+          day_of_week INTEGER NOT NULL CHECK(day_of_week BETWEEN 0 AND 6),
+          start_time TEXT NOT NULL,
+          end_time TEXT NOT NULL,
+          is_active INTEGER DEFAULT 1
+        );
+        CREATE INDEX IF NOT EXISTS idx_booking_avail_teacher ON booking_availability_rules(teacher_id);
+
+        CREATE TABLE IF NOT EXISTS booking_tokens (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          event_type_id INTEGER NOT NULL REFERENCES booking_event_types(id) ON DELETE CASCADE,
+          student_id INTEGER NOT NULL,
+          token TEXT NOT NULL UNIQUE,
+          created_at TEXT DEFAULT (datetime('now'))
+        );
+        CREATE INDEX IF NOT EXISTS idx_booking_tokens_token ON booking_tokens(token);
+
+        CREATE TABLE IF NOT EXISTS bookings (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          event_type_id INTEGER NOT NULL REFERENCES booking_event_types(id),
+          student_id INTEGER NOT NULL,
+          teacher_id INTEGER NOT NULL,
+          tutor_name TEXT NOT NULL,
+          tutor_email TEXT NOT NULL,
+          start_datetime TEXT NOT NULL,
+          end_datetime TEXT NOT NULL,
+          teams_join_url TEXT,
+          outlook_event_id TEXT,
+          status TEXT DEFAULT 'confirmed' CHECK(status IN ('confirmed','cancelled','rescheduled')),
+          cancel_token TEXT UNIQUE,
+          created_at TEXT DEFAULT (datetime('now'))
+        );
+        CREATE INDEX IF NOT EXISTS idx_bookings_teacher ON bookings(teacher_id, start_datetime);
+        CREATE INDEX IF NOT EXISTS idx_bookings_cancel ON bookings(cancel_token);
+
+        CREATE TABLE IF NOT EXISTS microsoft_tokens (
+          teacher_id INTEGER PRIMARY KEY REFERENCES users(id),
+          access_token_enc TEXT NOT NULL,
+          refresh_token_enc TEXT NOT NULL,
+          expires_at TEXT NOT NULL,
+          updated_at TEXT DEFAULT (datetime('now'))
         );
       `);
     },

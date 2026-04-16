@@ -169,6 +169,7 @@ app.use('/api/projects',        require('./routes/projects'))
 app.use('/api/lumen',           require('./routes/lumen'))
 app.use('/api/cahiers',         require('./routes/cahiers'))
 app.use('/api/live-v2',         require('./routes/live-unified'))
+app.use('/api/bookings',        require('./routes/bookings'))
 app.use('/api/calendar',        require('./routes/calendar'))
 
 // ── Auto-fermeture des sessions REX async expirées (toutes les 60s) ───────────
