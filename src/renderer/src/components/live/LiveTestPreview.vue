@@ -27,10 +27,10 @@ const selected = computed<LiveActivity | null>(() => {
 })
 
 const selectedOptions = computed<string[]>(() =>
-  selected.value ? parseJsonArray<string>(selected.value.options as string | null) : [],
+  parseJsonArray<string>(selected.value?.options as string | null),
 )
 const selectedPairs = computed<{ left: string; right: string }[]>(() =>
-  selected.value ? parsePairs(selected.value.correct_answers as string | null) : [],
+  parsePairs(selected.value?.correct_answers as string | null),
 )
 
 // Mock interactive state (purely visual feedback, not persisted)

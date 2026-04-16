@@ -1,6 +1,6 @@
 <!-- ActivityForm.vue - Formulaire de création/édition d'activité Live (QCM / Sondage / Nuage) -->
 <script setup lang="ts">
-  import { ref, computed, watchEffect } from 'vue'
+  import { ref, computed, watch, type Component } from 'vue'
   import {
     ListChecks, ToggleLeft, Type, Link2, Hash, Plus, X,
     Code2, StickyNote, MessageSquare, Cloud, Star, FileText,
@@ -66,58 +66,44 @@
   const correctAnswers = ref<number[]>(parseCorrectAnswers(props.initialData))
   const timerOptions = [10, 15, 20, 30, 45, 60, 90, 120]
 
-  const typeCards = [
-    // Spark (quiz gamifie)
-    { id: 'qcm' as const,             label: 'QCM',             icon: ListChecks,   desc: 'Choix multiple', category: 'Spark' },
-    { id: 'vrai_faux' as const,        label: 'Vrai / Faux',     icon: ToggleLeft,   desc: 'Question binaire', category: 'Spark' },
-    { id: 'reponse_courte' as const,   label: 'Réponse courte',  icon: Type,         desc: 'Texte libre noté', category: 'Spark' },
-    { id: 'association' as const,      label: 'Association',      icon: Link2,        desc: 'Relier les paires', category: 'Spark' },
-    { id: 'estimation' as const,       label: 'Estimation',       icon: Hash,         desc: 'Réponse numérique', category: 'Spark' },
-    // Pulse (feedback anonyme)
-    { id: 'sondage_libre' as const,    label: 'Sondage libre',   icon: MessageSquare, desc: 'Texte libre anonyme', category: 'Pulse' },
-    { id: 'nuage' as const,            label: 'Nuage de mots',   icon: Cloud,         desc: 'Mots-cles anonymes', category: 'Pulse' },
-    { id: 'echelle' as const,          label: 'Echelle',         icon: Star,          desc: 'Note 1 a N', category: 'Pulse' },
-    { id: 'question_ouverte' as const, label: 'Question ouverte',icon: FileText,      desc: 'Reponse longue', category: 'Pulse' },
-    { id: 'sondage' as const,          label: 'Sondage',         icon: BarChart,      desc: 'Choix parmi options', category: 'Pulse' },
-    { id: 'humeur' as const,           label: 'Humeur',          icon: Smile,         desc: 'Emoji ressenti', category: 'Pulse' },
-    { id: 'priorite' as const,         label: 'Priorite',        icon: ArrowUpDown,   desc: 'Classer des items', category: 'Pulse' },
-    { id: 'matrice' as const,          label: 'Matrice',         icon: Grid3X3,       desc: 'Noter des criteres', category: 'Pulse' },
-    // Code
-    { id: 'live_code' as const,        label: 'Live Code',        icon: Code2,        desc: 'Coder en direct', category: 'Code' },
-    // Board
-    { id: 'board' as const,            label: 'Tableau',          icon: StickyNote,   desc: 'Post-its collaboratifs', category: 'Board' },
+  // Typage fort : category == clef ACTIVITY_CATEGORIES (source unique de verite).
+  const typeCards: { id: ActivityType; label: string; icon: Component; desc: string; category: ActivityCategory }[] = [
+    // Spark
+    { id: 'qcm',              label: 'QCM',              icon: ListChecks,    desc: 'Choix multiple',        category: 'spark' },
+    { id: 'vrai_faux',        label: 'Vrai / Faux',      icon: ToggleLeft,    desc: 'Question binaire',      category: 'spark' },
+    { id: 'reponse_courte',   label: 'Réponse courte',   icon: Type,          desc: 'Texte libre noté',      category: 'spark' },
+    { id: 'association',      label: 'Association',      icon: Link2,         desc: 'Relier les paires',     category: 'spark' },
+    { id: 'estimation',       label: 'Estimation',       icon: Hash,          desc: 'Réponse numérique',     category: 'spark' },
+    // Pulse
+    { id: 'sondage_libre',    label: 'Sondage libre',    icon: MessageSquare, desc: 'Texte libre anonyme',   category: 'pulse' },
+    { id: 'nuage',            label: 'Nuage de mots',    icon: Cloud,         desc: 'Mots-cles anonymes',    category: 'pulse' },
+    { id: 'echelle',          label: 'Echelle',          icon: Star,          desc: 'Note 1 a N',            category: 'pulse' },
+    { id: 'question_ouverte', label: 'Question ouverte', icon: FileText,      desc: 'Reponse longue',        category: 'pulse' },
+    { id: 'sondage',          label: 'Sondage',          icon: BarChart,      desc: 'Choix parmi options',   category: 'pulse' },
+    { id: 'humeur',           label: 'Humeur',           icon: Smile,         desc: 'Emoji ressenti',        category: 'pulse' },
+    { id: 'priorite',         label: 'Priorite',         icon: ArrowUpDown,   desc: 'Classer des items',     category: 'pulse' },
+    { id: 'matrice',          label: 'Matrice',          icon: Grid3X3,       desc: 'Noter des criteres',    category: 'pulse' },
+    // Code / Board
+    { id: 'live_code',        label: 'Live Code',        icon: Code2,         desc: 'Coder en direct',       category: 'code' },
+    { id: 'board',            label: 'Tableau',          icon: StickyNote,    desc: 'Post-its collaboratifs', category: 'board' },
   ]
 
-  // Mapping label affiche (Title Case) -> clef ACTIVITY_CATEGORIES (lower case)
-  const CATEGORY_KEY_BY_LABEL: Record<string, ActivityCategory> = {
-    Spark: 'spark', Pulse: 'pulse', Code: 'code', Board: 'board',
-  }
-
-  function metaFor(label: string): { label: string; desc: string; color: string } | undefined {
-    const key = CATEGORY_KEY_BY_LABEL[label]
-    if (!key) return undefined
-    const cat = ACTIVITY_CATEGORIES[key]
-    return { label: cat.label, desc: cat.description, color: cat.color }
-  }
-
   const categories = computed(() => {
-    const grouped = new Map<string, typeof typeCards>()
+    const grouped = new Map<ActivityCategory, typeof typeCards>()
     for (const card of typeCards) {
       if (!grouped.has(card.category)) grouped.set(card.category, [])
       grouped.get(card.category)!.push(card)
     }
-    let all = [...grouped.entries()].map(([name, cards]) => ({
-      name,
-      meta: metaFor(name),
+    let all = [...grouped.entries()].map(([key, cards]) => ({
+      key,
+      meta: ACTIVITY_CATEGORIES[key],
       cards,
     }))
     if (props.lockedCategory && !isEditing) {
-      const target = ACTIVITY_CATEGORIES[props.lockedCategory].label
-      return all.filter(c => c.name === target)
+      return all.filter(c => c.key === props.lockedCategory)
     }
     if (props.defaultCategory) {
-      const target = ACTIVITY_CATEGORIES[props.defaultCategory].label
-      const idx = all.findIndex(c => c.name === target)
+      const idx = all.findIndex(c => c.key === props.defaultCategory)
       if (idx > 0) {
         const [cat] = all.splice(idx, 1)
         all.unshift(cat)
@@ -126,17 +112,15 @@
     return all
   })
 
-  // Reactif aux changements de prop : si le type courant n'appartient plus a la categorie verrouillee,
-  // reconduire vers le premier type autorise. Sans ca un parent qui reutilise le form avec une autre
-  // categorie laisserait une valeur stale.
-  watchEffect(() => {
-    if (!props.lockedCategory || isEditing) return
-    const target = ACTIVITY_CATEGORIES[props.lockedCategory].label
-    const allowed = typeCards.filter(c => c.category === target).map(c => c.id)
-    if (allowed.length && !allowed.includes(activityType.value as typeof allowed[number])) {
+  // Si la categorie verrouillee change, s'assurer que activityType y appartient.
+  // watch plutot que watchEffect : evite le self-retrigger quand on ecrit activityType.value.
+  watch(() => props.lockedCategory, (locked) => {
+    if (!locked || isEditing) return
+    const allowed = typeCards.filter(c => c.category === locked).map(c => c.id)
+    if (allowed.length && !allowed.includes(activityType.value)) {
       activityType.value = allowed[0]
     }
-  })
+  }, { immediate: true })
 
   // Code activity
   const codeLanguage = ref(props.initialData?.language ?? 'javascript')
@@ -293,11 +277,11 @@
     </h3>
 
     <!-- Type selector grouped by category -->
-    <div v-for="cat in categories" :key="cat.name" class="type-category">
+    <div v-for="cat in categories" :key="cat.key" class="type-category">
       <div class="type-category-header">
-        <span class="type-category-dot" :style="{ background: cat.meta?.color }" />
-        <span class="type-category-label">{{ cat.meta?.label ?? cat.name }}</span>
-        <span class="type-category-desc">{{ cat.meta?.desc ?? '' }}</span>
+        <span class="type-category-dot" :style="{ background: cat.meta.color }" />
+        <span class="type-category-label">{{ cat.meta.label }}</span>
+        <span class="type-category-desc">{{ cat.meta.description }}</span>
       </div>
       <div class="type-cards">
         <button
@@ -305,7 +289,7 @@
           :key="t.id"
           class="type-card"
           :class="{ active: activityType === t.id }"
-          :style="{ '--cat-color': cat.meta?.color ?? 'var(--accent)' }"
+          :style="{ '--cat-color': cat.meta.color }"
           @click="activityType = t.id"
         >
           <component :is="t.icon" :size="22" />

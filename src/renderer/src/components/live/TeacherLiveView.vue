@@ -7,7 +7,7 @@
     LogOut, Pencil, GripVertical, Copy, Download,
     ArrowRight, Eye, EyeOff,
   } from 'lucide-vue-next'
-  import { ACTIVITY_CATEGORIES, activityIcon, activityTypeLabel, getActivityCategory, isSparkType } from '@/utils/liveActivity'
+  import { ACTIVITY_CATEGORIES, activityIcon, activityTypeLabel, getActivityCategory, isSparkType, parseJsonArray } from '@/utils/liveActivity'
   import type { ActivityCategory } from '@/utils/liveActivity'
   import { useAppStore }  from '@/stores/app'
   import { useLiveStore } from '@/stores/live'
@@ -105,13 +105,6 @@
   /** Mode apercu : affiche une preview "etudiant" a cote du prof */
   const previewMode = ref(false)
   function togglePreview() { previewMode.value = !previewMode.value }
-
-  /** Parse les options d'une activite (JSON string -> array). */
-  function parseOptions(opts: string | string[] | null | undefined): string[] {
-    if (!opts) return []
-    if (Array.isArray(opts)) return opts
-    try { const arr = JSON.parse(opts); return Array.isArray(arr) ? arr : [] } catch { return [] }
-  }
 
   /** Normalise les counts Pulse en array { text, count } (pour RexSondageResults). */
   const pulseSondageCounts = computed<{ text: string; count: number }[]>(() => {
@@ -389,10 +382,12 @@
     }
     if (activity.language) payload.language = activity.language
     if (activity.options) {
-      try { payload.options = JSON.parse(activity.options as unknown as string) } catch { /* ignore */ }
+      const parsed = parseJsonArray<string>(activity.options as string | string[] | null)
+      if (parsed.length) payload.options = parsed
     }
     if (activity.correct_answers) {
-      try { payload.correct_answers = JSON.parse(activity.correct_answers as unknown as string) } catch { /* ignore */ }
+      const parsed = parseJsonArray<string | number>(activity.correct_answers as string | null)
+      if (parsed.length) payload.correct_answers = parsed as string[]
     }
     await liveStore.pushActivity(liveStore.currentSession.id, payload)
   }
@@ -838,7 +833,7 @@
           v-else-if="liveStore.currentActivity.type === 'board'"
           :activity-id="liveStore.currentActivity.id"
           :is-teacher="true"
-          :columns="parseOptions(liveStore.currentActivity.options)"
+          :columns="parseJsonArray<string>(liveStore.currentActivity.options as string | string[] | null)"
           :max-votes="liveStore.currentActivity.max_rating ?? 3"
         />
         <!-- Spark : resultats classiques -->

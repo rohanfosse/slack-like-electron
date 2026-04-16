@@ -102,9 +102,15 @@ export const useAgendaStore = defineStore('agenda', () => {
     }
 
     for (const r of reminders.value) {
-      // Support both date-only (YYYY-MM-DD) and datetime (YYYY-MM-DDTHH:MM:SS)
-      const hasTime = typeof r.date === 'string' && r.date.length > 10 && r.date.includes('T')
-      const startStr = hasTime ? r.date.replace('T', ' ').slice(0, 16) : r.date.substring(0, 10)
+      // Formats supportes : YYYY-MM-DD (date pure) ET YYYY-MM-DDTHH:MM:SS(Z) (date+heure).
+      // Un T00:00:00 (minuit UTC) signifie "date sans heure choisie" (serialisation ISO cote serveur)
+      // et non un rappel planifie pile a minuit — traite comme date pure.
+      const hasRealTime = typeof r.date === 'string'
+        && r.date.length > 10
+        && r.date.includes('T')
+        && !/T00:00:00(\.000)?Z?$/.test(r.date)
+      const startStr = hasRealTime ? r.date.replace('T', ' ').slice(0, 16) : r.date.substring(0, 10)
+      const hasTime = hasRealTime
       // Default to 1h duration for timed events
       let endStr = startStr
       if (hasTime) {
