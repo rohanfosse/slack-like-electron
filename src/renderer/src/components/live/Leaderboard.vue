@@ -97,13 +97,23 @@
   padding: 12px 16px;
   background: var(--bg-elevated);
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: 10px;
   transition: all 0.4s cubic-bezier(.25,.8,.25,1);
+  position: relative;
+  overflow: hidden;
+}
+.lb-row::after {
+  content: '';
+  position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
+  background: var(--accent); opacity: 0;
+  transition: opacity .3s;
 }
 .lb-row.lb-top {
-  background: linear-gradient(135deg, rgba(234,179,8,.06), rgba(234,179,8,.02));
-  border-color: rgba(234,179,8,.15);
+  background: linear-gradient(135deg, rgba(234,179,8,.08), rgba(234,179,8,.02));
+  border-color: rgba(234,179,8,.25);
 }
+.lb-row.lb-top::after { background: #eab308; opacity: .7; }
+.lb-row:hover::after { opacity: 1; }
 .lb-rank {
   width: 36px;
   text-align: center;

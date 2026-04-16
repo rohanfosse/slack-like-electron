@@ -5,9 +5,14 @@
   import {
     Plus, Play, Square, ChevronRight, Trash2, Users, Zap, Clock,
     LogOut, Pencil, GripVertical, Copy, Download,
-    ArrowRight, Eye, EyeOff,
+    ArrowRight, Eye, EyeOff, Bookmark, BookmarkPlus, Upload,
   } from 'lucide-vue-next'
   import { ACTIVITY_CATEGORIES, activityIcon, activityTypeLabel, getActivityCategory, isSparkType, parseJsonArray } from '@/utils/liveActivity'
+  import { useResponseTimer } from '@/composables/useResponseTimer'
+  import { useLiveTemplates } from '@/composables/useLiveTemplates'
+  import { useToast } from '@/composables/useToast'
+  import { useConfirm } from '@/composables/useConfirm'
+  import { parseKahootCsv } from '@/composables/useKahootCsv'
   import type { ActivityCategory } from '@/utils/liveActivity'
   import { useAppStore }  from '@/stores/app'
   import { useLiveStore } from '@/stores/live'
@@ -26,6 +31,7 @@
   import LiveCodeEditor       from './LiveCodeEditor.vue'
   import LiveBoard            from './LiveBoard.vue'
   import LiveTestPreview      from './LiveTestPreview.vue'
+  import LiveShortcutsOverlay from './LiveShortcutsOverlay.vue'
   // Pulse results (composants Rex reutilises)
   import RexQuestionOuverteResults from '@/components/rex/RexQuestionOuverteResults.vue'
   import RexSondageResults        from '@/components/rex/RexSondageResults.vue'
@@ -106,6 +112,134 @@
   const previewMode = ref(false)
   function togglePreview() { previewMode.value = !previewMode.value }
 
+  /** Raccourcis clavier : overlay d'aide (?) */
+  const shortcutsOpen = ref(false)
+
+  /** Modeles de session (localStorage) */
+  const { templates, save: saveTemplate, remove: removeTemplate } = useLiveTemplates()
+  const { showToast, showUndoToast } = useToast()
+  const { confirm } = useConfirm()
+
+  async function onSaveAsTemplate() {
+    if (!liveStore.currentSession || !liveStore.sessionActivities.length) return
+    const name = window.prompt(
+      'Nom du modele ?',
+      liveStore.currentSession.title,
+    )
+    if (!name) return
+    const saved = saveTemplate(name, liveStore.sessionActivities)
+    if (saved) showToast(`Modele "${saved.name}" enregistre`, 'success')
+    else showToast('Nom invalide', 'error')
+  }
+
+  async function onLoadTemplate(templateId: string) {
+    const tpl = templates.value.find(t => t.id === templateId)
+    if (!tpl || !promoId.value) return
+    const ok = await liveStore.createSession(tpl.name, promoId.value)
+    if (!ok || !liveStore.currentSession) {
+      showToast('Impossible de creer la session', 'error')
+      return
+    }
+    const sessionId = liveStore.currentSession.id
+    let successCount = 0
+    for (const act of tpl.activities) {
+      const payload = {
+        type: act.type,
+        title: act.title,
+        options: act.options ?? undefined,
+        max_words: act.max_words,
+        max_rating: act.max_rating,
+        timer_seconds: act.timer_seconds ?? undefined,
+        correct_answers: act.correct_answers ?? undefined,
+        language: act.language ?? undefined,
+      }
+      const ok = await liveStore.pushActivity(sessionId, payload as Parameters<typeof liveStore.pushActivity>[1])
+      if (ok) successCount++
+    }
+    showToast(`${successCount} activite${successCount > 1 ? 's' : ''} charge${successCount > 1 ? 'es' : 'e'} depuis "${tpl.name}"`, 'success')
+  }
+
+  async function onDeleteTemplate(templateId: string, name: string) {
+    const ok = await confirm(`Supprimer le modele "${name}" ?`, 'danger', 'Supprimer')
+    if (!ok) return
+    removeTemplate(templateId)
+    showToast('Modele supprime', 'info')
+  }
+
+  /** Import CSV Kahoot-style : cree un QCM par ligne dans la session courante. */
+  const csvInputRef = ref<HTMLInputElement | null>(null)
+  const csvImporting = ref(false)
+
+  function openCsvPicker() { csvInputRef.value?.click() }
+
+  async function onCsvSelected(e: Event) {
+    const input = e.target as HTMLInputElement
+    const file = input.files?.[0]
+    input.value = '' // reset pour pouvoir re-importer le meme fichier
+    if (!file || !liveStore.currentSession) return
+    if (file.size > 2 * 1024 * 1024) {
+      showToast('Fichier trop volumineux (max 2 Mo)', 'error')
+      return
+    }
+    csvImporting.value = true
+    try {
+      const text = await file.text()
+      const { rows, errors } = parseKahootCsv(text)
+      if (!rows.length) {
+        showToast('Aucune question valide trouvee dans le CSV', 'error',
+          errors.length ? `${errors.length} ligne(s) en erreur — voir la console.` : undefined)
+        if (errors.length) console.warn('[CSV Kahoot] erreurs :', errors)
+        return
+      }
+      if (errors.length) {
+        const proceed = await confirm(
+          `${rows.length} question(s) a importer, ${errors.length} ligne(s) ignoree(s). Continuer ?`,
+          'warning',
+          'Importer',
+        )
+        if (!proceed) return
+      }
+      const sessionId = liveStore.currentSession.id
+      let imported = 0
+      for (const row of rows) {
+        const ok = await liveStore.pushActivity(sessionId, {
+          type: 'qcm',
+          title: row.question,
+          options: row.answers,
+          timer_seconds: row.timerSeconds,
+          correct_answers: row.correctIndices,
+        })
+        if (ok) imported++
+      }
+      showToast(
+        `${imported} question${imported > 1 ? 's' : ''} importee${imported > 1 ? 's' : ''} depuis le CSV`,
+        'success',
+      )
+    } catch (err) {
+      console.error('[CSV Kahoot] import error', err)
+      showToast('Erreur lors de la lecture du CSV', 'error')
+    } finally {
+      csvImporting.value = false
+    }
+  }
+
+  /** Temps moyen de reponse pour l'activite en cours */
+  const currentResponseCount = computed(() => {
+    const r = liveStore.results
+    if (!r) return 0
+    return r.totalResponses ?? r.total ?? 0
+  })
+  const currentActivityStartedAt = computed(() => liveStore.currentActivity?.started_at ?? null)
+  const responseTimer = useResponseTimer(currentActivityStartedAt, currentResponseCount)
+  const responseTimerLabel = computed(() => {
+    const med = responseTimer.medianSeconds.value
+    if (med === null) return null
+    if (med < 60) return `~${Math.round(med)}s`
+    const m = Math.floor(med / 60)
+    const s = Math.round(med - m * 60)
+    return `~${m}m${s.toString().padStart(2, '0')}`
+  })
+
   /** Normalise les counts Pulse en array { text, count } (pour RexSondageResults). */
   const pulseSondageCounts = computed<{ text: string; count: number }[]>(() => {
     const c = liveStore.results?.counts
@@ -146,7 +280,21 @@
   // ── Keyboard shortcuts ───────────────────────────────────────────────────
   function onKeydown(e: KeyboardEvent) {
     // Skip if typing in an input
-    if ((e.target as HTMLElement).tagName === 'INPUT' || (e.target as HTMLElement).tagName === 'TEXTAREA') return
+    const target = e.target as HTMLElement
+    if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) return
+
+    // ? : afficher/fermer overlay raccourcis (prioritaire)
+    if (e.key === '?' || (e.key === '/' && e.shiftKey)) {
+      e.preventDefault()
+      shortcutsOpen.value = !shortcutsOpen.value
+      return
+    }
+
+    // Escape ferme l'overlay shortcuts en priorite
+    if (e.code === 'Escape' && shortcutsOpen.value) {
+      shortcutsOpen.value = false
+      return
+    }
 
     // Space or Enter: close current activity / launch next / dismiss leaderboard
     if (e.code === 'Space' || e.code === 'Enter') {
@@ -170,6 +318,20 @@
       else if (showLeaderboard.value) dismissLeaderboard()
       else if (showPodium.value) showPodium.value = false
       else if (selectedCategory.value) selectedCategory.value = null
+      else if (previewMode.value) previewMode.value = false
+    }
+
+    // T : toggle mode apercu (dans une session)
+    if ((e.key === 't' || e.key === 'T') && !e.ctrlKey && !e.metaKey && liveStore.currentSession) {
+      e.preventDefault()
+      togglePreview()
+    }
+
+    // N : ajouter une activite (dans une session waiting)
+    if ((e.key === 'n' || e.key === 'N') && !e.ctrlKey && !e.metaKey
+        && liveStore.currentSession && !liveStore.currentActivity && !showActivityForm.value) {
+      e.preventDefault()
+      addActivityInCategory(activeCategoryFilter.value)
     }
   }
 
@@ -215,7 +377,14 @@
   }
 
   async function onDeleteDraftSession(session: LiveSession) {
+    const ok = await confirm(
+      `Supprimer le brouillon "${session.title}" ? Cette action est irreversible.`,
+      'danger',
+      'Supprimer',
+    )
+    if (!ok) return
     await liveStore.deleteSession(session.id)
+    showToast('Brouillon supprime', 'info')
   }
 
   // ── Activity management ──────────────────────────────────────────────────
@@ -290,7 +459,35 @@
   }
 
   async function removeActivity(activity: LiveActivity) {
+    // Dialog immediate si l'activite a deja ete lancee (closed) : on perd les reponses
+    if (activity.status === 'closed') {
+      const ok = await confirm(
+        `Supprimer "${activity.title}" ? Les reponses des etudiants seront perdues.`,
+        'danger',
+        'Supprimer',
+      )
+      if (!ok) return
+      await liveStore.deleteActivity(activity.id)
+      showToast('Activite supprimee', 'info')
+      return
+    }
+    // Activite pending : suppression optimiste + toast undo 5s
+    const snapshot = { ...activity }
     await liveStore.deleteActivity(activity.id)
+    const undone = await showUndoToast(`"${activity.title}" supprimee`, 5000)
+    if (undone && liveStore.currentSession) {
+      await liveStore.pushActivity(liveStore.currentSession.id, {
+        type: snapshot.type,
+        title: snapshot.title,
+        options: snapshot.options ?? undefined,
+        max_words: snapshot.max_words,
+        max_rating: snapshot.max_rating,
+        timer_seconds: snapshot.timer_seconds ?? undefined,
+        correct_answers: snapshot.correct_answers ?? undefined,
+        language: snapshot.language ?? undefined,
+      } as Parameters<typeof liveStore.pushActivity>[1])
+      showToast('Suppression annulee', 'success')
+    }
   }
 
   async function broadcastSession() {
@@ -300,6 +497,12 @@
 
   async function endSession() {
     if (!liveStore.currentSession) return
+    const hasActive = liveStore.sessionActivities.some(a => a.status === 'live')
+    const message = hasActive
+      ? `Terminer la session ? Une activite est encore en direct (elle sera fermee).`
+      : `Terminer la session "${liveStore.currentSession.title}" ?`
+    const ok = await confirm(message, hasActive ? 'warning' : 'info', 'Terminer')
+    if (!ok) return
     await liveStore.fetchLeaderboard(liveStore.currentSession.id)
     showPodium.value = true
     await liveStore.endSession(liveStore.currentSession.id)
@@ -396,7 +599,12 @@
 <template>
   <div class="teacher-live" :class="{ 'preview-open': previewMode && liveStore.currentSession }">
     <!-- Preview pane flottante (a droite) -->
-    <aside v-if="previewMode && liveStore.currentSession" class="preview-pane">
+    <aside
+      v-if="previewMode && liveStore.currentSession"
+      class="preview-pane"
+      role="complementary"
+      aria-label="Apercu cote etudiant"
+    >
       <LiveTestPreview
         :activities="liveStore.sessionActivities"
         :current-activity="liveStore.currentActivity"
@@ -545,6 +753,30 @@
           </button>
         </div>
 
+        <!-- Modeles de session sauvegardes -->
+        <div v-if="templates.length > 0" class="live-templates">
+          <h3 class="live-templates-title">
+            <Bookmark :size="14" />
+            Modeles enregistres
+          </h3>
+          <div class="live-templates-list">
+            <div v-for="tpl in templates" :key="tpl.id" class="live-template-card">
+              <div class="ltc-body">
+                <span class="ltc-name">{{ tpl.name }}</span>
+                <span class="ltc-meta">{{ tpl.activities.length }} activite{{ tpl.activities.length > 1 ? 's' : '' }}</span>
+              </div>
+              <div class="ltc-actions">
+                <button class="ltc-load" @click="onLoadTemplate(tpl.id)" title="Charger ce modele dans une nouvelle session">
+                  <Plus :size="12" /> Utiliser
+                </button>
+                <button class="ltc-del" @click="onDeleteTemplate(tpl.id, tpl.name)" :title="`Supprimer ${tpl.name}`" aria-label="Supprimer le modele">
+                  <Trash2 :size="12" />
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <!-- Lien brouillons existants -->
         <div v-if="liveStore.draftSessions.length > 0" class="live-home-drafts-hint">
           <span class="live-home-drafts-text">
@@ -599,6 +831,15 @@
             <component :is="previewMode ? EyeOff : Eye" :size="16" />
             {{ previewMode ? 'Fermer apercu' : 'Mode apercu' }}
           </button>
+          <button
+            v-if="liveStore.sessionActivities.length > 0"
+            class="btn-template"
+            @click="onSaveAsTemplate"
+            title="Sauvegarder cette session comme modele reutilisable"
+          >
+            <BookmarkPlus :size="16" />
+            Modele
+          </button>
           <button class="btn-export" :disabled="exporting" @click="exportCsv" title="Exporter les resultats en CSV">
             <Download :size="16" />
             {{ exporting ? 'Export...' : 'CSV' }}
@@ -627,21 +868,40 @@
       <div class="activities-section">
         <div class="activities-header">
           <h2 class="activities-title">Activités</h2>
-          <button class="btn-add-activity" @click="addActivityInCategory(activeCategoryFilter)">
-            <Plus :size="16" />
-            Ajouter {{ activeCategoryFilter ? ACTIVITY_CATEGORIES[activeCategoryFilter].label : '' }}
-          </button>
+          <div class="activities-header-actions">
+            <button
+              class="btn-import-csv"
+              :disabled="csvImporting"
+              :title="`Importer un CSV Kahoot-style (Question; Rep1..Rep4; Temps; Bonne reponse)`"
+              @click="openCsvPicker"
+            >
+              <Upload :size="14" />
+              {{ csvImporting ? 'Import...' : 'Importer CSV' }}
+            </button>
+            <input
+              ref="csvInputRef"
+              type="file"
+              accept=".csv,text/csv,.txt,text/plain"
+              style="display:none"
+              @change="onCsvSelected"
+            />
+            <button class="btn-add-activity" @click="addActivityInCategory(activeCategoryFilter)">
+              <Plus :size="16" />
+              Ajouter {{ activeCategoryFilter ? ACTIVITY_CATEGORIES[activeCategoryFilter].label : '' }}
+            </button>
+          </div>
         </div>
 
         <!-- Category filter sidebar (horizontal pills) -->
-        <div class="cat-filter-bar">
+        <div class="cat-filter-bar" role="toolbar" aria-label="Filtrer par categorie">
           <button
             class="cat-filter-pill"
             :class="{ active: !activeCategoryFilter }"
+            :aria-pressed="!activeCategoryFilter"
             @click="activeCategoryFilter = null"
           >
             <span class="cfp-label">Tout</span>
-            <span class="cfp-count">{{ liveStore.sessionActivities.length }}</span>
+            <span class="cfp-count" aria-label="activites au total">{{ liveStore.sessionActivities.length }}</span>
           </button>
           <button
             v-for="(cat, key) in ACTIVITY_CATEGORIES"
@@ -649,9 +909,11 @@
             class="cat-filter-pill"
             :class="{ active: activeCategoryFilter === key, [`cfp--${key}`]: true }"
             :style="{ '--cat-color': cat.color }"
+            :aria-pressed="activeCategoryFilter === key"
+            :aria-label="`Filtrer ${cat.label} (${categoryCountsMap[key as ActivityCategory]} activite${categoryCountsMap[key as ActivityCategory] > 1 ? 's' : ''})`"
             @click="activeCategoryFilter = (activeCategoryFilter === key ? null : key as ActivityCategory)"
           >
-            <component :is="ACTIVITY_CATEGORIES[key as ActivityCategory].icon" :size="14" />
+            <component :is="ACTIVITY_CATEGORIES[key as ActivityCategory].icon" :size="14" aria-hidden="true" />
             <span class="cfp-label">{{ cat.label }}</span>
             <span class="cfp-count">{{ categoryCountsMap[key as ActivityCategory] }}</span>
           </button>
@@ -811,6 +1073,11 @@
           <Users :size="18" />
           <span>{{ liveStore.results.totalResponses ?? liveStore.results.total ?? 0 }} reponse{{ (liveStore.results.totalResponses ?? liveStore.results.total ?? 0) > 1 ? 's' : '' }}</span>
         </div>
+        <!-- Temps median de reponse -->
+        <div v-if="responseTimerLabel" class="response-median" :title="`Temps median sur ${responseTimer.sampleSize.value} reponses`">
+          <Clock :size="14" />
+          <span>{{ responseTimerLabel }}</span>
+        </div>
         <!-- Auto-close (Spark seulement) -->
         <label v-if="isSparkType(liveStore.currentActivity.type)" class="auto-close-toggle" title="Fermer automatiquement quand le timer expire">
           <input type="checkbox" v-model="autoCloseEnabled" />
@@ -885,6 +1152,16 @@
         </div>
       </div>
     </div>
+
+    <!-- Bouton flottant aide raccourcis -->
+    <button
+      class="help-fab"
+      aria-label="Afficher les raccourcis clavier (touche ?)"
+      title="Raccourcis clavier (?)"
+      @click="shortcutsOpen = true"
+    >?</button>
+
+    <LiveShortcutsOverlay :open="shortcutsOpen" @close="shortcutsOpen = false" />
   </div>
 </template>
 
@@ -898,6 +1175,19 @@
   display: flex;
   flex-direction: column;
   align-items: center;
+}
+/* Fade+rise discret au changement de vue (home, session, activity live, leaderboard, podium). */
+.live-home, .live-session, .live-activity-view, .live-leaderboard-view, .live-podium-view {
+  animation: live-view-in .26s var(--ease-out) both;
+}
+@keyframes live-view-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .live-home, .live-session, .live-activity-view, .live-leaderboard-view, .live-podium-view {
+    animation: none;
+  }
 }
 
 /* ── Home / Landing ── */
@@ -1220,6 +1510,93 @@
 }
 .btn-preview:hover { background: rgba(168,85,247,.18); }
 .btn-preview.active { background: #a855f7; color: #fff; border-color: #a855f7; }
+.btn-template {
+  display: flex; align-items: center; gap: 6px;
+  padding: 8px 14px; border-radius: 8px; font-size: 13px; font-weight: 600;
+  background: var(--bg-elevated); color: var(--text-secondary);
+  border: 1px solid var(--border); cursor: pointer;
+  transition: all .15s;
+}
+.btn-template:hover { color: var(--text-primary); border-color: var(--border-input); }
+
+/* Templates list (home) */
+.live-templates {
+  width: 100%;
+  display: flex; flex-direction: column; gap: 10px;
+  padding-top: 4px;
+  border-top: 1px solid var(--border);
+  margin-top: 8px;
+}
+.live-templates-title {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 11px; font-weight: 700; color: var(--text-muted);
+  text-transform: uppercase; letter-spacing: .5px;
+  margin: 8px 0 2px;
+}
+.live-templates-list {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 8px;
+}
+.live-template-card {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 8px;
+  padding: 10px 12px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  transition: all .15s;
+}
+.live-template-card:hover { border-color: var(--border-input); }
+.ltc-body { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.ltc-name {
+  font-size: 13px; font-weight: 600;
+  color: var(--text-primary);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.ltc-meta { font-size: 10px; color: var(--text-muted); }
+.ltc-actions { display: flex; gap: 4px; flex-shrink: 0; }
+.ltc-load {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 600;
+  background: var(--accent-subtle); color: var(--accent);
+  border: 1px solid rgba(74,144,217,.25); cursor: pointer;
+  font-family: inherit;
+  transition: all .15s;
+}
+.ltc-load:hover { background: rgba(74,144,217,.22); }
+.ltc-del {
+  width: 26px; height: 26px; border-radius: 6px;
+  background: rgba(239,68,68,.08); color: #f87171;
+  border: none; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: background .15s;
+}
+.ltc-del:hover { background: rgba(239,68,68,.2); }
+
+/* ── Floating help button ── */
+.help-fab {
+  position: fixed;
+  bottom: 20px; right: 20px;
+  width: 38px; height: 38px;
+  border-radius: 50%;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  font-size: 16px; font-weight: 800;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: var(--elevation-1);
+  transition: all .18s var(--ease-out);
+  z-index: 15;
+  font-family: inherit;
+}
+.help-fab:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+  transform: translateY(-2px);
+  box-shadow: var(--elevation-2);
+}
+.teacher-live.preview-open .help-fab { right: 440px; }
 
 /* ── Preview pane (mode apercu) ── */
 .teacher-live.preview-open {
@@ -1288,6 +1665,9 @@
   font-weight: 700;
   color: var(--text-primary);
 }
+.activities-header-actions {
+  display: flex; align-items: center; gap: 6px;
+}
 .btn-add-activity {
   display: flex; align-items: center; gap: 6px;
   padding: 6px 14px; border-radius: 8px; font-size: 13px; font-weight: 600;
@@ -1296,6 +1676,19 @@
   cursor: pointer; transition: all .15s;
 }
 .btn-add-activity:hover { background: rgba(74,144,217,.2); }
+.btn-import-csv {
+  display: flex; align-items: center; gap: 5px;
+  padding: 6px 12px; border-radius: 8px; font-size: 12px; font-weight: 600;
+  background: var(--bg-elevated); color: var(--text-secondary);
+  border: 1px solid var(--border); cursor: pointer;
+  transition: all .15s;
+  font-family: inherit;
+}
+.btn-import-csv:hover:not(:disabled) {
+  color: var(--text-primary); border-color: var(--border-input);
+  background: var(--bg-hover);
+}
+.btn-import-csv:disabled { opacity: .5; cursor: wait; }
 .activity-form-wrapper {
   padding: 20px;
   background: var(--bg-elevated);
@@ -1590,6 +1983,19 @@
   font-size: 16px;
   font-weight: 600;
   color: var(--text-secondary, #aaa);
+}
+.response-median {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: var(--bg-elevated);
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+  font-variant-numeric: tabular-nums;
 }
 .auto-close-toggle {
   display: flex;

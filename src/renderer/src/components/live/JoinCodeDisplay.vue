@@ -1,34 +1,60 @@
-<!-- JoinCodeDisplay.vue - Affichage grand format du code de session Live -->
+<!-- JoinCodeDisplay.vue - Code de session Live + URL partageable -->
 <script setup lang="ts">
-  import { ref } from 'vue'
-  import { Copy, Check } from 'lucide-vue-next'
+  import { ref, computed } from 'vue'
+  import { Copy, Check, Share2 } from 'lucide-vue-next'
 
   const props = defineProps<{ code: string }>()
 
-  const copied = ref(false)
+  const codeCopied = ref(false)
+  const urlCopied = ref(false)
 
-  async function copyCode() {
+  const shareUrl = computed(() => `cursus://live/join/${props.code}`)
+
+  async function copyTarget(text: string, flag: 'code' | 'url') {
     try {
-      await navigator.clipboard.writeText(props.code)
-      copied.value = true
-      setTimeout(() => { copied.value = false }, 2000)
+      await navigator.clipboard.writeText(text)
+      if (flag === 'code') {
+        codeCopied.value = true
+        setTimeout(() => { codeCopied.value = false }, 1800)
+      } else {
+        urlCopied.value = true
+        setTimeout(() => { urlCopied.value = false }, 1800)
+      }
     } catch { /* clipboard not available */ }
   }
 </script>
 
 <template>
-  <div class="join-code-card">
+  <div class="join-code-card" role="region" aria-label="Code de connexion à la session">
     <span class="join-code-label">Code de session</span>
-    <div class="join-code-value">
-      <span v-for="(ch, i) in code.split('')" :key="i" class="join-code-char" :style="{ animationDelay: `${i * 60}ms` }">
+    <button
+      class="join-code-value"
+      :aria-label="`Copier le code ${code}`"
+      @click="copyTarget(code, 'code')"
+    >
+      <span v-for="(ch, i) in code.split('')" :key="i" class="join-code-char" :style="{ animationDelay: `${i * 55}ms` }">
         {{ ch }}
       </span>
-    </div>
-    <button class="join-code-copy" :class="{ copied }" @click="copyCode">
-      <Check v-if="copied" :size="16" />
-      <Copy v-else :size="16" />
-      {{ copied ? 'Copié !' : 'Copier' }}
+      <span class="join-code-copy-hint">
+        <Check v-if="codeCopied" :size="14" />
+        <Copy v-else :size="14" />
+        {{ codeCopied ? 'Copié' : 'Copier' }}
+      </span>
     </button>
+
+    <div class="join-code-share">
+      <code class="join-code-url">{{ shareUrl }}</code>
+      <button
+        class="join-code-share-btn"
+        :class="{ copied: urlCopied }"
+        :aria-label="urlCopied ? 'URL copiée' : 'Copier l\'URL de partage'"
+        @click="copyTarget(shareUrl, 'url')"
+      >
+        <Check v-if="urlCopied" :size="13" />
+        <Share2 v-else :size="13" />
+        {{ urlCopied ? 'Lien copié' : 'Partager' }}
+      </button>
+    </div>
   </div>
 </template>
 
@@ -37,62 +63,138 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 12px;
-  padding: 32px 40px;
-  background: var(--bg-elevated);
+  gap: 14px;
+  padding: 28px 36px;
+  background:
+    radial-gradient(circle at top, color-mix(in srgb, var(--accent) 8%, transparent) 0%, transparent 60%),
+    var(--bg-elevated);
   border: 1px solid var(--border);
-  border-radius: var(--radius, 12px);
+  border-radius: var(--radius, 14px);
+  position: relative;
+  overflow: hidden;
+}
+.join-code-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  opacity: .4;
 }
 .join-code-label {
-  font-size: 13px;
-  font-weight: 600;
+  font-size: 11px;
+  font-weight: 700;
   color: var(--text-muted);
   text-transform: uppercase;
-  letter-spacing: 1px;
+  letter-spacing: 1.2px;
 }
 .join-code-value {
   display: flex;
   gap: 8px;
+  align-items: center;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  padding: 0;
+  position: relative;
 }
 .join-code-char {
   font-family: 'JetBrains Mono', 'Fira Code', monospace;
-  font-size: 48px;
+  font-size: 52px;
   font-weight: 800;
   color: var(--text-primary);
-  background: var(--bg-hover);
+  background: var(--bg-input);
   border: 1px solid var(--border);
-  border-radius: 8px;
-  width: 60px;
-  height: 72px;
+  border-radius: 10px;
+  width: 64px;
+  height: 76px;
   display: flex;
   align-items: center;
   justify-content: center;
   animation: char-pop .3s cubic-bezier(.34,1.56,.64,1) both;
+  transition: transform .15s, border-color .15s;
+}
+.join-code-value:hover .join-code-char {
+  border-color: color-mix(in srgb, var(--accent) 40%, var(--border));
+}
+.join-code-value:active .join-code-char {
+  transform: scale(.97);
 }
 @keyframes char-pop {
   from { transform: scale(0.6); opacity: 0; }
   to   { transform: scale(1); opacity: 1; }
 }
-.join-code-copy {
+.join-code-copy-hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  position: absolute;
+  bottom: -28px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  opacity: 0;
+  transition: opacity .15s;
+  white-space: nowrap;
+}
+.join-code-value:hover .join-code-copy-hint,
+.join-code-copy-hint:has(~ *),
+.join-code-value:focus-visible .join-code-copy-hint {
+  opacity: 1;
+}
+
+.join-code-share {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 8px 16px;
-  border-radius: 8px;
-  font-size: 13px;
-  font-weight: 600;
-  background: var(--bg-hover);
-  color: var(--text-secondary, #aaa);
+  gap: 8px;
+  margin-top: 12px;
+  padding: 6px 6px 6px 12px;
+  background: var(--bg-input);
   border: 1px solid var(--border);
+  border-radius: 999px;
+  max-width: 100%;
+}
+.join-code-url {
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-size: 11px;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 260px;
+}
+.join-code-share-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  background: var(--accent);
+  color: #fff;
+  border: none;
   cursor: pointer;
-  transition: all .15s;
+  transition: background .15s, transform .1s;
+  flex-shrink: 0;
 }
-.join-code-copy:hover {
-  background: var(--bg-elevated);
-  color: var(--text-primary);
+.join-code-share-btn:hover { filter: brightness(1.08); }
+.join-code-share-btn:active { transform: scale(.97); }
+.join-code-share-btn.copied {
+  background: var(--color-success);
 }
-.join-code-copy.copied {
-  color: #22c55e;
-  border-color: rgba(34,197,94,.3);
+
+@media (max-width: 500px) {
+  .join-code-card { padding: 20px 16px; }
+  .join-code-char {
+    font-size: 36px;
+    width: 48px;
+    height: 58px;
+  }
+  .join-code-url { max-width: 140px; }
 }
 </style>

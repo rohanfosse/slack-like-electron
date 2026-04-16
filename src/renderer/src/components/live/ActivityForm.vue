@@ -181,8 +181,18 @@
   function addPair() { if (pairs.value.length < 8) pairs.value = [...pairs.value, { left: '', right: '' }] }
   function removePair(i: number) { if (pairs.value.length > 2) pairs.value = pairs.value.filter((_, idx) => idx !== i) }
 
+  const validationError = ref<string | null>(null)
+
+  function fail(msg: string): false {
+    validationError.value = msg
+    return false
+  }
+
   function save() {
-    if (!title.value.trim()) return
+    validationError.value = null
+    const trimmedTitle = title.value.trim()
+    if (!trimmedTitle) { fail('Donnez un titre à la question.'); return }
+
     const payload: {
       type: ActivityType; title: string
       options?: string[] | string; max_words?: number; max_rating?: number
@@ -190,74 +200,83 @@
       language?: string
     } = {
       type: activityType.value,
-      title: title.value.trim(),
+      title: trimmedTitle,
       timer_seconds: timerSeconds.value,
     }
-    if (activityType.value === 'qcm') {
-      const filtered = options.value.map(o => o.trim()).filter(Boolean)
-      if (filtered.length < 2) return
-      payload.options = filtered
-      if (correctAnswers.value.length > 0) {
-        payload.correct_answers = correctAnswers.value.filter(i => i < filtered.length)
+
+    switch (activityType.value) {
+      case 'qcm': {
+        const filtered = options.value.map(o => o.trim()).filter(Boolean)
+        if (filtered.length < 2) { fail('Au moins deux options sont requises.'); return }
+        if (new Set(filtered).size !== filtered.length) { fail('Deux options ont le même libellé.'); return }
+        payload.options = filtered
+        if (correctAnswers.value.length > 0) {
+          payload.correct_answers = correctAnswers.value.filter(i => i < filtered.length)
+        }
+        break
       }
-    }
-    if (activityType.value === 'vrai_faux') {
-      payload.options = ['Vrai', 'Faux']
-      payload.correct_answers = [vraiFauxCorrect.value]
-    }
-    if (activityType.value === 'reponse_courte') {
-      const filtered = acceptedAnswers.value.map(a => a.trim()).filter(Boolean)
-      if (filtered.length === 0) return
-      payload.correct_answers = filtered
-    }
-    if (activityType.value === 'association') {
-      const valid = pairs.value.filter(p => p.left.trim() && p.right.trim())
-      if (valid.length < 2) return
-      payload.correct_answers = valid as unknown as string[]
-    }
-    if (activityType.value === 'estimation') {
-      const t = Number(estimation.value.target)
-      if (isNaN(t)) return
-      const m = Math.max(0, Number(estimation.value.margin) || 0)
-      payload.correct_answers = { target: t, margin: m } as unknown as string[]
-    }
-    if (activityType.value === 'live_code') {
-      payload.language = codeLanguage.value
-    }
-    if (activityType.value === 'board') {
-      const cols = boardColumns.value.map(c => c.trim()).filter(Boolean)
-      if (cols.length === 0) return
-      payload.options = JSON.stringify(cols)
-      payload.max_rating = boardMaxVotes.value // reuse max_rating as max_votes
-    }
-    // ── Pulse types ────────────────────────────────────────────────────
-    if (activityType.value === 'nuage') {
-      payload.max_words = maxWords.value
-    }
-    if (activityType.value === 'echelle') {
-      payload.max_rating = maxRating.value
-    }
-    if (activityType.value === 'sondage' && activityType.value !== 'sondage') {
-      // Placeholder, handled below
-    }
-    if (activityType.value === 'sondage') {
-      const filtered = sondageOptions.value.map(o => o.trim()).filter(Boolean)
-      if (filtered.length < 2) return
-      payload.options = JSON.stringify(filtered)
-    }
-    if (activityType.value === 'humeur') {
-      payload.options = JSON.stringify(HUMEUR_EMOJIS)
-    }
-    if (activityType.value === 'priorite') {
-      const filtered = prioriteItems.value.map(o => o.trim()).filter(Boolean)
-      if (filtered.length < 2) return
-      payload.options = JSON.stringify(filtered)
-    }
-    if (activityType.value === 'matrice') {
-      const filtered = matriceCriteria.value.map(o => o.trim()).filter(Boolean)
-      if (filtered.length < 2) return
-      payload.options = JSON.stringify(filtered)
-      payload.max_rating = maxRating.value
+      case 'vrai_faux':
+        payload.options = ['Vrai', 'Faux']
+        payload.correct_answers = [vraiFauxCorrect.value]
+        break
+      case 'reponse_courte': {
+        const filtered = acceptedAnswers.value.map(a => a.trim()).filter(Boolean)
+        if (filtered.length === 0) { fail('Indiquez au moins une réponse acceptée.'); return }
+        payload.correct_answers = filtered
+        break
+      }
+      case 'association': {
+        const valid = pairs.value.filter(p => p.left.trim() && p.right.trim())
+        if (valid.length < 2) { fail('Au moins deux paires complètes sont requises.'); return }
+        payload.correct_answers = valid as unknown as string[]
+        break
+      }
+      case 'estimation': {
+        const t = Number(estimation.value.target)
+        if (isNaN(t)) { fail('La valeur cible doit être un nombre.'); return }
+        const m = Math.max(0, Number(estimation.value.margin) || 0)
+        payload.correct_answers = { target: t, margin: m } as unknown as string[]
+        break
+      }
+      case 'live_code':
+        payload.language = codeLanguage.value
+        break
+      case 'board': {
+        const cols = boardColumns.value.map(c => c.trim()).filter(Boolean)
+        if (cols.length === 0) { fail('Ajoutez au moins une colonne.'); return }
+        payload.options = JSON.stringify(cols)
+        payload.max_rating = boardMaxVotes.value
+        break
+      }
+      case 'nuage':
+        payload.max_words = maxWords.value
+        break
+      case 'echelle':
+        payload.max_rating = maxRating.value
+        break
+      case 'sondage': {
+        const filtered = sondageOptions.value.map(o => o.trim()).filter(Boolean)
+        if (filtered.length < 2) { fail('Au moins deux options sont requises.'); return }
+        payload.options = JSON.stringify(filtered)
+        break
+      }
+      case 'humeur':
+        payload.options = JSON.stringify(HUMEUR_EMOJIS)
+        break
+      case 'priorite': {
+        const filtered = prioriteItems.value.map(o => o.trim()).filter(Boolean)
+        if (filtered.length < 2) { fail('Au moins deux items à classer sont requis.'); return }
+        payload.options = JSON.stringify(filtered)
+        break
+      }
+      case 'matrice': {
+        const filtered = matriceCriteria.value.map(o => o.trim()).filter(Boolean)
+        if (filtered.length < 2) { fail('Au moins deux critères sont requis.'); return }
+        payload.options = JSON.stringify(filtered)
+        payload.max_rating = maxRating.value
+        break
+      }
+      // 'sondage_libre' + 'question_ouverte' : rien a valider au-dela du titre
     }
     emit('save', payload)
   }
@@ -513,6 +532,12 @@
       </div>
     </div>
 
+    <!-- Banner validation -->
+    <div v-if="validationError" class="form-error" role="alert" aria-live="polite">
+      <span class="form-error-icon" aria-hidden="true">!</span>
+      <span>{{ validationError }}</span>
+    </div>
+
     <!-- Actions -->
     <div class="form-actions">
       <button class="btn-cancel" @click="emit('cancel')">Annuler</button>
@@ -549,6 +574,37 @@
   color: var(--cat-color, var(--accent));
   background: color-mix(in srgb, var(--cat-color, var(--accent)) 12%, transparent);
   border: 1px solid color-mix(in srgb, var(--cat-color, var(--accent)) 40%, transparent);
+}
+.form-error {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--color-danger) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-danger) 45%, transparent);
+  color: color-mix(in srgb, var(--color-danger) 80%, #fff);
+  font-size: 13px;
+  font-weight: 500;
+  animation: form-error-shake .3s cubic-bezier(.36,.07,.19,.97);
+}
+.form-error-icon {
+  flex-shrink: 0;
+  width: 20px; height: 20px;
+  border-radius: 50%;
+  background: var(--color-danger);
+  color: #fff;
+  font-weight: 800;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px;
+}
+@keyframes form-error-shake {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-4px); }
+  40%, 80% { transform: translateX(4px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .form-error { animation: none; }
 }
 
 /* Code + Board sections */
