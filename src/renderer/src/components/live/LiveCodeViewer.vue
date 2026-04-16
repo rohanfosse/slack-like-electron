@@ -91,7 +91,7 @@ watch(() => props.activityId, () => {
         <Copy v-else :size="13" />
       </button>
     </div>
-    <pre class="lcv-code hljs"><code v-html="highlighted" /></pre>
+    <pre class="lcv-code hljs"><code class="lcv-code-inner" v-html="highlighted" /></pre>
     <div v-if="!content" class="lcv-waiting">
       En attente que le prof commence a ecrire...
     </div>
@@ -143,6 +143,7 @@ watch(() => props.activityId, () => {
   overflow: auto; background: #1e1e2e;
   color: #cdd6f4; white-space: pre-wrap; word-break: break-word;
 }
+.lcv-code-inner { transition: opacity .15s ease; }
 .lcv-waiting {
   padding: 40px 20px; text-align: center;
   font-size: 13px; color: var(--text-muted); font-style: italic;

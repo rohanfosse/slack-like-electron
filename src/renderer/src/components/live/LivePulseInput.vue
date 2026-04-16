@@ -130,13 +130,19 @@ const wordCount = computed(() => props.activity.max_words ?? 3)
           :class="{ filled: s <= ratingInput }"
           @click="ratingInput = s"
         >
-          <Star :size="32" />
+          <Star :size="36" />
         </button>
       </div>
-      <div v-else class="lpi-slider-row">
-        <input v-model.number="ratingInput" type="range" min="1" :max="maxRating" class="lpi-slider" />
-        <span class="lpi-slider-val">{{ ratingInput || '-' }} / {{ maxRating }}</span>
+      <div v-if="maxRating <= 5 && ratingInput > 0" class="lpi-rating-label">
+        {{ ratingInput }} / {{ maxRating }}
+        {{ ratingInput === 1 ? '- Insuffisant' : ratingInput === 2 ? '- Moyen' : ratingInput === 3 ? '- Correct' : ratingInput === 4 ? '- Bien' : '- Excellent' }}
       </div>
+      <div v-if="maxRating > 5" class="lpi-slider-row">
+        <span class="lpi-slider-min">1</span>
+        <input v-model.number="ratingInput" type="range" min="1" :max="maxRating" class="lpi-slider" />
+        <span class="lpi-slider-max">{{ maxRating }}</span>
+      </div>
+      <div v-if="maxRating > 5 && ratingInput > 0" class="lpi-slider-val-big">{{ ratingInput }}</div>
       <button class="lpi-btn" :disabled="ratingInput <= 0" @click="submitRating">
         <Send :size="14" /> Envoyer
       </button>
@@ -251,10 +257,20 @@ const wordCount = computed(() => props.activity.max_words ?? 3)
 .lpi-star-btn:hover { color: #fbbf24; transform: scale(1.1); }
 .lpi-star-btn.filled { color: #fbbf24; }
 
+/* Rating label */
+.lpi-rating-label {
+  text-align: center; font-size: 14px; font-weight: 600;
+  color: var(--accent); margin-top: 4px;
+}
+
 /* Slider */
-.lpi-slider-row { display: flex; align-items: center; gap: 12px; }
-.lpi-slider { flex: 1; }
-.lpi-slider-val { font-weight: 700; color: var(--accent); min-width: 60px; text-align: center; }
+.lpi-slider-row { display: flex; align-items: center; gap: 10px; }
+.lpi-slider { flex: 1; height: 6px; accent-color: var(--accent); }
+.lpi-slider-min, .lpi-slider-max { font-size: 12px; font-weight: 700; color: var(--text-muted); }
+.lpi-slider-val-big {
+  text-align: center; font-size: 36px; font-weight: 800; color: var(--accent);
+  margin: 4px 0;
+}
 
 /* Options */
 .lpi-opts { display: flex; flex-direction: column; gap: 8px; }
