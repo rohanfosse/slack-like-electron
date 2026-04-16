@@ -8,7 +8,7 @@
   } from 'lucide-vue-next'
   import type { LiveActivity, LiveV2ActivityType } from '@/types'
 
-  const props = defineProps<{ initialData?: LiveActivity | null; defaultCategory?: string | null }>()
+  const props = defineProps<{ initialData?: LiveActivity | null; defaultCategory?: string | null; lockedCategory?: string | null }>()
 
   type ActivityType = LiveV2ActivityType
 
@@ -94,17 +94,27 @@
 
   const CATEGORY_KEY_MAP: Record<string, string> = { spark: 'Spark', pulse: 'Pulse', code: 'Code', board: 'Board' }
 
+  const lockedCategoryName = computed<string | null>(() => {
+    if (!props.lockedCategory) return null
+    return CATEGORY_KEY_MAP[props.lockedCategory] ?? props.lockedCategory
+  })
+
   const categories = computed(() => {
     const grouped = new Map<string, typeof typeCards>()
     for (const card of typeCards) {
       if (!grouped.has(card.category)) grouped.set(card.category, [])
       grouped.get(card.category)!.push(card)
     }
-    const all = [...grouped.entries()].map(([name, cards]) => ({
+    let all = [...grouped.entries()].map(([name, cards]) => ({
       name,
       meta: CATEGORY_META[name],
       cards,
     }))
+    // Locked : only show the locked category (hide others) — only for creation, not edition
+    if (lockedCategoryName.value && !isEditing) {
+      all = all.filter(c => c.name === lockedCategoryName.value)
+      return all
+    }
     // If a default category is specified, put it first
     if (props.defaultCategory) {
       const target = CATEGORY_KEY_MAP[props.defaultCategory] ?? props.defaultCategory
@@ -116,6 +126,14 @@
     }
     return all
   })
+
+  // Si la categorie est verrouillee et que le type courant n'y appartient pas, ajuster
+  if (lockedCategoryName.value && !isEditing) {
+    const allowed = typeCards.filter(c => c.category === lockedCategoryName.value).map(c => c.id)
+    if (!allowed.includes(activityType.value as typeof allowed[number])) {
+      activityType.value = allowed[0]
+    }
+  }
 
   // Code activity
   const codeLanguage = ref(props.initialData?.language ?? 'javascript')
@@ -260,7 +278,16 @@
 
 <template>
   <div class="activity-form">
-    <h3 class="form-title">{{ isEditing ? 'Modifier l\'activité' : 'Nouvelle activité' }}</h3>
+    <h3 class="form-title">
+      {{ isEditing ? 'Modifier l\'activité' : 'Nouvelle activité' }}
+      <span
+        v-if="lockedCategoryName && !isEditing"
+        class="form-scope-badge"
+        :style="{ '--cat-color': CATEGORY_META[lockedCategoryName]?.color }"
+      >
+        {{ CATEGORY_META[lockedCategoryName]?.label }} uniquement
+      </span>
+    </h3>
 
     <!-- Type selector grouped by category -->
     <div v-for="cat in categories" :key="cat.name" class="type-category">
@@ -437,14 +464,20 @@
       <label class="correct-label">Langage de programmation</label>
       <select v-model="codeLanguage" class="form-input">
         <option value="javascript">JavaScript</option>
+        <option value="typescript">TypeScript</option>
         <option value="python">Python</option>
         <option value="html">HTML</option>
         <option value="css">CSS</option>
         <option value="sql">SQL</option>
+        <option value="markdown">Markdown</option>
+        <option value="json">JSON</option>
+        <option value="java">Java</option>
+        <option value="cpp">C / C++</option>
         <option value="plaintext">Texte brut</option>
       </select>
       <p class="code-hint">
-        Vous ecrirez du code en direct. Les etudiants verront votre ecran en lecture seule.
+        Vous ecrirez du code en direct. Les etudiants verront votre ecran en lecture seule
+        avec coloration syntaxique complete.
       </p>
     </div>
 
@@ -508,9 +541,27 @@
   gap: 16px;
 }
 .form-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
   font-size: 16px;
   font-weight: 700;
   color: var(--text-primary);
+}
+.form-scope-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 999px;
+  text-transform: uppercase;
+  letter-spacing: .4px;
+  color: var(--cat-color, var(--accent));
+  background: color-mix(in srgb, var(--cat-color, var(--accent)) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--cat-color, var(--accent)) 40%, transparent);
 }
 
 /* Code + Board sections */

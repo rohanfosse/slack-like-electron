@@ -6,6 +6,7 @@
     Plus, Play, Square, ChevronRight, Trash2, Users, Zap, Clock,
     LogOut, Pencil, GripVertical, Copy, Download,
     History, BarChart3, Sparkles, Activity, Code2, StickyNote, ArrowRight,
+    Eye, EyeOff,
   } from 'lucide-vue-next'
   import { ACTIVITY_CATEGORIES, activityIcon, activityTypeLabel, getActivityCategory, isSparkType } from '@/utils/liveActivity'
   import type { ActivityCategory } from '@/utils/liveActivity'
@@ -25,6 +26,7 @@
   import QuizStatsView        from './QuizStatsView.vue'
   import LiveCodeEditor       from './LiveCodeEditor.vue'
   import LiveBoard            from './LiveBoard.vue'
+  import LiveTestPreview      from './LiveTestPreview.vue'
   // Pulse results (composants Rex reutilises)
   import RexQuestionOuverteResults from '@/components/rex/RexQuestionOuverteResults.vue'
   import RexSondageResults        from '@/components/rex/RexSondageResults.vue'
@@ -79,6 +81,36 @@
     }
     return Object.entries(map).map(([name, count]) => ({ name, count }))
   })
+
+  /** Filtre categorie dans la vue session (null = toutes) */
+  const activeCategoryFilter = ref<ActivityCategory | null>(null)
+
+  /** Activites filtrees par la categorie active */
+  const filteredActivities = computed<LiveActivity[]>(() => {
+    const acts = liveStore.sessionActivities
+    if (!activeCategoryFilter.value) return acts
+    return acts.filter(a => (a.category ?? getActivityCategory(a.type)) === activeCategoryFilter.value)
+  })
+
+  /** Nombre d'activites par categorie (map complete pour la sidebar) */
+  const categoryCountsMap = computed<Record<ActivityCategory, number>>(() => {
+    const map: Record<ActivityCategory, number> = { spark: 0, pulse: 0, code: 0, board: 0 }
+    for (const a of liveStore.sessionActivities) {
+      const cat = (a.category ?? getActivityCategory(a.type)) as ActivityCategory
+      map[cat] = (map[cat] ?? 0) + 1
+    }
+    return map
+  })
+
+  /** Ouvre le formulaire d'ajout scope sur la categorie active */
+  function addActivityInCategory(cat: ActivityCategory | null) {
+    preSelectedCategory.value = cat
+    showActivityForm.value = true
+  }
+
+  /** Mode apercu : affiche une preview "etudiant" a cote du prof */
+  const previewMode = ref(false)
+  function togglePreview() { previewMode.value = !previewMode.value }
 
   /** Parse les options d'une activite (JSON string -> array). */
   function parseOptions(opts: string | string[] | null | undefined): string[] {
@@ -228,6 +260,7 @@
       await liveStore.pushActivity(liveStore.currentSession.id, payload)
     }
     showActivityForm.value = false
+    preSelectedCategory.value = null
   }
 
   function startEditActivity(activity: LiveActivity) {
@@ -379,7 +412,14 @@
 </script>
 
 <template>
-  <div class="teacher-live">
+  <div class="teacher-live" :class="{ 'preview-open': previewMode && liveStore.currentSession }">
+    <!-- Preview pane flottante (a droite) -->
+    <aside v-if="previewMode && liveStore.currentSession" class="preview-pane">
+      <LiveTestPreview
+        :activities="liveStore.sessionActivities"
+        :current-activity="liveStore.currentActivity"
+      />
+    </aside>
     <!-- ══════════ Pas de session — page d'accueil Live ══════════ -->
     <div v-if="!liveStore.currentSession" class="live-home">
 
@@ -568,6 +608,15 @@
             <Play :size="16" />
             Diffuser aux étudiants
           </button>
+          <button
+            class="btn-preview"
+            :class="{ active: previewMode }"
+            @click="togglePreview"
+            title="Apercu cote etudiant (sans les etudiants)"
+          >
+            <component :is="previewMode ? EyeOff : Eye" :size="16" />
+            {{ previewMode ? 'Fermer apercu' : 'Mode apercu' }}
+          </button>
           <button class="btn-export" :disabled="exporting" @click="exportCsv" title="Exporter les resultats en CSV">
             <Download :size="16" />
             {{ exporting ? 'Export...' : 'CSV' }}
@@ -596,9 +645,33 @@
       <div class="activities-section">
         <div class="activities-header">
           <h2 class="activities-title">Activités</h2>
-          <button class="btn-add-activity" @click="showActivityForm = true">
+          <button class="btn-add-activity" @click="addActivityInCategory(activeCategoryFilter)">
             <Plus :size="16" />
-            Ajouter
+            Ajouter {{ activeCategoryFilter ? ACTIVITY_CATEGORIES[activeCategoryFilter].label : '' }}
+          </button>
+        </div>
+
+        <!-- Category filter sidebar (horizontal pills) -->
+        <div class="cat-filter-bar">
+          <button
+            class="cat-filter-pill"
+            :class="{ active: !activeCategoryFilter }"
+            @click="activeCategoryFilter = null"
+          >
+            <span class="cfp-label">Tout</span>
+            <span class="cfp-count">{{ liveStore.sessionActivities.length }}</span>
+          </button>
+          <button
+            v-for="(cat, key) in ACTIVITY_CATEGORIES"
+            :key="key"
+            class="cat-filter-pill"
+            :class="{ active: activeCategoryFilter === key, [`cfp--${key}`]: true }"
+            :style="{ '--cat-color': cat.color }"
+            @click="activeCategoryFilter = (activeCategoryFilter === key ? null : key as ActivityCategory)"
+          >
+            <component :is="CATEGORY_ICONS[key]" :size="14" />
+            <span class="cfp-label">{{ cat.label }}</span>
+            <span class="cfp-count">{{ categoryCountsMap[key as ActivityCategory] }}</span>
           </button>
         </div>
 
@@ -606,6 +679,7 @@
           <ActivityForm
             :initial-data="editingActivity"
             :default-category="preSelectedCategory"
+            :locked-category="preSelectedCategory"
             @save="onAddActivity"
             @cancel="cancelActivityForm"
           />
@@ -618,9 +692,19 @@
           <span class="no-activities-tip">Astuce : Espace/Entree pour naviguer rapidement entre les activites</span>
         </div>
 
+        <div v-else-if="filteredActivities.length === 0 && !showActivityForm && activeCategoryFilter" class="no-activities no-activities-filtered">
+          <component :is="CATEGORY_ICONS[activeCategoryFilter]" :size="24" class="no-activities-icon" :style="{ color: ACTIVITY_CATEGORIES[activeCategoryFilter].color }" />
+          <span class="no-activities-title">Aucune activite {{ ACTIVITY_CATEGORIES[activeCategoryFilter].label }}</span>
+          <span class="no-activities-desc">{{ ACTIVITY_CATEGORIES[activeCategoryFilter].description }}</span>
+          <button class="btn-add-activity" style="margin-top: 8px" @click="addActivityInCategory(activeCategoryFilter)">
+            <Plus :size="14" />
+            Ajouter une activite {{ ACTIVITY_CATEGORIES[activeCategoryFilter].label }}
+          </button>
+        </div>
+
         <div v-else class="activity-list">
           <div
-            v-for="act in liveStore.sessionActivities"
+            v-for="act in filteredActivities"
             :key="act.id"
             class="activity-card"
             :class="{ closed: act.status === 'closed', dragging: dragSrcId === act.id }"
@@ -885,42 +969,60 @@
 .live-cat-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 12px;
+  gap: 14px;
   width: 100%;
 }
 .live-cat-card {
   position: relative;
-  display: flex; flex-direction: column; gap: 12px;
-  padding: 20px;
+  display: flex; flex-direction: column; gap: 14px;
+  padding: 22px 22px 20px;
   background: var(--bg-elevated);
   border: 1px solid var(--border);
-  border-radius: 14px;
+  border-radius: 16px;
   cursor: pointer;
   text-align: left;
-  transition: all .15s;
+  transition: transform .18s var(--ease-out), border-color .18s, box-shadow .18s, background .18s;
   overflow: hidden;
   font-family: inherit;
+  isolation: isolate;
 }
+/* Halo diagonal derriere la carte */
+.live-cat-card::after {
+  content: '';
+  position: absolute; inset: 0;
+  background: radial-gradient(circle at top right,
+              color-mix(in srgb, var(--cat-color) 12%, transparent) 0%,
+              transparent 55%);
+  opacity: 0; transition: opacity .22s;
+  z-index: -1;
+}
+/* Barre colore en haut */
 .live-cat-card::before {
   content: '';
   position: absolute; top: 0; left: 0; right: 0; height: 3px;
-  background: var(--cat-color);
-  opacity: 0; transition: opacity .15s;
+  background: linear-gradient(90deg, var(--cat-color), color-mix(in srgb, var(--cat-color) 50%, transparent));
+  opacity: 0; transition: opacity .2s;
 }
 .live-cat-card:hover {
-  border-color: var(--cat-color);
-  box-shadow: 0 4px 20px rgba(0,0,0,.06);
-  transform: translateY(-1px);
+  border-color: color-mix(in srgb, var(--cat-color) 55%, var(--border));
+  box-shadow: 0 10px 30px color-mix(in srgb, var(--cat-color) 15%, rgba(0,0,0,.25));
+  transform: translateY(-2px);
 }
-.live-cat-card:hover::before { opacity: 1; }
+.live-cat-card:hover::before,
+.live-cat-card:hover::after { opacity: 1; }
 .live-cat-card:disabled { opacity: .5; cursor: wait; }
 
 .live-cat-icon {
-  width: 48px; height: 48px;
+  width: 52px; height: 52px;
   display: flex; align-items: center; justify-content: center;
-  border-radius: 12px;
-  background: color-mix(in srgb, var(--cat-color) 12%, transparent);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--cat-color) 14%, transparent);
   color: var(--cat-color);
+  transition: transform .2s var(--ease-spring), background .15s;
+}
+.live-cat-card:hover .live-cat-icon {
+  transform: scale(1.08) rotate(-4deg);
+  background: color-mix(in srgb, var(--cat-color) 22%, transparent);
 }
 .live-cat-info { display: flex; flex-direction: column; gap: 2px; }
 .live-cat-label { font-size: 16px; font-weight: 700; color: var(--text-primary); }
@@ -1128,6 +1230,43 @@
 }
 .btn-export:hover { background: rgba(74,144,217,.15); }
 .btn-export:disabled { opacity: .4; cursor: not-allowed; }
+.btn-preview {
+  display: flex; align-items: center; gap: 6px;
+  padding: 8px 14px; border-radius: 8px; font-size: 13px; font-weight: 600;
+  background: rgba(168,85,247,.08); color: #a855f7;
+  border: 1px solid rgba(168,85,247,.2); cursor: pointer;
+  transition: all .15s;
+}
+.btn-preview:hover { background: rgba(168,85,247,.18); }
+.btn-preview.active { background: #a855f7; color: #fff; border-color: #a855f7; }
+
+/* ── Preview pane (mode apercu) ── */
+.teacher-live.preview-open {
+  padding-right: 420px;
+  transition: padding .2s;
+}
+.preview-pane {
+  position: fixed;
+  top: 0; right: 0; bottom: 0;
+  width: 400px;
+  background: var(--bg-main);
+  border-left: 1px solid var(--border);
+  padding: 24px 16px;
+  overflow-y: auto;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  box-shadow: -4px 0 24px rgba(0,0,0,.15);
+  animation: slidePreview .22s ease-out;
+}
+@keyframes slidePreview {
+  from { transform: translateX(20px); opacity: 0 }
+  to   { transform: translateX(0);    opacity: 1 }
+}
+@media (max-width: 900px) {
+  .teacher-live.preview-open { padding-right: 32px; }
+  .preview-pane { display: none; }
+}
 .session-meta-bar {
   display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
 }
@@ -1214,30 +1353,106 @@
   opacity: .6;
   margin-top: 4px;
 }
+.no-activities-filtered {
+  padding: 32px 24px;
+}
+
+/* ── Category filter bar ── */
+.cat-filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 4px 0 4px;
+}
+.cat-filter-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: all .15s;
+}
+.cat-filter-pill:hover {
+  background: var(--bg-hover);
+  border-color: var(--border-input);
+}
+.cat-filter-pill .cfp-count {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: var(--bg-hover);
+  color: var(--text-muted);
+  min-width: 18px;
+  text-align: center;
+}
+.cat-filter-pill.active {
+  color: var(--cat-color, var(--accent));
+  border-color: var(--cat-color, var(--accent));
+  background: color-mix(in srgb, var(--cat-color, var(--accent)) 10%, transparent);
+}
+.cat-filter-pill.active .cfp-count {
+  background: var(--cat-color, var(--accent));
+  color: #fff;
+}
 .activity-list {
   display: flex;
   flex-direction: column;
   gap: 8px;
 }
 .activity-card {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 12px;
   padding: 14px 16px;
   background: var(--bg-elevated);
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: 10px;
   transition: all .15s;
+  overflow: hidden;
 }
+.activity-card::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 3px;
+  background: var(--text-muted);
+  opacity: 0;
+  transition: opacity .15s;
+}
+.activity-card:hover {
+  border-color: var(--border-input);
+  transform: translateX(1px);
+}
+.activity-card:hover::before { opacity: 1; }
+/* Barre laterale colore selon la categorie */
+.activity-card:has(.cat--spark)::before { background: var(--live-spark); }
+.activity-card:has(.cat--pulse)::before { background: var(--live-pulse); }
+.activity-card:has(.cat--code)::before  { background: var(--live-code); }
+.activity-card:has(.cat--board)::before { background: var(--live-board); }
 .activity-card.closed {
-  opacity: .5;
+  opacity: .55;
 }
 .activity-card-icon {
   width: 36px; height: 36px; border-radius: 8px;
   background: rgba(74,144,217,.12); color: var(--accent);
   display: flex; align-items: center; justify-content: center;
   flex-shrink: 0;
+  transition: background .15s, color .15s;
 }
+/* Teinte de l'icone selon la categorie */
+.activity-card:has(.cat--spark) .activity-card-icon { background: var(--live-spark-soft); color: var(--live-spark); }
+.activity-card:has(.cat--pulse) .activity-card-icon { background: var(--live-pulse-soft); color: var(--live-pulse); }
+.activity-card:has(.cat--code)  .activity-card-icon { background: var(--live-code-soft);  color: var(--live-code); }
+.activity-card:has(.cat--board) .activity-card-icon { background: var(--live-board-soft); color: var(--live-board); }
 .activity-card-body {
   flex: 1;
   display: flex;
@@ -1265,10 +1480,10 @@
   font-size: 10px; font-weight: 700; text-transform: uppercase;
   letter-spacing: .4px; padding: 2px 8px; border-radius: 10px;
 }
-.cat--spark  { background: rgba(245,158,11,.12); color: #f59e0b; }
-.cat--pulse  { background: rgba(16,185,129,.12); color: #10b981; }
-.cat--code   { background: rgba(59,130,246,.12); color: #3b82f6; }
-.cat--board  { background: rgba(168,85,247,.12); color: #a855f7; }
+.cat--spark  { background: var(--live-spark-soft); color: var(--live-spark); }
+.cat--pulse  { background: var(--live-pulse-soft); color: var(--live-pulse); }
+.cat--code   { background: var(--live-code-soft);  color: var(--live-code); }
+.cat--board  { background: var(--live-board-soft); color: var(--live-board); }
 .activity-card-title {
   font-size: 14px; font-weight: 600;
   color: var(--text-primary);

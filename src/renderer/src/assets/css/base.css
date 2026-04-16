@@ -104,6 +104,20 @@ body.theme-transitioning *::after {
   --color-warning: #E8891A;
   --color-success: #2ECC71;
 
+  /* Live : couleurs par categorie (Spark, Pulse, Code, Board) */
+  --live-spark:        #F59E0B;  /* Ambre : quiz gamifie */
+  --live-spark-soft:   rgba(245,158,11,.12);
+  --live-spark-border: rgba(245,158,11,.35);
+  --live-pulse:        #10B981;  /* Emeraude : feedback anonyme */
+  --live-pulse-soft:   rgba(16,185,129,.12);
+  --live-pulse-border: rgba(16,185,129,.35);
+  --live-code:         #3B82F6;  /* Bleu : live coding */
+  --live-code-soft:    rgba(59,130,246,.12);
+  --live-code-border:  rgba(59,130,246,.35);
+  --live-board:        #A855F7;  /* Violet : brainstorming */
+  --live-board-soft:   rgba(168,85,247,.12);
+  --live-board-border: rgba(168,85,247,.35);
+
   /* Deadlines */
   --deadline-ok-bg:     rgba(46, 204, 113, .16);
   --deadline-ok-text:   #6FCF97;

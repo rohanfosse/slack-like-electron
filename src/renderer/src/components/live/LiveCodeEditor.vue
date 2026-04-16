@@ -4,7 +4,7 @@
  */
 <script setup lang="ts">
 import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue'
-import { Code2, Copy, Check } from 'lucide-vue-next'
+import { Code2, Copy, Check, Maximize2, Minimize2 } from 'lucide-vue-next'
 import { EditorView } from '@codemirror/view'
 import { EditorState, Compartment } from '@codemirror/state'
 import { basicSetup } from 'codemirror'
@@ -26,10 +26,15 @@ const { showToast } = useToast()
 
 const LANGUAGES = [
   { value: 'javascript', label: 'JavaScript' },
+  { value: 'typescript', label: 'TypeScript' },
   { value: 'python', label: 'Python' },
   { value: 'html', label: 'HTML' },
   { value: 'css', label: 'CSS' },
   { value: 'sql', label: 'SQL' },
+  { value: 'markdown', label: 'Markdown' },
+  { value: 'json', label: 'JSON' },
+  { value: 'java', label: 'Java' },
+  { value: 'cpp', label: 'C / C++' },
   { value: 'plaintext', label: 'Texte brut' },
 ]
 
@@ -37,19 +42,25 @@ const language = ref(props.initialLanguage || 'javascript')
 const content = ref(props.initialContent || '')
 const editorRef = ref<HTMLDivElement | null>(null)
 const copied = ref(false)
+const fullscreen = ref(false)
+function toggleFullscreen() { fullscreen.value = !fullscreen.value }
 let view: EditorView | null = null
 let debounceTimer: ReturnType<typeof setTimeout> | null = null
 const langCompartment = new Compartment()
 
-/** Dynamic language pack loader */
+/** Dynamic language pack loader (CodeMirror). JSON, Java, C++ retombent en plaintext cote editeur
+ *  mais restent colores cote viewer (highlight.js supporte tout). */
 async function getLanguageExt(lang: string) {
   try {
     switch (lang) {
       case 'javascript': return (await import('@codemirror/lang-javascript')).javascript()
+      case 'typescript': return (await import('@codemirror/lang-javascript')).javascript({ typescript: true })
       case 'python':     return (await import('@codemirror/lang-python')).python()
       case 'html':       return (await import('@codemirror/lang-html')).html()
       case 'css':        return (await import('@codemirror/lang-css')).css()
       case 'sql':        return (await import('@codemirror/lang-sql')).sql()
+      case 'markdown':   return (await import('@codemirror/lang-markdown')).markdown()
+      // java, cpp, json : pas de pack installe — editeur en plaintext, coloration uniquement cote viewer
       default: return []
     }
   } catch {
@@ -140,7 +151,7 @@ defineExpose({ getContent: () => content.value, getLanguage: () => language.valu
 </script>
 
 <template>
-  <div class="lce-wrap">
+  <div class="lce-wrap" :class="{ 'lce-fullscreen': fullscreen }">
     <div class="lce-toolbar">
       <Code2 :size="14" class="lce-icon" />
       <select v-model="language" class="lce-lang" @change="changeLanguage(language)">
@@ -154,6 +165,10 @@ defineExpose({ getContent: () => content.value, getLanguage: () => language.valu
         <Check v-if="copied" :size="13" />
         <Copy v-else :size="13" />
       </button>
+      <button class="lce-copy" :title="fullscreen ? 'Quitter plein ecran' : 'Plein ecran'" @click="toggleFullscreen">
+        <Minimize2 v-if="fullscreen" :size="13" />
+        <Maximize2 v-else :size="13" />
+      </button>
     </div>
     <div ref="editorRef" class="lce-editor" />
   </div>
@@ -164,6 +179,13 @@ defineExpose({ getContent: () => content.value, getLanguage: () => language.valu
   display: flex; flex-direction: column; height: 100%;
   border: 1px solid var(--border); border-radius: 10px;
   overflow: hidden; background: var(--bg-sidebar);
+}
+.lce-wrap.lce-fullscreen {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  border-radius: 0;
+  border: none;
 }
 .lce-toolbar {
   display: flex; align-items: center; gap: 10px;

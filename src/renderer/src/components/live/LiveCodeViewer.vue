@@ -5,24 +5,37 @@
  */
 <script setup lang="ts">
 import { ref, onMounted, onBeforeUnmount, watch, computed } from 'vue'
-import { Code2, Copy, Check } from 'lucide-vue-next'
+import { Code2, Copy, Check, Maximize2, Minimize2 } from 'lucide-vue-next'
 import hljs from 'highlight.js/lib/core'
 import javascript from 'highlight.js/lib/languages/javascript'
+import typescript from 'highlight.js/lib/languages/typescript'
 import python from 'highlight.js/lib/languages/python'
 import xml from 'highlight.js/lib/languages/xml'
 import css from 'highlight.js/lib/languages/css'
 import sql from 'highlight.js/lib/languages/sql'
+import markdown from 'highlight.js/lib/languages/markdown'
+import json from 'highlight.js/lib/languages/json'
+import java from 'highlight.js/lib/languages/java'
+import cpp from 'highlight.js/lib/languages/cpp'
 import DOMPurify from 'dompurify'
 import { useToast } from '@/composables/useToast'
 
 // Register languages
 hljs.registerLanguage('javascript', javascript)
 hljs.registerLanguage('js', javascript)
+hljs.registerLanguage('typescript', typescript)
+hljs.registerLanguage('ts', typescript)
 hljs.registerLanguage('python', python)
 hljs.registerLanguage('html', xml)
 hljs.registerLanguage('xml', xml)
 hljs.registerLanguage('css', css)
 hljs.registerLanguage('sql', sql)
+hljs.registerLanguage('markdown', markdown)
+hljs.registerLanguage('md', markdown)
+hljs.registerLanguage('json', json)
+hljs.registerLanguage('java', java)
+hljs.registerLanguage('cpp', cpp)
+hljs.registerLanguage('c', cpp)
 
 const props = defineProps<{
   activityId: number
@@ -35,6 +48,8 @@ const { showToast } = useToast()
 const content = ref(props.initialContent || '')
 const language = ref(props.initialLanguage || 'plaintext')
 const copied = ref(false)
+const fullscreen = ref(false)
+function toggleFullscreen() { fullscreen.value = !fullscreen.value }
 let unsubscribe: (() => void) | null = null
 
 const lineCount = computed(() => content.value ? content.value.split('\n').length : 0)
@@ -87,7 +102,7 @@ watch(() => props.activityId, () => {
 </script>
 
 <template>
-  <div class="lcv-wrap">
+  <div class="lcv-wrap" :class="{ 'lcv-fullscreen': fullscreen }">
     <div class="lcv-toolbar">
       <Code2 :size="14" class="lcv-icon" />
       <span class="lcv-lang-badge">{{ language }}</span>
@@ -98,6 +113,10 @@ watch(() => props.activityId, () => {
       <button class="lcv-copy" :title="copied ? 'Copie !' : 'Copier'" @click="copyCode">
         <Check v-if="copied" :size="13" />
         <Copy v-else :size="13" />
+      </button>
+      <button class="lcv-copy" :title="fullscreen ? 'Quitter plein ecran' : 'Plein ecran'" @click="toggleFullscreen">
+        <Minimize2 v-if="fullscreen" :size="13" />
+        <Maximize2 v-else :size="13" />
       </button>
     </div>
     <pre class="lcv-code hljs"><code class="lcv-code-inner" v-html="highlighted" /></pre>
@@ -113,6 +132,14 @@ watch(() => props.activityId, () => {
   border: 1px solid var(--border); border-radius: 10px;
   overflow: hidden; background: var(--bg-sidebar);
   min-height: 400px;
+}
+.lcv-wrap.lcv-fullscreen {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  border-radius: 0;
+  border: none;
+  min-height: 100vh;
 }
 .lcv-toolbar {
   display: flex; align-items: center; gap: 10px;
