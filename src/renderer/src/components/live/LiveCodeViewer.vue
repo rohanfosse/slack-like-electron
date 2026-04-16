@@ -136,8 +136,8 @@ watch(() => props.activityId, () => {
   flex: 1; margin: 0; padding: 16px;
   font-family: Menlo, Monaco, Consolas, monospace;
   font-size: 13px; line-height: 1.6;
-  overflow: auto; background: var(--bg-main);
-  color: var(--text-primary); white-space: pre-wrap; word-break: break-word;
+  overflow: auto; background: #1e1e2e;
+  color: #cdd6f4; white-space: pre-wrap; word-break: break-word;
 }
 .lcv-waiting {
   padding: 40px 20px; text-align: center;

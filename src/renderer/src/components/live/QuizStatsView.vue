@@ -3,7 +3,7 @@
   import { computed, watch } from 'vue'
   import { BarChart3, Users, Hash, TrendingUp, Timer, Target } from 'lucide-vue-next'
   import { useLiveStore } from '@/stores/live'
-  import { ACTIVITY_TYPE_LABELS } from '@/utils/liveActivity'
+  import { ACTIVITY_TYPE_LABELS, getActivityCategory, ACTIVITY_CATEGORIES } from '@/utils/liveActivity'
 
   const props = defineProps<{ promoId: number }>()
   const liveStore = useLiveStore()
@@ -69,9 +69,15 @@
         <h3 class="qs-section-title"><BarChart3 :size="14" /> Repartition par type</h3>
         <div class="qs-bars">
           <div v-for="d in stats.activityTypeDistribution" :key="d.type" class="qs-bar-row">
-            <span class="qs-bar-label">{{ typeLabels[d.type] || d.type }}</span>
+            <span class="qs-bar-label">
+              <span class="qs-bar-cat-dot" :style="{ background: ACTIVITY_CATEGORIES[getActivityCategory(d.type)]?.color ?? '#666' }" />
+              {{ typeLabels[d.type] || d.type }}
+            </span>
             <div class="qs-bar-track">
-              <div class="qs-bar-fill" :style="{ width: (d.count / maxTypeCount * 100) + '%' }" />
+              <div
+                class="qs-bar-fill"
+                :style="{ width: (d.count / maxTypeCount * 100) + '%', background: ACTIVITY_CATEGORIES[getActivityCategory(d.type)]?.color ?? 'var(--accent)' }"
+              />
             </div>
             <span class="qs-bar-count">{{ d.count }}</span>
           </div>
@@ -121,7 +127,8 @@
 .qs-section-title { display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 700; color: var(--text-primary); margin: 0; }
 .qs-bars { display: flex; flex-direction: column; gap: 8px; }
 .qs-bar-row { display: flex; align-items: center; gap: 10px; }
-.qs-bar-label { width: 120px; flex-shrink: 0; font-size: 12px; color: var(--text-secondary, #aaa); text-align: right; }
+.qs-bar-label { width: 120px; flex-shrink: 0; font-size: 12px; color: var(--text-secondary, #aaa); text-align: right; display: flex; align-items: center; justify-content: flex-end; gap: 5px; }
+.qs-bar-cat-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
 .qs-bar-track { flex: 1; height: 22px; border-radius: 6px; background: rgba(255,255,255,.04); overflow: hidden; }
 .qs-bar-fill { height: 100%; border-radius: 6px; background: linear-gradient(90deg, #c0392b, #e74c3c); transition: width .6s ease; min-width: 2px; }
 .qs-bar-count { width: 32px; flex-shrink: 0; font-size: 12px; font-weight: 600; color: var(--text-primary); }

@@ -225,10 +225,9 @@
 
       <!-- Activity live + not responded yet -->
       <div v-else-if="activity.status === 'live' && !liveStore.hasResponded" class="response-area">
-        <!-- Countdown timer -->
-        <div class="timer-bar">
+        <!-- Countdown timer (Spark uniquement) -->
+        <div v-if="isSparkActivity && liveStore.timerStartedAt" class="timer-bar">
           <CountdownTimer
-            v-if="liveStore.timerStartedAt"
             :total-seconds="activity.timer_seconds ?? 30"
             :started-at="liveStore.timerStartedAt"
             @expired="onTimerExpired"

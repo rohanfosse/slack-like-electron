@@ -34,8 +34,14 @@ const cardsByColumn = computed(() => {
     if (!map[card.column_name]) map[card.column_name] = []
     map[card.column_name].push(card)
   }
+  // Sort by votes desc in each column
+  for (const col of Object.values(map)) {
+    col.sort((a, b) => b.votes - a.votes)
+  }
   return map
 })
+
+const totalVotes = computed(() => cards.value.reduce((s, c) => s + c.votes, 0))
 
 async function fetchCards() {
   loading.value = true
@@ -102,6 +108,7 @@ onBeforeUnmount(() => {
       <StickyNote :size="14" class="lb-icon" />
       <span class="lb-title">Tableau collaboratif</span>
       <span class="lb-count">{{ cards.length }} post-it{{ cards.length > 1 ? 's' : '' }}</span>
+      <span v-if="totalVotes > 0" class="lb-votes-total">{{ totalVotes }} vote{{ totalVotes > 1 ? 's' : '' }}</span>
     </div>
 
     <div class="lb-columns">
@@ -185,6 +192,10 @@ onBeforeUnmount(() => {
 .lb-icon { color: #a855f7; }
 .lb-title { font-size: 14px; font-weight: 700; color: var(--text-primary); flex: 1; }
 .lb-count { font-size: 11px; color: var(--text-muted); }
+.lb-votes-total {
+  font-size: 10px; font-weight: 600; padding: 1px 7px;
+  border-radius: 10px; background: rgba(74,144,217,.12); color: var(--accent);
+}
 
 .lb-columns {
   display: grid;

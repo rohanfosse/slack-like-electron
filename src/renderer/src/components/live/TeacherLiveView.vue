@@ -35,6 +35,17 @@
   const appStore  = useAppStore()
   const liveStore = useLiveStore()
 
+  /** Category counts for the current session */
+  const sessionCategoryCounts = computed(() => {
+    const acts = liveStore.sessionActivities
+    const map: Record<string, number> = {}
+    for (const a of acts) {
+      const cat = a.category ?? getActivityCategory(a.type)
+      map[cat] = (map[cat] ?? 0) + 1
+    }
+    return Object.entries(map).map(([name, count]) => ({ name, count }))
+  })
+
   /** Parse les options d'une activite (JSON string -> array). */
   function parseOptions(opts: string | string[] | null | undefined): string[] {
     if (!opts) return []
@@ -396,9 +407,14 @@
       <div class="session-header">
         <div class="session-info">
           <h1 class="session-title">{{ liveStore.currentSession.title }}</h1>
-          <span class="session-status" :class="'status-' + liveStore.currentSession.status">
-            {{ liveStore.currentSession.status === 'waiting' ? 'En attente' : liveStore.currentSession.status === 'active' ? 'Active' : 'Terminée' }}
-          </span>
+          <div class="session-meta-row">
+            <span class="session-status" :class="'status-' + liveStore.currentSession.status">
+              {{ liveStore.currentSession.status === 'waiting' ? 'En attente' : liveStore.currentSession.status === 'active' ? 'Active' : 'Terminee' }}
+            </span>
+            <span v-for="cat in sessionCategoryCounts" :key="cat.name" class="session-cat-pill" :class="`cat--${cat.name}`">
+              {{ cat.count }} {{ cat.name }}
+            </span>
+          </div>
         </div>
         <div class="session-actions">
           <button
@@ -564,19 +580,26 @@
         </div>
       </div>
 
-      <!-- Timer + response count -->
+      <!-- Timer + response count (Spark only has countdown, Pulse/Code/Board: elapsed time) -->
       <div class="activity-live-bar">
+        <!-- Countdown timer (Spark seulement) -->
         <CountdownTimer
-          v-if="liveStore.timerStartedAt"
+          v-if="liveStore.timerStartedAt && isSparkType(liveStore.currentActivity.type)"
           :total-seconds="liveStore.currentActivity.timer_seconds ?? 30"
           :started-at="liveStore.timerStartedAt"
           @expired="onTeacherTimerExpired"
         />
-        <div class="response-count" v-if="liveStore.results">
+        <!-- Badge categorie dans la topbar -->
+        <span class="activity-topbar-cat" :class="`cat--${getActivityCategory(liveStore.currentActivity.type)}`">
+          {{ getActivityCategory(liveStore.currentActivity.type) }}
+        </span>
+        <!-- Compteur reponses (Spark/Pulse) -->
+        <div v-if="liveStore.results && (liveStore.results.totalResponses || liveStore.results.total)" class="response-count">
           <Users :size="18" />
-          <span>{{ liveStore.results.totalResponses }} ont repondu</span>
+          <span>{{ liveStore.results.totalResponses ?? liveStore.results.total ?? 0 }} reponse{{ (liveStore.results.totalResponses ?? liveStore.results.total ?? 0) > 1 ? 's' : '' }}</span>
         </div>
-        <label class="auto-close-toggle" title="Fermer automatiquement quand le timer expire">
+        <!-- Auto-close (Spark seulement) -->
+        <label v-if="isSparkType(liveStore.currentActivity.type)" class="auto-close-toggle" title="Fermer automatiquement quand le timer expire">
           <input type="checkbox" v-model="autoCloseEnabled" />
           <span class="auto-close-label">Auto-fermer</span>
         </label>
@@ -838,8 +861,14 @@
 }
 .session-info {
   display: flex;
-  align-items: center;
-  gap: 12px;
+  flex-direction: column;
+  gap: 6px;
+}
+.session-meta-row {
+  display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+}
+.session-cat-pill {
+  font-size: 10px; font-weight: 700; padding: 1px 7px; border-radius: 10px;
 }
 .session-title {
   font-size: 24px;
@@ -1010,6 +1039,10 @@
 .activity-card-cat {
   font-size: 9px; font-weight: 700; text-transform: uppercase;
   letter-spacing: .4px; padding: 1px 6px; border-radius: 8px;
+}
+.activity-topbar-cat {
+  font-size: 10px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .4px; padding: 2px 8px; border-radius: 10px;
 }
 .cat--spark  { background: rgba(245,158,11,.12); color: #f59e0b; }
 .cat--pulse  { background: rgba(16,185,129,.12); color: #10b981; }

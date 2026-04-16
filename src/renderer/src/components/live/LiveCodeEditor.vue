@@ -74,9 +74,15 @@ async function initEditor() {
       basicSetup,
       langExt,
       EditorView.theme({
-        '&': { fontSize: '14px', height: '100%' },
+        '&': { fontSize: '14px', height: '100%', background: '#1e1e2e' },
         '.cm-scroller': { fontFamily: 'Menlo, Monaco, Consolas, monospace', overflow: 'auto' },
-        '.cm-content': { caretColor: 'var(--accent)' },
+        '.cm-content': { caretColor: '#89b4fa', color: '#cdd6f4' },
+        '.cm-cursor': { borderColor: '#89b4fa' },
+        '.cm-activeLine': { background: 'rgba(137,180,250,.06)' },
+        '.cm-gutters': { background: '#181825', color: '#6c7086', border: 'none' },
+        '.cm-activeLineGutter': { background: 'rgba(137,180,250,.1)', color: '#89b4fa' },
+        '.cm-selectionBackground': { background: 'rgba(137,180,250,.2) !important' },
+        '&.cm-focused .cm-selectionBackground': { background: 'rgba(137,180,250,.25) !important' },
       }),
       EditorView.updateListener.of((upd) => {
         if (upd.docChanged) {
