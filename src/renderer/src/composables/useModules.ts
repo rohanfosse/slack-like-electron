@@ -15,7 +15,7 @@ const MODULE_LABELS: Record<ModuleName, string> = {
   kanban: 'Kanban projet',
   frise: 'Frise chronologique',
   rex: 'Pulse',
-  live: 'Spark',
+  live: 'Live',
   signatures: 'Signature PDF',
   lumen: 'Lumen',
 }

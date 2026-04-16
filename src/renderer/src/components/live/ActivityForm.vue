@@ -1,6 +1,6 @@
 <!-- ActivityForm.vue - Formulaire de création/édition d'activité Live (QCM / Sondage / Nuage) -->
 <script setup lang="ts">
-  import { ref } from 'vue'
+  import { ref, computed } from 'vue'
   import {
     ListChecks, ToggleLeft, Type, Link2, Hash, Plus, X,
     Code2, StickyNote, MessageSquare, Cloud, Star, FileText,
@@ -87,6 +87,26 @@
     // Board
     { id: 'board' as const,            label: 'Tableau',          icon: StickyNote,   desc: 'Post-its collaboratifs', category: 'Board' },
   ]
+
+  const CATEGORY_META: Record<string, { label: string; desc: string; color: string }> = {
+    Spark: { label: 'Spark', desc: 'Quiz gamifie avec scoring', color: '#f59e0b' },
+    Pulse: { label: 'Pulse', desc: 'Feedback anonyme', color: '#10b981' },
+    Code:  { label: 'Code',  desc: 'Live coding', color: '#3b82f6' },
+    Board: { label: 'Board', desc: 'Brainstorming', color: '#a855f7' },
+  }
+
+  const categories = computed(() => {
+    const grouped = new Map<string, typeof typeCards>()
+    for (const card of typeCards) {
+      if (!grouped.has(card.category)) grouped.set(card.category, [])
+      grouped.get(card.category)!.push(card)
+    }
+    return [...grouped.entries()].map(([name, cards]) => ({
+      name,
+      meta: CATEGORY_META[name],
+      cards,
+    }))
+  })
 
   // Code activity
   const codeLanguage = ref(props.initialData?.language ?? 'javascript')
@@ -230,19 +250,27 @@
   <div class="activity-form">
     <h3 class="form-title">{{ isEditing ? 'Modifier l\'activité' : 'Nouvelle activité' }}</h3>
 
-    <!-- Type selector -->
-    <div class="type-cards">
-      <button
-        v-for="t in typeCards"
-        :key="t.id"
-        class="type-card"
-        :class="{ active: activityType === t.id }"
-        @click="activityType = t.id"
-      >
-        <component :is="t.icon" :size="22" />
-        <span class="type-card-label">{{ t.label }}</span>
-        <span class="type-card-desc">{{ t.desc }}</span>
-      </button>
+    <!-- Type selector grouped by category -->
+    <div v-for="cat in categories" :key="cat.name" class="type-category">
+      <div class="type-category-header">
+        <span class="type-category-dot" :style="{ background: cat.meta?.color }" />
+        <span class="type-category-label">{{ cat.meta?.label ?? cat.name }}</span>
+        <span class="type-category-desc">{{ cat.meta?.desc ?? '' }}</span>
+      </div>
+      <div class="type-cards">
+        <button
+          v-for="t in cat.cards"
+          :key="t.id"
+          class="type-card"
+          :class="{ active: activityType === t.id }"
+          :style="{ '--cat-color': cat.meta?.color ?? 'var(--accent)' }"
+          @click="activityType = t.id"
+        >
+          <component :is="t.icon" :size="22" />
+          <span class="type-card-label">{{ t.label }}</span>
+          <span class="type-card-desc">{{ t.desc }}</span>
+        </button>
+      </div>
     </div>
 
     <!-- Title -->
@@ -484,6 +512,25 @@
   background: var(--bg-input); border-radius: 6px;
 }
 .humeur-emoji { font-size: 28px; }
+
+/* Category groups */
+.type-category { margin-bottom: 12px; }
+.type-category-header {
+  display: flex; align-items: center; gap: 6px;
+  margin-bottom: 8px; padding-bottom: 4px;
+  border-bottom: 1px solid var(--border);
+}
+.type-category-dot {
+  width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+}
+.type-category-label {
+  font-size: 12px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .5px; color: var(--text-primary);
+}
+.type-category-desc {
+  font-size: 11px; color: var(--text-muted); margin-left: auto;
+}
+
 .type-cards {
   display: flex;
   flex-wrap: wrap;
@@ -508,9 +555,9 @@
   border-color: var(--border-input);
 }
 .type-card.active {
-  background: var(--accent-subtle, rgba(74,144,217,.12));
-  border-color: var(--accent);
-  color: var(--accent);
+  background: color-mix(in srgb, var(--cat-color, var(--accent)) 12%, transparent);
+  border-color: var(--cat-color, var(--accent));
+  color: var(--cat-color, var(--accent));
 }
 .type-card-label {
   font-size: 14px;

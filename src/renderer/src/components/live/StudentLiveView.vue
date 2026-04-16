@@ -1,6 +1,6 @@
 <!-- StudentLiveView.vue - Vue étudiant pour le Live Quiz interactif -->
 <script setup lang="ts">
-  import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
+  import { ref, computed, onMounted, onUnmounted, watch, type ComputedRef } from 'vue'
   import { Zap, CheckCircle2, Send, LogOut, XCircle, Trophy } from 'lucide-vue-next'
   import { useAppStore }  from '@/stores/app'
   import { useLiveStore } from '@/stores/live'
@@ -14,9 +14,25 @@
   import PollResults          from './PollResults.vue'
   import AssociationResults   from './AssociationResults.vue'
   import EstimationResults    from './EstimationResults.vue'
+  // Pulse results (Rex components reused)
+  import RexSondageResults        from '@/components/rex/RexSondageResults.vue'
+  import RexWordCloud             from '@/components/rex/RexWordCloud.vue'
+  import RexEchelleResults        from '@/components/rex/RexEchelleResults.vue'
+  import RexQuestionOuverteResults from '@/components/rex/RexQuestionOuverteResults.vue'
+  import RexHumeurResults         from '@/components/rex/RexHumeurResults.vue'
+  import RexPrioriteResults       from '@/components/rex/RexPrioriteResults.vue'
+  import RexMatriceResults        from '@/components/rex/RexMatriceResults.vue'
 
   const appStore  = useAppStore()
   const liveStore = useLiveStore()
+
+  /** Normalise counts Pulse en array */
+  const pulseSondageCounts = computed<{ text: string; count: number }[]>(() => {
+    const c = liveStore.results?.counts
+    if (!c) return []
+    if (Array.isArray(c)) return c as { text: string; count: number }[]
+    return Object.entries(c).map(([text, count]) => ({ text, count: Number(count) }))
+  })
 
   /** Parse les options JSON (string -> array) */
   function parseOptions(opts: string | string[] | null | undefined): string[] {
@@ -159,8 +175,8 @@
     <div v-if="!session" class="live-join">
       <div class="join-hero">
         <Zap :size="44" class="hero-icon" />
-        <h1 class="hero-title">Spark</h1>
-        <p class="hero-desc">Rejoignez une session avec un code</p>
+        <h1 class="hero-title">Live</h1>
+        <p class="hero-desc">Rejoignez une session interactive avec un code</p>
       </div>
 
       <div class="join-card">
@@ -344,10 +360,23 @@
           </div>
         </div>
         <h3 class="results-label">Resultats</h3>
+        <!-- Spark results -->
         <QcmResults v-if="(activity.type === 'qcm' || activity.type === 'vrai_faux') && liveStore.results" :results="liveStore.results" />
         <PollResults v-else-if="activity.type === 'reponse_courte' && liveStore.results" :results="liveStore.results" />
         <AssociationResults v-else-if="activity.type === 'association' && liveStore.results" :results="liveStore.results" />
         <EstimationResults v-else-if="activity.type === 'estimation' && liveStore.results" :results="liveStore.results" />
+        <!-- Pulse results -->
+        <RexQuestionOuverteResults v-else-if="activity.type === 'question_ouverte' && liveStore.results?.answers" :answers="liveStore.results.answers" :is-teacher="false" />
+        <RexSondageResults v-else-if="(activity.type === 'sondage' || activity.type === 'sondage_libre') && pulseSondageCounts.length" :results="pulseSondageCounts" :total="liveStore.results?.total ?? 0" />
+        <RexEchelleResults v-else-if="activity.type === 'echelle' && liveStore.results?.average !== undefined" :average="liveStore.results.average" :max-rating="activity.max_rating ?? 5" :distribution="liveStore.results.distribution ?? []" :total="liveStore.results.total ?? 0" />
+        <RexWordCloud v-else-if="activity.type === 'nuage' && liveStore.results?.freq" :words="liveStore.results.freq" />
+        <RexHumeurResults v-else-if="activity.type === 'humeur' && liveStore.results?.emojis" :emojis="liveStore.results.emojis" :total="liveStore.results.total ?? 0" />
+        <RexPrioriteResults v-else-if="activity.type === 'priorite' && liveStore.results?.rankings" :rankings="liveStore.results.rankings" :total="liveStore.results.total ?? 0" />
+        <RexMatriceResults v-else-if="activity.type === 'matrice' && liveStore.results?.criteria" :criteria="liveStore.results.criteria" :max-rating="activity.max_rating ?? 5" :total="liveStore.results.total ?? 0" />
+        <!-- Code : snapshot final -->
+        <LiveCodeViewer v-else-if="activity.type === 'live_code'" :activity-id="activity.id" :initial-content="activity.content ?? ''" :initial-language="activity.language ?? 'javascript'" />
+        <!-- Board : vue finale -->
+        <LiveBoard v-else-if="activity.type === 'board'" :activity-id="activity.id" :is-teacher="false" :columns="parseOptions(activity.options)" />
       </div>
     </div>
 

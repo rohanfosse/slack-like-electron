@@ -6,7 +6,7 @@
     LogOut, Pencil, GripVertical, Copy, Download,
     History, BarChart3,
   } from 'lucide-vue-next'
-  import { activityIcon, activityTypeLabel } from '@/utils/liveActivity'
+  import { activityIcon, activityTypeLabel, getActivityCategory } from '@/utils/liveActivity'
   import { useAppStore }  from '@/stores/app'
   import { useLiveStore } from '@/stores/live'
   import type { LiveActivity, LiveSession } from '@/types'
@@ -443,7 +443,7 @@
         <div v-if="liveStore.sessionActivities.length === 0 && !showActivityForm" class="no-activities">
           <Zap :size="24" class="no-activities-icon" />
           <span class="no-activities-title">Aucune activite</span>
-          <span class="no-activities-desc">Ajoutez des QCM, Vrai/Faux, associations, estimations ou reponses courtes</span>
+          <span class="no-activities-desc">Spark (quiz), Pulse (feedback), Code (live coding) ou Board (brainstorming)</span>
           <span class="no-activities-tip">Astuce : Espace/Entree pour naviguer rapidement entre les activites</span>
         </div>
 
@@ -469,7 +469,12 @@
               <component :is="activityIcon(act.type)" :size="18" />
             </div>
             <div class="activity-card-body">
-              <span class="activity-card-type">{{ activityTypeLabel(act.type) }}</span>
+              <div class="activity-card-meta">
+                <span class="activity-card-type">{{ activityTypeLabel(act.type) }}</span>
+                <span class="activity-card-cat" :class="`cat--${act.category ?? getActivityCategory(act.type)}`">
+                  {{ (act.category ?? getActivityCategory(act.type)).charAt(0).toUpperCase() + (act.category ?? getActivityCategory(act.type)).slice(1) }}
+                </span>
+              </div>
               <span class="activity-card-title">{{ act.title }}</span>
             </div>
             <span v-if="act.status === 'closed'" class="activity-card-done">Terminé</span>
@@ -984,10 +989,21 @@
   gap: 2px;
   min-width: 0;
 }
+.activity-card-meta {
+  display: flex; align-items: center; gap: 6px;
+}
 .activity-card-type {
   font-size: 11px; font-weight: 600;
   color: var(--text-muted);
 }
+.activity-card-cat {
+  font-size: 9px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .4px; padding: 1px 6px; border-radius: 8px;
+}
+.cat--spark  { background: rgba(245,158,11,.12); color: #f59e0b; }
+.cat--pulse  { background: rgba(16,185,129,.12); color: #10b981; }
+.cat--code   { background: rgba(59,130,246,.12); color: #3b82f6; }
+.cat--board  { background: rgba(168,85,247,.12); color: #a855f7; }
 .activity-card-title {
   font-size: 14px; font-weight: 600;
   color: var(--text-primary);

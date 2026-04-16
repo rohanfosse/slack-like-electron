@@ -215,7 +215,7 @@
     messages: 'Messages',
     devoirs: 'Devoirs',
     documents: 'Ressources',
-    live: 'Spark',
+    live: 'Live',
   }
 
   const totalUnreadBadge = computed(() => {

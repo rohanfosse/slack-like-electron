@@ -9,7 +9,7 @@
 </script>
 
 <template>
-  <ErrorBoundary label="Spark">
+  <ErrorBoundary label="Live">
     <TeacherLiveView v-if="appStore.isTeacher || appStore.isAdmin" />
     <StudentLiveView v-else />
   </ErrorBoundary>
