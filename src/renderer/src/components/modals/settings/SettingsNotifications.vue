@@ -101,7 +101,7 @@ function previewSound() {
       </label>
       <div class="stg-info-row">
         <Zap :size="12" style="color:#eab308;flex-shrink:0" />
-        <span class="stg-toggle-desc">Les invitations Spark et Pulse sont toujours notifiees pour ne pas manquer une session live.</span>
+        <span class="stg-toggle-desc">Les invitations Live sont toujours notifiees pour ne pas manquer une session en direct.</span>
       </div>
     </div>
 

@@ -34,7 +34,7 @@ const groups: ShortcutGroup[] = [
     ],
   },
   {
-    title: 'Spark (Quiz live)',
+    title: 'Live (Sessions interactives)',
     shortcuts: [
       { keys: ['Espace'], label: 'Fermer l\'activite en cours / suivante' },
       { keys: ['Entree'], label: 'Lancer l\'activite suivante' },

@@ -326,7 +326,7 @@
         <div class="live-invite-header">
           <Zap :size="16" class="live-invite-icon" />
           <span class="live-invite-dot" />
-          <strong>{{ liveInvite.teacherName }}</strong> vous invite a un Spark
+          <strong>{{ liveInvite.teacherName }}</strong> vous invite a une session Live
         </div>
         <div class="live-invite-title">{{ liveInvite.title }}</div>
         <div class="live-invite-code">Code : <strong>{{ liveInvite.joinCode }}</strong></div>

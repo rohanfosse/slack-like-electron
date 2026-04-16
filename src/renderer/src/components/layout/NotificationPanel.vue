@@ -189,7 +189,7 @@ function notifCategory(n: typeof appStore.notificationHistory[number]): string {
     <div v-if="!hasAny" class="notif-empty">
       <Bell :size="28" class="notif-empty-icon" />
       <p class="notif-empty-title">Tout est calme</p>
-      <p class="notif-empty-desc">Les messages, notes et invitations Spark apparaitront ici</p>
+      <p class="notif-empty-desc">Les messages, notes et invitations Live apparaitront ici</p>
     </div>
 
     <!-- Toutes lues -->
