@@ -36,6 +36,8 @@ const language = ref(props.initialLanguage || 'plaintext')
 const copied = ref(false)
 let unsubscribe: (() => void) | null = null
 
+const lineCount = computed(() => content.value ? content.value.split('\n').length : 0)
+
 const highlighted = computed(() => {
   if (!content.value) return ''
   try {
@@ -83,6 +85,7 @@ watch(() => props.activityId, () => {
       <span class="lcv-live">
         <span class="lcv-dot" /> En direct
       </span>
+      <span v-if="lineCount > 0" class="lcv-lines">{{ lineCount }} ligne{{ lineCount > 1 ? 's' : '' }}</span>
       <button class="lcv-copy" :title="copied ? 'Copie !' : 'Copier'" @click="copyCode">
         <Check v-if="copied" :size="13" />
         <Copy v-else :size="13" />
@@ -124,6 +127,7 @@ watch(() => props.activityId, () => {
   background: var(--color-success); animation: pulse 1.5s ease-in-out infinite;
 }
 @keyframes pulse { 0%, 100% { opacity: 1 } 50% { opacity: .4 } }
+.lcv-lines { font-size: 10px; color: var(--text-muted); font-variant-numeric: tabular-nums; }
 .lcv-copy {
   display: flex; align-items: center; justify-content: center;
   width: 28px; height: 28px; border-radius: 6px;

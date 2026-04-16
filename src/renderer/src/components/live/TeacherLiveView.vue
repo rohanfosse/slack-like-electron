@@ -2,7 +2,7 @@
 <script setup lang="ts">
   import { ref, computed, onMounted, onUnmounted } from 'vue'
   import {
-    Plus, Play, Square, ChevronRight, Trash2, Users, Zap,
+    Plus, Play, Square, ChevronRight, Trash2, Users, Zap, Clock,
     LogOut, Pencil, GripVertical, Copy, Download,
     History, BarChart3,
   } from 'lucide-vue-next'
@@ -34,6 +34,25 @@
 
   const appStore  = useAppStore()
   const liveStore = useLiveStore()
+
+  /** Elapsed time ticker for non-Spark activities */
+  const elapsedTick = ref(0)
+  let elapsedInterval: ReturnType<typeof setInterval> | null = null
+  onMounted(() => {
+    elapsedInterval = setInterval(() => { elapsedTick.value++ }, 1000)
+  })
+  onUnmounted(() => { if (elapsedInterval) clearInterval(elapsedInterval) })
+
+  const elapsedTime = computed(() => {
+    elapsedTick.value // trigger reactivity
+    const started = liveStore.currentActivity?.started_at
+    if (!started) return '0:00'
+    const ms = Math.max(0, Date.now() - new Date(started + 'Z').getTime())
+    const sec = Math.floor(ms / 1000)
+    const m = Math.floor(sec / 60)
+    const s = sec % 60
+    return `${m}:${s.toString().padStart(2, '0')}`
+  })
 
   /** Category counts for the current session */
   const sessionCategoryCounts = computed(() => {
@@ -589,6 +608,10 @@
           :started-at="liveStore.timerStartedAt"
           @expired="onTeacherTimerExpired"
         />
+        <!-- Elapsed time (Code/Board/Pulse) -->
+        <span v-if="!isSparkType(liveStore.currentActivity.type) && liveStore.currentActivity.started_at" class="activity-elapsed">
+          <Clock :size="12" /> {{ elapsedTime }}
+        </span>
         <!-- Badge categorie dans la topbar -->
         <span class="activity-topbar-cat" :class="`cat--${getActivityCategory(liveStore.currentActivity.type)}`">
           {{ getActivityCategory(liveStore.currentActivity.type) }}
@@ -1039,6 +1062,11 @@
 .activity-card-cat {
   font-size: 9px; font-weight: 700; text-transform: uppercase;
   letter-spacing: .4px; padding: 1px 6px; border-radius: 8px;
+}
+.activity-elapsed {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 13px; font-weight: 700; color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
 }
 .activity-topbar-cat {
   font-size: 10px; font-weight: 700; text-transform: uppercase;

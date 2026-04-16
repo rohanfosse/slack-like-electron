@@ -3,7 +3,7 @@
  * via socket.IO vers les etudiants. Debounce 300ms. Sauvegarde snapshot a la fermeture.
  */
 <script setup lang="ts">
-import { ref, onMounted, onBeforeUnmount, watch, computed } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue'
 import { Code2, Copy, Check } from 'lucide-vue-next'
 import { EditorView } from '@codemirror/view'
 import { EditorState } from '@codemirror/state'
@@ -109,6 +109,8 @@ async function changeLanguage(newLang: string) {
   window.api.emitLiveCodeUpdate(props.activityId, props.promoId, content.value, newLang)
 }
 
+const lineCount = computed(() => content.value.split('\n').length)
+
 async function copyCode() {
   await navigator.clipboard.writeText(content.value)
   copied.value = true
@@ -144,6 +146,7 @@ defineExpose({ getContent: () => content.value, getLanguage: () => language.valu
       <span class="lce-broadcast">
         <span class="lce-dot" /> Diffusion en direct
       </span>
+      <span class="lce-lines">{{ lineCount }} ligne{{ lineCount > 1 ? 's' : '' }}</span>
       <button class="lce-copy" :title="copied ? 'Copie !' : 'Copier'" @click="copyCode">
         <Check v-if="copied" :size="13" />
         <Copy v-else :size="13" />
@@ -182,6 +185,9 @@ defineExpose({ getContent: () => content.value, getLanguage: () => language.valu
   background: var(--color-success); animation: pulse 1.5s ease-in-out infinite;
 }
 @keyframes pulse { 0%, 100% { opacity: 1 } 50% { opacity: .4 } }
+.lce-lines {
+  font-size: 10px; color: var(--text-muted); font-variant-numeric: tabular-nums;
+}
 .lce-copy {
   display: flex; align-items: center; justify-content: center;
   width: 28px; height: 28px; border-radius: 6px;
