@@ -48,7 +48,8 @@ const filteredEvents = computed(() =>
     start: e.start,
     end:   e.end,
     title: e.title,
-    class: statusClass(e),
+    allDay: e.allDay === true,
+    class: (e.allDay ? 'ag-event--all-day ' : '') + statusClass(e),
     style: `border-left: 3px solid ${e.color}; background: ${getCategoryBg(e.category)}; color: ${e.color};`,
     _meta: e,
   }))
@@ -601,7 +602,7 @@ watch(() => route.query, (q) => {
         >
           <template #event="{ event }">
             <div class="vuecal__event-title" @contextmenu="onEventContextMenu($event, event)">
-              <span v-if="event.startTimeMinutes !== undefined" class="vuecal__event-time">
+              <span v-if="!event.allDay && event.startTimeMinutes !== undefined" class="vuecal__event-time">
                 {{ formatEventTime(event.start) }}
               </span>
               {{ event.title }}
@@ -917,6 +918,50 @@ watch(() => route.query, (q) => {
   opacity: 0.9;
   display: flex; align-items: center; gap: 3px;
   margin-bottom: 1px;
+}
+
+/* ══════════════ All-day events (barre horizontale haut de journee, style Outlook) ══ */
+:deep(.vuecal__all-day) {
+  min-height: 2em !important;
+  background: var(--bg-elevated);
+  border-bottom: 1px solid var(--border);
+  padding: 2px 0;
+}
+:deep(.vuecal__all-day-text) {
+  color: var(--text-muted) !important;
+  border-bottom: 1px solid var(--border) !important;
+  font-size: 10px;
+  font-weight: 600;
+}
+:deep(.vuecal__event--all-day) {
+  min-height: 22px !important;
+  border-radius: 4px !important;
+  margin: 1px 2px !important;
+  padding: 3px 8px !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  line-height: 1.3 !important;
+  box-shadow: none !important;
+  display: flex;
+  align-items: center;
+}
+:deep(.vuecal__event--all-day .vuecal__event-title) {
+  font-weight: 600 !important;
+  text-shadow: none !important;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/* Barre qui continue sur plusieurs jours : coins coupes cote jour non-bordure */
+:deep(.vuecal__event--all-day.vuecal__event--multiple-days:not(.vuecal__event--first-day)) {
+  border-top-left-radius: 0 !important;
+  border-bottom-left-radius: 0 !important;
+  margin-left: 0 !important;
+}
+:deep(.vuecal__event--all-day.vuecal__event--multiple-days:not(.vuecal__event--last-day)) {
+  border-top-right-radius: 0 !important;
+  border-bottom-right-radius: 0 !important;
+  margin-right: 0 !important;
 }
 
 /* Status indicators (more visible) */

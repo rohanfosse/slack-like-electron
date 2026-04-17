@@ -82,6 +82,7 @@ export const useAgendaStore = defineStore('agenda', () => {
           promoId: t.promo_id,
           promoName: t.promo_name,
           promoColor,
+          allDay: true,
         })
       }
       if (t.start_date) {
@@ -97,6 +98,7 @@ export const useAgendaStore = defineStore('agenda', () => {
           promoId: t.promo_id,
           promoName: t.promo_name,
           promoColor,
+          allDay: true,
         })
       }
     }
@@ -127,21 +129,44 @@ export const useAgendaStore = defineStore('agenda', () => {
         eventType: 'reminder',
         sourceId: r.id,
         category: r.bloc ?? null,
+        allDay: !hasTime,
       })
     }
 
     // Merge Outlook events if enabled
     if (outlookEnabled.value) {
       for (const ev of outlookEvents.value) {
-        // Format start/end for vue-cal
-        const toCalDate = (iso: string) => {
+        // Format pour vue-cal : date pure (YYYY-MM-DD) pour all-day, sinon date+heure.
+        // Pour un all-day multi-jours, Outlook renvoie end = lendemain 00:00 UTC → on recule d'1 jour
+        // pour que vue-cal l'affiche jusqu'a la derniere journee inclusivement.
+        const toDateOnly = (iso: string) => {
+          const d = new Date(iso)
+          return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+        }
+        const toCalDateTime = (iso: string) => {
           const d = new Date(iso)
           return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
         }
+
+        let startStr: string
+        let endStr: string
+        if (ev.isAllDay) {
+          startStr = toDateOnly(ev.start)
+          // Outlook semi-open : end exclusive (lendemain 00:00). Reculer d'1 jour pour l'inclusivite vue-cal.
+          const endDate = new Date(ev.end)
+          endDate.setUTCDate(endDate.getUTCDate() - 1)
+          endStr = toDateOnly(endDate.toISOString())
+          // Safety : si le calcul donne une date < start (evenement 1 jour), on aligne
+          if (endStr < startStr) endStr = startStr
+        } else {
+          startStr = toCalDateTime(ev.start)
+          endStr = toCalDateTime(ev.end)
+        }
+
         list.push({
           id: `outlook-${ev.id}`,
-          start: toCalDate(ev.start),
-          end:   toCalDate(ev.end),
+          start: startStr,
+          end:   endStr,
           title: ev.subject,
           color: '#0ea5e9', // outlook blue
           eventType: 'outlook',
@@ -151,6 +176,7 @@ export const useAgendaStore = defineStore('agenda', () => {
           teamsJoinUrl: ev.teamsJoinUrl,
           location: ev.location,
           organizer: ev.organizer,
+          allDay: ev.isAllDay,
         } as CalendarEvent)
       }
     }

@@ -545,6 +545,8 @@ export interface CalendarEvent {
   teamsJoinUrl?: string | null
   location?: string | null
   organizer?: string | null
+  /** Vue-cal: affiche l'evenement comme barre horizontale en haut de la journee. */
+  allDay?: boolean
 }
 
 // ─── Payloads IPC ────────────────────────────────────────────────────────────

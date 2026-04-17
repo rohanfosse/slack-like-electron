@@ -60,6 +60,44 @@ describe('agenda store', () => {
     expect(s.events[3].start).toBe('2026-04-10')
   })
 
+  it('flags deadline/start_date/date-only reminders as allDay for vue-cal top bar', () => {
+    const s = useAgendaStore()
+    s.ganttRows = [
+      { id: 1, title: 'TP1', deadline: '2026-04-10T00:00:00Z', start_date: '2026-04-01T00:00:00Z' },
+    ]
+    s.reminders = [
+      { id: 10, title: 'Date pure',  date: '2026-04-03',                  created_at: '' },
+      { id: 11, title: 'Midnight Z', date: '2026-04-04T00:00:00Z',        created_at: '' },
+      { id: 12, title: 'Timed',      date: '2026-04-05T14:30:00Z',        created_at: '' },
+    ]
+    const byId = (id: string) => s.events.find(e => e.id === id)
+    expect(byId('deadline-1')?.allDay).toBe(true)
+    expect(byId('start-1')?.allDay).toBe(true)
+    expect(byId('reminder-10')?.allDay).toBe(true)
+    expect(byId('reminder-11')?.allDay).toBe(true) // T00:00:00Z est traite comme date pure
+    expect(byId('reminder-12')?.allDay).toBe(false) // horodatage explicite
+  })
+
+  it('flags Outlook all-day multi-day events and adjusts end inclusivity', () => {
+    const s = useAgendaStore()
+    // Stage : 6 avril 00:00 UTC -> 18 avril 00:00 UTC (exclusif) = du 6 au 17 inclus
+    s.outlookEvents = [{
+      id: 'stage-1',
+      subject: 'Stage',
+      start: '2026-04-06T00:00:00Z',
+      end: '2026-04-18T00:00:00Z',
+      isAllDay: true,
+      location: null, bodyPreview: null, teamsJoinUrl: null, organizer: null,
+      showAs: 'free', categories: [],
+    }] as any
+    s.outlookEnabled = true
+
+    const ev = s.events.find(e => e.id === 'outlook-stage-1')
+    expect(ev?.allDay).toBe(true)
+    expect(ev?.start).toBe('2026-04-06')
+    expect(ev?.end).toBe('2026-04-17') // 18 exclusif -> 17 inclusif
+  })
+
   it('fetchEvents calls api for gantt and reminders', async () => {
     const ganttData = [{ id: 1, title: 'TP1', deadline: '2026-04-10T00:00:00Z' }]
     const remindersData = [{ id: 10, title: 'R1', date: '2026-04-01T00:00:00Z' }]
