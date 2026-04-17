@@ -2,6 +2,7 @@
 <script setup lang="ts">
   import { ref, computed } from 'vue'
   import { Copy, Check, Share2 } from 'lucide-vue-next'
+  import QrCode from './QrCode.vue'
 
   const props = defineProps<{ code: string }>()
 
@@ -41,6 +42,8 @@
         {{ codeCopied ? 'Copié' : 'Copier' }}
       </span>
     </button>
+
+    <QrCode :value="shareUrl" :size="120" class="join-code-qr" />
 
     <div class="join-code-share">
       <code class="join-code-url">{{ shareUrl }}</code>
@@ -146,6 +149,12 @@
   opacity: 1;
 }
 
+.join-code-qr {
+  margin-top: 4px;
+  border: 4px solid #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(0,0,0,.08);
+}
 .join-code-share {
   display: flex;
   align-items: center;

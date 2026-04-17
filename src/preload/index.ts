@@ -56,9 +56,13 @@ const liveScoresUpdateCallbacks:   Array<(data: LiveScoresUpdatePayload) => void
 
 // Live v2 : code + board
 type LiveCodeUpdatePayload = { activityId: number; content: string; language: string | null }
-type LiveBoardUpdatePayload = { activityId: number; action: 'add' | 'delete' | 'vote' | 'update'; card?: unknown; cardId?: number; votes?: number }
+type LiveBoardUpdatePayload = { activityId: number; action: 'add' | 'delete' | 'vote' | 'update' | 'hide'; card?: unknown; cardId?: number; votes?: number; hidden?: boolean }
+type LiveConfusionUpdatePayload = { sessionId: number; count: number }
+type LiveSelfPacedPayload = { sessionId: number; selfPaced: boolean }
 const liveCodeUpdateCallbacks:  Array<(data: LiveCodeUpdatePayload) => void> = []
 const liveBoardUpdateCallbacks: Array<(data: LiveBoardUpdatePayload) => void> = []
+const liveConfusionCallbacks:   Array<(data: LiveConfusionUpdatePayload) => void> = []
+const liveSelfPacedCallbacks:   Array<(data: LiveSelfPacedPayload) => void> = []
 
 // Booking real-time notifications
 type BookingNewPayload = { bookingId: number; tutorName: string; studentName: string; eventTitle: string; startDatetime: string }
@@ -126,6 +130,8 @@ function connectSocket(token: string): void {
   socket.on('live:scores-update',   (data: LiveScoresUpdatePayload) => liveScoresUpdateCallbacks.forEach(cb => cb(data)))
   socket.on('live:code-update',     (data: LiveCodeUpdatePayload) => liveCodeUpdateCallbacks.forEach(cb => cb(data)))
   socket.on('live:board-update',    (data: LiveBoardUpdatePayload) => liveBoardUpdateCallbacks.forEach(cb => cb(data)))
+  socket.on('live:confusion-update', (data: LiveConfusionUpdatePayload) => liveConfusionCallbacks.forEach(cb => cb(data)))
+  socket.on('live:self-paced-update', (data: LiveSelfPacedPayload) => liveSelfPacedCallbacks.forEach(cb => cb(data)))
   socket.on('booking:new',         (data: BookingNewPayload) => bookingNewCallbacks.forEach(cb => cb(data)))
   socket.on('booking:cancelled',   (data: BookingCancelledPayload) => bookingCancelledCallbacks.forEach(cb => cb(data)))
   socket.on('rex:activity-pushed', (data: RexActivityPushedPayload) => rexActivityPushedCallbacks.forEach(cb => cb(data)))
@@ -566,6 +572,12 @@ contextBridge.exposeInMainWorld('api', {
   updateLiveV2BoardCard: (cardId: number, payload: unknown) => patch(`/api/live-v2/cards/${cardId}`, payload),
   deleteLiveV2BoardCard:(cardId: number) => del(`/api/live-v2/cards/${cardId}`),
   voteLiveV2BoardCard:  (cardId: number, vote: boolean) => post(`/api/live-v2/cards/${cardId}/vote`, { vote }),
+  hideLiveV2BoardCard:  (cardId: number, hidden: boolean) => patch(`/api/live-v2/cards/${cardId}/hide`, { hidden }),
+  // Self-paced
+  toggleLiveV2SelfPaced: (sessionId: number, selfPaced: boolean) => patch(`/api/live-v2/sessions/${sessionId}/self-paced`, { selfPaced }),
+  // Confusion signal
+  sendConfusionSignal:   (sessionId: number, active: boolean) => post(`/api/live-v2/sessions/${sessionId}/confused`, { active }),
+  getConfusionCount:     (sessionId: number) => get(`/api/live-v2/sessions/${sessionId}/confused`),
 
   // ── Booking (mini-Calendly) ─────────────────────────────────────────────
   getBookingEventTypes:      ()                          => get('/api/bookings/event-types'),
@@ -597,6 +609,14 @@ contextBridge.exposeInMainWorld('api', {
   onLiveBoardUpdate: (cb: (data: LiveBoardUpdatePayload) => void) => {
     liveBoardUpdateCallbacks.push(cb)
     return () => { const i = liveBoardUpdateCallbacks.indexOf(cb); if (i !== -1) liveBoardUpdateCallbacks.splice(i, 1) }
+  },
+  onLiveConfusionUpdate: (cb: (data: LiveConfusionUpdatePayload) => void) => {
+    liveConfusionCallbacks.push(cb)
+    return () => { const i = liveConfusionCallbacks.indexOf(cb); if (i !== -1) liveConfusionCallbacks.splice(i, 1) }
+  },
+  onLiveSelfPacedUpdate: (cb: (data: LiveSelfPacedPayload) => void) => {
+    liveSelfPacedCallbacks.push(cb)
+    return () => { const i = liveSelfPacedCallbacks.indexOf(cb); if (i !== -1) liveSelfPacedCallbacks.splice(i, 1) }
   },
 
   // ── Booking real-time ────────────────────────────────────────────────────────

@@ -1,7 +1,7 @@
 <!-- StudentLiveView.vue - Vue étudiant pour le Live Quiz interactif -->
 <script setup lang="ts">
   import { ref, computed, onMounted, onUnmounted, watch, type ComputedRef } from 'vue'
-  import { Zap, CheckCircle2, Send, LogOut, XCircle, Trophy, RotateCw, ChevronRight } from 'lucide-vue-next'
+  import { Zap, CheckCircle2, Send, LogOut, XCircle, Trophy, RotateCw, ChevronRight, HelpCircle } from 'lucide-vue-next'
   import { useAppStore }  from '@/stores/app'
   import { useLiveStore } from '@/stores/live'
   import { shuffleArray, KAHOOT_COLORS, KAHOOT_SHAPES, isSparkType, buildResponsePayload } from '@/utils/liveActivity'
@@ -10,6 +10,7 @@
   import QcmResults           from './QcmResults.vue'
   import LiveCodeViewer       from './LiveCodeViewer.vue'
   import LiveBoard            from './LiveBoard.vue'
+  import MessageWall          from './MessageWall.vue'
   import LivePulseInput       from './LivePulseInput.vue'
   import PollResults          from './PollResults.vue'
   import AssociationResults   from './AssociationResults.vue'
@@ -111,6 +112,81 @@
 
   // Reset cumulative score when session changes
   watch(session, () => { cumulativePoints.value = 0 })
+
+  // Texte a trous: parse blanks from title and track student inputs
+  const tatBlanksInputs = ref<string[]>([])
+  const tatParts = computed(() => {
+    const act = activity.value
+    if (!act || act.type !== 'texte_a_trous') return { segments: [] as string[], blanksCount: 0 }
+    const title = act.title ?? ''
+    const segments = title.split(/\{\{[^}]+\}\}/)
+    const blanksCount = (title.match(/\{\{[^}]+\}\}/g) || []).length
+    return { segments, blanksCount }
+  })
+
+  // Reinit blanks inputs on activity change (handled below)
+  watch(activity, (act) => {
+    if (act?.type === 'texte_a_trous') {
+      const count = (act.title?.match(/\{\{[^}]+\}\}/g) || []).length
+      tatBlanksInputs.value = Array(count).fill('')
+    }
+  })
+
+  async function submitTexteATrous() {
+    if (!activity.value || tatBlanksInputs.value.some(b => !b.trim())) return
+    const answer = tatBlanksInputs.value.join(',')
+    const result = await liveStore.submitResponse(activity.value.id, { text: answer })
+    if (result?.data) accumulateScore(result.data)
+  }
+
+  // Confusion signal (Wooclap "I'm confused" button)
+  const isConfused = ref(false)
+  const confusionLoading = ref(false)
+
+  async function toggleConfusion() {
+    if (!session.value || confusionLoading.value) return
+    confusionLoading.value = true
+    try {
+      const res = await window.api.sendConfusionSignal(session.value.id, !isConfused.value)
+      if (res?.ok) isConfused.value = !isConfused.value
+    } catch { /* ignore */ }
+    confusionLoading.value = false
+  }
+
+  // Self-paced mode: student navigates activities independently
+  const isSelfPaced = computed(() => !!session.value?.self_paced && session.value?.status === 'active')
+  const selfPacedIndex = ref(0)
+  const selfPacedActivities = computed(() =>
+    (session.value?.activities ?? []).filter(a => a.type !== 'live_code'),
+  )
+  const selfPacedActivity = computed(() =>
+    selfPacedActivities.value[selfPacedIndex.value] ?? null,
+  )
+
+  // In self-paced mode, override the currentActivity with the student-selected one
+  watch([isSelfPaced, selfPacedActivity], ([sp, act]) => {
+    if (sp && act) {
+      liveStore.currentActivity = act
+    }
+  }, { immediate: true })
+
+  function selfPacedPrev() {
+    if (selfPacedIndex.value > 0) selfPacedIndex.value--
+  }
+  function selfPacedNext() {
+    if (selfPacedIndex.value < selfPacedActivities.value.length - 1) selfPacedIndex.value++
+  }
+
+  // Listen for self-paced updates
+  let selfPacedUnsub: (() => void) | null = null
+  onMounted(() => {
+    selfPacedUnsub = window.api.onLiveSelfPacedUpdate?.((data) => {
+      if (session.value && data.sessionId === session.value.id) {
+        liveStore.currentSession = { ...session.value, self_paced: data.selfPaced ? 1 : 0 }
+      }
+    })
+  })
+  onUnmounted(() => { selfPacedUnsub?.() })
 
   // Shuffled QCM options (index mapping: display index → original index)
   const qcmShuffleMap = ref<number[]>([])
@@ -363,6 +439,18 @@
         </template>
       </div>
 
+      <!-- Self-paced navigation bar -->
+      <div v-else-if="isSelfPaced" class="sp-nav">
+        <div class="sp-nav-header">
+          <span class="sp-badge">Auto-rythme</span>
+          <span class="sp-position">{{ selfPacedIndex + 1 }} / {{ selfPacedActivities.length }}</span>
+        </div>
+        <div class="sp-nav-btns">
+          <button class="sp-nav-btn" :disabled="selfPacedIndex === 0" @click="selfPacedPrev">Precedente</button>
+          <button class="sp-nav-btn sp-nav-btn--primary" :disabled="selfPacedIndex >= selfPacedActivities.length - 1" @click="selfPacedNext">Suivante</button>
+        </div>
+      </div>
+
       <!-- Waiting for activity (mode live uniquement) -->
       <div v-else-if="!activity || activity.status === 'pending'" class="waiting-state">
         <div class="waiting-dots">
@@ -454,6 +542,26 @@
           </button>
         </div>
 
+        <!-- Texte a trous (Fill in the Blanks) -->
+        <div v-else-if="activity.type === 'texte_a_trous'" class="tat-response">
+          <div class="tat-text">
+            <template v-for="(seg, i) in tatParts.segments" :key="i">
+              <span>{{ seg }}</span>
+              <input
+                v-if="i < tatParts.blanksCount"
+                v-model="tatBlanksInputs[i]"
+                class="tat-blank-input"
+                :placeholder="'...'"
+                maxlength="50"
+                @keydown.enter="submitTexteATrous"
+              />
+            </template>
+          </div>
+          <button class="submit-btn" :disabled="tatBlanksInputs.some(b => !b.trim())" @click="submitTexteATrous">
+            <Send :size="16" /> Envoyer
+          </button>
+        </div>
+
         <!-- Live Code (read-only viewer) -->
         <LiveCodeViewer
           v-else-if="activity.type === 'live_code'"
@@ -468,6 +576,12 @@
           :activity-id="activity.id"
           :is-teacher="false"
           :columns="parseOptions(activity.options)"
+        />
+        <!-- Message Wall -->
+        <MessageWall
+          v-else-if="activity.type === 'message_wall'"
+          :activity-id="activity.id"
+          :is-teacher="false"
         />
 
         <!-- Pulse : inputs anonymes (echelle, humeur, question ouverte, etc.) -->
@@ -534,6 +648,8 @@
         <LiveCodeViewer v-else-if="activity.type === 'live_code'" :activity-id="activity.id" :initial-content="activity.content ?? ''" :initial-language="activity.language ?? 'javascript'" />
         <!-- Board : vue finale -->
         <LiveBoard v-else-if="activity.type === 'board'" :activity-id="activity.id" :is-teacher="false" :columns="parseOptions(activity.options)" :max-votes="activity.max_rating ?? 3" />
+        <!-- Message Wall : vue finale -->
+        <MessageWall v-else-if="activity.type === 'message_wall'" :activity-id="activity.id" :is-teacher="false" />
       </div>
     </div>
 
@@ -542,6 +658,17 @@
       <Trophy :size="14" />
       <span>{{ cumulativePoints.toLocaleString() }} pts</span>
     </div>
+
+    <!-- ══════════ Bouton "Je suis perdu" (confusion signal) ══════════ -->
+    <button
+      v-if="session && session.status === 'active'"
+      :class="['confusion-btn', { active: isConfused }]"
+      :disabled="confusionLoading"
+      @click="toggleConfusion"
+    >
+      <HelpCircle :size="16" />
+      <span>{{ isConfused ? 'Signal envoye' : 'Je suis perdu' }}</span>
+    </button>
   </div>
 </template>
 
@@ -1109,5 +1236,116 @@
   padding: 10px 18px;
   background: var(--accent);
   color: #fff;
+}
+
+/* ── Self-paced navigation ── */
+.sp-nav {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+}
+.sp-nav-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.sp-badge {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+.sp-position {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+.sp-nav-btns {
+  display: flex;
+  gap: 8px;
+}
+.sp-nav-btn {
+  padding: 8px 18px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all .15s;
+}
+.sp-nav-btn:disabled { opacity: .4; cursor: not-allowed; }
+.sp-nav-btn:not(:disabled):hover { border-color: var(--accent); }
+.sp-nav-btn--primary {
+  background: var(--accent);
+  color: white;
+  border-color: var(--accent);
+}
+.sp-nav-btn--primary:not(:disabled):hover { filter: brightness(1.08); }
+
+/* ── Texte a trous ── */
+.tat-response { display: flex; flex-direction: column; gap: 14px; }
+.tat-text {
+  font-size: 16px;
+  line-height: 2.2;
+  color: var(--text-primary);
+}
+.tat-blank-input {
+  display: inline-block;
+  width: 120px;
+  padding: 4px 10px;
+  margin: 0 4px;
+  border: 2px dashed #f59e0b;
+  border-radius: 8px;
+  background: #fef3c7;
+  font-size: 15px;
+  font-weight: 600;
+  color: #92400e;
+  text-align: center;
+  transition: border-color .15s, background .15s;
+}
+.tat-blank-input:focus {
+  outline: none;
+  border-style: solid;
+  border-color: #f59e0b;
+  background: #fffbeb;
+}
+
+/* ── Confusion button ── */
+.confusion-btn {
+  position: fixed;
+  bottom: 20px;
+  left: 20px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: 20px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(0,0,0,.12);
+  z-index: 100;
+  transition: all .2s;
+}
+.confusion-btn:hover {
+  border-color: #f59e0b;
+  color: #f59e0b;
+}
+.confusion-btn.active {
+  background: #fef3c7;
+  border-color: #f59e0b;
+  color: #d97706;
 }
 </style>

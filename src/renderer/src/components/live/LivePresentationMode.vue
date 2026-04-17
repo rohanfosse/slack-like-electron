@@ -10,9 +10,10 @@
 -->
 <script setup lang="ts">
 import { ref, onMounted, onBeforeUnmount, computed } from 'vue'
-import { X, Users, Clock, Maximize2, ChevronRight } from 'lucide-vue-next'
+import { X, Users, Clock, Maximize2, ChevronRight, AlertTriangle } from 'lucide-vue-next'
 import { ACTIVITY_CATEGORIES, activityTypeLabel, getActivityCategory } from '@/utils/liveActivity'
 import type { LiveActivity } from '@/types'
+import QrCode from './QrCode.vue'
 
 const props = defineProps<{
   activity: LiveActivity
@@ -25,6 +26,8 @@ const props = defineProps<{
   totalCount?: number
   /** True si une activite pending suit — affiche un bouton "Suivante". */
   hasNext?: boolean
+  /** Nombre d'etudiants ayant signale une difficulte (confusion signal) */
+  confusionCount?: number
 }>()
 
 const emit = defineEmits<{ close: []; closeActivity: []; next: [] }>()
@@ -89,8 +92,11 @@ function formatElapsed(s: number): string {
     <header class="lpm-header">
       <div class="lpm-header-left">
         <div v-if="joinCode" class="lpm-join">
-          <span class="lpm-join-label">Rejoindre sur cursus.app</span>
-          <span class="lpm-join-code">{{ joinCode }}</span>
+          <QrCode :value="`cursus://live/join/${joinCode}`" :size="80" class="lpm-qr" />
+          <div>
+            <span class="lpm-join-label">Rejoindre sur cursus.app</span>
+            <span class="lpm-join-code">{{ joinCode }}</span>
+          </div>
         </div>
       </div>
 
@@ -142,6 +148,13 @@ function formatElapsed(s: number): string {
         <span class="lpm-stat-caption">Temps median</span>
         <span>~{{ Math.round(medianResponseSeconds) }}s</span>
       </div>
+      <div v-if="confusionCount && confusionCount > 0" class="lpm-stat lpm-stat-warn">
+        <AlertTriangle :size="20" />
+        <div class="lpm-stat-val">
+          <span class="lpm-stat-num">{{ confusionCount }}</span>
+          <span class="lpm-stat-lbl">perdu{{ confusionCount > 1 ? 's' : '' }}</span>
+        </div>
+      </div>
     </footer>
   </div>
 </template>
@@ -178,13 +191,17 @@ function formatElapsed(s: number): string {
 }
 .lpm-join {
   display: flex;
-  align-items: baseline;
-  gap: 10px;
+  align-items: center;
+  gap: 12px;
   padding: 10px 16px;
   background: rgba(255, 255, 255, .06);
   border: 1px solid rgba(255, 255, 255, .1);
   border-radius: 10px;
   backdrop-filter: blur(8px);
+}
+.lpm-qr {
+  border-radius: 6px;
+  flex-shrink: 0;
 }
 .lpm-join-label {
   font-size: 12px;
@@ -375,6 +392,14 @@ function formatElapsed(s: number): string {
   font-size: 14px;
   color: rgba(255, 255, 255, .55);
   font-weight: 500;
+}
+.lpm-stat-warn {
+  color: #fbbf24;
+  animation: lpm-pulse-warn .8s ease-in-out infinite alternate;
+}
+@keyframes lpm-pulse-warn {
+  from { opacity: .6 }
+  to   { opacity: 1 }
 }
 .lpm-stat-caption {
   font-size: 11px;

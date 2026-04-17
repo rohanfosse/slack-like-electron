@@ -2,7 +2,7 @@
 import {
   ListChecks, ToggleLeft, Type, Link2, Hash, Cloud, MessageSquare, Zap,
   Star, FileText, BarChart, Smile, ArrowUpDown, Grid3X3, Code2, StickyNote,
-  Sparkles, Activity,
+  Sparkles, Activity, MessagesSquare, TextCursorInput,
 } from 'lucide-vue-next'
 import type { Component } from 'vue'
 
@@ -12,7 +12,7 @@ export const ACTIVITY_CATEGORIES: Record<ActivityCategory, { label: string; desc
   spark: {
     label: 'Spark',
     description: 'Quiz gamifie (scoring, leaderboard)',
-    types: ['qcm', 'vrai_faux', 'reponse_courte', 'association', 'estimation'],
+    types: ['qcm', 'vrai_faux', 'reponse_courte', 'association', 'estimation', 'texte_a_trous'],
     color: '#f59e0b',
     icon: Sparkles,
   },
@@ -33,7 +33,7 @@ export const ACTIVITY_CATEGORIES: Record<ActivityCategory, { label: string; desc
   board: {
     label: 'Board',
     description: 'Brainstorming post-its + votes',
-    types: ['board'],
+    types: ['board', 'message_wall'],
     color: '#a855f7',
     icon: StickyNote,
   },
@@ -86,6 +86,11 @@ export function buildResponsePayload(
     if (associationMapping.some(v => v === -1) || associationMapping.length === 0) return null
     return { answer: associationMapping.join(',') }
   }
+  if (activityType === 'texte_a_trous') {
+    const t = textInput?.trim()
+    if (!t) return null
+    return { text: t }
+  }
   return null
 }
 
@@ -96,6 +101,7 @@ export const ACTIVITY_TYPE_LABELS: Record<string, string> = {
   reponse_courte: 'Reponse courte',
   association: 'Association',
   estimation: 'Estimation',
+  texte_a_trous: 'Texte a trous',
   // Pulse
   sondage_libre: 'Sondage libre',
   nuage: 'Nuage de mots',
@@ -109,12 +115,13 @@ export const ACTIVITY_TYPE_LABELS: Record<string, string> = {
   live_code: 'Live Code',
   // Board
   board: 'Tableau',
+  message_wall: 'Mur de messages',
 }
 
 const ACTIVITY_ICONS: Record<string, Component> = {
   // Spark
   qcm: ListChecks, vrai_faux: ToggleLeft, reponse_courte: Type,
-  association: Link2, estimation: Hash,
+  association: Link2, estimation: Hash, texte_a_trous: TextCursorInput,
   // Pulse
   sondage_libre: MessageSquare, nuage: Cloud, echelle: Star,
   question_ouverte: FileText, sondage: BarChart,
@@ -123,6 +130,7 @@ const ACTIVITY_ICONS: Record<string, Component> = {
   live_code: Code2,
   // Board
   board: StickyNote,
+  message_wall: MessagesSquare,
 }
 
 export function activityTypeLabel(type: string): string {
@@ -152,7 +160,7 @@ export function isCodeType(type: string): boolean {
   return type === 'live_code'
 }
 export function isBoardType(type: string): boolean {
-  return type === 'board'
+  return type === 'board' || type === 'message_wall'
 }
 
 export function medal(rank: number, fallback: string | ((r: number) => string) = ''): string {

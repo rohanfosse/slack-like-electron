@@ -1,6 +1,6 @@
 const { getDb } = require('./connection');
 
-const CURRENT_VERSION = 66;
+const CURRENT_VERSION = 69;
 
 // ─── Schema initial ───────────────────────────────────────────────────────────
 // Crée toutes les tables avec leur schéma complet (colonnes UTC, toutes colonnes incluses).
@@ -1491,6 +1491,32 @@ function runMigrations(db) {
         CREATE INDEX IF NOT EXISTS idx_live_scores_session ON live_scores(session_id);
         CREATE INDEX IF NOT EXISTS idx_live_scores_mode ON live_scores(mode);
       `);
+    },
+
+    // v67 : Message Wall — hidden column pour moderation + table confusion signals
+    (db) => {
+      tryAlter(db, 'ALTER TABLE live_board_cards ADD COLUMN hidden INTEGER NOT NULL DEFAULT 0');
+      db.exec(`
+        CREATE TABLE IF NOT EXISTS live_confusion_signals (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          session_id INTEGER NOT NULL REFERENCES live_sessions_v2(id) ON DELETE CASCADE,
+          student_id INTEGER NOT NULL,
+          active INTEGER NOT NULL DEFAULT 1,
+          created_at TEXT DEFAULT (datetime('now')),
+          UNIQUE(session_id, student_id)
+        );
+        CREATE INDEX IF NOT EXISTS idx_confusion_session ON live_confusion_signals(session_id);
+      `);
+    },
+
+    // v68 : Self-paced mode — colonne sur les sessions
+    (db) => {
+      tryAlter(db, "ALTER TABLE live_sessions_v2 ADD COLUMN self_paced INTEGER NOT NULL DEFAULT 0");
+    },
+
+    // v69 : Texte a trous — pas de migration DB necessaire (type stocke comme string)
+    (db) => {
+      // noop — texte_a_trous utilise correct_answers JSON existant
     },
   ];
 

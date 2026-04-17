@@ -417,4 +417,67 @@ router.post('/cards/:id/vote', requirePromo(promoFromCardV2), (req, res) => {
   } catch (err) { res.status(400).json({ ok: false, error: err.message }) }
 })
 
+// ─── Self-paced toggle ────────────────────────────────────────────────────
+
+router.patch('/sessions/:id/self-paced', requireRole('teacher'), requireSessionOwnerV2, (req, res) => {
+  try {
+    const sessionId = Number(req.params.id)
+    const selfPaced = req.body.selfPaced ? 1 : 0
+    const db = getDb()
+    db.prepare('UPDATE live_sessions_v2 SET self_paced = ? WHERE id = ?').run(selfPaced, sessionId)
+    const session = queries.getLiveSession(sessionId)
+    if (session) {
+      const io = req.app.get('io')
+      io.to(`live:${session.promo_id}`).emit('live:self-paced-update', { sessionId, selfPaced: !!selfPaced })
+    }
+    res.json({ ok: true, data: { selfPaced: !!selfPaced } })
+  } catch (err) { res.status(400).json({ ok: false, error: err.message }) }
+})
+
+// ─── Message Wall moderation ──────────────────────────────────────────────
+
+router.patch('/cards/:id/hide', requireRole('teacher'), requirePromo(promoFromCardV2), (req, res) => {
+  try {
+    const cardId = Number(req.params.id)
+    const hidden = req.body.hidden !== false
+    const card = queries.hideMessageWallCard(cardId, hidden)
+    emitBoardUpdate(req, 'hide', { activityId: req._cardActivityId, cardId, hidden: !!card.hidden })
+    res.json({ ok: true, data: card })
+  } catch (err) { res.status(400).json({ ok: false, error: err.message }) }
+})
+
+// ─── Confusion Signal ─────────────────────────────────────────────────────
+
+router.post('/sessions/:id/confused', requirePromo(promoFromSessionV2), (req, res) => {
+  try {
+    const studentId = req.user?.id
+    if (!studentId) throw new Error('studentId requis')
+    const sessionId = Number(req.params.id)
+    const active = req.body.active !== false ? 1 : 0
+    const db = getDb()
+    db.prepare(`
+      INSERT INTO live_confusion_signals (session_id, student_id, active)
+      VALUES (?, ?, ?)
+      ON CONFLICT(session_id, student_id) DO UPDATE SET active = excluded.active
+    `).run(sessionId, studentId, active)
+    const { count } = db.prepare(
+      'SELECT COUNT(*) as count FROM live_confusion_signals WHERE session_id = ? AND active = 1'
+    ).get(sessionId)
+    const session = queries.getLiveSession(sessionId)
+    if (session) {
+      req.app.get('io').to(`live:${session.promo_id}`).emit('live:confusion-update', { sessionId, count })
+    }
+    res.json({ ok: true, data: { active: !!active, count } })
+  } catch (err) { res.status(400).json({ ok: false, error: err.message }) }
+})
+
+router.get('/sessions/:id/confused', requirePromo(promoFromSessionV2), wrap((req) => {
+  const sessionId = Number(req.params.id)
+  const db = getDb()
+  const { count } = db.prepare(
+    'SELECT COUNT(*) as count FROM live_confusion_signals WHERE session_id = ? AND active = 1'
+  ).get(sessionId)
+  return { count }
+}))
+
 module.exports = router

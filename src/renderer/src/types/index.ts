@@ -292,13 +292,14 @@ export type LiveV2Category = 'spark' | 'pulse' | 'code' | 'board'
 
 export type LiveV2ActivityType =
   // Spark (quiz)
-  | 'qcm' | 'vrai_faux' | 'reponse_courte' | 'association' | 'estimation'
+  | 'qcm' | 'vrai_faux' | 'reponse_courte' | 'association' | 'estimation' | 'texte_a_trous'
   // Pulse (feedback)
   | 'sondage_libre' | 'nuage' | 'echelle' | 'question_ouverte' | 'sondage' | 'humeur' | 'priorite' | 'matrice'
   // Code
   | 'live_code'
   // Board
   | 'board'
+  | 'message_wall'
 
 /** Alias : LiveV2Session est compatible avec LiveSession (les champs V2 sont optionnels) */
 export type LiveV2Session = LiveSession

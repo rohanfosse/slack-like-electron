@@ -4,7 +4,7 @@
   import {
     ListChecks, ToggleLeft, Type, Link2, Hash, Plus, X,
     Code2, StickyNote, MessageSquare, Cloud, Star, FileText,
-    BarChart, Smile, ArrowUpDown, Grid3X3,
+    BarChart, Smile, ArrowUpDown, Grid3X3, TextCursorInput,
   } from 'lucide-vue-next'
   import type { LiveActivity, LiveV2ActivityType } from '@/types'
   import { ACTIVITY_CATEGORIES, HUMEUR_EMOJIS, type ActivityCategory } from '@/utils/liveActivity'
@@ -60,6 +60,23 @@
   const vraiFauxCorrect = ref<0 | 1>(parseVraiFauxCorrect(props.initialData))
   const pairs = ref(parsePairs(props.initialData))
   const estimation = ref(parseEstimation(props.initialData))
+
+  // Texte a trous : le texte avec les blancs marques par {{mot}}
+  function parseTexteATrous(data?: LiveActivity | null): { text: string; blanks: string[] } {
+    if (!data || data.type !== 'texte_a_trous') return { text: '', blanks: [] }
+    const text = data.title ?? ''
+    try {
+      const blanks = JSON.parse(data.correct_answers as unknown as string)
+      return { text, blanks: Array.isArray(blanks) ? blanks : [] }
+    } catch {
+      return { text, blanks: [] }
+    }
+  }
+  const texteATrous = ref(parseTexteATrous(props.initialData))
+  const texteATrousBlanks = computed(() => {
+    const matches = texteATrous.value.text.match(/\{\{([^}]+)\}\}/g) || []
+    return matches.map(m => m.slice(2, -2))
+  })
   const title        = ref(props.initialData?.title ?? '')
   const options      = ref<string[]>(parseOptions(props.initialData))
   const timerSeconds = ref(props.initialData?.timer_seconds ?? 30)
@@ -74,6 +91,7 @@
     { id: 'reponse_courte',   label: 'Réponse courte',   icon: Type,          desc: 'Texte libre noté',      category: 'spark' },
     { id: 'association',      label: 'Association',      icon: Link2,         desc: 'Relier les paires',     category: 'spark' },
     { id: 'estimation',       label: 'Estimation',       icon: Hash,          desc: 'Réponse numérique',     category: 'spark' },
+    { id: 'texte_a_trous',    label: 'Texte a trous',    icon: TextCursorInput, desc: 'Remplir les blancs',  category: 'spark' },
     // Pulse
     { id: 'sondage_libre',    label: 'Sondage libre',    icon: MessageSquare, desc: 'Texte libre anonyme',   category: 'pulse' },
     { id: 'nuage',            label: 'Nuage de mots',    icon: Cloud,         desc: 'Mots-cles anonymes',    category: 'pulse' },
@@ -86,6 +104,7 @@
     // Code / Board
     { id: 'live_code',        label: 'Live Code',        icon: Code2,         desc: 'Coder en direct',       category: 'code' },
     { id: 'board',            label: 'Tableau',          icon: StickyNote,    desc: 'Post-its collaboratifs', category: 'board' },
+    { id: 'message_wall',     label: 'Mur de messages',  icon: MessageSquare, desc: 'Messages + likes',       category: 'board' },
   ]
 
   const categories = computed(() => {
@@ -236,6 +255,13 @@
         if (isNaN(t)) { fail('La valeur cible doit être un nombre.'); return }
         const m = Math.max(0, Number(estimation.value.margin) || 0)
         payload.correct_answers = { target: t, margin: m } as unknown as string[]
+        break
+      }
+      case 'texte_a_trous': {
+        if (texteATrousBlanks.value.length === 0) { fail('Le texte doit contenir au moins un trou marque par {{mot}}.'); return }
+        // Le titre est le texte complet avec les {{...}} — il sert a la fois d'enonce et de source des trous
+        payload.title = texteATrous.value.text || trimmedTitle
+        payload.correct_answers = texteATrousBlanks.value as unknown as string[]
         break
       }
       case 'live_code':
@@ -515,6 +541,23 @@
       <p class="code-hint">
         Les etudiants pourront ajouter des post-its et voter pour les idees ({{ boardMaxVotes }} vote{{ boardMaxVotes > 1 ? 's' : '' }} chacun).
       </p>
+    </div>
+
+    <!-- Texte a trous -->
+    <div v-if="activityType === 'texte_a_trous'" class="accepted-section">
+      <label class="correct-label">Texte avec trous</label>
+      <p class="form-hint">Utilisez <code>{{ '{{mot}}' }}</code> pour marquer les trous. Exemple : Le {{soleil}} brille dans le {{ciel}}.</p>
+      <textarea
+        v-model="texteATrous.text"
+        class="form-input"
+        rows="4"
+        placeholder="La capitale de la France est {{Paris}} et elle se situe en {{Europe}}."
+        style="resize: vertical"
+      />
+      <div v-if="texteATrousBlanks.length > 0" class="tatrous-preview">
+        <span class="tatrous-preview-label">Trous detectes :</span>
+        <span v-for="(blank, i) in texteATrousBlanks" :key="i" class="tatrous-blank-chip">{{ blank }}</span>
+      </div>
     </div>
 
     <!-- Estimation target + margin -->
@@ -897,4 +940,19 @@
 .estimation-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .estimation-field { display: flex; flex-direction: column; gap: 4px; }
 .estimation-label { font-size: 12px; color: var(--text-secondary); }
+/* Texte a trous */
+.form-hint { font-size: 12px; color: var(--text-secondary); margin: 0; line-height: 1.4; }
+.form-hint code { background: var(--bg-tertiary); padding: 1px 5px; border-radius: 4px; font-size: 11px; }
+.tatrous-preview { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-top: 4px; }
+.tatrous-preview-label { font-size: 11px; color: var(--text-secondary); }
+.tatrous-blank-chip {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  background: #fef3c7;
+  color: #92400e;
+  border: 1px solid #fcd34d;
+}
 </style>

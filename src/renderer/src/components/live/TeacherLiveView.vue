@@ -6,7 +6,7 @@
     Plus, Play, Square, ChevronRight, Trash2, Users, Zap, Clock,
     LogOut, Pencil, GripVertical, Copy, Download,
     ArrowRight, Eye, EyeOff, Bookmark, BookmarkPlus, Upload, Presentation,
-    FileDown, HelpCircle,
+    FileDown, HelpCircle, AlertTriangle,
   } from 'lucide-vue-next'
   import { ACTIVITY_CATEGORIES, activityIcon, activityTypeLabel, getActivityCategory, isSparkType, parseJsonArray } from '@/utils/liveActivity'
   import { useResponseTimer } from '@/composables/useResponseTimer'
@@ -27,6 +27,7 @@
   import QuizStatsView        from './QuizStatsView.vue'
   import LiveCodeEditor       from './LiveCodeEditor.vue'
   import LiveBoard            from './LiveBoard.vue'
+  import MessageWall          from './MessageWall.vue'
   import LiveTestPreview      from './LiveTestPreview.vue'
   import LiveShortcutsOverlay from './LiveShortcutsOverlay.vue'
   import LivePresentationMode from './LivePresentationMode.vue'
@@ -121,6 +122,35 @@
   /** Mode apercu : affiche une preview "etudiant" a cote du prof */
   const previewMode = ref(false)
   function togglePreview() { previewMode.value = !previewMode.value }
+
+  /** Toggle self-paced mode */
+  async function toggleSelfPaced() {
+    if (!liveStore.currentSession) return
+    const newVal = !liveStore.currentSession.self_paced
+    try {
+      const res = await window.api.toggleLiveV2SelfPaced(liveStore.currentSession.id, newVal)
+      if (res?.ok && liveStore.currentSession) {
+        liveStore.currentSession = { ...liveStore.currentSession, self_paced: newVal ? 1 : 0 }
+      }
+    } catch { /* ignore */ }
+  }
+
+  /** Confusion signal counter (Wooclap "I'm confused") */
+  const confusionCount = ref(0)
+  let confusionUnsub: (() => void) | null = null
+
+  watch(() => liveStore.currentSession?.id, async (sessionId) => {
+    confusionCount.value = 0
+    confusionUnsub?.()
+    if (!sessionId) return
+    try {
+      const res = await window.api.getConfusionCount(sessionId)
+      if (res?.ok) confusionCount.value = res.data?.count ?? 0
+    } catch { /* ignore */ }
+    confusionUnsub = window.api.onLiveConfusionUpdate((data) => {
+      if (data.sessionId === sessionId) confusionCount.value = data.count
+    })
+  }, { immediate: true })
 
   /** Raccourcis clavier : overlay d'aide (?) */
   const shortcutsOpen = ref(false)
@@ -976,6 +1006,10 @@
           <Users :size="16" />
           <span>{{ liveStore.participantCount }} participant{{ liveStore.participantCount > 1 ? 's' : '' }}</span>
         </div>
+        <div v-if="confusionCount > 0" class="confusion-counter" :title="`${confusionCount} etudiant${confusionCount > 1 ? 's' : ''} signale${confusionCount > 1 ? 'nt' : ''} une difficulte`">
+          <AlertTriangle :size="14" />
+          <span>{{ confusionCount }} perdu{{ confusionCount > 1 ? 's' : '' }}</span>
+        </div>
         <div v-if="totalCount > 0" class="progress-bar">
           <div class="progress-fill" :style="{ width: (closedCount / totalCount * 100) + '%' }" />
           <span class="progress-text">{{ closedCount }}/{{ totalCount }} terminee{{ closedCount > 1 ? 's' : '' }}</span>
@@ -1016,6 +1050,18 @@
           <span class="bss-label">{{ sparkAutoChain ? 'Demarrer le Spark' : `Lancer : ${nextPendingActivity.title}` }}</span>
           <span class="bss-sub">{{ liveStore.sessionActivities.length }} question{{ liveStore.sessionActivities.length > 1 ? 's' : '' }}</span>
         </button>
+      </div>
+
+      <!-- Mode auto-rythme (self-paced) -->
+      <div v-if="liveStore.sessionActivities.length > 0" class="self-paced-panel">
+        <label class="spm-toggle">
+          <input type="checkbox" :checked="!!liveStore.currentSession?.self_paced" @change="toggleSelfPaced" />
+          <span class="spm-toggle-track"><span class="spm-toggle-dot" /></span>
+          <div class="spm-toggle-meta">
+            <span class="spm-toggle-label">Mode auto-rythme</span>
+            <span class="spm-toggle-desc">Les etudiants naviguent a leur propre rythme entre les activites</span>
+          </div>
+        </label>
       </div>
 
       <!-- Activity list -->
@@ -1316,6 +1362,12 @@
           :columns="parseJsonArray<string>(liveStore.currentActivity.options as string | string[] | null)"
           :max-votes="liveStore.currentActivity.max_rating ?? 3"
         />
+        <!-- Message Wall : mur de messages -->
+        <MessageWall
+          v-else-if="liveStore.currentActivity.type === 'message_wall'"
+          :activity-id="liveStore.currentActivity.id"
+          :is-teacher="true"
+        />
         <LiveActivityResults
           v-else
           :activity="liveStore.currentActivity"
@@ -1353,6 +1405,7 @@
       :position-index="currentActivityIndex"
       :total-count="totalActivities"
       :has-next="!!nextPendingActivity"
+      :confusion-count="confusionCount"
       @close="closePresentation"
       @close-activity="closeCurrentActivity(); closePresentation()"
       @next="goNext"
@@ -1841,6 +1894,23 @@
   padding: 12px 16px; border-radius: 8px;
   background: var(--bg-elevated); color: var(--text-muted);
   font-size: 14px; font-weight: 600;
+}
+.confusion-counter {
+  display: flex; align-items: center; gap: 6px;
+  padding: 6px 12px; border-radius: 8px;
+  background: #fef3c7; color: #d97706;
+  font-size: 12px; font-weight: 700;
+  animation: pulse-warn .8s ease-in-out infinite alternate;
+}
+.self-paced-panel {
+  padding: 12px 16px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+@keyframes pulse-warn {
+  from { opacity: .7 }
+  to   { opacity: 1 }
 }
 .progress-bar {
   flex: 1; min-width: 140px; height: 28px; position: relative;

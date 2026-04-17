@@ -9,6 +9,7 @@ import QcmResults           from './QcmResults.vue'
 import PollResults          from './PollResults.vue'
 import AssociationResults   from './AssociationResults.vue'
 import EstimationResults    from './EstimationResults.vue'
+import MessageWall          from './MessageWall.vue'
 import RexQuestionOuverteResults from '@/components/rex/RexQuestionOuverteResults.vue'
 import RexSondageResults        from '@/components/rex/RexSondageResults.vue'
 import RexEchelleResults        from '@/components/rex/RexEchelleResults.vue'
@@ -37,7 +38,7 @@ defineProps<{
     :results="results"
   />
   <AssociationResults
-    v-else-if="activity.type === 'association' && results"
+    v-else-if="(activity.type === 'association' || activity.type === 'texte_a_trous') && results"
     :results="results"
   />
   <EstimationResults
@@ -81,6 +82,12 @@ defineProps<{
     :criteria="results.criteria"
     :max-rating="activity.max_rating ?? 5"
     :total="results.total ?? 0"
+  />
+  <!-- Message Wall -->
+  <MessageWall
+    v-else-if="activity.type === 'message_wall'"
+    :activity-id="activity.id"
+    :is-teacher="true"
   />
   <slot v-else name="empty">
     <!-- Fallback : laisse le parent decider du rendu "en attente" -->

@@ -10,10 +10,10 @@ const generateJoinCode = require('../../utils/joinCode');
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
-const SPARK_TYPES = ['qcm', 'vrai_faux', 'reponse_courte', 'association', 'estimation'];
+const SPARK_TYPES = ['qcm', 'vrai_faux', 'reponse_courte', 'association', 'estimation', 'texte_a_trous'];
 const PULSE_TYPES = ['sondage_libre', 'nuage', 'echelle', 'question_ouverte', 'sondage', 'humeur', 'priorite', 'matrice'];
 const CODE_TYPES = ['live_code'];
-const BOARD_TYPES = ['board'];
+const BOARD_TYPES = ['board', 'message_wall'];
 
 function getActivityCategory(type) {
   if (SPARK_TYPES.includes(type)) return 'spark';
@@ -308,6 +308,22 @@ function checkLiveCorrectness(activityId, answer) {
     });
   }
 
+  // Texte a trous : correct_answers = ["mot1", "mot2", ...] (un par trou)
+  // Reponse etudiant = "mot1,mot2,..." (virgule-separated)
+  // Score = all-or-nothing avec tolerance typo
+  if (activity.type === 'texte_a_trous') {
+    if (!Array.isArray(parsed) || parsed.length === 0) return null;
+    const studentBlanks = String(answer).split(',').map(s => s.trim());
+    if (studentBlanks.length !== parsed.length) return false;
+    return studentBlanks.every((studentWord, i) => {
+      const target = normalizeAnswer(parsed[i]);
+      const student = normalizeAnswer(studentWord);
+      if (student === target) return true;
+      const maxDist = Math.max(1, Math.floor(target.length / 4));
+      return levenshtein(student, target) <= maxDist;
+    });
+  }
+
   const correct = parsed;
   const student = String(answer).split(',').map(s => Number(s.trim())).filter(n => !isNaN(n));
   if (student.length === 0) return false;
@@ -401,6 +417,25 @@ function getLiveActivityResultsAggregated(activityId, mode = 'live') {
     return { type: 'estimation', total, correctCount, average: Math.round(avg * 100) / 100, values };
   }
 
+  if (activity.type === 'texte_a_trous') {
+    let parsed; try { parsed = JSON.parse(activity.correct_answers || '[]'); } catch { parsed = []; }
+    let correctCount = 0;
+    for (const r of responses) {
+      const blanks = String(r.answer).split(',').map(s => s.trim());
+      if (Array.isArray(parsed) && blanks.length === parsed.length) {
+        const allCorrect = blanks.every((w, i) => {
+          const target = normalizeAnswer(parsed[i]);
+          const student = normalizeAnswer(w);
+          if (student === target) return true;
+          const maxDist = Math.max(1, Math.floor(target.length / 4));
+          return levenshtein(student, target) <= maxDist;
+        });
+        if (allCorrect) correctCount++;
+      }
+    }
+    return { type: 'texte_a_trous', total, correctCount, blanksCount: Array.isArray(parsed) ? parsed.length : 0 };
+  }
+
   // ── Pulse types ─────────────────────────────────────────────────────
   if (activity.type === 'sondage_libre' || activity.type === 'nuage' && activity.category === 'pulse') {
     const counts = {};
@@ -490,6 +525,10 @@ function getLiveActivityResultsAggregated(activityId, mode = 'live') {
     const cards = getBoardCards(activityId);
     return { type: 'board', total: cards.length, cards };
   }
+  if (activity.type === 'message_wall') {
+    const cards = getMessageWallCards(activityId);
+    return { type: 'message_wall', total: cards.length, cards };
+  }
 
   return { type: activity.type, total, raw: responses };
 }
@@ -552,6 +591,27 @@ function unvoteBoardCard(cardId, studentId) {
     return true;
   }
   return false;
+}
+
+// ─── Message Wall ──────────────────────────────────────────────────────────
+
+function getMessageWallCards(activityId, studentId = null) {
+  const db = getDb();
+  const cards = db.prepare(
+    'SELECT * FROM live_board_cards WHERE activity_id = ? ORDER BY created_at DESC'
+  ).all(activityId);
+  if (studentId) {
+    const votes = db.prepare('SELECT card_id FROM live_board_votes WHERE student_id = ?').all(studentId);
+    const votedSet = new Set(votes.map(v => v.card_id));
+    return cards.map(c => ({ ...c, voted_by_me: votedSet.has(c.id) }));
+  }
+  return cards;
+}
+
+function hideMessageWallCard(cardId, hidden) {
+  const db = getDb();
+  db.prepare('UPDATE live_board_cards SET hidden = ? WHERE id = ?').run(hidden ? 1 : 0, cardId);
+  return db.prepare('SELECT * FROM live_board_cards WHERE id = ?').get(cardId);
 }
 
 // ─── Historique / Stats ─────────────────────────────────────────────────────
@@ -699,6 +759,8 @@ module.exports = {
   getLiveActivityResultsAggregated,
   // Board
   getBoardCards, addBoardCard, updateBoardCard, deleteBoardCard, voteBoardCard, unvoteBoardCard,
+  // Message Wall
+  getMessageWallCards, hideMessageWallCard,
   // Historique / Stats / Export
   getEndedLiveSessionsForPromo, getLiveStatsForPromoV2, exportLiveSessionCsv,
 };
