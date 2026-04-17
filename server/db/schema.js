@@ -1,6 +1,6 @@
 const { getDb } = require('./connection');
 
-const CURRENT_VERSION = 69;
+const CURRENT_VERSION = 70;
 
 // ─── Schema initial ───────────────────────────────────────────────────────────
 // Crée toutes les tables avec leur schéma complet (colonnes UTC, toutes colonnes incluses).
@@ -1261,7 +1261,7 @@ function runMigrations(db) {
           project TEXT,
           title TEXT NOT NULL DEFAULT 'Sans titre',
           yjs_state BLOB,
-          created_by INTEGER NOT NULL REFERENCES users(id),
+          created_by INTEGER NOT NULL,
           created_at TEXT DEFAULT (datetime('now')),
           updated_at TEXT DEFAULT (datetime('now'))
         );
@@ -1351,7 +1351,7 @@ function runMigrations(db) {
       db.exec(`
         CREATE TABLE IF NOT EXISTS booking_event_types (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
-          teacher_id INTEGER NOT NULL REFERENCES users(id),
+          teacher_id INTEGER NOT NULL,
           title TEXT NOT NULL,
           slug TEXT NOT NULL UNIQUE,
           description TEXT,
@@ -1359,12 +1359,14 @@ function runMigrations(db) {
           color TEXT DEFAULT '#3b82f6',
           fallback_visio_url TEXT,
           is_active INTEGER DEFAULT 1,
-          created_at TEXT DEFAULT (datetime('now'))
+          created_at TEXT DEFAULT (datetime('now')),
+          buffer_minutes INTEGER NOT NULL DEFAULT 0,
+          timezone TEXT NOT NULL DEFAULT 'Europe/Paris'
         );
 
         CREATE TABLE IF NOT EXISTS booking_availability_rules (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
-          teacher_id INTEGER NOT NULL REFERENCES users(id),
+          teacher_id INTEGER NOT NULL,
           day_of_week INTEGER NOT NULL CHECK(day_of_week BETWEEN 0 AND 6),
           start_time TEXT NOT NULL,
           end_time TEXT NOT NULL,
@@ -1400,7 +1402,7 @@ function runMigrations(db) {
         CREATE INDEX IF NOT EXISTS idx_bookings_cancel ON bookings(cancel_token);
 
         CREATE TABLE IF NOT EXISTS microsoft_tokens (
-          teacher_id INTEGER PRIMARY KEY REFERENCES users(id),
+          teacher_id INTEGER PRIMARY KEY,
           access_token_enc TEXT NOT NULL,
           refresh_token_enc TEXT NOT NULL,
           expires_at TEXT NOT NULL,
@@ -1517,6 +1519,106 @@ function runMigrations(db) {
     // v69 : Texte a trous — pas de migration DB necessaire (type stocke comme string)
     (db) => {
       // noop — texte_a_trous utilise correct_answers JSON existant
+    },
+
+    // v70 : Fix `users` manquant
+    // 1) Recree les 4 tables qui pointaient sur `REFERENCES users(id)` (table jamais
+    //    creee) → supprime les FK cassees. Sinon INSERT echoue avec FK ON.
+    // 2) Cree une VIEW `users` unifiant teachers + students pour que les JOINs
+    //    existants dans cahiers.js / bookings.js continuent a fonctionner.
+    (db) => {
+      // ─── 1) Table cahiers : drop FK vers users ────────────────────────────
+      db.exec(`
+        CREATE TABLE cahiers_new (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          promo_id INTEGER NOT NULL REFERENCES promotions(id),
+          group_id INTEGER REFERENCES groups(id),
+          project TEXT,
+          title TEXT NOT NULL DEFAULT 'Sans titre',
+          yjs_state BLOB,
+          created_by INTEGER NOT NULL,
+          created_at TEXT DEFAULT (datetime('now')),
+          updated_at TEXT DEFAULT (datetime('now'))
+        );
+        INSERT INTO cahiers_new (id, promo_id, group_id, project, title, yjs_state, created_by, created_at, updated_at)
+          SELECT id, promo_id, group_id, project, title, yjs_state, created_by, created_at, updated_at FROM cahiers;
+        DROP TABLE cahiers;
+        ALTER TABLE cahiers_new RENAME TO cahiers;
+        CREATE INDEX IF NOT EXISTS idx_cahiers_promo ON cahiers(promo_id);
+        CREATE INDEX IF NOT EXISTS idx_cahiers_group ON cahiers(group_id);
+        CREATE INDEX IF NOT EXISTS idx_cahiers_project ON cahiers(promo_id, project);
+      `);
+
+      // ─── 1bis) Bookings : 3 tables avec REFERENCES users(id) a nettoyer.
+      // Les colonnes buffer_minutes (v63) + timezone (v64) ont ete ajoutees plus tard
+      // donc on les inclut dans la nouvelle table.
+      db.exec(`
+        CREATE TABLE booking_event_types_new (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          teacher_id INTEGER NOT NULL,
+          title TEXT NOT NULL,
+          slug TEXT NOT NULL UNIQUE,
+          description TEXT,
+          duration_minutes INTEGER NOT NULL DEFAULT 30,
+          color TEXT DEFAULT '#3b82f6',
+          fallback_visio_url TEXT,
+          is_active INTEGER DEFAULT 1,
+          created_at TEXT DEFAULT (datetime('now')),
+          buffer_minutes INTEGER NOT NULL DEFAULT 0,
+          timezone TEXT NOT NULL DEFAULT 'Europe/Paris'
+        );
+        INSERT INTO booking_event_types_new
+            (id, teacher_id, title, slug, description, duration_minutes, color,
+             fallback_visio_url, is_active, created_at, buffer_minutes, timezone)
+          SELECT id, teacher_id, title, slug, description, duration_minutes, color,
+                 fallback_visio_url, is_active, created_at, buffer_minutes, timezone
+          FROM booking_event_types;
+        DROP TABLE booking_event_types;
+        ALTER TABLE booking_event_types_new RENAME TO booking_event_types;
+
+        CREATE TABLE booking_availability_rules_new (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          teacher_id INTEGER NOT NULL,
+          day_of_week INTEGER NOT NULL CHECK(day_of_week BETWEEN 0 AND 6),
+          start_time TEXT NOT NULL,
+          end_time TEXT NOT NULL,
+          is_active INTEGER DEFAULT 1
+        );
+        INSERT INTO booking_availability_rules_new
+            (id, teacher_id, day_of_week, start_time, end_time, is_active)
+          SELECT id, teacher_id, day_of_week, start_time, end_time, is_active
+          FROM booking_availability_rules;
+        DROP TABLE booking_availability_rules;
+        ALTER TABLE booking_availability_rules_new RENAME TO booking_availability_rules;
+        CREATE INDEX IF NOT EXISTS idx_booking_avail_teacher ON booking_availability_rules(teacher_id);
+
+        CREATE TABLE microsoft_tokens_new (
+          teacher_id INTEGER PRIMARY KEY,
+          access_token_enc TEXT NOT NULL,
+          refresh_token_enc TEXT NOT NULL,
+          expires_at TEXT NOT NULL,
+          updated_at TEXT DEFAULT (datetime('now'))
+        );
+        INSERT INTO microsoft_tokens_new
+            (teacher_id, access_token_enc, refresh_token_enc, expires_at, updated_at)
+          SELECT teacher_id, access_token_enc, refresh_token_enc, expires_at, updated_at
+          FROM microsoft_tokens;
+        DROP TABLE microsoft_tokens;
+        ALTER TABLE microsoft_tokens_new RENAME TO microsoft_tokens;
+      `);
+
+      // ─── 2) VIEW users unifiee pour les JOINs ──────────────────────────────
+      const existing = db.prepare("SELECT type FROM sqlite_master WHERE name = 'users'").get();
+      if (existing) {
+        if (existing.type === 'table') db.exec('DROP TABLE users');
+        else if (existing.type === 'view') db.exec('DROP VIEW users');
+      }
+      db.exec(`
+        CREATE VIEW users AS
+          SELECT id, name, email, 'teacher' AS role FROM teachers
+          UNION ALL
+          SELECT id, name, email, 'student' AS role FROM students;
+      `);
     },
   ];
 
