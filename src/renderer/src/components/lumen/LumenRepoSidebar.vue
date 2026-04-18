@@ -16,13 +16,19 @@
  */
 import { ref, computed, watch, nextTick } from 'vue'
 import { storeToRefs } from 'pinia'
-import { FileText, FileDown, FileCode, AlertTriangle, StickyNote, Search, X, Eye, EyeOff, BookOpen, Presentation, Lightbulb, Wrench, Hammer, Folder, Plus, Loader2, ChevronsDown, ChevronsUp, ChevronRight, Check } from 'lucide-vue-next'
+import { FileText, FileDown, FileCode, AlertTriangle, StickyNote, Search, X, Eye, EyeOff, BookOpen, Presentation, Lightbulb, Wrench, Hammer, Folder, ChevronsDown, ChevronsUp, ChevronRight, Check } from 'lucide-vue-next'
 import type { Component } from 'vue'
 import { useLumenStore } from '@/stores/lumen'
-import { useToast } from '@/composables/useToast'
 import { chapterKey } from '@/utils/lumenDevoirLinks'
-import type { LumenRepo, LumenChapter, LumenSearchResult, LumenRepoKind } from '@/types'
-import Modal from '@/components/ui/Modal.vue'
+import {
+  extractRepoNumericPrefix, displayRepoName,
+  splitSectionTitle, groupBySection, formatDuration,
+  type SectionGroup,
+} from '@/utils/lumenRepoDisplay'
+import { useLumenCollapsedState } from '@/composables/useLumenCollapsedState'
+import { useLumenNewChapter } from '@/composables/useLumenNewChapter'
+import LumenNewChapterModal from '@/components/lumen/LumenNewChapterModal.vue'
+import type { LumenRepo, LumenSearchResult, LumenRepoKind } from '@/types'
 
 interface Props {
   repos: LumenRepo[]
@@ -69,30 +75,6 @@ watch(() => [props.currentRepoId, props.currentChapterPath], async () => {
   }
 })
 
-/**
- * Extrait le prefixe numerique d'un nom de repo, ex: "0-Mathematiques" -> 0,
- * "4-Programmation-Web" -> 4, "Astruc-Sebastien" -> Infinity. Permet de trier
- * les blocs CESI dans l'ordre prevu (0, 1, 2, 3, 4, ...) plutot qu'en
- * lexical (qui mettrait "10-foo" avant "2-bar"). v2.66.
- */
-function extractRepoNumericPrefix(repo: LumenRepo): number {
-  const name = repo.repo ?? repo.fullName.split('/').pop() ?? ''
-  const m = name.match(/^(\d+)[-_.]/)
-  return m ? Number(m[1]) : Number.POSITIVE_INFINITY
-}
-
-/**
- * Affiche un nom de repo plus humain en retirant le prefixe numerique :
- * "0-Mathematiques" -> "Mathematiques", "4-Programmation-Web" -> "Programmation Web".
- * Si pas de prefixe ou si le manifest expose un `project` lisible, on garde
- * le project name du manifest tel quel.
- */
-function displayRepoName(repo: LumenRepo): string {
-  if (repo.manifest?.project) return repo.manifest.project
-  const name = repo.repo ?? repo.fullName.split('/').pop() ?? repo.fullName
-  return name.replace(/^\d+[-_.]/, '').replace(/[-_]+/g, ' ')
-}
-
 // Lumen = cours uniquement. On exclut les repos etudiants, groupes et le
 // repo .github (readme) qui est accessible via le bouton Accueil dans la topbar.
 const HIDDEN_KINDS = new Set<LumenRepoKind>(['student', 'group', 'readme'])
@@ -111,79 +93,6 @@ const sortedRepos = computed(() => [...props.repos]
     // 3. Tie-break alphabetique
     return a.fullName.localeCompare(b.fullName)
   }))
-
-interface SectionGroup {
-  title: string
-  chapters: LumenChapter[]
-  /** Somme des durees des chapitres de cette section (minutes). 0 si aucun. */
-  totalDuration: number
-}
-
-/**
- * Decompose un titre de section "A · B · C" en { parent: "A · B", child: "C" }.
- * Utilise pour afficher le parent en prefixe muted plus petit et le child
- * en label principal (v2.67.2) — evite la repetition visuelle dans la
- * sidebar quand plusieurs sections partagent le meme parent dossier.
- */
-function splitSectionTitle(title: string): { parent: string; child: string } {
-  const idx = title.lastIndexOf(' · ')
-  if (idx === -1) return { parent: '', child: title }
-  return { parent: title.slice(0, idx), child: title.slice(idx + 3) }
-}
-
-/**
- * Groupe une liste de chapitres par section. Les sections sont triees par
- * leur prefixe numerique (si present) puis alphabetiquement — evite que
- * "02 Labs" passe avant "01 Fundamentals" quand l'ordre des fichiers dans
- * le manifest est arbitraire. Les chapitres sans champ `section` tombent
- * dans un bucket "Chapitres".
- *
- * Le prefixe numerique est extrait du DEBUT de la section (ex: "01 Fundamentals"
- * -> 1, "02 Labs · Lab01" -> 2). Les sections sans prefixe tombent apres
- * les sections prefixees, triees alphabetiquement entre elles.
- */
-function sectionSortKey(title: string): { num: number; title: string } {
-  const m = title.match(/^(\d+)/)
-  return {
-    num: m ? Number(m[1]) : Number.POSITIVE_INFINITY,
-    title: title.toLowerCase(),
-  }
-}
-
-function groupBySection(chapters: LumenChapter[]): SectionGroup[] {
-  const map = new Map<string, LumenChapter[]>()
-  for (const ch of chapters) {
-    const key = ch.section?.trim() || 'Chapitres'
-    const existing = map.get(key)
-    if (existing) existing.push(ch)
-    else map.set(key, [ch])
-  }
-  return Array.from(map.entries())
-    .map(([title, chs]) => ({
-      title,
-      chapters: chs,
-      totalDuration: chs.reduce((sum, c) => sum + (c.duration ?? 0), 0),
-    }))
-    .sort((a, b) => {
-      const ka = sectionSortKey(a.title)
-      const kb = sectionSortKey(b.title)
-      if (ka.num !== kb.num) return ka.num - kb.num
-      return ka.title.localeCompare(kb.title)
-    })
-}
-
-/**
- * Format une duree en minutes vers "1h30", "45 min", "2h", "5 min", etc.
- * Retourne null si la duree est 0 ou negative (pas d'affichage).
- */
-function formatDuration(minutes: number): string | null {
-  if (!minutes || minutes <= 0) return null
-  if (minutes < 60) return `${minutes} min`
-  const h = Math.floor(minutes / 60)
-  const m = minutes % 60
-  if (m === 0) return `${h}h`
-  return `${h}h${String(m).padStart(2, '0')}`
-}
 
 interface FilteredRepo {
   repo: LumenRepo
@@ -272,100 +181,24 @@ const groupedRepos = computed<RepoSection[]>(() => {
     }))
 })
 
-// Sections collapsible : v2.76 on persiste maintenant en localStorage.
-// Format : une chaine comma-separated des kinds collapsed (ex: "prosit,group").
-const COLLAPSED_KINDS_KEY = 'lumen.sidebar.collapsedKinds'
-function loadCollapsedKinds(): Set<LumenRepoKind> {
-  try {
-    const raw = localStorage.getItem(COLLAPSED_KINDS_KEY)
-    if (!raw) return new Set()
-    const parts = raw.split(',').filter((k): k is LumenRepoKind =>
-      KIND_ORDER.includes(k as LumenRepoKind),
-    )
-    return new Set(parts)
-  } catch { return new Set() }
-}
-const collapsedKinds = ref<Set<LumenRepoKind>>(loadCollapsedKinds())
-function saveCollapsedKinds(set: Set<LumenRepoKind>): void {
-  try {
-    localStorage.setItem(COLLAPSED_KINDS_KEY, Array.from(set).join(','))
-  } catch { /* quota exceeded ou private mode */ }
-}
-function toggleKind(k: LumenRepoKind): void {
-  const next = new Set(collapsedKinds.value)
-  if (next.has(k)) next.delete(k)
-  else next.add(k)
-  collapsedKinds.value = next
-  saveCollapsedKinds(next)
-}
+// ── Persistance localStorage de l'etat replie/deplie (v2.76/v2.100/v2.102) ─
+const {
+  collapsedKinds, toggleKind, setKinds,
+  collapsedRepos, toggleRepo,
+  toggleSection, isSectionOpen, setSectionOpen,
+} = useLumenCollapsedState(KIND_ORDER)
 
 // v2.78 : toggle global "tout deplier / tout replier" les sections.
-// Heuristique : si au moins une section est repliee, on deplie TOUT.
-// Sinon on replie TOUT.
-const allSectionsCollapsed = computed<boolean>(() => {
-  // True si toutes les kinds presentes dans groupedRepos sont dans
-  // le Set. On ne compte pas les kinds vides.
-  return groupedRepos.value.length > 0
-    && groupedRepos.value.every((s) => collapsedKinds.value.has(s.kind))
-})
+const allSectionsCollapsed = computed<boolean>(() =>
+  groupedRepos.value.length > 0
+    && groupedRepos.value.every((s) => collapsedKinds.value.has(s.kind)),
+)
 function toggleAllSections(): void {
   if (collapsedKinds.value.size === 0) {
-    // Tout deplie -> on replie tout
-    const all = new Set<LumenRepoKind>(groupedRepos.value.map((s) => s.kind))
-    collapsedKinds.value = all
-    saveCollapsedKinds(all)
+    setKinds(new Set<LumenRepoKind>(groupedRepos.value.map((s) => s.kind)))
   } else {
-    // Au moins une repliee -> on deplie tout
-    collapsedKinds.value = new Set()
-    saveCollapsedKinds(new Set())
+    setKinds(new Set())
   }
-}
-
-// ── Repos collapsibles (v2.100) ──────────────────────────────────────────
-// Chaque repo peut etre replie individuellement. Persiste en localStorage.
-const COLLAPSED_REPOS_KEY = 'lumen.sidebar.collapsedRepos'
-function loadCollapsedRepos(): Set<number> {
-  try {
-    const raw = localStorage.getItem(COLLAPSED_REPOS_KEY)
-    if (!raw) return new Set()
-    return new Set(raw.split(',').map(Number).filter(Boolean))
-  } catch { return new Set() }
-}
-const collapsedRepos = ref<Set<number>>(loadCollapsedRepos())
-function saveCollapsedRepos(set: Set<number>): void {
-  try { localStorage.setItem(COLLAPSED_REPOS_KEY, Array.from(set).join(',')) } catch { /* noop */ }
-}
-function toggleRepo(repoId: number): void {
-  const next = new Set(collapsedRepos.value)
-  if (next.has(repoId)) next.delete(repoId)
-  else next.add(repoId)
-  collapsedRepos.value = next
-  saveCollapsedRepos(next)
-}
-
-// ── Sections accordeon (v2.102) ──────────────────────────────────────────
-// Une seule section ouverte par repo (accordeon). Persiste en localStorage.
-const OPEN_SECTION_KEY = 'lumen.sidebar.openSections'
-function loadOpenSections(): Record<number, string | null> {
-  try {
-    const raw = localStorage.getItem(OPEN_SECTION_KEY)
-    return raw ? JSON.parse(raw) : {}
-  } catch { return {} }
-}
-const openSections = ref<Record<number, string | null>>(loadOpenSections())
-function saveOpenSections(): void {
-  try { localStorage.setItem(OPEN_SECTION_KEY, JSON.stringify(openSections.value)) } catch { /* noop */ }
-}
-function toggleSection(repoId: number, sectionTitle: string): void {
-  const current = openSections.value[repoId]
-  openSections.value = {
-    ...openSections.value,
-    [repoId]: current === sectionTitle ? null : sectionTitle,
-  }
-  saveOpenSections()
-}
-function isSectionOpen(repoId: number, sectionTitle: string): boolean {
-  return openSections.value[repoId] === sectionTitle
 }
 
 // Auto-open : quand le chapitre actif change, ouvrir sa section
@@ -374,10 +207,7 @@ watch([() => props.currentRepoId, () => props.currentChapterPath], () => {
   const repo = props.repos.find(r => r.id === props.currentRepoId)
   if (!repo?.manifest?.chapters) return
   const ch = repo.manifest.chapters.find(c => c.path === props.currentChapterPath)
-  if (ch?.section) {
-    openSections.value = { ...openSections.value, [repo.id]: ch.section }
-    saveOpenSections()
-  }
+  if (ch?.section) setSectionOpen(repo.id, ch.section)
 })
 
 // ── Cours termines (v2.102) ─────────────────────────────────────────────
@@ -437,128 +267,22 @@ function handleSelectSearchResult(r: LumenSearchResult) {
 }
 
 // ── Nouveau chapitre (v2.68) ──────────────────────────────────────────────
-// Modale accessible via un bouton "+" en regard de chaque section (teacher
-// only). Permet de creer un .md dans le meme dossier que les autres
-// chapitres de la section. Le commit est pose via l'IPC createLumenChapterFile.
-const { showToast } = useToast()
-
-interface NewChapterContext {
-  repo: LumenRepo
-  sectionTitle: string
-  sectionDir: string   // derive du 1er chapitre de la section
-}
-
-const newChapterOpen = ref(false)
-const newChapterCtx = ref<NewChapterContext | null>(null)
-const newTitle = ref('')
-const newFilename = ref('')
-const newMessage = ref('')
-const newFilenameManual = ref(false)  // user a edite manuellement le filename
-const newSaving = ref(false)
-
-/**
- * Retourne le dossier d'une section — derive du premier chapitre de la
- * section. Un section sans chapitre est impossible (on ne peut creer dans
- * un dossier vide qu'on ne voit pas).
- */
-function dirOfSection(group: SectionGroup): string {
-  const firstPath = group.chapters[0]?.path ?? ''
-  const slash = firstPath.lastIndexOf('/')
-  return slash === -1 ? '' : firstPath.slice(0, slash)
-}
-
-/**
- * Slugify un titre en filename : lowercase, espaces -> -, supprime
- * les caracteres non [a-z0-9-]. Suffix .md. Retourne '' si le titre est
- * vide pour laisser le bouton Creer desactive.
- */
-function slugifyTitleToFilename(title: string): string {
-  const slug = title
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')   // retire les accents
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-  if (!slug) return ''
-  return `${slug}.md`
-}
-
-function openNewChapterModal(repo: LumenRepo, group: SectionGroup): void {
-  newChapterCtx.value = {
-    repo,
-    sectionTitle: group.title,
-    sectionDir: dirOfSection(group),
-  }
-  newTitle.value = ''
-  newFilename.value = ''
-  newFilenameManual.value = false
-  newMessage.value = ''
-  newChapterOpen.value = true
-}
-
-function closeNewChapterModal(): void {
-  if (newSaving.value) return
-  newChapterOpen.value = false
-  newChapterCtx.value = null
-}
-
-watch(newTitle, (t) => {
-  if (newFilenameManual.value) return
-  newFilename.value = slugifyTitleToFilename(t)
-})
-function onFilenameInput(): void { newFilenameManual.value = true }
-
-const newChapterPath = computed<string>(() => {
-  if (!newChapterCtx.value) return ''
-  const dir = newChapterCtx.value.sectionDir
-  const name = newFilename.value.trim()
-  if (!name) return ''
-  return dir ? `${dir}/${name}` : name
-})
-
-const canCreateChapter = computed<boolean>(() => {
-  return !newSaving.value
-    && newTitle.value.trim().length > 0
-    && /\.md$/i.test(newFilename.value)
-    && newChapterPath.value.length > 0
-})
-
-async function saveNewChapter(): Promise<void> {
-  if (!canCreateChapter.value || !newChapterCtx.value) return
-  const { repo, sectionTitle } = newChapterCtx.value
-  const path = newChapterPath.value
-  const title = newTitle.value.trim()
-  // Skeleton minimal — le prof completera ensuite via "Modifier"
-  const content = `# ${title}\n\nContenu du chapitre.\n`
-  const message = newMessage.value.trim() || `docs: add ${path}`
-
-  newSaving.value = true
-  try {
-    const resp = await window.api.createLumenChapterFile(repo.id, {
-      path, content, message,
-    }) as { ok: boolean; error?: string }
-    if (!resp?.ok) {
-      const msg = resp?.error || 'Echec de la creation'
-      showToast(msg, 'error')
-      return
-    }
-    showToast(`Chapitre cree : ${title}`, 'success')
-    newChapterOpen.value = false
-    newChapterCtx.value = null
-    // Re-sync le repo pour que l'auto-manifest decouvre le nouveau fichier
-    try {
-      await lumenStore.syncReposForPromo(repo.promoId)
-    } catch { /* si sync echoue, le prochain sync manuel prendra le relais */ }
-    // Selectionne le nouveau chapitre pour ouvrir immediatement le viewer
-    emit('select', { repoId: repo.id, path })
-    void sectionTitle  // lint suppress (l'info est dans le toast)
-  } catch (err) {
-    const msg = (err as { message?: string })?.message || 'Erreur reseau'
-    showToast(msg, 'error')
-  } finally {
-    newSaving.value = false
-  }
-}
+// Nouveau chapitre : modale accessible via le "+" en regard de chaque section
+// (teacher only). Le composable gere l'etat + appel IPC + re-sync du repo.
+const {
+  open: newChapterOpen,
+  ctx: newChapterCtx,
+  title: newTitle,
+  filename: newFilename,
+  message: newMessage,
+  saving: newSaving,
+  path: newChapterPath,
+  canCreate: canCreateChapter,
+  openModal: openNewChapterModal,
+  closeModal: closeNewChapterModal,
+  onFilenameInput,
+  save: saveNewChapter,
+} = useLumenNewChapter((payload) => emit('select', payload))
 </script>
 
 <template>
@@ -792,75 +516,23 @@ async function saveNewChapter(): Promise<void> {
     </nav>
 
     <!-- Modale "Nouveau chapitre" (v2.68) — teacher only, via le + de section -->
-    <Modal v-model="newChapterOpen" max-width="520px">
-      <div class="lumen-new-chapter">
-        <header class="lumen-new-head">
-          <div>
-            <h2 class="lumen-new-title">Nouveau chapitre</h2>
-            <p v-if="newChapterCtx" class="lumen-new-sub">
-              dans <strong>{{ newChapterCtx.sectionTitle }}</strong>
-            </p>
-          </div>
-          <button
-            type="button"
-            class="lumen-new-close"
-            aria-label="Fermer"
-            :disabled="newSaving"
-            @click="closeNewChapterModal"
-          >
-            <X :size="16" />
-          </button>
-        </header>
-        <div class="lumen-new-body">
-          <label class="lumen-new-label">
-            Titre du chapitre
-            <input
-              v-model="newTitle"
-              type="text"
-              class="form-input"
-              placeholder="Ex: Introduction aux routeurs"
-              maxlength="200"
-              @keydown.enter.prevent="saveNewChapter"
-            />
-          </label>
-          <label class="lumen-new-label">
-            Nom de fichier
-            <input
-              v-model="newFilename"
-              type="text"
-              class="form-input"
-              placeholder="introduction-routeurs.md"
-              maxlength="200"
-              @input="onFilenameInput"
-            />
-          </label>
-          <p v-if="newChapterPath" class="lumen-new-path">
-            <span class="lumen-new-path-label">Chemin complet :</span>
-            <code>{{ newChapterPath }}</code>
-          </p>
-          <label class="lumen-new-label">
-            Message de commit (optionnel)
-            <input
-              v-model="newMessage"
-              type="text"
-              class="form-input"
-              :placeholder="`docs: add ${newChapterPath || 'nouveau-chapitre.md'}`"
-              maxlength="200"
-            />
-          </label>
-        </div>
-        <footer class="lumen-new-foot">
-          <button type="button" class="btn-ghost" :disabled="newSaving" @click="closeNewChapterModal">
-            Annuler
-          </button>
-          <button type="button" class="btn-primary" :disabled="!canCreateChapter" @click="saveNewChapter">
-            <Loader2 v-if="newSaving" :size="14" class="spin" />
-            <Plus v-else :size="14" />
-            {{ newSaving ? 'Creation...' : 'Creer' }}
-          </button>
-        </footer>
-      </div>
-    </Modal>
+    <LumenNewChapterModal
+      :model-value="newChapterOpen"
+      :section-title="newChapterCtx?.sectionTitle ?? null"
+      :title="newTitle"
+      :filename="newFilename"
+      :message="newMessage"
+      :path="newChapterPath"
+      :saving="newSaving"
+      :can-create="canCreateChapter"
+      @update:model-value="newChapterOpen = $event"
+      @update:title="newTitle = $event"
+      @update:filename="newFilename = $event"
+      @update:message="newMessage = $event"
+      @filename-input="onFilenameInput"
+      @save="saveNewChapter"
+      @close="closeNewChapterModal"
+    />
   </div>
 </template>
 
