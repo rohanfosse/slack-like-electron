@@ -294,22 +294,27 @@ async function submitReminder() {
 
       // If Teams meeting requested, also create in Outlook with online meeting
       if (formCreateTeams.value && isTeacher.value && formTime.value) {
-        const startIso = new Date(`${formDate.value}T${formTime.value}:00`).toISOString()
-        const endIso   = new Date(new Date(startIso).getTime() + 60 * 60 * 1000).toISOString()
-        try {
-          const res = await window.api.createOutlookEvent({
-            subject: formTitle.value.trim(),
-            startDateTime: startIso,
-            endDateTime: endIso,
-            body: formDesc.value.trim() || undefined,
-            createTeams: true,
-          })
-          if (res.ok && res.data?.teamsJoinUrl) {
-            showToast('Reunion Teams creee — lien dans Outlook', 'success')
-            // Refresh outlook to see the new event
-            await loadOutlook()
-          }
-        } catch { showToast('Teams non disponible (verifiez la connexion Microsoft)', 'error') }
+        const startDate = new Date(`${formDate.value}T${formTime.value}:00`)
+        if (isNaN(startDate.getTime())) {
+          showToast('Date ou heure invalide pour la reunion Teams', 'error')
+        } else {
+          const startIso = startDate.toISOString()
+          const endIso   = new Date(startDate.getTime() + 60 * 60 * 1000).toISOString()
+          try {
+            const res = await window.api.createOutlookEvent({
+              subject: formTitle.value.trim(),
+              startDateTime: startIso,
+              endDateTime: endIso,
+              body: formDesc.value.trim() || undefined,
+              createTeams: true,
+            })
+            if (res.ok && res.data?.teamsJoinUrl) {
+              showToast('Reunion Teams creee — lien dans Outlook', 'success')
+              // Refresh outlook to see the new event
+              await loadOutlook()
+            }
+          } catch { showToast('Teams non disponible (verifiez la connexion Microsoft)', 'error') }
+        }
       }
     }
     editingId.value = null
