@@ -39,11 +39,15 @@ const activityStatusSchema = z.object({
   status: z.enum(['pending', 'live', 'closed'], { message: 'Statut invalide' }),
 }).passthrough()
 
+// Limites anti-DoS sur les reponses (text, words agreges, answer)
+const MAX_ANSWER_LENGTH = 2000
+const MAX_WORD_COUNT    = 50
+
 const respondSchema = z.object({
   answer:  z.any().optional(),
-  answers: z.array(z.any()).optional(),
-  text:    z.string().optional(),
-  words:   z.array(z.string()).optional(),
+  answers: z.array(z.any()).max(50).optional(),
+  text:    z.string().max(MAX_ANSWER_LENGTH).optional(),
+  words:   z.array(z.string().max(100)).max(MAX_WORD_COUNT).optional(),
 }).passthrough()
 
 const reorderSchema = z.object({
@@ -251,47 +255,64 @@ router.post('/activities/:id/respond', requirePromo(promoFromActivity), validate
     const studentName = req.user?.name ?? ''
     // Support multiple answer formats: { answer } or { answers } or { text } or { words }
     let answer = req.body.answer
-    if (answer === undefined && req.body.answers) answer = req.body.answers.join(',')
+    if (answer === undefined && Array.isArray(req.body.answers)) answer = req.body.answers.join(',')
     if (answer === undefined && req.body.text) answer = req.body.text
-    if (answer === undefined && req.body.words) answer = req.body.words.join(',')
-    if (!studentId || answer === undefined) throw new Error('studentId et answer requis')
+    if (answer === undefined && Array.isArray(req.body.words)) answer = req.body.words.join(',')
+    if (!studentId || answer === undefined) {
+      return res.status(400).json({ ok: false, error: 'studentId et answer requis' })
+    }
+
+    // Normaliser en string et borner la taille (anti-DoS)
+    const answerStr = String(answer)
+    if (answerStr.length === 0) {
+      return res.status(400).json({ ok: false, error: 'answer vide non autorise' })
+    }
+    if (answerStr.length > MAX_ANSWER_LENGTH) {
+      return res.status(400).json({ ok: false, error: `answer trop long (max ${MAX_ANSWER_LENGTH} caracteres)` })
+    }
+
     const activityId = Number(req.params.id)
+
+    // Verifier existence + statut de l'activite AVANT insertion
+    const db = require('../db/connection').getDb()
+    const activityRow = db.prepare('SELECT * FROM live_activities WHERE id = ?').get(activityId)
+    if (!activityRow) {
+      return res.status(404).json({ ok: false, error: 'Activite introuvable' })
+    }
+    if (activityRow.status !== 'live') {
+      return res.status(409).json({ ok: false, error: "L'activite n'accepte plus de reponses" })
+    }
+
     const response = queries.submitResponse({
-      activityId, studentId, answer: String(answer),
+      activityId, studentId, answer: answerStr,
     })
     const io = req.app.get('io')
 
-    // Retrouver l'activité complète pour le scoring
-    const db = require('../db/connection').getDb()
-    const activityRow = db.prepare('SELECT * FROM live_activities WHERE id = ?').get(activityId)
-
     let scoreResult = { isCorrect: null, points: 0, rank: null, streak: 0 }
 
-    if (activityRow) {
-      const session = queries.getSession(activityRow.session_id)
+    const session = queries.getSession(activityRow.session_id)
 
-      // Calculate correctness and score for QCM with correct_answers
-      const isCorrect = queries.checkCorrectness(activityId, answer)
-      if (isCorrect !== null) {
-        // Compute answer time (ms since activity started)
-        let answerTimeMs = 0
-        if (activityRow.started_at) {
-          answerTimeMs = Math.max(0, Date.now() - new Date(activityRow.started_at + 'Z').getTime())
-        }
-        const name = studentName || `Etudiant ${studentId}`
-        const { points, streak } = queries.calculateScore(activityId, studentId, name, answerTimeMs, isCorrect)
-        const rank = queries.getStudentRank(activityRow.session_id, studentId)
-        scoreResult = { isCorrect, points, rank, streak }
+    // Calculate correctness and score for QCM with correct_answers
+    const isCorrect = queries.checkCorrectness(activityId, answerStr)
+    if (isCorrect !== null) {
+      // Compute answer time (ms since activity started)
+      let answerTimeMs = 0
+      if (activityRow.started_at) {
+        answerTimeMs = Math.max(0, Date.now() - new Date(activityRow.started_at + 'Z').getTime())
       }
+      const name = studentName || `Etudiant ${studentId}`
+      const { points, streak } = queries.calculateScore(activityId, studentId, name, answerTimeMs, isCorrect)
+      const rank = queries.getStudentRank(activityRow.session_id, studentId)
+      scoreResult = { isCorrect, points, rank, streak }
+    }
 
-      if (session) {
-        throttledResultsEmit(io, activityId, session.promo_id)
-        // Emit scores update if scoring is active
-        if (isCorrect !== null) {
-          throttledScoresEmit(io, session.id, activityId, session.promo_id)
-        }
+    if (session && io) {
+      throttledResultsEmit(io, activityId, session.promo_id)
+      if (isCorrect !== null) {
+        throttledScoresEmit(io, session.id, activityId, session.promo_id)
       }
     }
+
     res.json({ ok: true, data: { ...response, ...scoreResult } })
   } catch (err) { res.status(400).json({ ok: false, error: err.message }) }
 })

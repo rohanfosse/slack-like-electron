@@ -131,7 +131,18 @@ describe('POST /api/live/sessions/:id/activities', () => {
 })
 
 describe('POST /api/live/activities/:id/respond', () => {
-  it('submits a response', async () => {
+  it('rejects response when activity not live (409)', async () => {
+    const res = await request(app)
+      .post(`/api/live/activities/${createdActivityId}/respond`)
+      .send({ studentId: 1, answer: 'A' })
+    expect(res.status).toBe(409)
+    expect(res.body.ok).toBe(false)
+  })
+
+  it('submits a response when activity is live', async () => {
+    await request(app)
+      .patch(`/api/live/activities/${createdActivityId}/status`)
+      .send({ status: 'live' })
     const res = await request(app)
       .post(`/api/live/activities/${createdActivityId}/respond`)
       .send({ studentId: 1, answer: 'A' })
@@ -146,6 +157,30 @@ describe('POST /api/live/activities/:id/respond', () => {
       .send({})
     expect(res.status).toBe(400)
     expect(res.body.ok).toBe(false)
+  })
+
+  it('returns 400 on empty answer', async () => {
+    const res = await request(app)
+      .post(`/api/live/activities/${createdActivityId}/respond`)
+      .send({ answer: '' })
+    expect(res.status).toBe(400)
+    expect(res.body.error).toMatch(/vide|requis/i)
+  })
+
+  it('returns 400 on oversize answer', async () => {
+    const big = 'x'.repeat(2001)
+    const res = await request(app)
+      .post(`/api/live/activities/${createdActivityId}/respond`)
+      .send({ answer: big })
+    expect(res.status).toBe(400)
+    expect(res.body.error).toMatch(/trop long/i)
+  })
+
+  it('returns 404 on unknown activity id', async () => {
+    const res = await request(app)
+      .post('/api/live/activities/99999/respond')
+      .send({ answer: 'A' })
+    expect(res.status).toBe(404)
   })
 })
 
