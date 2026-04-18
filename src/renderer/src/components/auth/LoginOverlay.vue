@@ -1,169 +1,59 @@
 <script setup lang="ts">
-  import { ref, computed, onMounted } from 'vue'
-  import { useRouter } from 'vue-router'
+  import { ref } from 'vue'
   import { Eye, EyeOff } from 'lucide-vue-next'
-  import { useAppStore } from '@/stores/app'
-  import { STORAGE_KEYS } from '@/constants'
-  import { avatarColor }  from '@/utils/format'
-  import type { LoginResponse } from '@/types'
+  import { useLoginForm } from '@/composables/useLoginForm'
+  import { useRegisterForm } from '@/composables/useRegisterForm'
+  import { useForgotPassword } from '@/composables/useForgotPassword'
   import logoUrl from '@/assets/logo.png'
-
-  const appStore = useAppStore()
-  const router   = useRouter()
 
   type Screen = 'login' | 'register' | 'forgot'
   const screen = ref<Screen>('login')
 
-  // ── Mot de passe oublié ──────────────────────────────────────────────────
-  const forgotEmail    = ref('')
-  const forgotSent     = ref(false)
-  const forgotErr      = ref('')
+  // ── Login ─────────────────────────────────────────────────────────────
+  const {
+    email, password, loginErr, submitting, showPwd, rememberMe,
+    submit: handleLogin,
+  } = useLoginForm()
 
-  function goForgot() {
-    forgotEmail.value = email.value
-    forgotSent.value  = false
-    forgotErr.value   = ''
-    screen.value      = 'forgot'
-  }
-
-  function handleForgot() {
-    forgotErr.value = ''
-    const trimmed = forgotEmail.value.trim().toLowerCase()
-    if (!trimmed) { forgotErr.value = 'Veuillez saisir votre adresse email.'; return }
-    forgotSent.value = true
-  }
-
-  // ── Connexion ─────────────────────────────────────────────────────────────
-  const email      = ref('')
-  const password   = ref('')
-  const loginErr   = ref('')
-  const submitting = ref(false)
-  const showPwd    = ref(false)
-  const rememberMe = ref(!!localStorage.getItem(STORAGE_KEYS.REMEMBER_TOKEN))
-
-  async function handleLogin() {
-    loginErr.value   = ''
-    submitting.value = true
-    try {
-      const res = await window.api.loginWithCredentials(email.value.trim(), password.value)
-      if (!res?.ok || !res.data) {
-        const serverErr = (res as { error?: string })?.error
-        loginErr.value = serverErr ?? 'Email ou mot de passe incorrect.'
-        password.value = ''
-        return
-      }
-      const u = res.data as LoginResponse
-      appStore.login({ ...u, avatar_initials: u.avatar_initials ?? u.name.slice(0, 2).toUpperCase() })
-      if (rememberMe.value) {
-        localStorage.setItem(STORAGE_KEYS.REMEMBER_TOKEN, JSON.stringify({ email: email.value.trim(), ts: Date.now() }))
-      } else {
-        localStorage.removeItem(STORAGE_KEYS.REMEMBER_TOKEN)
-      }
-      router.replace('/dashboard')
-    } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : String(e)
-      loginErr.value = msg || 'Erreur inattendue lors de la connexion.'
-    } finally {
-      submitting.value = false
-    }
-  }
-
-  // ── Inscription ───────────────────────────────────────────────────────────
-  const firstName     = ref('')
-  const lastName      = ref('')
-  const regEmail      = ref('')
-  const regPassword   = ref('')
-  const regPromoId    = ref<number | ''>('')
-  const regEmailErr   = ref('')
-  const regSubmitting = ref(false)
-  const pendingPhoto  = ref<string | null>(null)
-  const promotions    = ref<{ id: number; name: string }[]>([])
+  // ── Inscription ──────────────────────────────────────────────────────
+  const registerForm = useRegisterForm()
+  const firstName     = registerForm.firstName
+  const lastName      = registerForm.lastName
+  const regEmail      = registerForm.email
+  const regPassword   = registerForm.password
+  const regPromoId    = registerForm.promoId
+  const regEmailErr   = registerForm.emailErr
+  const regSubmitting = registerForm.submitting
+  const pendingPhoto  = registerForm.pendingPhoto
+  const promotions    = registerForm.promotions
+  const regPwdCriteria = registerForm.pwdCriteria
+  const regPwdValid    = registerForm.pwdValid
+  const isCesiEmail    = registerForm.isCesiEmail
+  const regEmailHint   = registerForm.emailHint
+  const pickPhoto       = registerForm.pickPhoto
+  const previewInitials = registerForm.previewInitials
+  const previewColor    = registerForm.previewColor
 
   async function goRegister() {
-    const res = await window.api.getPromotions()
-    promotions.value = res?.ok ? res.data : []
+    await registerForm.loadPromotions()
     screen.value = 'register'
   }
 
-  // Auto-fill email from remembered session (expires after 7 days)
-  onMounted(() => {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEYS.REMEMBER_TOKEN)
-      if (raw) {
-        const { email: savedEmail, ts } = JSON.parse(raw)
-        const SEVEN_DAYS = 7 * 24 * 60 * 60 * 1000
-        if (Date.now() - ts < SEVEN_DAYS) {
-          email.value = savedEmail
-          rememberMe.value = true
-        } else {
-          localStorage.removeItem(STORAGE_KEYS.REMEMBER_TOKEN)
-        }
-      }
-    } catch { localStorage.removeItem(STORAGE_KEYS.REMEMBER_TOKEN) }
-  })
-
-  const previewInitials = () => {
-    const n = `${firstName.value} ${lastName.value}`.trim()
-    return n.split(/\s+/).map((w) => w[0]).join('').toUpperCase().slice(0, 2) || '?'
-  }
-  const previewColor = () => avatarColor(`${firstName.value} ${lastName.value}`.trim() || '?')
-
-  async function pickPhoto() {
-    const res = await window.api.openImageDialog()
-    if (res?.ok && res.data) pendingPhoto.value = res.data
-  }
-
-  // Validation mot de passe inscription
-  const regPwdCriteria = computed(() => ({
-    length:    regPassword.value.length >= 8,
-    uppercase: /[A-Z]/.test(regPassword.value),
-    number:    /[0-9]/.test(regPassword.value),
-    special:   /[^A-Za-z0-9]/.test(regPassword.value),
-  }))
-  const regPwdValid = computed(() => Object.values(regPwdCriteria.value).every(Boolean))
-
-  // Indication CESI en temps réel
-  const isCesiEmail = computed(() => regEmail.value.trim().toLowerCase().endsWith('@viacesi.fr'))
-  const regEmailHint = computed(() => {
-    const v = regEmail.value.trim()
-    if (!v || v.length < 3) return ''
-    if (v.includes('@') && !isCesiEmail.value) {
-      return 'Compte externe (non-CESI)'
-    }
-    return ''
-  })
-
   async function handleRegister() {
-    regEmailErr.value = ''
-    if (!regPromoId.value) return
-    if (!regPwdValid.value) {
-      regEmailErr.value = 'Le mot de passe doit contenir au moins 8 caractères, 1 majuscule, 1 chiffre et 1 caractère spécial.'
-      return
-    }
-    regSubmitting.value = true
-    try {
-      const fullName = `${firstName.value.trim()} ${lastName.value.trim()}`
-      const res = await window.api.registerStudent({
-        name: fullName, email: regEmail.value.trim().toLowerCase(),
-        promoId: regPromoId.value as number, photoData: pendingPhoto.value,
-        password: regPassword.value,
-      })
-      if (!res?.ok) { regEmailErr.value = res?.error ?? 'Erreur lors de la création du compte.'; return }
-      // Login automatique après inscription pour obtenir le token JWT
-      const loginRes = await window.api.loginWithCredentials(regEmail.value.trim().toLowerCase(), regPassword.value)
-      if (!loginRes?.ok || !loginRes.data) {
-        regEmailErr.value = 'Compte créé mais connexion impossible. Essayez de vous connecter.'
-        screen.value = 'login'
-        return
-      }
-      const u = loginRes.data as LoginResponse
-      appStore.login({ ...u, avatar_initials: u.avatar_initials ?? u.name.slice(0, 2).toUpperCase() })
-      router.replace('/dashboard')
-    } catch (e: unknown) {
-      regEmailErr.value = e instanceof Error ? e.message : 'Erreur.'
-    } finally {
-      regSubmitting.value = false
-    }
+    const r = await registerForm.submit()
+    if (r.loginFailed) screen.value = 'login'
+  }
+
+  // ── Mot de passe oublie ──────────────────────────────────────────────
+  const forgot = useForgotPassword()
+  const forgotEmail   = forgot.email
+  const forgotSent    = forgot.sent
+  const forgotErr     = forgot.err
+  const handleForgot  = forgot.submit
+
+  function goForgot() {
+    forgot.reset(email.value)
+    screen.value = 'forgot'
   }
 </script>
 
