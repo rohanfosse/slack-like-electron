@@ -38,11 +38,15 @@ const addActivitySchema = z.object({
 
 const sessionStatusSchema = z.object({ status: z.enum(['waiting', 'active', 'ended']) })
 const activityStatusSchema = z.object({ status: z.enum(['pending', 'live', 'closed']) })
+
+const MAX_ANSWER_LENGTH = 2000
+const MAX_WORD_COUNT    = 50
+
 const respondSchema = z.object({
   answer:  z.any().optional(),
-  answers: z.array(z.any()).optional(),
-  text:    z.string().optional(),
-  words:   z.array(z.string()).optional(),
+  answers: z.array(z.any()).max(50).optional(),
+  text:    z.string().max(MAX_ANSWER_LENGTH).optional(),
+  words:   z.array(z.string().max(100)).max(MAX_WORD_COUNT).optional(),
   mode:    z.enum(['live', 'replay']).optional(),
 })
 const reorderSchema = z.object({ order: z.array(z.number().int()) })
@@ -269,14 +273,27 @@ router.post('/activities/:id/respond', requirePromo(promoFromActivityV2), valida
     const studentId = req.user?.id
     const studentName = req.user?.name ?? ''
     let answer = req.body.answer
-    if (answer === undefined && req.body.answers) answer = req.body.answers.join(',')
+    if (answer === undefined && Array.isArray(req.body.answers)) answer = req.body.answers.join(',')
     if (answer === undefined && req.body.text) answer = req.body.text
-    if (answer === undefined && req.body.words) answer = req.body.words.join(',')
-    if (!studentId || answer === undefined) throw new Error('studentId et answer requis')
+    if (answer === undefined && Array.isArray(req.body.words)) answer = req.body.words.join(',')
+    if (!studentId || answer === undefined) {
+      return res.status(400).json({ ok: false, error: 'studentId et answer requis' })
+    }
+
+    const answerStr = String(answer)
+    if (answerStr.length === 0) {
+      return res.status(400).json({ ok: false, error: 'answer vide non autorise' })
+    }
+    if (answerStr.length > MAX_ANSWER_LENGTH) {
+      return res.status(400).json({ ok: false, error: `answer trop long (max ${MAX_ANSWER_LENGTH} caracteres)` })
+    }
+
     const activityId = Number(req.params.id)
     const db = getDb()
     const activityRow = db.prepare('SELECT * FROM live_activities_v2 WHERE id = ?').get(activityId)
-    if (!activityRow) throw new Error('Activity not found')
+    if (!activityRow) {
+      return res.status(404).json({ ok: false, error: 'Activite introuvable' })
+    }
 
     // Determine mode : client envoie ?mode=replay OU le body {mode:'replay'}. Accepte uniquement si session ended.
     const requestedMode = (req.query?.mode === 'replay' || req.body?.mode === 'replay') ? 'replay' : 'live'
@@ -284,17 +301,21 @@ router.post('/activities/:id/respond', requirePromo(promoFromActivityV2), valida
     let mode = 'live'
     if (requestedMode === 'replay') {
       if (!session || session.status !== 'ended') {
-        throw new Error('Mode replay reserve aux sessions terminees')
+        return res.status(409).json({ ok: false, error: 'Mode replay reserve aux sessions terminees' })
       }
       mode = 'replay'
+    } else {
+      // Mode live : l'activite doit etre 'live' (pending/closed refusees)
+      if (activityRow.status !== 'live') {
+        return res.status(409).json({ ok: false, error: "L'activite n'accepte plus de reponses" })
+      }
     }
-    // Mode live : pas de guard supplementaire (comportement inchange pour compat)
 
-    const response = queries.submitLiveResponse({ activityId, studentId, answer: String(answer), mode })
+    const response = queries.submitLiveResponse({ activityId, studentId, answer: answerStr, mode })
     const io = req.app.get('io')
     let scoreResult = { isCorrect: null, points: 0, rank: null, streak: 0 }
     if (activityRow.category === 'spark') {
-      const isCorrect = queries.checkLiveCorrectness(activityId, answer)
+      const isCorrect = queries.checkLiveCorrectness(activityId, answerStr)
       if (isCorrect !== null) {
         let answerTimeMs = 0
         if (activityRow.started_at) {
