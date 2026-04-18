@@ -25,14 +25,19 @@ async function handleCreate() {
   if (id) {
     cahierStore.openCahier(id)
     showToast('Cahier cree.', 'success')
+  } else {
+    showToast('Impossible de creer le cahier.', 'error')
   }
 }
 
 async function handleDelete(id: number, e: Event) {
   e.stopPropagation()
   if (!await confirm('Supprimer ce cahier ?', 'danger', 'Supprimer')) return
-  await cahierStore.deleteCahier(id)
-  showToast('Cahier supprime.', 'success')
+  const ok = await cahierStore.deleteCahier(id)
+  if (ok) {
+    showToast('Cahier supprime.', 'success')
+  }
+  // En cas d'echec, useApi a deja affiche un toast d'erreur — on n'en rajoute pas un second.
 }
 </script>
 
