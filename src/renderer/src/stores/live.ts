@@ -203,6 +203,11 @@ export const useLiveStore = defineStore('live', () => {
     activityId: number,
     payload: { answers?: number[]; text?: string; words?: string[]; answer?: string; mode?: 'live' | 'replay' },
   ): Promise<LiveScoreResult | null> {
+    // Garde-fou client : si on a deja repondu pour cette activite en mode live, ne renvoie pas
+    // (le backend refuse aussi via ON CONFLICT mais evitons le roundtrip inutile)
+    if (payload.mode !== 'replay' && hasResponded.value && currentActivity.value?.id === activityId) {
+      return myScore.value
+    }
     const data = await api(
       () => window.api.submitLiveV2Response(activityId, payload),
     ) as { isCorrect: boolean | null; points: number; rank: number | null } | null
@@ -371,7 +376,12 @@ export const useLiveStore = defineStore('live', () => {
         const act = activity as LiveActivity
         if (currentSession.value && act.session_id === currentSession.value.id) {
           const acts = currentSession.value.activities ?? []
-          currentSession.value = { ...currentSession.value, activities: [...acts, act] }
+          // Upsert : remplace si l'activite existe deja (evite doublons), sinon append
+          const existing = acts.findIndex(a => a.id === act.id)
+          const next = existing >= 0
+            ? acts.map((a, i) => (i === existing ? { ...a, ...act } : a))
+            : [...acts, act]
+          currentSession.value = { ...currentSession.value, activities: next }
         }
         // Set timer info for students
         if (act.status === 'live') {
