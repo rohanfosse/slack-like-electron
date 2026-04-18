@@ -1,11 +1,12 @@
 /** StudentRexView — Vue etudiant pour les sessions REX anonymes. */
 <script setup lang="ts">
-  import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
+  import { ref, computed, onMounted, onUnmounted } from 'vue'
   import { HeartPulse, CheckCircle2, Send, LogOut, Clock, Star } from 'lucide-vue-next'
   import { useAppStore }  from '@/stores/app'
   import { useRexStore }  from '@/stores/rex'
   import { rexActivityTypeLabel } from '@/utils/rexActivity'
-  import type { RexActivity } from '@/types'
+  import { useRexSyncSubmit } from '@/composables/useRexSyncSubmit'
+  import { useRexAsyncSubmit } from '@/composables/useRexAsyncSubmit'
 
   import RexSondageResults          from './RexSondageResults.vue'
   import RexWordCloud               from './RexWordCloud.vue'
@@ -18,28 +19,10 @@
   const appStore = useAppStore()
   const rex      = useRexStore()
 
-  const joinCode    = ref('')
-  const joining     = ref(false)
-  const textInput   = ref('')
-  const wordInputs  = ref<string[]>([])
-  const ratingInput = ref(0)
-  const sondageSelected = ref<number | null>(null)
-  const humeurSelected  = ref<string | null>(null)
-  const prioriteOrder   = ref<number[]>([])
-  const matriceRatings  = ref<Record<string, number>>({})
+  const joinCode = ref('')
+  const joining  = ref(false)
 
   const HUMEUR_EMOJIS = ['😊', '🙂', '😐', '😟', '🤯']
-
-  // Async mode: track responded activity IDs + expanded activity
-  const respondedIds       = ref<Set<number>>(new Set())
-  const asyncExpandedId    = ref<number | null>(null)
-  const asyncTextInputs    = ref<Record<number, string>>({})
-  const asyncWordInputs    = ref<Record<number, string[]>>({})
-  const asyncRatingInputs  = ref<Record<number, number>>({})
-  const asyncSondageInputs = ref<Record<number, number | null>>({})
-  const asyncHumeurInputs  = ref<Record<number, string | null>>({})
-  const asyncPrioriteInputs = ref<Record<number, number[]>>({})
-  const asyncMatriceInputs  = ref<Record<number, Record<string, number>>>({})
 
   const parsedOptions = computed<string[]>(() => {
     try { return JSON.parse(activity.value?.options as string ?? '[]') } catch { return [] }
@@ -54,19 +37,33 @@
     (session.value?.activities ?? []).filter(a => a.status === 'live')
   )
 
-  // Reset inputs when activity changes (sync mode)
-  watch(activity, (act) => {
-    if (act?.type === 'nuage') {
-      wordInputs.value = Array.from({ length: act.max_words || 2 }, () => '')
-    }
-    if (act?.type === 'priorite') initPriorite(act)
-    if (act?.type === 'matrice') initMatrice(act)
-    textInput.value = ''
-    ratingInput.value = 0
-    sondageSelected.value = null
-    humeurSelected.value = null
-    rex.hasResponded = false
-  })
+  // ── Sync mode (live) : un seul jeu d'inputs partage ─────────────────────
+  const {
+    textInput, wordInputs, ratingInput, sondageSelected, humeurSelected,
+    prioriteOrder, matriceRatings,
+    movePriorite,
+    submitText, submitWords, submitRating, submitSondage,
+    submitHumeur, submitPriorite, submitMatrice,
+  } = useRexSyncSubmit(activity)
+
+  // ── Async mode : inputs par-activite (Record<actId, ...>) ───────────────
+  const {
+    respondedIds,
+    expandedId: asyncExpandedId,
+    textInputs: asyncTextInputs,
+    wordInputs: asyncWordInputs,
+    ratingInputs: asyncRatingInputs,
+    sondageInputs: asyncSondageInputs,
+    humeurInputs: asyncHumeurInputs,
+    prioriteInputs: asyncPrioriteInputs,
+    matriceInputs: asyncMatriceInputs,
+    expand: expandAsyncActivity,
+    submitText: asyncSubmitText,
+    submitWords: asyncSubmitWords,
+    submitRating: asyncSubmitRating,
+    submitSondage: asyncSubmitSondage,
+    submitHumeur: asyncSubmitHumeur,
+  } = useRexAsyncSubmit()
 
   onMounted(async () => {
     rex.initSocketListeners()
@@ -83,130 +80,6 @@
     joining.value = true
     await rex.joinByCode(joinCode.value.trim().toUpperCase())
     joining.value = false
-  }
-
-  // ── Sync submit helpers ─────────────────────────────────────────────────
-  async function submitText() {
-    if (!activity.value || !textInput.value.trim()) return
-    await rex.submitResponse(activity.value.id, { text: textInput.value.trim() })
-  }
-
-  async function submitWords() {
-    if (!activity.value) return
-    const filtered = wordInputs.value.map(w => w.trim()).filter(Boolean)
-    if (filtered.length === 0) return
-    await rex.submitResponse(activity.value.id, { words: filtered })
-  }
-
-  async function submitRating() {
-    if (!activity.value || ratingInput.value <= 0) return
-    await rex.submitResponse(activity.value.id, { rating: ratingInput.value })
-  }
-
-  async function submitSondage() {
-    if (!activity.value || sondageSelected.value === null) return
-    await rex.submitResponse(activity.value.id, { answer: String(sondageSelected.value) })
-  }
-
-  async function submitHumeur() {
-    if (!activity.value || !humeurSelected.value) return
-    await rex.submitResponse(activity.value.id, { answer: humeurSelected.value })
-  }
-
-  async function submitPriorite() {
-    if (!activity.value || prioriteOrder.value.length === 0) return
-    await rex.submitResponse(activity.value.id, { answer: prioriteOrder.value.join(',') })
-  }
-
-  async function submitMatrice() {
-    if (!activity.value) return
-    await rex.submitResponse(activity.value.id, { answer: JSON.stringify(matriceRatings.value) })
-  }
-
-  function initPriorite(act: { options?: string | null }) {
-    try {
-      const items = JSON.parse(act.options as string || '[]')
-      prioriteOrder.value = Array.from({ length: items.length }, (_, i) => i)
-    } catch { prioriteOrder.value = [] }
-  }
-
-  function initMatrice(act: { options?: string | null; max_rating?: number }) {
-    try {
-      const criteria = JSON.parse(act.options as string || '[]')
-      const ratings: Record<string, number> = {}
-      for (const c of criteria) ratings[c] = 0
-      matriceRatings.value = ratings
-    } catch { matriceRatings.value = {} }
-  }
-
-  function movePriorite(from: number, to: number) {
-    const arr = [...prioriteOrder.value]
-    const [item] = arr.splice(from, 1)
-    arr.splice(to, 0, item)
-    prioriteOrder.value = arr
-  }
-
-  // ── Async submit helpers ────────────────────────────────────────────────
-  function initAsyncInputs(act: RexActivity) {
-    if (!(act.id in asyncTextInputs.value))   asyncTextInputs.value[act.id] = ''
-    if (!(act.id in asyncRatingInputs.value)) asyncRatingInputs.value[act.id] = 0
-    if (!(act.id in asyncWordInputs.value))   asyncWordInputs.value[act.id] = Array.from({ length: act.max_words || 2 }, () => '')
-    if (!(act.id in asyncSondageInputs.value)) asyncSondageInputs.value[act.id] = null
-    if (!(act.id in asyncHumeurInputs.value)) asyncHumeurInputs.value[act.id] = null
-    if (act.type === 'priorite' && !(act.id in asyncPrioriteInputs.value)) {
-      try {
-        const items = JSON.parse(act.options as string || '[]')
-        asyncPrioriteInputs.value[act.id] = Array.from({ length: items.length }, (_, i) => i)
-      } catch { asyncPrioriteInputs.value[act.id] = [] }
-    }
-    if (act.type === 'matrice' && !(act.id in asyncMatriceInputs.value)) {
-      try {
-        const criteria = JSON.parse(act.options as string || '[]')
-        const ratings: Record<string, number> = {}
-        for (const c of criteria) ratings[c] = 0
-        asyncMatriceInputs.value[act.id] = ratings
-      } catch { asyncMatriceInputs.value[act.id] = {} }
-    }
-  }
-
-  function expandAsyncActivity(act: RexActivity) {
-    initAsyncInputs(act)
-    asyncExpandedId.value = asyncExpandedId.value === act.id ? null : act.id
-  }
-
-  async function asyncSubmitText(actId: number) {
-    const text = asyncTextInputs.value[actId]?.trim()
-    if (!text) return
-    const ok = await rex.submitResponse(actId, { text })
-    if (ok) respondedIds.value = new Set([...respondedIds.value, actId])
-  }
-
-  async function asyncSubmitWords(actId: number) {
-    const filtered = (asyncWordInputs.value[actId] ?? []).map(w => w.trim()).filter(Boolean)
-    if (!filtered.length) return
-    const ok = await rex.submitResponse(actId, { words: filtered })
-    if (ok) respondedIds.value = new Set([...respondedIds.value, actId])
-  }
-
-  async function asyncSubmitRating(actId: number) {
-    const rating = asyncRatingInputs.value[actId]
-    if (!rating || rating <= 0) return
-    const ok = await rex.submitResponse(actId, { rating })
-    if (ok) respondedIds.value = new Set([...respondedIds.value, actId])
-  }
-
-  async function asyncSubmitSondage(actId: number) {
-    const sel = asyncSondageInputs.value[actId]
-    if (sel === null || sel === undefined) return
-    const ok = await rex.submitResponse(actId, { answer: String(sel) })
-    if (ok) respondedIds.value = new Set([...respondedIds.value, actId])
-  }
-
-  async function asyncSubmitHumeur(actId: number) {
-    const emoji = asyncHumeurInputs.value[actId]
-    if (!emoji) return
-    const ok = await rex.submitResponse(actId, { answer: emoji })
-    if (ok) respondedIds.value = new Set([...respondedIds.value, actId])
   }
 
   function leave() {
