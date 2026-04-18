@@ -1,17 +1,13 @@
 <script setup lang="ts">
   import { ref, watch, onMounted, computed } from 'vue'
   import { useRoute, useRouter } from 'vue-router'
-  import { Plus, ChevronDown, FolderOpen, Layers, BookOpen, BarChart2, CalendarDays, Calendar, Pencil, Trash2, UserPlus, Archive, ArchiveRestore, Search, X } from 'lucide-vue-next'
-  import { useTravauxStore } from '@/stores/travaux'
-  import NewProjectModal from '@/components/modals/NewProjectModal.vue'
+  import { Plus, ChevronDown, BookOpen, Pencil, Trash2, Search, X } from 'lucide-vue-next'
   import type { ProjectMeta } from '@/components/modals/NewProjectModal.vue'
-  import ProjectEditPanel from './ProjectEditPanel.vue'
   import ContextMenu from '@/components/ui/ContextMenu.vue'
   import type { ContextMenuItem } from '@/components/ui/ContextMenu.vue'
   import { parseCategoryIcon } from '@/utils/categoryIcon'
   import { useAppStore }       from '@/stores/app'
   import { useModalsStore }    from '@/stores/modals'
-  import { useDocumentsStore } from '@/stores/documents'
   import PromoRail          from './PromoRail.vue'
   import ChannelItem        from './ChannelItem.vue'
   import SidebarDashboard   from './SidebarDashboard.vue'
@@ -21,9 +17,9 @@
   import SidebarFichiers    from './SidebarFichiers.vue'
   import SidebarLive        from './SidebarLive.vue'
   import SidebarDmList      from './SidebarDmList.vue'
+  import SidebarArchivedChannels from './SidebarArchivedChannels.vue'
   import LumenRepoSidebar   from '@/components/lumen/LumenRepoSidebar.vue'
   import SkeletonLoader     from '@/components/ui/SkeletonLoader.vue'
-  import { avatarColor }  from '@/utils/format'
   import { useLumenStore }  from '@/stores/lumen'
   import { useLiveStore }   from '@/stores/live'
   import { useFichiersStore } from '@/stores/fichiers'
@@ -32,43 +28,20 @@
   import { useSidebarDm }       from '@/composables/useSidebarDm'
   import { useSidebarProjects } from '@/composables/useSidebarProjects'
   import { useSidebarActions }  from '@/composables/useSidebarActions'
-  import { useSidebarNav, channelMemberCount } from '@/composables/useSidebarNav'
+  import { useSidebarNav }      from '@/composables/useSidebarNav'
+  import { useSidebarArchivedChannels } from '@/composables/useSidebarArchivedChannels'
+  import { useSidebarCategoryDrag } from '@/composables/useSidebarCategoryDrag'
+  import { useSidebarDashboardSummary } from '@/composables/useSidebarDashboardSummary'
+  import { useSidebarDocsHelpers } from '@/composables/useSidebarDocsHelpers'
+  import { useSidebarKeyboardNav } from '@/composables/useSidebarKeyboardNav'
 
   const emit = defineEmits<{ navigate: [] }>()
   const channelFilter = ref('')
 
-  // Keyboard navigation : fleches haut/bas dans la sidebar canaux
-  function onSidebarKeydown(ev: KeyboardEvent) {
-    if (ev.key !== 'ArrowUp' && ev.key !== 'ArrowDown') return
-    ev.preventDefault()
-    const items = document.querySelectorAll<HTMLElement>('.sidebar-scroll-list .sidebar-item, .sidebar-scroll-list .channel-drag-wrap [role="button"]')
-    if (!items.length) return
-    const active = document.activeElement as HTMLElement | null
-    const currentIdx = active ? [...items].indexOf(active) : -1
-    let nextIdx: number
-    if (ev.key === 'ArrowDown') {
-      nextIdx = currentIdx < items.length - 1 ? currentIdx + 1 : 0
-    } else {
-      nextIdx = currentIdx > 0 ? currentIdx - 1 : items.length - 1
-    }
-    items[nextIdx]?.focus()
-  }
-
-  /** Channels filtres par la recherche. */
-  const filteredChannelGroups = computed(() => {
-    const q = channelFilter.value.toLowerCase().trim()
-    if (!q) return sortedChannelGroups.value
-    return sortedChannelGroups.value
-      .map((g) => ({
-        ...g,
-        channels: g.channels.filter((ch) => ch.name.toLowerCase().includes(q)),
-      }))
-      .filter((g) => g.channels.length > 0)
-  })
+  const { onKeydown: onSidebarKeydown } = useSidebarKeyboardNav()
 
   const appStore   = useAppStore()
   const modals     = useModalsStore()
-  const docStore   = useDocumentsStore()
   const lumenStore    = useLumenStore()
   const liveStore     = useLiveStore()
   const fichiersStore = useFichiersStore()
@@ -86,6 +59,18 @@
     loadTeacherChannels, load, visibleChannels, channelGroups, sortedChannelGroups, reorderCategories, dmStudents,
     selectPromo, setLoadRecentDmContacts,
   } = useSidebarData()
+
+  /** Channels filtres par la recherche. */
+  const filteredChannelGroups = computed(() => {
+    const q = channelFilter.value.toLowerCase().trim()
+    if (!q) return sortedChannelGroups.value
+    return sortedChannelGroups.value
+      .map((g) => ({
+        ...g,
+        channels: g.channels.filter((ch) => ch.name.toLowerCase().includes(q)),
+      }))
+      .filter((g) => g.channels.length > 0)
+  })
 
   const {
     collapsed, collapsedDashboard, channelsCollapsed, dmCollapsed,
@@ -136,52 +121,16 @@
   }
 
   // ── Canaux archives (staff only) ──────────────────────────────────────────
-  const archivedChannels  = ref<import('@/types').Channel[]>([])
-  const archivedCollapsed = ref(true)
-
-  async function loadArchivedChannels() {
-    if (!appStore.isStaff || !appStore.activePromoId) { archivedChannels.value = []; return }
-    try {
-      const res = await window.api.getArchivedChannels(appStore.activePromoId)
-      archivedChannels.value = res?.ok ? res.data : []
-    } catch { archivedChannels.value = [] }
-  }
-
-  function selectArchivedChannel(ch: import('@/types').Channel) {
-    appStore.openChannel(ch.id, ch.promo_id, ch.name, ch.type, ch.description ?? '', true, !!ch.is_private, channelMemberCount(ch))
-    emit('navigate')
-  }
-
-  async function handleRestore(channelId: number) {
-    await restoreChannel(channelId)
-    await loadArchivedChannels()
-  }
-
-  watch(() => appStore.activePromoId, () => loadArchivedChannels())
-  watch(() => route.name, (n) => { if (n === 'messages') loadArchivedChannels() })
-  watch(channels, () => loadArchivedChannels())
+  const {
+    archivedChannels,
+    collapsed: archivedCollapsed,
+    load: loadArchivedChannels,
+    selectArchived: selectArchivedChannel,
+    restore: handleRestore,
+  } = useSidebarArchivedChannels(channels, restoreChannel, () => emit('navigate'))
 
   // ── Documents sidebar helpers ────────────────────────────────────────────
-  const docCategories = computed(() => {
-    const cats = new Set(docStore.documents.map(d => d.category ?? 'Général'))
-    return Array.from(cats).sort()
-  })
-  const projectDocCounts = computed(() => {
-    const counts: Record<string, number> = {}
-    for (const d of docStore.documents) {
-      const p = d.project ?? ''
-      counts[p] = (counts[p] ?? 0) + 1
-    }
-    return counts
-  })
-  const docCatCounts = computed(() => {
-    const counts: Record<string, number> = {}
-    for (const d of docStore.documents) {
-      const cat = d.category ?? 'Général'
-      counts[cat] = (counts[cat] ?? 0) + 1
-    }
-    return counts
-  })
+  const { docCategories, projectDocCounts, docCatCounts } = useSidebarDocsHelpers()
 
   // ── Project context menu ──────────────────────────────────────────────────
   function openProjectCtx(e: MouseEvent, proj: string) {
@@ -203,30 +152,13 @@
   }
 
   // ── Drag & drop categories (reorder) ─────────────────────────────────────
-  interface CategoryGroup { label: string; key: string; channels: { id: number; name: string }[] }
-  const draggingCategory = ref<CategoryGroup | null>(null)
-
-  function onCategoryDragStart(e: DragEvent, group: CategoryGroup) {
-    draggingCategory.value = group
-    if (e.dataTransfer) e.dataTransfer.effectAllowed = 'move'
-  }
-  function onCategoryDragOver(e: DragEvent, _group: CategoryGroup) {
-    e.preventDefault()
-  }
-  function onCategoryDrop(_e: DragEvent, targetGroup: CategoryGroup) {
-    if (!draggingCategory.value || draggingCategory.value.key === targetGroup.key) return
-    const groups = [...sortedChannelGroups.value]
-    const fromIdx = groups.findIndex(g => g.key === draggingCategory.value!.key)
-    const toIdx = groups.findIndex(g => g.key === targetGroup.key)
-    if (fromIdx < 0 || toIdx < 0) return
-    const [moved] = groups.splice(fromIdx, 1)
-    groups.splice(toIdx, 0, moved)
-    reorderCategories(groups)
-    draggingCategory.value = null
-  }
-  function onCategoryDragEnd() {
-    draggingCategory.value = null
-  }
+  const {
+    dragging: draggingCategory,
+    onStart: onCategoryDragStart,
+    onOver: onCategoryDragOver,
+    onDrop: onCategoryDrop,
+    onEnd: onCategoryDragEnd,
+  } = useSidebarCategoryDrag(sortedChannelGroups, reorderCategories)
 
   function onProjectEditSave(proj: string, meta: ProjectMeta) {
     saveProjectMeta(proj, meta)
@@ -236,40 +168,8 @@
   // Wire up DM loading into data composable so load*Sidebar calls it
   setLoadRecentDmContacts(loadRecentDmContacts)
 
-  const travauxStore = useTravauxStore()
-
-  // ── Résumé promo (sidebar dashboard) ──────────────────────────────────────
-  const activePromoObj = computed(() => promotions.value.find(p => p.id === appStore.activePromoId) ?? null)
-
-  const promoSummary = computed(() => {
-    const gantt = travauxStore.ganttData
-    const published = gantt.filter(t => t.published)
-    let depots = 0, expected = 0
-    for (const t of published) {
-      depots   += t.depots_count  ?? 0
-      expected += t.students_total ?? 0
-    }
-    const stuCount = students.value.filter(s => s.promo_id === appStore.activePromoId && s.id > 0).length
-    return {
-      studentCount: stuCount,
-      devoirCount: published.length,
-      submissionPct: expected > 0 ? Math.round((depots / expected) * 100) : 0,
-    }
-  })
-
-  // ── Activité récente (derniers rendus) ────────────────────────────────────
-  const recentActivity = computed(() => {
-    return travauxStore.allRendus
-      .filter(r => r.submitted_at)
-      .sort((a, b) => new Date(b.submitted_at ?? 0).getTime() - new Date(a.submitted_at ?? 0).getTime())
-      .slice(0, 3)
-      .map(r => {
-        const ago = Date.now() - new Date(r.submitted_at!).getTime()
-        const mins = Math.floor(ago / 60_000)
-        const label = mins < 60 ? `il y a ${mins}min` : mins < 1440 ? `il y a ${Math.floor(mins / 60)}h` : `il y a ${Math.floor(mins / 1440)}j`
-        return { id: r.id, text: `${r.student_name} - ${r.travail_title ?? 'devoir'}`, time: label }
-      })
-  })
+  // ── Resume promo + activite recente (sidebar dashboard) ──────────────────
+  const { activePromoObj, promoSummary, recentActivity } = useSidebarDashboardSummary(promotions, students)
 
   // ── Réactivité ────────────────────────────────────────────────────────────
   onMounted(() => {
@@ -535,53 +435,14 @@
         </div><!-- /sidebar-scroll-list canaux -->
 
         <!-- Canaux archives (staff only) -->
-        <template v-if="appStore.isStaff && archivedChannels.length">
-          <div class="sidebar-separator" />
-          <div
-            class="sidebar-section-header sidebar-collapsible-header"
-            role="button"
-            tabindex="0"
-            :aria-expanded="!archivedCollapsed"
-            @click="archivedCollapsed = !archivedCollapsed"
-            @keydown.enter="archivedCollapsed = !archivedCollapsed"
-            @keydown.space.prevent="archivedCollapsed = !archivedCollapsed"
-          >
-            <ChevronDown
-              :size="12"
-              class="sidebar-category-chevron"
-              :class="{ rotated: archivedCollapsed }"
-            />
-            <Archive :size="12" style="opacity:.5" />
-            <span>Canaux archives</span>
-            <span class="sidebar-section-count">{{ archivedChannels.length }}</span>
-          </div>
-
-          <nav v-show="!archivedCollapsed" aria-label="Canaux archives" class="sidebar-scroll-list">
-            <div
-              v-for="ch in archivedChannels"
-              :key="'arch-' + ch.id"
-              class="sidebar-item archived-channel-item"
-              :class="{ active: appStore.activeChannelId === ch.id }"
-              role="button"
-              tabindex="0"
-              :aria-label="'Canal archivé ' + ch.name"
-              @click="selectArchivedChannel(ch)"
-              @keydown.enter="selectArchivedChannel(ch)"
-              @keydown.space.prevent="selectArchivedChannel(ch)"
-            >
-              <span class="channel-prefix archived-prefix">#</span>
-              <span class="channel-name archived-name">{{ ch.name }}</span>
-              <button
-                class="archived-restore-btn"
-                title="Restaurer"
-                aria-label="Restaurer le canal"
-                @click.stop="handleRestore(ch.id)"
-              >
-                <ArchiveRestore :size="13" />
-              </button>
-            </div>
-          </nav>
-        </template>
+        <SidebarArchivedChannels
+          v-if="appStore.isStaff && archivedChannels.length"
+          :channels="archivedChannels"
+          :collapsed="archivedCollapsed"
+          @update:collapsed="archivedCollapsed = $event"
+          @select="selectArchivedChannel"
+          @restore="handleRestore"
+        />
 
         <!-- Messages directs (composant extrait) -->
         <SidebarDmList
