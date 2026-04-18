@@ -10,12 +10,25 @@ import { useTravauxStore }   from '@/stores/travaux'
 import { useToast }          from '@/composables/useToast'
 import { getAuthToken }      from '@/utils/auth'
 
-// Extensions bloquées (même liste que le serveur)
+// Extensions bloquées (même liste que le serveur - voir server/routes/documents.js)
 const BLOCKED_EXTENSIONS = new Set([
   '.exe', '.bat', '.cmd', '.com', '.msi', '.dll', '.scr', '.pif', '.vbs', '.wsf',
+  '.jar', '.apk', '.ps1', '.sh', '.ps2', '.psm1', '.hta', '.reg', '.lnk', '.js',
+  '.wsh', '.cpl', '.gadget', '.inf',
 ])
 
+const ALLOWED_LINK_PROTOCOLS = new Set(['http:', 'https:'])
 const MAX_FILE_SIZE = 50 * 1024 * 1024 // 50 Mo
+
+/** Retourne true si l'URL est http(s) et bien formee. */
+function isValidLink(url: string): boolean {
+  try {
+    const u = new URL(url.trim())
+    return ALLOWED_LINK_PROTOCOLS.has(u.protocol)
+  } catch {
+    return false
+  }
+}
 
 export interface PendingFile {
   /** Chemin local (Electron) ou URL serveur (Web, déjà uploadé via openFileDialog) */
@@ -87,8 +100,9 @@ export function useDocumentsAdd() {
 
   /** Vérifie que l'extension n'est pas bloquée. */
   function isExtensionAllowed(fileName: string): boolean {
-    const ext = ('.' + fileName.split('.').pop()!).toLowerCase()
-    return !BLOCKED_EXTENSIONS.has(ext)
+    const match = fileName.toLowerCase().match(/\.[^./\\]+$/)
+    if (!match) return true // fichiers sans extension : autorises
+    return !BLOCKED_EXTENSIONS.has(match[0])
   }
 
   function openAddModal() {
@@ -282,6 +296,11 @@ export function useDocumentsAdd() {
   }
 
   async function submitLink() {
+    // Validation cote client (miroir serveur : http/https only)
+    if (!isValidLink(addLink.value)) {
+      showToast('URL invalide : seuls les liens http:// et https:// sont autorises.', 'error')
+      return
+    }
     adding.value = true
     try {
       const ok = await docStore.addDocument({
@@ -300,7 +319,7 @@ export function useDocumentsAdd() {
         showToast('Document ajouté.', 'success')
         showAddModal.value = false
       } else {
-        showToast('Erreur lors de l\'ajout.')
+        showToast('Erreur lors de l\'ajout.', 'error')
       }
     } finally {
       adding.value = false
