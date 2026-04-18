@@ -431,6 +431,8 @@
     liveStore.disposeSocketListeners()
     window.removeEventListener('keydown', onKeydown)
     clearAutoChainTimer()
+    confusionUnsub?.()
+    confusionUnsub = null
   })
 
   // ── Keyboard shortcuts ───────────────────────────────────────────────────
