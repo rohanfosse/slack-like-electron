@@ -1,30 +1,26 @@
 <script setup lang="ts">
-  import { ref, computed, watch } from 'vue'
-  import { AlertTriangle, Download, FileText, Link2, MessageSquare, X, LayoutList, Star, Search, ArrowUpDown, Zap } from 'lucide-vue-next'
+  import { computed, watch } from 'vue'
+  import { AlertTriangle, Download, FileText, Link2, MessageSquare, X, LayoutList, Star } from 'lucide-vue-next'
   import { useTravauxStore } from '@/stores/travaux'
   import { useAppStore }     from '@/stores/app'
-  import { useModalsStore }  from '@/stores/modals'
-  import { useToast }        from '@/composables/useToast'
-  import { useOpenExternal } from '@/composables/useOpenExternal'
   import { useBatchGrading } from '@/composables/useBatchGrading'
   import { useDepotFeedbackBank } from '@/composables/useDepotFeedbackBank'
   import { useGithubCiStatus, CI_ICON, CI_TITLE } from '@/composables/useGithubCiStatus'
+  import { useDepotStats } from '@/composables/useDepotStats'
+  import { useDepotFilterSort } from '@/composables/useDepotFilterSort'
+  import { useDepotInlineGrading, DEPOT_NOTES } from '@/composables/useDepotInlineGrading'
+  import { useDepotActions, formatLateDelay } from '@/composables/useDepotActions'
   import { avatarColor, initials, formatGrade, gradeClass } from '@/utils/format'
   import { formatDate } from '@/utils/date'
   import Modal from '@/components/ui/Modal.vue'
-  import ProgressBar from '@/components/ui/ProgressBar.vue'
   import EmptyState from '@/components/ui/EmptyState.vue'
-  import SkeletonLoader from '@/components/ui/SkeletonLoader.vue'
-  import type { Depot } from '@/types'
+  import DepotsStatsHeader from '@/components/modals/depots/DepotsStatsHeader.vue'
 
   const props = defineProps<{ modelValue: boolean }>()
   const emit  = defineEmits<{ 'update:modelValue': [v: boolean] }>()
 
   const travauxStore = useTravauxStore()
   const appStore     = useAppStore()
-  const modals       = useModalsStore()
-  const { showToast }    = useToast()
-  const { openExternal } = useOpenExternal()
 
   // ── Mode notation rapide (batch) ────────────────────────────────────────
   const batch = useBatchGrading({
@@ -35,14 +31,15 @@
     },
   })
 
-  // ── Notation inline ───────────────────────────────────────────────────────
-  const editingNoteId     = ref<number | null>(null)
-  const noteInput         = ref('')
-  const editingFeedbackId = ref<number | null>(null)
-  const feedbackInput     = ref('')
-  const saving            = ref(false)
-
-  const NOTES = ['A', 'B', 'C', 'D', 'NA']
+  // Notation inline (note + feedback) — mutuellement exclusifs
+  const {
+    editingNoteId, noteInput,
+    editingFeedbackId, feedbackInput,
+    saving,
+    startNote, saveNote,
+    startFeedback, saveFeedback,
+  } = useDepotInlineGrading()
+  const NOTES = DEPOT_NOTES
 
   // Feedback bank (extracted composable)
   const fb = useDepotFeedbackBank()
@@ -61,139 +58,22 @@
     }
   })
 
-  // ── Statistiques ─────────────────────────────────────────────────────────
-  const totalStudents = computed(() => travauxStore.depots.length)
-  const notedCount    = computed(() => travauxStore.depots.filter((d) => d.note != null).length)
-  const progressPct   = computed(() =>
-    totalStudents.value ? Math.round((notedCount.value / totalStudents.value) * 100) : 0,
-  )
+  // Stats + filtre/tri + actions (composables extraits)
+  const depotsRef = computed(() => travauxStore.depots)
+  const {
+    totalStudents, notedCount, progressPct,
+    gradeDistribution, modeGrade,
+    submittedCount, ungradedCount,
+  } = useDepotStats(depotsRef)
 
-  // ── Analytics #3 : distribution des notes ────────────────────────────────
-  const GRADE_ORDER = ['A', 'B', 'C', 'D', 'NA']
-  const gradeDistribution = computed(() => {
-    const counts: Record<string, number> = {}
-    for (const d of travauxStore.depots) {
-      if (d.note) counts[d.note] = (counts[d.note] ?? 0) + 1
-    }
-    return GRADE_ORDER
-      .filter((g) => counts[g])
-      .map((g) => ({ grade: g, count: counts[g] }))
-  })
+  const { searchQuery, sortMode, filtered: filteredDepots } = useDepotFilterSort(depotsRef)
 
-  // Note la plus fréquente
-  const modeGrade = computed(() => {
-    if (!gradeDistribution.value.length) return null
-    return gradeDistribution.value.reduce((a, b) => b.count > a.count ? b : a).grade
-  })
-
-  // Taux de soumission
-  const submittedCount = computed(() => travauxStore.depots.filter(d => d.content || d.file_name).length)
-
-  // ── Search / Sort / Filter ───────────────────────────────────────────────
-  const searchQuery = ref('')
-  type SortMode = 'name' | 'date'
-  const sortMode = ref<SortMode>('name')
-
-  const filteredDepots = computed(() => {
-    let list = [...travauxStore.depots]
-    const q = searchQuery.value.trim().toLowerCase()
-    if (q) list = list.filter(d => d.student_name.toLowerCase().includes(q))
-    if (sortMode.value === 'name') {
-      list.sort((a, b) => a.student_name.localeCompare(b.student_name))
-    } else {
-      list.sort((a, b) => (b.submitted_at ?? '').localeCompare(a.submitted_at ?? ''))
-    }
-    return list
-  })
-
-  // ── Bulk grade hint ────────────────────────────────────────────────────────
-  const ungradedCount = computed(() => travauxStore.depots.filter(d => d.note == null && (d.content || d.file_name)).length)
-
-  // ── Helpers retard #7 ─────────────────────────────────────────────────────
-  function formatLate(seconds: number): string {
-    if (seconds <= 0) return ''
-    const h = Math.floor(seconds / 3600)
-    const d = Math.floor(h / 24)
-    if (d >= 1) return `+${d}j ${h % 24}h`
-    return `+${h}h${Math.floor((seconds % 3600) / 60)}min`
-  }
-
-  // ── Actions note ─────────────────────────────────────────────────────────
-  function startNote(d: Depot) {
-    editingNoteId.value = d.id
-    noteInput.value     = d.note ?? ''
-    editingFeedbackId.value = null
-  }
-
-  async function saveNote(d: Depot) {
-    saving.value = true
-    try {
-      await travauxStore.setNote({ depotId: d.id, note: noteInput.value })
-      editingNoteId.value = null
-      showToast('Note enregistrée', 'success')
-    } finally {
-      saving.value = false
-    }
-  }
-
-  // ── Actions feedback ──────────────────────────────────────────────────────
-  function startFeedback(d: Depot) {
-    editingFeedbackId.value = d.id
-    feedbackInput.value     = d.feedback ?? ''
-    editingNoteId.value = null
-  }
-
-  async function saveFeedback(d: Depot) {
-    saving.value = true
-    try {
-      await travauxStore.setFeedback({ depotId: d.id, feedback: feedbackInput.value })
-      editingFeedbackId.value = null
-      showToast('Commentaire enregistré', 'success')
-    } finally {
-      saving.value = false
-    }
-  }
-
-  // ── Ouvrir / télécharger ─────────────────────────────────────────────────
-  async function openDepot(d: Depot) {
-    if (d.type === 'link') {
-      await openExternal(d.content)
-    } else {
-      await window.api.openPath(d.content)
-    }
-  }
-
-  async function downloadDepot(d: Depot) {
-    if (d.type === 'file') {
-      await window.api.downloadFile(d.content)
-    }
-  }
-
-  // ── Marquer tout D ────────────────────────────────────────────────────────
-  async function markAllD() {
-    if (!appStore.currentTravailId) return
-    await travauxStore.markNonSubmittedAsD(appStore.currentTravailId)
-    showToast('Rendus manquants marqués D', 'success')
-  }
-
-  // ── Export CSV ────────────────────────────────────────────────────────────
-  async function exportCsv() {
-    if (!appStore.currentTravailId) return
-    const res = await window.api.exportCsv(appStore.currentTravailId)
-    if (res?.ok && res.data) showToast(`Export : ${res.data}`, 'success')
-  }
-
-  // ── Rubric ────────────────────────────────────────────────────────────────
-  function openRubricEditor() {
-    appStore.rubricDepotId = null
-    modals.rubric = true
-  }
-
-  function openRubricScoring(d: Depot) {
-    appStore.rubricDepotId = d.id
-    modals.rubric = true
-  }
-
+  const {
+    openDepot, downloadDepot,
+    markAllD, exportCsv,
+    openRubricEditor, openRubricScoring,
+  } = useDepotActions()
+  const formatLate = formatLateDelay
 </script>
 
 <template>
@@ -203,82 +83,25 @@
     max-width="820px"
     @update:model-value="emit('update:modelValue', $event)"
   >
-    <!-- Sous-titre + progression -->
-    <div v-if="travauxStore.currentDevoir" class="depots-subheader">
-      <div class="depots-meta-row">
-        <span class="travail-type-badge" :class="`type-${travauxStore.currentDevoir.type}`">
-          {{ travauxStore.currentDevoir.type }}
-        </span>
-        <span class="depots-deadline">
-          Échéance : {{ formatDate(travauxStore.currentDevoir.deadline) }}
-        </span>
-      </div>
-
-      <div class="depots-progress-row">
-        <span class="depots-progress-label">
-          <strong>{{ notedCount }}</strong> / {{ totalStudents }} noté{{ notedCount > 1 ? 's' : '' }}
-        </span>
-        <ProgressBar :value="progressPct" show-pct style="flex:1" />
-      </div>
-
-      <!-- Distribution des notes (#3) -->
-      <div v-if="gradeDistribution.length" class="depots-grade-dist">
-        <span
-          v-for="g in gradeDistribution"
-          :key="g.grade"
-          class="grade-dist-pill"
-          :class="gradeClass(g.grade)"
-          :title="`${g.count} étudiant${g.count > 1 ? 's' : ''} - ${g.grade}`"
-        >
-          {{ g.grade }} <strong>{{ g.count }}</strong>
-        </span>
-      </div>
-
-      <!-- Stats rapides - badges colorés -->
-      <div class="depots-quick-stats">
-        <span class="stat-badge stat-total">{{ totalStudents }} rendus</span>
-        <span class="stat-badge stat-noted">{{ notedCount }} notés</span>
-        <span class="stat-badge stat-waiting">{{ totalStudents - notedCount }} en attente</span>
-        <span class="stat-badge stat-submitted">{{ submittedCount }} soumis</span>
-        <span v-if="modeGrade" class="stat-badge stat-mode">Fréquente : <strong>{{ modeGrade }}</strong></span>
-      </div>
-
-      <!-- Search + sort -->
-      <div class="depots-search-row">
-        <div class="depots-search-input-wrap">
-          <Search :size="13" class="depots-search-icon" />
-          <input
-            v-model="searchQuery"
-            class="form-input depots-search-input"
-            placeholder="Rechercher un étudiant…"
-            aria-label="Rechercher un étudiant"
-          />
-        </div>
-        <button
-          class="btn-ghost depots-sort-btn"
-          :title="`Trier par ${sortMode === 'name' ? 'date' : 'nom'}`"
-          @click="sortMode = sortMode === 'name' ? 'date' : 'name'"
-        >
-          <ArrowUpDown :size="12" />
-          {{ sortMode === 'name' ? 'Nom' : 'Date' }}
-        </button>
-      </div>
-
-      <!-- Batch mode toggle -->
-      <div class="depots-batch-row">
-        <button
-          class="btn-batch-toggle"
-          :class="{ active: batch.active.value }"
-          @click="batch.toggle()"
-        >
-          <Zap :size="13" />
-          {{ batch.active.value ? 'Mode normal' : 'Notation rapide' }}
-        </button>
-        <div v-if="!batch.active.value && ungradedCount > 1" class="depots-bulk-hint">
-          {{ ungradedCount }} rendus en attente
-        </div>
-      </div>
-    </div>
+    <!-- Sous-titre + progression + stats + filtres + batch toggle -->
+    <DepotsStatsHeader
+      v-if="travauxStore.currentDevoir"
+      :travail-type="travauxStore.currentDevoir.type"
+      :deadline="travauxStore.currentDevoir.deadline"
+      :total-students="totalStudents"
+      :noted-count="notedCount"
+      :progress-pct="progressPct"
+      :submitted-count="submittedCount"
+      :ungraded-count="ungradedCount"
+      :grade-distribution="gradeDistribution"
+      :mode-grade="modeGrade"
+      :search-query="searchQuery"
+      :sort-mode="sortMode"
+      :batch-active="batch.active.value"
+      @update:search-query="searchQuery = $event"
+      @update:sort-mode="sortMode = $event"
+      @toggle-batch="batch.toggle()"
+    />
 
     <!-- ═══ MODE NOTATION RAPIDE (split view) ═══ -->
     <div v-if="batch.active.value" class="batch-split" @keydown="batch.handleKeydown">
