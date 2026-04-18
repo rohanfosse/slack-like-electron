@@ -1,12 +1,12 @@
 <script setup lang="ts">
   import ErrorBoundary from '@/components/ui/ErrorBoundary.vue'
   import UiPageHeader from '@/components/ui/UiPageHeader.vue'
-  import { ref, computed, watch } from 'vue'
+  import { computed } from 'vue'
   import {
-    FileText, Image, Link2, Video, File, Plus, Trash2, Upload,
-    ExternalLink, Download, Search, X, FolderOpen, Eye, Menu,
-    LayoutGrid, List, Grid3x3, Star, Copy, Pencil,
-    BookOpen, BookMarked, Github, Linkedin, Globe, Package, ClipboardList, FileSpreadsheet,
+    FileText, Image, Link2, Video, File, Plus, Trash2,
+    Search, X, FolderOpen, Menu,
+    LayoutGrid, List, Grid3x3, Star,
+    BookOpen, Github, Linkedin, Globe, Package, ClipboardList, FileSpreadsheet,
   } from 'lucide-vue-next'
   import type { Component } from 'vue'
 
@@ -27,18 +27,20 @@
   }
   import { useAppStore }       from '@/stores/app'
   import { useDocumentsStore } from '@/stores/documents'
-  import Modal     from '@/components/ui/Modal.vue'
-  import { formatDate } from '@/utils/date'
   import { parseCategoryIcon } from '@/utils/categoryIcon'
 
   import { useDocumentsData, docIconType, iconColors, iconLabels, TYPE_FILTERS } from '@/composables/useDocumentsData'
   import { useDocumentsAdd } from '@/composables/useDocumentsAdd'
   import { useDocumentsEdit } from '@/composables/useDocumentsEdit'
+  import { useDocumentsBatchSelection } from '@/composables/useDocumentsBatchSelection'
+  import { useDocumentsViewMode } from '@/composables/useDocumentsViewMode'
   import { useCahierStore } from '@/stores/cahier'
   import CahierList from '@/components/cahier/CahierList.vue'
   import CahierEditor from '@/components/cahier/CahierEditor.vue'
   import DocumentAddModal from '@/components/documents/DocumentAddModal.vue'
   import DocumentEditModal from '@/components/documents/DocumentEditModal.vue'
+  import DocumentCard from '@/components/documents/DocumentCard.vue'
+  import DocumentsEmptyState from '@/components/documents/DocumentsEmptyState.vue'
   import { useFileDrop } from '@/composables/useFileDrop'
   import { useToast } from '@/composables/useToast'
   import DropOverlay from '@/components/ui/DropOverlay.vue'
@@ -50,12 +52,8 @@
   const docStore = useDocumentsStore()
   const cahierStore = useCahierStore()
 
-  // ── View mode: grid vs list (persisté en localStorage) ───────────────
-  const VIEW_MODE_KEY = 'cc_docs_view_mode'
-  const viewMode = ref<'grid' | 'list' | 'dense'>(
-    (localStorage.getItem(VIEW_MODE_KEY) as 'grid' | 'list' | 'dense') ?? 'grid',
-  )
-  watch(viewMode, (v) => localStorage.setItem(VIEW_MODE_KEY, v))
+  // ── View mode: grid vs list (persiste en localStorage) ───────────────
+  const { mode: viewMode } = useDocumentsViewMode()
 
   // ── Drag & drop ────────────────────────────────────────────────────────
   const { isDragOver, pendingFile, uploading, onDragEnter, onDragLeave, onDragOver, onDrop, submitDocument, cancelDrop } = useFileDrop()
@@ -97,42 +95,14 @@
   } = useDocumentsData()
 
   // ── Batch selection ──────────────────────────────────────────────────
-  const selectionMode = ref(false)
-  const selectedIds = ref<Set<number>>(new Set())
-
-  function toggleSelection(id: number) {
-    if (selectedIds.value.has(id)) selectedIds.value.delete(id)
-    else selectedIds.value.add(id)
-    selectedIds.value = new Set(selectedIds.value) // trigger reactivity
-  }
-
-  function selectAll() {
-    for (const doc of filtered.value) selectedIds.value.add(doc.id)
-    selectedIds.value = new Set(selectedIds.value)
-  }
-
-  function clearSelection() {
-    selectedIds.value = new Set()
-    selectionMode.value = false
-  }
-
-  async function deleteSelected() {
-    if (!selectedIds.value.size) return
-    const count = selectedIds.value.size
-    const ok = await (await import('@/composables/useConfirm')).useConfirm().confirm(
-      `Supprimer ${count} document${count > 1 ? 's' : ''} ?`,
-      'danger',
-      'Supprimer',
-    )
-    if (!ok) return
-    let deleted = 0
-    for (const id of selectedIds.value) {
-      const res = await docStore.deleteDocument(id)
-      if (res) deleted++
-    }
-    showToast(`${deleted} document${deleted > 1 ? 's' : ''} supprimé${deleted > 1 ? 's' : ''}.`, 'success')
-    clearSelection()
-  }
+  const {
+    selectionMode,
+    selectedIds,
+    toggle: toggleSelection,
+    selectAll,
+    clear: clearSelection,
+    deleteSelected,
+  } = useDocumentsBatchSelection(filtered)
 
   /** Format storage size */
   function formatStorage(bytes: number): string {
@@ -149,7 +119,7 @@
   }
 
   // ── Add/Edit modals (extracted to components) ─────────────────────────────
-  const { showAddModal, openAddModal } = useDocumentsAdd()
+  const { openAddModal } = useDocumentsAdd()
   const { openEditModal } = useDocumentsEdit()
 
   // ── Copy link ───────────────────────────────────────────────────────────
@@ -365,49 +335,26 @@
       <!-- ── Dense mode (flat grid, no categories) ── -->
       <template v-else-if="filtered.length && viewMode === 'dense'">
         <div class="docs-grid docs-grid--dense">
-          <div
+          <DocumentCard
             v-for="doc in filtered"
             :key="doc.id"
-            class="doc-card doc-card--dense"
-            :class="{ 'doc-card--fav': docStore.isFavorite(doc.id), 'doc-card--selected': selectedIds.has(doc.id) }"
-            :title="doc.description ?? doc.name"
-            @click="selectionMode ? toggleSelection(doc.id) : openDoc(doc)"
-          >
-            <input
-              v-if="selectionMode"
-              type="checkbox"
-              class="doc-select-cb"
-              :checked="selectedIds.has(doc.id)"
-              @click.stop="toggleSelection(doc.id)"
-            />
-            <button
-              v-else
-              class="doc-card-fav doc-card-fav--dense"
-              :class="{ 'doc-card-fav--active': docStore.isFavorite(doc.id) }"
-              :aria-label="docStore.isFavorite(doc.id) ? 'Retirer des favoris' : 'Ajouter aux favoris'"
-              @click.stop="docStore.toggleFavorite(doc.id)"
-            >
-              <Star :size="10" />
-            </button>
-            <div class="doc-dense-icon" :style="{ background: iconColors[docIconType(doc)] + '1A', color: iconColors[docIconType(doc)] }">
-              <component :is="TYPE_ICON_MAP[docIconType(doc)] ?? File" :size="18" />
-            </div>
-            <p class="doc-dense-name">{{ doc.name }}</p>
-            <span class="doc-dense-meta">
-              {{ formatDate(doc.created_at) }}
-              <span v-if="doc.type === 'file' && formatFileSize(doc.file_size)" class="doc-dense-size">{{ formatFileSize(doc.file_size) }}</span>
-            </span>
-
-            <div class="doc-card-actions" @click.stop>
-              <button class="doc-card-action-btn" title="Copier le lien" aria-label="Copier le lien" @click="copyDocLink(doc)"><Copy :size="12" /></button>
-              <button class="doc-card-action-btn" :title="doc.type === 'link' ? 'Ouvrir' : 'Aperçu'" :aria-label="doc.type === 'link' ? 'Ouvrir' : 'Aperçu'" @click="openDoc(doc)">
-                <Eye v-if="doc.type === 'file'" :size="12" />
-                <ExternalLink v-else :size="12" />
-              </button>
-              <button v-if="doc.type === 'file'" class="doc-card-action-btn" title="Télécharger" aria-label="Télécharger" @click="api.downloadFile(doc.content)"><Download :size="12" /></button>
-              <button v-if="appStore.isTeacher" class="doc-card-action-btn doc-card-action-btn--danger" title="Supprimer" aria-label="Supprimer" @click="deleteDoc(doc.id)"><Trash2 :size="12" /></button>
-            </div>
-          </div>
+            :doc="doc"
+            view-mode="dense"
+            :selection-mode="selectionMode"
+            :selected="selectedIds.has(doc.id)"
+            :icon-key="docIconType(doc)"
+            :icon-color="iconColors[docIconType(doc)]"
+            :icon-label="iconLabels[docIconType(doc)]"
+            :icon-component="TYPE_ICON_MAP[docIconType(doc)]"
+            :is-recent="isRecent(doc.created_at)"
+            :file-size="doc.type === 'file' ? formatFileSize(doc.file_size) : null"
+            @open="openDoc(doc)"
+            @toggle-select="toggleSelection(doc.id)"
+            @copy-link="copyDocLink(doc)"
+            @download="api.downloadFile(doc.content)"
+            @edit="openEditModal(doc)"
+            @delete="deleteDoc(doc.id)"
+          />
         </div>
       </template>
 
@@ -429,140 +376,32 @@
           </div>
 
           <div class="docs-grid" :class="{ 'docs-grid--list': viewMode === 'list' }">
-            <div
+            <DocumentCard
               v-for="doc in docs"
               :key="doc.id"
-              class="doc-card"
-              :class="{ 'doc-card--list': viewMode === 'list', 'doc-card--fav': docStore.isFavorite(doc.id), 'doc-card--selected': selectedIds.has(doc.id) }"
-              :title="doc.description ?? doc.name"
-              @click="selectionMode ? toggleSelection(doc.id) : openDoc(doc)"
-            >
-              <!-- Checkbox for batch selection -->
-              <input
-                v-if="selectionMode"
-                type="checkbox"
-                class="doc-select-cb"
-                :checked="selectedIds.has(doc.id)"
-                @click.stop="toggleSelection(doc.id)"
-              />
-              <!-- Favorite star (always visible) -->
-              <button
-                v-else
-                class="doc-card-fav"
-                :class="{ 'doc-card-fav--active': docStore.isFavorite(doc.id) }"
-                :title="docStore.isFavorite(doc.id) ? 'Retirer des favoris' : 'Ajouter aux favoris'"
-                :aria-label="docStore.isFavorite(doc.id) ? 'Retirer des favoris' : 'Ajouter aux favoris'"
-                @click.stop="docStore.toggleFavorite(doc.id)"
-              >
-                <Star :size="13" />
-              </button>
-
-              <div class="doc-card-icon" :style="{ background: iconColors[docIconType(doc)] + '1A', color: iconColors[docIconType(doc)] }">
-                <component :is="TYPE_ICON_MAP[docIconType(doc)] ?? File" :size="viewMode === 'list' ? 20 : 28" />
-              </div>
-
-              <span class="doc-card-type-badge" :style="{ background: iconColors[docIconType(doc)] + '22', color: iconColors[docIconType(doc)] }">
-                {{ iconLabels[docIconType(doc)] }}
-              </span>
-
-              <p class="doc-card-name">
-                {{ doc.name }}
-                <span v-if="isRecent(doc.created_at)" class="doc-new-badge">Nouveau</span>
-              </p>
-
-              <p v-if="doc.description" class="doc-card-desc">{{ doc.description }}</p>
-
-              <span v-if="doc.travail_title" class="doc-devoir-badge">
-                <BookMarked :size="10" />
-                {{ doc.travail_title }}
-              </span>
-
-              <p class="doc-card-meta">
-                <span v-if="!appStore.activeChannelId && doc.channel_name">#{{ doc.channel_name }}</span>
-                <span>{{ formatDate(doc.created_at) }}</span>
-                <span v-if="doc.type === 'file' && formatFileSize(doc.file_size)" class="doc-card-size">{{ formatFileSize(doc.file_size) }}</span>
-              </p>
-
-              <div class="doc-card-actions" @click.stop>
-                <button
-                  class="doc-card-action-btn"
-                  :class="{ 'doc-fav--active': docStore.isFavorite(doc.id) }"
-                  :title="docStore.isFavorite(doc.id) ? 'Retirer des favoris' : 'Ajouter aux favoris'"
-                  :aria-label="docStore.isFavorite(doc.id) ? 'Retirer des favoris' : 'Ajouter aux favoris'"
-                  @click="docStore.toggleFavorite(doc.id)"
-                >
-                  <Star :size="14" />
-                </button>
-                <button
-                  class="doc-card-action-btn"
-                  title="Copier le lien"
-                  aria-label="Copier le lien"
-                  @click="copyDocLink(doc)"
-                >
-                  <Copy :size="14" />
-                </button>
-                <button
-                  class="doc-card-action-btn"
-                  :title="doc.type === 'link' ? 'Ouvrir le lien' : 'Prévisualiser'"
-                  :aria-label="doc.type === 'link' ? 'Ouvrir le lien' : 'Prévisualiser'"
-                  @click="openDoc(doc)"
-                >
-                  <Eye v-if="doc.type === 'file'" :size="14" />
-                  <ExternalLink v-else :size="14" />
-                </button>
-                <button
-                  v-if="doc.type === 'file'"
-                  class="doc-card-action-btn"
-                  title="Télécharger"
-                  aria-label="Télécharger"
-                  @click="api.downloadFile(doc.content)"
-                >
-                  <Download :size="14" />
-                </button>
-                <button
-                  v-if="appStore.isTeacher"
-                  class="doc-card-action-btn"
-                  title="Modifier"
-                  aria-label="Modifier"
-                  @click="openEditModal(doc)"
-                >
-                  <Pencil :size="14" />
-                </button>
-                <button
-                  v-if="appStore.isTeacher"
-                  class="doc-card-action-btn doc-card-action-btn--danger"
-                  title="Supprimer"
-                  aria-label="Supprimer"
-                  @click="deleteDoc(doc.id)"
-                >
-                  <Trash2 :size="14" />
-                </button>
-              </div>
-            </div>
+              :doc="doc"
+              :view-mode="viewMode"
+              :selection-mode="selectionMode"
+              :selected="selectedIds.has(doc.id)"
+              :icon-key="docIconType(doc)"
+              :icon-color="iconColors[docIconType(doc)]"
+              :icon-label="iconLabels[docIconType(doc)]"
+              :icon-component="TYPE_ICON_MAP[docIconType(doc)]"
+              :is-recent="isRecent(doc.created_at)"
+              :file-size="doc.type === 'file' ? formatFileSize(doc.file_size) : null"
+              @open="openDoc(doc)"
+              @toggle-select="toggleSelection(doc.id)"
+              @copy-link="copyDocLink(doc)"
+              @download="api.downloadFile(doc.content)"
+              @edit="openEditModal(doc)"
+              @delete="deleteDoc(doc.id)"
+            />
           </div>
         </template>
       </template>
 
-      <!-- État vide -->
-      <div v-else class="docs-empty">
-        <FolderOpen :size="40" class="docs-empty-icon" />
-        <p class="docs-empty-title">Aucun document</p>
-        <p class="docs-empty-sub">
-          {{ docStore.searchQuery
-            ? 'Aucun résultat pour cette recherche. Essayez d\'autres mots-clés.'
-            : appStore.isStudent
-              ? 'Aucun document pour le moment. Les documents seront ajoutés par votre responsable.'
-              : 'Ce canal ne contient pas encore de document.'
-          }}
-        </p>
-        <p v-if="appStore.isTeacher && !docStore.searchQuery" class="docs-empty-hint">
-          <Upload :size="14" />
-          Glissez un fichier ici ou cliquez Ajouter
-        </p>
-        <button v-if="appStore.isTeacher && !docStore.searchQuery" class="btn-primary" @click="openAddModal">
-          <Plus :size="14" /> Ajouter un document
-        </button>
-      </div>
+      <!-- Etat vide -->
+      <DocumentsEmptyState v-else @add="openAddModal" />
 
     </div>
 
