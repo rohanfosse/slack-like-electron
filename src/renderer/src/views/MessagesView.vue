@@ -7,9 +7,9 @@
   import { useMessagesStore } from '@/stores/messages'
   import { useTravauxStore }  from '@/stores/travaux'
   import { useModalsStore }   from '@/stores/modals'
-  import { useToast }         from '@/composables/useToast'
-  import { useApi }           from '@/composables/useApi'
-  import { injectMd }         from '@/composables/useMsgAttachment'
+  import { useDmFiles } from '@/composables/useDmFiles'
+  import { useMessagesDragDrop } from '@/composables/useMessagesDragDrop'
+  import { useMessagesSearch } from '@/composables/useMessagesSearch'
   import MessageList         from '@/components/chat/MessageList.vue'
   import MessageInput        from '@/components/chat/MessageInput.vue'
   import PinnedBanner        from '@/components/chat/PinnedBanner.vue'
@@ -17,7 +17,7 @@
   import ChannelDocsPanel      from '@/components/panels/ChannelDocsPanel.vue'
   import ChannelTravauxPanel   from '@/components/panels/ChannelTravauxPanel.vue'
   import { deadlineClass } from '@/utils/date'
-  import { authUrl, getAuthToken } from '@/utils/auth'
+  import { authUrl } from '@/utils/auth'
 
   const props = defineProps<{ toggleSidebar?: () => void }>()
 
@@ -25,10 +25,7 @@
   const messagesStore = useMessagesStore()
   const travauxStore  = useTravauxStore()
   const modals        = useModalsStore()
-  const { showToast } = useToast()
-  const { api }       = useApi()
 
-  const searchInput      = ref('')
   const bannerDismissed  = ref(false)
   const rightPanel       = ref<'members' | 'docs' | 'travaux' | 'dm-files' | null>(null)
 
@@ -40,25 +37,13 @@
     return (appStore.onlineUsers ?? []).some((u: { name: string }) => u.name === peerName)
   })
 
-  // ── Fichiers partagés en DM ──────────────────────────────────────────────
-  interface DmFile { message_id: number; student_id: number; student_name: string; file_name: string; file_url: string; is_image: boolean; sent_at: string }
-  const dmFiles        = ref<DmFile[]>([])
-  const dmFilesLoading = ref(false)
-  const dmFileFilter   = ref<'all' | 'images' | 'docs'>('all')
-  const filteredDmFiles = computed(() => {
-    if (dmFileFilter.value === 'all') return dmFiles.value
-    if (dmFileFilter.value === 'images') return dmFiles.value.filter(f => f.is_image)
-    return dmFiles.value.filter(f => !f.is_image)
-  })
-
-  async function loadDmFiles() {
-    if (!appStore.activeDmStudentId) return
-    dmFilesLoading.value = true
-    const res = await api<DmFile[]>(() => window.api.getDmFiles())
-    const sid = appStore.activeDmStudentId
-    dmFiles.value = (res ?? []).filter(f => f.student_id === sid)
-    dmFilesLoading.value = false
-  }
+  // ── Fichiers partages en DM (composable dedie, se refresh sur peer change) ─
+  const {
+    loading: dmFilesLoading,
+    filter: dmFileFilter,
+    filtered: filteredDmFiles,
+    load: loadDmFiles,
+  } = useDmFiles()
 
   function dmInitials(name: string) {
     return name.split(' ').map(w => w[0]?.toUpperCase() ?? '').slice(0, 2).join('')
@@ -86,128 +71,40 @@
 
   // Fermer le panel quand on change de canal/DM
   watch(() => appStore.activeChannelId, () => { rightPanel.value = null })
-  watch(() => appStore.activeDmStudentId, (id) => {
-    rightPanel.value = null
-    if (id) loadDmFiles()
-  })
+  watch(() => appStore.activeDmStudentId, () => { rightPanel.value = null })
+
+  // ── Recherche + filtres avances ─────────────────────────────────────────
+  const {
+    input: searchInput,
+    filterOpen: searchFilterOpen,
+    dateFrom: searchDateFrom,
+    dateTo: searchDateTo,
+    hasFile: searchHasFile,
+    hasActiveFilters,
+    doSearch,
+    clearSearch,
+  } = useMessagesSearch()
 
   // Escape ferme le panneau lateral ou la recherche
   function onEscapeKey(e: KeyboardEvent) {
     if (e.key !== 'Escape') return
     if (rightPanel.value) { rightPanel.value = null; return }
     if (messagesStore.searchTerm) {
-      searchInput.value = ''
-      messagesStore.clearSearch()
-      messagesStore.fetchMessages()
+      clearSearch()
     }
   }
   onMounted(() => document.addEventListener('keydown', onEscapeKey))
   onUnmounted(() => document.removeEventListener('keydown', onEscapeKey))
 
-  // ── Drag & drop ──────────────────────────────────────────────────────────
-  const isDragOver    = ref(false)
-  const dmUploading   = ref(false)
-  const pendingDoc    = ref<{ name: string; path: string } | null>(null)
-  const docAddName    = ref('')
-  const docAddCat     = ref('')
-  const docAdding     = ref(false)
-  let   dragCounter   = 0
-
-  function onDragEnter(e: DragEvent) {
-    if (!appStore.activeChannelId && !appStore.activeDmStudentId) return
-    if (!e.dataTransfer?.types.includes('Files')) return
-    dragCounter++
-    isDragOver.value = true
-  }
-
-  function onDragLeave() {
-    dragCounter--
-    if (dragCounter <= 0) { dragCounter = 0; isDragOver.value = false }
-  }
-
-  function onDragOver(e: DragEvent) {
-    e.preventDefault()
-    if (e.dataTransfer) e.dataTransfer.dropEffect = 'copy'
-  }
-
-  async function onDrop(e: DragEvent) {
-    e.preventDefault()
-    dragCounter = 0
-    isDragOver.value = false
-    const file = e.dataTransfer?.files[0]
-    if (!file) return
-
-    // ── Mode canal : ajouter aux documents ─────────────────────────────────
-    if (appStore.activeChannelId) {
-      const path = (file as unknown as { path?: string }).path
-      if (!path) return
-      pendingDoc.value = { name: file.name, path }
-      docAddName.value = file.name
-      docAddCat.value  = ''
-      return
-    }
-
-    // ── Mode DM : upload → injecter dans le champ de saisie ────────────────
-    if (!appStore.activeDmStudentId) return
-    dmUploading.value = true
-    try {
-      let url: string | null = null
-      let fileSize = 0
-      const electronPath = (file as unknown as { path?: string }).path
-      if (electronPath) {
-        // Electron : upload via preload
-        const res = await window.api.uploadFile(electronPath) as { ok: boolean; data?: { url: string; file_size?: number } } | null
-        if (res?.ok && res.data) { url = res.data.url; fileSize = res.data.file_size || 0 }
-      } else {
-        // Web : upload direct FormData
-        const formData = new FormData()
-        formData.append('file', file, file.name)
-        const token = getAuthToken()
-        const resp = await fetch('/api/files/upload', {
-          method: 'POST',
-          headers: token ? { Authorization: `Bearer ${token}` } : {},
-          body: formData,
-        })
-        const json = await resp.json() as { ok: boolean; data?: string; file_size?: number }
-        if (json.ok && json.data) { url = window.location.origin + json.data; fileSize = json.file_size || 0 }
-      }
-      if (!url) { showToast('Échec de l\'upload.', 'error'); return }
-      const sizedUrl = fileSize ? `${url}#size=${fileSize}` : url
-      const isImage = /\.(png|jpe?g|gif|webp|svg|bmp)$/i.test(file.name)
-      injectMd(isImage ? `![${file.name}](${sizedUrl})` : `[📎 ${file.name}](${sizedUrl})`)
-      // Rafraîchir la liste des fichiers DM si le panel est ouvert
-      if (rightPanel.value === 'dm-files') loadDmFiles()
-    } catch { showToast('Erreur lors de l\'upload.', 'error') }
-    finally { dmUploading.value = false }
-  }
-
-  async function confirmDocAdd() {
-    if (!pendingDoc.value || !appStore.activeChannelId) return
-    docAdding.value = true
-    try {
-      const result = await api(
-        () => window.api.addChannelDocument({
-          channelId:  appStore.activeChannelId ?? 0,
-          type:       'file',
-          name:       docAddName.value.trim() || pendingDoc.value!.name,
-          pathOrUrl:  pendingDoc.value!.path,
-          category:   docAddCat.value.trim() || 'Général',
-          description: null,
-        }),
-        'upload',
-      )
-      if (result !== null) {
-        showToast(`"${docAddName.value || pendingDoc.value.name}" ajouté aux documents.`, 'success')
-        pendingDoc.value = null
-      }
-    } finally {
-      docAdding.value = false
-    }
-  }
-
-  function cancelDocAdd() {
-    pendingDoc.value = null
-  }
+  // ── Drag & drop (upload canal = doc inline, upload DM = injection md) ───
+  const {
+    isDragOver,
+    pendingDoc, docAddName, docAddCat, docAdding,
+    onDragEnter, onDragLeave, onDragOver, onDrop,
+    confirmDocAdd, cancelDocAdd,
+  } = useMessagesDragDrop(() => {
+    if (rightPanel.value === 'dm-files') loadDmFiles()
+  })
 
   // ── Chargement quand le canal change ─────────────────────────────────────
   watch(
@@ -244,50 +141,7 @@
 
   function onPinnedJump(id: number) { scrollToMessage(id) }
 
-  // ── Recherche + filtres avances ─────────────────────────────────────────
-  const searchFilterOpen = ref(false)
-  const searchDateFrom   = ref('')
-  const searchDateTo     = ref('')
-  const searchHasFile    = ref(false)
-
-  async function doSearch() {
-    messagesStore.searchTerm = searchInput.value
-    await messagesStore.fetchMessages()
-    // Client-side date filtering (backend search doesn't support date range)
-    if (searchDateFrom.value || searchDateTo.value || searchHasFile.value) {
-      applyClientFilters()
-    }
-  }
-
-  function applyClientFilters() {
-    let filtered = [...messagesStore.messages]
-    if (searchDateFrom.value) {
-      const from = new Date(searchDateFrom.value).getTime()
-      filtered = filtered.filter(m => new Date(m.created_at).getTime() >= from)
-    }
-    if (searchDateTo.value) {
-      const to = new Date(searchDateTo.value).getTime() + 86400000 // include end of day
-      filtered = filtered.filter(m => new Date(m.created_at).getTime() <= to)
-    }
-    if (searchHasFile.value) {
-      filtered = filtered.filter(m => (m as any).file_url || m.content?.includes('[fichier]') || m.content?.includes('**') )
-    }
-    messagesStore.messages = filtered
-  }
-
-  function clearSearch() {
-    searchInput.value = ''
-    searchDateFrom.value = ''
-    searchDateTo.value = ''
-    searchHasFile.value = false
-    searchFilterOpen.value = false
-    messagesStore.clearSearch()
-    messagesStore.fetchMessages()
-  }
-
-  const hasActiveFilters = computed(() => !!searchDateFrom.value || !!searchDateTo.value || searchHasFile.value)
-
-  // ── Bannière travaux en attente ───────────────────────────────────────────
+  // ── Banniere travaux en attente ──────────────────────────────────────────
   const pendingForChannel = computed(() => {
     if (!appStore.isStudent || !appStore.activeChannelId) return []
     return travauxStore.pendingDevoirs.filter(
