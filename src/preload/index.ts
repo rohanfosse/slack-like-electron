@@ -1,106 +1,27 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import { io, Socket } from 'socket.io-client'
+import {
+  SERVER_URL, safeAtob, setJwtToken, getJwtToken, setUnauthorizedHandler,
+  get, post, put, patch, del,
+} from './httpClient'
+import type {
+  MsgNewPayload, PresenceEntry, TypingPayload,
+  LiveActivityPushedPayload, LiveActivityClosedPayload, LiveResultsUpdatePayload,
+  LiveSessionStartedPayload, LiveSessionEndedPayload, LiveInvitePayload, LiveScoresUpdatePayload,
+  LiveCodeUpdatePayload, LiveBoardUpdatePayload, LiveConfusionUpdatePayload, LiveSelfPacedPayload,
+  BookingNewPayload, BookingCancelledPayload,
+  RexActivityPushedPayload, RexActivityClosedPayload, RexResultsUpdatePayload,
+  RexSessionStartedPayload, RexSessionEndedPayload, RexInvitePayload,
+  GradeNewPayload, SignatureUpdatePayload, DocumentNewPayload, AssignmentNewPayload,
+} from './socketTypes'
+import * as sockEv from './socketEvents'
 
-// ─── Configuration serveur ────────────────────────────────────────────────────
-const SERVER_URL: string = process.env.VITE_SERVER_URL || (
-  process.env.NODE_ENV === 'development' ? 'http://localhost:3001' : 'https://app.cursus.school'
-)
-if (process.env.NODE_ENV === 'development') {
-  console.log('[Preload] SERVER_URL =', SERVER_URL, '| VITE_SERVER_URL =', process.env.VITE_SERVER_URL ?? '(unset)')
-}
+let socket: Socket | null = null
 
-/** Décodage base64 protégé contre les données corrompues */
-function safeAtob(b64: string): string {
-  try { return atob(b64) }
-  catch { console.warn('[Preload] Décodage base64 échoué'); return '' }
-}
+// Nettoyer le socket sur 401 (session expiree)
+setUnauthorizedHandler(() => { socket?.disconnect() })
 
-// ─── État module-level ────────────────────────────────────────────────────────
-let jwtToken: string | null = null
-let socket:   Socket | null  = null
-
-// ─── Callbacks "msg:new" enregistrés avant la connexion socket ────────────────
-type MsgNewPayload = {
-  channelId:       number | null
-  dmStudentId:     number | null
-  authorName:      string | null
-  channelName:     string | null
-  promoId:         number | null
-  preview:         string | null
-  mentionEveryone: boolean
-  mentionNames:    string[]
-  message?:        unknown
-}
-const msgCallbacks: Array<(data: MsgNewPayload) => void> = []
-const socketStateCallbacks: Array<(connected: boolean) => void> = []
-type PresenceEntry = { id: number; name: string; role: string }
-const presenceCallbacks: Array<(data: PresenceEntry[]) => void> = []
-type TypingPayload = { channelId?: number; dmStudentId?: number; userName: string }
-const typingCallbacks: Array<(data: TypingPayload) => void> = []
-
-// Live quiz callbacks
-type LiveActivityPushedPayload = { activity: unknown }
-type LiveActivityClosedPayload = { activityId: number }
-type LiveResultsUpdatePayload  = { activityId: number; data: unknown }
-type LiveSessionStartedPayload = { sessionId: number }
-type LiveSessionEndedPayload   = { sessionId: number }
-type LiveInvitePayload         = { sessionId: number; title: string; joinCode: string; teacherName: string }
-type LiveScoresUpdatePayload   = { sessionId: number; activityId: number; leaderboard: unknown[] }
-const liveActivityPushedCallbacks: Array<(data: LiveActivityPushedPayload) => void> = []
-const liveActivityClosedCallbacks: Array<(data: LiveActivityClosedPayload) => void> = []
-const liveResultsUpdateCallbacks:  Array<(data: LiveResultsUpdatePayload) => void> = []
-const liveSessionStartedCallbacks: Array<(data: LiveSessionStartedPayload) => void> = []
-const liveSessionEndedCallbacks:   Array<(data: LiveSessionEndedPayload) => void> = []
-const liveInviteCallbacks:         Array<(data: LiveInvitePayload) => void> = []
-const liveScoresUpdateCallbacks:   Array<(data: LiveScoresUpdatePayload) => void> = []
-
-// Live v2 : code + board
-type LiveCodeUpdatePayload = { activityId: number; content: string; language: string | null }
-type LiveBoardUpdatePayload = { activityId: number; action: 'add' | 'delete' | 'vote' | 'update' | 'hide'; card?: unknown; cardId?: number; votes?: number; hidden?: boolean }
-type LiveConfusionUpdatePayload = { sessionId: number; count: number }
-type LiveSelfPacedPayload = { sessionId: number; selfPaced: boolean }
-const liveCodeUpdateCallbacks:  Array<(data: LiveCodeUpdatePayload) => void> = []
-const liveBoardUpdateCallbacks: Array<(data: LiveBoardUpdatePayload) => void> = []
-const liveConfusionCallbacks:   Array<(data: LiveConfusionUpdatePayload) => void> = []
-const liveSelfPacedCallbacks:   Array<(data: LiveSelfPacedPayload) => void> = []
-
-// Booking real-time notifications
-type BookingNewPayload = { bookingId: number; tutorName: string; studentName: string; eventTitle: string; startDatetime: string }
-type BookingCancelledPayload = { bookingId: number; tutorName: string; eventTitle: string }
-const bookingNewCallbacks: Array<(data: BookingNewPayload) => void> = []
-const bookingCancelledCallbacks: Array<(data: BookingCancelledPayload) => void> = []
-
-// REX callbacks
-type RexActivityPushedPayload = { activity: unknown }
-type RexActivityClosedPayload = { activityId: number }
-type RexResultsUpdatePayload  = { activityId: number; data: unknown }
-type RexSessionStartedPayload = { sessionId: number }
-type RexSessionEndedPayload   = { sessionId: number }
-type RexInvitePayload         = { sessionId: number; title: string; joinCode: string; teacherName: string }
-const rexActivityPushedCallbacks: Array<(data: RexActivityPushedPayload) => void> = []
-const rexActivityClosedCallbacks: Array<(data: RexActivityClosedPayload) => void> = []
-const rexResultsUpdateCallbacks:  Array<(data: RexResultsUpdatePayload) => void> = []
-const rexSessionStartedCallbacks: Array<(data: RexSessionStartedPayload) => void> = []
-const rexSessionEndedCallbacks:   Array<(data: RexSessionEndedPayload) => void> = []
-const rexInviteCallbacks:         Array<(data: RexInvitePayload) => void> = []
-
-// Grade notification callbacks
-type GradeNewPayload = { devoirTitle: string; note: string | null; feedback: string | null; devoirId: number; category: string | null }
-const gradeNewCallbacks: Array<(data: GradeNewPayload) => void> = []
-
-// Signature update callbacks
-type SignatureUpdatePayload = { id: number; status: string; signed_file_url?: string; signer_name?: string; rejection_reason?: string }
-const signatureUpdateCallbacks: Array<(data: SignatureUpdatePayload) => void> = []
-
-// Document & assignment notification callbacks
-type DocumentNewPayload = { name: string; category?: string; promoId?: number }
-type AssignmentNewPayload = { title: string; category?: string; deadline?: string; promoId?: number }
-const documentNewCallbacks: Array<(data: DocumentNewPayload) => void> = []
-const assignmentNewCallbacks: Array<(data: AssignmentNewPayload) => void> = []
-
-// ─── Socket.io ────────────────────────────────────────────────────────────────
 function connectSocket(token: string): void {
-  // Nettoyer l'ancien socket (anti-stacking de listeners)
   if (socket) {
     socket.removeAllListeners()
     socket.disconnect()
@@ -112,106 +33,7 @@ function connectSocket(token: string): void {
     reconnectionDelay: 1000,
     reconnectionDelayMax: 30000,
   })
-  socket.on('msg:new', (data: MsgNewPayload) => {
-    msgCallbacks.forEach((cb) => cb(data))
-  })
-  socket.on('presence:update', (data: PresenceEntry[]) => {
-    presenceCallbacks.forEach((cb) => cb(data))
-  })
-  socket.on('typing', (data: TypingPayload) => {
-    typingCallbacks.forEach((cb) => cb(data))
-  })
-  socket.on('live:activity-pushed', (data: LiveActivityPushedPayload) => liveActivityPushedCallbacks.forEach(cb => cb(data)))
-  socket.on('live:activity-closed', (data: LiveActivityClosedPayload) => liveActivityClosedCallbacks.forEach(cb => cb(data)))
-  socket.on('live:results-update',  (data: LiveResultsUpdatePayload) => liveResultsUpdateCallbacks.forEach(cb => cb(data)))
-  socket.on('live:session-started', (data: LiveSessionStartedPayload) => liveSessionStartedCallbacks.forEach(cb => cb(data)))
-  socket.on('live:session-ended',   (data: LiveSessionEndedPayload) => liveSessionEndedCallbacks.forEach(cb => cb(data)))
-  socket.on('live:invite',          (data: LiveInvitePayload) => liveInviteCallbacks.forEach(cb => cb(data)))
-  socket.on('live:scores-update',   (data: LiveScoresUpdatePayload) => liveScoresUpdateCallbacks.forEach(cb => cb(data)))
-  socket.on('live:code-update',     (data: LiveCodeUpdatePayload) => liveCodeUpdateCallbacks.forEach(cb => cb(data)))
-  socket.on('live:board-update',    (data: LiveBoardUpdatePayload) => liveBoardUpdateCallbacks.forEach(cb => cb(data)))
-  socket.on('live:confusion-update', (data: LiveConfusionUpdatePayload) => liveConfusionCallbacks.forEach(cb => cb(data)))
-  socket.on('live:self-paced-update', (data: LiveSelfPacedPayload) => liveSelfPacedCallbacks.forEach(cb => cb(data)))
-  socket.on('booking:new',         (data: BookingNewPayload) => bookingNewCallbacks.forEach(cb => cb(data)))
-  socket.on('booking:cancelled',   (data: BookingCancelledPayload) => bookingCancelledCallbacks.forEach(cb => cb(data)))
-  socket.on('rex:activity-pushed', (data: RexActivityPushedPayload) => rexActivityPushedCallbacks.forEach(cb => cb(data)))
-  socket.on('rex:activity-closed', (data: RexActivityClosedPayload) => rexActivityClosedCallbacks.forEach(cb => cb(data)))
-  socket.on('rex:results-update',  (data: RexResultsUpdatePayload) => rexResultsUpdateCallbacks.forEach(cb => cb(data)))
-  socket.on('rex:session-started', (data: RexSessionStartedPayload) => rexSessionStartedCallbacks.forEach(cb => cb(data)))
-  socket.on('rex:session-ended',   (data: RexSessionEndedPayload) => rexSessionEndedCallbacks.forEach(cb => cb(data)))
-  socket.on('rex:invite',          (data: RexInvitePayload) => rexInviteCallbacks.forEach(cb => cb(data)))
-  socket.on('grade:new',           (data: GradeNewPayload) => gradeNewCallbacks.forEach(cb => cb(data)))
-  socket.on('signature:update',    (data: SignatureUpdatePayload) => signatureUpdateCallbacks.forEach(cb => cb(data)))
-  socket.on('document:new',       (data: DocumentNewPayload) => documentNewCallbacks.forEach(cb => cb(data)))
-  socket.on('assignment:new',     (data: AssignmentNewPayload) => assignmentNewCallbacks.forEach(cb => cb(data)))
-  socket.on('connect', () => {
-    if (process.env.NODE_ENV === 'development') console.log('[Socket.io] Connecte')
-    socketStateCallbacks.forEach((cb) => cb(true))
-  })
-  socket.on('disconnect', () => {
-    socketStateCallbacks.forEach((cb) => cb(false))
-  })
-  socket.on('connect_error', (err) => {
-    console.warn('[Socket.io] Erreur connexion:', err.message)
-    socketStateCallbacks.forEach((cb) => cb(false))
-  })
-}
-
-// ─── Fetch vers le serveur (avec timeout, retry, 401 handling) ───────────────
-const FETCH_TIMEOUT = 15_000
-const MAX_RETRIES   = 2
-
-async function apiFetch(path: string, options: RequestInit = {}, retries = MAX_RETRIES): Promise<unknown> {
-  const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
-    ...(jwtToken ? { Authorization: `Bearer ${jwtToken}` } : {}),
-    ...(options.headers as Record<string, string> ?? {}),
-  }
-  for (let attempt = 0; attempt <= retries; attempt++) {
-    try {
-      const ctrl = new AbortController()
-      const timer = setTimeout(() => ctrl.abort(), FETCH_TIMEOUT)
-      const res = await fetch(`${SERVER_URL}${path}`, { ...options, headers, signal: ctrl.signal })
-      clearTimeout(timer)
-      if (res.status === 401) {
-        jwtToken = null
-        socket?.disconnect()
-        // Notifier le renderer que la session a expiré
-        try { ipcRenderer.send('auth:expired') } catch {}
-        return { ok: false, error: 'Session expirée. Veuillez vous reconnecter.' }
-      }
-      try {
-        return await res.json()
-      } catch {
-        return { ok: false, error: 'Réponse serveur invalide (JSON attendu)' }
-      }
-    } catch (e: unknown) {
-      const isAbort = e instanceof Error && e.name === 'AbortError'
-      const errMsg = e instanceof Error ? e.message : String(e)
-      const errCode = (e as NodeJS.ErrnoException)?.code ?? ''
-      console.warn(`[API] ${path} tentative ${attempt + 1}/${retries + 1} echouee:`, errMsg, errCode ? `(${errCode})` : '')
-      if (attempt === retries) {
-        const detail = isAbort
-          ? `Timeout apres ${FETCH_TIMEOUT / 1000}s sur ${SERVER_URL}${path}`
-          : `${errMsg}${errCode ? ` [${errCode}]` : ''} → ${SERVER_URL}${path}`
-        console.error(`[API] ECHEC FINAL: ${detail}`)
-        return { ok: false, error: detail }
-      }
-      // Backoff avant retry (1s, 3s)
-      await new Promise(r => setTimeout(r, 1000 * (attempt + 1)))
-    }
-  }
-  return { ok: false, error: 'Erreur réseau' }
-}
-
-function get(path: string)                      { return apiFetch(path) }
-function post(path: string, body: unknown)      { return apiFetch(path, { method: 'POST',   body: JSON.stringify(body) }) }
-function put(path: string, body: unknown)       { return apiFetch(path, { method: 'PUT',    body: JSON.stringify(body) }) }
-function patch(path: string, body: unknown)     { return apiFetch(path, { method: 'PATCH',  body: JSON.stringify(body) }) }
-function del(path: string, body?: unknown)      {
-  return apiFetch(path, body !== undefined
-    ? { method: 'DELETE', body: JSON.stringify(body) }
-    : { method: 'DELETE' })
+  sockEv.bindSocketEvents(socket)
 }
 
 // ─── IPC local (fenêtre, dialogs, shell, fs) ─────────────────────────────────
@@ -230,32 +52,33 @@ contextBridge.exposeInMainWorld('api', {
 
   // ── Auth / session ──────────────────────────────────────────────────────────
   setToken: (token: string) => {
-    jwtToken = token
+    setJwtToken(token)
     connectSocket(token)
-    // Décoder le JWT pour transmettre le contexte utilisateur au main process (IPC auth)
     try {
       const payload = JSON.parse(atob(token.split('.')[1]))
       ipcRenderer.send('auth:setUser', { id: payload.id, name: payload.name, type: payload.type, promo_id: payload.promo_id })
-    } catch { /* token invalide — ignoré */ }
+    } catch { /* token invalide — ignore */ }
   },
 
   async refreshToken(): Promise<{ token: string } | null> {
-    if (!jwtToken) return null
+    const current = getJwtToken()
+    if (!current) return null
     try {
       const res = await fetch(`${SERVER_URL}/api/auth/refresh`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${jwtToken}` },
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${current}` },
         body: '{}',
       })
       const data = await res.json()
       if (data?.ok && data.data?.token) {
-        jwtToken = data.data.token
-        connectSocket(jwtToken)
+        const newToken = data.data.token as string
+        setJwtToken(newToken)
+        connectSocket(newToken)
         try {
-          const payload = JSON.parse(atob(jwtToken.split('.')[1]))
+          const payload = JSON.parse(atob(newToken.split('.')[1]))
           ipcRenderer.send('auth:setUser', { id: payload.id, name: payload.name, type: payload.type, promo_id: payload.promo_id })
-        } catch { /* ignoré */ }
-        return { token: data.data.token }
+        } catch { /* ignore */ }
+        return { token: newToken }
       }
       return null
     } catch { return null }
@@ -268,11 +91,11 @@ contextBridge.exposeInMainWorld('api', {
   loginWithCredentials: async (email: string, pwd: string) => {
     const res = await post('/api/auth/login', { email, password: pwd }) as { ok: boolean; data?: { token?: string; [k: string]: unknown }; error?: string }
     if (res?.ok && res.data?.token) {
-      jwtToken = res.data.token as string
-      connectSocket(jwtToken)
-      // Retourner sans exposer le token dans l'objet user
+      const token = res.data.token as string
+      setJwtToken(token)
+      connectSocket(token)
       const { token: _t, ...user } = res.data
-      return { ok: true, data: { ...user, token: res.data.token } }
+      return { ok: true, data: { ...user, token } }
     }
     return res
   },
@@ -508,34 +331,13 @@ contextBridge.exposeInMainWorld('api', {
   emitLiveJoin:  (promoId: number) => { socket?.emit('live:join', { promoId }) },
   emitLiveLeave: (promoId: number) => { socket?.emit('live:leave', { promoId }) },
 
-  onLiveActivityPushed: (cb: (data: LiveActivityPushedPayload) => void) => {
-    liveActivityPushedCallbacks.push(cb)
-    return () => { const i = liveActivityPushedCallbacks.indexOf(cb); if (i !== -1) liveActivityPushedCallbacks.splice(i, 1) }
-  },
-  onLiveActivityClosed: (cb: (data: LiveActivityClosedPayload) => void) => {
-    liveActivityClosedCallbacks.push(cb)
-    return () => { const i = liveActivityClosedCallbacks.indexOf(cb); if (i !== -1) liveActivityClosedCallbacks.splice(i, 1) }
-  },
-  onLiveResultsUpdate: (cb: (data: LiveResultsUpdatePayload) => void) => {
-    liveResultsUpdateCallbacks.push(cb)
-    return () => { const i = liveResultsUpdateCallbacks.indexOf(cb); if (i !== -1) liveResultsUpdateCallbacks.splice(i, 1) }
-  },
-  onLiveSessionStarted: (cb: (data: LiveSessionStartedPayload) => void) => {
-    liveSessionStartedCallbacks.push(cb)
-    return () => { const i = liveSessionStartedCallbacks.indexOf(cb); if (i !== -1) liveSessionStartedCallbacks.splice(i, 1) }
-  },
-  onLiveSessionEnded: (cb: (data: LiveSessionEndedPayload) => void) => {
-    liveSessionEndedCallbacks.push(cb)
-    return () => { const i = liveSessionEndedCallbacks.indexOf(cb); if (i !== -1) liveSessionEndedCallbacks.splice(i, 1) }
-  },
-  onLiveInvite: (cb: (data: LiveInvitePayload) => void) => {
-    liveInviteCallbacks.push(cb)
-    return () => { const i = liveInviteCallbacks.indexOf(cb); if (i !== -1) liveInviteCallbacks.splice(i, 1) }
-  },
-  onLiveScoresUpdate: (cb: (data: LiveScoresUpdatePayload) => void) => {
-    liveScoresUpdateCallbacks.push(cb)
-    return () => { const i = liveScoresUpdateCallbacks.indexOf(cb); if (i !== -1) liveScoresUpdateCallbacks.splice(i, 1) }
-  },
+  onLiveActivityPushed: (cb: (data: LiveActivityPushedPayload) => void) => sockEv.liveActivityPushed.add(cb),
+  onLiveActivityClosed: (cb: (data: LiveActivityClosedPayload) => void) => sockEv.liveActivityClosed.add(cb),
+  onLiveResultsUpdate:  (cb: (data: LiveResultsUpdatePayload) => void) => sockEv.liveResultsUpdate.add(cb),
+  onLiveSessionStarted: (cb: (data: LiveSessionStartedPayload) => void) => sockEv.liveSessionStarted.add(cb),
+  onLiveSessionEnded:   (cb: (data: LiveSessionEndedPayload) => void) => sockEv.liveSessionEnded.add(cb),
+  onLiveInvite:         (cb: (data: LiveInvitePayload) => void) => sockEv.liveInvite.add(cb),
+  onLiveScoresUpdate:   (cb: (data: LiveScoresUpdatePayload) => void) => sockEv.liveScoresUpdate.add(cb),
 
   // ── Live v2 unifie (Spark + Pulse + Code + Board) ─────────────────────────
   createLiveV2Session:       (payload: unknown) => post('/api/live-v2/sessions', payload),
@@ -605,32 +407,14 @@ contextBridge.exposeInMainWorld('api', {
   emitLiveCodeUpdate: (activityId: number, promoId: number, content: string, language: string | null) => {
     socket?.emit('live:code-update', { activityId, promoId, content, language })
   },
-  onLiveCodeUpdate: (cb: (data: LiveCodeUpdatePayload) => void) => {
-    liveCodeUpdateCallbacks.push(cb)
-    return () => { const i = liveCodeUpdateCallbacks.indexOf(cb); if (i !== -1) liveCodeUpdateCallbacks.splice(i, 1) }
-  },
-  onLiveBoardUpdate: (cb: (data: LiveBoardUpdatePayload) => void) => {
-    liveBoardUpdateCallbacks.push(cb)
-    return () => { const i = liveBoardUpdateCallbacks.indexOf(cb); if (i !== -1) liveBoardUpdateCallbacks.splice(i, 1) }
-  },
-  onLiveConfusionUpdate: (cb: (data: LiveConfusionUpdatePayload) => void) => {
-    liveConfusionCallbacks.push(cb)
-    return () => { const i = liveConfusionCallbacks.indexOf(cb); if (i !== -1) liveConfusionCallbacks.splice(i, 1) }
-  },
-  onLiveSelfPacedUpdate: (cb: (data: LiveSelfPacedPayload) => void) => {
-    liveSelfPacedCallbacks.push(cb)
-    return () => { const i = liveSelfPacedCallbacks.indexOf(cb); if (i !== -1) liveSelfPacedCallbacks.splice(i, 1) }
-  },
+  onLiveCodeUpdate:      (cb: (data: LiveCodeUpdatePayload) => void) => sockEv.liveCodeUpdate.add(cb),
+  onLiveBoardUpdate:     (cb: (data: LiveBoardUpdatePayload) => void) => sockEv.liveBoardUpdate.add(cb),
+  onLiveConfusionUpdate: (cb: (data: LiveConfusionUpdatePayload) => void) => sockEv.liveConfusion.add(cb),
+  onLiveSelfPacedUpdate: (cb: (data: LiveSelfPacedPayload) => void) => sockEv.liveSelfPaced.add(cb),
 
   // ── Booking real-time ────────────────────────────────────────────────────────
-  onBookingNew: (cb: (data: BookingNewPayload) => void) => {
-    bookingNewCallbacks.push(cb)
-    return () => { const i = bookingNewCallbacks.indexOf(cb); if (i !== -1) bookingNewCallbacks.splice(i, 1) }
-  },
-  onBookingCancelled: (cb: (data: BookingCancelledPayload) => void) => {
-    bookingCancelledCallbacks.push(cb)
-    return () => { const i = bookingCancelledCallbacks.indexOf(cb); if (i !== -1) bookingCancelledCallbacks.splice(i, 1) }
-  },
+  onBookingNew:       (cb: (data: BookingNewPayload) => void) => sockEv.bookingNew.add(cb),
+  onBookingCancelled: (cb: (data: BookingCancelledPayload) => void) => sockEv.bookingCancelled.add(cb),
 
   // ── REX (Retour d'Experience) ──────────────────────────────────────────────
   createRexSession:       (payload: unknown)  => post('/api/rex/sessions', payload),
@@ -802,52 +586,22 @@ contextBridge.exposeInMainWorld('api', {
   emitRexJoin:  (promoId: number) => { socket?.emit('rex:join', { promoId }) },
   emitRexLeave: (promoId: number) => { socket?.emit('rex:leave', { promoId }) },
 
-  onRexActivityPushed: (cb: (data: RexActivityPushedPayload) => void) => {
-    rexActivityPushedCallbacks.push(cb)
-    return () => { const i = rexActivityPushedCallbacks.indexOf(cb); if (i !== -1) rexActivityPushedCallbacks.splice(i, 1) }
-  },
-  onRexActivityClosed: (cb: (data: RexActivityClosedPayload) => void) => {
-    rexActivityClosedCallbacks.push(cb)
-    return () => { const i = rexActivityClosedCallbacks.indexOf(cb); if (i !== -1) rexActivityClosedCallbacks.splice(i, 1) }
-  },
-  onRexResultsUpdate: (cb: (data: RexResultsUpdatePayload) => void) => {
-    rexResultsUpdateCallbacks.push(cb)
-    return () => { const i = rexResultsUpdateCallbacks.indexOf(cb); if (i !== -1) rexResultsUpdateCallbacks.splice(i, 1) }
-  },
-  onRexSessionStarted: (cb: (data: RexSessionStartedPayload) => void) => {
-    rexSessionStartedCallbacks.push(cb)
-    return () => { const i = rexSessionStartedCallbacks.indexOf(cb); if (i !== -1) rexSessionStartedCallbacks.splice(i, 1) }
-  },
-  onRexSessionEnded: (cb: (data: RexSessionEndedPayload) => void) => {
-    rexSessionEndedCallbacks.push(cb)
-    return () => { const i = rexSessionEndedCallbacks.indexOf(cb); if (i !== -1) rexSessionEndedCallbacks.splice(i, 1) }
-  },
-  onRexInvite: (cb: (data: RexInvitePayload) => void) => {
-    rexInviteCallbacks.push(cb)
-    return () => { const i = rexInviteCallbacks.indexOf(cb); if (i !== -1) rexInviteCallbacks.splice(i, 1) }
-  },
+  onRexActivityPushed: (cb: (data: RexActivityPushedPayload) => void) => sockEv.rexActivityPushed.add(cb),
+  onRexActivityClosed: (cb: (data: RexActivityClosedPayload) => void) => sockEv.rexActivityClosed.add(cb),
+  onRexResultsUpdate:  (cb: (data: RexResultsUpdatePayload) => void) => sockEv.rexResultsUpdate.add(cb),
+  onRexSessionStarted: (cb: (data: RexSessionStartedPayload) => void) => sockEv.rexSessionStarted.add(cb),
+  onRexSessionEnded:   (cb: (data: RexSessionEndedPayload) => void) => sockEv.rexSessionEnded.add(cb),
+  onRexInvite:         (cb: (data: RexInvitePayload) => void) => sockEv.rexInvite.add(cb),
 
   // ── Grade notifications ─────────────────────────────────────────────────────
-  onGradeNew: (cb: (data: GradeNewPayload) => void) => {
-    gradeNewCallbacks.push(cb)
-    return () => { const i = gradeNewCallbacks.indexOf(cb); if (i !== -1) gradeNewCallbacks.splice(i, 1) }
-  },
+  onGradeNew: (cb: (data: GradeNewPayload) => void) => sockEv.gradeNew.add(cb),
 
   // ── Signature notifications ──────────────────────────────────────────────────
-  onSignatureUpdate: (cb: (data: SignatureUpdatePayload) => void) => {
-    signatureUpdateCallbacks.push(cb)
-    return () => { const i = signatureUpdateCallbacks.indexOf(cb); if (i !== -1) signatureUpdateCallbacks.splice(i, 1) }
-  },
+  onSignatureUpdate: (cb: (data: SignatureUpdatePayload) => void) => sockEv.signatureUpdate.add(cb),
 
   // ── Document & assignment notifications ────────────────────────────────────
-  onDocumentNew: (cb: (data: DocumentNewPayload) => void) => {
-    documentNewCallbacks.push(cb)
-    return () => { const i = documentNewCallbacks.indexOf(cb); if (i !== -1) documentNewCallbacks.splice(i, 1) }
-  },
-  onAssignmentNew: (cb: (data: AssignmentNewPayload) => void) => {
-    assignmentNewCallbacks.push(cb)
-    return () => { const i = assignmentNewCallbacks.indexOf(cb); if (i !== -1) assignmentNewCallbacks.splice(i, 1) }
-  },
+  onDocumentNew:   (cb: (data: DocumentNewPayload) => void) => sockEv.documentNew.add(cb),
+  onAssignmentNew: (cb: (data: AssignmentNewPayload) => void) => sockEv.assignmentNew.add(cb),
 
   // ── Admin ────────────────────────────────────────────────────────────────────
   resetAndSeed: () => post('/api/admin/reset-seed', {}),
@@ -879,9 +633,10 @@ contextBridge.exposeInMainWorld('api', {
     const formData = new FormData()
     formData.append('file', blob, fileName)
     try {
+      const token = getJwtToken()
       const res = await fetch(`${SERVER_URL}/api/files/upload`, {
         method: 'POST',
-        headers: jwtToken ? { Authorization: `Bearer ${jwtToken}` } : {},
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
         body: formData,
       })
       const json = await res.json() as { ok: boolean; data?: string; file_size?: number; error?: string }
@@ -898,7 +653,8 @@ contextBridge.exposeInMainWorld('api', {
   readFileBase64: async (filePath: string) => {
     if (filePath.startsWith('http://') || filePath.startsWith('https://')) {
       try {
-        const headers: Record<string, string> = jwtToken ? { Authorization: `Bearer ${jwtToken}` } : {}
+        const token = getJwtToken()
+        const headers: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {}
         const res  = await fetch(filePath, { headers })
         const blob = await res.blob()
         const ext  = filePath.split('/').pop()?.split('.').pop()?.toLowerCase() ?? 'bin'
@@ -972,44 +728,13 @@ contextBridge.exposeInMainWorld('api', {
   offlineRead:  (key: string) => ipcRenderer.invoke('offline:read', key),
   offlineClear: () => ipcRenderer.invoke('offline:clear'),
 
-  // ── Temps réel (Socket.io) ───────────────────────────────────────────────────
-  onNewMessage: (cb: (data: MsgNewPayload) => void) => {
-    msgCallbacks.push(cb)
-    return () => {
-      const idx = msgCallbacks.indexOf(cb)
-      if (idx !== -1) msgCallbacks.splice(idx, 1)
-    }
-  },
-
-  onSocketStateChange: (cb: (connected: boolean) => void) => {
-    socketStateCallbacks.push(cb)
-    return () => {
-      const idx = socketStateCallbacks.indexOf(cb)
-      if (idx !== -1) socketStateCallbacks.splice(idx, 1)
-    }
-  },
-
-  // Présence en ligne
-  onPresenceUpdate: (cb: (data: PresenceEntry[]) => void) => {
-    presenceCallbacks.push(cb)
-    return () => {
-      const idx = presenceCallbacks.indexOf(cb)
-      if (idx !== -1) presenceCallbacks.splice(idx, 1)
-    }
-  },
+  // ── Temps reel (Socket.io) ───────────────────────────────────────────────────
+  onNewMessage:        (cb: (data: MsgNewPayload) => void) => sockEv.msgNew.add(cb),
+  onSocketStateChange: (cb: (connected: boolean) => void) => sockEv.socketState.add(cb),
+  onPresenceUpdate:    (cb: (data: PresenceEntry[]) => void) => sockEv.presenceUpdate.add(cb),
 
   // Typing indicator
-  emitTyping: (channelId: number) => {
-    socket?.emit('typing', { channelId })
-  },
-  emitDmTyping: (dmStudentId: number, dmPeerId?: number) => {
-    socket?.emit('typing', { dmStudentId, dmPeerId })
-  },
-  onTyping: (cb: (data: TypingPayload) => void) => {
-    typingCallbacks.push(cb)
-    return () => {
-      const idx = typingCallbacks.indexOf(cb)
-      if (idx !== -1) typingCallbacks.splice(idx, 1)
-    }
-  },
+  emitTyping:   (channelId: number) => { socket?.emit('typing', { channelId }) },
+  emitDmTyping: (dmStudentId: number, dmPeerId?: number) => { socket?.emit('typing', { dmStudentId, dmPeerId }) },
+  onTyping:     (cb: (data: TypingPayload) => void) => sockEv.typing.add(cb),
 })
