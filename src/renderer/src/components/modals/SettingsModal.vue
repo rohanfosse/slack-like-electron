@@ -1,11 +1,11 @@
 <script setup lang="ts">
-  import { ref, watch } from 'vue'
+  import { ref, watch, computed } from 'vue'
   import {
     LogOut, Settings, User, Info, Camera, X, RotateCcw, KeyRound,
     Download, Palette, Monitor, Moon, Sunset, Waves, Sparkles, Globe, Lock,
     FileText, ChevronRight, Github, Heart, Shield, Mail, BookOpen,
     ExternalLink, Type, BellRing, Maximize2, Sun, MessageSquare,
-    Volume2, Clock, MousePointer, Home, AlignJustify, Keyboard,
+    Volume2, Clock, MousePointer, Home, AlignJustify, Keyboard, Plug,
   } from 'lucide-vue-next'
   import ChangePasswordModal  from '@/components/modals/ChangePasswordModal.vue'
   import SettingsGeneral      from './settings/SettingsGeneral.vue'
@@ -14,6 +14,7 @@
   import SettingsNotifications  from './settings/SettingsNotifications.vue'
   import SettingsShortcuts      from './settings/SettingsShortcuts.vue'
   import SettingsAccount        from './settings/SettingsAccount.vue'
+  import SettingsIntegrations   from './settings/SettingsIntegrations.vue'
   import SettingsAbout          from './settings/SettingsAbout.vue'
   import { useAppStore } from '@/stores/app'
   // import { STORAGE_KEYS } from '@/constants' // moved to SettingsPreferences
@@ -27,7 +28,7 @@
   const props = defineProps<{ modelValue: boolean }>()
   const emit  = defineEmits<{ 'update:modelValue': [v: boolean] }>()
 
-  type Section = 'general' | 'apparence' | 'notifications' | 'preferences' | 'raccourcis' | 'compte' | 'apropos'
+  type Section = 'general' | 'apparence' | 'notifications' | 'preferences' | 'raccourcis' | 'compte' | 'integrations' | 'apropos'
 
   const appStore = useAppStore()
   // ── Composables ────────────────────────────────────────────────────────────
@@ -49,15 +50,21 @@
   // ── Tabs ───────────────────────────────────────────────────────────────────
   const activeSection = ref<Section>('general')
 
-  const navItems: { key: Section; label: string; icon: typeof Settings }[] = [
-    { key: 'general',       label: 'General',       icon: Home },
-    { key: 'apparence',     label: 'Apparence',     icon: Palette },
-    { key: 'notifications', label: 'Notifications', icon: BellRing },
-    { key: 'preferences',   label: 'Preferences',   icon: Settings },
-    { key: 'raccourcis',    label: 'Raccourcis',    icon: Keyboard },
-    { key: 'compte',        label: 'Mon compte',    icon: User },
-    { key: 'apropos',       label: 'A propos',      icon: Info },
-  ]
+  const navItems = computed<{ key: Section; label: string; icon: typeof Settings }[]>(() => {
+    const items: { key: Section; label: string; icon: typeof Settings }[] = [
+      { key: 'general',       label: 'General',       icon: Home },
+      { key: 'apparence',     label: 'Apparence',     icon: Palette },
+      { key: 'notifications', label: 'Notifications', icon: BellRing },
+      { key: 'preferences',   label: 'Preferences',   icon: Settings },
+      { key: 'raccourcis',    label: 'Raccourcis',    icon: Keyboard },
+      { key: 'compte',        label: 'Mon compte',    icon: User },
+    ]
+    if (appStore.isTeacher) {
+      items.push({ key: 'integrations', label: 'Integrations', icon: Plug })
+    }
+    items.push({ key: 'apropos', label: 'A propos', icon: Info })
+    return items
+  })
 
   // ── Reset state when modal opens ──────────────────────────────────────────
   watch(() => props.modelValue, (open) => {
@@ -139,6 +146,9 @@
 
         <!-- ════ Mon compte ════ -->
         <SettingsAccount v-else-if="activeSection === 'compte'" />
+
+        <!-- ════ Integrations (teacher only) ════ -->
+        <SettingsIntegrations v-else-if="activeSection === 'integrations'" />
 
         <!-- ════ A propos ════ -->
         <SettingsAbout v-else />

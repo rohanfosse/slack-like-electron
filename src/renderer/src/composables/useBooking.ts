@@ -47,8 +47,6 @@ export function useBooking() {
   const { showToast } = useToast()
 
   const loading = ref(true)
-  const msConnected = ref(false)
-  const msExpires = ref<string | null>(null)
   const eventTypes = ref<EventType[]>([])
   const availability = ref<AvailabilityRule[]>([])
   const bookings = ref<Booking[]>([])
@@ -75,19 +73,14 @@ export function useBooking() {
   async function fetchAll() {
     loading.value = true
     try {
-      const [etRes, avRes, bkRes, oaRes] = await Promise.all([
+      const [etRes, avRes, bkRes] = await Promise.all([
         window.api.getBookingEventTypes(),
         window.api.getBookingAvailability(),
         window.api.getMyBookings(),
-        window.api.getBookingOAuthStatus(),
       ])
       if (etRes.ok && etRes.data) eventTypes.value = etRes.data
       if (avRes.ok && avRes.data) availability.value = avRes.data
       if (bkRes.ok && bkRes.data) bookings.value = bkRes.data as Booking[]
-      if (oaRes.ok && oaRes.data) {
-        msConnected.value = oaRes.data.connected
-        msExpires.value = oaRes.data.expiresAt ?? null
-      }
     } catch {
       showToast('Erreur lors du chargement des donnees de reservation', 'error')
     } finally {
@@ -218,55 +211,6 @@ export function useBooking() {
     }
   }
 
-  // ── Microsoft OAuth ────────────────────────────────────────────────────
-
-  let oauthPollInterval: ReturnType<typeof setInterval> | null = null
-  let oauthPollTimeout: ReturnType<typeof setTimeout> | null = null
-
-  function cleanupOAuthPoll() {
-    if (oauthPollInterval) { clearInterval(oauthPollInterval); oauthPollInterval = null }
-    if (oauthPollTimeout) { clearTimeout(oauthPollTimeout); oauthPollTimeout = null }
-  }
-
-  async function connectMs() {
-    try {
-      const res = await window.api.startBookingOAuth()
-      if (res.ok && res.data?.url) {
-        window.api.openExternal(res.data.url)
-        cleanupOAuthPoll()
-        oauthPollInterval = setInterval(async () => {
-          const st = await window.api.getBookingOAuthStatus()
-          if (st.ok && st.data?.connected) {
-            msConnected.value = true
-            msExpires.value = st.data.expiresAt ?? null
-            cleanupOAuthPoll()
-            showToast('Compte Microsoft connecte', 'success')
-          }
-        }, 3000)
-        oauthPollTimeout = setTimeout(cleanupOAuthPoll, 120_000)
-      } else {
-        showToast(res.error || 'Erreur OAuth', 'error')
-      }
-    } catch {
-      showToast('Erreur lors de la connexion Microsoft', 'error')
-    }
-  }
-
-  async function disconnectMs() {
-    try {
-      const res = await window.api.disconnectBookingOAuth()
-      if (res.ok) {
-        msConnected.value = false
-        msExpires.value = null
-        showToast('Compte Microsoft deconnecte', 'success')
-      } else {
-        showToast(res.error || 'Erreur', 'error')
-      }
-    } catch {
-      showToast('Erreur lors de la deconnexion', 'error')
-    }
-  }
-
   // ── Real-time socket listeners ──────────────────────────────────────────
 
   let unsubBookingNew: (() => void) | null = null
@@ -312,7 +256,7 @@ export function useBooking() {
 
   return {
     // State
-    loading, msConnected, msExpires,
+    loading,
     eventTypes, availability, bookings,
     savingAvailability,
     // Computed
@@ -321,7 +265,6 @@ export function useBooking() {
     fetchAll,
     createEventType, toggleActive, deleteEventType, generateLink, generateBulkLinks,
     addSlot, removeSlot, saveAvailability,
-    connectMs, disconnectMs, cleanupOAuthPoll,
     initSocketListeners, disposeSocketListeners,
     // Helpers
     formatDate, formatTime, statusLabel, statusClass,

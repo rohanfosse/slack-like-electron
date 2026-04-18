@@ -11,28 +11,37 @@
 import { ref, onMounted, onUnmounted, watch } from 'vue'
 import {
   CalendarPlus, Clock, Link, Users, Settings, Trash2, Plus,
-  Check, X, ExternalLink, Copy, Calendar, Globe, LayoutList, CalendarDays,
+  Check, X, ExternalLink, Copy, Calendar, LayoutList, CalendarDays,
 } from 'lucide-vue-next'
 import BookingCalendarView from './BookingCalendarView.vue'
 import QrCode from '@/components/ui/QrCode.vue'
 import { useBooking } from '@/composables/useBooking'
+import { useMicrosoftConnection } from '@/composables/useMicrosoftConnection'
+import { useModalsStore } from '@/stores/modals'
 
 const props = defineProps<{
   allStudents: Array<{ id: number; name?: string; email?: string; promo_id?: number }>
 }>()
 
 const {
-  loading, msConnected, msExpires,
+  loading,
   eventTypes, availability, bookings,
   savingAvailability,
   sortedBookings, rulesByDay,
   fetchAll,
   createEventType, toggleActive, deleteEventType, generateLink, generateBulkLinks,
   addSlot, removeSlot, saveAvailability,
-  connectMs, disconnectMs, cleanupOAuthPoll,
   initSocketListeners, disposeSocketListeners,
   formatDate, formatTime, statusLabel, statusClass,
 } = useBooking()
+
+// Etat Microsoft partage (meme source que Settings > Integrations)
+const { connected: msConnected, refresh: refreshMsStatus } = useMicrosoftConnection()
+const modalsStore = useModalsStore()
+
+function openSettingsIntegrations() {
+  modalsStore.settings = true
+}
 
 // ── Local UI state ──────────────────────────────────────────────────────────
 
@@ -165,11 +174,11 @@ function onAddSlot(day: number) {
 onMounted(() => {
   fetchAll()
   initSocketListeners()
+  refreshMsStatus()
 })
 
 onUnmounted(() => {
   disposeSocketListeners()
-  cleanupOAuthPoll()
   if (copyTimeout) clearTimeout(copyTimeout)
 })
 </script>
@@ -182,30 +191,17 @@ onUnmounted(() => {
         <Calendar :size="18" />
         <span>Rendez-vous</span>
       </div>
-      <div class="ms-status">
+      <button
+        class="ms-status ms-status-btn"
+        :title="msConnected ? 'Microsoft connecte — gerer dans Parametres > Integrations' : 'Se connecter dans Parametres > Integrations'"
+        @click="openSettingsIntegrations"
+      >
         <span class="ms-dot" :class="msConnected ? 'connected' : 'disconnected'" />
         <span class="ms-label">
           {{ msConnected ? 'Microsoft connecte' : 'Microsoft non connecte' }}
         </span>
-        <button
-          v-if="msConnected"
-          class="btn-sm btn-danger"
-          @click="disconnectMs"
-          aria-label="Deconnecter Microsoft"
-        >
-          <X :size="12" />
-          Deconnecter
-        </button>
-        <button
-          v-else
-          class="btn-sm btn-primary"
-          @click="connectMs"
-          aria-label="Connecter Microsoft"
-        >
-          <Globe :size="12" />
-          Connecter
-        </button>
-      </div>
+        <Settings :size="12" class="ms-gear" />
+      </button>
     </div>
 
     <div v-if="loading" class="loading-state">Chargement...</div>
