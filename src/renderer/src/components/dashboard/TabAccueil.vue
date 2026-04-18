@@ -7,7 +7,7 @@
  *   Messages (1x1) | Quick actions (2x1) | Activity feed (2x1)
  */
 <script setup lang="ts">
-import { ref, computed, watch, type Component } from 'vue'
+import { ref, computed, watch, toRef, type Component } from 'vue'
 import { VueDraggable } from 'vue-draggable-plus'
 import TeacherTodoWidget from './TeacherTodoWidget.vue'
 import WidgetClock from './student-widgets/WidgetClock.vue'
@@ -26,18 +26,23 @@ import WidgetNotationPending from './teacher-widgets/WidgetNotationPending.vue'
 import WidgetStickyNote from './teacher-widgets/WidgetStickyNote.vue'
 import WidgetPromoVelocity from './teacher-widgets/WidgetPromoVelocity.vue'
 import MultiPromoCard from './MultiPromoCard.vue'
+import AccueilFocusTile from './accueil/AccueilFocusTile.vue'
+import AccueilScheduleTile from './accueil/AccueilScheduleTile.vue'
+import AccueilMessagesTile from './accueil/AccueilMessagesTile.vue'
+import AccueilActivityTile from './accueil/AccueilActivityTile.vue'
 import { useTeacherBento } from '@/composables/useTeacherBento'
+import { useAccueilFocusTile } from '@/composables/useAccueilFocusTile'
+import { useAccueilSchedule } from '@/composables/useAccueilSchedule'
+import { useAccueilActivityFeed } from '@/composables/useAccueilActivityFeed'
 
 const bento = useTeacherBento()
 import {
-  Edit3, Clock, FileText, CheckCircle2,
-  PlusCircle, Bell, BarChart2, MessageSquare, ChevronRight,
+  Edit3,
+  PlusCircle, Bell, BarChart2,
   X, Plus,
   Percent, Wifi, Award,
-  Mic,
 } from 'lucide-vue-next'
-import { avatarColor, gradeClass } from '@/utils/format'
-import { relativeTime } from '@/utils/date'
+import { gradeClass } from '@/utils/format'
 import type { ProjectCard, GanttRow } from '@/composables/useDashboardTeacher'
 import type { AgendaItem } from '@/composables/useDashboardWidgets'
 import type { Depot } from '@/types'
@@ -83,142 +88,19 @@ const emit = defineEmits<{
   openDevoirCrossPromo: [travailId: number, promoId: number, channelId: number, channelName: string]
 }>()
 
-// ── Focus tile logic ──────────────────────────────────────────────────────────
-
-type FocusState = {
-  type: 'grade' | 'deadline' | 'draft' | 'clear'
-  urgency: 'critical' | 'warning' | 'normal' | 'clear'
-  title: string
-  subtitle: string
-  actionLabel: string
-  action: (() => void) | null
-}
-
-const focusState = computed((): FocusState => {
-  // 1. Ungraded submissions
-  if (props.aNoterCount > 0) {
-    const gradeAction = props.actionItems.find(a => a.type === 'grade')
-    return {
-      type: 'grade',
-      urgency: props.aNoterCount >= 10 ? 'critical' : 'warning',
-      title: `${props.aNoterCount} rendu${props.aNoterCount > 1 ? 's' : ''} a noter`,
-      subtitle: gradeAction?.subtitle ?? 'Des travaux attendent votre evaluation',
-      actionLabel: 'Corriger',
-      action: gradeAction?.action ?? null,
-    }
-  }
-
-  // 2. Deadline within 24h
-  const deadlineAction = props.actionItems.find(a => a.type === 'deadline')
-  if (deadlineAction) {
-    return {
-      type: 'deadline',
-      urgency: deadlineAction.urgency === 'critical' ? 'critical' : 'warning',
-      title: deadlineAction.title,
-      subtitle: deadlineAction.subtitle,
-      actionLabel: 'Rappeler',
-      action: deadlineAction.action,
-    }
-  }
-
-  // 3. Forgotten drafts
-  if (props.forgottenDrafts.length > 0) {
-    return {
-      type: 'draft',
-      urgency: 'normal',
-      title: `${props.forgottenDrafts.length} brouillon${props.forgottenDrafts.length > 1 ? 's' : ''} non publie${props.forgottenDrafts.length > 1 ? 's' : ''}`,
-      subtitle: 'Des devoirs attendent d\'etre publies',
-      actionLabel: 'Publier',
-      action: props.forgottenDrafts.length === 1
-        ? () => emit('publishDraft', props.forgottenDrafts[0].id)
-        : null,
-    }
-  }
-
-  // 4. All clear
-  return {
-    type: 'clear',
-    urgency: 'clear',
-    title: 'Tout est a jour',
-    subtitle: 'Aucune action urgente requise',
-    actionLabel: '',
-    action: null,
-  }
+// ── Focus tile + Schedule + Activity feed (composables extraits) ─────────────
+const { state: focusState, bgClass: focusBgClass } = useAccueilFocusTile({
+  aNoterCount: toRef(props, 'aNoterCount'),
+  actionItems: toRef(props, 'actionItems'),
+  forgottenDrafts: toRef(props, 'forgottenDrafts'),
+  onPublishSingleDraft: (id: number) => emit('publishDraft', id),
 })
 
-const focusBgClass = computed(() => {
-  switch (focusState.value.urgency) {
-    case 'critical': return 'focus--critical'
-    case 'warning':  return 'focus--warning'
-    case 'normal':   return 'focus--normal'
-    case 'clear':    return 'focus--clear'
-    default:         return 'focus--normal'
-  }
-})
+const { todayEvents, isPastEvent, isCurrentEvent } = useAccueilSchedule(toRef(props, 'next48h'))
 
-// ── Schedule: filter to today only ────────────────────────────────────────────
-
-const todayEvents = computed(() => {
-  const todayStr = new Date().toDateString()
-  return props.next48h.filter(item => new Date(item.time).toDateString() === todayStr)
-})
-
-const isPastEvent = (time: string) => new Date(time).getTime() < Date.now()
-
-const isCurrentEvent = (time: string, index: number) => {
-  const t = new Date(time).getTime()
-  const now = Date.now()
-  if (t > now) {
-    // First future event is "current"
-    return index === todayEvents.value.findIndex(e => new Date(e.time).getTime() > now)
-  }
-  return false
-}
-
-// ── Activity feed: group recent rendus by devoir ─────────────────────────────
-
-interface ActivityGroup {
-  id: string
-  type: 'rendus' | 'message'
-  label: string
-  count: number
-  timeAgo: string
-}
-
-const activityFeed = computed((): ActivityGroup[] => {
-  const groups = new Map<number, { title: string; count: number; latest: number }>()
-  for (const r of props.recentRendus) {
-    const existing = groups.get(r.travail_id)
-    const ts = new Date(r.submitted_at ?? 0).getTime()
-    if (existing) {
-      existing.count++
-      existing.latest = Math.max(existing.latest, ts)
-    } else {
-      groups.set(r.travail_id, {
-        title: r.travail_title ?? `Devoir #${r.travail_id}`,
-        count: 1,
-        latest: ts,
-      })
-    }
-  }
-
-  const items: ActivityGroup[] = []
-  for (const [id, g] of groups) {
-    items.push({
-      id: `rendus-${id}`,
-      type: 'rendus',
-      label: `${g.count} rendu${g.count > 1 ? 's' : ''} pour ${g.title}`,
-      count: g.count,
-      timeAgo: relativeTime(g.latest),
-    })
-  }
-  return items.sort((a, b) => items.indexOf(a) - items.indexOf(b)).slice(0, 5)
-})
-
-// relativeTime imported from @/utils/date
+const { items: activityFeed } = useAccueilActivityFeed(toRef(props, 'recentRendus'))
 
 // ── Stat: average grade letter ────────────────────────────────────────────────
-
 const averageGrade = computed(() => props.globalModeGrade ?? '--')
 
 // ── Edit mode (reuse composable for hide/show) ──────────────────────────────
@@ -272,23 +154,11 @@ function onOptDragEnd() { bento.reorderOptional(draggableOpt.value) }
     </div>
 
     <!-- ═══ FOCUS TILE (2x2) ═══ -->
-    <div v-if="bento.isVisible('focus')" class="dashboard-card bento-tile bento-focus" :class="focusBgClass">
-      <div class="focus-icon">
-        <Edit3 v-if="focusState.type === 'grade'" :size="28" />
-        <Clock v-else-if="focusState.type === 'deadline'" :size="28" />
-        <FileText v-else-if="focusState.type === 'draft'" :size="28" />
-        <CheckCircle2 v-else :size="28" />
-      </div>
-      <h2 class="focus-title">{{ focusState.title }}</h2>
-      <p class="focus-subtitle">{{ focusState.subtitle }}</p>
-      <button
-        v-if="focusState.action"
-        class="focus-action"
-        @click="focusState.action?.()"
-      >
-        {{ focusState.actionLabel }} <ChevronRight :size="14" />
-      </button>
-    </div>
+    <AccueilFocusTile
+      v-if="bento.isVisible('focus')"
+      :state="focusState"
+      :bg-class="focusBgClass"
+    />
 
     <!-- ═══ STAT TILES (1x1 each) ═══ -->
 
@@ -335,60 +205,24 @@ function onOptDragEnd() { bento.reorderOptional(draggableOpt.value) }
     </div>
 
     <!-- ═══ SCHEDULE STRIP (2x1) ═══ -->
-    <div v-if="bento.isVisible('schedule')" class="dashboard-card bento-tile bento-schedule" :class="{ 'bento-tile--editing': editMode }">
-      <button v-if="editMode" class="bento-tile-remove" @click="bento.toggleTile('schedule')"><X :size="12" /></button>
-      <h3 class="tile-title"><Clock :size="14" /> Aujourd'hui</h3>
-      <div v-if="!todayEvents.length" class="schedule-empty">
-        Aucun evenement prevu aujourd'hui
-      </div>
-      <div v-else class="schedule-list">
-        <div
-          v-for="(ev, idx) in todayEvents"
-          :key="ev.id"
-          class="schedule-item"
-          :class="{
-            'schedule-past': isPastEvent(ev.time),
-            'schedule-current': isCurrentEvent(ev.time, idx),
-          }"
-        >
-          <span class="schedule-time">
-            {{ new Date(ev.time).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) }}
-          </span>
-          <span class="schedule-badge" :class="'schedule-type-' + ev.type">
-            <Mic v-if="ev.type === 'soutenance'" :size="10" />
-            <Clock v-else-if="ev.type === 'deadline'" :size="10" />
-            <CheckCircle2 v-else :size="10" />
-          </span>
-          <span class="schedule-title">{{ ev.title }}</span>
-        </div>
-      </div>
-    </div>
+    <AccueilScheduleTile
+      v-if="bento.isVisible('schedule')"
+      :events="todayEvents"
+      :edit-mode="editMode"
+      :is-past-event="isPastEvent"
+      :is-current-event="isCurrentEvent"
+      @remove="bento.toggleTile('schedule')"
+    />
 
     <!-- ═══ MESSAGES TILE (1x1) ═══ -->
-    <div v-if="bento.isVisible('messages')" class="dashboard-card bento-tile bento-messages" :class="{ 'bento-tile--editing': editMode }">
-      <button v-if="editMode" class="bento-tile-remove" @click="bento.toggleTile('messages')"><X :size="12" /></button>
-      <h3 class="tile-title"><MessageSquare :size="14" /> Messages</h3>
-      <div v-if="!unreadDmEntries.length" class="messages-empty">
-        Aucun message non lu
-      </div>
-      <template v-else>
-        <span class="messages-count">{{ totalUnreadDms }} non lu{{ totalUnreadDms > 1 ? 's' : '' }}</span>
-        <div class="messages-list">
-          <button
-            v-for="entry in unreadDmEntries.slice(0, 3)"
-            :key="entry.name"
-            class="messages-item"
-            @click="emit('openDmFromDashboard', entry.name)"
-          >
-            <div class="messages-avatar" :style="{ background: avatarColor(entry.name) }">
-              {{ entry.name.slice(0, 2).toUpperCase() }}
-            </div>
-            <span class="messages-name">{{ entry.name }}</span>
-            <span class="messages-badge">{{ entry.count }}</span>
-          </button>
-        </div>
-      </template>
-    </div>
+    <AccueilMessagesTile
+      v-if="bento.isVisible('messages')"
+      :entries="unreadDmEntries"
+      :total-unread="totalUnreadDms"
+      :edit-mode="editMode"
+      @open-dm="(n) => emit('openDmFromDashboard', n)"
+      @remove="bento.toggleTile('messages')"
+    />
 
     <!-- ═══ QUICK ACTIONS (2x1) ═══ -->
     <div v-if="bento.isVisible('actions')" class="dashboard-card bento-tile bento-actions" :class="{ 'bento-tile--editing': editMode }">
@@ -408,22 +242,12 @@ function onOptDragEnd() { bento.reorderOptional(draggableOpt.value) }
     </div>
 
     <!-- ═══ ACTIVITY FEED (2x1) ═══ -->
-    <div v-if="bento.isVisible('activity')" class="dashboard-card bento-tile bento-activity" :class="{ 'bento-tile--editing': editMode }">
-      <button v-if="editMode" class="bento-tile-remove" @click="bento.toggleTile('activity')"><X :size="12" /></button>
-      <h3 class="tile-title"><Clock :size="14" /> Derniers rendus</h3>
-      <div v-if="!activityFeed.length" class="activity-empty">
-        Aucune activite recente
-      </div>
-      <div v-else class="activity-list">
-        <div v-for="item in activityFeed" :key="item.id" class="activity-item">
-          <span class="activity-icon">
-            <Edit3 :size="12" />
-          </span>
-          <span class="activity-label">{{ item.label }}</span>
-          <span class="activity-time">{{ item.timeAgo }}</span>
-        </div>
-      </div>
-    </div>
+    <AccueilActivityTile
+      v-if="bento.isVisible('activity')"
+      :items="activityFeed"
+      :edit-mode="editMode"
+      @remove="bento.toggleTile('activity')"
+    />
 
     <!-- ═══ TODO WIDGET (2x1) ═══ -->
     <div v-if="bento.isVisible('todo')" class="dashboard-card bento-tile bento-todo" :class="{ 'bento-tile--editing': editMode }">
