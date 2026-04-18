@@ -14,19 +14,43 @@ const MAX_FILE_SIZE = 50 * 1024 * 1024 // 50 MB
 
 const BLOCKED_EXTENSIONS = new Set([
   '.exe', '.bat', '.cmd', '.com', '.msi', '.dll', '.scr', '.pif', '.vbs', '.wsf',
-  '.jar', '.apk', '.ps1', '.sh',
+  '.jar', '.apk', '.ps1', '.sh', '.ps2', '.psm1', '.hta', '.reg', '.lnk', '.js',
+  '.wsh', '.cpl', '.gadget', '.inf',
 ])
+
+const ALLOWED_LINK_PROTOCOLS = new Set(['http:', 'https:'])
+
+/** Extrait l'extension en minuscules (avec le point) ou null. */
+function extensionOf(name) {
+  return String(name || '').toLowerCase().match(/\.[^./\\]+$/)?.[0] ?? null
+}
 
 /** Vérifie la sécurité d'un payload de document (traversée, extension, taille). */
 function validateDocSecurity(payload) {
   if (payload.type === 'file') {
-    const normalized = path.normalize(payload.pathOrUrl)
-    if (normalized.includes('..')) {
+    const raw = String(payload.pathOrUrl || '')
+    // Null byte injection + traversée
+    if (raw.includes('\0')) {
       throw new AppError('Chemin de fichier invalide.')
     }
-    const ext = payload.name.toLowerCase().match(/\.[^.]+$/)?.[0]
+    const normalized = path.normalize(raw).replace(/\\/g, '/')
+    // Bloque ".." sauf dans le nom de fichier (ex: "ma..suite.pdf" autorise)
+    const segments = normalized.split('/')
+    if (segments.some((seg) => seg === '..')) {
+      throw new AppError('Chemin de fichier invalide.')
+    }
+    const ext = extensionOf(payload.name) || extensionOf(raw)
     if (ext && BLOCKED_EXTENSIONS.has(ext)) {
       throw new AppError('Type de fichier non autorise.')
+    }
+  } else if (payload.type === 'link') {
+    const raw = String(payload.pathOrUrl || '').trim()
+    let url
+    try { url = new URL(raw) } catch {
+      throw new AppError('URL invalide.')
+    }
+    if (!ALLOWED_LINK_PROTOCOLS.has(url.protocol)) {
+      throw new AppError('URL invalide : seuls http/https sont autorises.')
     }
   }
   if (payload.fileSize && payload.fileSize > MAX_FILE_SIZE) {

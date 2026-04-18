@@ -390,4 +390,60 @@ describe('POST /api/documents/channel — security checks', () => {
       .send({ channelId: 1, promoId: 1, name: 'big.zip', type: 'file', pathOrUrl: '/uploads/big.zip', fileSize: 100 * 1024 * 1024 })
     expect(res.status).toBe(400)
   })
+
+  it('rejects null-byte injection in pathOrUrl', async () => {
+    const res = await request(app)
+      .post('/api/documents/channel')
+      .set('Authorization', `Bearer ${teacherToken}`)
+      .send({ channelId: 1, promoId: 1, name: 'inject.txt', type: 'file', pathOrUrl: '/uploads/inject.txt\u0000.evil' })
+    expect(res.status).toBe(400)
+  })
+
+  it('rejects javascript: scheme on link type', async () => {
+    const res = await request(app)
+      .post('/api/documents/channel')
+      .set('Authorization', `Bearer ${teacherToken}`)
+      .send({ channelId: 1, promoId: 1, name: 'xss', type: 'link', pathOrUrl: 'javascript:alert(1)' })
+    expect(res.status).toBe(400)
+  })
+
+  it('rejects data: scheme on link type', async () => {
+    const res = await request(app)
+      .post('/api/documents/channel')
+      .set('Authorization', `Bearer ${teacherToken}`)
+      .send({ channelId: 1, promoId: 1, name: 'databomb', type: 'link', pathOrUrl: 'data:text/html,<script>alert(1)</script>' })
+    expect(res.status).toBe(400)
+  })
+
+  it('rejects malformed URL on link type', async () => {
+    const res = await request(app)
+      .post('/api/documents/channel')
+      .set('Authorization', `Bearer ${teacherToken}`)
+      .send({ channelId: 1, promoId: 1, name: 'bad', type: 'link', pathOrUrl: 'not a url at all' })
+    expect(res.status).toBe(400)
+  })
+
+  it('rejects blocked .js script file upload', async () => {
+    const res = await request(app)
+      .post('/api/documents/channel')
+      .set('Authorization', `Bearer ${teacherToken}`)
+      .send({ channelId: 1, promoId: 1, name: 'payload.js', type: 'file', pathOrUrl: '/uploads/payload.js' })
+    expect(res.status).toBe(400)
+  })
+
+  it('rejects blocked .hta script file upload', async () => {
+    const res = await request(app)
+      .post('/api/documents/channel')
+      .set('Authorization', `Bearer ${teacherToken}`)
+      .send({ channelId: 1, promoId: 1, name: 'payload.hta', type: 'file', pathOrUrl: '/uploads/payload.hta' })
+    expect(res.status).toBe(400)
+  })
+
+  it('allows filenames with dots (e.g. "mon..rapport.pdf")', async () => {
+    const res = await request(app)
+      .post('/api/documents/channel')
+      .set('Authorization', `Bearer ${teacherToken}`)
+      .send({ channelId: 1, promoId: 1, name: 'mon..rapport.pdf', type: 'file', pathOrUrl: '/uploads/mon..rapport.pdf' })
+    expect(res.status).toBe(200)
+  })
 })
