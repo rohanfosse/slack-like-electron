@@ -1,15 +1,15 @@
 <script setup lang="ts">
 import {
-  Pin, PinOff, MoreHorizontal, Copy, Trash2, Check, Pencil,
-  SmilePlus, Bookmark, BookmarkCheck, Reply, AlertTriangle, Flame, Download, X,
+  Check, Reply, AlertTriangle, Flame,
 } from 'lucide-vue-next'
 import { useAppStore }      from '@/stores/app'
 import { useMessagesStore } from '@/stores/messages'
 import Avatar       from '@/components/ui/Avatar.vue'
-import EmojiPicker  from '@/components/ui/EmojiPicker.vue'
 import ContextMenu  from '@/components/ui/ContextMenu.vue'
+import MessageActionPill from '@/components/chat/MessageActionPill.vue'
+import MessageLightbox from '@/components/chat/MessageLightbox.vue'
+import MessageReportDialog from '@/components/chat/MessageReportDialog.vue'
 import { formatTime }      from '@/utils/date'
-import { useOpenExternal } from '@/composables/useOpenExternal'
 import { authUrl }         from '@/utils/auth'
 import { useBubbleActions }   from '@/composables/useBubbleActions'
 import { useBubbleReactions } from '@/composables/useBubbleReactions'
@@ -27,7 +27,6 @@ const props = withDefaults(defineProps<Props>(), { grouped: false, searchTerm: '
 
 const appStore      = useAppStore()
 const messagesStore = useMessagesStore()
-const { openExternal } = useOpenExternal()
 
 // ── Composables
 const msgGetter   = () => props.msg
@@ -192,95 +191,26 @@ function onTextClick(e: MouseEvent) {
     <!-- ═══════════════════════════════════════════
          PILL D'ACTIONS (style Slack) - au survol
     ════════════════════════════════════════════ -->
-    <div v-if="!editing" class="msg-action-pill">
-
-      <!-- Répondre -->
-      <button class="pill-btn" title="Répondre" aria-label="Répondre au message" @click.stop="onReply">
-        <Reply :size="15" />
-      </button>
-
-      <!-- Raccourcis réactions rapides -->
-      <button
-        v-for="r in QUICK_REACTS"
-        :key="r.type"
-        class="pill-btn pill-emoji-btn"
-        :title="r.emoji"
-        :aria-label="`Réagir avec ${r.emoji}`"
-        @click.stop="quickReact(r.type)"
-      >{{ r.emoji }}</button>
-
-      <!-- Picker complet -->
-      <div class="pill-picker-wrap">
-        <button
-          class="pill-btn"
-          title="Ajouter une réaction"
-          aria-label="Ouvrir le sélecteur de réactions"
-          @click.stop="showPicker = !showPicker"
-        >
-          <SmilePlus :size="15" />
-        </button>
-        <div v-if="showPicker" class="full-picker-pos" @click.stop>
-          <EmojiPicker @pick="pickEmojiReact" />
-        </div>
-      </div>
-
-      <!-- Séparateur -->
-      <span class="pill-sep" />
-
-      <!-- Épingler -->
-      <button
-        v-if="appStore.isTeacher"
-        class="pill-btn"
-        :title="isPinned ? 'Désépingler' : 'Épingler'"
-        :aria-label="isPinned ? 'Désépingler le message' : 'Épingler le message'"
-        @click.stop="togglePin"
-      >
-        <PinOff v-if="isPinned" :size="15" />
-        <Pin v-else :size="15" />
-      </button>
-
-      <!-- Bookmark -->
-      <button
-        class="pill-btn"
-        :class="{ 'pill-bookmarked': isBookmarked }"
-        :title="isBookmarked ? 'Retirer des favoris' : 'Sauvegarder dans les favoris'"
-        :aria-label="isBookmarked ? 'Retirer des favoris' : 'Sauvegarder dans les favoris'"
-        @click.stop="toggleBookmark"
-      >
-        <BookmarkCheck v-if="isBookmarked" :size="15" />
-        <Bookmark v-else :size="15" />
-      </button>
-
-      <!-- Menu ··· -->
-      <div class="pill-menu-wrap" @mouseleave="showMenu = false">
-        <button
-          class="pill-btn"
-          title="Plus d'options"
-          aria-label="Plus d'options"
-          @click.stop="showMenu = !showMenu"
-        >
-          <MoreHorizontal :size="15" />
-        </button>
-
-        <div v-if="showMenu" class="msg-menu" role="menu">
-          <button class="msg-menu-item" role="menuitem" @click="onReply">
-            <Reply :size="12" /> Répondre
-          </button>
-          <button class="msg-menu-item" role="menuitem" @click="copyMessage">
-            <Copy :size="12" /> Copier le texte
-          </button>
-          <button v-if="canEdit" class="msg-menu-item" role="menuitem" @click="startEdit">
-            <Pencil :size="12" /> Modifier
-          </button>
-          <button v-if="appStore.isTeacher" class="msg-menu-item" role="menuitem" @click="togglePin">
-            <Pin :size="12" /> {{ isPinned ? 'Désépingler' : 'Épingler' }}
-          </button>
-          <button v-if="canDelete" class="msg-menu-item msg-menu-danger" role="menuitem" @click="deleteMessage">
-            <Trash2 :size="12" /> Supprimer
-          </button>
-        </div>
-      </div>
-    </div>
+    <MessageActionPill
+      v-if="!editing"
+      :quick-reacts="QUICK_REACTS"
+      :is-pinned="isPinned"
+      :is-bookmarked="isBookmarked"
+      :can-edit="canEdit"
+      :can-delete="canDelete"
+      :show-picker="showPicker"
+      :show-menu="showMenu"
+      @update:show-picker="showPicker = $event"
+      @update:show-menu="showMenu = $event"
+      @reply="onReply"
+      @quick-react="quickReact"
+      @pick-emoji="pickEmojiReact"
+      @toggle-pin="togglePin"
+      @toggle-bookmark="toggleBookmark"
+      @copy="copyMessage"
+      @edit="startEdit"
+      @delete="deleteMessage"
+    />
 
     <!-- Menu contextuel (clic droit) -->
     <ContextMenu
@@ -293,45 +223,17 @@ function onTextClick(e: MouseEvent) {
 
   </div>
 
-  <!-- Lightbox image plein écran -->
+  <!-- Lightbox image + dialog signalement -->
   <Teleport to="body">
-    <Transition name="lightbox-fade">
-      <div v-if="lightboxUrl" class="lightbox-overlay" @click.self="lightboxUrl = null">
-        <div class="lightbox-toolbar">
-          <a :href="authUrl(lightboxUrl!)" download class="lightbox-btn" title="Télécharger" aria-label="Télécharger l'image" @click.stop>
-            <Download :size="18" />
-          </a>
-          <button class="lightbox-btn" title="Ouvrir dans le navigateur" aria-label="Ouvrir dans le navigateur" @click.stop="openExternal(lightboxUrl!)">
-            <Flame :size="18" />
-          </button>
-          <button class="lightbox-btn" title="Fermer" aria-label="Fermer la visionneuse" @click="lightboxUrl = null">
-            <X :size="18" />
-          </button>
-        </div>
-        <img :src="authUrl(lightboxUrl!)" class="lightbox-img" alt="Image agrandie" />
-      </div>
-    </Transition>
-
-    <!-- Dialog de signalement -->
-    <Transition name="lightbox-fade">
-      <div v-if="reportingMsg" class="lightbox-overlay report-overlay" @click.self="reportingMsg = false">
-        <div class="report-dialog">
-          <h3 class="report-title"><AlertTriangle :size="16" /> Signaler ce message</h3>
-          <p class="report-preview">"{{ msg.content.slice(0, 100) }}{{ msg.content.length > 100 ? '…' : '' }}"</p>
-          <p class="report-hint">Indiquez la raison du signalement :</p>
-          <div class="report-quick-reasons">
-            <button v-for="r in ['Harcèlement', 'Spam', 'Contenu inapproprié', 'Hors-sujet']" :key="r"
-              class="report-reason-btn" :class="{ active: reportReason === r }" @click="reportReason = r"
-            >{{ r }}</button>
-          </div>
-          <textarea v-model="reportReason" class="report-textarea" rows="2" placeholder="Ou décrivez la raison…" />
-          <div class="report-actions">
-            <button class="btn-ghost" @click="reportingMsg = false">Annuler</button>
-            <button class="btn-primary" :disabled="!reportReason.trim()" @click="reportMessage">Envoyer</button>
-          </div>
-        </div>
-      </div>
-    </Transition>
+    <MessageLightbox :url="lightboxUrl" @close="lightboxUrl = null" />
+    <MessageReportDialog
+      :open="reportingMsg"
+      :message-preview="msg.content.slice(0, 100) + (msg.content.length > 100 ? '...' : '')"
+      :reason="reportReason"
+      @update:open="reportingMsg = $event"
+      @update:reason="reportReason = $event"
+      @submit="reportMessage"
+    />
   </Teleport>
 </template>
 
