@@ -11,18 +11,21 @@
  * du breadcrumbs, de la banner stale content, et du panneau Outline
  * auto-genere depuis les headings du DOM rendu.
  */
-import { computed, onMounted, onBeforeUnmount, ref, watch, nextTick } from 'vue'
+import { computed, onMounted, onBeforeUnmount, ref, watch, nextTick, toRef } from 'vue'
 import { useRouter } from 'vue-router'
 import { Loader2, FileText, FileDown, FileCode, Clock, User, ChevronLeft, ChevronRight, Copy, Check, ClipboardList, Plus, Calendar, RefreshCw, ChevronRight as CrumbSep, Presentation, Pencil, Save, X, Eye, EyeOff, Columns2, Link2, Printer, Sun, Moon, Search } from 'lucide-vue-next'
 import { renderMarkdown } from '@/utils/markdown'
 import { renderTex } from '@/utils/texRenderer'
 import { renderIpynb } from '@/utils/ipynbRenderer'
 import { resolveAnchorTarget } from '@/utils/lumenDevoirLinks'
-import { parseChapterContent } from '@/utils/lumenFrontmatter'
+import { relativeTime } from '@/utils/date'
 import { useToast } from '@/composables/useToast'
 import { useAppStore } from '@/stores/app'
-import { useLumenStore } from '@/stores/lumen'
-import { relativeTime } from '@/utils/date'
+import { useChapterSearch } from '@/composables/useChapterSearch'
+import { useChapterLinkedTravaux } from '@/composables/useChapterLinkedTravaux'
+import { useChapterEdit } from '@/composables/useChapterEdit'
+import { useChapterKind } from '@/composables/useChapterKind'
+import { useChapterStaleStatus } from '@/composables/useChapterStaleStatus'
 import LumenLinkDevoirModal from '@/components/lumen/LumenLinkDevoirModal.vue'
 import LumenOutline from '@/components/lumen/LumenOutline.vue'
 import LumenPdfViewer from '@/components/lumen/LumenPdfViewer.vue'
@@ -61,33 +64,22 @@ const appStore = useAppStore()
 
 const isTeacher = computed(() => appStore.currentUser?.type === 'teacher' || appStore.currentUser?.type === 'admin')
 
+const repoRef = toRef(props, 'repo') as unknown as import('vue').Ref<LumenRepo>
+const chapterRef = toRef(props, 'chapter') as unknown as import('vue').Ref<LumenChapter>
+const contentRef = toRef(props, 'content') as unknown as import('vue').Ref<string | null | undefined>
+const contentShaRef = toRef(props, 'contentSha') as unknown as import('vue').Ref<string | null | undefined>
+const cachedRef = toRef(props, 'cached') as unknown as import('vue').Ref<boolean | undefined>
+
 // ── Devoirs lies a ce chapitre ────────────────────────────────────────────
-const linkedTravaux = ref<LumenLinkedTravail[]>([])
-const linkedTravauxLoading = ref(false)
-const linkDevoirModalOpen = ref(false)
-// Popover "devoirs lies" : ferme par defaut pour ne pas encombrer la lecture.
-// L'utilisateur l'ouvre via un chip dans le header. Auto-fermeture sur Esc
-// et au clic exterieur.
-const linkedPopoverOpen = ref(false)
-const linkedPopoverRef = ref<HTMLElement | null>(null)
-function toggleLinkedPopover(): void {
-  linkedPopoverOpen.value = !linkedPopoverOpen.value
-}
-function closeLinkedPopover(): void {
-  linkedPopoverOpen.value = false
-}
-function onDocumentClick(ev: MouseEvent): void {
-  if (!linkedPopoverOpen.value) return
-  const target = ev.target as Node | null
-  if (linkedPopoverRef.value && target && !linkedPopoverRef.value.contains(target)) {
-    linkedPopoverOpen.value = false
-  }
-}
-function onDocumentKey(ev: KeyboardEvent): void {
-  if (ev.key === 'Escape' && linkedPopoverOpen.value) {
-    linkedPopoverOpen.value = false
-  }
-}
+const {
+  travaux: linkedTravaux,
+  linkModalOpen: linkDevoirModalOpen,
+  popoverOpen: linkedPopoverOpen,
+  popoverRef: linkedPopoverRef,
+  togglePopover: toggleLinkedPopover,
+  closePopover: closeLinkedPopover,
+  load: loadLinkedTravaux,
+} = useChapterLinkedTravaux(repoRef, chapterRef)
 
 // ── Raccourcis clavier Lumen (v2.70) ──────────────────────────────────────
 // Attaches au document : actifs quand le focus n'est pas dans un input ou
@@ -145,127 +137,19 @@ function onLumenKeyboard(ev: KeyboardEvent): void {
   }
 }
 
+const bodyRef = ref<HTMLElement | null>(null)
+
 // ── Recherche dans le chapitre (Ctrl+F) ─────────────────────────────────
-const chapterSearchOpen = ref(false)
-const chapterSearchQuery = ref('')
-const chapterSearchCount = ref(0)
-const chapterSearchCurrent = ref(0)
-
-const findInputRef = ref<HTMLInputElement | null>(null)
-
-function openChapterSearch() {
-  chapterSearchOpen.value = true
-  nextTick(() => {
-    findInputRef.value?.focus()
-    findInputRef.value?.select()
-  })
-}
-
-function closeChapterSearch() {
-  chapterSearchOpen.value = false
-  chapterSearchQuery.value = ''
-  clearHighlights()
-}
-
-function clearHighlights() {
-  if (!bodyRef.value) return
-  const marks = bodyRef.value.querySelectorAll('mark.lumen-find-hl')
-  marks.forEach(m => {
-    const parent = m.parentNode
-    if (parent) {
-      parent.replaceChild(document.createTextNode(m.textContent ?? ''), m)
-      parent.normalize()
-    }
-  })
-  chapterSearchCount.value = 0
-  chapterSearchCurrent.value = 0
-}
-
-function highlightMatches() {
-  clearHighlights()
-  const q = chapterSearchQuery.value.trim().toLowerCase()
-  if (!q || !bodyRef.value) return
-  const walker = document.createTreeWalker(bodyRef.value, NodeFilter.SHOW_TEXT)
-  const nodes: { node: Text; index: number }[] = []
-  let textNode: Text | null
-  while ((textNode = walker.nextNode() as Text | null)) {
-    const text = textNode.textContent ?? ''
-    let idx = text.toLowerCase().indexOf(q)
-    while (idx !== -1) {
-      nodes.push({ node: textNode, index: idx })
-      idx = text.toLowerCase().indexOf(q, idx + q.length)
-    }
-  }
-  // Apply highlights in reverse to avoid index shifts
-  for (let i = nodes.length - 1; i >= 0; i--) {
-    const { node, index } = nodes[i]
-    try {
-      const range = document.createRange()
-      range.setStart(node, index)
-      range.setEnd(node, index + q.length)
-      const mark = document.createElement('mark')
-      mark.className = 'lumen-find-hl'
-      range.surroundContents(mark)
-    } catch {
-      // surroundContents throws when range crosses element boundaries — skip
-    }
-  }
-  chapterSearchCount.value = nodes.length
-  chapterSearchCurrent.value = nodes.length > 0 ? 1 : 0
-  scrollToCurrentMatch()
-}
-
-function scrollToCurrentMatch() {
-  if (!bodyRef.value || chapterSearchCount.value === 0) return
-  const marks = bodyRef.value.querySelectorAll('mark.lumen-find-hl')
-  marks.forEach(m => m.classList.remove('lumen-find-hl--active'))
-  const idx = chapterSearchCurrent.value - 1
-  if (idx >= 0 && idx < marks.length) {
-    marks[idx].classList.add('lumen-find-hl--active')
-    marks[idx].scrollIntoView({ behavior: 'smooth', block: 'center' })
-  }
-}
-
-function findNext() {
-  if (chapterSearchCount.value === 0) return
-  chapterSearchCurrent.value = chapterSearchCurrent.value >= chapterSearchCount.value ? 1 : chapterSearchCurrent.value + 1
-  scrollToCurrentMatch()
-}
-
-function findPrev() {
-  if (chapterSearchCount.value === 0) return
-  chapterSearchCurrent.value = chapterSearchCurrent.value <= 1 ? chapterSearchCount.value : chapterSearchCurrent.value - 1
-  scrollToCurrentMatch()
-}
-
-watch(chapterSearchQuery, () => highlightMatches())
-
-// Intercept Ctrl+F to open chapter search
-function onGlobalKeydown(ev: KeyboardEvent) {
-  if ((ev.ctrlKey || ev.metaKey) && ev.key === 'f') {
-    ev.preventDefault()
-    openChapterSearch()
-  }
-  if (ev.key === 'Escape' && chapterSearchOpen.value) {
-    closeChapterSearch()
-  }
-}
-
-async function loadLinkedTravaux() {
-  if (!props.chapter?.path) return
-  linkedTravauxLoading.value = true
-  try {
-    const resp = await window.api.getLumenTravauxForChapter(props.repo.id, props.chapter.path) as {
-      ok: boolean
-      data?: { travaux: LumenLinkedTravail[] }
-    }
-    linkedTravaux.value = resp?.ok && resp.data?.travaux ? resp.data.travaux : []
-  } catch {
-    linkedTravaux.value = []
-  } finally {
-    linkedTravauxLoading.value = false
-  }
-}
+const {
+  open: chapterSearchOpen,
+  query: chapterSearchQuery,
+  count: chapterSearchCount,
+  current: chapterSearchCurrent,
+  inputRef: findInputRef,
+  closeSearch: closeChapterSearch,
+  findNext,
+  findPrev,
+} = useChapterSearch(bodyRef)
 
 function navigateToFirstChapter() {
   const first = props.repo.manifest?.chapters[0]
@@ -282,8 +166,6 @@ function openTravail(travail: LumenLinkedTravail) {
   if (travail.category) appStore.activeProject = travail.category
   router.push({ name: 'devoirs' })
 }
-
-const bodyRef = ref<HTMLElement | null>(null)
 
 /**
  * Detection chapitre "Accueil" (v2.66) : le README racine du repo, ou tout
@@ -324,93 +206,43 @@ function openAccueilChapter(ch: LumenChapter) {
   emit('navigate-chapter', ch.path)
 }
 
+// ── Detection du format de chapitre (markdown/pdf/tex/ipynb + Marp) ──────
+const { kind: chapterKind, isPdf, isTex, isIpynb, isMarp } = useChapterKind(chapterRef, contentRef)
+
 // ── Edition inline de chapitre par le prof (v2.104) ──────────────────────
-// Toggle lecture/edition dans le viewer. Le prof modifie directement dans
-// le contenu, sans modale. Split-view optionnel avec preview live.
-const editMode = ref(false)
-const editDraft = ref('')
-const editMessage = ref('')
-const editSaving = ref(false)
-const editPreviewOpen = ref(true)
-const editPreviewHtml = computed(() => {
-  if (!editPreviewOpen.value || !editDraft.value) return ''
-  if (chapterKind.value === 'tex') return renderTex(editDraft.value)
-  return renderMarkdown(editDraft.value, { chapterPath: props.chapter.path })
+const {
+  editMode,
+  draft: editDraft,
+  message: editMessage,
+  saving: editSaving,
+  previewOpen: editPreviewOpen,
+  previewHtml: editPreviewHtml,
+  canEdit,
+  enter: enterEditMode,
+  exit: exitEditMode,
+  save: saveEdit,
+} = useChapterEdit({
+  repo: repoRef,
+  chapter: chapterRef,
+  content: contentRef,
+  contentSha: contentShaRef,
+  isTeacher,
+  chapterKind,
+  isMarp,
 })
-const lumenStore = useLumenStore()
-
-function enterEditMode(): void {
-  if (!canEdit.value) return
-  if (props.content == null) return
-  editDraft.value = props.content
-  editMessage.value = ''
-  editMode.value = true
-}
-
-function exitEditMode(): void {
-  if (editSaving.value) return
-  editMode.value = false
-}
-
-async function saveEdit(): Promise<void> {
-  if (editSaving.value) return
-  if (!props.contentSha) {
-    showToast('SHA du fichier introuvable, recharge le chapitre', 'error')
-    return
-  }
-  editSaving.value = true
-  try {
-    const message = editMessage.value.trim() || `docs: edit ${props.chapter.path}`
-    const resp = await window.api.updateLumenChapterFile(props.repo.id, {
-      path: props.chapter.path,
-      content: editDraft.value,
-      sha: props.contentSha,
-      message,
-    }) as { ok: boolean; error?: string }
-    if (!resp?.ok) {
-      const msg = resp?.error || 'Echec de la sauvegarde'
-      showToast(msg, 'error')
-      return
-    }
-    showToast('Chapitre enregistre', 'success')
-    editMode.value = false
-    await lumenStore.fetchChapterContent(props.repo.id, props.chapter.path)
-  } catch (err) {
-    const msg = (err as { message?: string })?.message || 'Erreur reseau'
-    showToast(msg, 'error')
-  } finally {
-    editSaving.value = false
-  }
-}
-
-const canEdit = computed(() =>
-  isTeacher.value
-  && (chapterKind.value === 'markdown' || chapterKind.value === 'tex')
-  && !isMarp.value
-  && props.content != null
-  && Boolean(props.contentSha),
-)
 
 // Mode lecture clair/sombre — persiste dans localStorage
 const readingLight = ref(localStorage.getItem('lumen-reading-light') === '1')
 watch(readingLight, (v) => { localStorage.setItem('lumen-reading-light', v ? '1' : '0') })
 
-// v2.79 : imprimer le chapitre courant. Le stylesheet print masque tout
-// sauf le body markdown pour obtenir un PDF propre (via le dialogue
-// d'impression Chromium). Utile pour polycopies et archivage.
+// v2.79 : imprimer le chapitre courant (feuille @media print gere le reste).
 function printChapter() {
-  // Chromium gere tout : on appelle juste window.print() et la feuille
-  // @media print cachee dans le styles global fait le reste.
   window.print()
 }
 
-// v2.78 : copier un lien cross-repo lumen:// vers ce chapitre dans le
-// presse-papiers. Utile pour partager un chapitre precis dans un message
-// Slack / un devoir / un email.
+// v2.78 : copier un lien cross-repo lumen:// vers ce chapitre.
 const linkCopied = ref(false)
 async function copyChapterLink() {
-  // On utilise le nom court du repo (sans owner) pour que le lien
-  // fonctionne avec handleNavigateLumenLink cote LumenView.
   const repoName = props.repo.repo || props.repo.fullName.split('/').pop() || ''
   const url = `lumen://${repoName}/${props.chapter.path}`
   try {
@@ -422,38 +254,6 @@ async function copyChapterLink() {
     showToast('Copie impossible', 'error')
   }
 }
-
-// Detection du format de chapitre (v2.64). Le `kind` vient du manifest
-// auto-genere, sinon on infere
-// depuis l'extension du path. Branches de rendu :
-//  - pdf : iframe data: URL (PDF natif)
-//  - tex : source LaTeX colorisee via highlight.js
-//  - markdown : rendu standard, ou Marp si frontmatter `marp: true`
-type ChapterKind = 'markdown' | 'pdf' | 'tex' | 'ipynb'
-
-function inferKindFromPath(path: string): ChapterKind {
-  const m = path.match(/\.([^./]+)$/)
-  const ext = m ? m[1].toLowerCase() : ''
-  if (ext === 'pdf') return 'pdf'
-  if (ext === 'tex') return 'tex'
-  if (ext === 'ipynb') return 'ipynb'
-  return 'markdown'
-}
-const chapterKind = computed<ChapterKind>(() => {
-  return (props.chapter.kind as ChapterKind | undefined) ?? inferKindFromPath(props.chapter.path)
-})
-const isPdf = computed(() => chapterKind.value === 'pdf')
-const isTex = computed(() => chapterKind.value === 'tex')
-const isIpynb = computed(() => chapterKind.value === 'ipynb')
-
-// Detection Marp via frontmatter `marp: true`. Si detecte, on bascule sur
-// LumenSlideDeck (rendu en slides) au lieu du rendu Markdown long-form.
-// Marp ne s'applique qu'aux chapitres markdown — un .pdf ou .tex ne peut
-// pas avoir de frontmatter Marp.
-const parsed = computed(() =>
-  chapterKind.value === 'markdown' ? parseChapterContent(props.content) : { frontmatter: {}, body: '', isMarp: false },
-)
-const isMarp = computed(() => parsed.value.isMarp)
 
 const ipynbHtml = computed(() => {
   if (!isIpynb.value || !props.content) return ''
@@ -651,34 +451,9 @@ function scrollToHeading(id: string) {
   el.scrollIntoView({ behavior: 'smooth', block: 'start' })
 }
 
-// SQLite `datetime('now')` renvoie "YYYY-MM-DD HH:MM:SS" (separateur espace,
-// sans timezone). Safari / WebKit retourne NaN sur `new Date("2026-04-11 15:30:00Z")`
-// a cause du separateur non-ISO. Electron tourne sous Chromium donc ca marche
-// mais on normalise quand meme pour la portabilite (web shim, tests Node).
-function parseSqlTimestamp(raw: string | null): number | null {
-  if (!raw) return null
-  const iso = raw.includes('T') ? raw : raw.replace(' ', 'T')
-  const withTz = /Z|[+-]\d{2}:?\d{2}$/.test(iso) ? iso : iso + 'Z'
-  const ts = new Date(withTz).getTime()
-  return Number.isNaN(ts) ? null : ts
-}
-
 // Banner stale : true si on lit du cache OU si le repo n'a pas ete sync
-// depuis plus d'une heure. Invite l'utilisateur a resync pour etre sur
-// d'avoir la derniere version du chapitre.
-const STALE_THRESHOLD_MS = 60 * 60 * 1000  // 1 heure
-const isStaleContent = computed<boolean>(() => {
-  if (props.cached) return true
-  const syncedAt = parseSqlTimestamp(props.repo.lastSyncedAt)
-  if (syncedAt === null) return false
-  return Date.now() - syncedAt > STALE_THRESHOLD_MS
-})
-
-const staleRelative = computed(() => {
-  const syncedAt = parseSqlTimestamp(props.repo.lastSyncedAt)
-  if (syncedAt === null) return 'jamais'
-  return relativeTime(syncedAt)
-})
+// depuis plus d'une heure. Invite l'utilisateur a resync.
+const { isStale: isStaleContent, relativeSyncedAt: staleRelative } = useChapterStaleStatus(repoRef, cachedRef)
 
 // ── Enrichissement post-render (copy buttons + click handlers) ────────────
 
@@ -832,18 +607,11 @@ async function enrichRender() {
 onMounted(() => {
   enrichRender()
   loadLinkedTravaux()
-  document.addEventListener('mousedown', onDocumentClick)
-  document.addEventListener('keydown', onDocumentKey)
   document.addEventListener('keydown', onLumenKeyboard)
-  document.addEventListener('keydown', onGlobalKeydown)
 })
 
 onBeforeUnmount(() => {
-  document.removeEventListener('mousedown', onDocumentClick)
-  document.removeEventListener('keydown', onDocumentKey)
   document.removeEventListener('keydown', onLumenKeyboard)
-  document.removeEventListener('keydown', onGlobalKeydown)
-  closeChapterSearch()
   outlineObserver?.disconnect()
   outlineObserver = null
 })
