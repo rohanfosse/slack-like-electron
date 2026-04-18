@@ -381,19 +381,25 @@ router.post('/public/:token/book', publicBookingLimiter, requireBookingToken, va
       queries.createBookingReminder(booking.id, 'email_teacher_24h', reminderAt)
     }
 
-    // Send confirmation email
+    // Send confirmation email (echec = log, booking reste confirmee)
     const cancelUrl = `${SERVER_URL}/api/bookings/public/cancel/${booking.cancel_token}`
-    await email.sendBookingConfirmation({
-      to: tutorEmail,
-      tutorName,
-      teacherName: data.teacher_name,
-      studentName: data.student_name,
-      eventTitle: data.event_title,
-      startDatetime,
-      endDatetime,
-      teamsJoinUrl,
-      cancelUrl,
-    })
+    let emailSent = true
+    try {
+      await email.sendBookingConfirmation({
+        to: tutorEmail,
+        tutorName,
+        teacherName: data.teacher_name,
+        studentName: data.student_name,
+        eventTitle: data.event_title,
+        startDatetime,
+        endDatetime,
+        teamsJoinUrl,
+        cancelUrl,
+      })
+    } catch (err) {
+      emailSent = false
+      log.warn('booking_email_failed', { bookingId: booking.id, error: err.message })
+    }
 
     res.json({
       ok: true,
@@ -402,6 +408,7 @@ router.post('/public/:token/book', publicBookingLimiter, requireBookingToken, va
         teamsJoinUrl,
         startDatetime,
         endDatetime,
+        emailSent,
       },
     })
   } catch (err) {
