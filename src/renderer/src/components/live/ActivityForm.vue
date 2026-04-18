@@ -1,13 +1,15 @@
 <!-- ActivityForm.vue - Formulaire de création/édition d'activité Live (QCM / Sondage / Nuage) -->
 <script setup lang="ts">
-  import { ref, computed, watch, type Component } from 'vue'
-  import {
-    ListChecks, ToggleLeft, Type, Link2, Hash, Plus, X,
-    Code2, StickyNote, MessageSquare, Cloud, Star, FileText,
-    BarChart, Smile, ArrowUpDown, Grid3X3, TextCursorInput,
-  } from 'lucide-vue-next'
+  import { ref, computed, toRef } from 'vue'
+  import { Plus, X } from 'lucide-vue-next'
   import type { LiveActivity, LiveV2ActivityType } from '@/types'
   import { ACTIVITY_CATEGORIES, HUMEUR_EMOJIS, type ActivityCategory } from '@/utils/liveActivity'
+  import {
+    parseOptions, parseCorrectAnswers, parseAcceptedAnswers,
+    parseVraiFauxCorrect, parsePairs, parseEstimation,
+    parseTexteATrous, parsePulseOptions, parseBoardColumns,
+  } from '@/utils/liveActivityParsing'
+  import { useLiveActivityTypeCards } from '@/composables/useLiveActivityTypeCards'
 
   const props = defineProps<{
     initialData?: LiveActivity | null
@@ -29,49 +31,11 @@
 
   const isEditing = !!props.initialData
 
-  function parseOptions(data?: LiveActivity | null): string[] {
-    if (!data?.options) return ['', '']
-    try { return JSON.parse(data.options as unknown as string) } catch { return ['', ''] }
-  }
-  function parseCorrectAnswers(data?: LiveActivity | null): number[] {
-    if (!data?.correct_answers) return []
-    try { return JSON.parse(data.correct_answers as unknown as string) } catch { return [] }
-  }
-  function parseAcceptedAnswers(data?: LiveActivity | null): string[] {
-    if (!data || data.type !== 'reponse_courte' || !data.correct_answers) return ['']
-    try { const arr = JSON.parse(data.correct_answers as unknown as string); return Array.isArray(arr) ? arr : [''] } catch { return [''] }
-  }
-  function parseVraiFauxCorrect(data?: LiveActivity | null): 0 | 1 {
-    if (!data || data.type !== 'vrai_faux' || !data.correct_answers) return 0
-    try { const arr = JSON.parse(data.correct_answers as unknown as string); return arr[0] === 1 ? 1 : 0 } catch { return 0 }
-  }
-
-  function parsePairs(data?: LiveActivity | null): { left: string; right: string }[] {
-    if (!data || data.type !== 'association' || !data.correct_answers) return [{ left: '', right: '' }, { left: '', right: '' }]
-    try { const arr = JSON.parse(data.correct_answers as unknown as string); return Array.isArray(arr) ? arr : [{ left: '', right: '' }, { left: '', right: '' }] } catch { return [{ left: '', right: '' }, { left: '', right: '' }] }
-  }
-  function parseEstimation(data?: LiveActivity | null): { target: string; margin: string } {
-    if (!data || data.type !== 'estimation' || !data.correct_answers) return { target: '', margin: '0' }
-    try { const obj = JSON.parse(data.correct_answers as unknown as string); return { target: String(obj.target ?? ''), margin: String(obj.margin ?? '0') } } catch { return { target: '', margin: '0' } }
-  }
-
   const activityType = ref<ActivityType>(props.initialData?.type ?? 'qcm')
   const acceptedAnswers = ref<string[]>(parseAcceptedAnswers(props.initialData))
   const vraiFauxCorrect = ref<0 | 1>(parseVraiFauxCorrect(props.initialData))
   const pairs = ref(parsePairs(props.initialData))
   const estimation = ref(parseEstimation(props.initialData))
-
-  // Texte a trous : le texte avec les blancs marques par {{mot}}
-  function parseTexteATrous(data?: LiveActivity | null): { text: string; blanks: string[] } {
-    if (!data || data.type !== 'texte_a_trous') return { text: '', blanks: [] }
-    const text = data.title ?? ''
-    try {
-      const blanks = JSON.parse(data.correct_answers as unknown as string)
-      return { text, blanks: Array.isArray(blanks) ? blanks : [] }
-    } catch {
-      return { text, blanks: [] }
-    }
-  }
   const texteATrous = ref(parseTexteATrous(props.initialData))
   const texteATrousBlanks = computed(() => {
     const matches = texteATrous.value.text.match(/\{\{([^}]+)\}\}/g) || []
@@ -83,64 +47,12 @@
   const correctAnswers = ref<number[]>(parseCorrectAnswers(props.initialData))
   const timerOptions = [10, 15, 20, 30, 45, 60, 90, 120]
 
-  // Typage fort : category == clef ACTIVITY_CATEGORIES (source unique de verite).
-  const typeCards: { id: ActivityType; label: string; icon: Component; desc: string; category: ActivityCategory }[] = [
-    // Spark
-    { id: 'qcm',              label: 'QCM',              icon: ListChecks,    desc: 'Choix multiple',        category: 'spark' },
-    { id: 'vrai_faux',        label: 'Vrai / Faux',      icon: ToggleLeft,    desc: 'Question binaire',      category: 'spark' },
-    { id: 'reponse_courte',   label: 'Réponse courte',   icon: Type,          desc: 'Texte libre noté',      category: 'spark' },
-    { id: 'association',      label: 'Association',      icon: Link2,         desc: 'Relier les paires',     category: 'spark' },
-    { id: 'estimation',       label: 'Estimation',       icon: Hash,          desc: 'Réponse numérique',     category: 'spark' },
-    { id: 'texte_a_trous',    label: 'Texte a trous',    icon: TextCursorInput, desc: 'Remplir les blancs',  category: 'spark' },
-    { id: 'tri',              label: 'Tri (ordre)',      icon: ArrowUpDown,     desc: 'Remettre dans l\'ordre', category: 'spark' },
-    // Pulse
-    { id: 'sondage_libre',    label: 'Sondage libre',    icon: MessageSquare, desc: 'Texte libre anonyme',   category: 'pulse' },
-    { id: 'nuage',            label: 'Nuage de mots',    icon: Cloud,         desc: 'Mots-cles anonymes',    category: 'pulse' },
-    { id: 'echelle',          label: 'Echelle',          icon: Star,          desc: 'Note 1 a N',            category: 'pulse' },
-    { id: 'question_ouverte', label: 'Question ouverte', icon: FileText,      desc: 'Reponse longue',        category: 'pulse' },
-    { id: 'sondage',          label: 'Sondage',          icon: BarChart,      desc: 'Choix parmi options',   category: 'pulse' },
-    { id: 'humeur',           label: 'Humeur',           icon: Smile,         desc: 'Emoji ressenti',        category: 'pulse' },
-    { id: 'priorite',         label: 'Priorite',         icon: ArrowUpDown,   desc: 'Classer des items',     category: 'pulse' },
-    { id: 'matrice',          label: 'Matrice',          icon: Grid3X3,       desc: 'Noter des criteres',    category: 'pulse' },
-    // Code / Board
-    { id: 'live_code',        label: 'Live Code',        icon: Code2,         desc: 'Coder en direct',       category: 'code' },
-    { id: 'board',            label: 'Tableau',          icon: StickyNote,    desc: 'Post-its collaboratifs', category: 'board' },
-    { id: 'message_wall',     label: 'Mur de messages',  icon: MessageSquare, desc: 'Messages + likes',       category: 'board' },
-  ]
-
-  const categories = computed(() => {
-    const grouped = new Map<ActivityCategory, typeof typeCards>()
-    for (const card of typeCards) {
-      if (!grouped.has(card.category)) grouped.set(card.category, [])
-      grouped.get(card.category)!.push(card)
-    }
-    let all = [...grouped.entries()].map(([key, cards]) => ({
-      key,
-      meta: ACTIVITY_CATEGORIES[key],
-      cards,
-    }))
-    if (props.lockedCategory && !isEditing) {
-      return all.filter(c => c.key === props.lockedCategory)
-    }
-    if (props.defaultCategory) {
-      const idx = all.findIndex(c => c.key === props.defaultCategory)
-      if (idx > 0) {
-        const [cat] = all.splice(idx, 1)
-        all.unshift(cat)
-      }
-    }
-    return all
+  const { categories } = useLiveActivityTypeCards({
+    isEditing,
+    lockedCategory: toRef(props, 'lockedCategory'),
+    defaultCategory: toRef(props, 'defaultCategory'),
+    activityType,
   })
-
-  // Si la categorie verrouillee change, s'assurer que activityType y appartient.
-  // watch plutot que watchEffect : evite le self-retrigger quand on ecrit activityType.value.
-  watch(() => props.lockedCategory, (locked) => {
-    if (!locked || isEditing) return
-    const allowed = typeCards.filter(c => c.category === locked).map(c => c.id)
-    if (allowed.length && !allowed.includes(activityType.value)) {
-      activityType.value = allowed[0]
-    }
-  }, { immediate: true })
 
   // Code activity
   const codeLanguage = ref(props.initialData?.language ?? 'javascript')
@@ -154,11 +66,6 @@
   const prioriteItems = ref<string[]>(props.initialData?.type === 'priorite' ? parsePulseOptions(props.initialData) : ['', '', ''])
   const matriceCriteria = ref<string[]>(props.initialData?.type === 'matrice' ? parsePulseOptions(props.initialData) : ['', ''])
 
-  function parsePulseOptions(data?: LiveActivity | null): string[] {
-    if (!data?.options) return ['', '']
-    try { const arr = JSON.parse(data.options as unknown as string); return Array.isArray(arr) ? arr : ['', ''] } catch { return ['', ''] }
-  }
-
   function addSondageOption() { if (sondageOptions.value.length < 8) sondageOptions.value.push('') }
   function removeSondageOption(i: number) { if (sondageOptions.value.length > 2) sondageOptions.value = sondageOptions.value.filter((_, idx) => idx !== i) }
   function addPrioriteItem() { if (prioriteItems.value.length < 8) prioriteItems.value.push('') }
@@ -167,11 +74,6 @@
   function removeMatriceCrit(i: number) { if (matriceCriteria.value.length > 2) matriceCriteria.value = matriceCriteria.value.filter((_, idx) => idx !== i) }
 
   const boardMaxVotes = ref(props.initialData?.type === 'board' ? (props.initialData?.max_rating ?? 3) : 3)
-
-  function parseBoardColumns(data?: LiveActivity | null): string[] {
-    if (!data || data.type !== 'board' || !data.options) return ['Idees', 'A approfondir', 'A ecarter']
-    try { const arr = JSON.parse(data.options as unknown as string); return Array.isArray(arr) ? arr : ['Idees', 'A approfondir', 'A ecarter'] } catch { return ['Idees', 'A approfondir', 'A ecarter'] }
-  }
 
   function addBoardColumn() { if (boardColumns.value.length < 6) boardColumns.value.push('') }
   function removeBoardColumn(i: number) { if (boardColumns.value.length > 1) boardColumns.value = boardColumns.value.filter((_, idx) => idx !== i) }
