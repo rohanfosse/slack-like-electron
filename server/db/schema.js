@@ -1,6 +1,6 @@
 const { getDb } = require('./connection');
 
-const CURRENT_VERSION = 73;
+const CURRENT_VERSION = 74;
 
 // ─── Schema initial ───────────────────────────────────────────────────────────
 // Crée toutes les tables avec leur schéma complet (colonnes UTC, toutes colonnes incluses).
@@ -1673,6 +1673,28 @@ function runMigrations(db) {
         );
         CREATE INDEX IF NOT EXISTS idx_typerace_user_day ON typerace_scores(user_type, user_id, created_at);
         CREATE INDEX IF NOT EXISTS idx_typerace_promo_day ON typerace_scores(promo_id, created_at);
+      `);
+    },
+
+    // v74 : Arcade games scores — table generique pour Snake, Space Invaders,
+    // Pacman, et tous les mini-jeux arcade a venir. Schema unifie (score
+    // INTEGER + duration_ms + meta JSON optionnel) evite 1 table par jeu.
+    // TypeRace reste sur son schema riche (wpm/accuracy) historique.
+    (db) => {
+      db.exec(`
+        CREATE TABLE IF NOT EXISTS game_scores (
+          id          INTEGER PRIMARY KEY AUTOINCREMENT,
+          game_id     TEXT NOT NULL,
+          user_type   TEXT NOT NULL CHECK(user_type IN ('student','teacher')),
+          user_id     INTEGER NOT NULL,
+          promo_id    INTEGER,
+          score       INTEGER NOT NULL,
+          duration_ms INTEGER NOT NULL,
+          meta        TEXT,
+          created_at  TEXT NOT NULL DEFAULT (datetime('now'))
+        );
+        CREATE INDEX IF NOT EXISTS idx_game_scores_game_day ON game_scores(game_id, created_at);
+        CREATE INDEX IF NOT EXISTS idx_game_scores_user ON game_scores(game_id, user_type, user_id, created_at);
       `);
     },
   ];

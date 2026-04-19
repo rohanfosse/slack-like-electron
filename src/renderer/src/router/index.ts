@@ -30,8 +30,10 @@ const router = createRouter({
     { path: '/live',       component: () => import('@/views/LiveView.vue'),   name: 'live',   meta: { requiredModule: 'live' }  },
     { path: '/lumen',      component: () => import('@/views/LumenView.vue'), name: 'lumen',  meta: { requiredModule: 'lumen' } },
     { path: '/agenda',     component: () => import('@/views/AgendaView.vue'), name: 'agenda' },
-    { path: '/jeux',       component: () => import('@/views/GamesView.vue'),    name: 'jeux',     meta: { requiredModule: 'games' } },
-    { path: '/typerace',   component: () => import('@/views/TypeRaceView.vue'), name: 'typerace', meta: { requiredModule: 'games' } },
+    { path: '/jeux',           component: () => import('@/views/GamesView.vue'),          name: 'jeux',           meta: { requiredModule: 'games' } },
+    { path: '/typerace',       component: () => import('@/views/TypeRaceView.vue'),       name: 'typerace',       meta: { requiredModule: 'games' } },
+    { path: '/snake',          component: () => import('@/views/SnakeView.vue'),          name: 'snake',          meta: { requiredModule: 'games' } },
+    { path: '/space-invaders', component: () => import('@/views/SpaceInvadersView.vue'),  name: 'space-invaders', meta: { requiredModule: 'games' } },
     { path: '/fichiers',   component: () => import('@/views/FilesView.vue'),  name: 'fichiers', meta: { requiredRole: 'teacher' } },
     // Public booking pages (no auth required)
     { path: '/book/:token',          component: () => import('@/views/BookingPublicView.vue'),  name: 'booking-public', meta: { public: true } },
@@ -44,20 +46,33 @@ const router = createRouter({
 // ── Route guard : role + module ──────────────────────────────────────────────
 const { isEnabled, loadModules } = useModules()
 
+/**
+ * Modules opt-in : le prof peut toujours y acceder (preview / admin)
+ * meme quand le module est desactive pour les etudiants. Les autres
+ * modules (lumen, live, kanban...) gardent la regle stricte : si l'admin
+ * coupe, plus personne n'y accede.
+ */
+const TEACHER_BYPASS_MODULES = new Set<string>(['games'])
+
 router.beforeEach(async (to, _from, next) => {
-  if (to.meta.requiredRole) {
-    try {
-      const raw = localStorage.getItem('cc_session')
-      const role = raw ? (JSON.parse(raw).type || 'student') : 'student'
-      if (!hasRole(role, to.meta.requiredRole)) {
+  let role: Role = 'student'
+  try {
+    const raw = localStorage.getItem('cc_session')
+    if (raw) role = JSON.parse(raw).type || 'student'
+  } catch { /* session corrompue */ }
+
+  if (to.meta.requiredRole && !hasRole(role, to.meta.requiredRole)) {
+    return next('/dashboard')
+  }
+
+  if (to.meta.requiredModule) {
+    const isTeacher = hasRole(role, 'teacher')
+    const bypass = isTeacher && TEACHER_BYPASS_MODULES.has(to.meta.requiredModule)
+    if (!bypass) {
+      await loadModules()
+      if (!isEnabled(to.meta.requiredModule)) {
         return next('/dashboard')
       }
-    } catch { /* session corrompue */ }
-  }
-  if (to.meta.requiredModule) {
-    await loadModules()
-    if (!isEnabled(to.meta.requiredModule)) {
-      return next('/dashboard')
     }
   }
   next()

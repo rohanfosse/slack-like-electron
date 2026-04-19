@@ -321,6 +321,16 @@ declare global {
         history: Array<{ id: number; score: number; wpm: number; accuracy: number; durationMs: number; createdAt: string }>
       }>>
 
+      // Arcade games (Snake, Space Invaders, ...)
+      gameSubmitScore(gameId: string, payload: { score: number; durationMs: number; meta?: Record<string, unknown> }): Promise<IpcResponse<{ id: number; score: number }>>
+      gameLeaderboard(gameId: string, scope?: 'day' | 'week' | 'all', promoId?: number | null): Promise<IpcResponse<Array<{ rank: number; userType: 'student' | 'teacher'; userId: number; name: string; bestScore: number; plays: number }>>>
+      gameMyStats(gameId: string): Promise<IpcResponse<{
+        allTime: { plays: number; bestScore: number; avgScore: number }
+        today: { bestScore: number; plays: number }
+        week: { bestScore: number }
+        history: Array<{ id: number; score: number; durationMs: number; createdAt: string }>
+      }>>
+
       // Booking real-time
       onBookingNew(cb: (data: { bookingId: number; tutorName: string; studentName: string; eventTitle: string; startDatetime: string }) => void): () => void
       onBookingCancelled(cb: (data: { bookingId: number; tutorName: string; eventTitle: string }) => void): () => void

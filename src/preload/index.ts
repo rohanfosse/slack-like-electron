@@ -422,6 +422,16 @@ contextBridge.exposeInMainWorld('api', {
   },
   typeRaceMyStats:        ()                             => get('/api/typerace/me'),
 
+  // ── Arcade games generiques (Snake, Space Invaders, Pacman, ...) ──────────
+  gameSubmitScore: (gameId: string, payload: { score: number; durationMs: number; meta?: Record<string, unknown> }) =>
+    post(`/api/games/${gameId}/scores`, payload),
+  gameLeaderboard: (gameId: string, scope: 'day' | 'week' | 'all' = 'day', promoId?: number | null) => {
+    const params = new URLSearchParams({ scope })
+    if (promoId != null) params.set('promoId', String(promoId))
+    return get(`/api/games/${gameId}/leaderboard?${params.toString()}`)
+  },
+  gameMyStats:     (gameId: string)                      => get(`/api/games/${gameId}/me`),
+
   emitLiveCodeUpdate: (activityId: number, promoId: number, content: string, language: string | null) => {
     socket?.emit('live:code-update', { activityId, promoId, content, language })
   },

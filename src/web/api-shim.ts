@@ -478,6 +478,16 @@ async function importStudentsBrowser(promoId: number): Promise<unknown> {
   },
   typeRaceMyStats:            ()                      => get('/api/typerace/me'),
 
+  // Arcade games generiques
+  gameSubmitScore: (gameId: string, payload: { score: number; durationMs: number; meta?: Record<string, unknown> }) =>
+    post(`/api/games/${gameId}/scores`, payload),
+  gameLeaderboard: (gameId: string, scope: 'day' | 'week' | 'all' = 'day', promoId?: number | null) => {
+    const params = new URLSearchParams({ scope })
+    if (promoId != null) params.set('promoId', String(promoId))
+    return get(`/api/games/${gameId}/leaderboard?${params.toString()}`)
+  },
+  gameMyStats:     (gameId: string)                   => get(`/api/games/${gameId}/me`),
+
   // Lumen (liseuse GitHub)
   getLumenGithubStatus:       ()                      => get('/api/lumen/github/me'),
   connectLumenGithub:         (token: string)         => post('/api/lumen/github/connect', { token }),

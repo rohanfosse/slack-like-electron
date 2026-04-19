@@ -263,12 +263,14 @@
       <span v-if="!appStore.isStaff && liveStore.currentSession" class="nav-live-dot" />
     </button>
 
-    <!-- Jeux : mini-jeux avec leaderboard, opt-in par l'admin -->
+    <!-- Jeux : toujours visible pour les profs (preview/admin), opt-in
+         module pour les etudiants. Routes couvertes : jeux, typerace,
+         snake, space-invaders (et futurs). -->
     <button
-      v-if="isEnabled('games')"
+      v-if="appStore.isTeacher || isEnabled('games')"
       class="nav-btn"
-      :class="{ active: route.name === 'jeux' || route.name === 'typerace' }"
-      title="Jeux (TypeRace, ...)"
+      :class="{ active: ['jeux', 'typerace', 'snake', 'space-invaders'].includes(route.name as string) }"
+      title="Jeux (TypeRace, Snake, Space Invaders, ...)"
       aria-label="Section Jeux"
       @click="router.push('/jeux')"
     >

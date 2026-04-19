@@ -9,7 +9,7 @@
  * Pas besoin de toucher a la sidebar ni au hub.
  */
 import type { Component } from 'vue'
-import { Keyboard } from 'lucide-vue-next'
+import { Keyboard, Joystick, Rocket } from 'lucide-vue-next'
 
 export interface Game {
   id:          string
@@ -33,9 +33,28 @@ export const GAMES: Game[] = [
     label:       'TypeRace',
     icon:        Keyboard,
     tagline:     'Tape une phrase FR le plus vite possible',
-    description: 'Mini-jeu typing speed en francais. 60 secondes pour taper une phrase aleatoire. Score = WPM x precision. Leaderboard par promo remis a zero chaque jour.',
+    description: 'Mini-jeu typing speed en francais. 60 secondes pour taper une phrase aleatoire. Score = WPM x precision.',
     route:       '/typerace',
-    badge:       'new',
     accent:      '#3b82f6',
+  },
+  {
+    id:          'snake',
+    label:       'Snake',
+    icon:        Joystick,
+    tagline:     'Mange les pommes, grandis, ne touche pas les murs',
+    description: 'Classique Snake sur grille 20x15. Vitesse augmente tous les 5 pommes. 10 pts par pomme + 1 pt par tick de survie.',
+    route:       '/snake',
+    badge:       'new',
+    accent:      '#22c55e',
+  },
+  {
+    id:          'space_invaders',
+    label:       'Space Invaders',
+    icon:        Rocket,
+    tagline:     'Defends la base contre l\'invasion',
+    description: 'Vagues d\'aliens qui accelerent. Tire sur les aliens, esquive leurs tirs, 3 vies. Score boostes par le multiplicateur de vague.',
+    route:       '/space-invaders',
+    badge:       'new',
+    accent:      '#22d3ee',
   },
 ]

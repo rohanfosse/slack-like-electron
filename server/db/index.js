@@ -23,6 +23,7 @@ const liveUnified    = require('./models/live-unified');
 const bookings       = require('./models/bookings');
 const calendar       = require('./models/calendar');
 const typerace       = require('./models/typerace');
+const games          = require('./models/games');
 
 // Initialisation complète : schema + migrations + seed
 function init() {
@@ -55,4 +56,5 @@ module.exports = {
   ...bookings,
   ...calendar,
   ...typerace,
+  ...games,
 };
