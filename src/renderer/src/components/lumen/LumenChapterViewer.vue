@@ -1326,10 +1326,9 @@ button.lumen-viewer-chip:focus-visible {
   padding: var(--space-xl) 64px var(--space-xl);
 }
 .lumen-viewer-body--accueil :deep(h1) {
-  font-size: 32px;
+  font-size: 36px;
   margin-bottom: var(--space-xl);
-  padding-bottom: var(--space-md);
-  border-bottom: 3px solid var(--accent);
+  letter-spacing: -0.025em;
 }
 
 /* Sommaire du bloc affiche en bas de la page d'accueil (v2.66) */
@@ -1762,40 +1761,40 @@ button.lumen-viewer-chip:focus-visible {
   font-weight: 700;
   line-height: 1.25;
   scroll-margin-top: var(--space-lg);
+  /* Coupures de ligne propres sur les titres long (CSS moderne). */
+  text-wrap: balance;
 }
 
+/* Hierarchie sobre : la taille porte le poids, pas les bordures accent.
+   v2.166.1 — alignement avec la voix v2.166 (sentence case, calme). */
 .lumen-viewer .markdown-body h1 {
-  font-size: 28px;
+  font-size: 30px;
   margin: 0 0 var(--space-lg);
-  padding-bottom: var(--space-sm);
-  border-bottom: 2px solid var(--accent);
-  letter-spacing: -0.01em;
+  letter-spacing: -0.02em;
 }
 
 .lumen-viewer .markdown-body h2 {
-  font-size: 22px;
+  font-size: 24px;
   margin: var(--space-xl) 0 var(--space-md);
-  padding-left: var(--space-md);
-  border-left: 3px solid var(--accent);
+  letter-spacing: -0.015em;
 }
 
 .lumen-viewer .markdown-body h3 {
   font-size: 18px;
   margin: var(--space-lg) 0 var(--space-sm);
-  color: var(--accent);
 }
 
 .lumen-viewer .markdown-body h4 {
   font-size: 16px;
+  font-weight: 600;
   margin: var(--space-lg) 0 var(--space-xs);
-  text-transform: uppercase;
-  letter-spacing: .04em;
   color: var(--text-secondary);
 }
 
 .lumen-viewer .markdown-body h5,
 .lumen-viewer .markdown-body h6 {
   font-size: 14px;
+  font-weight: 600;
   margin: var(--space-md) 0 var(--space-xs);
   color: var(--text-secondary);
 }
@@ -1853,26 +1852,28 @@ button.lumen-viewer-chip:focus-visible {
 
 /* ── Code inline ────────────────────────────────────────────────────────── */
 .lumen-viewer .markdown-body :not(pre) > code {
-  background: rgba(var(--accent-rgb), .12);
+  background: rgba(var(--accent-rgb), .1);
   color: var(--accent);
-  padding: 2px 6px;
+  padding: 1px 6px;
   border-radius: 4px;
   font-family: 'JetBrains Mono', 'Fira Code', Menlo, Consolas, monospace;
   font-size: 0.88em;
-  font-weight: 600;
-  border: 1px solid rgba(var(--accent-rgb), .18);
+  font-weight: 500;
 }
 
-/* ── Blockquotes (callout neutre par defaut) ───────────────────────────── */
+/* ── Blockquotes : citation litteraire (callouts → admonitions ::: ) ───── */
 .lumen-viewer .markdown-body blockquote {
   margin: var(--space-lg) 0;
-  padding: var(--space-md) var(--space-lg);
-  background: rgba(var(--accent-rgb), .06);
-  border-left: 3px solid var(--accent);
-  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  padding: 2px var(--space-lg);
+  border-left: 4px solid var(--border);
   color: var(--text-secondary);
+  font-style: italic;
+  font-size: 1.05em;
+  line-height: 1.65;
 }
 .lumen-viewer .markdown-body blockquote p:last-child { margin-bottom: 0; }
+/* Code inline dans une citation : pas d'italique sur le code. */
+.lumen-viewer .markdown-body blockquote code { font-style: normal; }
 
 /* ── Hr / separateur ────────────────────────────────────────────────────── */
 .lumen-viewer .markdown-body hr {
@@ -1892,15 +1893,13 @@ button.lumen-viewer-chip:focus-visible {
   overflow: hidden;
 }
 .lumen-viewer .markdown-body th {
-  background: rgba(var(--accent-rgb), .08);
+  background: var(--bg-hover);
   color: var(--text-primary);
-  font-weight: 700;
+  font-weight: 600;
   text-align: left;
   padding: var(--space-sm) var(--space-md);
-  border-bottom: 2px solid var(--accent);
-  text-transform: uppercase;
-  letter-spacing: .04em;
-  font-size: 11px;
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
 }
 .lumen-viewer .markdown-body td {
   padding: var(--space-sm) var(--space-md);
@@ -1961,11 +1960,9 @@ button.lumen-viewer-chip:focus-visible {
   min-height: 32px;
 }
 .lumen-viewer .markdown-body .lumen-codeblock-lang {
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--code-lang-color, rgba(255, 255, 255, 0.6));
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--code-lang-color, rgba(255, 255, 255, 0.55));
   font-family: 'JetBrains Mono', 'Fira Code', Menlo, Consolas, monospace;
 }
 .lumen-viewer .markdown-body .lumen-codeblock pre.lumen-code {

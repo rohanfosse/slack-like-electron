@@ -12,6 +12,17 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '2.166.1',
+    date: '2026-04-19',
+    title: 'Lumen : rendu markdown apaise',
+    highlights: [
+      'Headings sobres : drop des border-bottom et border-left accent',
+      'Blockquote = vraie citation litteraire (separe des admonitions)',
+      'Tables, code blocks et inline code en sentence case',
+      'text-wrap: balance sur tous les titres pour des coupures propres',
+    ],
+  },
+  {
     version: '2.166.0',
     date: '2026-04-19',
     title: 'Widgets alignes sur la voix Cursus',
