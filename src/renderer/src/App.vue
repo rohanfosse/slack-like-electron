@@ -12,6 +12,7 @@
   import { useModules }     from '@/composables/useModules'
   import { useLumenFocus }  from '@/composables/useLumenFocus'
   import { useSocketReconnectToast } from '@/composables/useSocketReconnectToast'
+  import { useNotificationBanner } from '@/composables/useNotificationBanner'
   import { reportError }    from '@/utils/errorReporter'
   import { MessageSquare, FileText, Camera, Lock, Trash2, Download, UserX, Download as DownloadIcon, RefreshCw, Shield, Scale, Clock, Mail, Globe, Eye, Pencil, ChevronDown, Server, Zap } from 'lucide-vue-next'
   import Toast        from '@/components/ui/Toast.vue'
@@ -67,15 +68,8 @@
   const promoCreatedKey = ref(0)
   function onPromoCreated() { promoCreatedKey.value++ }
 
-  // Bandeau demande de notifications
-  const showNotifBanner = ref(false)
-  function acceptNotifs() {
-    Notification.requestPermission().catch(() => {})
-    showNotifBanner.value = false
-  }
-  function dismissNotifs() {
-    showNotifBanner.value = false
-  }
+  // Bandeau demande de notifications (extrait dans useNotificationBanner).
+  const { visible: showNotifBanner, accept: acceptNotifs, dismiss: dismissNotifs } = useNotificationBanner()
 
   // Toast discret pour la connexion socket (extrait dans useSocketReconnectToast).
   useSocketReconnectToast()
@@ -253,13 +247,7 @@
     const spacings: Record<string, string> = { compact: '2px', default: '6px', cozy: '10px' }
     document.documentElement.style.setProperty('--msg-spacing', spacings[dens])
 
-    // Demander la permission notifications APRÈS un délai (pas au premier chargement)
-    // pour laisser l'utilisateur voir l'app d'abord
-    if ('Notification' in window && Notification.permission === 'default') {
-      setTimeout(() => {
-        showNotifBanner.value = true
-      }, 15_000) // Afficher le bandeau après 15s
-    }
+    // (Bandeau notifications gere par useNotificationBanner — debounce 15s avec cleanup.)
 
     // Toast in-app pour les notifications quand la fenêtre est au premier plan
     window.addEventListener('cursus:notif-toast', ((e: CustomEvent) => {
