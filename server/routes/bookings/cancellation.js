@@ -1,0 +1,152 @@
+/**
+ * Routes d'annulation / report / export ICS (publiques).
+ * GET  /public/cancel/:cancelToken            - redirige vers frontend (CSRF-safe)
+ * GET  /public/cancel/:cancelToken/info       - snapshot booking pour la page
+ * POST /public/cancel/:cancelToken            - annulation effective
+ * POST /public/reschedule/:cancelToken        - report
+ * GET  /public/:token/booking/:bookingId/ics  - telecharge fichier .ics
+ */
+const router  = require('express').Router()
+const queries = require('../../db/index')
+const wrap    = require('../../utils/wrap')
+const log     = require('../../utils/logger')
+const email   = require('../../services/email')
+const { generateIcs } = require('../../utils/icsGenerator')
+const {
+  SERVER_URL,
+  publicBookingLimiter, publicBookingPerTokenLimiter, requireBookingToken,
+  tryDeleteOutlookEvent,
+} = require('./_shared')
+
+// ── GET /public/cancel/:cancelToken (redirect) ────────────────────────
+
+router.get('/public/cancel/:cancelToken', publicBookingLimiter, (req, res) => {
+  res.redirect(302, `${SERVER_URL}/#/book/cancel/${req.params.cancelToken}`)
+})
+
+// ── GET /public/cancel/:cancelToken/info ──────────────────────────────
+
+router.get('/public/cancel/:cancelToken/info', publicBookingLimiter, wrap((req) => {
+  const booking = queries.getBookingByCancelToken(req.params.cancelToken)
+  if (!booking) throw Object.assign(new Error('Reservation introuvable'), { statusCode: 404 })
+  return {
+    alreadyCancelled: booking.status !== 'confirmed',
+    eventTitle: booking.event_title,
+    startDatetime: booking.start_datetime,
+    endDatetime: booking.end_datetime,
+    tutorName: booking.tutor_name,
+  }
+}))
+
+// ── POST /public/cancel/:cancelToken ──────────────────────────────────
+
+router.post('/public/cancel/:cancelToken', publicBookingLimiter, async (req, res) => {
+  try {
+    const booking = queries.getBookingByCancelToken(req.params.cancelToken)
+    if (!booking) return res.status(404).json({ ok: false, error: 'Reservation introuvable' })
+    if (booking.status !== 'confirmed') {
+      return res.status(200).json({ ok: true, data: { alreadyCancelled: true } })
+    }
+
+    queries.cancelBooking(booking.id)
+
+    const io = req.app.get('io')
+    if (io) {
+      io.to(`user:${booking.teacher_id}`).emit('booking:cancelled', {
+        bookingId: booking.id,
+        tutorName: booking.tutor_name,
+        eventTitle: booking.event_title,
+      })
+    }
+
+    await tryDeleteOutlookEvent(booking.teacher_id, booking.outlook_event_id)
+
+    const tokenRow = queries.getOrCreateToken(booking.event_type_id, booking.student_id)
+    const rebookUrl = `${SERVER_URL}/#/book/${tokenRow.token}`
+    try {
+      await email.sendBookingCancellation({
+        to: booking.tutor_email,
+        tutorName: booking.tutor_name,
+        eventTitle: booking.event_title,
+        startDatetime: booking.start_datetime,
+        rebookUrl,
+      })
+    } catch (err) {
+      log.warn('booking_cancel_email_failed', { bookingId: booking.id, error: err.message })
+    }
+
+    log.info('booking_cancelled', { bookingId: booking.id, teacherId: booking.teacher_id })
+    res.json({ ok: true, data: { alreadyCancelled: false, rebookUrl } })
+  } catch (err) {
+    log.warn('cancel_error', { error: err.message })
+    res.status(500).json({ ok: false, error: 'Erreur lors de l\'annulation.' })
+  }
+})
+
+// ── POST /public/reschedule/:cancelToken ──────────────────────────────
+
+router.post('/public/reschedule/:cancelToken', publicBookingLimiter, async (req, res) => {
+  try {
+    const booking = queries.getBookingByCancelToken(req.params.cancelToken)
+    if (!booking || booking.status !== 'confirmed') {
+      return res.status(404).json({ ok: false, error: 'Reservation introuvable ou deja annulee' })
+    }
+
+    queries.rescheduleBooking(booking.id)
+    await tryDeleteOutlookEvent(booking.teacher_id, booking.outlook_event_id)
+
+    const tokenRow = queries.getOrCreateToken(booking.event_type_id, booking.student_id)
+    const rebookUrl = `${SERVER_URL}/#/book/${tokenRow.token}`
+
+    try {
+      await email.sendBookingReschedule({
+        to: booking.tutor_email,
+        tutorName: booking.tutor_name,
+        eventTitle: booking.event_title,
+        oldDatetime: booking.start_datetime,
+        rebookUrl,
+      })
+    } catch (err) {
+      log.warn('booking_reschedule_email_failed', { bookingId: booking.id, error: err.message })
+    }
+
+    const io = req.app.get('io')
+    if (io) {
+      io.to(`user:${booking.teacher_id}`).emit('booking:rescheduled', {
+        bookingId: booking.id,
+        tutorName: booking.tutor_name,
+        eventTitle: booking.event_title,
+      })
+    }
+
+    res.json({ ok: true, data: { rebookUrl } })
+  } catch (err) {
+    log.warn('reschedule_error', { error: err.message })
+    res.status(400).json({ ok: false, error: 'Erreur lors du report.' })
+  }
+})
+
+// ── GET /public/:token/booking/:bookingId/ics ─────────────────────────
+
+router.get('/public/:token/booking/:bookingId/ics', publicBookingLimiter, publicBookingPerTokenLimiter, requireBookingToken, (req, res) => {
+  try {
+    const bookingId = Number(req.params.bookingId)
+    const booking = queries.getBookingForToken(bookingId, req.params.token)
+    if (!booking) return res.status(404).json({ ok: false, error: 'Reservation introuvable' })
+    const ics = generateIcs({
+      title: `${booking.event_title} - ${booking.teacher_name}`,
+      startDatetime: booking.start_datetime,
+      endDatetime: booking.end_datetime,
+      description: `Rendez-vous ${booking.event_title} avec ${booking.teacher_name}`,
+      location: booking.teams_join_url || undefined,
+    })
+    res.setHeader('Content-Type', 'text/calendar; charset=utf-8')
+    res.setHeader('Content-Disposition', 'attachment; filename="rdv.ics"')
+    res.send(ics)
+  } catch (err) {
+    log.warn('ics_error', { error: err.message })
+    res.status(400).json({ ok: false, error: 'Erreur lors de la generation du fichier calendrier.' })
+  }
+})
+
+module.exports = router

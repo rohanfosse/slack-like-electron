@@ -1,0 +1,127 @@
+/**
+ * Routes Booking admin enseignant :
+ *   event-types CRUD, availability rules, overrides, tokens, my-bookings.
+ * Toutes ces routes requierent requireRole('teacher').
+ */
+const router = require('express').Router()
+const { z }  = require('zod')
+const queries = require('../../db/index')
+const { validate } = require('../../middleware/validate')
+const wrap    = require('../../utils/wrap')
+const { requireRole } = require('../../middleware/authorize')
+const { ForbiddenError, ValidationError } = require('../../utils/errors')
+const { SERVER_URL } = require('./_shared')
+
+// ── Schemas ────────────────────────────────────────────────────────────
+
+const createEventTypeSchema = z.object({
+  title: z.string().min(1).max(200),
+  slug: z.string().min(1).max(100).regex(/^[a-z0-9-]+$/),
+  description: z.string().max(1000).optional(),
+  durationMinutes: z.number().int().min(5).max(480).optional(),
+  color: z.string().max(20).regex(/^#[0-9a-fA-F]{3,8}$/).optional(),
+  fallbackVisioUrl: z.string().url().optional().nullable(),
+  bufferMinutes: z.number().int().min(0).max(60).optional(),
+  timezone: z.string().max(50).optional(),
+})
+const updateEventTypeSchema = createEventTypeSchema.partial()
+
+const availabilitySchema = z.object({
+  rules: z.array(z.object({
+    dayOfWeek: z.number().int().min(0).max(6),
+    startTime: z.string().regex(/^\d{2}:\d{2}$/),
+    endTime:   z.string().regex(/^\d{2}:\d{2}$/),
+  })).refine(
+    rules => rules.every(r => r.startTime < r.endTime),
+    { message: 'startTime doit etre avant endTime' },
+  ),
+})
+
+const bulkTokensSchema = z.object({
+  eventTypeId: z.number().int().positive(),
+  promoId:     z.number().int().positive(),
+})
+
+// ── Event Types ────────────────────────────────────────────────────────
+
+router.get('/event-types', requireRole('teacher'), wrap((req) => {
+  return queries.getEventTypes(req.user.id)
+}))
+
+router.post('/event-types', requireRole('teacher'), validate(createEventTypeSchema), wrap((req) => {
+  return queries.createEventType({ teacherId: req.user.id, ...req.body })
+}))
+
+router.patch('/event-types/:id', requireRole('teacher'), validate(updateEventTypeSchema), wrap((req) => {
+  const et = queries.getEventTypeById(Number(req.params.id))
+  if (!et || et.teacher_id !== req.user.id) throw new ForbiddenError()
+  return queries.updateEventType(Number(req.params.id), req.body)
+}))
+
+router.delete('/event-types/:id', requireRole('teacher'), wrap((req) => {
+  const et = queries.getEventTypeById(Number(req.params.id))
+  if (!et || et.teacher_id !== req.user.id) throw new ForbiddenError()
+  queries.deleteEventType(Number(req.params.id))
+  return null
+}))
+
+// ── Availability Rules ─────────────────────────────────────────────────
+
+router.get('/availability', requireRole('teacher'), wrap((req) => {
+  return queries.getAvailabilityRules(req.user.id)
+}))
+
+router.put('/availability', requireRole('teacher'), validate(availabilitySchema), wrap((req) => {
+  return queries.setAvailabilityRules(req.user.id, req.body.rules)
+}))
+
+// ── Availability Overrides ─────────────────────────────────────────────
+
+router.get('/event-types/:id/overrides', requireRole('teacher'), wrap((req) => {
+  const et = queries.getEventTypeById(Number(req.params.id))
+  if (!et || et.teacher_id !== req.user.id) throw new ForbiddenError()
+  return queries.getAvailabilityOverrides(et.id)
+}))
+
+router.put('/event-types/:id/overrides', requireRole('teacher'), wrap((req) => {
+  const et = queries.getEventTypeById(Number(req.params.id))
+  if (!et || et.teacher_id !== req.user.id) throw new ForbiddenError()
+  const overrides = req.body.overrides || []
+  return queries.setAvailabilityOverrides(et.id, overrides)
+}))
+
+// ── Booking Tokens ─────────────────────────────────────────────────────
+
+router.post('/tokens', requireRole('teacher'), wrap((req) => {
+  const { eventTypeId, studentId } = req.body
+  if (!eventTypeId || !studentId) throw new ValidationError('eventTypeId et studentId requis')
+  const et = queries.getEventTypeById(eventTypeId)
+  if (!et || et.teacher_id !== req.user.id) throw new ForbiddenError()
+  const tokenData = queries.getOrCreateToken(eventTypeId, studentId)
+  return { ...tokenData, bookingUrl: `${SERVER_URL}/#/book/${tokenData.token}` }
+}))
+
+router.post('/tokens/bulk', requireRole('teacher'), validate(bulkTokensSchema), wrap((req) => {
+  const { eventTypeId, promoId } = req.body
+  const et = queries.getEventTypeById(eventTypeId)
+  if (!et || et.teacher_id !== req.user.id) throw new ForbiddenError()
+  const students = queries.getStudents(promoId)
+  return students.map(s => {
+    const tokenData = queries.getOrCreateToken(eventTypeId, s.id)
+    return {
+      studentId: s.id,
+      studentName: s.name,
+      bookingUrl: `${SERVER_URL}/#/book/${tokenData.token}`,
+    }
+  })
+}))
+
+// ── My Bookings ────────────────────────────────────────────────────────
+
+router.get('/my-bookings', requireRole('teacher'), wrap((req) => {
+  const from = req.query.from && !isNaN(Date.parse(req.query.from)) ? req.query.from : undefined
+  const to   = req.query.to   && !isNaN(Date.parse(req.query.to))   ? req.query.to   : undefined
+  return queries.getBookingsForTeacher(req.user.id, { from, to })
+}))
+
+module.exports = router
