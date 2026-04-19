@@ -1,13 +1,16 @@
 <script setup lang="ts">
-import { watch, ref, computed, onMounted, onBeforeUnmount } from 'vue'
+import { watch, ref, computed, onMounted, onBeforeUnmount, defineAsyncComponent } from 'vue'
 import { Download, ExternalLink, FileText, Image, Video, File, Table2, BookOpen, ZoomIn, ZoomOut, ChevronLeft, ChevronRight } from 'lucide-vue-next'
 import { useDocumentsStore } from '@/stores/documents'
 import { useOpenExternal }   from '@/composables/useOpenExternal'
 import Modal from '@/components/ui/Modal.vue'
-import LumenPdfViewer from '@/components/lumen/LumenPdfViewer.vue'
-import * as mammoth from 'mammoth'
-import ExcelJS from 'exceljs'
-import DOMPurify from 'dompurify'
+// Lazy : pdfjs (~3 MB), mammoth (~1.5 MB), exceljs (~2 MB) et DOMPurify ne
+// se chargent qu a l ouverture de la preview. Le modal reste leger tant que
+// le user ne clique pas sur un fichier Word/Excel/PDF.
+const LumenPdfViewer = defineAsyncComponent(() => import('@/components/lumen/LumenPdfViewer.vue'))
+async function loadMammoth() { return (await import('mammoth')) }
+async function loadExcelJS() { return (await import('exceljs')).default }
+async function loadDOMPurify() { return (await import('dompurify')).default }
 import { escapeHtml } from '@/utils/html'
 import { base64ToUint8Array, base64ToArrayBuffer, base64ToBlobUrl } from '@/utils/base64'
 import { isImage, isVideo, isPdf, isText, isWord, isExcel } from '@/utils/mimeTypes'
@@ -114,10 +117,12 @@ watch(() => props.modelValue, async (open) => {
       textContent.value = atob(b64)
 
     } else if (isWord(mime.value)) {
+      const [mammoth, DOMPurify] = await Promise.all([loadMammoth(), loadDOMPurify()])
       const result = await mammoth.convertToHtml({ arrayBuffer: base64ToArrayBuffer(b64) })
       wordHtml.value = DOMPurify.sanitize(result.value)
 
     } else if (isExcel(mime.value)) {
+      const [ExcelJS, DOMPurify] = await Promise.all([loadExcelJS(), loadDOMPurify()])
       const wb = new ExcelJS.Workbook()
       await wb.xlsx.load(base64ToArrayBuffer(b64))
       const ws = wb.worksheets[0]

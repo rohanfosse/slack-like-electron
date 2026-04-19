@@ -11,7 +11,7 @@
  * du breadcrumbs, de la banner stale content, et du panneau Outline
  * auto-genere depuis les headings du DOM rendu.
  */
-import { computed, onMounted, onBeforeUnmount, ref, watch, nextTick, toRef } from 'vue'
+import { computed, onMounted, onBeforeUnmount, ref, watch, nextTick, toRef, defineAsyncComponent } from 'vue'
 import { useRouter } from 'vue-router'
 import { Loader2, FileText, FileDown, FileCode, Clock, User, ChevronLeft, ChevronRight, Copy, Check, ClipboardList, Plus, Calendar, RefreshCw, ChevronRight as CrumbSep, Presentation, Pencil, Save, X, Eye, EyeOff, Columns2, Link2, Printer, Sun, Moon, Search } from 'lucide-vue-next'
 import { renderMarkdown } from '@/utils/markdown'
@@ -31,9 +31,11 @@ import { useChapterCompanion } from '@/composables/useChapterCompanion'
 import { useChapterAccueil } from '@/composables/useChapterAccueil'
 import LumenLinkDevoirModal from '@/components/lumen/LumenLinkDevoirModal.vue'
 import LumenOutline from '@/components/lumen/LumenOutline.vue'
-import LumenPdfViewer from '@/components/lumen/LumenPdfViewer.vue'
 import LumenAnnotations from '@/components/lumen/LumenAnnotations.vue'
-import LumenSlideDeck from '@/components/lumen/LumenSlideDeck.vue'
+// Lazy : pdfjs (~3 MB) et Marp (~2 MB) ne sont charges qu au premier chapitre
+// PDF ou slides. Economise ~5 MB de parse JS au startup de chaque route.
+const LumenPdfViewer = defineAsyncComponent(() => import('@/components/lumen/LumenPdfViewer.vue'))
+const LumenSlideDeck = defineAsyncComponent(() => import('@/components/lumen/LumenSlideDeck.vue'))
 import UiCodeEditor from '@/components/ui/UiCodeEditor.vue'
 import type { LumenChapter, LumenRepo, LumenLinkedTravail } from '@/types'
 
