@@ -403,6 +403,11 @@ contextBridge.exposeInMainWorld('api', {
   getBookingOAuthStatus:     ()                          => get('/api/bookings/oauth/status'),
   disconnectBookingOAuth:    ()                          => del('/api/bookings/oauth/disconnect'),
 
+  // ── Calendar iCal feed (abonnement externe Google/Outlook/Apple) ──────────
+  getCalendarFeedToken:      ()                          => get('/api/calendar/feed-token'),
+  rotateCalendarFeedToken:   ()                          => post('/api/calendar/feed-token', {}),
+  revokeCalendarFeedToken:   ()                          => del('/api/calendar/feed-token'),
+
   emitLiveCodeUpdate: (activityId: number, promoId: number, content: string, language: string | null) => {
     socket?.emit('live:code-update', { activityId, promoId, content, language })
   },

@@ -459,6 +459,11 @@ async function importStudentsBrowser(promoId: number): Promise<unknown> {
     return () => { const i = liveScoresUpdateCallbacks.indexOf(cb); if (i !== -1) liveScoresUpdateCallbacks.splice(i, 1) }
   },
 
+  // Calendar iCal feed (abonnement externe)
+  getCalendarFeedToken:       ()                      => get('/api/calendar/feed-token'),
+  rotateCalendarFeedToken:    ()                      => post('/api/calendar/feed-token', {}),
+  revokeCalendarFeedToken:    ()                      => del('/api/calendar/feed-token'),
+
   // Lumen (liseuse GitHub)
   getLumenGithubStatus:       ()                      => get('/api/lumen/github/me'),
   connectLumenGithub:         (token: string)         => post('/api/lumen/github/connect', { token }),

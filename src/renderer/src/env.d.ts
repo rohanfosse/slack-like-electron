@@ -305,6 +305,11 @@ declare global {
       getBookingOAuthStatus(): Promise<IpcResponse<{ connected: boolean; expiresAt?: string }>>
       disconnectBookingOAuth(): Promise<IpcResponse<null>>
 
+      // Calendar iCal feed (abonnement externe Google/Outlook/Apple)
+      getCalendarFeedToken(): Promise<IpcResponse<{ token: string | null; url: string | null; createdAt?: string }>>
+      rotateCalendarFeedToken(): Promise<IpcResponse<{ token: string; url: string }>>
+      revokeCalendarFeedToken(): Promise<IpcResponse<{ revoked: boolean }>>
+
       // Booking real-time
       onBookingNew(cb: (data: { bookingId: number; tutorName: string; studentName: string; eventTitle: string; startDatetime: string }) => void): () => void
       onBookingCancelled(cb: (data: { bookingId: number; tutorName: string; eventTitle: string }) => void): () => void

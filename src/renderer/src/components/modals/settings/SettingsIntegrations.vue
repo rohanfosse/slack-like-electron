@@ -1,22 +1,78 @@
-/** SettingsIntegrations — services externes connectables (Microsoft 365, ...). */
+/** SettingsIntegrations — services externes connectables (Microsoft 365, GitHub, iCal). */
 <script setup lang="ts">
-import { onMounted, computed } from 'vue'
-import { Plug, Check, X, Globe, ExternalLink, Info } from 'lucide-vue-next'
+import { onMounted, computed, ref } from 'vue'
+import {
+  Plug, Check, X, Globe, ExternalLink, Info, Github, KeyRound,
+  Calendar, Copy, RotateCw, Download, AlertCircle,
+} from 'lucide-vue-next'
 import { useAppStore } from '@/stores/app'
 import { useMicrosoftConnection } from '@/composables/useMicrosoftConnection'
+import { useGithubConnection }    from '@/composables/useGithubConnection'
+import { useCalendarFeed }        from '@/composables/useCalendarFeed'
 
 const appStore = useAppStore()
-const { connected, expiresAt, loading, connect, disconnect, refresh } = useMicrosoftConnection()
 
-onMounted(() => {
-  if (appStore.isTeacher) refresh()
-})
-
+// ── Microsoft 365 ────────────────────────────────────────────────────────────
+const ms = useMicrosoftConnection()
 const expiresText = computed(() => {
-  if (!expiresAt.value) return null
-  const d = new Date(expiresAt.value)
+  if (!ms.expiresAt.value) return null
+  const d = new Date(ms.expiresAt.value)
   if (Number.isNaN(d.getTime())) return null
   return d.toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' })
+})
+
+// ── GitHub ───────────────────────────────────────────────────────────────────
+const gh = useGithubConnection()
+const ghTokenInput = ref('')
+const ghSubmitting = ref(false)
+const ghError = ref<string | null>(null)
+
+const ghUserFriendlyError = computed(() => {
+  if (!ghError.value) return null
+  const e = ghError.value.toLowerCase()
+  if (e.includes('401') || e.includes('invalid') || e.includes('bad credentials'))
+    return 'Token invalide. Verifie que tu l\'as colle en entier.'
+  if (e.includes('rate limit'))
+    return 'GitHub est temporairement indisponible. Reessaie dans quelques minutes.'
+  if (e.includes('network') || e.includes('fetch'))
+    return 'Impossible de joindre GitHub. Verifie ta connexion.'
+  return ghError.value
+})
+
+async function handleGhConnect() {
+  ghError.value = null
+  ghSubmitting.value = true
+  try {
+    const res = await gh.connect(ghTokenInput.value)
+    if (res.ok) {
+      ghTokenInput.value = ''
+    } else {
+      ghError.value = res.error ?? 'Echec de la connexion'
+    }
+  } finally {
+    ghSubmitting.value = false
+  }
+}
+
+function openGhTokenPage() {
+  window.api.openExternal?.('https://github.com/settings/tokens/new?scopes=repo,read:org&description=Cursus')
+}
+
+// ── iCal feed ────────────────────────────────────────────────────────────────
+const feed = useCalendarFeed()
+const feedCreatedText = computed(() => {
+  if (!feed.createdAt.value) return null
+  const d = new Date(feed.createdAt.value)
+  if (Number.isNaN(d.getTime())) return null
+  return d.toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' })
+})
+
+onMounted(() => {
+  const tasks: Promise<void>[] = [feed.refresh()]
+  if (appStore.isTeacher) {
+    tasks.push(ms.refresh(), gh.refresh())
+  }
+  Promise.all(tasks).catch(() => { /* toasts handled in composables */ })
 })
 </script>
 
@@ -27,12 +83,217 @@ const expiresText = computed(() => {
       <h3 class="stg-section-title">Integrations</h3>
     </div>
 
-    <p v-if="!appStore.isTeacher" class="stg-info-muted">
-      Les integrations externes sont reservees aux enseignants.
-    </p>
+    <!-- ══════════════ iCal — tous les utilisateurs ══════════════ -->
+    <div class="stg-integration-card">
+      <div class="stg-integration-head">
+        <div class="stg-integration-logo ical-logo">
+          <Calendar :size="18" />
+        </div>
+        <div class="stg-integration-meta">
+          <h4 class="stg-integration-title">Abonnement calendrier (iCal)</h4>
+          <p class="stg-integration-desc">
+            Genere une URL privee pour abonner Google Agenda, Outlook, Apple
+            Calendar ou Thunderbird a tes echeances et rappels Cursus. Les
+            nouveaux evenements apparaissent automatiquement (rafraichissement
+            cote client toutes les 15 minutes a 1 heure selon l'app).
+          </p>
+        </div>
+        <span
+          class="stg-integration-status"
+          :class="feed.url.value ? 'ok' : 'ko'"
+        >
+          <Check v-if="feed.url.value" :size="12" />
+          <X v-else :size="12" />
+          {{ feed.url.value ? 'Actif' : 'Inactif' }}
+        </span>
+      </div>
 
-    <template v-else>
-      <!-- Microsoft 365 -->
+      <!-- Pas encore genere -->
+      <div v-if="!feed.url.value" class="stg-integration-actions">
+        <button
+          class="btn-primary"
+          :disabled="feed.loading.value"
+          @click="feed.rotate()"
+        >
+          <Calendar :size="14" />
+          {{ feed.loading.value ? 'Generation...' : 'Generer mon lien d\'abonnement' }}
+        </button>
+      </div>
+
+      <!-- URL active -->
+      <template v-else>
+        <div class="stg-feed-url">
+          <input
+            :value="feed.url.value"
+            readonly
+            class="stg-feed-url-input"
+            @click="($event.target as HTMLInputElement).select()"
+          />
+          <button
+            class="stg-feed-btn"
+            :disabled="feed.loading.value"
+            title="Copier l'URL"
+            @click="feed.copyUrl()"
+          >
+            <Copy :size="14" />
+          </button>
+        </div>
+
+        <div v-if="feedCreatedText" class="stg-integration-info">
+          <Info :size="12" />
+          <span>Genere le {{ feedCreatedText }}</span>
+        </div>
+
+        <div class="stg-integration-actions">
+          <button
+            class="stg-btn stg-btn-ghost"
+            :disabled="feed.loading.value"
+            @click="feed.rotate()"
+          >
+            <RotateCw :size="14" />
+            Regenerer
+          </button>
+          <button
+            class="stg-btn stg-btn-danger"
+            :disabled="feed.loading.value"
+            @click="feed.revoke()"
+          >
+            <X :size="14" />
+            Revoquer
+          </button>
+        </div>
+
+        <div class="stg-feed-warning">
+          <AlertCircle :size="12" />
+          <span>
+            Cette URL contient un secret. Ne la partage pas — regenere-la si
+            tu penses qu'elle a fuite.
+          </span>
+        </div>
+      </template>
+
+      <details class="stg-integration-help">
+        <summary>
+          <ExternalLink :size="12" />
+          Comment s'abonner ?
+        </summary>
+        <div class="stg-feed-steps">
+          <div class="stg-feed-step">
+            <strong>Google Agenda</strong>
+            <p>Agenda -> Autres agendas -> "+" -> Depuis une URL -> colle l'URL.</p>
+          </div>
+          <div class="stg-feed-step">
+            <strong>Outlook (Web/Desktop)</strong>
+            <p>Calendrier -> Ajouter un calendrier -> S'abonner depuis le Web -> colle l'URL.</p>
+          </div>
+          <div class="stg-feed-step">
+            <strong>Apple Calendar (macOS / iOS)</strong>
+            <p>Fichier -> Nouvel abonnement a un calendrier -> colle l'URL. Sur iOS : Reglages -> Calendrier -> Comptes -> Ajouter -> Autre.</p>
+          </div>
+          <div class="stg-feed-step">
+            <strong>Thunderbird</strong>
+            <p>Calendrier -> Nouveau calendrier -> Sur le reseau -> iCalendar (ICS) -> colle l'URL.</p>
+          </div>
+        </div>
+      </details>
+    </div>
+
+    <!-- ══════════════ GitHub — teachers only ══════════════ -->
+    <template v-if="appStore.isTeacher">
+      <div class="stg-integration-card">
+        <div class="stg-integration-head">
+          <div class="stg-integration-logo gh-logo">
+            <Github :size="20" />
+          </div>
+          <div class="stg-integration-meta">
+            <h4 class="stg-integration-title">GitHub</h4>
+            <p class="stg-integration-desc">
+              Necessaire pour Lumen (liseuse de cours). Le token te permet
+              d'acceder aux repos de cours, de creer des scaffolds, et de
+              beneficier de 5000 requetes/heure au lieu de 60 en anonyme.
+            </p>
+          </div>
+          <span
+            class="stg-integration-status"
+            :class="gh.connected.value ? 'ok' : 'ko'"
+          >
+            <Check v-if="gh.connected.value" :size="12" />
+            <X v-else :size="12" />
+            {{ gh.connected.value ? 'Connecte' : 'Non connecte' }}
+          </span>
+        </div>
+
+        <!-- Connecte -->
+        <template v-if="gh.connected.value">
+          <div class="stg-integration-info">
+            <Info :size="12" />
+            <span>
+              Connecte en tant que <strong>@{{ gh.login.value }}</strong>
+              <template v-if="gh.scopes.value">
+                — scopes : <code>{{ gh.scopes.value }}</code>
+              </template>
+            </span>
+          </div>
+          <div class="stg-integration-actions">
+            <button class="btn-danger" @click="gh.disconnect()">
+              <X :size="14" />
+              Deconnecter
+            </button>
+          </div>
+        </template>
+
+        <!-- Non connecte : instructions + input -->
+        <template v-else>
+          <ol class="stg-gh-steps">
+            <li>
+              Cree un Personal Access Token GitHub (tous les defauts conviennent) :
+              <button class="stg-btn stg-btn-ghost stg-gh-link" @click="openGhTokenPage">
+                <ExternalLink :size="12" />
+                Ouvrir la page GitHub
+              </button>
+            </li>
+            <li>Clique sur <strong>Generate token</strong> tout en bas de la page.</li>
+            <li>Copie le token (commence par <code>ghp_</code>) et colle-le ici :</li>
+          </ol>
+
+          <div class="stg-gh-input-row">
+            <KeyRound :size="16" class="stg-gh-input-icon" />
+            <input
+              v-model="ghTokenInput"
+              type="password"
+              class="stg-gh-input"
+              placeholder="ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+              :disabled="ghSubmitting"
+              @keydown.enter="handleGhConnect"
+            />
+          </div>
+
+          <div v-if="ghUserFriendlyError" class="stg-gh-error">
+            <AlertCircle :size="12" />
+            {{ ghUserFriendlyError }}
+          </div>
+
+          <div class="stg-integration-actions">
+            <button
+              class="btn-primary"
+              :disabled="ghSubmitting || !ghTokenInput.trim()"
+              @click="handleGhConnect"
+            >
+              <Github :size="14" />
+              {{ ghSubmitting ? 'Verification...' : 'Connecter' }}
+            </button>
+          </div>
+
+          <p class="stg-integration-note">
+            Le token est chiffre localement (AES-GCM) avant stockage en base.
+            Tu peux le revoquer a tout moment dans tes parametres GitHub.
+          </p>
+        </template>
+      </div>
+    </template>
+
+    <!-- ══════════════ Microsoft 365 — teachers only ══════════════ -->
+    <template v-if="appStore.isTeacher">
       <div class="stg-integration-card">
         <div class="stg-integration-head">
           <div class="stg-integration-logo ms-logo">
@@ -51,33 +312,33 @@ const expiresText = computed(() => {
               les creneaux de reservation.
             </p>
           </div>
-          <span class="stg-integration-status" :class="connected ? 'ok' : 'ko'">
-            <Check v-if="connected" :size="12" />
+          <span class="stg-integration-status" :class="ms.connected.value ? 'ok' : 'ko'">
+            <Check v-if="ms.connected.value" :size="12" />
             <X v-else :size="12" />
-            {{ connected ? 'Connecte' : 'Non connecte' }}
+            {{ ms.connected.value ? 'Connecte' : 'Non connecte' }}
           </span>
         </div>
 
-        <div v-if="connected && expiresText" class="stg-integration-info">
+        <div v-if="ms.connected.value && expiresText" class="stg-integration-info">
           <Info :size="12" />
           <span>Token valide jusqu'au {{ expiresText }} (refresh automatique)</span>
         </div>
 
         <div class="stg-integration-actions">
           <button
-            v-if="!connected"
+            v-if="!ms.connected.value"
             class="btn-primary"
-            :disabled="loading"
-            @click="connect"
+            :disabled="ms.loading.value"
+            @click="ms.connect()"
           >
             <Globe :size="14" />
-            {{ loading ? 'Ouverture...' : 'Connecter Microsoft' }}
+            {{ ms.loading.value ? 'Ouverture...' : 'Connecter Microsoft' }}
           </button>
           <button
             v-else
             class="btn-danger"
-            :disabled="loading"
-            @click="disconnect"
+            :disabled="ms.loading.value"
+            @click="ms.disconnect()"
           >
             <X :size="14" />
             Deconnecter
@@ -132,6 +393,12 @@ const expiresText = computed(() => {
   background: white;
   border-radius: var(--radius-sm);
   padding: 4px;
+  color: #24292e;
+}
+
+.stg-integration-logo.ical-logo {
+  background: var(--accent-subtle);
+  color: var(--accent);
 }
 
 .stg-integration-meta { flex: 1; min-width: 0; }
@@ -181,11 +448,18 @@ const expiresText = computed(() => {
   background: rgba(59, 130, 246, .08);
   border-radius: var(--radius-sm);
 }
+.stg-integration-info code {
+  font-size: 10.5px;
+  padding: 1px 5px;
+  background: var(--bg-elevated);
+  border-radius: 3px;
+}
 
 .stg-integration-actions {
   display: flex;
   gap: 8px;
   margin-top: 12px;
+  flex-wrap: wrap;
 }
 
 .stg-integration-help {
@@ -219,13 +493,173 @@ const expiresText = computed(() => {
   line-height: 1.5;
 }
 
-.stg-info-muted {
-  margin: 16px 0 0;
-  padding: 12px;
-  color: var(--text-muted);
-  background: var(--bg-hover);
+/* ── iCal feed ───────────────────────────────────────────────────────────── */
+.stg-feed-url {
+  display: flex;
+  gap: 6px;
+  margin-top: 12px;
+}
+.stg-feed-url-input {
+  flex: 1;
+  min-width: 0;
+  padding: 8px 10px;
+  font-family: ui-monospace, 'Consolas', monospace;
+  font-size: 11.5px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
   border-radius: var(--radius-sm);
+  color: var(--text-primary);
+}
+.stg-feed-btn {
+  padding: 0 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg-elevated);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: background .12s, color .12s;
+}
+.stg-feed-btn:hover:not(:disabled) {
+  background: var(--bg-active);
+  color: var(--text-primary);
+}
+
+.stg-feed-warning {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  margin-top: 10px;
+  padding: 8px 10px;
+  font-size: 11px;
+  color: #b45309;
+  background: rgba(245, 158, 11, .1);
+  border: 1px solid rgba(245, 158, 11, .25);
+  border-radius: var(--radius-sm);
+  line-height: 1.4;
+}
+:global(.high-contrast) .stg-feed-warning { color: #fbbf24; }
+
+.stg-feed-steps {
+  margin: 10px 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.stg-feed-step strong {
+  display: block;
+  font-size: 12px;
+  color: var(--text-primary);
+  margin-bottom: 2px;
+}
+.stg-feed-step p {
+  margin: 0;
+  font-size: 11.5px;
+  color: var(--text-secondary);
+  line-height: 1.45;
+}
+
+/* ── GitHub ──────────────────────────────────────────────────────────────── */
+.stg-gh-steps {
+  margin: 12px 0 0;
+  padding-left: 22px;
+  color: var(--text-secondary);
+  line-height: 1.7;
+  font-size: 12px;
+}
+.stg-gh-steps code {
+  font-size: 11px;
+  padding: 1px 5px;
+  background: var(--bg-elevated);
+  border-radius: 3px;
+}
+
+.stg-gh-link {
+  margin-left: 6px;
+  vertical-align: middle;
+}
+
+.stg-gh-input-row {
+  position: relative;
+  margin-top: 10px;
+}
+.stg-gh-input-icon {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-muted);
+}
+.stg-gh-input {
+  width: 100%;
+  padding: 9px 10px 9px 34px;
+  font-family: ui-monospace, 'Consolas', monospace;
+  font-size: 12px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+}
+.stg-gh-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-subtle);
+}
+
+.stg-gh-error {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+  padding: 6px 10px;
+  font-size: 11.5px;
+  color: var(--color-danger);
+  background: rgba(var(--color-danger-rgb), .08);
+  border-radius: var(--radius-sm);
+}
+
+/* ── Boutons partages ────────────────────────────────────────────────────── */
+.btn-primary,
+.btn-danger,
+.stg-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border: none;
+  border-radius: 8px;
   font-size: 12.5px;
-  text-align: center;
+  font-weight: 600;
+  font-family: var(--font);
+  cursor: pointer;
+  transition: all .12s;
+}
+.btn-primary {
+  background: var(--accent);
+  color: #fff;
+}
+.btn-primary:hover:not(:disabled) { filter: brightness(1.1); }
+.btn-primary:disabled { opacity: .5; cursor: not-allowed; }
+
+.btn-danger,
+.stg-btn-danger {
+  background: rgba(var(--color-danger-rgb), .1);
+  color: var(--color-danger);
+  border: 1px solid rgba(var(--color-danger-rgb), .2);
+}
+.btn-danger:hover:not(:disabled),
+.stg-btn-danger:hover:not(:disabled) {
+  background: rgba(var(--color-danger-rgb), .18);
+  border-color: rgba(var(--color-danger-rgb), .35);
+}
+
+.stg-btn-ghost {
+  background: var(--bg-hover);
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
+}
+.stg-btn-ghost:hover:not(:disabled) {
+  background: var(--bg-active);
+  border-color: var(--border-input);
+  color: var(--text-primary);
 }
 </style>

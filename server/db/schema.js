@@ -1,6 +1,6 @@
 const { getDb } = require('./connection');
 
-const CURRENT_VERSION = 71;
+const CURRENT_VERSION = 72;
 
 // ─── Schema initial ───────────────────────────────────────────────────────────
 // Crée toutes les tables avec leur schéma complet (colonnes UTC, toutes colonnes incluses).
@@ -1632,6 +1632,23 @@ function runMigrations(db) {
           expires_at TEXT NOT NULL
         );
         CREATE INDEX IF NOT EXISTS idx_oauth_states_expires ON oauth_states(expires_at);
+      `);
+    },
+
+    // v72 : Calendar feed tokens — abonnement iCal public par utilisateur
+    // Token opaque aleatoire (pas de HMAC stateless) : revocation = DELETE,
+    // rotation = upsert avec nouvelle valeur. PK (user_type, user_id) garantit
+    // un seul token actif par user. Le token lui-meme est UNIQUE pour lookup.
+    (db) => {
+      db.exec(`
+        CREATE TABLE IF NOT EXISTS calendar_feed_tokens (
+          user_type  TEXT NOT NULL CHECK(user_type IN ('student','teacher')),
+          user_id    INTEGER NOT NULL,
+          token      TEXT NOT NULL UNIQUE,
+          created_at TEXT NOT NULL DEFAULT (datetime('now')),
+          PRIMARY KEY (user_type, user_id)
+        );
+        CREATE INDEX IF NOT EXISTS idx_calendar_feed_token ON calendar_feed_tokens(token);
       `);
     },
   ];
