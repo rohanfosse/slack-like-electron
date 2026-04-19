@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
-import { NotebookPen, ChevronRight } from 'lucide-vue-next'
+import { NotebookPen } from 'lucide-vue-next'
 import { useRouter } from 'vue-router'
 import { relativeTime } from '@/utils/date'
 import UiWidgetCard from '@/components/ui/UiWidgetCard.vue'
+import UiWidgetHeaderLink from '@/components/ui/UiWidgetHeaderLink.vue'
 
 interface NoteRow {
   owner: string
@@ -52,9 +53,7 @@ function openLumen() {
 <template>
   <UiWidgetCard :icon="NotebookPen" label="Mes notes">
     <template #header-extra>
-      <button type="button" class="wln-more" @click="openLumen">
-        Ouvrir <ChevronRight :size="12" />
-      </button>
+      <UiWidgetHeaderLink @click="openLumen" />
     </template>
 
     <div v-if="loading" class="wln-empty">Chargement...</div>
@@ -76,24 +75,6 @@ function openLumen() {
 </template>
 
 <style scoped>
-.wln-more {
-  background: none;
-  border: none;
-  color: var(--accent);
-  font-size: var(--text-xs);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 2px;
-  padding: 2px var(--space-xs);
-  border-radius: var(--radius-xs);
-  font-family: inherit;
-}
-.wln-more:focus-visible {
-  outline: none;
-  box-shadow: var(--focus-ring);
-}
-
 .wln-empty {
   font-size: var(--text-sm);
   color: var(--text-muted);

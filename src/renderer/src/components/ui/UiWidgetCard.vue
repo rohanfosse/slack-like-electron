@@ -17,8 +17,13 @@
     interactive?: boolean
     padding?: 'sm' | 'md' | 'lg'
     ariaLabel?: string
-    /** Override de la couleur de l'icone (sinon derivee du `tone`). */
-    iconColor?: string
+    /**
+     * Couleur d'accent personnalisee (icone + barre laterale) hors palette
+     * `tone`. Pour les widgets sentinelle (Bookmarks, Countdown, ...) qui
+     * portent leur propre couleur semantique. Si fourni, override `tone`
+     * pour la barre et l'icone.
+     */
+    accentColor?: string
   }>(), {
     tone: 'none',
     interactive: false,
@@ -28,7 +33,7 @@
   const emit = defineEmits<{ (e: 'click', ev: MouseEvent): void }>()
 
   const resolvedIconColor = computed(() => {
-    if (props.iconColor) return props.iconColor
+    if (props.accentColor) return props.accentColor
     switch (props.tone) {
       case 'danger':  return 'var(--color-danger)'
       case 'warning': return 'var(--color-warning)'
@@ -43,6 +48,7 @@
 <template>
   <UiCard
     :tone="tone"
+    :accent-color="accentColor"
     :interactive="interactive"
     :padding="padding"
     :aria-label="ariaLabel ?? label"

@@ -17,8 +17,7 @@ defineProps<{ grades: GradeEntry[] }>()
   <UiWidgetCard
     :icon="Award"
     label="Mes notes"
-    icon-color="var(--color-grade-warm)"
-    class="wg-card"
+    accent-color="var(--color-grade-warm)"
   >
     <div v-if="grades.length" class="wg-list">
       <div v-for="(g, i) in grades.slice(0, 4)" :key="i" class="wg-item">
@@ -31,10 +30,6 @@ defineProps<{ grades: GradeEntry[] }>()
 </template>
 
 <style scoped>
-.wg-card {
-  border-left: 3px solid var(--color-grade-warm);
-}
-
 .wg-list { display: flex; flex-direction: column; gap: var(--space-xs); }
 
 .wg-item {

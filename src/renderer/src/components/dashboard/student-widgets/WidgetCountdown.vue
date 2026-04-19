@@ -51,9 +51,8 @@ const colorClass = computed(() => {
   <UiWidgetCard
     :icon="Hourglass"
     label="Prochaine échéance"
-    icon-color="var(--color-countdown)"
+    accent-color="var(--color-countdown)"
     aria-label="Compte à rebours"
-    class="wcd-card"
   >
     <template v-if="nextDeadline && remaining">
       <div class="wcd-value" :class="colorClass">
@@ -66,10 +65,6 @@ const colorClass = computed(() => {
 </template>
 
 <style scoped>
-.wcd-card {
-  border-left: 3px solid var(--color-countdown);
-}
-
 .wcd-value {
   font-family: var(--font-mono);
   font-size: var(--text-xl);

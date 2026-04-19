@@ -17,6 +17,8 @@
     tone?: Tone
     padding?: 'sm' | 'md' | 'lg'
     as?: 'div' | 'article' | 'section' | 'button'
+    /** Override couleur de la barre laterale (sinon derivee du `tone`). */
+    accentColor?: string
   }>(), {
     interactive: false,
     elevated: 1,
@@ -40,8 +42,9 @@
       `ui-card--pad-${padding}`,
       `ui-card--elev-${elevated}`,
       tone !== 'none' ? `ui-card--tone-${tone}` : null,
-      { 'ui-card--interactive': interactive },
+      { 'ui-card--interactive': interactive, 'ui-card--accent': accentColor },
     ]"
+    :style="accentColor ? { borderLeftColor: accentColor } : undefined"
     :tabindex="interactive ? 0 : undefined"
     :role="interactive && as !== 'button' ? 'button' : undefined"
     @click="onClick"
@@ -85,6 +88,8 @@
 .ui-card--tone-warning { border-left: 3px solid var(--color-warning); }
 .ui-card--tone-danger  { border-left: 3px solid var(--color-danger); }
 .ui-card--tone-info    { border-left: 3px solid var(--color-info); }
+/* Override couleur via prop accentColor (inline style), gere la largeur ici */
+.ui-card--accent       { border-left-width: 3px; border-left-style: solid; }
 
 /* Interactive : hover state + focus ring */
 .ui-card--interactive {

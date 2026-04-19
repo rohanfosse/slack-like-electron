@@ -38,8 +38,7 @@ function goToMessages() {
   <UiWidgetCard
     :icon="Bookmark"
     label="Messages sauvegardés"
-    icon-color="var(--color-bookmark)"
-    class="wb-card"
+    accent-color="var(--color-bookmark)"
   >
     <div v-if="bookmarks.length" class="wb-list">
       <div
@@ -62,10 +61,6 @@ function goToMessages() {
 </template>
 
 <style scoped>
-.wb-card {
-  border-left: 3px solid var(--color-bookmark);
-}
-
 .wb-list { display: flex; flex-direction: column; gap: var(--space-xs); }
 
 .wb-item {

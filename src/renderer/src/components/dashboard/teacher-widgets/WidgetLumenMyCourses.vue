@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { computed, onMounted } from 'vue'
-import { FolderGit2, ChevronRight, AlertTriangle } from 'lucide-vue-next'
+import { FolderGit2, AlertTriangle } from 'lucide-vue-next'
 import { useRouter } from 'vue-router'
 import { useLumenStore } from '@/stores/lumen'
 import { useAppStore } from '@/stores/app'
 import UiWidgetCard from '@/components/ui/UiWidgetCard.vue'
+import UiWidgetHeaderLink from '@/components/ui/UiWidgetHeaderLink.vue'
 
 const router = useRouter()
 const lumenStore = useLumenStore()
@@ -29,9 +30,7 @@ function openLumen() {
 <template>
   <UiWidgetCard :icon="FolderGit2" label="Mes cours Lumen">
     <template #header-extra>
-      <button type="button" class="wlmc-more" @click="openLumen">
-        Ouvrir <ChevronRight :size="12" />
-      </button>
+      <UiWidgetHeaderLink @click="openLumen" />
     </template>
 
     <div v-if="topRepos.length === 0" class="wlmc-empty">
@@ -53,24 +52,6 @@ function openLumen() {
 </template>
 
 <style scoped>
-.wlmc-more {
-  background: none;
-  border: none;
-  color: var(--accent);
-  font-size: var(--text-xs);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 2px;
-  padding: 2px var(--space-xs);
-  border-radius: var(--radius-xs);
-  font-family: inherit;
-}
-.wlmc-more:focus-visible {
-  outline: none;
-  box-shadow: var(--focus-ring);
-}
-
 .wlmc-empty {
   font-size: var(--text-sm);
   color: var(--text-muted);

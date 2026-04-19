@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { computed, onMounted } from 'vue'
-import { BookOpen, ChevronRight } from 'lucide-vue-next'
+import { BookOpen } from 'lucide-vue-next'
 import { useRouter } from 'vue-router'
 import { useLumenStore } from '@/stores/lumen'
 import { useAppStore } from '@/stores/app'
 import UiWidgetCard from '@/components/ui/UiWidgetCard.vue'
+import UiWidgetHeaderLink from '@/components/ui/UiWidgetHeaderLink.vue'
 
 const router = useRouter()
 const lumenStore = useLumenStore()
@@ -34,9 +35,7 @@ function openLumen() {
 <template>
   <UiWidgetCard :icon="BookOpen" label="Cours Lumen">
     <template #header-extra>
-      <button type="button" class="wlc-more" @click="openLumen">
-        Ouvrir <ChevronRight :size="12" />
-      </button>
+      <UiWidgetHeaderLink @click="openLumen" />
     </template>
 
     <div v-if="recentRepos.length === 0" class="wlc-empty">
@@ -56,24 +55,6 @@ function openLumen() {
 </template>
 
 <style scoped>
-.wlc-more {
-  background: none;
-  border: none;
-  color: var(--accent);
-  font-size: var(--text-xs);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 2px;
-  padding: 2px var(--space-xs);
-  border-radius: var(--radius-xs);
-  font-family: inherit;
-}
-.wlc-more:focus-visible {
-  outline: none;
-  box-shadow: var(--focus-ring);
-}
-
 .wlc-empty {
   font-size: var(--text-sm);
   color: var(--text-muted);

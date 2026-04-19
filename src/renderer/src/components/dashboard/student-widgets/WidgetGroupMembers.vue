@@ -69,9 +69,8 @@ onMounted(fetchGroup)
   <UiWidgetCard
     :icon="Users"
     label="Mon groupe"
-    icon-color="var(--color-group)"
+    accent-color="var(--color-group)"
     aria-label="Membres de mon groupe"
-    class="wgm-card"
   >
     <template v-if="groupName" #header-extra>
       <span class="wgm-name">{{ groupName }}</span>
@@ -90,10 +89,6 @@ onMounted(fetchGroup)
 </template>
 
 <style scoped>
-.wgm-card {
-  border-left: 3px solid var(--color-group);
-}
-
 .wgm-name {
   font-size: var(--text-xs);
   color: var(--text-muted);

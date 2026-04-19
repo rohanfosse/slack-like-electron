@@ -38,8 +38,7 @@ function handleClick() {
     label="Dernier retour"
     interactive
     aria-label="Voir le dernier retour"
-    class="wlf-card"
-    :style="{ borderLeftColor: gradeColor }"
+    :accent-color="gradeColor"
     @click="handleClick"
   >
     <template #header-extra>
@@ -64,10 +63,6 @@ function handleClick() {
 </template>
 
 <style scoped>
-.wlf-card {
-  border-left: 3px solid transparent;
-}
-
 .wlf-chevron { color: var(--text-muted); }
 
 .wlf-row {

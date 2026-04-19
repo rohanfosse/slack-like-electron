@@ -16,8 +16,7 @@ const emit = defineEmits<{ goToProject: [key: string] }>()
   <UiWidgetCard
     :icon="Award"
     label="CCTLs & Études de cas"
-    icon-color="var(--color-cctl)"
-    class="we-card"
+    accent-color="var(--color-cctl)"
   >
     <div v-if="exams.length" class="sa-next-list">
       <div
@@ -41,9 +40,6 @@ const emit = defineEmits<{ goToProject: [key: string] }>()
 </template>
 
 <style scoped>
-.we-card {
-  border-left: 3px solid var(--color-cctl);
-}
 .we-empty {
   font-size: var(--text-sm);
   color: var(--text-muted);
