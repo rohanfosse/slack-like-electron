@@ -1,8 +1,10 @@
 <script setup lang="ts">
   import { ref, watch } from 'vue'
-  import { X, GraduationCap, Check } from 'lucide-vue-next'
+  import { X, GraduationCap } from 'lucide-vue-next'
   import { useAppStore }  from '@/stores/app'
   import { useToast }     from '@/composables/useToast'
+  import PromoColorPicker from '@/components/ui/PromoColorPicker.vue'
+  import { DEFAULT_PROMO_COLOR, getPromoColorFromName } from '@/utils/promoPalette'
 
   const props = defineProps<{ modelValue: boolean }>()
   const emit  = defineEmits<{
@@ -13,24 +15,32 @@
   const appStore     = useAppStore()
   const { showToast } = useToast()
 
-  const COLORS = [
-    '#4A90D9', '#7B5EA7', '#27AE60', '#E74C3C', '#E8891A',
-    '#1ABC9C', '#E91E8C', '#34495E', '#8E44AD', '#2980B9',
-  ]
-
   const name    = ref('')
-  const color   = ref(COLORS[0])
+  const color   = ref<string>(DEFAULT_PROMO_COLOR)
+  const colorTouched = ref(false)
   const saving  = ref(false)
   const nameEl  = ref<HTMLInputElement | null>(null)
 
   watch(() => props.modelValue, (open) => {
     if (open) {
       name.value  = ''
-      color.value = COLORS[0]
+      color.value = DEFAULT_PROMO_COLOR
+      colorTouched.value = false
       saving.value = false
       setTimeout(() => nameEl.value?.focus(), 60)
     }
   })
+
+  // Auto-suggestion : tant que l'utilisateur n'a pas touché la palette,
+  // la couleur suit le nom (déterministe hash-based) — harmonie visuelle.
+  watch(name, (n) => {
+    if (!colorTouched.value) color.value = getPromoColorFromName(n)
+  })
+
+  function onColorChange(v: string): void {
+    colorTouched.value = true
+    color.value = v
+  }
 
   function close() { emit('update:modelValue', false) }
 
@@ -92,19 +102,7 @@
             <!-- Couleur -->
             <div class="cp-field">
               <label class="cp-label">Couleur d'identification</label>
-              <div class="cp-color-row">
-                <button
-                  v-for="c in COLORS"
-                  :key="c"
-                  class="cp-color-btn"
-                  :style="{ background: c }"
-                  :class="{ selected: color === c }"
-                  :title="c"
-                  @click="color = c"
-                >
-                  <Check v-if="color === c" :size="13" class="cp-check" />
-                </button>
-              </div>
+              <PromoColorPicker :model-value="color" @update:model-value="onColorChange" />
 
               <!-- Aperçu pill -->
               <div class="cp-preview-wrap">
@@ -197,34 +195,6 @@
   box-shadow: 0 0 0 3px rgba(74,144,217,.14);
 }
 .cp-input::placeholder { color: var(--text-muted); }
-
-/* ── Sélecteur couleur ── */
-.cp-color-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.cp-color-btn {
-  width: 30px;
-  height: 30px;
-  border-radius: 8px;
-  border: 2px solid transparent;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: transform .15s, border-color .15s, box-shadow .15s;
-  padding: 0;
-}
-.cp-color-btn:hover { transform: scale(1.12); }
-.cp-color-btn.selected {
-  border-color: var(--border);
-  box-shadow: 0 0 0 3px rgba(255,255,255,.2);
-  transform: scale(1.1);
-}
-
-.cp-check { color: #fff; filter: drop-shadow(0 1px 2px rgba(0,0,0,.4)); }
 
 /* ── Aperçu ── */
 .cp-preview-wrap { display: flex; align-items: center; gap: 8px; margin-top: 4px; }

@@ -305,7 +305,7 @@ function onKeydown(e: KeyboardEvent) {
               >
                 <span class="mi-ref-icon">#</span>
                 <span class="mi-mention-name">{{ (ch as RefChannel).name }}</span>
-                <span v-if="(ch as RefChannel).type === 'annonce'" class="mi-mention-badge" style="background:rgba(243,156,18,.2);color:#e67e22">Annonce</span>
+                <span v-if="(ch as RefChannel).type === 'annonce'" class="mi-mention-badge mi-mention-badge--annonce">Annonce</span>
               </button>
             </template>
             <template v-else-if="activeRef === 'devoir'">
@@ -438,7 +438,7 @@ function onKeydown(e: KeyboardEvent) {
   gap: 8px;
   padding: 6px 12px;
   margin: 0 0 4px;
-  background: rgba(74, 144, 217, .07);
+  background: rgba(var(--accent-rgb), .07);
   border-left: 3px solid var(--accent);
   border-radius: 0 6px 6px 0;
 }
@@ -447,7 +447,7 @@ function onKeydown(e: KeyboardEvent) {
 .mi-quote-author {
   font-size: 11px;
   font-weight: 700;
-  color: var(--accent-light, #7db8f0);
+  color: var(--accent-light);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -478,8 +478,13 @@ function onKeydown(e: KeyboardEvent) {
 .mi-everyone-warn {
   display: flex; align-items: center; justify-content: space-between; gap: 12px;
   padding: 8px 14px; margin-bottom: 6px;
-  background: rgba(243,156,18,.1); border: 1px solid rgba(243,156,18,.25);
+  background: color-mix(in srgb, var(--color-warning) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-warning) 25%, transparent);
   border-radius: var(--radius-sm); font-size: 12.5px; color: var(--color-warning);
+}
+.mi-mention-badge--annonce {
+  background: color-mix(in srgb, var(--color-warning) 20%, transparent);
+  color: var(--color-warning);
 }
 .mi-everyone-actions { display: flex; gap: 6px; flex-shrink: 0; }
 .mi-everyone-btn {
@@ -488,7 +493,7 @@ function onKeydown(e: KeyboardEvent) {
 }
 .mi-everyone-cancel { background: var(--bg-active); color: var(--text-secondary); }
 .mi-everyone-cancel:hover { background: var(--bg-active); }
-.mi-everyone-confirm { background: var(--color-warning); color: #fff; }
+.mi-everyone-confirm { background: var(--color-warning); color: white; }
 .mi-everyone-confirm:hover { filter: brightness(1.1); }
 
 .message-input-wrapper { position: relative; }
@@ -545,12 +550,12 @@ function onKeydown(e: KeyboardEvent) {
   justify-content: center;
   font-size: 10px;
   font-weight: 800;
-  color: #fff;
+  color: white;
   letter-spacing: -.3px;
   user-select: none;
 }
 .mi-mention-avatar-everyone {
-  background: linear-gradient(135deg, #e74c3c, #c0392b) !important;
+  background: linear-gradient(135deg, var(--color-danger), color-mix(in srgb, var(--color-danger) 75%, black)) !important;
   font-size: 12px;
 }
 .mi-mention-name {
@@ -562,7 +567,7 @@ function onKeydown(e: KeyboardEvent) {
   white-space: nowrap;
 }
 .mi-mention-everyone .mi-mention-name {
-  color: var(--color-danger, #e74c3c);
+  color: var(--color-danger);
   font-weight: 700;
 }
 .mi-mention-hint {
@@ -583,8 +588,8 @@ function onKeydown(e: KeyboardEvent) {
   flex-shrink: 0;
   white-space: nowrap;
 }
-.mi-badge-teacher { background: rgba(123, 104, 238, .2); color: var(--color-cctl); }
-.mi-badge-ta      { background: rgba(39, 174, 96, .2); color: var(--color-success); }
+.mi-badge-teacher { background: color-mix(in srgb, var(--color-cctl) 20%, transparent); color: var(--color-cctl); }
+.mi-badge-ta      { background: color-mix(in srgb, var(--color-success) 20%, transparent); color: var(--color-success); }
 
 /* Transition popup mention */
 .mention-pop-enter-active { transition: opacity .1s ease, transform .1s ease; }
@@ -601,8 +606,8 @@ function onKeydown(e: KeyboardEvent) {
   font-size: 14px;
   line-height: 1.6;
   color: var(--text-primary);
-  background: rgba(74,144,217,.04);
-  border-top: 1px dashed rgba(74,144,217,.2);
+  background: rgba(var(--accent-rgb),.04);
+  border-top: 1px dashed rgba(var(--accent-rgb),.2);
 }
 /* ── Hint clavier ── */
 .mi-hint-row { display: flex; align-items: center; justify-content: space-between; margin: 4px 2px 0; }
@@ -621,7 +626,7 @@ function onKeydown(e: KeyboardEvent) {
   transition: color .12s, background .12s;
 }
 .mi-sig-link:hover { color: var(--text-secondary); background: var(--bg-hover); }
-.mi-sig-link.active { color: var(--color-success, #059669); font-weight: 600; }
+.mi-sig-link.active { color: var(--color-success); font-weight: 600; }
 .mi-hint kbd {
   font-family: var(--font);
   font-size: 10.5px;
@@ -671,8 +676,8 @@ function onKeydown(e: KeyboardEvent) {
   background: var(--bg-hover); padding: 2px 6px;
   border-radius: 4px; flex-shrink: 0;
 }
-.mi-mention-selected .mi-cmd-name { color: #fff; }
-.mi-mention-selected .mi-cmd-desc { color: rgba(255,255,255,.6); }
-.mi-mention-selected .mi-cmd-icon { background: var(--bg-active) !important; color: #fff !important; }
-.mi-mention-selected .mi-cmd-shortcut { background: var(--bg-active); color: rgba(255,255,255,.7); opacity: 1; }
+.mi-mention-selected .mi-cmd-name { color: var(--text-primary); }
+.mi-mention-selected .mi-cmd-desc { color: var(--text-secondary); }
+.mi-mention-selected .mi-cmd-icon { background: var(--bg-active) !important; color: var(--text-primary) !important; }
+.mi-mention-selected .mi-cmd-shortcut { background: var(--bg-active); color: var(--text-secondary); opacity: 1; }
 </style>

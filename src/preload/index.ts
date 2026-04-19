@@ -204,6 +204,7 @@ contextBridge.exposeInMainWorld('api', {
   getTravaux:             (channelId: number)  => get(`/api/assignments?channelId=${channelId}`),
   getTravailById:         (travailId: number)  => get(`/api/assignments/${travailId}`),
   createTravail:          (payload: unknown)   => post('/api/assignments', payload),
+  updateTravail:          (id: number, payload: unknown) => patch(`/api/assignments/${id}`, payload),
   deleteTravail:          (id: number)         => del(`/api/assignments/${id}`),
   getTravauxSuivi:        (travailId: number)  => get(`/api/assignments/${travailId}/suivi`),
   updateTravailPublished: (payload: unknown)   => post('/api/assignments/publish', payload),

@@ -14,6 +14,7 @@ import type { Promotion } from '@/types'
 import type { GanttRow } from '@/composables/useDashboardTeacher'
 
 import { computed, ref } from 'vue'
+import PromoColorPicker from '@/components/ui/PromoColorPicker.vue'
 
 const props = defineProps<{
   promos: Promotion[]
@@ -28,16 +29,12 @@ const props = defineProps<{
 
 /* ── Color picker state ── */
 const colorPickerOpenId = ref<number | null>(null)
-const COLOR_OPTIONS = [
-  '#4A90D9', '#2ECC71', '#9B87F5', '#F39C12', '#E74C3C',
-  '#1ABC9C', '#E67E22', '#8E44AD', '#27AE60', '#3498DB',
-]
 
 function toggleColorPicker(promoId: number) {
   colorPickerOpenId.value = colorPickerOpenId.value === promoId ? null : promoId
 }
 
-async function selectColor(promoId: number, color: string) {
+function onPickColor(promoId: number, color: string) {
   colorPickerOpenId.value = null
   emit('changePromoColor', promoId, color)
 }
@@ -168,19 +165,11 @@ const emit = defineEmits<{
             <FileText :size="11" /> Importer
           </button>
           <div class="tp-color-picker-wrap">
-            <button class="tp-btn tp-btn--icon" title="Couleur" @click="toggleColorPicker(p.id)">
+            <button class="tp-btn tp-btn--icon" title="Couleur" aria-label="Changer la couleur" @click="toggleColorPicker(p.id)">
               <Palette :size="11" />
             </button>
-            <div v-if="colorPickerOpenId === p.id" class="tp-color-dropdown">
-              <button
-                v-for="c in COLOR_OPTIONS"
-                :key="c"
-                class="tp-color-swatch"
-                :class="{ 'tp-color-swatch--active': p.color === c }"
-                :style="{ background: c }"
-                :title="c"
-                @click.stop="selectColor(p.id, c)"
-              />
+            <div v-if="colorPickerOpenId === p.id" class="tp-color-dropdown" @click.stop>
+              <PromoColorPicker :model-value="p.color" size="sm" @update:model-value="(c) => onPickColor(p.id, c)" />
             </div>
           </div>
           <button
@@ -269,14 +258,6 @@ const emit = defineEmits<{
   border-radius: 10px; box-shadow: var(--shadow-lg, 0 4px 20px rgba(0,0,0,.25));
   z-index: 20; width: 140px;
 }
-.tp-color-swatch {
-  width: 22px; height: 22px; border-radius: 50%; border: 2px solid transparent;
-  cursor: pointer; transition: transform .12s, border-color .12s;
-  flex-shrink: 0;
-}
-.tp-color-swatch:hover { transform: scale(1.2); }
-.tp-color-swatch--active { border-color: var(--text-primary); }
-
 /* ── Backdrop for closing color picker ── */
 .tp-backdrop { position: fixed; inset: 0; z-index: 15; }
 

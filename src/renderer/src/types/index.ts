@@ -504,6 +504,8 @@ export interface CalendarEvent {
   organizer?: string | null
   /** Vue-cal: affiche l'evenement comme barre horizontale en haut de la journee. */
   allDay?: boolean
+  /** Vue-cal : l'evenement peut etre deplace par drag (reminders + deadlines prof uniquement). */
+  draggable?: boolean
 }
 
 // ─── Payloads IPC ────────────────────────────────────────────────────────────

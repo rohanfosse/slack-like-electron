@@ -350,12 +350,15 @@ const dateGroups = computed<DateGroup[]>(() => {
 
 /* ── Highlight résultat de recherche ── */
 .msg-highlight {
-  background: rgba(243,156,18,.06);
+  background: color-mix(in srgb, var(--color-warning) 6%, transparent);
   animation: highlight-flash .6s ease-out;
 }
 @keyframes highlight-flash {
-  0%   { background: rgba(243,156,18,.18); }
-  100% { background: rgba(243,156,18,.06); }
+  0%   { background: color-mix(in srgb, var(--color-warning) 18%, transparent); }
+  100% { background: color-mix(in srgb, var(--color-warning) 6%, transparent); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .msg-highlight { animation: none; }
 }
 
 /* ── Skeleton fade ── */
@@ -366,10 +369,13 @@ const dateGroups = computed<DateGroup[]>(() => {
 }
 .skel-spinner {
   width: 14px; height: 14px; border: 2px solid var(--border-input);
-  border-top-color: var(--accent, #4a90d9); border-radius: 50%;
+  border-top-color: var(--accent); border-radius: 50%;
   animation: spin .7s linear infinite;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) {
+  .skel-spinner { animation: none; }
+}
 .skel-fade-enter-active { transition: opacity var(--motion-base) var(--ease-out); }
 .skel-fade-leave-active { transition: opacity var(--motion-fast) var(--ease-out); position: absolute; width: 100%; top: 0; left: 0; }
 .skel-fade-enter-from, .skel-fade-leave-to { opacity: 0; }
@@ -398,16 +404,19 @@ const dateGroups = computed<DateGroup[]>(() => {
 }
 .scroll-to-bottom-btn:hover {
   background: var(--accent);
-  color: #fff;
+  color: white;
   transform: translateX(-50%) translateY(-2px);
-  box-shadow: 0 6px 20px rgba(74,144,217,.35);
+  box-shadow: 0 6px 20px rgba(var(--accent-rgb),.35);
 }
 .scroll-to-bottom-btn.has-badge { width: auto; border-radius: 18px; padding: 0 10px; gap: 5px; }
 .scroll-badge {
   font-size: 11px; font-weight: 700;
   background: var(--color-danger);
-  color: #fff; border-radius: 10px;
+  color: white; border-radius: 10px;
   padding: 1px 6px; line-height: 1.5;
+}
+@media (prefers-reduced-motion: reduce) {
+  .scroll-to-bottom-btn:hover { transform: translateX(-50%); }
 }
 
 /* Transition bouton scroll */

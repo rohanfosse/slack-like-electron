@@ -218,14 +218,14 @@ function save() {
 }
 .pep-icon-btn:hover { background: var(--bg-hover); color: var(--text-primary); }
 .pep-icon-btn.active {
-  background: rgba(155,135,245,.15);
-  color: var(--color-cctl, #9B87F5);
-  border-color: var(--color-cctl, #9B87F5);
+  background: color-mix(in srgb, var(--color-cctl) 15%, transparent);
+  color: var(--color-cctl);
+  border-color: var(--color-cctl);
 }
 
 .pep-input {
-  background: var(--bg-input, rgba(255,255,255,.07));
-  border: 1px solid var(--border-input, var(--border));
+  background: var(--bg-input);
+  border: 1px solid var(--border-input);
   border-radius: 4px;
   color: var(--text-primary);
   font-size: 12px;
@@ -233,7 +233,10 @@ function save() {
   padding: 4px 7px;
   outline: none;
 }
-.pep-input:focus { border-color: var(--color-cctl, #9B87F5); box-shadow: 0 0 0 2px rgba(155,135,245,.2); }
+.pep-input:focus {
+  border-color: var(--color-cctl);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-cctl) 20%, transparent);
+}
 
 .pep-date-row {
   display: flex;

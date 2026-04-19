@@ -5,11 +5,11 @@
 import ErrorBoundary from '@/components/ui/ErrorBoundary.vue'
 import AgendaDayNotes from '@/components/agenda/AgendaDayNotes.vue'
 import ContextMenu, { type ContextMenuItem } from '@/components/ui/ContextMenu.vue'
-import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount, watch, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import VueCal from 'vue-cal'
 import 'vue-cal/dist/vuecal.css'
-import { Plus, Trash2, RefreshCw, X, Clock, Tag, ExternalLink, ChevronLeft, ChevronRight, Check, AlertCircle, Download, Filter, Copy, Edit3, Calendar as CalIcon, Video } from 'lucide-vue-next'
+import { Plus, Trash2, RefreshCw, X, Clock, Tag, ExternalLink, ChevronLeft, ChevronRight, Check, AlertCircle, Download, Filter, Copy, Edit3, Calendar as CalIcon, Video, MapPin, User } from 'lucide-vue-next'
 import { useAppStore }   from '@/stores/app'
 import { useAgendaStore } from '@/stores/agenda'
 import { useToast } from '@/composables/useToast'
@@ -18,6 +18,9 @@ import { useAgendaViewNav } from '@/composables/useAgendaViewNav'
 import { useAgendaIcsExport } from '@/composables/useAgendaIcsExport'
 import { useAgendaOutlookPolling } from '@/composables/useAgendaOutlookPolling'
 import { useAgendaKeyboardShortcuts } from '@/composables/useAgendaKeyboardShortcuts'
+import { useConfirm } from '@/composables/useConfirm'
+import { useFocusTrap } from '@/composables/useFocusTrap'
+import { getISOWeekNumber } from '@/utils/date'
 import type { CalendarEvent } from '@/types'
 
 const appStore  = useAppStore()
@@ -41,13 +44,37 @@ const {
 // ── Calendar ref + view control ──────────────────────────────────────────
 const { calRef, activeView, currentTitle, selectedDate, onViewChange, goPrev, goNext, goToday, switchView } = useAgendaViewNav()
 
-// P0.1 : clic sur un jour → vue jour
+// ── Day view hero : résumé du jour sélectionné ───────────────────────────
+const dayHero = computed(() => {
+  if (activeView.value !== 'day') return null
+  const d = new Date(selectedDate.value)
+  if (isNaN(d.getTime())) return null
+  const iso = selectedDate.value
+
+  // Comptage single-pass : total + deadlines + teams en un seul parcours
+  let total = 0, deadlines = 0, teams = 0
+  for (const ev of filteredEvents.value) {
+    const meta = ev._meta
+    if (typeof meta?.start !== 'string' || meta.start.slice(0, 10) !== iso) continue
+    total++
+    if (meta.eventType === 'deadline') deadlines++
+    if (meta.teamsJoinUrl) teams++
+  }
+
+  return {
+    weekday: d.toLocaleDateString('fr-FR', { weekday: 'long' }),
+    dateFull: d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }),
+    weekNum: getISOWeekNumber(d),
+    isToday: iso === new Date().toISOString().slice(0, 10),
+    total, deadlines, teams,
+  }
+})
+
 function onCellClick(date: Date) {
   selectedDate.value = date.toISOString().slice(0, 10)
   activeView.value = 'day'
 }
 
-// P2 : double-clic = creer un evenement (pre-rempli avec la date/heure cliquee)
 function onCellDblClick(date: Date) {
   if (!isTeacher.value) return
   formDate.value = date.toISOString().slice(0, 10)
@@ -216,6 +243,8 @@ function isHeadingWeekend(heading: { full?: string; small?: string }): boolean {
 // ── Selected event ────────────────────────────────────────────────────────
 const selectedEvent = ref<CalendarEvent | null>(null)
 const detailOpen = ref(false)
+const detailRef = ref<HTMLElement | null>(null)
+useFocusTrap(detailRef, detailOpen)
 
 function onEventClick(event: { _meta?: CalendarEvent }) {
   selectedEvent.value = event._meta ?? null
@@ -225,12 +254,40 @@ function closeDetail() { detailOpen.value = false; selectedEvent.value = null }
 
 // ── New reminder form ────────────────────────────────────────────────────
 const showForm       = ref(false)
+const formRef        = ref<HTMLElement | null>(null)
+const titleInputRef  = ref<HTMLInputElement | null>(null)
+useFocusTrap(formRef, showForm)
 const formDate       = ref('')
 const formTime       = ref('')
 const formTitle      = ref('')
 const formDesc       = ref('')
 const formCreateTeams = ref(false)
 const saving         = ref(false)
+
+// Autofocus : quand showForm passe à true, focus le champ Titre après rendu
+watch(showForm, async (open) => {
+  if (!open) return
+  await nextTick()
+  titleInputRef.value?.focus()
+  titleInputRef.value?.select?.()
+})
+
+// Fermeture protégée : confirme si l'utilisateur a tapé quelque chose
+async function tryCloseForm(): Promise<void> {
+  const dirty = formTitle.value.trim() !== '' || formDesc.value.trim() !== ''
+  if (dirty) {
+    const ok = await confirm(
+      'Fermer sans enregistrer ?',
+      'warning',
+      'Fermer',
+    )
+    if (!ok) return
+  }
+  showForm.value = false
+  editingId.value = null
+  formTitle.value = ''
+  formDesc.value = ''
+}
 
 async function submitReminder() {
   if (!formDate.value || !formTitle.value.trim()) return
@@ -294,16 +351,50 @@ async function removeReminder(id: number) {
   if (selectedEvent.value?.sourceId === id) closeDetail()
 }
 
-// P2.1 : drag-to-reschedule (prof)
-async function onEventDrop(event: { event: { _meta?: CalendarEvent }; newDate: Date }) {
-  const meta = event.event._meta
-  if (!meta || !isTeacher.value || meta.eventType !== 'deadline') return
-  const newDateStr = event.newDate.toISOString().slice(0, 10)
-  try {
-    await (window.api as any).updateTravail?.(meta.sourceId, { deadline: newDateStr })
-    showToast(`Echeance deplacee au ${event.newDate.toLocaleDateString('fr-FR')}`, 'success')
-    await load()
-  } catch { showToast('Impossible de deplacer l\'echeance', 'error') }
+// Drag-to-reschedule : rappels + deadlines (prof uniquement pour deadlines).
+// Rollback optimiste confie a VueCal : si on rejette, vue-cal replace l'event.
+const { confirm } = useConfirm()
+type VueCalDropEvent = {
+  event: { _meta?: CalendarEvent }
+  newDate: Date
+  originalEvent?: { start: Date | string; end: Date | string }
+  revert?: () => void
+}
+
+function fmtFrDate(d: Date): string {
+  return d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })
+}
+
+async function onEventDrop(e: VueCalDropEvent): Promise<void> {
+  const meta = e.event._meta
+  if (!meta || !meta.draggable) { e.revert?.(); return }
+
+  // Deadlines = profs uniquement
+  if (meta.eventType === 'deadline' && !isTeacher.value) { e.revert?.(); return }
+
+  const newDateStr = e.newDate.toISOString().slice(0, 10)
+
+  // Confirmation pour deadline : zone sensible (etudiants peuvent avoir deja rendu)
+  if (meta.eventType === 'deadline') {
+    const suffix = meta.depotsCount && meta.depotsCount > 0
+      ? ` (${meta.depotsCount} depot${meta.depotsCount > 1 ? 's' : ''} deja soumis)`
+      : ''
+    const ok = await confirm(
+      `Deplacer "${meta.title}" au ${fmtFrDate(e.newDate)} ?${suffix}`,
+      'warning',
+      'Deplacer',
+    )
+    if (!ok) { e.revert?.(); return }
+  }
+
+  const success = await agenda.updateEventDate(meta.id, newDateStr)
+  if (!success) {
+    e.revert?.()
+    return
+  }
+
+  const label = meta.eventType === 'deadline' ? 'Echeance' : 'Rappel'
+  showToast(`${label} deplace${meta.eventType === 'deadline' ? 'e' : ''} au ${fmtFrDate(e.newDate)}.`, 'success')
 }
 
 // ── Export ICS (iCalendar) ───────────────────────────────────────────────
@@ -344,7 +435,7 @@ async function load() {
   if (isTeacher.value && showOutlook.value) await loadOutlook()
 }
 
-// ── Keyboard shortcuts (Phase 5) ──────────────────────────────────────
+// ── Keyboard shortcuts ────────────────────────────────────────────────
 useAgendaKeyboardShortcuts({
   isTeacher,
   detailOpen,
@@ -363,7 +454,6 @@ onMounted(() => {
   load()
   startOutlookPolling()
   if (route.query.action === 'new-reminder' && isTeacher.value) showForm.value = true
-  // P0.3 : deep-link depuis sidebar mini-cal
   if (typeof route.query.date === 'string') {
     selectedDate.value = route.query.date
     activeView.value = 'day'
@@ -388,32 +478,32 @@ watch(() => route.query, (q) => {
   <div class="agenda-area">
 
     <!-- Toolbar -->
-    <header class="agenda-toolbar">
+    <header class="agenda-toolbar" role="toolbar" aria-label="Barre d'outils du calendrier">
       <div class="agenda-toolbar-left">
-        <button type="button" class="ag-today-btn" @click="goToday" title="Aujourd'hui (T)">Aujourd'hui</button>
-        <div class="ag-nav-arrows">
-          <button type="button" class="ag-nav-btn" @click="goPrev"><ChevronLeft :size="16" /></button>
-          <button type="button" class="ag-nav-btn" @click="goNext"><ChevronRight :size="16" /></button>
+        <button type="button" class="ag-today-btn" @click="goToday" title="Aujourd'hui (T)" aria-label="Aller à aujourd'hui">Aujourd'hui</button>
+        <div class="ag-nav-arrows" role="group" aria-label="Navigation par période">
+          <button type="button" class="ag-nav-btn" @click="goPrev" title="Période précédente" aria-label="Période précédente"><ChevronLeft :size="16" aria-hidden="true" /></button>
+          <button type="button" class="ag-nav-btn" @click="goNext" title="Période suivante" aria-label="Période suivante"><ChevronRight :size="16" aria-hidden="true" /></button>
         </div>
-        <h1 class="ag-current-title">{{ currentTitle || 'Calendrier' }}</h1>
+        <h1 class="ag-current-title" aria-live="polite">{{ currentTitle || 'Calendrier' }}</h1>
       </div>
       <div class="agenda-toolbar-right">
-        <div class="ag-view-switch">
-          <button type="button" class="ag-view-btn" :class="{ active: activeView === 'month' }" @click="switchView('month')" title="Vue mois (M)">Mois</button>
-          <button type="button" class="ag-view-btn" :class="{ active: activeView === 'week' }" @click="switchView('week')" title="Vue semaine (S)">Semaine</button>
-          <button type="button" class="ag-view-btn" :class="{ active: activeView === 'day' }" @click="switchView('day')" title="Vue jour (J)">Jour</button>
+        <div class="ag-view-switch" role="group" aria-label="Changer de vue">
+          <button type="button" class="ag-view-btn" :class="{ active: activeView === 'month' }" @click="switchView('month')" title="Vue mois (M)" :aria-pressed="activeView === 'month'">Mois</button>
+          <button type="button" class="ag-view-btn" :class="{ active: activeView === 'week' }" @click="switchView('week')" title="Vue semaine (S)" :aria-pressed="activeView === 'week'">Semaine</button>
+          <button type="button" class="ag-view-btn" :class="{ active: activeView === 'day' }" @click="switchView('day')" title="Vue jour (J)" :aria-pressed="activeView === 'day'">Jour</button>
         </div>
-        <button class="ag-btn ag-btn--ghost" title="Filtres" :class="{ 'ag-btn--active': showFilters }" @click="showFilters = !showFilters">
-          <Filter :size="14" />
+        <button class="ag-btn ag-btn--ghost" title="Filtres" :aria-label="showFilters ? 'Masquer les filtres' : 'Afficher les filtres'" :aria-expanded="showFilters" :class="{ 'ag-btn--active': showFilters }" @click="showFilters = !showFilters">
+          <Filter :size="14" aria-hidden="true" />
         </button>
-        <button class="ag-btn ag-btn--ghost" title="Exporter en ICS (Outlook, Google Calendar)" @click="exportIcs">
-          <Download :size="14" />
+        <button class="ag-btn ag-btn--ghost" title="Exporter en ICS (Outlook, Google Calendar)" aria-label="Exporter le calendrier en ICS" @click="exportIcs">
+          <Download :size="14" aria-hidden="true" />
         </button>
-        <button v-if="isTeacher" class="ag-btn ag-btn--accent" @click="showForm = !showForm" title="Nouveau rappel (N)">
-          <Plus :size="13" /> Rappel
+        <button v-if="isTeacher" class="ag-btn ag-btn--accent" @click="showForm = !showForm" title="Nouveau rappel (N)" aria-label="Créer un nouveau rappel">
+          <Plus :size="14" aria-hidden="true" /> Rappel
         </button>
-        <button class="ag-btn ag-btn--ghost" :disabled="agenda.loading" @click="load">
-          <RefreshCw :size="14" :class="{ 'ag-spin': agenda.loading }" />
+        <button class="ag-btn ag-btn--ghost" :disabled="agenda.loading" @click="load" :aria-label="agenda.loading ? 'Rafraîchissement en cours' : 'Rafraîchir le calendrier'" :aria-busy="agenda.loading" title="Rafraîchir">
+          <RefreshCw :size="14" :class="{ 'ag-spin': agenda.loading }" aria-hidden="true" />
         </button>
       </div>
     </header>
@@ -439,8 +529,47 @@ watch(() => route.query, (q) => {
       </div>
     </Transition>
 
+    <!-- Day view hero : résumé contextuel du jour sélectionné -->
+    <Transition name="filter-slide">
+      <div v-if="dayHero" class="ag-day-hero">
+        <div class="ag-day-hero-main">
+          <span class="ag-day-hero-weekday">{{ dayHero.weekday }}</span>
+          <h2 class="ag-day-hero-date">
+            {{ dayHero.dateFull }}
+            <span v-if="dayHero.isToday" class="ag-day-hero-badge">Aujourd'hui</span>
+          </h2>
+        </div>
+        <div class="ag-day-hero-meta">
+          <span class="ag-day-hero-week">Semaine {{ dayHero.weekNum }}</span>
+          <span v-if="dayHero.total === 0" class="ag-day-hero-chip ag-day-hero-chip--empty">Journée libre</span>
+          <template v-else>
+            <span class="ag-day-hero-chip">
+              <span class="ag-chip-dot" :style="{ background: 'var(--accent)' }" />
+              {{ dayHero.total }} événement{{ dayHero.total > 1 ? 's' : '' }}
+            </span>
+            <span v-if="dayHero.deadlines > 0" class="ag-day-hero-chip">
+              <span class="ag-chip-dot" :style="{ background: 'var(--color-danger)' }" />
+              {{ dayHero.deadlines }} échéance{{ dayHero.deadlines > 1 ? 's' : '' }}
+            </span>
+            <span v-if="dayHero.teams > 0" class="ag-day-hero-chip">
+              <Video :size="12" aria-hidden="true" />
+              {{ dayHero.teams }} Teams
+            </span>
+          </template>
+        </div>
+      </div>
+    </Transition>
+
     <div class="agenda-body">
       <div class="agenda-cal-wrap" @contextmenu="onCalWrapContextMenu">
+        <!-- Skeleton overlay : affiche pendant le premier load (pas de spam pendant refresh) -->
+        <div v-if="agenda.loading && !filteredEvents.length" class="ag-skeleton" aria-hidden="true">
+          <div v-for="i in 12" :key="i" class="ag-skel-event" :style="{
+            gridColumn: ((i * 3) % 7) + 1,
+            gridRow: Math.floor(i / 3) + 1,
+            width: (50 + (i * 13) % 40) + '%',
+          }" />
+        </div>
         <VueCal
           ref="calRef"
           :active-view="activeView"
@@ -453,7 +582,7 @@ watch(() => route.query, (q) => {
           :time-step="30"
           :time-cell-height="28"
           :disable-views="['years', 'year']"
-          :editable-events="isTeacher ? { drag: true } : false"
+          :editable-events="{ drag: true }"
           hide-title-bar
           show-week-numbers
           class="vuecal--dark"
@@ -499,6 +628,33 @@ watch(() => route.query, (q) => {
             </div>
           </template>
         </VueCal>
+        <!-- Empty state : pas de chargement en cours + aucun event -->
+        <div v-if="!agenda.loading && filteredEvents.length === 0" class="ag-empty-state" role="status">
+          <!-- SVG illustré : mini-calendrier avec 3 events qui flottent doucement -->
+          <svg class="ag-empty-illus" width="128" height="104" viewBox="0 0 128 104" aria-hidden="true" fill="none">
+            <rect x="12" y="22" width="104" height="72" rx="10" stroke="currentColor" stroke-width="1.5" opacity="0.35" />
+            <rect x="30" y="12" width="4" height="16" rx="2" fill="currentColor" opacity="0.45" />
+            <rect x="94" y="12" width="4" height="16" rx="2" fill="currentColor" opacity="0.45" />
+            <path d="M12 38 L116 38" stroke="currentColor" stroke-width="1.5" opacity="0.35" />
+            <g opacity="0.22">
+              <line x1="38" y1="38" x2="38" y2="94" stroke="currentColor" stroke-width="1" />
+              <line x1="64" y1="38" x2="64" y2="94" stroke="currentColor" stroke-width="1" />
+              <line x1="90" y1="38" x2="90" y2="94" stroke="currentColor" stroke-width="1" />
+              <line x1="12" y1="58" x2="116" y2="58" stroke="currentColor" stroke-width="1" />
+              <line x1="12" y1="76" x2="116" y2="76" stroke="currentColor" stroke-width="1" />
+            </g>
+            <rect class="ag-empty-ev ag-empty-ev1" x="16" y="46" width="18" height="6" rx="2" fill="var(--accent)" opacity="0.78" />
+            <rect class="ag-empty-ev ag-empty-ev2" x="68" y="62" width="22" height="6" rx="2" fill="var(--color-success)" opacity="0.72" />
+            <rect class="ag-empty-ev ag-empty-ev3" x="42" y="80" width="20" height="6" rx="2" fill="var(--color-info)" opacity="0.78" />
+          </svg>
+          <p class="ag-empty-title">Rien de prévu pour cette période</p>
+          <p class="ag-empty-hint">
+            {{ isTeacher ? 'Créez un rappel avec la touche N, double-cliquez sur un jour, ou faites glisser un événement pour le replanifier.' : 'Vos échéances apparaîtront ici dès qu\'un devoir sera publié par votre enseignant.' }}
+          </p>
+          <button v-if="isTeacher" class="ag-btn ag-btn--accent" @click="showForm = true">
+            <Plus :size="14" aria-hidden="true" /> Nouveau rappel
+          </button>
+        </div>
       </div>
 
       <!-- Right-click context menu -->
@@ -506,88 +662,128 @@ watch(() => route.query, (q) => {
 
       <!-- Detail panel -->
       <Transition name="detail-slide">
-        <aside v-if="detailOpen && selectedEvent" class="agenda-detail">
-          <header class="agenda-detail-head">
-            <div class="agenda-detail-dot" :style="{ background: selectedEvent.color }" />
-            <span class="agenda-detail-type">{{ eventTypeLabel(selectedEvent.eventType) }}</span>
-            <button type="button" class="agenda-detail-close" @click="closeDetail"><X :size="14" /></button>
-          </header>
-          <h2 class="agenda-detail-title">{{ selectedEvent.title }}</h2>
-          <div class="agenda-detail-meta">
-            <Clock :size="12" />
-            <span>{{ formatFullDate(selectedEvent.start) }}</span>
+        <aside
+          v-if="detailOpen && selectedEvent"
+          ref="detailRef"
+          class="agenda-detail"
+          role="dialog"
+          aria-modal="false"
+          aria-labelledby="agenda-detail-title"
+          @keydown.esc="closeDetail"
+        >
+          <!-- Hero : bande de couleur promo pleine largeur -->
+          <div class="agenda-detail-hero" :style="{ background: selectedEvent.color }" aria-hidden="true" />
+
+          <div class="agenda-detail-body">
+            <header class="agenda-detail-head">
+              <span class="agenda-detail-type">{{ eventTypeLabel(selectedEvent.eventType) }}</span>
+              <button type="button" class="agenda-detail-close" @click="closeDetail" aria-label="Fermer le panneau de détails"><X :size="14" aria-hidden="true" /></button>
+            </header>
+            <h2 id="agenda-detail-title" class="agenda-detail-title">{{ selectedEvent.title }}</h2>
+
+            <div class="agenda-detail-meta-list">
+              <div class="agenda-detail-meta">
+                <Clock :size="14" aria-hidden="true" />
+                <span>{{ formatFullDate(selectedEvent.start) }}</span>
+              </div>
+              <div v-if="selectedEvent.promoName" class="agenda-detail-meta">
+                <span class="agenda-detail-promo-dot" :style="{ background: selectedEvent.promoColor }" aria-hidden="true" />
+                <span>{{ selectedEvent.promoName }}</span>
+              </div>
+              <div v-if="selectedEvent.category" class="agenda-detail-meta">
+                <Tag :size="14" aria-hidden="true" />
+                <span>{{ selectedEvent.category }}</span>
+              </div>
+              <div v-if="selectedEvent.location" class="agenda-detail-meta">
+                <MapPin :size="14" aria-hidden="true" />
+                <span>{{ selectedEvent.location }}</span>
+              </div>
+              <div v-if="selectedEvent.organizer" class="agenda-detail-meta">
+                <User :size="14" aria-hidden="true" />
+                <span>{{ selectedEvent.organizer }}</span>
+              </div>
+            </div>
+
+            <!-- Teams join button -->
+            <a v-if="selectedEvent.teamsJoinUrl" :href="selectedEvent.teamsJoinUrl" target="_blank" rel="noopener" class="ag-btn ag-btn--teams ag-btn--block">
+              <Video :size="14" aria-hidden="true" /> Rejoindre Teams
+            </a>
+
+            <!-- Statut rendu avec progress bar -->
+            <div v-if="selectedEvent.submissionStatus" class="agenda-detail-status-card" :class="`status--${selectedEvent.submissionStatus}`">
+              <div class="agenda-detail-status-head">
+                <Check v-if="selectedEvent.submissionStatus === 'submitted'" :size="14" aria-hidden="true" />
+                <AlertCircle v-else-if="selectedEvent.submissionStatus === 'late'" :size="14" aria-hidden="true" />
+                <Clock v-else :size="14" aria-hidden="true" />
+                <span>{{ statusLabel(selectedEvent.submissionStatus) }}</span>
+                <span v-if="isTeacher && selectedEvent.depotsCount != null && selectedEvent.studentsTotal" class="agenda-detail-status-count">
+                  {{ selectedEvent.depotsCount }} / {{ selectedEvent.studentsTotal }}
+                </span>
+              </div>
+              <div v-if="isTeacher && selectedEvent.depotsCount != null && selectedEvent.studentsTotal" class="agenda-detail-progress-bar" :aria-label="`${selectedEvent.depotsCount} rendus sur ${selectedEvent.studentsTotal}`">
+                <div class="agenda-detail-progress-fill" :style="{ width: ((selectedEvent.depotsCount / selectedEvent.studentsTotal) * 100) + '%' }" />
+              </div>
+            </div>
+
+            <!-- Notes personnelles pour ce jour -->
+            <AgendaDayNotes :date="selectedEvent.start" />
           </div>
-          <div v-if="selectedEvent.promoName" class="agenda-detail-meta">
-            <span class="agenda-detail-promo-dot" :style="{ background: selectedEvent.promoColor }" />
-            <span>{{ selectedEvent.promoName }}</span>
-          </div>
-          <div v-if="selectedEvent.category" class="agenda-detail-meta">
-            <Tag :size="12" />
-            <span>{{ selectedEvent.category }}</span>
-          </div>
-          <!-- Outlook-specific metadata -->
-          <div v-if="selectedEvent.location" class="agenda-detail-meta">
-            <span class="ag-icon-pin">📍</span>
-            <span>{{ selectedEvent.location }}</span>
-          </div>
-          <div v-if="selectedEvent.organizer" class="agenda-detail-meta">
-            <span class="ag-icon-org">👤</span>
-            <span>{{ selectedEvent.organizer }}</span>
-          </div>
-          <!-- Teams join button -->
-          <a v-if="selectedEvent.teamsJoinUrl" :href="selectedEvent.teamsJoinUrl" target="_blank" rel="noopener" class="ag-btn ag-btn--teams">
-            <Video :size="13" /> Rejoindre Teams
-          </a>
-          <!-- Statut rendu -->
-          <div v-if="selectedEvent.submissionStatus" class="agenda-detail-status" :class="`status--${selectedEvent.submissionStatus}`">
-            <Check v-if="selectedEvent.submissionStatus === 'submitted'" :size="13" />
-            <AlertCircle v-else-if="selectedEvent.submissionStatus === 'late'" :size="13" />
-            <Clock v-else :size="13" />
-            <span>{{ statusLabel(selectedEvent.submissionStatus) }}</span>
-            <span v-if="isTeacher && selectedEvent.depotsCount != null" class="agenda-detail-progress">
-              {{ selectedEvent.depotsCount }}/{{ selectedEvent.studentsTotal }} rendus
-            </span>
-          </div>
-          <button
-            v-if="selectedEvent.eventType === 'deadline' || selectedEvent.eventType === 'start_date'"
-            class="ag-btn ag-btn--accent"
-            @click="router.push({ name: 'devoirs' }); closeDetail()"
-          >
-            <ExternalLink :size="12" /> Voir le devoir
-          </button>
-          <button v-if="isTeacher && selectedEvent.eventType === 'reminder'" class="ag-btn ag-btn--danger" @click="removeReminder(selectedEvent.sourceId)">
-            <Trash2 :size="12" /> Supprimer
-          </button>
-          <!-- Notes personnelles pour ce jour -->
-          <AgendaDayNotes :date="selectedEvent.start" />
+
+          <!-- CTA sticky footer -->
+          <footer class="agenda-detail-footer">
+            <button
+              v-if="selectedEvent.eventType === 'deadline' || selectedEvent.eventType === 'start_date'"
+              class="ag-btn ag-btn--accent ag-btn--block"
+              @click="router.push({ name: 'devoirs' }); closeDetail()"
+            >
+              <ExternalLink :size="14" aria-hidden="true" /> Voir le devoir
+            </button>
+            <button v-if="isTeacher && selectedEvent.eventType === 'reminder'" class="ag-btn ag-btn--danger ag-btn--block" @click="removeReminder(selectedEvent.sourceId)">
+              <Trash2 :size="14" aria-hidden="true" /> Supprimer
+            </button>
+          </footer>
         </aside>
       </Transition>
 
       <!-- New reminder form -->
       <Transition name="detail-slide">
-        <aside v-if="showForm && isTeacher" class="agenda-detail">
-          <header class="agenda-detail-head">
-            <Plus :size="14" />
-            <span class="agenda-detail-type">Nouveau rappel</span>
-            <button type="button" class="agenda-detail-close" @click="showForm = false"><X :size="14" /></button>
-          </header>
-          <div class="ag-form">
-            <div class="ag-form-row">
-              <label class="ag-label" style="flex:1;">Date<input v-model="formDate" type="date" class="ag-input" /></label>
-              <label class="ag-label" style="width: 110px;">Heure<input v-model="formTime" type="time" class="ag-input" /></label>
-            </div>
-            <label class="ag-label">Titre<input v-model="formTitle" type="text" class="ag-input" placeholder="Ex: Soutenance finale..." /></label>
-            <label class="ag-label">Description<textarea v-model="formDesc" class="ag-input ag-textarea" rows="3" placeholder="Details..." /></label>
-            <label v-if="formTime && isTeacher && !editingId" class="ag-label ag-check-label">
-              <input type="checkbox" v-model="formCreateTeams" />
-              <Video :size="12" />
-              <span>Creer une reunion Teams + Outlook</span>
-            </label>
-            <div class="ag-form-actions">
-              <button class="ag-btn ag-btn--accent" :disabled="!formDate || !formTitle.trim() || saving" @click="submitReminder">{{ saving ? 'Enregistrement...' : 'Ajouter' }}</button>
-              <button class="ag-btn ag-btn--ghost" @click="showForm = false">Annuler</button>
+        <aside
+          v-if="showForm && isTeacher"
+          ref="formRef"
+          class="agenda-detail"
+          role="dialog"
+          aria-modal="false"
+          aria-labelledby="agenda-form-title"
+          @keydown.esc="tryCloseForm"
+        >
+          <!-- Hero accent : couleur d'accent pour identifier le formulaire -->
+          <div class="agenda-detail-hero" style="background: var(--accent);" aria-hidden="true" />
+
+          <div class="agenda-detail-body">
+            <header class="agenda-detail-head">
+              <span id="agenda-form-title" class="agenda-detail-type">{{ editingId ? 'Modifier le rappel' : 'Nouveau rappel' }}</span>
+              <button type="button" class="agenda-detail-close" @click="tryCloseForm" aria-label="Fermer le formulaire"><X :size="14" aria-hidden="true" /></button>
+            </header>
+            <div class="ag-form">
+              <div class="ag-form-row">
+                <label class="ag-label" style="flex:1;">Date<input v-model="formDate" type="date" class="ag-input" /></label>
+                <label class="ag-label" style="width: 110px;">Heure<input v-model="formTime" type="time" class="ag-input" /></label>
+              </div>
+              <label class="ag-label">Titre<input v-model="formTitle" ref="titleInputRef" type="text" class="ag-input" placeholder="Ex: Soutenance finale..." /></label>
+              <label class="ag-label">Description<textarea v-model="formDesc" class="ag-input ag-textarea" rows="3" placeholder="Details..." /></label>
+              <label v-if="isTeacher && !editingId" class="ag-label ag-check-label" :class="{ 'ag-check-label--disabled': !formTime }">
+                <input type="checkbox" v-model="formCreateTeams" :disabled="!formTime" />
+                <Video :size="14" aria-hidden="true" />
+                <span>Créer une réunion Teams + Outlook</span>
+                <small v-if="!formTime" class="ag-hint">Nécessite une heure</small>
+              </label>
             </div>
           </div>
+
+          <footer class="agenda-detail-footer">
+            <button class="ag-btn ag-btn--accent ag-btn--block" :disabled="!formDate || !formTitle.trim() || saving" @click="submitReminder">{{ saving ? 'Enregistrement...' : (editingId ? 'Enregistrer' : 'Ajouter') }}</button>
+            <button class="ag-btn ag-btn--ghost ag-btn--block" @click="tryCloseForm">Annuler</button>
+          </footer>
         </aside>
       </Transition>
     </div>
@@ -603,16 +799,17 @@ watch(() => route.query, (q) => {
 /* ── Toolbar ── */
 .agenda-toolbar {
   display: flex; align-items: center; justify-content: space-between; gap: 16px;
-  padding: 10px 20px; background: var(--bg-main); border-bottom: 1px solid var(--border);
-  flex-shrink: 0; min-height: 52px;
+  padding: 12px 20px; background: var(--bg-main); border-bottom: 1px solid var(--border);
+  flex-shrink: 0; min-height: 56px;
 }
 .agenda-toolbar-left { display: flex; align-items: center; gap: 12px; }
-.agenda-toolbar-right { display: flex; align-items: center; gap: 10px; }
+.agenda-toolbar-right { display: flex; align-items: center; gap: 8px; }
 
 .ag-today-btn {
   padding: 6px 16px; border-radius: 20px; border: 1px solid var(--border);
   background: transparent; color: var(--text-primary); font-size: 13px;
-  font-weight: 600; font-family: inherit; cursor: pointer; transition: all 0.12s;
+  font-weight: 600; font-family: inherit; cursor: pointer;
+  transition: background-color 0.12s, color 0.12s, border-color 0.12s;
 }
 .ag-today-btn:hover { background: var(--bg-hover); border-color: var(--accent); color: var(--accent); }
 
@@ -635,7 +832,7 @@ watch(() => route.query, (q) => {
   background: #94a3b8; margin-left: 4px;
 }
 .ag-sync-dot--live {
-  background: #22c55e;
+  background: var(--color-success);
   box-shadow: 0 0 0 0 rgba(34,197,94,0.6);
   animation: ag-sync-pulse 2s infinite;
 }
@@ -645,7 +842,11 @@ watch(() => route.query, (q) => {
   100% { box-shadow: 0 0 0 0 rgba(34,197,94,0); }
 }
 .ag-btn--active { color: var(--accent) !important; border-color: var(--accent) !important; }
-.filter-slide-enter-active, .filter-slide-leave-active { transition: all .2s ease; }
+.filter-slide-enter-active, .filter-slide-leave-active {
+  transition: opacity 0.18s ease,
+              max-height 0.22s cubic-bezier(0.4, 0, 0.2, 1),
+              padding 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+}
 .filter-slide-enter-from, .filter-slide-leave-to { opacity: 0; max-height: 0; padding-top: 0; padding-bottom: 0; overflow: hidden; }
 .filter-slide-enter-to, .filter-slide-leave-from { max-height: 50px; }
 
@@ -653,13 +854,16 @@ watch(() => route.query, (q) => {
 .ag-nav-btn {
   display: flex; align-items: center; justify-content: center;
   width: 32px; height: 32px; border-radius: 50%; border: none;
-  background: transparent; color: var(--text-secondary); cursor: pointer; transition: all 0.12s;
+  background: transparent; color: var(--text-secondary); cursor: pointer;
+  transition: background-color 0.12s, color 0.12s;
 }
 .ag-nav-btn:hover { background: var(--bg-hover); color: var(--text-primary); }
 
 .ag-current-title {
-  font-size: 18px; font-weight: 600; color: var(--text-primary);
+  font-size: 22px; font-weight: 500; color: var(--text-primary);
   margin: 0; text-transform: capitalize; white-space: nowrap;
+  letter-spacing: -0.015em;
+  font-variant-numeric: tabular-nums;
 }
 
 .ag-view-switch {
@@ -669,7 +873,8 @@ watch(() => route.query, (q) => {
 .ag-view-btn {
   padding: 5px 14px; border-radius: 6px; border: none; background: transparent;
   color: var(--text-muted); font-size: 12px; font-weight: 600; font-family: inherit;
-  cursor: pointer; transition: all 0.15s;
+  cursor: pointer;
+  transition: background-color 0.15s, color 0.15s, box-shadow 0.15s;
 }
 .ag-view-btn:hover { color: var(--text-primary); }
 .ag-view-btn.active { background: var(--accent); color: white; box-shadow: 0 1px 3px rgba(0,0,0,0.15); }
@@ -678,7 +883,7 @@ watch(() => route.query, (q) => {
 .agenda-body { flex: 1; display: flex; overflow: hidden; position: relative; }
 .agenda-cal-wrap { flex: 1; overflow: auto; padding: 0; }
 
-/* ══════════════ Vue-cal overrides (Phase 1 - high contrast) ══════════════ */
+/* ══════════════ Vue-cal overrides (high contrast) ══════════════ */
 :deep(.vuecal__title-bar) { display: none !important; }
 :deep(.vuecal__header) {
   background: var(--bg-elevated) !important; color: var(--text-primary) !important;
@@ -706,13 +911,13 @@ watch(() => route.query, (q) => {
 }
 .ag-day-head--month { padding: 8px 4px; }
 .ag-day-num {
-  font-size: 22px;
-  font-weight: 400;
+  font-size: 26px;
+  font-weight: 300;
   color: var(--text-primary);
   line-height: 1;
   font-variant-numeric: tabular-nums;
   text-transform: none;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.02em;
 }
 .ag-day-name {
   font-size: 11px;
@@ -732,24 +937,21 @@ watch(() => route.query, (q) => {
 .ag-day-head--weekend .ag-day-name {
   color: var(--text-muted);
 }
-/* Today : numero en accent comme Outlook ("17 Ven" en bleu) */
+/* Today : badge rond rempli (style Fantastical / Notion Calendar) */
 .ag-day-head--today .ag-day-num {
-  color: var(--accent);
-  font-weight: 600;
+  background: var(--accent);
+  color: white;
+  border-radius: 50%;
+  width: 34px; height: 34px;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-weight: 500;
+  font-size: 18px;
+  letter-spacing: -0.01em;
+  box-shadow: 0 2px 8px rgba(var(--accent-rgb), 0.35);
 }
 .ag-day-head--today .ag-day-name {
   color: var(--accent);
   font-weight: 600;
-}
-/* Trait coloré sous le nom du jour courant */
-.ag-day-head--today::after {
-  content: '';
-  position: absolute;
-  left: 30%; right: 30%;
-  bottom: 2px;
-  height: 2px;
-  background: var(--accent);
-  border-radius: 2px;
 }
 :deep(.vuecal__cell) {
   background: var(--bg-main) !important; border-color: var(--border) !important;
@@ -783,12 +985,20 @@ watch(() => route.query, (q) => {
   outline: 2px solid var(--accent);
   outline-offset: -2px;
 }
-/* Weekend shading for better visual rhythm */
-:deep(.vuecal__cell--has-splits.vuecal__cell--day-6),
-:deep(.vuecal__cell--has-splits.vuecal__cell--day-7),
-:deep(.vuecal__flex.weekday-label:nth-child(6)),
-:deep(.vuecal__flex.weekday-label:nth-child(7)) {
-  background: var(--bg-elevated) !important;
+/* Weekend : pas de shading (modern calendars don't) — on shade plutôt les off-hours. */
+
+/* Off-hours shading (avant 8h et après 18h) — met en valeur la journée active. */
+:deep(.vuecal--week-view .vuecal__bg),
+:deep(.vuecal--day-view .vuecal__bg) {
+  background: linear-gradient(
+    to bottom,
+    color-mix(in srgb, var(--bg-elevated) 65%, transparent) 0%,
+    color-mix(in srgb, var(--bg-elevated) 65%, transparent) 6.7%,   /* 7h → 8h = 1/15 = 6.7% */
+    transparent 6.7%,
+    transparent 73.3%,                                               /* jusqu'à 18h = 11/15 = 73.3% */
+    color-mix(in srgb, var(--bg-elevated) 65%, transparent) 73.3%,
+    color-mix(in srgb, var(--bg-elevated) 65%, transparent) 100%
+  ) !important;
 }
 
 /* Week numbers — more prominent */
@@ -838,40 +1048,80 @@ watch(() => route.query, (q) => {
 }
 /* Current-time red line */
 :deep(.vuecal__now-line) {
-  color: #ef4444 !important;
-  border-color: #ef4444 !important;
+  color: var(--color-danger) !important;
+  border-color: var(--color-danger) !important;
   border-width: 2px !important;
+  position: relative;
 }
 :deep(.vuecal__now-line::before) {
-  background: #ef4444 !important;
+  background: var(--color-danger) !important;
   width: 10px; height: 10px;
   box-shadow: 0 0 0 3px rgba(239,68,68,0.2);
+}
+/* a11y : label texte pour les daltoniens — le trait rouge seul ne transmet pas l'info */
+:deep(.vuecal__now-line::after) {
+  content: 'Maintenant';
+  position: absolute;
+  left: 6px;
+  top: -0.75em;
+  font-size: 9.5px;
+  font-weight: 700;
+  color: var(--color-danger);
+  background: var(--bg-main);
+  padding: 1px 5px;
+  border-radius: 3px;
+  letter-spacing: 0.3px;
+  pointer-events: none;
 }
 
 /* ══════════════ Events (larger, higher contrast) ══════════════ */
 :deep(.vuecal__event) {
-  border-radius: 6px !important;
-  padding: 4px 8px !important;
+  border-radius: 8px !important;          /* plus doux, style "pill" */
+  padding: 5px 10px !important;           /* un peu plus d'air */
   font-size: 12px !important;
   font-weight: 600 !important;
   cursor: pointer;
   margin: 2px 3px !important;
-  transition: transform 0.12s, box-shadow 0.12s, filter 0.12s;
+  transition: transform 0.14s cubic-bezier(0.4, 0, 0.2, 1),
+              box-shadow 0.14s cubic-bezier(0.4, 0, 0.2, 1),
+              filter 0.14s;
   line-height: 1.35 !important;
-  min-height: 22px;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.08);
-  /* Force higher contrast : darken text on light backgrounds */
+  min-height: 24px;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
   -webkit-font-smoothing: antialiased;
+  position: relative;
+}
+/* Drag affordance : cursor grab/grabbing + style dragging */
+:deep(.vuecal__event.vuecal__event--draggable),
+:deep(.vuecal__event[draggable="true"]) { cursor: grab; }
+:deep(.vuecal__event.vuecal__event--draggable:active),
+:deep(.vuecal__event.vuecal__event--dragging) {
+  cursor: grabbing;
+  opacity: 0.88;
+  transform: scale(1.03) rotate(-0.5deg);
+  box-shadow: 0 12px 28px rgba(0,0,0,0.22),
+              0 0 0 2px color-mix(in srgb, var(--ev-color, var(--accent)) 60%, transparent);
+  z-index: 100;
+}
+:deep(.vuecal__cell.vuecal__cell--drop-target) {
+  background: rgba(var(--accent-rgb), 0.18) !important;
+  outline: 2px dashed var(--accent);
+  outline-offset: -2px;
 }
 :deep(.vuecal__event:hover) {
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.18),
+              0 0 0 1px color-mix(in srgb, var(--ev-color, var(--accent)) 40%, transparent);
   filter: brightness(1.05);
   z-index: 5;
 }
+:deep(.vuecal__event:active) {
+  transform: scale(0.97);
+  transition: transform 80ms ease-out, box-shadow 80ms ease-out;
+}
 :deep(.vuecal__event-title) {
-  font-weight: 700 !important;
-  text-shadow: 0 1px 0 rgba(255,255,255,0.15);
+  font-weight: 600 !important;
+  letter-spacing: -0.005em;
 }
 :deep(.vuecal__event-time) {
   font-size: 10px !important; font-weight: 600 !important;
@@ -964,53 +1214,117 @@ watch(() => route.query, (q) => {
   opacity: 0;
 }
 
-/* Status indicators (more visible) */
+/* Status indicators : dots ronds SVG (sans emoji, pas de font-dépendance) */
 :deep(.ag-event--submitted) { opacity: 0.55; text-decoration: line-through; }
 :deep(.ag-event--submitted::after) {
-  content: '✓'; position: absolute; right: 6px; top: 2px;
-  font-size: 11px; color: #22c55e; font-weight: 800;
-  text-shadow: 0 1px 0 rgba(0,0,0,0.2);
+  content: ''; position: absolute; right: 5px; top: 5px;
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--color-success);
+  box-shadow: 0 0 0 2px var(--bg-main);
 }
-:deep(.ag-event--late) {
-  animation: ag-pulse-late 2s infinite;
-}
+:deep(.ag-event--late) { animation: ag-pulse-late 2.4s infinite; }
 :deep(.ag-event--late::after) {
-  content: '⚠'; position: absolute; right: 6px; top: 2px;
-  font-size: 11px; color: #ef4444; font-weight: 800;
+  content: ''; position: absolute; right: 5px; top: 5px;
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--color-danger);
+  box-shadow: 0 0 0 2px var(--bg-main), 0 0 8px rgba(239,68,68,0.55);
 }
 @keyframes ag-pulse-late {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(239,68,68,0.4); }
-  50% { box-shadow: 0 0 0 4px rgba(239,68,68,0); }
+  0%, 100% { box-shadow: 0 0 0 0 rgba(239,68,68,0.35); }
+  50% { box-shadow: 0 0 0 5px rgba(239,68,68,0); }
 }
 
-/* ── Detail panel ── */
+/* ══════════════ Detail panel — hero design ══════════════ */
 .agenda-detail {
-  position: absolute; right: 0; top: 0; bottom: 0; width: 320px;
-  background: var(--bg-main); border-left: 1px solid var(--border);
-  padding: 20px; display: flex; flex-direction: column; gap: 12px;
-  overflow-y: auto; box-shadow: -4px 0 16px rgba(0,0,0,0.15); z-index: 10;
+  position: absolute; right: 0; top: 0; bottom: 0;
+  width: clamp(300px, 32vw, 380px);
+  background: var(--bg-main);
+  border-left: 1px solid var(--border);
+  display: flex; flex-direction: column;
+  overflow: hidden; /* le body gère son propre scroll */
+  box-shadow: -4px 0 24px rgba(0,0,0,0.18);
+  z-index: 10;
+}
+/* Hero : bande de couleur pleine largeur en haut */
+.agenda-detail-hero {
+  height: 6px;
+  flex-shrink: 0;
+}
+.agenda-detail-body {
+  flex: 1; overflow-y: auto;
+  padding: 20px 24px 16px;
+  display: flex; flex-direction: column; gap: 16px;
 }
 .agenda-detail-head { display: flex; align-items: center; gap: 8px; }
-.agenda-detail-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
-.agenda-detail-type { font-size: 11px; font-weight: 700; color: var(--text-muted); flex: 1; }
+.agenda-detail-type {
+  font-size: 10.5px; font-weight: 700; color: var(--text-muted); flex: 1;
+  text-transform: uppercase; letter-spacing: 0.08em;
+}
 .agenda-detail-close {
-  background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 4px; border-radius: 4px;
+  background: none; border: none; color: var(--text-muted); cursor: pointer;
+  padding: 6px; border-radius: 6px;
+  transition: background-color 0.12s, color 0.12s;
 }
 .agenda-detail-close:hover { background: var(--bg-hover); color: var(--text-primary); }
-.agenda-detail-title { font-size: 18px; font-weight: 700; color: var(--text-primary); margin: 0; line-height: 1.3; }
-.agenda-detail-meta { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-secondary); }
-.agenda-detail-promo-dot { width: 8px; height: 8px; border-radius: 2px; flex-shrink: 0; }
-
-/* Status badge */
-.agenda-detail-status {
-  display: flex; align-items: center; gap: 6px; padding: 6px 10px;
-  border-radius: 6px; font-size: 12px; font-weight: 600;
+.agenda-detail-title {
+  font-size: 22px; font-weight: 600; color: var(--text-primary);
+  margin: -4px 0 0; line-height: 1.25;
+  letter-spacing: -0.015em;
 }
-.status--submitted { background: rgba(34,197,94,0.12); color: #22c55e; }
-.status--late { background: rgba(239,68,68,0.12); color: #ef4444; }
-.status--pending { background: rgba(59,130,246,0.12); color: #3b82f6; }
-.status--upcoming { background: var(--bg-hover); color: var(--text-muted); }
-.agenda-detail-progress { margin-left: auto; font-weight: 500; opacity: 0.8; }
+
+.agenda-detail-meta-list {
+  display: flex; flex-direction: column; gap: 8px;
+  padding: 12px 0;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+.agenda-detail-meta {
+  display: flex; align-items: center; gap: 10px;
+  font-size: 13px; color: var(--text-secondary);
+  line-height: 1.4;
+}
+.agenda-detail-meta svg { color: var(--text-muted); flex-shrink: 0; }
+.agenda-detail-promo-dot {
+  width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0;
+}
+
+/* Status card avec progress bar */
+.agenda-detail-status-card {
+  display: flex; flex-direction: column; gap: 8px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  font-size: 13px; font-weight: 600;
+}
+.agenda-detail-status-head {
+  display: flex; align-items: center; gap: 8px;
+}
+.agenda-detail-status-count {
+  margin-left: auto; font-weight: 500; opacity: 0.85; font-variant-numeric: tabular-nums;
+}
+.agenda-detail-progress-bar {
+  height: 6px; border-radius: 3px;
+  background: rgba(0,0,0,0.1);
+  overflow: hidden;
+}
+.agenda-detail-progress-fill {
+  height: 100%; border-radius: 3px;
+  background: currentColor;
+  transition: width 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.status--submitted { background: color-mix(in srgb, var(--color-success) 14%, transparent); color: var(--color-success); }
+.status--late      { background: color-mix(in srgb, var(--color-danger) 14%, transparent);  color: var(--color-danger); }
+.status--pending   { background: color-mix(in srgb, var(--color-info) 14%, transparent);    color: var(--color-info); }
+.status--upcoming  { background: var(--bg-hover); color: var(--text-muted); }
+
+/* Sticky footer avec CTA plein-width */
+.agenda-detail-footer {
+  flex-shrink: 0;
+  padding: 12px 24px 16px;
+  background: var(--bg-main);
+  border-top: 1px solid var(--border);
+  display: flex; flex-direction: column; gap: 8px;
+}
+.ag-btn--block { width: 100%; justify-content: center; padding: 10px 14px; font-size: 13px; }
 
 /* Form */
 .ag-form { display: flex; flex-direction: column; gap: 12px; }
@@ -1021,44 +1335,248 @@ watch(() => route.query, (q) => {
   background: var(--bg-elevated); color: var(--text-primary); font-size: 13px;
   font-family: var(--font); outline: none; transition: border-color 0.15s;
 }
-.ag-input:focus { border-color: var(--accent); }
+.ag-input:focus,
+.ag-input:focus-visible {
+  border-color: var(--accent);
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
 .ag-textarea { resize: vertical; min-height: 56px; }
-.ag-form-actions { display: flex; gap: 8px; }
 
 /* Buttons */
 .ag-btn {
   display: inline-flex; align-items: center; gap: 5px; padding: 7px 14px;
   border-radius: 6px; border: 1px solid var(--border); font-size: 12px;
-  font-weight: 600; font-family: inherit; cursor: pointer; transition: all 0.12s;
+  font-weight: 600; font-family: inherit; cursor: pointer;
+  transition: background-color 0.12s, color 0.12s, border-color 0.12s, opacity 0.12s;
 }
 .ag-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 .ag-btn--accent { background: var(--accent); color: white; border-color: var(--accent); }
 .ag-btn--accent:hover:not(:disabled) { opacity: 0.9; }
 .ag-btn--ghost { background: transparent; color: var(--text-secondary); border-color: transparent; }
 .ag-btn--ghost:hover:not(:disabled) { background: var(--bg-hover); }
-.ag-btn--danger { background: rgba(239,68,68,0.1); color: #ef4444; border-color: transparent; margin-top: 8px; }
+.ag-btn--danger { background: rgba(239,68,68,0.1); color: var(--color-danger); border-color: transparent; margin-top: 8px; }
 .ag-btn--danger:hover { background: rgba(239,68,68,0.2); }
 .ag-btn--teams {
-  background: #6264a7; color: #fff; border-color: #6264a7; margin-top: 4px;
+  background: var(--brand-teams); color: #fff; border-color: var(--brand-teams); margin-top: 4px;
   text-decoration: none;
 }
-.ag-btn--teams:hover { background: #4e5199; border-color: #4e5199; }
+.ag-btn--teams:hover { background: var(--brand-teams-hover); border-color: var(--brand-teams-hover); }
 .ag-check-label {
   flex-direction: row !important; align-items: center; gap: 6px;
   background: rgba(98, 100, 167, 0.08); padding: 8px 10px; border-radius: 6px;
   color: var(--text-primary); cursor: pointer;
   font-size: 12px !important; font-weight: 500 !important;
 }
-.ag-check-label input { accent-color: #6264a7; }
-.ag-icon-pin, .ag-icon-org { font-size: 12px; }
+.ag-check-label input { accent-color: var(--brand-teams); }
+.ag-check-label--disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background: color-mix(in srgb, var(--bg-hover) 60%, transparent) !important;
+}
+.ag-check-label--disabled input { cursor: not-allowed; }
+.ag-hint {
+  margin-left: auto;
+  font-size: 10.5px;
+  color: var(--text-muted);
+  font-style: italic;
+}
 
 .ag-spin { animation: ag-spin 1s linear infinite; }
 @keyframes ag-spin { to { transform: rotate(360deg); } }
 
+/* ══════════════ Day view hero banner ══════════════ */
+.ag-day-hero {
+  display: flex; align-items: flex-end; justify-content: space-between;
+  gap: 16px; flex-wrap: wrap;
+  padding: 16px 24px 12px;
+  background: linear-gradient(
+    to bottom,
+    color-mix(in srgb, var(--accent) 6%, var(--bg-main)) 0%,
+    var(--bg-main) 100%
+  );
+  border-bottom: 1px solid var(--border);
+}
+.ag-day-hero-main {
+  display: flex; flex-direction: column; gap: 2px;
+  min-width: 0;
+}
+.ag-day-hero-weekday {
+  font-size: 11px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.1em;
+  color: var(--text-muted);
+}
+.ag-day-hero-date {
+  font-size: 24px; font-weight: 500; color: var(--text-primary);
+  margin: 0; line-height: 1.15;
+  letter-spacing: -0.02em;
+  display: flex; align-items: center; gap: 10px;
+  flex-wrap: wrap;
+}
+.ag-day-hero-badge {
+  display: inline-flex; align-items: center;
+  padding: 3px 10px; border-radius: 999px;
+  background: var(--accent); color: white;
+  font-size: 11px; font-weight: 600; letter-spacing: 0.02em;
+  text-transform: none;
+}
+.ag-day-hero-meta {
+  display: flex; align-items: center; gap: 8px;
+  flex-wrap: wrap;
+}
+.ag-day-hero-week {
+  font-size: 11px; font-weight: 600; color: var(--text-muted);
+  padding: 4px 10px; border-radius: 999px;
+  background: var(--bg-elevated); border: 1px solid var(--border);
+  font-variant-numeric: tabular-nums;
+}
+.ag-day-hero-chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 12px; font-weight: 600; color: var(--text-secondary);
+  padding: 4px 10px; border-radius: 999px;
+  background: var(--bg-elevated); border: 1px solid var(--border);
+}
+.ag-day-hero-chip--empty {
+  color: var(--text-muted);
+  font-style: italic;
+  font-weight: 500;
+}
+.ag-chip-dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  display: inline-block;
+}
+
+/* ══════════════ Skeleton loading (premier chargement) ══════════════ */
+.ag-skeleton {
+  position: absolute; inset: 60px 0 0 0;
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  grid-template-rows: repeat(5, 1fr);
+  gap: 8px;
+  padding: 16px;
+  pointer-events: none;
+  z-index: 2;
+}
+.ag-skel-event {
+  height: 22px;
+  background: linear-gradient(90deg, var(--bg-hover) 25%, var(--bg-elevated) 50%, var(--bg-hover) 75%);
+  background-size: 200% 100%;
+  border-radius: 6px;
+  animation: ag-skel-shimmer 1.6s linear infinite;
+  align-self: start;
+}
+@keyframes ag-skel-shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* ══════════════ Empty state ══════════════ */
+.ag-empty-state {
+  position: absolute; inset: 60px 0 0 0;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 12px;
+  padding: 32px;
+  color: var(--text-muted);
+  text-align: center;
+  pointer-events: none;
+  z-index: 1;
+}
+.ag-empty-state > * { pointer-events: auto; }
+.ag-empty-illus {
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+.ag-empty-ev { transform-origin: center; }
+.ag-empty-ev1 { animation: ag-empty-float 4s cubic-bezier(0.4, 0, 0.2, 1) infinite; }
+.ag-empty-ev2 { animation: ag-empty-float 4.8s cubic-bezier(0.4, 0, 0.2, 1) infinite 0.4s; }
+.ag-empty-ev3 { animation: ag-empty-float 5.2s cubic-bezier(0.4, 0, 0.2, 1) infinite 0.8s; }
+@keyframes ag-empty-float {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-3px); }
+}
+.ag-empty-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin: 0;
+}
+.ag-empty-hint {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin: 0;
+  max-width: 360px;
+  line-height: 1.5;
+}
+
+/* ══════════════ Responsive detail panel + toolbar ══════════════ */
+@media (max-width: 900px) {
+  .agenda-toolbar {
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 8px 12px;
+  }
+  .agenda-toolbar-right {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .ag-current-title { font-size: 15px; }
+  .agenda-detail {
+    position: fixed !important;
+    inset: 0 !important;
+    width: 100% !important;
+    z-index: var(--z-modal, 1100);
+    box-shadow: none;
+    border-left: none;
+  }
+}
+@media (min-width: 901px) {
+  .agenda-detail {
+    width: clamp(280px, 30vw, 360px);
+  }
+}
+
+/* ══════════════ Focus rings (a11y) ══════════════ */
+.ag-btn:focus-visible,
+.ag-nav-btn:focus-visible,
+.ag-view-btn:focus-visible,
+.ag-today-btn:focus-visible,
+.agenda-detail-close:focus-visible,
+.ag-filter-check:focus-within {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+:deep(.vuecal__event:focus-visible) {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  filter: brightness(1.1);
+}
+
+/* ══════════════ Reduced motion (a11y) ══════════════
+ * Respecte prefers-reduced-motion : désactive toute animation décorative.
+ * Les transitions courtes de hover/focus sont conservées (< 150 ms = invisible).
+ */
+@media (prefers-reduced-motion: reduce) {
+  .ag-sync-dot--live { animation: none !important; }
+  :deep(.ag-event--late) { animation: none !important; }
+  :deep(.vuecal__event) { transition: none !important; }
+  :deep(.vuecal__event:hover),
+  :deep(.vuecal__event:active) { transform: none !important; }
+  .ag-spin { animation: none !important; }
+  .filter-slide-enter-active,
+  .filter-slide-leave-active,
+  .detail-slide-enter-active,
+  .detail-slide-leave-active { transition: none !important; }
+  .ag-skel-event { animation: none !important; }
+  .ag-empty-ev1, .ag-empty-ev2, .ag-empty-ev3 { animation: none !important; }
+  .agenda-detail-progress-fill { transition: none !important; }
+}
+
 .detail-slide-enter-active, .detail-slide-leave-active { transition: transform 0.2s ease, opacity 0.2s ease; }
 .detail-slide-enter-from, .detail-slide-leave-to { transform: translateX(20px); opacity: 0; }
 
-/* ══════════════ Mobile responsive (Phase 5) ══════════════ */
+/* ══════════════ Mobile responsive ══════════════ */
 @media (max-width: 768px) {
   .agenda-toolbar {
     flex-wrap: wrap; gap: 8px; padding: 8px 12px;

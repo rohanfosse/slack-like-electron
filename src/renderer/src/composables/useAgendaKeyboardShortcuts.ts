@@ -5,6 +5,11 @@
  *  N          - nouveau rappel (teacher)
  *  Left/Right - nav periode precedente/suivante
  *  Escape     - close context menu | close detail | close form
+ *
+ * Robustesse :
+ *  - Ignore les touches pendant la composition IME (évite les faux positifs JA/ZH).
+ *  - Ignore les frappes dans les champs éditables (input/textarea/contenteditable).
+ *  - Cleanup du listener via onBeforeUnmount + garde contre double-registration.
  */
 import { onMounted, onBeforeUnmount } from 'vue'
 import type { Ref } from 'vue'
@@ -23,10 +28,26 @@ export interface AgendaShortcutHandlers {
   closeDetail: () => void
 }
 
+/** Détecte si l'évènement provient d'un champ éditable (ne déclenche pas de raccourci). */
+function isEditableTarget(target: EventTarget | null): boolean {
+  if (!(target instanceof HTMLElement)) return false
+  const tag = target.tagName
+  if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return true
+  if (target.isContentEditable) return true
+  // Ancestor contentEditable (au cas où l'event vient d'un descendant)
+  if (target.closest('[contenteditable="true"], [contenteditable=""]')) return true
+  return false
+}
+
 export function useAgendaKeyboardShortcuts(h: AgendaShortcutHandlers) {
-  function onKeydown(e: KeyboardEvent) {
-    const target = e.target as HTMLElement
-    if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') return
+  let bound = false
+
+  function onKeydown(e: KeyboardEvent): void {
+    // IME composition (Japonais/Chinois/Coréen) : la touche sert à la composition, pas au raccourci.
+    // `isComposing` ET `keyCode === 229` sont tous deux vérifiés pour compat navigateurs.
+    if (e.isComposing || e.keyCode === 229) return
+
+    if (isEditableTarget(e.target)) return
     if (e.ctrlKey || e.metaKey || e.altKey) return
 
     switch (e.key.toLowerCase()) {
@@ -59,6 +80,15 @@ export function useAgendaKeyboardShortcuts(h: AgendaShortcutHandlers) {
     }
   }
 
-  onMounted(() => window.addEventListener('keydown', onKeydown))
-  onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
+  onMounted(() => {
+    if (bound) return
+    window.addEventListener('keydown', onKeydown)
+    bound = true
+  })
+
+  onBeforeUnmount(() => {
+    if (!bound) return
+    window.removeEventListener('keydown', onKeydown)
+    bound = false
+  })
 }

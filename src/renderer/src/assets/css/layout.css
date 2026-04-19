@@ -366,7 +366,7 @@ nav[aria-label="Messages directs"] {
 
 .sidebar-item.active {
   background: rgba(var(--accent-rgb),.18);
-  color: #fff;
+  color: var(--text-primary);
   font-weight: 700;
   border-radius: var(--radius-sm);
 }
@@ -389,14 +389,15 @@ nav[aria-label="Messages directs"] {
   font-weight: 500;
 }
 
+/* .channel-prefix : maintenant une <component> Lucide dans ChannelItem.
+   Les styles spécifiques (color/opacity selon état) sont dans ChannelItem.vue.
+   Ici : réserver la largeur pour aligner les labels. */
 .channel-prefix {
-  color: var(--text-muted);
-  font-size: 14px;
-  font-weight: 400;
   flex-shrink: 0;
-  line-height: 1;
   width: 14px;
-  text-align: center;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .channel-name {
@@ -412,7 +413,7 @@ nav[aria-label="Messages directs"] {
   border-radius: var(--radius);
   font-size: 10px;
   font-weight: 700;
-  color: #fff;
+  color: white;
   display: flex;
   align-items: center;
   justify-content: center;

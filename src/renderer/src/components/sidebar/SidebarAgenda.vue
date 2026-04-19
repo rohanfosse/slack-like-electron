@@ -183,7 +183,7 @@ function copyIcalUrl() {
       <!-- Rappels (toujours vert, pas lie a une promo) -->
       <label class="sb-cal-toggle">
         <input type="checkbox" :checked="showReminders" @change="showReminders = !showReminders" />
-        <span class="sb-cal-dot" style="background: #22c55e" />
+        <span class="sb-cal-dot sb-cal-dot--reminder" />
         <span class="sb-cal-name">Rappels</span>
       </label>
     </div>
@@ -261,6 +261,7 @@ function copyIcalUrl() {
 .sb-cal-toggle:hover { background: var(--bg-hover); }
 .sb-cal-toggle input { width: 12px; height: 12px; cursor: pointer; }
 .sb-cal-dot { width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; }
+.sb-cal-dot--reminder { background: var(--color-success); }
 .sb-cal-toggle input:not(:checked) ~ .sb-cal-dot { opacity: 0.2; }
 .sb-cal-name { font-size: 11px; font-weight: 500; color: var(--text-primary); }
 .sb-cal-toggle input:not(:checked) ~ .sb-cal-name { color: var(--text-muted); text-decoration: line-through; }

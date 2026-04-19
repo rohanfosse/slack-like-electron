@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import {
-  Check, Reply, AlertTriangle, Flame,
+  Check, Reply, AlertTriangle, Flame, Pin, GraduationCap,
 } from 'lucide-vue-next'
 import { useAppStore }      from '@/stores/app'
 import { useMessagesStore } from '@/stores/messages'
@@ -111,17 +111,22 @@ function onTextClick(e: MouseEvent) {
         <div class="msg-meta">
           <span
             class="msg-author"
-            :class="{ clickable: !isOwnMessage, 'msg-author-teacher': msg.author_type === 'teacher' }"
+            :class="{ clickable: !isOwnMessage }"
             :role="isOwnMessage ? undefined : 'button'"
             :tabindex="isOwnMessage ? undefined : 0"
             :title="isOwnMessage ? '' : 'Cliquer pour envoyer un message direct'"
             @click="openDmWithAuthor"
             @keydown.enter="openDmWithAuthor"
           >{{ msg.author_name }}</span>
-          <!-- badge rôle retiré pour plus de sobriété -->
+          <span v-if="msg.author_type === 'teacher'" class="msg-role-badge" title="Enseignant">
+            <GraduationCap :size="9" aria-hidden="true" />
+            Enseignant
+          </span>
           <span class="msg-time" :title="new Date(msg.created_at).toLocaleString('fr-FR', { dateStyle: 'full', timeStyle: 'short' })">{{ formatTime(msg.created_at) }}</span>
           <span v-if="isEdited" class="msg-edited-tag">(modifié)</span>
-          <span v-if="isPinned" class="pin-badge" title="Message épinglé">📌</span>
+          <span v-if="isPinned" class="msg-pin-badge" title="Message épinglé" aria-label="Message épinglé">
+            <Pin :size="10" aria-hidden="true" />
+          </span>
         </div>
       </template>
 
@@ -254,17 +259,27 @@ function onTextClick(e: MouseEvent) {
   width: 10px;
   height: 10px;
   border-radius: 50%;
-  border: 2px solid var(--bg-primary, #1a1a2e);
+  border: 2px solid var(--bg-main);
 }
-.presence-online  { background: #22c55e; }
+.presence-online  { background: var(--color-success); }
 
-/* Fond subtil au survol - effet Discord */
+/* Fond subtil au survol - style Discord/Slack */
+.msg-row {
+  position: relative;
+  transition: background-color .12s ease;
+}
 .msg-row:hover {
   background: rgba(255, 255, 255, 0.025);
   border-radius: 4px;
 }
-.msg-row.editing { background: rgba(74, 144, 217, .04); border-radius: 6px; }
-.msg-row.pinned  { background: rgba(243, 156, 18, .04); }
+.msg-row.editing { background: rgba(var(--accent-rgb), .04); border-radius: 6px; }
+
+/* Message épinglé : bandeau latéral gold au lieu de fond pâle (plus clean) */
+.msg-row.pinned {
+  background: color-mix(in srgb, var(--color-warning) 5%, transparent);
+  box-shadow: inset 2px 0 0 var(--color-warning);
+  padding-left: 4px;
+}
 
 /* ════════════════════════════════════════════
    TYPOGRAPHIE & MÉTA
@@ -277,40 +292,50 @@ function onTextClick(e: MouseEvent) {
   margin-bottom: 1px;
 }
 
-/* Nom de l'auteur - plus impactant */
+/* Nom de l'auteur */
 .msg-author {
   font-weight: 700;
-  font-size: 13.5px;
+  font-size: 13px;
   color: var(--text-primary);
-  letter-spacing: .01em;
+  letter-spacing: .005em;
 }
-/* Nom du prof - couleur accent distincte */
-.msg-author-teacher { color: var(--accent); }
-/* Légère teinte accent sur hover de la row */
-.msg-row:hover .msg-author { color: var(--accent-light, #7db8f0); }
 .msg-author.clickable { cursor: pointer; }
-.msg-author.clickable:hover { text-decoration: underline; color: var(--accent); }
+.msg-author.clickable:hover { color: var(--accent); text-decoration: underline; }
 
-/* Badge rôle Prof */
+/* Badge "Enseignant" : pill subtile, pas de teinte sur le nom lui-meme
+   (evite la confusion nom-teinte/lien clickable). */
 .msg-role-badge {
-  font-size: 9px;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 9.5px;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: .5px;
+  letter-spacing: .04em;
   color: var(--accent);
-  background: var(--accent-subtle, rgba(74,144,217,.14));
-  padding: 1px 6px;
-  border-radius: 4px;
-  line-height: 1.4;
+  background: var(--accent-subtle);
+  padding: 2px 7px;
+  border-radius: 999px;
+  line-height: 1;
+}
+.msg-role-badge svg { opacity: .85; }
+
+/* Pin badge (remplace l'emoji 📌) */
+.msg-pin-badge {
+  display: inline-flex;
+  align-items: center;
+  color: var(--color-warning);
+  opacity: .85;
 }
 
 /* Heure - plus discrète */
 .msg-time {
-  font-size: 10.5px;
+  font-size: 11px;
   color: var(--text-muted);
   font-weight: 400;
+  font-variant-numeric: tabular-nums;
 }
-.msg-edited-tag { font-size: 10px; color: var(--text-muted); font-style: italic; }
+.msg-edited-tag { font-size: 11px; color: var(--text-muted); font-style: italic; }
 
 /* ════════════════════════════════════════════
    CITATION (reply-to)
@@ -322,7 +347,7 @@ function onTextClick(e: MouseEvent) {
   padding: 3px 8px;
   margin-bottom: 4px;
   border-left: 3px solid var(--accent);
-  background: rgba(74, 144, 217, .06);
+  background: rgba(var(--accent-rgb), .06);
   border-radius: 0 4px 4px 0;
   max-width: 100%;
   overflow: hidden;
@@ -330,14 +355,14 @@ function onTextClick(e: MouseEvent) {
 }
 .msg-quote-icon   { color: var(--accent); flex-shrink: 0; }
 .msg-quote-author {
-  font-size: 11.5px;
+  font-size: 11px;
   font-weight: 700;
-  color: var(--accent-light, #7db8f0);
+  color: var(--accent-light);
   white-space: nowrap;
   flex-shrink: 0;
 }
 .msg-quote-preview {
-  font-size: 11.5px;
+  font-size: 11px;
   color: var(--text-muted);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -354,7 +379,7 @@ function onTextClick(e: MouseEvent) {
   margin: 6px 0;
   padding: 6px 12px;
   border-left: 3px solid var(--accent);
-  background: rgba(74, 144, 217, .06);
+  background: rgba(var(--accent-rgb), .06);
   border-radius: 0 6px 6px 0;
   color: var(--text-secondary);
   font-style: italic;
@@ -368,7 +393,7 @@ function onTextClick(e: MouseEvent) {
   border: 1px solid var(--border);
   border-radius: 4px;
   padding: 1px 5px;
-  color: #e8a87c;
+  color: var(--color-warning);
 }
 
 /* Blocs de code highlight.js */
@@ -395,7 +420,7 @@ function onTextClick(e: MouseEvent) {
   margin: 0;
   padding: 10px 14px;
   overflow-x: auto;
-  font-size: 12.5px;
+  font-size: 13px;
   line-height: 1.6;
   font-family: 'JetBrains Mono', 'Fira Code', monospace;
 }
@@ -517,7 +542,7 @@ function onTextClick(e: MouseEvent) {
   background: transparent;
   color: var(--text-secondary);
   font-family: var(--font);
-  font-size: 12.5px;
+  font-size: 13px;
   border-radius: 5px;
   cursor: pointer;
   width: 100%;
@@ -526,7 +551,10 @@ function onTextClick(e: MouseEvent) {
 }
 .msg-menu-item:hover { background: var(--bg-hover); color: var(--text-primary); }
 .msg-menu-danger       { color: var(--color-danger); }
-.msg-menu-danger:hover { background: rgba(231,76,60,.12); color: #ff8070; }
+.msg-menu-danger:hover {
+  background: color-mix(in srgb, var(--color-danger) 12%, transparent);
+  color: var(--color-danger);
+}
 
 /* ════════════════════════════════════════════
    RÉACTIONS - design "juicy"
@@ -569,18 +597,18 @@ function onTextClick(e: MouseEvent) {
   box-shadow: 0 4px 12px rgba(0,0,0,.25);
 }
 
-/* Réaction de l'utilisateur courant - visuel accentué */
+/* Réaction de l'utilisateur courant - visuel accentué (opacités scale cohérent 12/28/45) */
 .msg-reaction-pill.mine {
-  background: rgba(74, 144, 217, .2);
-  border-color: rgba(74, 144, 217, .65);
-  color: var(--accent-light, #7db8f0);
+  background: rgba(var(--accent-rgb), .18);
+  border-color: rgba(var(--accent-rgb), .45);
+  color: var(--accent-light);
   font-weight: 700;
-  box-shadow: 0 0 0 1px rgba(74, 144, 217, .3), 0 2px 8px rgba(74, 144, 217, .15);
+  box-shadow: 0 2px 8px rgba(var(--accent-rgb), .12);
 }
 .msg-reaction-pill.mine:hover {
-  background: rgba(74, 144, 217, .3);
-  border-color: rgba(74, 144, 217, .8);
-  box-shadow: 0 0 0 1px rgba(74, 144, 217, .5), 0 4px 14px rgba(74, 144, 217, .2);
+  background: rgba(var(--accent-rgb), .28);
+  border-color: rgba(var(--accent-rgb), .65);
+  box-shadow: 0 4px 14px rgba(var(--accent-rgb), .18);
 }
 
 .reaction-emoji { font-size: 16px; line-height: 1; }
@@ -601,7 +629,7 @@ function onTextClick(e: MouseEvent) {
   padding: 7px 10px;
   resize: none;
   outline: none;
-  box-shadow: 0 0 0 3px rgba(74,144,217,.15);
+  box-shadow: 0 0 0 3px rgba(var(--accent-rgb),.15);
   line-height: 1.5;
 }
 .msg-edit-input:focus-visible { outline: 2px solid var(--accent); outline-offset: -1px; }
@@ -625,8 +653,8 @@ function onTextClick(e: MouseEvent) {
   gap: 8px;
   margin-top: 6px;
   padding: 7px 12px;
-  background: rgba(231,76,60,.09);
-  border: 1px solid rgba(231,76,60,.22);
+  background: color-mix(in srgb, var(--color-danger) 9%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-danger) 22%, transparent);
   border-radius: 7px;
   max-width: fit-content;
 }
@@ -634,7 +662,7 @@ function onTextClick(e: MouseEvent) {
 .del-icon { color: var(--color-danger); flex-shrink: 0; }
 
 .del-label {
-  font-size: 12.5px;
+  font-size: 13px;
   color: var(--color-danger);
   font-weight: 600;
   white-space: nowrap;
@@ -677,6 +705,34 @@ function onTextClick(e: MouseEvent) {
 }
 .pill-bookmarked:hover { background: rgba(232,137,26,.12) !important; }
 
+/* ══════════════ Motion polish ══════════════ */
+
+/* Entrée : un nouveau message apparait en slide-up doux. On cible les rows
+   qui arrivent via Vue reactivity (clé data-msg-id nouvelle) — effet natif
+   grâce à `@starting-style` non supporté partout, on fallback via CSS keyframe
+   déclenché par animation-name (stable cross-browser). */
+@keyframes msg-enter {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.msg-row {
+  animation: msg-enter .18s cubic-bezier(0.4, 0, 0.2, 1);
+}
+/* Les messages groupés (même auteur) ont une animation plus discrète */
+.msg-row.grouped {
+  animation-duration: .14s;
+}
+
+/* Reduced motion : on respecte la préférence utilisateur. */
+@media (prefers-reduced-motion: reduce) {
+  .msg-row,
+  .msg-row.grouped { animation: none !important; }
+  .msg-action-pill { transition: none !important; }
+  .msg-reaction-pill:hover { transform: none !important; }
+  .pill-btn:hover:not(:disabled) { transform: none !important; }
+  .pill-emoji-btn:hover:not(:disabled) { transform: none !important; }
+}
+
 /* ── Lightbox ── */
 .lightbox-overlay {
   position: fixed; inset: 0; z-index: 9999;
@@ -708,12 +764,12 @@ function onTextClick(e: MouseEvent) {
 /* Report dialog */
 .report-overlay { align-items: center; justify-content: center; }
 .report-dialog {
-  background: var(--bg-primary, #1a1a2e); border-radius: 12px; padding: 24px;
+  background: var(--bg-modal); border-radius: 12px; padding: 24px;
   max-width: 420px; width: 90%; box-shadow: 0 20px 60px rgba(0,0,0,.5);
 }
 .report-title {
   display: flex; align-items: center; gap: 6px;
-  font-size: 15px; font-weight: 600; color: #f87171; margin-bottom: 10px;
+  font-size: 15px; font-weight: 600; color: var(--color-danger); margin-bottom: 10px;
 }
 .report-preview {
   font-size: 12px; color: var(--text-muted); font-style: italic;
@@ -725,10 +781,13 @@ function onTextClick(e: MouseEvent) {
 .report-reason-btn {
   padding: 4px 10px; border-radius: 14px; font-size: 11px;
   background: var(--bg-hover); color: var(--text-secondary);
-  border: 1px solid var(--border); cursor: pointer; transition: all .15s;
+  border: 1px solid var(--border); cursor: pointer;
+  transition: background-color .15s, color .15s, border-color .15s;
 }
 .report-reason-btn.active, .report-reason-btn:hover {
-  background: rgba(248,113,113,.15); color: #f87171; border-color: rgba(248,113,113,.3);
+  background: color-mix(in srgb, var(--color-danger) 15%, transparent);
+  color: var(--color-danger);
+  border-color: color-mix(in srgb, var(--color-danger) 30%, transparent);
 }
 .report-textarea {
   width: 100%; background: var(--bg-hover); border: 1px solid var(--border);
@@ -737,7 +796,7 @@ function onTextClick(e: MouseEvent) {
 }
 .report-actions { display: flex; justify-content: flex-end; gap: 8px; }
 .report-actions .btn-primary {
-  background: #f87171; color: #fff; padding: 6px 16px; border-radius: 6px; font-size: 12px;
+  background: var(--color-danger); color: white; padding: 6px 16px; border-radius: 6px; font-size: 12px;
   border: none; cursor: pointer;
 }
 .report-actions .btn-primary:disabled { opacity: .4; cursor: not-allowed; }

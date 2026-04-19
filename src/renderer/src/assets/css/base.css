@@ -162,6 +162,11 @@ body.theme-transitioning *::after {
   --color-gold:    #E5A842;
   --color-online:  #27AE60;
 
+  /* Brand tokens tiers (services externes) */
+  --brand-teams:   #6264A7;
+  --brand-teams-hover: #4E5199;
+  --brand-outlook: #0EA5E9;
+
   /* Focus ring unifie (accessibilite clavier, v2.52.0).
      Usage : box-shadow: var(--focus-ring); — preferer a outline car
      respecte border-radius. Cf. MASTER.md §6. */

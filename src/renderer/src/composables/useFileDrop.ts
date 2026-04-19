@@ -2,7 +2,7 @@
  * Composable drag & drop de fichiers - fonctionne sur Electron et Web.
  * Utilisable dans n'importe quelle vue pour déposer un document.
  */
-import { ref } from 'vue'
+import { ref, onUnmounted, getCurrentInstance } from 'vue'
 import { useAppStore } from '@/stores/app'
 import { useToast } from '@/composables/useToast'
 import { getAuthToken } from '@/utils/auth'
@@ -12,37 +12,71 @@ export interface DroppedFile {
   path: string  // file.path (Electron) ou URL serveur (Web)
 }
 
-export function useFileDrop() {
+export interface FileDropOptions {
+  /** Taille max en Mo (défaut 50) */
+  maxSizeMb?: number
+}
+
+interface UploadResponse {
+  ok: boolean
+  data?: string
+  error?: string
+}
+
+const DEFAULT_MAX_SIZE_MB = 50
+
+function isUploadResponse(x: unknown): x is UploadResponse {
+  if (!x || typeof x !== 'object') return false
+  const o = x as Record<string, unknown>
+  return typeof o.ok === 'boolean'
+}
+
+export function useFileDrop(options: FileDropOptions = {}) {
   const appStore = useAppStore()
   const { showToast } = useToast()
+
+  const maxSizeBytes = Math.max(1, options.maxSizeMb ?? DEFAULT_MAX_SIZE_MB) * 1024 * 1024
 
   const isDragOver  = ref(false)
   const pendingFile = ref<DroppedFile | null>(null)
   const uploading   = ref(false)
   let dragCounter   = 0
+  let inflightCtrl: AbortController | null = null
 
-  function onDragEnter(e: DragEvent) {
+  function resetDragState(): void {
+    dragCounter = 0
+    isDragOver.value = false
+  }
+
+  function onDragEnter(e: DragEvent): void {
     if (!e.dataTransfer?.types.includes('Files')) return
     dragCounter++
     isDragOver.value = true
   }
 
-  function onDragLeave() {
+  function onDragLeave(): void {
     dragCounter--
     if (dragCounter <= 0) { dragCounter = 0; isDragOver.value = false }
   }
 
-  function onDragOver(e: DragEvent) {
+  function onDragOver(e: DragEvent): void {
     e.preventDefault()
     if (e.dataTransfer) e.dataTransfer.dropEffect = 'copy'
   }
 
-  async function onDrop(e: DragEvent) {
+  async function onDrop(e: DragEvent): Promise<void> {
     e.preventDefault()
-    dragCounter = 0
-    isDragOver.value = false
+    resetDragState()
+
     const file = e.dataTransfer?.files[0]
     if (!file) return
+
+    // Validation taille
+    if (file.size > maxSizeBytes) {
+      const mb = Math.round(maxSizeBytes / (1024 * 1024))
+      showToast(`Fichier trop volumineux (max ${mb} Mo).`, 'error')
+      return
+    }
 
     // Electron : file.path disponible
     const electronPath = (file as unknown as { path?: string }).path
@@ -52,6 +86,11 @@ export function useFileDrop() {
     }
 
     // Web : upload immédiat via FormData
+    // On annule tout upload en cours si un nouveau drop arrive
+    inflightCtrl?.abort()
+    inflightCtrl = new AbortController()
+    const ctrl = inflightCtrl
+
     uploading.value = true
     try {
       const formData = new FormData()
@@ -62,16 +101,25 @@ export function useFileDrop() {
         method: 'POST',
         headers: token ? { Authorization: `Bearer ${token}` } : {},
         body: formData,
+        signal: ctrl.signal,
       })
-      const json = await response.json() as { ok: boolean; data?: string; error?: string }
-      if (json.ok && json.data) {
-        pendingFile.value = { name: file.name, path: `${SERVER_URL}${json.data}` }
-      } else {
-        showToast(json.error ?? 'Erreur lors de l\'upload.', 'error')
+      const raw = await response.json() as unknown
+      if (!isUploadResponse(raw)) {
+        showToast('Réponse serveur invalide.', 'error')
+        return
       }
-    } catch {
+      if (raw.ok && raw.data) {
+        pendingFile.value = { name: file.name, path: `${SERVER_URL}${raw.data}` }
+      } else {
+        showToast(raw.error ?? 'Erreur lors de l\'upload.', 'error')
+      }
+    } catch (err) {
+      // Abort volontaire (drop suivant ou unmount) : silencieux
+      if (err instanceof DOMException && err.name === 'AbortError') return
+      if (err instanceof Error && err.name === 'AbortError') return
       showToast('Erreur lors de l\'upload du fichier.', 'error')
     } finally {
+      if (inflightCtrl === ctrl) inflightCtrl = null
       uploading.value = false
     }
   }
@@ -82,7 +130,7 @@ export function useFileDrop() {
     project?: string | null
     name?: string
     category?: string
-  }) {
+  }): Promise<boolean> {
     if (!pendingFile.value) return false
     uploading.value = true
     try {
@@ -108,8 +156,19 @@ export function useFileDrop() {
     }
   }
 
-  function cancelDrop() {
+  function cancelDrop(): void {
+    inflightCtrl?.abort()
+    inflightCtrl = null
     pendingFile.value = null
+    uploading.value = false
+  }
+
+  // Cleanup : abort les uploads en cours à l'unmount
+  if (getCurrentInstance()) {
+    onUnmounted(() => {
+      inflightCtrl?.abort()
+      inflightCtrl = null
+    })
   }
 
   return {
