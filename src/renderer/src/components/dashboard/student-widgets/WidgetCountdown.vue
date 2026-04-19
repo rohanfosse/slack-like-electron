@@ -1,9 +1,7 @@
-/**
- * WidgetCountdown.vue - Compte à rebours vers la prochaine échéance.
- */
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { Hourglass } from 'lucide-vue-next'
+import UiWidgetCard from '@/components/ui/UiWidgetCard.vue'
 
 export interface NextDeadline {
   title: string
@@ -43,46 +41,49 @@ const remaining = computed(() => {
 const colorClass = computed(() => {
   if (!remaining.value) return ''
   const ms = remaining.value.total
-  if (ms > 7 * 86_400_000) return 'cd--green'
-  if (ms > 86_400_000) return 'cd--orange'
-  return 'cd--red'
+  if (ms > 7 * 86_400_000) return 'wcd--ok'
+  if (ms > 86_400_000) return 'wcd--warn'
+  return 'wcd--danger'
 })
 </script>
 
 <template>
-  <div class="dashboard-card sa-card sa-countdown" aria-label="Compte a rebours">
-    <div class="sa-card-header">
-      <Hourglass :size="14" class="sa-card-icon sa-icon--countdown" />
-      <span class="sa-section-label">Prochaine échéance</span>
-    </div>
+  <UiWidgetCard
+    :icon="Hourglass"
+    label="Prochaine échéance"
+    icon-color="var(--color-countdown)"
+    aria-label="Compte à rebours"
+    class="wcd-card"
+  >
     <template v-if="nextDeadline && remaining">
-      <div class="sa-cd-value" :class="colorClass">
+      <div class="wcd-value" :class="colorClass">
         {{ remaining.days }}j {{ remaining.hours }}h {{ remaining.minutes }}m
       </div>
-      <p class="sa-cd-title">{{ nextDeadline.title }}</p>
+      <p class="wcd-title">{{ nextDeadline.title }}</p>
     </template>
-    <p v-else class="sa-empty">Aucune échéance à venir</p>
-  </div>
+    <p v-else class="wcd-empty">Aucune échéance à venir</p>
+  </UiWidgetCard>
 </template>
 
 <style scoped>
-.sa-countdown { border-left: 3px solid var(--color-countdown, #6366f1); }
-.sa-icon--countdown { color: var(--color-countdown, #6366f1); }
-
-.sa-cd-value {
-  font-family: 'JetBrains Mono', 'SF Mono', 'Cascadia Code', monospace;
-  font-size: 22px;
-  font-weight: 800;
-  letter-spacing: -0.5px;
-  margin-bottom: 4px;
+.wcd-card {
+  border-left: 3px solid var(--color-countdown);
 }
 
-.cd--green  { color: #22c55e; }
-.cd--orange { color: #f59e0b; }
-.cd--red    { color: #ef4444; }
+.wcd-value {
+  font-family: var(--font-mono);
+  font-size: var(--text-xl);
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  margin-bottom: var(--space-xs);
+}
 
-.sa-cd-title {
-  font-size: 12px;
+.wcd--ok     { color: var(--color-success); }
+.wcd--warn   { color: var(--color-warning); }
+.wcd--danger { color: var(--color-danger); }
+
+.wcd-title {
+  font-size: var(--text-sm);
   color: var(--text-muted);
   margin: 0;
   white-space: nowrap;
@@ -90,5 +91,10 @@ const colorClass = computed(() => {
   text-overflow: ellipsis;
 }
 
-/* .sa-empty in devoirs-shared.css */
+.wcd-empty {
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+  margin: 0;
+  opacity: .6;
+}
 </style>

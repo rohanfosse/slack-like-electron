@@ -1,13 +1,10 @@
 <script setup lang="ts">
-/**
- * WidgetLumenCourses.vue — Liste les cours (repos) disponibles pour l'etudiant.
- * Affiche les 3 repos les plus recemment synchronises avec lien vers /lumen.
- */
 import { computed, onMounted } from 'vue'
 import { BookOpen, ChevronRight } from 'lucide-vue-next'
 import { useRouter } from 'vue-router'
 import { useLumenStore } from '@/stores/lumen'
 import { useAppStore } from '@/stores/app'
+import UiWidgetCard from '@/components/ui/UiWidgetCard.vue'
 
 const router = useRouter()
 const lumenStore = useLumenStore()
@@ -35,16 +32,12 @@ function openLumen() {
 </script>
 
 <template>
-  <div class="wlc-card">
-    <header class="wlc-head">
-      <div class="wlc-title">
-        <BookOpen :size="14" />
-        <span>Cours Lumen</span>
-      </div>
+  <UiWidgetCard :icon="BookOpen" label="Cours Lumen">
+    <template #header-extra>
       <button type="button" class="wlc-more" @click="openLumen">
         Ouvrir <ChevronRight :size="12" />
       </button>
-    </header>
+    </template>
 
     <div v-if="recentRepos.length === 0" class="wlc-empty">
       Aucun cours disponible.
@@ -59,86 +52,80 @@ function openLumen() {
         </button>
       </li>
     </ul>
-  </div>
+  </UiWidgetCard>
 </template>
 
 <style scoped>
-.wlc-card {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  padding: 14px;
-  background: var(--bg-secondary);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  height: 100%;
-}
-.wlc-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-.wlc-title {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 12px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--text-muted);
-}
 .wlc-more {
   background: none;
   border: none;
   color: var(--accent);
-  font-size: 11px;
+  font-size: var(--text-xs);
   cursor: pointer;
   display: flex;
   align-items: center;
   gap: 2px;
+  padding: 2px var(--space-xs);
+  border-radius: var(--radius-xs);
+  font-family: inherit;
 }
+.wlc-more:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
 .wlc-empty {
-  font-size: 12px;
+  font-size: var(--text-sm);
   color: var(--text-muted);
-  padding: 12px 0;
+  padding: var(--space-md) 0;
   text-align: center;
 }
+
 .wlc-list {
   list-style: none;
   margin: 0;
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--space-xs);
 }
+
 .wlc-item {
   display: flex;
   flex-direction: column;
   gap: 2px;
   width: 100%;
   text-align: left;
-  padding: 8px 10px;
-  background: var(--bg-primary);
+  padding: var(--space-sm) var(--space-sm);
+  background: var(--bg-input);
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
-  transition: all var(--t-fast) ease;
+  font-family: inherit;
+  transition:
+    background var(--motion-fast) var(--ease-out),
+    border-color var(--motion-fast) var(--ease-out);
 }
 .wlc-item:hover {
   background: var(--bg-hover);
   border-color: var(--accent);
 }
+.wlc-item:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
 .wlc-item-title {
-  font-size: 13px;
+  font-size: var(--text-sm);
   font-weight: 600;
   color: var(--text-primary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
 .wlc-item-meta {
-  font-size: 11px;
+  font-size: var(--text-xs);
   color: var(--text-muted);
 }
 </style>

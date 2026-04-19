@@ -1,10 +1,8 @@
-/**
- * WidgetGrades.vue - Liste compacte des dernières notes.
- */
 <script setup lang="ts">
 import { Award } from 'lucide-vue-next'
 import { gradeBadgeClass } from '@/utils/grade'
 import EmptyState from '@/components/ui/EmptyState.vue'
+import UiWidgetCard from '@/components/ui/UiWidgetCard.vue'
 
 export interface GradeEntry {
   title: string
@@ -16,56 +14,56 @@ defineProps<{ grades: GradeEntry[] }>()
 </script>
 
 <template>
-  <div class="dashboard-card sa-card sa-grades">
-    <div class="sa-card-header">
-      <Award :size="14" class="sa-card-icon sa-icon--grades" />
-      <span class="sa-section-label">Mes notes</span>
-    </div>
-    <div v-if="grades.length" class="sa-grades-list">
-      <div v-for="(g, i) in grades.slice(0, 4)" :key="i" class="sa-grade-item">
-        <span class="sa-grade-badge" :class="gradeBadgeClass(g.note)">{{ g.note }}</span>
-        <span class="sa-grade-title">{{ g.title }}</span>
+  <UiWidgetCard
+    :icon="Award"
+    label="Mes notes"
+    icon-color="var(--color-grade-warm)"
+    class="wg-card"
+  >
+    <div v-if="grades.length" class="wg-list">
+      <div v-for="(g, i) in grades.slice(0, 4)" :key="i" class="wg-item">
+        <span class="wg-badge" :class="gradeBadgeClass(g.note)">{{ g.note }}</span>
+        <span class="wg-title">{{ g.title }}</span>
       </div>
     </div>
     <EmptyState v-else title="Aucune note pour l'instant" compact />
-  </div>
+  </UiWidgetCard>
 </template>
 
 <style scoped>
-.sa-grades { border-left: 3px solid var(--color-grade, #f59e0b); }
-.sa-icon--grades { color: var(--color-grade, #f59e0b); }
+.wg-card {
+  border-left: 3px solid var(--color-grade-warm);
+}
 
-.sa-grades-list { display: flex; flex-direction: column; gap: 6px; }
+.wg-list { display: flex; flex-direction: column; gap: var(--space-xs); }
 
-.sa-grade-item {
+.wg-item {
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-size: 13px;
+  gap: var(--space-sm);
+  font-size: var(--text-sm);
   color: var(--text-secondary);
 }
 
-.sa-grade-badge {
-  font-family: 'JetBrains Mono', 'SF Mono', 'Cascadia Code', monospace;
-  font-size: 11px;
+.wg-badge {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
   font-weight: 700;
   min-width: 28px;
   text-align: center;
-  padding: 2px 6px;
-  border-radius: 4px;
+  padding: 2px var(--space-xs);
+  border-radius: var(--radius-xs);
   flex-shrink: 0;
 }
 
-.grade--green  { background: rgba(74, 222, 128, .15); color: #22c55e; }
-.grade--blue   { background: rgba(59, 130, 246, .15); color: #3b82f6; }
-.grade--orange { background: rgba(245, 158, 11, .15); color: #f59e0b; }
-.grade--red    { background: rgba(239, 68, 68, .15);  color: #ef4444; }
+.grade--green  { background: rgba(var(--color-success-rgb), .15); color: var(--color-success); }
+.grade--blue   { background: rgba(var(--accent-rgb), .15);        color: var(--accent); }
+.grade--orange { background: rgba(var(--color-warning-rgb), .15); color: var(--color-warning); }
+.grade--red    { background: rgba(var(--color-danger-rgb), .15);  color: var(--color-danger); }
 
-.sa-grade-title {
+.wg-title {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
-
-/* .sa-empty in devoirs-shared.css */
 </style>

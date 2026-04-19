@@ -1,19 +1,11 @@
 <script setup lang="ts">
-/**
- * WidgetLumenProgress.vue — "Continuer la lecture".
- *
- * v2.48 : le tracking "X/Y chapitres lus" est supprime (accuse de lecture
- * retire). Ce widget affiche maintenant le dernier chapitre ouvert dans
- * Lumen avec un gros bouton qui y retourne directement. Zero friction pour
- * reprendre son cours. Si pas d'historique, affiche juste un lien vers le
- * module Lumen.
- */
 import { computed, onMounted, ref } from 'vue'
-import { BookOpen, ChevronRight, Play } from 'lucide-vue-next'
+import { BookOpen, Play } from 'lucide-vue-next'
 import { useRouter } from 'vue-router'
 import { useLumenStore } from '@/stores/lumen'
 import { useAppStore } from '@/stores/app'
 import { useLumenLastChapter } from '@/composables/useLumenLastChapter'
+import UiWidgetCard from '@/components/ui/UiWidgetCard.vue'
 
 const router = useRouter()
 const lumenStore = useLumenStore()
@@ -30,7 +22,6 @@ onMounted(async () => {
   loading.value = false
 })
 
-/** Dernier chapitre lu (depuis localStorage) enrichi avec titres du manifest. */
 const resumeInfo = computed(() => {
   const pid = appStore.activePromoId
   if (!pid) return null
@@ -59,18 +50,8 @@ function openLumen() {
 </script>
 
 <template>
-  <div class="wlp-card">
-    <header class="wlp-head">
-      <div class="wlp-title">
-        <BookOpen :size="14" />
-        <span>Continuer la lecture</span>
-      </div>
-      <button type="button" class="wlp-more" title="Ouvrir Lumen" @click="openLumen">
-        <ChevronRight :size="12" />
-      </button>
-    </header>
-
-    <div v-if="loading" class="wlp-body wlp-loading">
+  <UiWidgetCard :icon="BookOpen" label="Continuer la lecture">
+    <div v-if="loading" class="wlp-loading">
       <span>Chargement...</span>
     </div>
 
@@ -84,98 +65,71 @@ function openLumen() {
       </span>
     </button>
 
-    <div v-else class="wlp-body wlp-empty">
-      <p>Aucun cours ouvert recemment.</p>
+    <div v-else class="wlp-empty">
+      <p>Aucun cours ouvert récemment.</p>
       <button type="button" class="wlp-open-btn" @click="openLumen">
         Ouvrir Lumen
       </button>
     </div>
-  </div>
+  </UiWidgetCard>
 </template>
 
 <style scoped>
-.wlp-card {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  padding: 14px;
-  background: var(--bg-secondary);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  height: 100%;
-}
-.wlp-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-.wlp-title {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 12px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--text-muted);
-}
-.wlp-more {
-  background: none;
-  border: none;
-  color: var(--accent);
-  cursor: pointer;
-  padding: 2px;
-}
-
-.wlp-body {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  flex: 1;
-}
 .wlp-loading {
-  color: var(--text-muted);
-  font-size: 12px;
+  display: flex;
+  align-items: center;
   justify-content: center;
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+  padding: var(--space-md) 0;
 }
 
 .wlp-resume {
   display: flex;
   align-items: center;
-  gap: 12px;
-  flex: 1;
-  padding: 10px 12px;
-  background: var(--bg-primary);
+  gap: var(--space-md);
+  width: 100%;
+  padding: var(--space-sm) var(--space-md);
+  background: var(--bg-input);
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
   font-family: inherit;
   text-align: left;
-  transition: all var(--t-fast, 150ms) ease;
+  transition:
+    background var(--motion-fast) var(--ease-out),
+    border-color var(--motion-fast) var(--ease-out);
 }
 .wlp-resume:hover {
   border-color: var(--accent);
   background: var(--bg-hover);
 }
+.wlp-resume:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
 .wlp-resume-icon {
   display: flex;
   align-items: center;
   justify-content: center;
   width: 32px;
   height: 32px;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   background: var(--accent);
-  color: white;
+  color: #fff;
   flex-shrink: 0;
 }
+
 .wlp-resume-text {
   display: flex;
   flex-direction: column;
   gap: 2px;
   min-width: 0;
 }
+
 .wlp-resume-repo {
-  font-size: 10px;
+  font-size: var(--text-2xs);
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -184,8 +138,9 @@ function openLumen() {
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
 .wlp-resume-chapter {
-  font-size: 13px;
+  font-size: var(--text-sm);
   font-weight: 600;
   color: var(--text-primary);
   white-space: nowrap;
@@ -194,23 +149,32 @@ function openLumen() {
 }
 
 .wlp-empty {
+  display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--space-sm);
+  align-items: center;
   justify-content: center;
-  font-size: 12px;
+  font-size: var(--text-sm);
   color: var(--text-muted);
+  padding: var(--space-md) 0;
 }
 .wlp-empty p { margin: 0; }
+
 .wlp-open-btn {
-  padding: 6px 14px;
+  padding: 6px var(--space-md);
   background: var(--accent);
-  color: white;
+  color: #fff;
   border: none;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
   font-family: inherit;
-  font-size: 12px;
+  font-size: var(--text-sm);
   font-weight: 500;
+  transition: opacity var(--motion-fast) var(--ease-out);
 }
 .wlp-open-btn:hover { opacity: 0.9; }
+.wlp-open-btn:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
 </style>

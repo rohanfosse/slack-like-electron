@@ -1,14 +1,11 @@
-/**
- * WidgetNotationPending.vue — Devoirs avec le plus de rendus en attente
- * de note. Aide le prof a prioriser sa charge de correction.
- */
 <script setup lang="ts">
 import { computed, onMounted } from 'vue'
-import { Edit3, ChevronRight, AlertCircle } from 'lucide-vue-next'
+import { Edit3, ChevronRight } from 'lucide-vue-next'
 import { useRouter } from 'vue-router'
 import { useTravauxStore } from '@/stores/travaux'
 import { useAppStore } from '@/stores/app'
 import { useModalsStore } from '@/stores/modals'
+import UiWidgetCard from '@/components/ui/UiWidgetCard.vue'
 
 const router = useRouter()
 const travauxStore = useTravauxStore()
@@ -30,7 +27,6 @@ interface Pending {
   totalCount: number
 }
 
-// Groupe les rendus par devoir : soumis mais note null
 const topPending = computed<Pending[]>(() => {
   const byTravail = new Map<number, { title: string; waiting: number; total: number }>()
   for (const d of travauxStore.allRendus) {
@@ -59,22 +55,18 @@ function goToDevoirs() { router.push('/assignments') }
 </script>
 
 <template>
-  <div
+  <UiWidgetCard
     v-if="topPending.length > 0"
-    class="dashboard-card sa-card wnp-card"
-    role="button"
-    tabindex="0"
+    :icon="Edit3"
+    label="À noter"
+    interactive
     aria-label="Voir les rendus en attente de note"
     @click="goToDevoirs"
-    @keydown.enter="goToDevoirs"
-    @keydown.space.prevent="goToDevoirs"
   >
-    <div class="sa-card-header">
-      <Edit3 :size="14" class="sa-card-icon" />
-      <span class="sa-section-label">A noter</span>
+    <template #header-extra>
       <span class="wnp-total">{{ totalWaiting }}</span>
-      <ChevronRight :size="13" class="sa-chevron" />
-    </div>
+      <ChevronRight :size="13" class="wnp-chevron" />
+    </template>
 
     <ul class="wnp-list">
       <li
@@ -85,6 +77,7 @@ function goToDevoirs() { router.push('/assignments') }
         role="button"
         @click.stop="openDevoir(p.travailId)"
         @keydown.enter.stop="openDevoir(p.travailId)"
+        @keydown.space.prevent.stop="openDevoir(p.travailId)"
       >
         <span class="wnp-title">{{ p.title }}</span>
         <span class="wnp-ratio">
@@ -92,52 +85,49 @@ function goToDevoirs() { router.push('/assignments') }
         </span>
       </li>
     </ul>
-  </div>
+  </UiWidgetCard>
 </template>
 
 <style scoped>
-.wnp-card { cursor: pointer; }
-
 .wnp-total {
-  font-size: 10px;
+  font-size: var(--text-2xs);
   font-weight: 800;
-  padding: 2px 8px;
+  padding: 2px var(--space-sm);
   border-radius: var(--radius-xl);
-  background: var(--color-danger, #d9534f);
-  color: white;
-  margin-left: auto;
-  margin-right: 4px;
+  background: var(--color-danger);
+  color: #fff;
   font-variant-numeric: tabular-nums;
 }
+.wnp-chevron { color: var(--text-muted); }
 
 .wnp-list {
   list-style: none;
-  margin: 6px 0 0;
+  margin: 0;
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--space-xs);
 }
 .wnp-item {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: var(--space-sm);
   padding: 6px 9px;
   background: var(--bg-input);
   border-radius: 3px;
-  border-left: 2px solid var(--color-danger, #d9534f);
+  border-left: 2px solid var(--color-danger);
   cursor: pointer;
-  transition: all var(--motion-fast) var(--ease-out);
+  transition: background var(--motion-fast) var(--ease-out);
 }
 .wnp-item:hover { background: var(--bg-hover); }
 .wnp-item:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 1px;
+  outline: none;
+  box-shadow: var(--focus-ring);
 }
 
 .wnp-title {
   flex: 1;
-  font-size: 12px;
+  font-size: var(--text-sm);
   color: var(--text-primary);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -145,12 +135,12 @@ function goToDevoirs() { router.push('/assignments') }
   font-weight: 600;
 }
 .wnp-ratio {
-  font-size: 11px;
+  font-size: var(--text-xs);
   color: var(--text-secondary);
   font-variant-numeric: tabular-nums;
 }
 .wnp-ratio strong {
-  color: var(--color-danger, #d9534f);
+  color: var(--color-danger);
   font-weight: 800;
 }
 </style>

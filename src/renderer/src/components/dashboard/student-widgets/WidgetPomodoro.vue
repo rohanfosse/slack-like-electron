@@ -1,9 +1,7 @@
-/**
- * WidgetPomodoro.vue - Minuteur Pomodoro simple.
- */
 <script setup lang="ts">
 import { ref, computed, onUnmounted } from 'vue'
 import { Timer, Play, Pause, RotateCcw } from 'lucide-vue-next'
+import UiWidgetCard from '@/components/ui/UiWidgetCard.vue'
 
 type PomodoroState = 'idle' | 'work' | 'break'
 
@@ -77,11 +75,8 @@ function stopTimer() {
 }
 
 function toggleTimer() {
-  if (running.value) {
-    stopTimer()
-  } else {
-    startTimer()
-  }
+  if (running.value) stopTimer()
+  else startTimer()
 }
 
 function resetTimer() {
@@ -96,85 +91,86 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="dashboard-card sa-card sa-pomodoro" :class="`sa-pomodoro--${state}`">
-    <div class="sa-card-header">
-      <Timer :size="14" class="sa-card-icon" />
-      <span class="sa-section-label">Pomodoro</span>
-      <span class="sa-pomo-state">{{ stateLabel }}</span>
-    </div>
-    <div class="sa-pomo-body">
-      <span class="sa-pomo-time sa-mono">{{ display }}</span>
-      <div class="sa-pomo-actions">
-        <button class="sa-pomo-btn" :title="running ? 'Pause' : 'Démarrer'" @click="toggleTimer">
+  <UiWidgetCard
+    :icon="Timer"
+    label="Pomodoro"
+    :tone="state === 'work' ? 'accent' : state === 'break' ? 'success' : 'none'"
+    aria-label="Minuteur Pomodoro"
+  >
+    <template #header-extra>
+      <span class="wp-state">{{ stateLabel }}</span>
+    </template>
+
+    <div class="wp-body">
+      <span class="wp-time" :class="`wp-time--${state}`">{{ display }}</span>
+      <div class="wp-actions">
+        <button class="wp-btn" :aria-label="running ? 'Pause' : 'Démarrer'" @click="toggleTimer">
           <Pause v-if="running" :size="14" />
           <Play v-else :size="14" />
         </button>
-        <button class="sa-pomo-btn sa-pomo-btn--reset" title="Réinitialiser" @click="resetTimer">
+        <button class="wp-btn wp-btn--reset" aria-label="Réinitialiser" @click="resetTimer">
           <RotateCcw :size="14" />
         </button>
       </div>
     </div>
-  </div>
+  </UiWidgetCard>
 </template>
 
 <style scoped>
-.sa-mono { font-family: 'JetBrains Mono', 'SF Mono', 'Cascadia Code', monospace; }
-
-.sa-pomo-state {
-  margin-left: auto;
-  font-size: 10px;
+.wp-state {
+  font-size: var(--text-2xs);
   font-weight: 700;
   text-transform: uppercase;
   color: var(--text-muted);
 }
 
-.sa-pomodoro--work { border-left: 3px solid var(--accent); }
-.sa-pomodoro--work .sa-pomo-state { color: var(--accent); }
-.sa-pomodoro--work .sa-pomo-time { color: var(--accent); }
-
-.sa-pomodoro--break { border-left: 3px solid var(--color-success, #27ae60); }
-.sa-pomodoro--break .sa-pomo-state { color: var(--color-success, #27ae60); }
-.sa-pomodoro--break .sa-pomo-time { color: var(--color-success, #27ae60); }
-
-.sa-pomo-body {
+.wp-body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-sm);
   padding: 4px 0 2px;
 }
 
-.sa-pomo-time {
-  font-size: 32px;
+.wp-time {
+  font-family: var(--font-mono);
+  font-size: var(--text-2xl);
   font-weight: 700;
   color: var(--text-primary);
   letter-spacing: 2px;
+  transition: color var(--motion-fast) var(--ease-out);
 }
+.wp-time--work  { color: var(--accent); }
+.wp-time--break { color: var(--color-success); }
 
-.sa-pomo-actions {
+.wp-actions {
   display: flex;
-  gap: 8px;
+  gap: var(--space-sm);
 }
 
-.sa-pomo-btn {
+.wp-btn {
   display: flex;
   align-items: center;
   justify-content: center;
   width: 32px;
   height: 32px;
   border: none;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   background: var(--accent);
   color: #fff;
   cursor: pointer;
   font-family: inherit;
-  transition: opacity .15s;
+  transition: opacity var(--motion-fast) var(--ease-out);
 }
-.sa-pomo-btn:hover { opacity: .85; }
+.wp-btn:hover { opacity: .85; }
+.wp-btn:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
 
-.sa-pomo-btn--reset {
-  background: var(--bg-secondary, #f0f0f0);
+.wp-btn--reset {
+  background: var(--bg-input);
   color: var(--text-muted);
 }
-.sa-pomo-btn--reset:hover { color: var(--text-primary); }
+.wp-btn--reset:hover { color: var(--text-primary); opacity: 1; }
 </style>

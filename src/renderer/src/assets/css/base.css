@@ -135,6 +135,7 @@ body.theme-transitioning *::after {
   /* Typographie */
   --font:      'Inter Variable', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   --font-base: 'Inter Variable', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono', 'SF Mono', 'Cascadia Code', ui-monospace, monospace;
   --font-size-base: 14px;
 
   /* Densité d'affichage (espacement entre messages) */
@@ -214,6 +215,12 @@ body.theme-transitioning *::after {
   --color-grade-c: #F39C12;
   --color-grade-d: #E74C3C;
   --color-grade-na: #95A5A6;
+
+  /* Widgets — accents semantiques (extraits des fallbacks hardcodes) */
+  --color-bookmark:   #8B5CF6;
+  --color-grade-warm: var(--color-grade-c);
+  --color-countdown:  #6366F1;
+  --color-group:      #14B8A6;
 
   /* Dimensions de layout */
   --rail-width:    72px;

@@ -1,11 +1,7 @@
-/**
- * WidgetStickyNote.vue — Bloc-notes jaune perso du prof. Contenu
- * stocke en localStorage (jamais envoye au backend, jamais partage).
- * Debounce 1s pour eviter les ecritures excessives.
- */
 <script setup lang="ts">
-import { ref, watch, onMounted } from 'vue'
+import { ref, watch, onMounted, onUnmounted } from 'vue'
 import { StickyNote } from 'lucide-vue-next'
+import UiWidgetCard from '@/components/ui/UiWidgetCard.vue'
 
 const STORAGE_KEY = 'teacher_sticky_note'
 const MAX_CHARS = 2000
@@ -21,7 +17,6 @@ onMounted(() => {
   initialized.value = true
 })
 
-// Debounce 1s pour ne pas thrash localStorage
 let persistTimer: ReturnType<typeof setTimeout> | null = null
 watch(content, (newVal) => {
   if (!initialized.value) return
@@ -32,23 +27,23 @@ watch(content, (newVal) => {
     } catch { /* quota full */ }
   }, 1000)
 })
+
+onUnmounted(() => {
+  if (persistTimer) clearTimeout(persistTimer)
+})
 </script>
 
 <template>
-  <div class="dashboard-card sa-card wsn-card">
-    <div class="sa-card-header">
-      <StickyNote :size="14" class="sa-card-icon" />
-      <span class="sa-section-label">Bloc-notes</span>
-    </div>
+  <UiWidgetCard :icon="StickyNote" label="Bloc-notes" class="wsn-card">
     <textarea
       v-model="content"
       class="wsn-textarea"
       :maxlength="MAX_CHARS"
-      placeholder="Note perso rapide… (sauvegarde auto, prive)"
+      placeholder="Note perso rapide… (sauvegarde auto, privé)"
       aria-label="Bloc-notes personnel"
       rows="6"
     />
-  </div>
+  </UiWidgetCard>
 </template>
 
 <style scoped>
@@ -62,23 +57,20 @@ watch(content, (newVal) => {
   border: none;
   outline: none;
   color: var(--text-primary);
-  font-family: 'Caveat', 'Comic Sans MS', cursive, sans-serif;
-  font-size: 15px;
+  font-family: var(--font);
+  font-size: var(--text-sm);
   line-height: 1.5;
   resize: none;
-  margin-top: 8px;
-  padding: 4px;
+  padding: var(--space-xs);
   box-sizing: border-box;
   min-height: 110px;
 }
 .wsn-textarea::placeholder {
   color: var(--text-muted);
   font-style: italic;
-  font-family: inherit;
 }
 .wsn-textarea:focus {
-  outline: none;
   background: rgba(255, 232, 141, 0.05);
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
 }
 </style>

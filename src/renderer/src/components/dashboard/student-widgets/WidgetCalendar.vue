@@ -1,9 +1,7 @@
-/**
- * WidgetCalendar.vue - Mini calendrier mensuel avec points de deadline.
- */
 <script setup lang="ts">
 import { computed } from 'vue'
 import { CalendarDays } from 'lucide-vue-next'
+import UiWidgetCard from '@/components/ui/UiWidgetCard.vue'
 
 const props = defineProps<{
   deadlines: { date: string; title: string }[]
@@ -26,7 +24,6 @@ interface CalendarCell { day: number; inMonth: boolean; hasDeadline: boolean; is
 
 const cells = computed<CalendarCell[]>(() => {
   const first = new Date(year, month, 1)
-  // Monday-based: 0=Mon … 6=Sun
   const startDay = (first.getDay() + 6) % 7
   const daysInMonth = new Date(year, month + 1, 0).getDate()
 
@@ -41,7 +38,6 @@ const cells = computed<CalendarCell[]>(() => {
 
   const result: CalendarCell[] = []
 
-  // Leading blanks
   for (let i = 0; i < startDay; i++) {
     result.push({ day: 0, inMonth: false, hasDeadline: false, isToday: false })
   }
@@ -60,48 +56,50 @@ const cells = computed<CalendarCell[]>(() => {
 </script>
 
 <template>
-  <div class="dashboard-card sa-card sa-calendar" aria-label="Calendrier des echeances">
-    <div class="sa-card-header">
-      <CalendarDays :size="14" class="sa-card-icon" />
-      <span class="sa-section-label">Calendrier</span>
-      <span class="sa-cal-month">{{ headerLabel }}</span>
-    </div>
-    <div class="sa-cal-grid">
-      <span v-for="d in DAYS_SHORT" :key="d" class="sa-cal-head">{{ d }}</span>
+  <UiWidgetCard
+    :icon="CalendarDays"
+    label="Calendrier"
+    aria-label="Calendrier des échéances"
+  >
+    <template #header-extra>
+      <span class="wcal-month">{{ headerLabel }}</span>
+    </template>
+
+    <div class="wcal-grid">
+      <span v-for="d in DAYS_SHORT" :key="d" class="wcal-head">{{ d }}</span>
       <span
         v-for="(cell, i) in cells"
         :key="i"
-        class="sa-cal-cell"
+        class="wcal-cell"
         :class="{
-          'sa-cal-today': cell.isToday,
-          'sa-cal-blank': !cell.inMonth,
+          'wcal-today': cell.isToday,
+          'wcal-blank': !cell.inMonth,
         }"
         :title="cell.hasDeadline ? 'Échéance ce jour' : undefined"
       >
         <template v-if="cell.inMonth">{{ cell.day }}</template>
-        <span v-if="cell.hasDeadline" class="sa-cal-dot" />
+        <span v-if="cell.hasDeadline" class="wcal-dot" />
       </span>
     </div>
-  </div>
+  </UiWidgetCard>
 </template>
 
 <style scoped>
-.sa-cal-month {
-  margin-left: auto;
-  font-size: 11px;
+.wcal-month {
+  font-size: var(--text-xs);
   color: var(--text-muted);
   font-weight: 600;
 }
 
-.sa-cal-grid {
+.wcal-grid {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
   gap: 1px;
   text-align: center;
-  font-size: 10px;
+  font-size: var(--text-2xs);
 }
 
-.sa-cal-head {
+.wcal-head {
   font-size: 9px;
   font-weight: 700;
   color: var(--text-muted);
@@ -109,33 +107,33 @@ const cells = computed<CalendarCell[]>(() => {
   text-transform: uppercase;
 }
 
-.sa-cal-cell {
+.wcal-cell {
   position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   height: 22px;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   color: var(--text-primary);
   font-weight: 500;
 }
 
-.sa-cal-blank { visibility: hidden; }
+.wcal-blank { visibility: hidden; }
 
-.sa-cal-today {
+.wcal-today {
   background: var(--accent);
   color: #fff;
   font-weight: 700;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
 }
 
-.sa-cal-dot {
+.wcal-dot {
   position: absolute;
   bottom: 1px;
   width: 4px;
   height: 4px;
-  border-radius: 50%;
-  background: var(--color-danger, #e74c3c);
+  border-radius: var(--radius-full);
+  background: var(--color-danger);
 }
 </style>

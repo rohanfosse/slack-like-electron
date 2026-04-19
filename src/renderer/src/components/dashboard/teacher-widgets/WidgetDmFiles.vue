@@ -1,10 +1,8 @@
-/**
- * WidgetDmFiles.vue - Derniers fichiers reçus en DM par les étudiants.
- */
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { FileBox, Download, ChevronRight } from 'lucide-vue-next'
+import { FileBox, ChevronRight } from 'lucide-vue-next'
 import { useRouter } from 'vue-router'
+import UiWidgetCard from '@/components/ui/UiWidgetCard.vue'
 
 interface DmFile {
   message_id: number
@@ -39,46 +37,77 @@ function goToFiles() { router.push('/files') }
 </script>
 
 <template>
-  <div class="sa-card-header">
-    <FileBox :size="14" class="sa-card-icon" />
-    <span class="sa-section-label">Fichiers DM</span>
-    <button class="sa-chevron-btn" title="Voir tout" @click="goToFiles">
-      <ChevronRight :size="13" />
-    </button>
-  </div>
-  <div v-if="files.length" class="wdf-list">
-    <div v-for="f in files" :key="f.message_id" class="wdf-item">
-      <span class="wdf-name">{{ f.file_name || 'Fichier' }}</span>
-      <span class="wdf-student">{{ f.student_name }}</span>
-      <span class="wdf-date">{{ relativeDate(f.created_at) }}</span>
+  <UiWidgetCard :icon="FileBox" label="Fichiers DM">
+    <template #header-extra>
+      <button type="button" class="wdf-chevron" aria-label="Voir tout" @click="goToFiles">
+        <ChevronRight :size="13" />
+      </button>
+    </template>
+
+    <div v-if="files.length" class="wdf-list">
+      <div v-for="f in files" :key="f.message_id" class="wdf-item">
+        <span class="wdf-name">{{ f.file_name || 'Fichier' }}</span>
+        <span class="wdf-student">{{ f.student_name }}</span>
+        <span class="wdf-date">{{ relativeDate(f.created_at) }}</span>
+      </div>
     </div>
-  </div>
-  <p v-else class="wdf-empty">Aucun fichier recu</p>
+    <p v-else class="wdf-empty">Aucun fichier reçu</p>
+  </UiWidgetCard>
 </template>
 
 <style scoped>
-.sa-chevron-btn {
-  margin-left: auto; background: none; border: none;
-  color: var(--text-muted); cursor: pointer; display: flex;
-  align-items: center; padding: 2px; border-radius: 4px;
+.wdf-chevron {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  padding: 2px;
+  border-radius: var(--radius-xs);
+  transition:
+    color var(--motion-fast) var(--ease-out),
+    background var(--motion-fast) var(--ease-out);
 }
-.sa-chevron-btn:hover { color: var(--text-primary); background: var(--bg-hover); }
+.wdf-chevron:hover { color: var(--text-primary); background: var(--bg-hover); }
+.wdf-chevron:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
 
-.wdf-list { display: flex; flex-direction: column; gap: 4px; }
+.wdf-list { display: flex; flex-direction: column; gap: var(--space-xs); }
 .wdf-item {
-  display: flex; align-items: center; gap: 8px;
-  font-size: 12px; padding: 4px 0;
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  font-size: var(--text-sm);
+  padding: var(--space-xs) 0;
   border-bottom: 1px solid var(--border);
 }
 .wdf-item:last-child { border-bottom: none; }
 .wdf-name {
-  flex: 1; font-weight: 600; color: var(--text-primary);
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  flex: 1;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
-.wdf-student { color: var(--text-muted); font-size: 11px; flex-shrink: 0; }
+.wdf-student {
+  color: var(--text-muted);
+  font-size: var(--text-xs);
+  flex-shrink: 0;
+}
 .wdf-date {
-  font-family: 'JetBrains Mono', monospace; font-size: 11px;
-  color: var(--text-muted); flex-shrink: 0;
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  flex-shrink: 0;
 }
-.wdf-empty { font-size: 12px; color: var(--text-muted); margin: 0; opacity: .7; }
+.wdf-empty {
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+  margin: 0;
+  opacity: .6;
+}
 </style>

@@ -1,37 +1,47 @@
-/**
- * WidgetLivrables.vue - Liste des prochains livrables à rendre.
- */
 <script setup lang="ts">
 import { FileText } from 'lucide-vue-next'
 import { deadlineLabel, deadlineClass } from '@/utils/date'
+import UiWidgetCard from '@/components/ui/UiWidgetCard.vue'
 
 export interface LivrableAction {
   id: number; title: string; deadline?: string; category?: string | null
 }
 
-const props = defineProps<{ livrables: LivrableAction[] }>()
+defineProps<{ livrables: LivrableAction[] }>()
 const emit = defineEmits<{ goToProject: [key: string] }>()
 </script>
 
 <template>
-  <div class="dashboard-card sa-card sa-next sa-next--livrable">
-    <div class="sa-card-header">
-      <FileText :size="14" class="sa-card-icon sa-icon--livrable" />
-      <span class="sa-section-label">{{ livrables.length > 1 ? 'Prochains livrables' : 'Livrables' }}</span>
-    </div>
+  <UiWidgetCard
+    :icon="FileText"
+    :label="livrables.length > 1 ? 'Prochains livrables' : 'Livrables'"
+    tone="accent"
+  >
     <div v-if="livrables.length" class="sa-next-list">
-      <div v-for="l in livrables" :key="l.id" class="sa-next-item" role="button" tabindex="0" :aria-label="'Voir le livrable ' + l.title" @click="emit('goToProject', l.category ?? '')" @keydown.enter="emit('goToProject', l.category ?? '')" @keydown.space.prevent="emit('goToProject', l.category ?? '')">
+      <div
+        v-for="l in livrables"
+        :key="l.id"
+        class="sa-next-item"
+        role="button"
+        tabindex="0"
+        :aria-label="'Voir le livrable ' + l.title"
+        @click="emit('goToProject', l.category ?? '')"
+        @keydown.enter="emit('goToProject', l.category ?? '')"
+        @keydown.space.prevent="emit('goToProject', l.category ?? '')"
+      >
         <span class="sa-next-title">{{ l.title }}</span>
         <span v-if="l.deadline" class="deadline-badge" :class="deadlineClass(l.deadline)">{{ deadlineLabel(l.deadline) }}</span>
       </div>
     </div>
-    <p v-else class="sa-empty">Aucun livrable à venir</p>
-  </div>
+    <p v-else class="wl-empty">Aucun livrable à venir</p>
+  </UiWidgetCard>
 </template>
 
 <style scoped>
-/* Base .sa-card, .sa-card-header, .sa-section-label, .sa-next-* styles in devoirs-shared.css */
-.sa-next--livrable { border-left: 3px solid var(--accent); }
-.sa-icon--livrable { color: var(--accent); }
-/* .sa-empty in devoirs-shared.css */
+.wl-empty {
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+  margin: 0;
+  opacity: .6;
+}
 </style>

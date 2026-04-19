@@ -1,12 +1,9 @@
 <script setup lang="ts">
-/**
- * WidgetLumenNotes.vue — Dernieres notes prises par l'etudiant sur des chapitres Lumen.
- * Affiche les 3 dernieres notes (titre chapitre extrait du manifest).
- */
 import { ref, onMounted, computed } from 'vue'
 import { NotebookPen, ChevronRight } from 'lucide-vue-next'
 import { useRouter } from 'vue-router'
 import { relativeTime } from '@/utils/date'
+import UiWidgetCard from '@/components/ui/UiWidgetCard.vue'
 
 interface NoteRow {
   owner: string
@@ -53,16 +50,12 @@ function openLumen() {
 </script>
 
 <template>
-  <div class="wln-card">
-    <header class="wln-head">
-      <div class="wln-title">
-        <NotebookPen :size="14" />
-        <span>Mes notes</span>
-      </div>
+  <UiWidgetCard :icon="NotebookPen" label="Mes notes">
+    <template #header-extra>
       <button type="button" class="wln-more" @click="openLumen">
         Ouvrir <ChevronRight :size="12" />
       </button>
-    </header>
+    </template>
 
     <div v-if="loading" class="wln-empty">Chargement...</div>
     <div v-else-if="recent.length === 0" class="wln-empty">
@@ -79,96 +72,90 @@ function openLumen() {
         </button>
       </li>
     </ul>
-  </div>
+  </UiWidgetCard>
 </template>
 
 <style scoped>
-.wln-card {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  padding: 14px;
-  background: var(--bg-secondary);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  height: 100%;
-}
-.wln-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-.wln-title {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 12px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--text-muted);
-}
 .wln-more {
   background: none;
   border: none;
   color: var(--accent);
-  font-size: 11px;
+  font-size: var(--text-xs);
   cursor: pointer;
   display: flex;
   align-items: center;
   gap: 2px;
+  padding: 2px var(--space-xs);
+  border-radius: var(--radius-xs);
+  font-family: inherit;
 }
+.wln-more:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
 .wln-empty {
-  font-size: 12px;
+  font-size: var(--text-sm);
   color: var(--text-muted);
-  padding: 12px 0;
+  padding: var(--space-md) 0;
   text-align: center;
 }
+
 .wln-list {
   list-style: none;
   margin: 0;
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: var(--space-xs);
   overflow-y: auto;
 }
+
 .wln-item {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--space-xs);
   width: 100%;
   text-align: left;
-  padding: 8px 10px;
-  background: var(--bg-primary);
+  padding: var(--space-sm) var(--space-sm);
+  background: var(--bg-input);
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
-  transition: background var(--t-fast) ease;
+  font-family: inherit;
+  transition: background var(--motion-fast) var(--ease-out);
 }
 .wln-item:hover { background: var(--bg-hover); }
+.wln-item:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
 .wln-item-head {
   display: flex;
   justify-content: space-between;
   align-items: baseline;
-  gap: 8px;
+  gap: var(--space-sm);
 }
+
 .wln-item-title {
-  font-size: 12.5px;
+  font-size: var(--text-sm);
   font-weight: 600;
   color: var(--text-primary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
 .wln-item-time {
-  font-size: 10px;
+  font-size: var(--text-2xs);
   color: var(--text-muted);
   flex-shrink: 0;
 }
+
 .wln-item-preview {
   margin: 0;
-  font-size: 11.5px;
+  font-size: var(--text-xs);
   color: var(--text-secondary);
   line-height: 1.4;
   display: -webkit-box;

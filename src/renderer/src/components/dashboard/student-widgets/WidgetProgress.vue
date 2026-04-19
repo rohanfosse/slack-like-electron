@@ -1,9 +1,7 @@
-/**
- * WidgetProgress.vue - Anneau de progression global.
- */
 <script setup lang="ts">
 import { computed } from 'vue'
 import { TrendingUp } from 'lucide-vue-next'
+import UiWidgetCard from '@/components/ui/UiWidgetCard.vue'
 
 const props = defineProps<{
   submitted: number
@@ -24,20 +22,18 @@ const remaining = computed(() => Math.max(0, props.total - props.submitted))
 </script>
 
 <template>
-  <div class="dashboard-card sa-card sa-progress" :aria-label="`Progression : ${pct}% soumis, ${gradedPct}% notes`">
-    <div class="sa-card-header">
-      <TrendingUp :size="14" class="sa-card-icon" />
-      <span class="sa-section-label">Progression</span>
-    </div>
-    <div class="sa-progress-body">
-      <div class="sa-progress-ring">
+  <UiWidgetCard
+    :icon="TrendingUp"
+    label="Progression"
+    :aria-label="`Progression : ${pct}% soumis, ${gradedPct}% notés`"
+  >
+    <div class="wpg-body">
+      <div class="wpg-ring">
         <svg width="88" height="88" viewBox="0 0 88 88">
-          <!-- Background circle -->
           <circle
             cx="44" cy="44" :r="RADIUS"
-            fill="none" stroke="var(--border-color, #e0e0e0)" stroke-width="7"
+            fill="none" stroke="var(--border)" stroke-width="7"
           />
-          <!-- Submitted arc -->
           <circle
             cx="44" cy="44" :r="RADIUS"
             fill="none" stroke="var(--accent)" stroke-width="7"
@@ -45,59 +41,57 @@ const remaining = computed(() => Math.max(0, props.total - props.submitted))
             :stroke-dasharray="CIRCUMFERENCE"
             :stroke-dashoffset="submittedOffset"
             transform="rotate(-90 44 44)"
-            class="sa-ring-arc"
+            class="wpg-arc"
           />
-          <!-- Graded arc (overlaid, shorter) -->
           <circle
             cx="44" cy="44" :r="RADIUS"
-            fill="none" stroke="var(--color-success, #27ae60)" stroke-width="7"
+            fill="none" stroke="var(--color-success)" stroke-width="7"
             stroke-linecap="round"
             :stroke-dasharray="CIRCUMFERENCE"
             :stroke-dashoffset="gradedOffset"
             transform="rotate(-90 44 44)"
-            class="sa-ring-arc"
+            class="wpg-arc"
           />
         </svg>
-        <span class="sa-progress-pct sa-mono">{{ pct }}%</span>
+        <span class="wpg-pct">{{ pct }}%</span>
       </div>
-      <span class="sa-progress-detail">
+      <span class="wpg-detail">
         {{ submitted }} soumis · {{ graded }} notés · {{ remaining }} restants
       </span>
     </div>
-  </div>
+  </UiWidgetCard>
 </template>
 
 <style scoped>
-.sa-mono { font-family: 'JetBrains Mono', 'SF Mono', 'Cascadia Code', monospace; }
-
-.sa-progress-body {
+.wpg-body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-sm);
   padding: 4px 0 2px;
 }
 
-.sa-progress-ring {
+.wpg-ring {
   position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-.sa-ring-arc {
-  transition: stroke-dashoffset .6s cubic-bezier(0.4, 0, 0.2, 1);
+.wpg-arc {
+  transition: stroke-dashoffset .6s var(--ease-in-out);
 }
 
-.sa-progress-pct {
+.wpg-pct {
   position: absolute;
-  font-size: 18px;
+  font-family: var(--font-mono);
+  font-size: var(--text-lg);
   font-weight: 700;
   color: var(--text-primary);
 }
 
-.sa-progress-detail {
-  font-size: 11px;
+.wpg-detail {
+  font-size: var(--text-xs);
   color: var(--text-muted);
   text-align: center;
 }

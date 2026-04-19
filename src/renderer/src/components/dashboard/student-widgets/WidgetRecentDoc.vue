@@ -1,6 +1,3 @@
-/**
- * WidgetRecentDoc.vue - Affiche le document le plus récent de la promo.
- */
 <script setup lang="ts">
 import { computed, onMounted } from 'vue'
 import { FileText, Link2, Image, ChevronRight } from 'lucide-vue-next'
@@ -8,6 +5,7 @@ import { useRouter } from 'vue-router'
 import { useAppStore } from '@/stores/app'
 import { useDocumentsStore } from '@/stores/documents'
 import { relativeTime } from '@/utils/date'
+import UiWidgetCard from '@/components/ui/UiWidgetCard.vue'
 
 const router = useRouter()
 const appStore = useAppStore()
@@ -35,7 +33,6 @@ const typeIcon = computed(() => {
   if (!recentDoc.value) return FileText
   const t = recentDoc.value.type
   if (t === 'link') return Link2
-  // Check file extension for images
   const name = recentDoc.value.name?.toLowerCase() ?? ''
   if (/\.(png|jpe?g|gif|svg|webp)$/i.test(name)) return Image
   return FileText
@@ -51,52 +48,45 @@ function navigateToDocuments() {
 </script>
 
 <template>
-  <div
+  <UiWidgetCard
     v-if="recentDoc"
-    class="dashboard-card sa-card sa-recent-doc"
-    role="button"
-    tabindex="0"
+    :icon="typeIcon"
+    label="Document récent"
+    interactive
     aria-label="Voir les documents"
     @click="navigateToDocuments"
-    @keydown.enter="navigateToDocuments" @keydown.space.prevent="navigateToDocuments"
   >
-    <div class="sa-card-header">
-      <component :is="typeIcon" :size="14" class="sa-card-icon" />
-      <span class="sa-section-label">Document récent</span>
-      <ChevronRight :size="13" class="sa-chevron" />
+    <template #header-extra>
+      <ChevronRight :size="13" class="wrd-chevron" />
+    </template>
+    <div class="wrd-row">
+      <span class="wrd-pill">{{ recentDoc.type === 'link' ? 'Lien' : (recentDoc.name?.split('.').pop()?.toUpperCase() ?? 'Fichier') }}</span>
+      <span class="wrd-name">{{ recentDoc.name }}</span>
+      <span class="wrd-date">{{ relativeDate }}</span>
     </div>
-    <div class="sa-doc-row">
-      <span class="sa-doc-type-pill">{{ recentDoc.type === 'link' ? 'Lien' : (recentDoc.name?.split('.').pop()?.toUpperCase() ?? 'Fichier') }}</span>
-      <span class="sa-doc-name">{{ recentDoc.name }}</span>
-      <span class="sa-doc-date sa-mono">{{ relativeDate }}</span>
-    </div>
-  </div>
+  </UiWidgetCard>
 
-  <div v-else class="dashboard-card sa-card sa-recent-doc sa-recent-doc--empty">
-    <div class="sa-card-header">
-      <FileText :size="14" class="sa-card-icon" />
-      <span class="sa-section-label">Document récent</span>
-    </div>
-    <p class="sa-doc-empty">Aucun document partagé</p>
-  </div>
+  <UiWidgetCard
+    v-else
+    :icon="FileText"
+    label="Document récent"
+  >
+    <p class="wrd-empty">Aucun document partagé</p>
+  </UiWidgetCard>
 </template>
 
 <style scoped>
-/* Base card: .dashboard-card from dashboard-shared.css + .sa-card from devoirs-shared.css */
-.sa-mono { font-family: 'JetBrains Mono', 'SF Mono', 'Cascadia Code', monospace; font-size: 12px; }
+.wrd-chevron { color: var(--text-muted); }
 
-.sa-recent-doc { cursor: pointer; }
-.sa-recent-doc--empty { cursor: default; }
-
-.sa-doc-row {
+.wrd-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
+  gap: var(--space-sm);
 }
 
-.sa-doc-name {
-  font-size: 13px;
+.wrd-name {
+  font-size: var(--text-sm);
   font-weight: 600;
   color: var(--text-primary);
   white-space: nowrap;
@@ -105,26 +95,28 @@ function navigateToDocuments() {
   flex: 1;
 }
 
-.sa-doc-type-pill {
+.wrd-pill {
   font-size: 9px;
   font-weight: 700;
   padding: 1px 5px;
-  border-radius: 4px;
-  background: rgba(74, 144, 217, .12);
+  border-radius: var(--radius-xs);
+  background: rgba(var(--accent-rgb), .12);
   color: var(--accent);
   text-transform: uppercase;
   flex-shrink: 0;
 }
 
-.sa-doc-date {
+.wrd-date {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
   color: var(--text-muted);
   flex-shrink: 0;
 }
 
-.sa-doc-empty {
-  font-size: 12.5px;
+.wrd-empty {
+  font-size: var(--text-sm);
   color: var(--text-muted);
   margin: 0;
-  opacity: .7;
+  opacity: .6;
 }
 </style>

@@ -1,12 +1,10 @@
-/**
- * WidgetProject.vue - Carte du projet actif avec progression MicroRing.
- */
 <script setup lang="ts">
 import { FolderOpen, ChevronRight, Clock } from 'lucide-vue-next'
 import { deadlineLabel } from '@/utils/date'
 import type { StudentProjectCard } from '@/composables/useDashboardStudent'
 import MicroRing from '@/components/ui/MicroRing.vue'
 import CountdownArc from '@/components/ui/CountdownArc.vue'
+import UiWidgetCard from '@/components/ui/UiWidgetCard.vue'
 
 const props = defineProps<{
   project: StudentProjectCard | null
@@ -18,46 +16,70 @@ const emit = defineEmits<{
 </script>
 
 <template>
-  <div v-if="project" class="dashboard-card sa-card sa-project" role="button" tabindex="0" aria-label="Voir le projet en cours" @click="emit('goToProject', project.key)" @keydown.enter="emit('goToProject', project.key)">
-    <div class="sa-card-header">
-      <component :is="project.icon" v-if="project.icon" :size="14" class="sa-card-icon" />
-      <FolderOpen v-else :size="14" class="sa-card-icon" />
-      <span class="sa-section-label">Projet en cours</span>
-      <ChevronRight :size="13" class="sa-chevron" />
-    </div>
-    <h3 class="sa-project-name">{{ project.label }}</h3>
-    <div class="sa-project-meta">
+  <UiWidgetCard
+    v-if="project"
+    :icon="project.icon ?? FolderOpen"
+    label="Projet en cours"
+    interactive
+    aria-label="Voir le projet en cours"
+    @click="emit('goToProject', project.key)"
+  >
+    <template #header-extra>
+      <ChevronRight :size="13" class="wp-chevron" />
+    </template>
+
+    <h3 class="wp-name">{{ project.label }}</h3>
+    <div class="wp-meta">
       <MicroRing :value="project.submitted" :total="project.total" :size="22" />
-      <span class="sa-mono">{{ project.submitted }}/{{ project.total }} rendus</span>
-      <span v-if="project.overdue" class="sa-badge sa-badge--danger">{{ project.overdue }} en retard</span>
+      <span class="wp-mono">{{ project.submitted }}/{{ project.total }} rendus</span>
+      <span v-if="project.overdue" class="wp-badge wp-badge--danger">{{ project.overdue }} en retard</span>
     </div>
-    <div v-if="project.nextDeadline" class="sa-project-deadline">
+    <div v-if="project.nextDeadline" class="wp-deadline">
       <CountdownArc :deadline="project.nextDeadline" :size="20" />
       <Clock :size="12" />
-      <span>Prochaine échéance : <strong class="sa-mono">{{ deadlineLabel(project.nextDeadline) }}</strong></span>
+      <span>Prochaine échéance : <strong class="wp-mono">{{ deadlineLabel(project.nextDeadline) }}</strong></span>
     </div>
-  </div>
+  </UiWidgetCard>
 </template>
 
 <style scoped>
-/* Base card: .dashboard-card from dashboard-shared.css + .sa-card from devoirs-shared.css */
-.sa-mono { font-family: 'JetBrains Mono', 'SF Mono', 'Cascadia Code', monospace; font-size: 12px; }
-.sa-project { cursor: pointer; }
-.sa-project-name {
-  font-size: 16px; font-weight: 800; color: var(--text-primary);
-  margin-bottom: 8px; line-height: 1.2;
+.wp-mono {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
 }
-.sa-project-meta {
-  display: flex; align-items: center; gap: 10px;
-  margin-bottom: 8px; font-size: 13px; color: var(--text-secondary);
+.wp-chevron { color: var(--text-muted); }
+
+.wp-name {
+  font-size: var(--text-base);
+  font-weight: 800;
+  color: var(--text-primary);
+  margin-bottom: var(--space-sm);
+  line-height: 1.2;
 }
-.sa-project-deadline {
-  display: flex; align-items: center; gap: 5px;
-  font-size: 12px; color: var(--text-muted);
+.wp-meta {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-sm);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
 }
-.sa-badge {
-  font-family: 'JetBrains Mono', 'SF Mono', monospace;
-  font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 4px;
+.wp-deadline {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: var(--text-sm);
+  color: var(--text-muted);
 }
-.sa-badge--danger { background: rgba(231,76,60,.12); color: var(--color-danger); }
+.wp-badge {
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  font-weight: 700;
+  padding: 2px var(--space-xs);
+  border-radius: var(--radius-xs);
+}
+.wp-badge--danger {
+  background: rgba(var(--color-danger-rgb), .12);
+  color: var(--color-danger);
+}
 </style>

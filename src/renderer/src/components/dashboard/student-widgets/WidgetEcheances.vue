@@ -1,11 +1,8 @@
 <script setup lang="ts">
-/**
- * Widget unifie Echeances (v2.97) — fusionne les 3 anciens widgets
- * CCTLs, Livrables et Soutenances dans un seul bloc avec onglets.
- */
 import { ref, computed } from 'vue'
 import { Award, FileText, Mic, ListChecks } from 'lucide-vue-next'
 import { relativeTime } from '@/utils/date'
+import UiWidgetCard from '@/components/ui/UiWidgetCard.vue'
 
 interface Action {
   id: number
@@ -30,7 +27,7 @@ const activeTab = ref<Tab>('exams')
 const tabs = computed(() => [
   { id: 'exams' as Tab,       label: 'CCTLs',       icon: Award,    count: props.exams.length },
   { id: 'livrables' as Tab,   label: 'Livrables',   icon: FileText, count: props.livrables.length },
-  { id: 'soutenances' as Tab, label: 'Soutenances',  icon: Mic,      count: props.soutenances.length },
+  { id: 'soutenances' as Tab, label: 'Soutenances', icon: Mic,      count: props.soutenances.length },
 ])
 
 const activeItems = computed<Action[]>(() => {
@@ -49,12 +46,14 @@ function handleClick(action: Action) {
 </script>
 
 <template>
-  <div class="we">
-    <header class="we-head">
-      <ListChecks :size="14" />
-      <span class="we-title">Echeances</span>
-      <span v-if="totalCount > 0" class="we-count">{{ totalCount }}</span>
-    </header>
+  <UiWidgetCard
+    :icon="ListChecks"
+    label="Échéances"
+    aria-label="Échéances à venir"
+  >
+    <template v-if="totalCount > 0" #header-extra>
+      <span class="we-count">{{ totalCount }}</span>
+    </template>
 
     <nav class="we-tabs">
       <button
@@ -72,7 +71,7 @@ function handleClick(action: Action) {
     </nav>
 
     <div v-if="activeItems.length === 0" class="we-empty">
-      Aucune echeance a venir
+      Aucune échéance à venir
     </div>
     <ul v-else class="we-list">
       <li
@@ -84,6 +83,7 @@ function handleClick(action: Action) {
         tabindex="0"
         @click="handleClick(item)"
         @keydown.enter="handleClick(item)"
+        @keydown.space.prevent="handleClick(item)"
       >
         <span class="we-item-title">{{ item.title }}</span>
         <span v-if="item.deadline" class="we-item-deadline" :class="{ overdue: item.isOverdue }">
@@ -91,99 +91,90 @@ function handleClick(action: Action) {
         </span>
       </li>
     </ul>
-  </div>
+  </UiWidgetCard>
 </template>
 
 <style scoped>
-.we {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-}
-.we-head {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 12px 14px 8px;
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--text-primary);
-}
 .we-count {
-  margin-left: auto;
-  font-size: 11px;
+  font-size: var(--text-xs);
   font-weight: 600;
   color: var(--accent);
-  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  background: rgba(var(--accent-rgb), .12);
   padding: 1px 6px;
-  border-radius: 10px;
-}
-@supports not (color: color-mix(in srgb, white, black)) {
-  .we-count { background: var(--bg-hover); }
+  border-radius: var(--radius);
 }
 
 .we-tabs {
   display: flex;
   gap: 2px;
-  padding: 0 12px;
   border-bottom: 1px solid var(--border);
 }
 .we-tab {
   display: flex;
   align-items: center;
-  gap: 4px;
-  padding: 6px 10px;
-  font-size: 11px;
+  gap: var(--space-xs);
+  padding: 6px var(--space-sm);
+  font-size: var(--text-xs);
   font-weight: 600;
   color: var(--text-muted);
   background: none;
   border: none;
   border-bottom: 2px solid transparent;
   cursor: pointer;
-  transition: color 0.15s, border-color 0.15s;
+  transition: color var(--motion-fast) var(--ease-out), border-color var(--motion-fast) var(--ease-out);
 }
 .we-tab:hover { color: var(--text-secondary); }
 .we-tab.active {
   color: var(--accent);
   border-bottom-color: var(--accent);
 }
+.we-tab:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
 .we-tab-count {
-  font-size: 10px;
+  font-size: var(--text-2xs);
   background: var(--bg-hover);
-  padding: 0 4px;
+  padding: 0 var(--space-xs);
   border-radius: 8px;
 }
 
 .we-empty {
-  flex: 1;
   display: flex;
   align-items: center;
   justify-content: center;
   color: var(--text-muted);
-  font-size: 12px;
-  padding: 16px;
+  font-size: var(--text-sm);
+  padding: var(--space-lg);
 }
 
 .we-list {
   list-style: none;
   margin: 0;
-  padding: 8px 12px;
+  padding: var(--space-sm) 0 0;
   flex: 1;
   overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
 .we-item {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
-  padding: 8px 10px;
-  border-radius: 6px;
+  gap: var(--space-sm);
+  padding: var(--space-sm) var(--space-sm);
+  border-radius: var(--radius-sm);
   cursor: pointer;
-  transition: background 0.15s;
+  transition: background var(--motion-fast) var(--ease-out);
 }
 .we-item:hover { background: var(--bg-hover); }
+.we-item:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
 .we-item-title {
-  font-size: 13px;
+  font-size: var(--text-sm);
   color: var(--text-primary);
   flex: 1;
   overflow: hidden;
@@ -192,21 +183,15 @@ function handleClick(action: Action) {
 }
 .we-item-deadline {
   flex-shrink: 0;
-  font-size: 11px;
+  font-size: var(--text-xs);
   font-weight: 600;
-  padding: 2px 8px;
-  border-radius: 10px;
-  background: color-mix(in srgb, var(--accent) 10%, transparent);
+  padding: 2px var(--space-sm);
+  border-radius: var(--radius);
+  background: rgba(var(--accent-rgb), .1);
   color: var(--accent);
 }
-@supports not (color: color-mix(in srgb, white, black)) {
-  .we-item-deadline { background: var(--bg-hover); }
-}
 .we-item-deadline.overdue {
-  background: color-mix(in srgb, var(--danger) 10%, transparent);
-  color: var(--danger);
-}
-@supports not (color: color-mix(in srgb, white, black)) {
-  .we-item-deadline.overdue { background: var(--bg-hover); }
+  background: rgba(var(--color-danger-rgb), .1);
+  color: var(--color-danger);
 }
 </style>

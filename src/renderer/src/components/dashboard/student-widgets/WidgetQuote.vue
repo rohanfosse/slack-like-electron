@@ -1,9 +1,7 @@
-/**
- * WidgetQuote.vue - Citation inspirante du jour.
- */
 <script setup lang="ts">
 import { computed } from 'vue'
 import { Quote } from 'lucide-vue-next'
+import UiWidgetCard from '@/components/ui/UiWidgetCard.vue'
 
 const QUOTES = [
   { text: "L'éducation est l'arme la plus puissante pour changer le monde.", author: 'Nelson Mandela' },
@@ -32,36 +30,32 @@ const todayQuote = computed(() => {
 </script>
 
 <template>
-  <div class="dashboard-card sa-card sa-quote">
-    <div class="sa-card-header">
-      <Quote :size="14" class="sa-card-icon" />
-      <span class="sa-section-label">Citation du jour</span>
+  <UiWidgetCard :icon="Quote" label="Citation du jour">
+    <div class="wq-body">
+      <p class="wq-text">&laquo;&nbsp;{{ todayQuote.text }}&nbsp;&raquo;</p>
+      <span class="wq-author">&mdash; {{ todayQuote.author }}</span>
     </div>
-    <div class="sa-quote-body">
-      <p class="sa-quote-text">&laquo;&nbsp;{{ todayQuote.text }}&nbsp;&raquo;</p>
-      <span class="sa-quote-author">— {{ todayQuote.author }}</span>
-    </div>
-  </div>
+  </UiWidgetCard>
 </template>
 
 <style scoped>
-.sa-quote-body {
+.wq-body {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: var(--space-xs);
   padding: 2px 0;
 }
 
-.sa-quote-text {
-  font-size: 12.5px;
+.wq-text {
+  font-size: var(--text-sm);
   font-style: italic;
   color: var(--text-primary);
   line-height: 1.5;
   margin: 0;
 }
 
-.sa-quote-author {
-  font-size: 11px;
+.wq-author {
+  font-size: var(--text-xs);
   color: var(--text-muted);
   text-align: right;
 }

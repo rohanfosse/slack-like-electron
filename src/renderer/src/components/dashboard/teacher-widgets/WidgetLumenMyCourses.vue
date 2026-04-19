@@ -1,13 +1,10 @@
 <script setup lang="ts">
-/**
- * WidgetLumenMyCourses.vue — Liste des repos de cours de la promo pour le prof.
- * Metric principale : nombre de chapitres par repo + etat du manifest.
- */
 import { computed, onMounted } from 'vue'
 import { FolderGit2, ChevronRight, AlertTriangle } from 'lucide-vue-next'
 import { useRouter } from 'vue-router'
 import { useLumenStore } from '@/stores/lumen'
 import { useAppStore } from '@/stores/app'
+import UiWidgetCard from '@/components/ui/UiWidgetCard.vue'
 
 const router = useRouter()
 const lumenStore = useLumenStore()
@@ -30,19 +27,15 @@ function openLumen() {
 </script>
 
 <template>
-  <div class="wlmc-card">
-    <header class="wlmc-head">
-      <div class="wlmc-title">
-        <FolderGit2 :size="14" />
-        <span>Mes cours Lumen</span>
-      </div>
+  <UiWidgetCard :icon="FolderGit2" label="Mes cours Lumen">
+    <template #header-extra>
       <button type="button" class="wlmc-more" @click="openLumen">
         Ouvrir <ChevronRight :size="12" />
       </button>
-    </header>
+    </template>
 
     <div v-if="topRepos.length === 0" class="wlmc-empty">
-      Aucun repo synchronise. Configure une organisation GitHub pour commencer.
+      Aucun repo synchronisé. Configure une organisation GitHub pour commencer.
     </div>
     <ul v-else class="wlmc-list">
       <li v-for="repo in topRepos" :key="repo.id">
@@ -56,89 +49,86 @@ function openLumen() {
         </button>
       </li>
     </ul>
-  </div>
+  </UiWidgetCard>
 </template>
 
 <style scoped>
-.wlmc-card {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  padding: 14px;
-  background: var(--bg-secondary);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  height: 100%;
-}
-.wlmc-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-.wlmc-title {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 12px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--text-muted);
-}
 .wlmc-more {
   background: none;
   border: none;
   color: var(--accent);
-  font-size: 11px;
+  font-size: var(--text-xs);
   cursor: pointer;
   display: flex;
   align-items: center;
   gap: 2px;
+  padding: 2px var(--space-xs);
+  border-radius: var(--radius-xs);
+  font-family: inherit;
 }
+.wlmc-more:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
 .wlmc-empty {
-  font-size: 12px;
+  font-size: var(--text-sm);
   color: var(--text-muted);
-  padding: 12px 0;
+  padding: var(--space-md) 0;
   text-align: center;
   line-height: 1.5;
 }
+
 .wlmc-list {
   list-style: none;
   margin: 0;
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--space-xs);
 }
+
 .wlmc-item {
   display: flex;
   flex-direction: column;
   gap: 2px;
   width: 100%;
   text-align: left;
-  padding: 7px 10px;
-  background: var(--bg-primary);
+  padding: 7px var(--space-sm);
+  background: var(--bg-input);
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
-  transition: all var(--t-fast) ease;
+  font-family: inherit;
+  transition:
+    background var(--motion-fast) var(--ease-out),
+    border-color var(--motion-fast) var(--ease-out);
 }
-.wlmc-item:hover { background: var(--bg-hover); border-color: var(--accent); }
+.wlmc-item:hover {
+  background: var(--bg-hover);
+  border-color: var(--accent);
+}
+.wlmc-item:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
 .wlmc-item-title {
-  font-size: 13px;
+  font-size: var(--text-sm);
   font-weight: 600;
   color: var(--text-primary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
 .wlmc-item-meta {
   display: flex;
   align-items: center;
   gap: 5px;
-  font-size: 11px;
+  font-size: var(--text-xs);
   color: var(--text-muted);
 }
-.wlmc-warn { color: var(--warning, #d98a00); }
-.wlmc-warn-text { color: var(--warning, #d98a00); }
+.wlmc-warn,
+.wlmc-warn-text { color: var(--color-warning); }
 </style>

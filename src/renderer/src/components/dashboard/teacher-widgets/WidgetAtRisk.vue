@@ -4,6 +4,7 @@
   import { useAtRiskStudents } from '@/composables/useAtRiskStudents'
   import { useAppStore } from '@/stores/app'
   import { avatarColor, initials } from '@/utils/format'
+  import UiWidgetCard from '@/components/ui/UiWidgetCard.vue'
 
   const appStore = useAppStore()
   const { atRiskStudents, atRiskCount, loading, daysSinceActivity, load } =
@@ -15,12 +16,15 @@
 </script>
 
 <template>
-  <div class="war-widget">
-    <div class="war-header">
-      <AlertTriangle :size="14" class="war-icon" />
-      <span class="war-title">Etudiants a risque</span>
-      <span v-if="atRiskCount > 0" class="war-count">{{ atRiskCount }}</span>
-    </div>
+  <UiWidgetCard
+    :icon="AlertTriangle"
+    label="Etudiants a risque"
+    tone="danger"
+    aria-label="Liste des etudiants a risque"
+  >
+    <template v-if="atRiskCount > 0" #header-extra>
+      <span class="war-count">{{ atRiskCount }}</span>
+    </template>
 
     <div v-if="loading" class="war-loading">Chargement...</div>
 
@@ -53,43 +57,24 @@
         </span>
       </button>
     </div>
-  </div>
+  </UiWidgetCard>
 </template>
 
 <style scoped>
-.war-widget { display: flex; flex-direction: column; gap: 10px; }
-
-.war-header {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.war-icon { color: var(--color-danger); }
-
-.war-title {
-  font-size: 12px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  color: var(--text-secondary);
-}
-
 .war-count {
-  margin-left: auto;
   background: var(--color-danger);
   color: #fff;
-  font-size: 10px;
+  font-size: var(--text-2xs);
   font-weight: 700;
   padding: 1px 6px;
-  border-radius: 8px;
+  border-radius: var(--radius);
 }
 
 .war-loading, .war-empty {
-  font-size: 12px;
+  font-size: var(--text-sm);
   color: var(--text-muted);
   text-align: center;
-  padding: 12px 0;
+  padding: var(--space-md) 0;
 }
 
 .war-list { display: flex; flex-direction: column; gap: 2px; }
@@ -97,23 +82,28 @@
 .war-student {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 6px 8px;
+  gap: var(--space-sm);
+  padding: var(--space-xs) var(--space-sm);
   border-radius: var(--radius-sm);
   border: none;
   background: none;
   cursor: pointer;
   width: 100%;
   text-align: left;
-  transition: background var(--t-fast);
+  transition: background var(--motion-fast) var(--ease-out);
 }
 
 .war-student:hover { background: var(--bg-hover); }
 
+.war-student:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
 .war-student-info { flex: 1; min-width: 0; }
 
 .war-student-name {
-  font-size: 13px;
+  font-size: var(--text-sm);
   font-weight: 600;
   color: var(--text-primary);
   display: block;
@@ -123,7 +113,7 @@
 }
 
 .war-student-meta {
-  font-size: 11px;
+  font-size: var(--text-xs);
   color: var(--text-muted);
   display: flex;
   align-items: center;
@@ -131,13 +121,13 @@
 }
 
 .war-score {
-  font-size: 12px;
+  font-size: var(--text-sm);
   font-weight: 700;
-  padding: 2px 8px;
-  border-radius: 6px;
+  padding: 2px var(--space-sm);
+  border-radius: var(--radius-sm);
   flex-shrink: 0;
 }
 
-.war-score--critical { background: rgba(231, 76, 60, .12); color: var(--color-danger); }
-.war-score--warn { background: rgba(232, 137, 26, .12); color: var(--color-warning); }
+.war-score--critical { background: rgba(var(--color-danger-rgb), .12);  color: var(--color-danger); }
+.war-score--warn     { background: rgba(var(--color-warning-rgb), .12); color: var(--color-warning); }
 </style>

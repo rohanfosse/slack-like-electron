@@ -1,12 +1,8 @@
-/**
- * WidgetQuickCreate.vue — Boutons rapides pour creer un devoir, un
- * cours Lumen, ou ouvrir les ressources. Shortcut prof pour reduire
- * les frictions de creation de contenu.
- */
 <script setup lang="ts">
 import { Plus, FileText, Lightbulb, FolderOpen } from 'lucide-vue-next'
 import { useRouter } from 'vue-router'
 import { useModalsStore } from '@/stores/modals'
+import UiWidgetCard from '@/components/ui/UiWidgetCard.vue'
 
 const router = useRouter()
 const modals = useModalsStore()
@@ -25,12 +21,7 @@ function openDocuments() {
 </script>
 
 <template>
-  <div class="dashboard-card sa-card wqc-card">
-    <div class="sa-card-header">
-      <Plus :size="14" class="sa-card-icon" />
-      <span class="sa-section-label">Creation rapide</span>
-    </div>
-
+  <UiWidgetCard :icon="Plus" label="Creation rapide">
     <div class="wqc-grid">
       <button type="button" class="wqc-btn" @click="createDevoir">
         <FileText :size="18" />
@@ -45,45 +36,50 @@ function openDocuments() {
         <span>Ressources</span>
       </button>
     </div>
-  </div>
+  </UiWidgetCard>
 </template>
 
 <style scoped>
-.wqc-card { cursor: default; }
-
 .wqc-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
-  margin-top: 8px;
+  gap: var(--space-sm);
 }
+
 .wqc-btn {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 6px;
-  padding: 12px 6px;
+  gap: var(--space-xs);
+  padding: var(--space-md) var(--space-xs);
   background: var(--bg-input);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   cursor: pointer;
   color: var(--text-secondary);
   font-family: inherit;
-  font-size: 11px;
+  font-size: var(--text-xs);
   font-weight: 600;
-  transition: all var(--motion-fast) var(--ease-out);
+  transition:
+    background var(--motion-fast) var(--ease-out),
+    border-color var(--motion-fast) var(--ease-out),
+    color var(--motion-fast) var(--ease-out),
+    transform var(--motion-fast) var(--ease-out);
   min-height: 56px;
 }
+
 .wqc-btn:hover {
   background: var(--accent-subtle);
   border-color: var(--accent);
   color: var(--accent);
   transform: translateY(-1px);
 }
+
 .wqc-btn:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 1px;
+  outline: none;
+  box-shadow: var(--focus-ring);
 }
+
 .wqc-btn:active { transform: translateY(0); }
 </style>

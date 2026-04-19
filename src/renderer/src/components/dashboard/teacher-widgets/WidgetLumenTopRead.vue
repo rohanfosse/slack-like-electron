@@ -1,12 +1,9 @@
 <script setup lang="ts">
-/**
- * WidgetLumenTopRead.vue — Top 5 chapitres les plus lus dans la promo.
- * Resout le titre humain via le manifest du repo charge dans le store.
- */
 import { ref, onMounted, computed } from 'vue'
 import { TrendingUp } from 'lucide-vue-next'
 import { useLumenStore } from '@/stores/lumen'
 import { useAppStore } from '@/stores/app'
+import UiWidgetCard from '@/components/ui/UiWidgetCard.vue'
 
 interface CountRow { repo_id: number; path: string; readers: number }
 
@@ -41,14 +38,9 @@ const maxReaders = computed(() => top.value[0]?.readers ?? 1)
 </script>
 
 <template>
-  <div class="wltr-card">
-    <header class="wltr-head">
-      <TrendingUp :size="14" />
-      <span>Top chapitres lus</span>
-    </header>
-
+  <UiWidgetCard :icon="TrendingUp" label="Top chapitres lus">
     <div v-if="top.length === 0" class="wltr-empty">
-      Aucune lecture enregistree.
+      Aucune lecture enregistrée.
     </div>
     <ul v-else class="wltr-list">
       <li v-for="(item, i) in top" :key="`${item.repo_id}::${item.path}`">
@@ -65,57 +57,41 @@ const maxReaders = computed(() => top.value[0]?.readers ?? 1)
         </div>
       </li>
     </ul>
-  </div>
+  </UiWidgetCard>
 </template>
 
 <style scoped>
-.wltr-card {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  padding: 14px;
-  background: var(--bg-secondary);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  height: 100%;
-}
-.wltr-head {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 12px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--text-muted);
-}
 .wltr-empty {
-  font-size: 12px;
+  font-size: var(--text-sm);
   color: var(--text-muted);
   text-align: center;
-  padding: 20px 0;
+  padding: var(--space-lg) 0;
 }
+
 .wltr-list {
   list-style: none;
   margin: 0;
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--space-sm);
 }
+
 .wltr-item {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: var(--space-sm);
 }
+
 .wltr-rank {
-  font-size: 12px;
+  font-size: var(--text-sm);
   font-weight: 700;
   color: var(--text-muted);
   width: 14px;
   font-variant-numeric: tabular-nums;
   flex-shrink: 0;
 }
+
 .wltr-item-body {
   flex: 1;
   display: flex;
@@ -123,35 +99,40 @@ const maxReaders = computed(() => top.value[0]?.readers ?? 1)
   gap: 2px;
   min-width: 0;
 }
+
 .wltr-item-title {
-  font-size: 12px;
+  font-size: var(--text-sm);
   font-weight: 600;
   color: var(--text-primary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
 .wltr-item-repo {
-  font-size: 10px;
+  font-size: var(--text-2xs);
   color: var(--text-muted);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
 .wltr-bar-wrap {
-  background: var(--bg-primary);
+  background: var(--bg-input);
   border-radius: 3px;
   overflow: hidden;
   height: 4px;
   margin-top: 3px;
 }
+
 .wltr-bar {
   background: var(--accent);
   height: 100%;
   transition: width var(--motion-slow) var(--ease-out);
 }
+
 .wltr-readers {
-  font-size: 12px;
+  font-size: var(--text-sm);
   font-weight: 700;
   color: var(--text-primary);
   font-variant-numeric: tabular-nums;
