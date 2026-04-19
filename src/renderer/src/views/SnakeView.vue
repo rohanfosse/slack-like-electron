@@ -11,26 +11,35 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
-import { ArrowLeft, Play, RotateCw, Trophy, Sparkles } from 'lucide-vue-next'
+import { ArrowLeft, Play, RotateCw, Sparkles } from 'lucide-vue-next'
 import { useArcadeGame } from '@/composables/useArcadeGame'
 import { useAppStore } from '@/stores/app'
+import GameSidebar from '@/components/games/GameSidebar.vue'
+import { GAMES } from '@/games/registry'
+import {
+  DEFAULT_SNAKE_CONFIG,
+  initialSnake,
+  canTurn,
+  computeNextTick,
+  placeFood as engineSpawnFood,
+  keyToDir,
+  stepOnce,
+  type Cell,
+  type Dir,
+} from '@/games/snakeEngine'
+
+const gameMeta = GAMES.find(g => g.id === 'snake')
 
 const router = useRouter()
 const appStore = useAppStore()
 const game = useArcadeGame('snake')
 
 // ── Config ────────────────────────────────────────────────────────────────
-const GRID_W = 20
-const GRID_H = 15
-const CELL   = 28 // pixels
-const TICK_INITIAL = 140
-const TICK_MIN     = 60
-const TICK_STEP    = 8    // ms retires tous les N food
+const GRID_W = DEFAULT_SNAKE_CONFIG.width
+const GRID_H = DEFAULT_SNAKE_CONFIG.height
+const CELL   = 28 // pixels (rendu uniquement)
 
 // ── Etat du jeu ───────────────────────────────────────────────────────────
-type Dir = 'up' | 'down' | 'left' | 'right'
-interface Cell { x: number; y: number }
-
 const snake     = ref<Cell[]>([])
 const direction = ref<Dir>('right')
 const queuedDir = ref<Dir | null>(null)
@@ -38,36 +47,20 @@ const food      = ref<Cell>({ x: 10, y: 7 })
 const gameOverReason = ref<string | null>(null)
 
 let tickInterval: ReturnType<typeof setInterval> | null = null
-let currentTickMs = TICK_INITIAL
+let currentTickMs = DEFAULT_SNAKE_CONFIG.tickInitial
 let foodEaten = 0
 
 const canvasRef = ref<HTMLCanvasElement | null>(null)
 
 // ── Init / Reset ──────────────────────────────────────────────────────────
 function initSnake() {
-  const cx = Math.floor(GRID_W / 2)
-  const cy = Math.floor(GRID_H / 2)
-  snake.value = [
-    { x: cx,     y: cy },
-    { x: cx - 1, y: cy },
-    { x: cx - 2, y: cy },
-  ]
+  snake.value = initialSnake(GRID_W, GRID_H)
   direction.value = 'right'
   queuedDir.value = null
   foodEaten = 0
-  currentTickMs = TICK_INITIAL
-  placeFood()
+  currentTickMs = DEFAULT_SNAKE_CONFIG.tickInitial
+  food.value = engineSpawnFood(snake.value, GRID_W, GRID_H)
   gameOverReason.value = null
-}
-
-function placeFood() {
-  const occupied = new Set(snake.value.map((c) => `${c.x},${c.y}`))
-  let x, y
-  do {
-    x = Math.floor(Math.random() * GRID_W)
-    y = Math.floor(Math.random() * GRID_H)
-  } while (occupied.has(`${x},${y}`))
-  food.value = { x, y }
 }
 
 function startGame() {
@@ -96,36 +89,21 @@ function doTick() {
     queuedDir.value = null
   }
 
-  const head = snake.value[0]
-  const next: Cell = { x: head.x, y: head.y }
-  if (direction.value === 'up')    next.y -= 1
-  if (direction.value === 'down')  next.y += 1
-  if (direction.value === 'left')  next.x -= 1
-  if (direction.value === 'right') next.x += 1
+  const outcome = stepOnce(snake.value, direction.value, food.value, DEFAULT_SNAKE_CONFIG)
+  if (outcome.kind === 'wall') return gameOver('Mur')
+  if (outcome.kind === 'self') return gameOver('Toi-meme')
 
-  // Collision mur
-  if (next.x < 0 || next.x >= GRID_W || next.y < 0 || next.y >= GRID_H) {
-    return gameOver('Mur')
-  }
-  // Collision self
-  if (snake.value.some((c) => c.x === next.x && c.y === next.y)) {
-    return gameOver('Toi-meme')
-  }
-
-  const ateFood = next.x === food.value.x && next.y === food.value.y
-  const newBody = [next, ...snake.value]
-  if (!ateFood) newBody.pop()
-  else {
+  snake.value = outcome.body
+  if (outcome.ateFood) {
     foodEaten++
     game.addScore(10)
-    placeFood()
-    // Accelere tous les 5 pommes
-    if (foodEaten % 5 === 0) {
-      currentTickMs = Math.max(TICK_MIN, currentTickMs - TICK_STEP)
+    food.value = engineSpawnFood(snake.value, GRID_W, GRID_H)
+    const nextTickMs = computeNextTick(currentTickMs, foodEaten, DEFAULT_SNAKE_CONFIG)
+    if (nextTickMs !== currentTickMs) {
+      currentTickMs = nextTickMs
       startLoop()
     }
   }
-  snake.value = newBody
   game.addScore(1) // survival bonus
 
   render()
@@ -199,8 +177,7 @@ function render() {
 
 // ── Input ─────────────────────────────────────────────────────────────────
 function queueDir(dir: Dir) {
-  const opposite: Record<Dir, Dir> = { up: 'down', down: 'up', left: 'right', right: 'left' }
-  if (opposite[dir] === direction.value) return // pas de 180° instantane
+  if (!canTurn(direction.value, dir)) return
   queuedDir.value = dir
 }
 
@@ -212,11 +189,8 @@ function onKeydown(e: KeyboardEvent) {
     return
   }
   if (game.state.value !== 'playing') return
-  const k = e.key.toLowerCase()
-  if (k === 'arrowup'    || k === 'z' || k === 'w') { e.preventDefault(); queueDir('up') }
-  if (k === 'arrowdown'  || k === 's')              { e.preventDefault(); queueDir('down') }
-  if (k === 'arrowleft'  || k === 'q' || k === 'a') { e.preventDefault(); queueDir('left') }
-  if (k === 'arrowright' || k === 'd')              { e.preventDefault(); queueDir('right') }
+  const dir = keyToDir(e.key)
+  if (dir) { e.preventDefault(); queueDir(dir) }
 }
 
 // ── Lifecycle ─────────────────────────────────────────────────────────────
@@ -305,27 +279,16 @@ const currentRank = computed(() => {
         </p>
       </section>
 
-      <!-- Leaderboard lateral -->
-      <aside class="s-leaderboard">
-        <h3><Trophy :size="12" /> Aujourd'hui</h3>
-        <ol v-if="game.leaderboard.value.length" class="s-lb-list">
-          <li
-            v-for="e in game.leaderboard.value.slice(0, 10)"
-            :key="e.rank"
-            :class="{
-              'is-me':   e.name === appStore.currentUser?.name,
-              'is-gold': e.rank === 1,
-              'is-silver': e.rank === 2,
-              'is-bronze': e.rank === 3,
-            }"
-          >
-            <span class="s-lb-rank">{{ e.rank }}</span>
-            <span class="s-lb-name">{{ e.name }}</span>
-            <span class="s-lb-score">{{ e.bestScore }}</span>
-          </li>
-        </ol>
-        <p v-else class="s-lb-empty">Sois le premier a jouer.</p>
-      </aside>
+      <!-- Sidebar leaderboard + stats (partage) -->
+      <GameSidebar
+        :leaderboard="game.leaderboard.value"
+        :my-stats="game.myStats.value"
+        :scope="game.scope.value"
+        :current-user-name="appStore.currentUser?.name ?? null"
+        :accent="gameMeta?.accent"
+        class="s-sidebar"
+        @change-scope="(s) => game.setScope(s)"
+      />
     </main>
   </div>
 </template>
@@ -476,42 +439,13 @@ const currentRank = computed(() => {
   background: var(--bg-elevated);
 }
 
-/* Leaderboard ──────────────────────────────────────────────────────────── */
-.s-leaderboard {
-  background: var(--bg-sidebar);
-  border: 1px solid var(--border);
-  border-radius: 14px;
-  padding: 14px;
-  display: flex; flex-direction: column; gap: 8px;
-  min-height: 0; overflow: auto;
+/* Sidebar (leaderboard + stats) — styles portes par GameSidebar.vue */
+.s-sidebar {
+  align-self: stretch;
 }
-.s-leaderboard h3 {
-  display: inline-flex; align-items: center; gap: 5px;
-  font-size: 11px; font-weight: 800;
-  text-transform: uppercase; letter-spacing: .5px;
-  color: var(--text-secondary);
-  margin: 0 0 4px;
-}
-.s-lb-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 3px; }
-.s-lb-list li {
-  display: grid; grid-template-columns: 22px 1fr auto;
-  align-items: center; gap: 8px;
-  padding: 5px 8px;
-  border-radius: 6px;
-  font-size: 12px; color: var(--text-secondary);
-}
-.s-lb-list li:hover { background: var(--bg-hover); }
-.s-lb-list li.is-me { background: var(--accent-subtle); color: var(--accent); font-weight: 700; }
-.s-lb-rank { font-weight: 800; text-align: center; font-variant-numeric: tabular-nums; color: var(--text-muted); }
-.is-gold   .s-lb-rank { color: #eab308; }
-.is-silver .s-lb-rank { color: #94a3b8; }
-.is-bronze .s-lb-rank { color: #c2884d; }
-.s-lb-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.s-lb-score { font-family: var(--font-mono, monospace); font-weight: 800; font-variant-numeric: tabular-nums; }
-.s-lb-empty { margin: 0; padding: 12px; color: var(--text-muted); font-size: 11px; font-style: italic; text-align: center; }
 
 @media (max-width: 900px) {
   .s-main { grid-template-columns: 1fr; }
-  .s-leaderboard { max-height: 200px; }
+  .s-sidebar { max-height: 260px; }
 }
 </style>

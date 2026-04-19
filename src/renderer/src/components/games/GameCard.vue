@@ -15,7 +15,8 @@ interface LbRow {
   userType: 'student' | 'teacher'
   name: string
   bestScore: number
-  bestWpm: number
+  /** TypeRace uniquement — autres jeux n exposent pas ce champ. */
+  bestWpm?: number
 }
 
 interface Props { game: Game }
@@ -27,21 +28,43 @@ const { api } = useApi()
 
 const top = ref<LbRow[]>([])
 const myBest = ref(0)
+const myPlays = ref(0)
 const loading = ref(false)
 
-// Pour l'instant le seul jeu qui remplit le leaderboard est TypeRace.
-// Quand d'autres jeux arriveront, chaque jeu exposera son propre fetcher
-// dans le registre (fetchLeaderboard?: () => Promise<...>).
+// Fetcher generique : TypeRace a son endpoint dedie, tous les autres jeux
+// passent par /api/games/:gameId (v2.172+). Les trois jeux actuels (typerace,
+// snake, space_invaders) remplissent leur leaderboard des qu une partie est
+// enregistree — donc la carte reflete la DB.
 async function refresh() {
-  if (props.game.id !== 'typerace') return
   loading.value = true
   try {
-    const [lb, stats] = await Promise.all([
-      api<LbRow[]>(() => window.api.typeRaceLeaderboard('day'), { silent: true }),
-      api<{ week: { bestScore: number } }>(() => window.api.typeRaceMyStats(), { silent: true }),
-    ])
-    if (lb) top.value = lb.slice(0, 3)
-    if (stats) myBest.value = stats.week.bestScore ?? 0
+    if (props.game.id === 'typerace') {
+      const [lb, stats] = await Promise.all([
+        api<LbRow[]>(() => window.api.typeRaceLeaderboard('day'), { silent: true }),
+        api<{ week: { bestScore: number }; allTime: { plays: number } }>(
+          () => window.api.typeRaceMyStats(),
+          { silent: true },
+        ),
+      ])
+      if (lb) top.value = lb.slice(0, 3)
+      if (stats) {
+        myBest.value = stats.week.bestScore ?? 0
+        myPlays.value = stats.allTime?.plays ?? 0
+      }
+    } else {
+      const [lb, stats] = await Promise.all([
+        api<LbRow[]>(() => window.api.gameLeaderboard(props.game.id, 'day'), { silent: true }),
+        api<{ week: { bestScore: number }; allTime: { plays: number } }>(
+          () => window.api.gameMyStats(props.game.id),
+          { silent: true },
+        ),
+      ])
+      if (lb) top.value = lb.slice(0, 3)
+      if (stats) {
+        myBest.value = stats.week.bestScore ?? 0
+        myPlays.value = stats.allTime?.plays ?? 0
+      }
+    }
   } finally {
     loading.value = false
   }
@@ -109,10 +132,13 @@ function play() { router.push(props.game.route) }
         <p v-else class="gc-empty">Sois le premier a jouer aujourd'hui.</p>
       </div>
 
-      <!-- Footer : mon best + CTA -->
+      <!-- Footer : mon best + plays + CTA -->
       <div class="gc-footer">
-        <div v-if="myBest > 0" class="gc-mybest">
-          <span class="gc-mybest-label">Ton best semaine</span>
+        <div v-if="myBest > 0 || myPlays > 0" class="gc-mybest">
+          <span class="gc-mybest-label">
+            Ton best semaine
+            <span v-if="myPlays > 0" class="gc-mybest-plays">· {{ myPlays }} partie{{ myPlays > 1 ? 's' : '' }}</span>
+          </span>
           <span class="gc-mybest-value">{{ myBest }} pts</span>
         </div>
         <button class="gc-cta" @click.stop="play" :aria-label="`Jouer a ${game.label}`">
@@ -332,6 +358,7 @@ function play() { router.push(props.game.route) }
   color: var(--text-muted);
   font-weight: 700;
 }
+.gc-mybest-plays { text-transform: none; letter-spacing: 0; font-weight: 600; margin-left: 3px; }
 .gc-mybest-value {
   font-family: var(--font-mono, ui-monospace, monospace);
   font-size: 14px;

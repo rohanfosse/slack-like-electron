@@ -1,13 +1,13 @@
 /**
  * TabAccueil.vue
  * ---------------------------------------------------------------------------
- * Bento-Box + Task-Driven hybrid layout for the teacher dashboard Accueil tab.
- * Uses CSS Grid with tiles of varying sizes to create visual hierarchy:
- *   Focus (2x2) | 4 stat tiles (1x1) | Schedule strip (2x1) |
- *   Messages (1x1) | Quick actions (2x1) | Activity feed (2x1)
+ * Bento-Box unifie : toutes les tuiles du prof (focus, stats, agenda, actions,
+ * widgets optionnels) sont rangees dans une seule grille drag and drop. Aucune
+ * tuile n est obligatoire : en mode edition, un bouton X permet de masquer
+ * chaque tuile et un bouton "Auto" reorganise intelligemment la grille.
  */
 <script setup lang="ts">
-import { ref, computed, watch, toRef, type Component } from 'vue'
+import { ref, computed, watch, toRef, type Component, type CSSProperties } from 'vue'
 import { VueDraggable } from 'vue-draggable-plus'
 import TeacherTodoWidget from './TeacherTodoWidget.vue'
 import WidgetClock from './student-widgets/WidgetClock.vue'
@@ -39,12 +39,14 @@ import { useTeacherBento } from '@/composables/useTeacherBento'
 import { useAccueilFocusTile } from '@/composables/useAccueilFocusTile'
 import { useAccueilSchedule } from '@/composables/useAccueilSchedule'
 import { useAccueilActivityFeed } from '@/composables/useAccueilActivityFeed'
+import { sizeToGridSpan } from '@/types/widgets'
+import type { WidgetDef } from '@/types/widgets'
 
 const bento = useTeacherBento()
 import {
   Edit3,
   PlusCircle, Bell, BarChart2,
-  X, Plus,
+  X, Plus, Wand2,
   Percent, Wifi, Award,
 } from 'lucide-vue-next'
 import { gradeClass } from '@/utils/format'
@@ -119,8 +121,9 @@ function toggleEditMode() {
 }
 defineExpose({ toggleEditMode, editMode })
 
-// ── Drag-and-drop widgets optionnels ────────────────────────────────────────
+// ── Mapping id -> composant (widgets optionnels non "core") ─────────────────
 const optWidgetComponents: Record<string, Component> = {
+  'at-risk': WidgetAtRisk,
   clock: WidgetClock, quote: WidgetQuote, pomodoro: WidgetPomodoro,
   quicklinks: WidgetQuickLinks, 'dm-files': WidgetDmFiles, 'week-cal': WidgetWeekCal,
   signatures: WidgetSignatures,
@@ -137,202 +140,267 @@ const optWidgetComponents: Record<string, Component> = {
   'actu': WidgetActuCursus,
   'typerace': WidgetTypeRace,
 }
-const wideWidgets = new Set([
-  'quote', 'quicklinks', 'dm-files', 'week-cal', 'signatures',
-  'lumen-engagement', 'lumen-my-courses', 'lumen-top-read',
-  'feedback-templates', 'agenda-jour', 'cahier', 'typerace',
-])
+function spanStyle(id: string): CSSProperties {
+  const { colSpan, rowSpan } = sizeToGridSpan(bento.getWidgetSize(id))
+  return { gridColumn: `span ${colSpan}`, gridRow: `span ${rowSpan}` }
+}
 
-const draggableOpt = ref([...bento.visibleOptionalTiles.value])
-watch(() => bento.visibleOptionalTiles.value, (v) => { draggableOpt.value = [...v] })
-function onOptDragEnd() { bento.reorderOptional(draggableOpt.value) }
+// ── Drag-and-drop unifie : toutes les tuiles visibles ────────────────────────
+const draggableTiles = ref<WidgetDef[]>([...bento.visibleTiles.value])
+watch(() => bento.visibleTiles.value, (v) => { draggableTiles.value = [...v] })
+function onDragEnd() { bento.reorderTiles(draggableTiles.value) }
+
+function smartReorganize() {
+  bento.smartReorganize()
+}
 </script>
 
 <template>
-  <div class="bento-grid" :class="{ 'bento-grid--editing': editMode }">
+  <div class="bento-root">
 
-    <!-- ═══ MULTI-PROMO (full width, above bento) ═══ -->
+    <!-- ═══ MULTI-PROMO (full width, hors grille draggable) ═══ -->
     <MultiPromoCard
       v-if="promos.length >= 2"
       :promos="promos"
-      style="grid-column: 1 / -1"
+      class="bento-multi-promo"
       @open-devoir="(tid, pid, cid, cname) => emit('openDevoirCrossPromo', tid, pid, cid, cname)"
     />
 
-    <!-- ═══ AT-RISK STUDENTS (2x1) ═══ -->
-    <div v-if="bento.isVisible('at-risk')" class="dashboard-card bento-tile" style="grid-column: span 2">
-      <WidgetAtRisk />
-    </div>
-
-    <!-- ═══ FOCUS TILE (2x2) ═══ -->
-    <AccueilFocusTile
-      v-if="bento.isVisible('focus')"
-      :state="focusState"
-      :bg-class="focusBgClass"
-    />
-
-    <!-- ═══ STAT TILES (1x1 each) ═══ -->
-
-    <!-- Soumission % -->
-    <div v-if="bento.isVisible('stat-soumis')" class="dashboard-card bento-tile bento-stat">
-      <div class="stat-ring">
-        <svg viewBox="0 0 36 36" class="stat-ring-svg">
-          <circle cx="18" cy="18" r="15" fill="none" stroke="var(--bg-active)" stroke-width="3" />
-          <circle
-            cx="18" cy="18" r="15" fill="none"
-            stroke="var(--accent)" stroke-width="3"
-            stroke-linecap="round"
-            :stroke-dasharray="`${submissionRate * 0.942} 94.2`"
-            transform="rotate(-90 18 18)"
-            style="transition: stroke-dasharray .6s ease"
-          />
-        </svg>
-      </div>
-      <span class="stat-number">{{ Math.round(submissionRate) }}%</span>
-      <span class="stat-label">soumis</span>
-      <Percent :size="14" class="stat-icon" />
-    </div>
-
-    <!-- A noter -->
-    <div v-if="bento.isVisible('stat-noter')" class="dashboard-card bento-tile bento-stat" :class="{ 'stat--alert': aNoterCount > 0 }">
-      <span class="stat-number">{{ aNoterCount }}</span>
-      <span class="stat-label">a noter</span>
-      <Edit3 :size="14" class="stat-icon" />
-    </div>
-
-    <!-- Moyenne -->
-    <div v-if="bento.isVisible('stat-moyenne')" class="dashboard-card bento-tile bento-stat">
-      <span class="stat-number stat-grade" :class="gradeClass(averageGrade)">{{ averageGrade }}</span>
-      <span class="stat-label">moyenne</span>
-      <Award :size="14" class="stat-icon" />
-    </div>
-
-    <!-- En ligne -->
-    <div v-if="bento.isVisible('stat-online')" class="dashboard-card bento-tile bento-stat">
-      <span class="stat-online-dot" />
-      <span class="stat-number">{{ onlineStudents }}</span>
-      <span class="stat-label">en ligne</span>
-      <Wifi :size="14" class="stat-icon" />
-    </div>
-
-    <!-- ═══ SCHEDULE STRIP (2x1) ═══ -->
-    <AccueilScheduleTile
-      v-if="bento.isVisible('schedule')"
-      :events="todayEvents"
-      :edit-mode="editMode"
-      :is-past-event="isPastEvent"
-      :is-current-event="isCurrentEvent"
-      @remove="bento.toggleTile('schedule')"
-    />
-
-    <!-- ═══ MESSAGES TILE (1x1) ═══ -->
-    <AccueilMessagesTile
-      v-if="bento.isVisible('messages')"
-      :entries="unreadDmEntries"
-      :total-unread="totalUnreadDms"
-      :edit-mode="editMode"
-      @open-dm="(n) => emit('openDmFromDashboard', n)"
-      @remove="bento.toggleTile('messages')"
-    />
-
-    <!-- ═══ QUICK ACTIONS (2x1) ═══ -->
-    <div v-if="bento.isVisible('actions')" class="dashboard-card bento-tile bento-actions" :class="{ 'bento-tile--editing': editMode }">
-      <button v-if="editMode" class="bento-tile-remove" @click="bento.toggleTile('actions')"><X :size="12" /></button>
-      <button class="action-btn action-btn--primary" @click="emit('openNewDevoir')">
-        <PlusCircle :size="22" />
-        <span class="action-label">Creer un devoir</span>
-      </button>
-      <button class="action-btn action-btn--secondary" @click="emit('openActiveDevoir')">
-        <Bell :size="22" />
-        <span class="action-label">Envoyer un rappel</span>
-      </button>
-      <button class="action-btn action-btn--secondary" @click="emit('switchToFrise')">
-        <BarChart2 :size="22" />
-        <span class="action-label">Voir la frise</span>
-      </button>
-    </div>
-
-    <!-- ═══ ACTIVITY FEED (2x1) ═══ -->
-    <AccueilActivityTile
-      v-if="bento.isVisible('activity')"
-      :items="activityFeed"
-      :edit-mode="editMode"
-      @remove="bento.toggleTile('activity')"
-    />
-
-    <!-- ═══ TODO WIDGET (2x1) ═══ -->
-    <div v-if="bento.isVisible('todo')" class="dashboard-card bento-tile bento-todo" :class="{ 'bento-tile--editing': editMode }">
-      <button v-if="editMode" class="bento-tile-remove" @click="bento.toggleTile('todo')"><X :size="12" /></button>
-      <TeacherTodoWidget />
-    </div>
-
-    <!-- ═══ OPTIONAL WIDGETS (drag-and-drop en mode édition) ═══ -->
+    <!-- ═══ GRILLE UNIFIEE (core + optionnels) ═══ -->
     <VueDraggable
-      v-if="draggableOpt.length"
-      v-model="draggableOpt"
+      v-model="draggableTiles"
       :disabled="!editMode"
-      ghost-class="bento-opt--ghost"
+      ghost-class="bento-tile--ghost"
       :animation="200"
-      class="bento-opt-grid"
-      @end="onOptDragEnd"
+      class="bento-grid"
+      :class="{ 'bento-grid--editing': editMode }"
+      @end="onDragEnd"
     >
-      <div
-        v-for="t in draggableOpt"
-        :key="t.id"
-        class="dashboard-card bento-tile bento-optional"
-        :class="{ 'bento-tile--editing': editMode, 'bento-optional--wide': wideWidgets.has(t.id) }"
-      >
-        <button v-if="editMode" class="bento-tile-remove" @click="bento.toggleTile(t.id); bento.refreshVisibleOptional()"><X :size="12" /></button>
-        <component :is="optWidgetComponents[t.id]" v-bind="t.id === 'week-cal' ? { items: next48h } : {}" />
-      </div>
+      <template v-for="w in draggableTiles" :key="w.id">
+
+        <!-- Focus (2x2) -->
+        <AccueilFocusTile
+          v-if="w.id === 'focus'"
+          :state="focusState"
+          :bg-class="focusBgClass"
+          :edit-mode="editMode"
+          :style="spanStyle(w.id)"
+          @remove="bento.toggleTile('focus')"
+        />
+
+        <!-- Stat: Soumissions (1x1) -->
+        <div
+          v-else-if="w.id === 'stat-soumis'"
+          class="dashboard-card bento-tile bento-stat"
+          :class="{ 'bento-tile--editing': editMode }"
+          :style="spanStyle(w.id)"
+        >
+          <button v-if="editMode" class="bento-tile-remove" :aria-label="`Masquer ${w.label}`" @click="bento.toggleTile(w.id)"><X :size="14" /></button>
+          <div class="stat-ring">
+            <svg viewBox="0 0 36 36" class="stat-ring-svg">
+              <circle cx="18" cy="18" r="15" fill="none" stroke="var(--bg-active)" stroke-width="3" />
+              <circle
+                cx="18" cy="18" r="15" fill="none"
+                stroke="var(--accent)" stroke-width="3"
+                stroke-linecap="round"
+                :stroke-dasharray="`${submissionRate * 0.942} 94.2`"
+                transform="rotate(-90 18 18)"
+                style="transition: stroke-dasharray .6s ease"
+              />
+            </svg>
+          </div>
+          <span class="stat-number">{{ Math.round(submissionRate) }}%</span>
+          <span class="stat-label">soumis</span>
+          <Percent :size="14" class="stat-icon" />
+        </div>
+
+        <!-- Stat: A noter (1x1) -->
+        <div
+          v-else-if="w.id === 'stat-noter'"
+          class="dashboard-card bento-tile bento-stat"
+          :class="{ 'stat--alert': aNoterCount > 0, 'bento-tile--editing': editMode }"
+          :style="spanStyle(w.id)"
+        >
+          <button v-if="editMode" class="bento-tile-remove" :aria-label="`Masquer ${w.label}`" @click="bento.toggleTile(w.id)"><X :size="14" /></button>
+          <span class="stat-number">{{ aNoterCount }}</span>
+          <span class="stat-label">a noter</span>
+          <Edit3 :size="14" class="stat-icon" />
+        </div>
+
+        <!-- Stat: Moyenne (1x1) -->
+        <div
+          v-else-if="w.id === 'stat-moyenne'"
+          class="dashboard-card bento-tile bento-stat"
+          :class="{ 'bento-tile--editing': editMode }"
+          :style="spanStyle(w.id)"
+        >
+          <button v-if="editMode" class="bento-tile-remove" :aria-label="`Masquer ${w.label}`" @click="bento.toggleTile(w.id)"><X :size="14" /></button>
+          <span class="stat-number stat-grade" :class="gradeClass(averageGrade)">{{ averageGrade }}</span>
+          <span class="stat-label">moyenne</span>
+          <Award :size="14" class="stat-icon" />
+        </div>
+
+        <!-- Stat: En ligne (1x1) -->
+        <div
+          v-else-if="w.id === 'stat-online'"
+          class="dashboard-card bento-tile bento-stat"
+          :class="{ 'bento-tile--editing': editMode }"
+          :style="spanStyle(w.id)"
+        >
+          <button v-if="editMode" class="bento-tile-remove" :aria-label="`Masquer ${w.label}`" @click="bento.toggleTile(w.id)"><X :size="14" /></button>
+          <span class="stat-online-dot" />
+          <span class="stat-number">{{ onlineStudents }}</span>
+          <span class="stat-label">en ligne</span>
+          <Wifi :size="14" class="stat-icon" />
+        </div>
+
+        <!-- Schedule (2x1 / 4x1) -->
+        <AccueilScheduleTile
+          v-else-if="w.id === 'schedule'"
+          :events="todayEvents"
+          :edit-mode="editMode"
+          :is-past-event="isPastEvent"
+          :is-current-event="isCurrentEvent"
+          :style="spanStyle(w.id)"
+          @remove="bento.toggleTile('schedule')"
+        />
+
+        <!-- Messages (1x1 / 2x1) -->
+        <AccueilMessagesTile
+          v-else-if="w.id === 'messages'"
+          :entries="unreadDmEntries"
+          :total-unread="totalUnreadDms"
+          :edit-mode="editMode"
+          :style="spanStyle(w.id)"
+          @open-dm="(n) => emit('openDmFromDashboard', n)"
+          @remove="bento.toggleTile('messages')"
+        />
+
+        <!-- Quick actions (2x1) -->
+        <div
+          v-else-if="w.id === 'actions'"
+          class="dashboard-card bento-tile bento-actions"
+          :class="{ 'bento-tile--editing': editMode }"
+          :style="spanStyle(w.id)"
+        >
+          <button v-if="editMode" class="bento-tile-remove" :aria-label="`Masquer ${w.label}`" @click="bento.toggleTile(w.id)"><X :size="14" /></button>
+          <button class="action-btn action-btn--primary" @click="emit('openNewDevoir')">
+            <PlusCircle :size="22" />
+            <span class="action-label">Creer un devoir</span>
+          </button>
+          <button class="action-btn action-btn--secondary" @click="emit('openActiveDevoir')">
+            <Bell :size="22" />
+            <span class="action-label">Envoyer un rappel</span>
+          </button>
+          <button class="action-btn action-btn--secondary" @click="emit('switchToFrise')">
+            <BarChart2 :size="22" />
+            <span class="action-label">Voir la frise</span>
+          </button>
+        </div>
+
+        <!-- Activity feed (2x1) -->
+        <AccueilActivityTile
+          v-else-if="w.id === 'activity'"
+          :items="activityFeed"
+          :edit-mode="editMode"
+          :style="spanStyle(w.id)"
+          @remove="bento.toggleTile('activity')"
+        />
+
+        <!-- Todo (2x1) -->
+        <div
+          v-else-if="w.id === 'todo'"
+          class="dashboard-card bento-tile bento-todo"
+          :class="{ 'bento-tile--editing': editMode }"
+          :style="spanStyle(w.id)"
+        >
+          <button v-if="editMode" class="bento-tile-remove" :aria-label="`Masquer ${w.label}`" @click="bento.toggleTile(w.id)"><X :size="14" /></button>
+          <TeacherTodoWidget />
+        </div>
+
+        <!-- Widgets optionnels generiques (tous les autres) -->
+        <div
+          v-else-if="optWidgetComponents[w.id]"
+          class="dashboard-card bento-tile bento-optional"
+          :class="{ 'bento-tile--editing': editMode }"
+          :style="spanStyle(w.id)"
+        >
+          <button v-if="editMode" class="bento-tile-remove" :aria-label="`Masquer ${w.label}`" @click="bento.toggleTile(w.id)"><X :size="14" /></button>
+          <component :is="optWidgetComponents[w.id]" v-bind="w.id === 'week-cal' ? { items: next48h } : {}" />
+        </div>
+
+      </template>
     </VueDraggable>
 
-    <!-- ═══ ADD WIDGET (edit mode) ═══ -->
-    <button v-if="editMode && hiddenTileDefs.length" class="bento-add-tile" @click="showTileDrawer = !showTileDrawer">
-      <Plus :size="20" />
-      <span>Ajouter une tuile</span>
-    </button>
-  </div>
-
-  <!-- Tile drawer -->
-  <Transition name="bento-drawer">
-    <div v-if="editMode && showTileDrawer && hiddenTileDefs.length" class="bento-drawer">
-      <div class="bento-drawer-header">
-        <h4>Tuiles masquees</h4>
-        <button @click="showTileDrawer = false"><X :size="14" /></button>
-      </div>
-      <div class="bento-drawer-list">
-        <button
-          v-for="t in hiddenTileDefs"
-          :key="t.id"
-          class="bento-drawer-item"
-          @click="bento.toggleTile(t.id)"
-        >
-          <component :is="t.icon" :size="16" />
-          <span>{{ t.label }}</span>
-          <Plus :size="14" class="bento-drawer-item-add" />
-        </button>
-      </div>
+    <!-- ═══ ACTIONS DE LA BARRE D EDITION ═══ -->
+    <div v-if="editMode" class="bento-edit-actions">
+      <button v-if="hiddenTileDefs.length" class="bento-edit-btn bento-edit-btn--add" @click="showTileDrawer = !showTileDrawer">
+        <Plus :size="16" />
+        <span>Ajouter une tuile ({{ hiddenTileDefs.length }})</span>
+      </button>
+      <button
+        v-if="draggableTiles.length > 1"
+        class="bento-edit-btn bento-edit-btn--auto"
+        title="Reorganiser intelligemment"
+        @click="smartReorganize"
+      >
+        <Wand2 :size="16" />
+        <span>Reorganiser auto</span>
+      </button>
+      <button
+        class="bento-edit-btn bento-edit-btn--reset"
+        title="Revenir aux tuiles par defaut"
+        @click="bento.resetTiles()"
+      >
+        Reinitialiser
+      </button>
     </div>
-  </Transition>
+
+    <!-- Tile drawer -->
+    <Transition name="bento-drawer">
+      <div v-if="editMode && showTileDrawer && hiddenTileDefs.length" class="bento-drawer">
+        <div class="bento-drawer-header">
+          <h4>Tuiles masquees</h4>
+          <button aria-label="Fermer" @click="showTileDrawer = false"><X :size="14" /></button>
+        </div>
+        <div class="bento-drawer-list">
+          <button
+            v-for="t in hiddenTileDefs"
+            :key="t.id"
+            class="bento-drawer-item"
+            @click="bento.toggleTile(t.id)"
+          >
+            <component :is="t.icon" :size="16" />
+            <span>{{ t.label }}</span>
+            <Plus :size="14" class="bento-drawer-item-add" />
+          </button>
+        </div>
+      </div>
+    </Transition>
+
+  </div>
 </template>
 
 <style scoped>
+.bento-root {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-top: 14px;
+}
+.bento-multi-promo { width: 100%; }
+
 /* ── Bento Grid ── */
 .bento-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   grid-auto-rows: minmax(100px, auto);
+  grid-auto-flow: row dense;
   gap: 12px;
-  padding-top: 14px;
 }
-
-/* ── Base tile: extends .dashboard-card from dashboard-shared.css ── */
 
 /* ── FOCUS TILE (2x2) ── */
 .bento-focus {
-  grid-column: span 2;
-  grid-row: span 2;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
@@ -462,10 +530,7 @@ function onOptDragEnd() { bento.reorderOptional(draggableOpt.value) }
 .stat-grade.grade-d { color: var(--color-danger); }
 .stat-grade.grade-empty { color: var(--text-muted); }
 
-/* ── SCHEDULE STRIP (spans 2 cols) ── */
-.bento-schedule {
-  grid-column: span 2;
-}
+/* ── SCHEDULE STRIP ── */
 .tile-title {
   display: flex;
   align-items: center;
@@ -497,9 +562,7 @@ function onOptDragEnd() { bento.reorderOptional(draggableOpt.value) }
   flex-shrink: 0;
   transition: opacity var(--t-base), background var(--t-base);
 }
-.schedule-past {
-  opacity: .4;
-}
+.schedule-past { opacity: .4; }
 .schedule-current {
   background: var(--accent-subtle);
   border-color: rgba(var(--accent-rgb), .3);
@@ -597,9 +660,8 @@ function onOptDragEnd() { bento.reorderOptional(draggableOpt.value) }
   flex-shrink: 0;
 }
 
-/* ── QUICK ACTIONS (spans 2 cols) ── */
+/* ── QUICK ACTIONS ── */
 .bento-actions {
-  grid-column: span 2;
   display: flex;
   gap: 10px;
   align-items: stretch;
@@ -645,28 +707,7 @@ function onOptDragEnd() { bento.reorderOptional(draggableOpt.value) }
   text-align: center;
 }
 
-/* ── ACTIVITY FEED (spans 2 cols) ── */
-.bento-activity {
-  grid-column: span 2;
-}
-.bento-todo {
-  grid-column: span 2;
-}
-
-/* ── Optional widgets (drag-drop grid) ── */
-.bento-opt-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 12px;
-  grid-column: 1 / -1;
-}
-.bento-optional { grid-column: span 1; }
-.bento-optional--wide { grid-column: span 2; }
-.bento-opt--ghost {
-  opacity: 0.3;
-  border: 2px dashed var(--accent) !important;
-  border-radius: var(--radius);
-}
+/* ── ACTIVITY FEED ── */
 .activity-list {
   display: flex;
   flex-direction: column;
@@ -706,43 +747,15 @@ function onOptDragEnd() { bento.reorderOptional(draggableOpt.value) }
   flex-shrink: 0;
 }
 
-/* ── Responsive: tablet (2 cols) ── */
+/* ── Responsive ── */
 @media (max-width: 768px) {
-  .bento-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-  .bento-focus {
-    grid-column: span 2;
-    grid-row: span 1;
-    padding: 20px;
-  }
-  .focus-title { font-size: 18px; }
-  .bento-schedule { grid-column: span 2; }
-  .bento-actions { grid-column: span 2; }
-  .bento-activity { grid-column: span 2; }
+  .bento-grid { grid-template-columns: repeat(2, 1fr); }
 }
-
-/* ── Responsive: mobile (1 col) ── */
 @media (max-width: 480px) {
-  .bento-grid {
-    grid-template-columns: 1fr;
-  }
-  .bento-focus,
-  .bento-schedule,
-  .bento-actions,
-  .bento-activity {
-    grid-column: span 1;
-  }
-  .bento-focus { grid-row: span 1; }
-  .bento-actions {
-    flex-direction: column;
-  }
-  .schedule-list {
-    flex-direction: column;
-  }
-  .schedule-item {
-    flex-shrink: initial;
-  }
+  .bento-grid { grid-template-columns: 1fr; }
+  .bento-actions { flex-direction: column; }
+  .schedule-list { flex-direction: column; }
+  .schedule-item { flex-shrink: initial; }
 }
 
 /* ── Edit mode ── */
@@ -752,42 +765,84 @@ function onOptDragEnd() { bento.reorderOptional(draggableOpt.value) }
   border: 2px dashed transparent;
   animation: bento-jiggle var(--motion-slow) var(--ease-out) infinite alternate;
 }
-.bento-tile--editing:hover { border-color: rgba(var(--accent-rgb), .3); }
+.bento-tile--editing:hover { border-color: rgba(var(--accent-rgb), .35); }
 
 @keyframes bento-jiggle {
-  from { transform: rotate(-0.2deg); }
-  to   { transform: rotate(0.2deg); }
+  from { transform: rotate(-0.25deg); }
+  to   { transform: rotate(0.25deg); }
 }
 
+.bento-tile--ghost {
+  opacity: 0.35;
+  border: 2px dashed var(--accent) !important;
+  border-radius: var(--radius);
+}
+
+/* ── Remove button (ameliore) ── */
 .bento-tile-remove {
-  position: absolute; top: -8px; right: -8px; z-index: 5;
-  display: flex; align-items: center; justify-content: center;
-  width: 22px; height: 22px; border-radius: var(--radius-full);
-  background: var(--color-danger); color: #fff; border: 2px solid var(--bg-main);
-  cursor: pointer; transition: transform var(--t-base);
-  box-shadow: 0 2px 6px rgba(0,0,0,.2);
+  position: absolute; top: -10px; right: -10px; z-index: 10;
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 28px; height: 28px; border-radius: var(--radius-full);
+  background: var(--color-danger); color: #fff;
+  border: 2px solid var(--bg-main);
+  cursor: pointer;
+  transition: transform var(--t-base), box-shadow var(--t-base), background var(--t-base);
+  box-shadow: 0 3px 10px rgba(239, 68, 68, .35);
+  padding: 0;
 }
-.bento-tile-remove:hover { transform: scale(1.15); }
+.bento-tile-remove:hover {
+  transform: scale(1.18);
+  background: #dc2626;
+  box-shadow: 0 4px 14px rgba(239, 68, 68, .55);
+}
+.bento-tile-remove:focus-visible {
+  outline: 3px solid rgba(239, 68, 68, .4);
+  outline-offset: 2px;
+}
 
-.bento-tile { position: relative; }
+.bento-grid .dashboard-card,
+.bento-grid .bento-tile {
+  position: relative;
+}
 
-/* Add tile button */
-.bento-add-tile {
-  display: flex; align-items: center; justify-content: center; gap: 8px;
-  padding: 16px; border-radius: var(--radius-lg); grid-column: span 4;
-  border: 2px dashed rgba(var(--accent-rgb), .3);
+/* ── Edit action bar (boutons bas de grille) ── */
+.bento-edit-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+.bento-edit-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 10px 16px; border-radius: var(--radius);
+  font-family: var(--font); font-size: 13px; font-weight: 600;
+  cursor: pointer; transition: all var(--t-base);
+  border: 1px solid var(--border); background: var(--bg-elevated);
+  color: var(--text-primary);
+}
+.bento-edit-btn:hover {
+  border-color: var(--accent);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0,0,0,.06);
+}
+.bento-edit-btn:focus-visible { outline: var(--focus-ring); outline-offset: var(--focus-offset); }
+
+.bento-edit-btn--add {
+  border: 1px dashed rgba(var(--accent-rgb), .5);
   background: var(--accent-subtle);
-  color: var(--accent); cursor: pointer;
-  transition: all var(--t-base); font-family: var(--font); font-size: 13px; font-weight: 600;
+  color: var(--accent);
 }
-.bento-add-tile:hover {
-  border-color: var(--accent); background: var(--accent-subtle);
+.bento-edit-btn--auto {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
 }
-.bento-add-tile:focus-visible { outline: var(--focus-ring); outline-offset: var(--focus-offset); }
+.bento-edit-btn--auto:hover { filter: brightness(1.1); border-color: var(--accent); }
+.bento-edit-btn--reset { color: var(--text-muted); }
 
 /* Drawer */
 .bento-drawer {
-  margin-top: 12px; padding: 16px; border-radius: var(--radius-lg);
+  margin-top: 4px; padding: 16px; border-radius: var(--radius-lg);
   background: var(--bg-elevated); border: 1px solid var(--border);
   box-shadow: 0 8px 24px rgba(0,0,0,.12);
 }
@@ -826,11 +881,4 @@ function onOptDragEnd() { bento.reorderOptional(draggableOpt.value) }
 .bento-drawer-leave-active { transition: all var(--t-base) ease; }
 .bento-drawer-enter-from { opacity: 0; transform: translateY(12px); }
 .bento-drawer-leave-to { opacity: 0; transform: translateY(8px); }
-
-@media (max-width: 768px) {
-  .bento-add-tile { grid-column: span 2; }
-}
-@media (max-width: 480px) {
-  .bento-add-tile { grid-column: span 1; }
-}
 </style>

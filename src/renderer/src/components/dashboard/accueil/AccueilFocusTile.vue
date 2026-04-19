@@ -4,17 +4,22 @@
  * Grande tuile 2x2 qui propose la prochaine action principale avec icone
  * contextuelle + bouton. Couleur de fond selon urgence.
  */
-import { Edit3, Clock, FileText, CheckCircle2, ChevronRight } from 'lucide-vue-next'
+import { Edit3, Clock, FileText, CheckCircle2, ChevronRight, X } from 'lucide-vue-next'
 import type { FocusState } from '@/composables/useAccueilFocusTile'
 
 defineProps<{
   state: FocusState
   bgClass: string
+  editMode?: boolean
 }>()
+defineEmits<{ (e: 'remove'): void }>()
 </script>
 
 <template>
-  <div class="dashboard-card bento-tile bento-focus" :class="bgClass">
+  <div class="dashboard-card bento-tile bento-focus" :class="[bgClass, { 'bento-tile--editing': editMode }]">
+    <button v-if="editMode" class="bento-tile-remove" @click="$emit('remove')">
+      <X :size="12" />
+    </button>
     <div class="focus-icon">
       <Edit3 v-if="state.type === 'grade'" :size="28" />
       <Clock v-else-if="state.type === 'deadline'" :size="28" />

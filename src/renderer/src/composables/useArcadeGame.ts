@@ -13,6 +13,7 @@ import { ref } from 'vue'
 import { useApi } from '@/composables/useApi'
 
 export type ArcadeGameState = 'idle' | 'playing' | 'done'
+export type ArcadeScope     = 'day' | 'week' | 'all'
 
 export interface ArcadeLeaderboardRow {
   rank: number
@@ -41,6 +42,7 @@ export function useArcadeGame(gameId: string) {
 
   const leaderboard = ref<ArcadeLeaderboardRow[]>([])
   const myStats     = ref<ArcadeMyStats | null>(null)
+  const scope       = ref<ArcadeScope>('day')
 
   function startRun() {
     state.value = 'playing'
@@ -87,12 +89,18 @@ export function useArcadeGame(gameId: string) {
     await Promise.all([refreshLeaderboard(), refreshMyStats()])
   }
 
-  async function refreshLeaderboard() {
+  async function refreshLeaderboard(s: ArcadeScope = scope.value) {
+    scope.value = s
     const data = await api<ArcadeLeaderboardRow[]>(
-      () => window.api.gameLeaderboard(gameId, 'day'),
+      () => window.api.gameLeaderboard(gameId, s),
       { silent: true },
     )
     if (data) leaderboard.value = data
+  }
+
+  async function setScope(s: ArcadeScope) {
+    if (s === scope.value) return
+    await refreshLeaderboard(s)
   }
 
   async function refreshMyStats() {
@@ -106,9 +114,9 @@ export function useArcadeGame(gameId: string) {
   return {
     // state
     state, score, elapsedMs, lastResult,
-    leaderboard, myStats,
+    leaderboard, myStats, scope,
     // actions
     startRun, addScore, tick, endRun, reset,
-    refreshLeaderboard, refreshMyStats,
+    refreshLeaderboard, refreshMyStats, setScope,
   }
 }

@@ -151,4 +151,107 @@ describe('useTeacherBento', () => {
     const { allTiles } = useTeacherBento()
     expect(allTiles).toBe(TEACHER_TILES)
   })
+
+  // ── visibleTiles (computed) ───────────────────────────────────────────────
+  it('visibleTiles exclut les tuiles masquees', () => {
+    const { visibleTiles, toggleTile } = useTeacherBento()
+    const before = visibleTiles.value.length
+    toggleTile('focus') // cache une tuile visible par defaut
+    expect(visibleTiles.value.length).toBe(before - 1)
+    expect(visibleTiles.value.find(t => t.id === 'focus')).toBeUndefined()
+  })
+
+  it('visibleTiles inclut les tuiles nouvellement activees', () => {
+    const { visibleTiles, toggleTile } = useTeacherBento()
+    expect(visibleTiles.value.find(t => t.id === 'clock')).toBeUndefined()
+    toggleTile('clock')
+    expect(visibleTiles.value.find(t => t.id === 'clock')).toBeDefined()
+  })
+
+  it('visibleTiles contient uniquement des WidgetDef valides', () => {
+    const { visibleTiles } = useTeacherBento()
+    for (const tile of visibleTiles.value) {
+      expect(tile).toBeDefined()
+      expect(tile.id).toBeDefined()
+    }
+  })
+
+  // ── reorderTiles ──────────────────────────────────────────────────────────
+  it('reorderTiles persiste le nouvel ordre', () => {
+    const { reorderTiles, visibleTiles } = useTeacherBento()
+    const reversed = [...visibleTiles.value].reverse()
+    reorderTiles(reversed)
+    expect(localStorageMock.setItem).toHaveBeenCalledWith(
+      'teacher_bento_opt_order',
+      expect.any(String),
+    )
+  })
+
+  it('reorderTiles applique l ordre sur visibleTiles', () => {
+    const { reorderTiles, visibleTiles } = useTeacherBento()
+    const firstId = visibleTiles.value[0].id
+    const lastId = visibleTiles.value[visibleTiles.value.length - 1].id
+    const reversed = [...visibleTiles.value].reverse()
+    reorderTiles(reversed)
+    expect(visibleTiles.value[0].id).toBe(lastId)
+    expect(visibleTiles.value[visibleTiles.value.length - 1].id).toBe(firstId)
+  })
+
+  it('reorderTiles preserve les tuiles masquees hors de la sequence', () => {
+    const { reorderTiles, toggleTile, visibleTiles } = useTeacherBento()
+    // Cache 'clock' reste masque apres un reorder
+    expect(visibleTiles.value.find(t => t.id === 'clock')).toBeUndefined()
+    const reversed = [...visibleTiles.value].reverse()
+    reorderTiles(reversed)
+    toggleTile('clock') // on l active : il doit apparaitre quelque part
+    expect(visibleTiles.value.find(t => t.id === 'clock')).toBeDefined()
+  })
+
+  // ── smartReorganize ───────────────────────────────────────────────────────
+  it('smartReorganize range les essentielles en premier', () => {
+    const { smartReorganize, visibleTiles } = useTeacherBento()
+    smartReorganize()
+    // La 1ere tuile visible doit appartenir a la categorie la plus prioritaire
+    // presente dans l ensemble visible (essential ou tracking).
+    const firstCat = visibleTiles.value[0].category
+    expect(['essential', 'tracking']).toContain(firstCat)
+  })
+
+  it('smartReorganize persiste l ordre', () => {
+    const { smartReorganize } = useTeacherBento()
+    smartReorganize()
+    expect(localStorageMock.setItem).toHaveBeenCalledWith(
+      'teacher_bento_opt_order',
+      expect.any(String),
+    )
+  })
+
+  it('smartReorganize laisse la categorie fun vers la fin', () => {
+    const { smartReorganize, toggleTile, visibleTiles } = useTeacherBento()
+    toggleTile('clock') // fun
+    smartReorganize()
+    const funIdx = visibleTiles.value.findIndex(t => t.id === 'clock')
+    const essentialIdx = visibleTiles.value.findIndex(t => t.category === 'essential')
+    // fun doit etre apres au moins une tuile essentielle
+    if (essentialIdx >= 0 && funIdx >= 0) {
+      expect(funIdx).toBeGreaterThan(essentialIdx)
+    }
+  })
+
+  it('smartReorganize est idempotent (2 appels = meme resultat)', () => {
+    const { smartReorganize, visibleTiles } = useTeacherBento()
+    smartReorganize()
+    const order1 = visibleTiles.value.map(t => t.id)
+    smartReorganize()
+    const order2 = visibleTiles.value.map(t => t.id)
+    expect(order2).toEqual(order1)
+  })
+
+  it('smartReorganize conserve le meme ensemble de tuiles visibles', () => {
+    const { smartReorganize, visibleTiles } = useTeacherBento()
+    const beforeIds = new Set(visibleTiles.value.map(t => t.id))
+    smartReorganize()
+    const afterIds = new Set(visibleTiles.value.map(t => t.id))
+    expect(afterIds).toEqual(beforeIds)
+  })
 })

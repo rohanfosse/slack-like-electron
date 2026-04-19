@@ -15,9 +15,13 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { useRouter } from 'vue-router'
-import { ArrowLeft, Play, RotateCw, Trophy, Sparkles, Heart } from 'lucide-vue-next'
+import { ArrowLeft, Play, RotateCw, Sparkles, Heart } from 'lucide-vue-next'
 import { useArcadeGame } from '@/composables/useArcadeGame'
 import { useAppStore } from '@/stores/app'
+import GameSidebar from '@/components/games/GameSidebar.vue'
+import { GAMES } from '@/games/registry'
+
+const gameMeta = GAMES.find(g => g.id === 'space_invaders')
 
 const router = useRouter()
 const appStore = useAppStore()
@@ -372,26 +376,15 @@ const currentRank = computed(() => {
         </p>
       </section>
 
-      <aside class="si-leaderboard">
-        <h3><Trophy :size="12" /> Aujourd'hui</h3>
-        <ol v-if="game.leaderboard.value.length" class="si-lb-list">
-          <li
-            v-for="e in game.leaderboard.value.slice(0, 10)"
-            :key="e.rank"
-            :class="{
-              'is-me':   e.name === appStore.currentUser?.name,
-              'is-gold': e.rank === 1,
-              'is-silver': e.rank === 2,
-              'is-bronze': e.rank === 3,
-            }"
-          >
-            <span class="si-lb-rank">{{ e.rank }}</span>
-            <span class="si-lb-name">{{ e.name }}</span>
-            <span class="si-lb-score">{{ e.bestScore }}</span>
-          </li>
-        </ol>
-        <p v-else class="si-lb-empty">Sois le premier a jouer.</p>
-      </aside>
+      <GameSidebar
+        :leaderboard="game.leaderboard.value"
+        :my-stats="game.myStats.value"
+        :scope="game.scope.value"
+        :current-user-name="appStore.currentUser?.name ?? null"
+        :accent="gameMeta?.accent"
+        class="si-sidebar"
+        @change-scope="(s) => game.setScope(s)"
+      />
     </main>
   </div>
 </template>
@@ -516,37 +509,11 @@ const currentRank = computed(() => {
   background: var(--bg-elevated);
 }
 
-.si-leaderboard {
-  background: var(--bg-sidebar);
-  border: 1px solid var(--border);
-  border-radius: 14px;
-  padding: 14px;
-  display: flex; flex-direction: column; gap: 8px;
-  min-height: 0; overflow: auto;
-}
-.si-leaderboard h3 {
-  display: inline-flex; align-items: center; gap: 5px;
-  font-size: 11px; font-weight: 800;
-  text-transform: uppercase; letter-spacing: .5px;
-  color: var(--text-secondary); margin: 0 0 4px;
-}
-.si-lb-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 3px; }
-.si-lb-list li {
-  display: grid; grid-template-columns: 22px 1fr auto;
-  align-items: center; gap: 8px; padding: 5px 8px;
-  border-radius: 6px; font-size: 12px; color: var(--text-secondary);
-}
-.si-lb-list li.is-me { background: rgba(34, 211, 238, .14); color: #22d3ee; font-weight: 700; }
-.si-lb-rank { font-weight: 800; text-align: center; font-variant-numeric: tabular-nums; color: var(--text-muted); }
-.is-gold   .si-lb-rank { color: #eab308; }
-.is-silver .si-lb-rank { color: #94a3b8; }
-.is-bronze .si-lb-rank { color: #c2884d; }
-.si-lb-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.si-lb-score { font-family: var(--font-mono, monospace); font-weight: 800; font-variant-numeric: tabular-nums; }
-.si-lb-empty { margin: 0; padding: 12px; color: var(--text-muted); font-size: 11px; font-style: italic; text-align: center; }
+/* Sidebar partage (leaderboard + stats + historique) — styles portes par GameSidebar.vue */
+.si-sidebar { align-self: stretch; }
 
 @media (max-width: 900px) {
   .si-main { grid-template-columns: 1fr; }
-  .si-leaderboard { max-height: 200px; }
+  .si-sidebar { max-height: 260px; }
 }
 </style>
