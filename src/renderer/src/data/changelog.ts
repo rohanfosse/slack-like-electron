@@ -12,6 +12,17 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '2.166.2',
+    date: '2026-04-19',
+    title: 'Agenda semaine : jours plus visibles + devoirs apaises',
+    highlights: [
+      'Headers de jour redesignes : nom du jour au-dessus, numero plus gros (style Apple Calendar)',
+      'Devoirs all-day : fond tinte avec la couleur de la promo (au lieu du flat satur\u00e9)',
+      'Barre laterale 3px qui preserve l\'identite couleur',
+      'UPPERCASE letter-spaced retire des headers de colonnes',
+    ],
+  },
+  {
     version: '2.166.1',
     date: '2026-04-19',
     title: 'Lumen : rendu markdown apaise',

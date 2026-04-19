@@ -612,7 +612,12 @@ watch(() => route.query, (q) => {
           </template>
 
           <template #event="{ event }">
-            <div class="ag-event-body" @contextmenu="onEventContextMenu($event, event)">
+            <div
+              class="ag-event-body"
+              :class="{ 'ag-event-body--allday-tinted': event.allDay && (event.eventType === 'deadline' || event.eventType === 'start_date') }"
+              :style="event.allDay && event.color ? { '--ag-event-color': event.color } : undefined"
+              @contextmenu="onEventContextMenu($event, event)"
+            >
               <span v-if="!event.allDay && event.startTimeMinutes !== undefined" class="vuecal__event-time">
                 {{ formatEventTime(event.start) }}
               </span>
@@ -890,41 +895,42 @@ watch(() => route.query, (q) => {
   border-bottom: 2px solid var(--border) !important;
 }
 :deep(.vuecal__heading) {
-  font-size: 12px !important; font-weight: 700 !important;
-  color: var(--text-primary) !important; padding: 6px 0 !important;
-  text-transform: uppercase; letter-spacing: 0.5px;
+  font-size: 12px !important; font-weight: 600 !important;
+  color: var(--text-primary) !important; padding: 4px 0 !important;
   height: auto !important;
   min-height: 3.4em;
 }
 
-/* ── Day heading custom slot (Outlook-like: big number + day name below) ── */
+/* ── Day heading custom slot — name top, number bottom (style Apple Calendar) ── */
 .ag-day-head {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 2px;
-  padding: 6px 4px;
+  gap: 4px;
+  padding: 10px 4px 8px;
   width: 100%;
   box-sizing: border-box;
   position: relative;
 }
 .ag-day-head--month { padding: 8px 4px; }
+.ag-day-name {
+  font-family: var(--font-display);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: capitalize;
+  letter-spacing: 0;
+  order: -1;
+}
 .ag-day-num {
-  font-size: 26px;
-  font-weight: 300;
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 600;
   color: var(--text-primary);
   line-height: 1;
   font-variant-numeric: tabular-nums;
-  text-transform: none;
   letter-spacing: -0.02em;
-}
-.ag-day-name {
-  font-size: 11px;
-  font-weight: 500;
-  color: var(--text-muted);
-  text-transform: capitalize;
-  letter-spacing: 0;
 }
 .ag-day-name-mo {
   font-size: 11px;
@@ -940,18 +946,18 @@ watch(() => route.query, (q) => {
 /* Today : badge rond rempli (style Fantastical / Notion Calendar) */
 .ag-day-head--today .ag-day-num {
   background: var(--accent);
-  color: white;
+  color: #fff;
   border-radius: 50%;
-  width: 34px; height: 34px;
+  width: 32px; height: 32px;
   display: inline-flex; align-items: center; justify-content: center;
-  font-weight: 500;
-  font-size: 18px;
+  font-weight: 700;
+  font-size: 17px;
   letter-spacing: -0.01em;
   box-shadow: 0 2px 8px rgba(var(--accent-rgb), 0.35);
 }
 .ag-day-head--today .ag-day-name {
   color: var(--accent);
-  font-weight: 600;
+  font-weight: 700;
 }
 :deep(.vuecal__cell) {
   background: var(--bg-main) !important; border-color: var(--border) !important;
@@ -1166,28 +1172,49 @@ watch(() => route.query, (q) => {
   border-bottom: 1px solid var(--border) !important;
   font-size: 10px !important;
   font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.3px;
   width: 3em !important;
 }
 :deep(.vuecal__event--all-day) {
-  min-height: 20px !important;
-  height: 20px !important;
-  border-radius: 3px !important;
+  min-height: 22px !important;
+  height: 22px !important;
+  border-radius: 4px !important;
   margin: 1px 2px !important;
-  padding: 2px 8px !important;
+  padding: 0 !important;
   font-size: 11px !important;
   font-weight: 500 !important;
   line-height: 1.3 !important;
   box-shadow: none !important;
   display: flex;
+  align-items: stretch;
+  transition: background var(--motion-fast) var(--ease-out);
+}
+/* Devoirs all-day : fond tinte avec la couleur promo + barre laterale.
+   Override du background satur\u00e9 que VueCal applique inline. */
+:deep(.vuecal__event--all-day):has(.ag-event-body--allday-tinted) {
+  background: transparent !important;
+}
+.ag-event-body--allday-tinted {
+  display: flex;
   align-items: center;
-  transition: filter 0.12s;
+  width: 100%;
+  height: 100%;
+  padding: 2px 8px;
+  background: color-mix(in srgb, var(--ag-event-color, var(--accent)) 14%, transparent);
+  border-left: 3px solid var(--ag-event-color, var(--accent));
+  border-radius: 3px;
+  color: var(--text-primary);
+  transition: background var(--motion-fast) var(--ease-out);
+}
+.ag-event-body--allday-tinted:hover {
+  background: color-mix(in srgb, var(--ag-event-color, var(--accent)) 22%, transparent);
+}
+@supports not (background: color-mix(in srgb, white, black)) {
+  .ag-event-body--allday-tinted {
+    background: var(--bg-elevated);
+  }
 }
 :deep(.vuecal__event--all-day:hover) {
-  filter: brightness(1.08);
   transform: none !important;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.15) !important;
 }
 :deep(.vuecal__event--all-day .vuecal__event-title) {
   font-weight: 500 !important;
