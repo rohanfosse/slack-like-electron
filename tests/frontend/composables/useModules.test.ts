@@ -20,13 +20,13 @@ describe('useModules', () => {
     resetLoaded()
   })
 
-  it('MODULES array contains exactly 5 items', () => {
+  it('MODULES array contains exactly 6 items', () => {
     const { MODULES } = useModules()
-    expect(MODULES).toHaveLength(5)
-    expect(MODULES).toEqual(['kanban', 'frise', 'live', 'signatures', 'lumen'])
+    expect(MODULES).toHaveLength(6)
+    expect(MODULES).toEqual(['kanban', 'frise', 'live', 'signatures', 'lumen', 'games'])
   })
 
-  it('MODULE_LABELS has all 5 modules with string labels', () => {
+  it('MODULE_LABELS has all modules with string labels', () => {
     const { MODULE_LABELS, MODULES } = useModules()
     for (const m of MODULES) {
       expect(typeof MODULE_LABELS[m]).toBe('string')
@@ -34,11 +34,14 @@ describe('useModules', () => {
     }
   })
 
-  it('isEnabled defaults to true for all modules', () => {
-    const { isEnabled, MODULES } = useModules()
-    for (const m of MODULES) {
+  it('isEnabled defaults to true for core modules and false for opt-in modules', () => {
+    const { isEnabled } = useModules()
+    // Core modules : default enabled
+    for (const m of ['kanban', 'frise', 'live', 'signatures', 'lumen'] as const) {
       expect(isEnabled(m)).toBe(true)
     }
+    // Opt-in modules : default disabled (rollout controle par admin)
+    expect(isEnabled('games')).toBe(false)
   })
 
   it('loadModules fetches and updates state', async () => {
@@ -57,26 +60,29 @@ describe('useModules', () => {
     expect(isEnabled('signatures')).toBe(false)
   })
 
-  it('loadModules handles API error gracefully (defaults stay true)', async () => {
+  it('loadModules handles API error gracefully (defaults preserved)', async () => {
     getModulesMock.mockRejectedValue(new Error('Network error'))
 
-    const { loadModules, isEnabled, MODULES } = useModules()
+    const { loadModules, isEnabled } = useModules()
     await loadModules()
 
-    for (const m of MODULES) {
+    // Core modules restent actives, opt-in restent inactifs
+    for (const m of ['kanban', 'frise', 'live', 'signatures', 'lumen'] as const) {
       expect(isEnabled(m)).toBe(true)
     }
+    expect(isEnabled('games')).toBe(false)
   })
 
   it('loadModules handles response with ok=false gracefully', async () => {
     getModulesMock.mockResolvedValue({ ok: false })
 
-    const { loadModules, isEnabled, MODULES } = useModules()
+    const { loadModules, isEnabled } = useModules()
     await loadModules()
 
-    for (const m of MODULES) {
+    for (const m of ['kanban', 'frise', 'live', 'signatures', 'lumen'] as const) {
       expect(isEnabled(m)).toBe(true)
     }
+    expect(isEnabled('games')).toBe(false)
   })
 
   it('setEnabled updates local state and calls API', async () => {
