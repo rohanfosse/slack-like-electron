@@ -135,6 +135,26 @@ describe('messages model', () => {
       expect(msg.id).toBeLessThan(lastId)
     }
   })
+
+  // v2.180 — DoS guard : cap a 500 messages sur les endpoints full-history.
+  // Les clients doivent utiliser getChannelMessagesPage pour tout voir.
+  it('getChannelMessages plafonne a 500 messages max', () => {
+    const count = queries.getChannelMessages(1).length
+    expect(count).toBeLessThanOrEqual(500)
+  })
+
+  it('getDmMessages plafonne a 500 messages max', () => {
+    const count = queries.getDmMessages(1).length
+    expect(count).toBeLessThanOrEqual(500)
+  })
+
+  it('getChannelMessages retourne dans l ordre chronologique (ASC)', () => {
+    const msgs = queries.getChannelMessages(1)
+    if (msgs.length < 2) return
+    for (let i = 1; i < msgs.length; i++) {
+      expect(msgs[i].id).toBeGreaterThanOrEqual(msgs[i - 1].id)
+    }
+  })
 })
 
 describe('updateReactions', () => {

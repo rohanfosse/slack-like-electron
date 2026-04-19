@@ -56,7 +56,7 @@ router.get('/:id',                      requirePromo(promoFromTravail), wrap((re
 router.get('/:id/suivi',                requirePromo(promoFromTravail), wrap((req) => queries.getTravauxSuivi(Number(req.params.id))))
 router.get('/:id/group-members',        requirePromo(promoFromTravail), wrap((req) => queries.getTravailGroupMembers(Number(req.params.id))))
 router.post('/', requireRole('teacher'), validate(createAssignmentSchema), wrap((req) => queries.createTravail(req.body)))
-router.post('/publish', requireRole('teacher'), async (req, res) => {
+router.post('/publish', requireRole('teacher'), requireTravailOwner, async (req, res) => {
   try {
     const result = queries.updateTravailPublished(req.body)
     // Notifier les etudiants quand un devoir est publie

@@ -5,7 +5,20 @@ const queries = require('../db/index')
 const { validate } = require('../middleware/validate')
 const wrap         = require('../utils/wrap')
 const log          = require('../utils/logger')
-const { requirePromo, promoFromTravail } = require('../middleware/authorize')
+const { requirePromo, promoFromTravail, requireDepotOwner } = require('../middleware/authorize')
+
+/** Trace une modification de note/feedback dans audit_log (contestation CESI). */
+function auditGradeChange(req, { depotId, field, oldValue, newValue }) {
+  try {
+    const { logAudit } = require('../db/models/admin')
+    logAudit({
+      actorId: req.user?.id, actorName: req.user?.name, actorType: req.user?.type,
+      action: `grade:${field}`, target: `depot:${depotId}`,
+      details: JSON.stringify({ old: oldValue ?? null, new: newValue ?? null }),
+      ip: req.ip,
+    })
+  } catch { /* non-bloquant — le log admin ne doit pas casser la notation */ }
+}
 
 /** Émet une notification grade:new à l'étudiant concerné. */
 function emitGradeNotification(req, { note, feedback }) {
@@ -128,8 +141,9 @@ router.post('/', validate(submitDepotSchema), (req, res) => {
   }
 })
 
-// Note et feedback - réservés aux enseignants
-router.post('/note', validate(noteSchema), (req, res) => {
+// Note et feedback - réservés aux enseignants propriétaires de la promo.
+// requireDepotOwner empeche un prof de noter le depot d une autre promo.
+router.post('/note', validate(noteSchema), requireDepotOwner, (req, res) => {
   if (req.user.type === 'student') {
     return res.status(403).json({ ok: false, error: 'Seuls les responsables peuvent attribuer des notes.' })
   }
@@ -147,12 +161,13 @@ router.post('/note', validate(noteSchema), (req, res) => {
       return res.json({ ok: true, data: { changes: 0, unchanged: true } })
     }
     const result = queries.setNote({ depotId, note: req.body.note })
+    auditGradeChange(req, { depotId, field: 'note', oldValue: existing.note, newValue: req.body.note })
     emitGradeNotification(req, { note: req.body.note })
     res.json({ ok: true, data: result })
   }
   catch (err) { res.status(400).json({ ok: false, error: err.message }) }
 })
-router.post('/feedback', validate(feedbackSchema), (req, res) => {
+router.post('/feedback', validate(feedbackSchema), requireDepotOwner, (req, res) => {
   if (req.user.type === 'student') {
     return res.status(403).json({ ok: false, error: 'Seuls les responsables peuvent donner un feedback.' })
   }
@@ -167,6 +182,7 @@ router.post('/feedback', validate(feedbackSchema), (req, res) => {
       return res.json({ ok: true, data: { changes: 0, unchanged: true } })
     }
     const result = queries.setFeedback({ depotId, feedback: req.body.feedback })
+    auditGradeChange(req, { depotId, field: 'feedback', oldValue: existing.feedback, newValue: req.body.feedback })
     emitGradeNotification(req, { feedback: req.body.feedback })
     res.json({ ok: true, data: result })
   }

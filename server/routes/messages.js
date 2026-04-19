@@ -43,6 +43,32 @@ const reportSchema = z.object({
   details: z.string().max(1000).nullable().optional(),
 })
 
+const pinSchema = z.object({
+  messageId: z.number().int().positive('messageId invalide'),
+  pinned:    z.union([z.boolean(), z.number().int().min(0).max(1)]),
+})
+
+// reactionsJson : string JSON max 4 KB, doit etre un objet clef->count.
+const reactionsSchema = z.object({
+  msgId:         z.number().int().positive('msgId invalide'),
+  reactionsJson: z.string().max(4000, 'reactionsJson trop long').refine(
+    (s) => {
+      try {
+        const parsed = JSON.parse(s)
+        return parsed && typeof parsed === 'object' && !Array.isArray(parsed)
+      } catch { return false }
+    },
+    { message: 'reactionsJson doit etre un objet JSON valide' },
+  ),
+})
+
+const searchAllSchema = z.object({
+  query:   z.string().min(1).max(200),
+  limit:   z.number().int().min(1).max(50).optional(),
+  promoId: z.number().int().positive().nullable().optional(),
+  userId:  z.number().int().nullable().optional(),
+})
+
 // ── Helper audit log ─────────────────────────────────────────────────────────
 function audit(req, action, target, details) {
   try {
@@ -67,9 +93,12 @@ router.get('/dm/:studentId/page', requireDmParticipant, wrap((req) => {
   return queries.getDmMessagesPage(Number(req.params.studentId), before, peer)
 }))
 router.get('/search', requirePromo(promoFromChannel), wrap((req) => queries.searchMessages(Number(req.query.channelId), req.query.q)))
-router.post('/search-all', wrap((req) => {
+router.post('/search-all', validate(searchAllSchema), wrap((req) => {
   const { query, limit } = req.body
-  // Étudiants : forcé à leur propre promo + leur propre userId (pas de recherche cross-promo/user)
+  // Etudiants : force a leur propre promo + propre userId (pas de cross-user/promo).
+  // Teachers/admins : peuvent restreindre a une promo/user specifiques mais seulement
+  // dans leurs promos (teacher_promos). Sinon, le teacher passe null pour tout ouvrir
+  // mais les DMs d autres users restent filtres par searchAllMessages.
   const promoId = req.user.type === 'student' ? req.user.promo_id : (req.body.promoId ?? null)
   const userId  = req.user.type === 'student' ? req.user.id : (req.body.userId ?? null)
   return queries.searchAllMessages(promoId, query, limit ?? 8, userId)
@@ -126,19 +155,37 @@ router.post('/', messageLimiter, validate(sendMessageSchema), (req, res) => {
   }
 })
 
-router.post('/pin',       requireRole('teacher'), wrap((req) => queries.togglePinMessage(req.body.messageId, req.body.pinned)))
-router.post('/reactions', (req, res, next) => {
-  // Étudiants : vérifier que le message est dans leur promo
-  if (req.user?.type !== 'student') return next()
+router.post('/pin', requireRole('teacher'), validate(pinSchema), wrap((req) => {
+  // Verifie que le prof est responsable de la promo du message avant de pin/unpin.
+  const { getDb } = require('../db/connection')
+  const row = getDb().prepare(`
+    SELECT c.promo_id FROM messages m
+    LEFT JOIN channels c ON c.id = m.channel_id
+    WHERE m.id = ? AND m.deleted_at IS NULL
+  `).get(req.body.messageId)
+  if (!row) throw new NotFoundError('Message introuvable.')
+  if (req.user.type !== 'admin' && row.promo_id) {
+    const teacherId = Math.abs(req.user.id)
+    const owns = getDb().prepare(
+      'SELECT 1 FROM teacher_promos WHERE teacher_id = ? AND promo_id = ? LIMIT 1'
+    ).get(teacherId, row.promo_id)
+    if (!owns) throw new ForbiddenError('Ce message n\'appartient pas à vos promotions.')
+  }
+  return queries.togglePinMessage(req.body.messageId, req.body.pinned)
+}))
+
+router.post('/reactions', validate(reactionsSchema), (req, res, next) => {
+  // Verifie l appartenance a la promo/DM avant d ecrire en DB.
   const { getDb } = require('../db/connection')
   const msg = getDb().prepare('SELECT channel_id, dm_student_id FROM messages WHERE id = ? AND deleted_at IS NULL').get(req.body.msgId)
   if (!msg) return res.status(404).json({ ok: false, error: 'Message introuvable.' })
-  if (msg.dm_student_id) {
-    // DM : l'étudiant ne peut réagir que dans sa boîte
-    if (msg.dm_student_id !== req.user.id) return res.status(403).json({ ok: false, error: 'Accès non autorisé.' })
-  } else if (msg.channel_id) {
-    const ch = getDb().prepare('SELECT promo_id FROM channels WHERE id = ?').get(msg.channel_id)
-    if (ch && ch.promo_id !== req.user.promo_id) return res.status(403).json({ ok: false, error: 'Accès non autorisé.' })
+  if (req.user?.type === 'student') {
+    if (msg.dm_student_id) {
+      if (msg.dm_student_id !== req.user.id) return res.status(403).json({ ok: false, error: 'Accès non autorisé.' })
+    } else if (msg.channel_id) {
+      const ch = getDb().prepare('SELECT promo_id FROM channels WHERE id = ?').get(msg.channel_id)
+      if (ch && ch.promo_id !== req.user.promo_id) return res.status(403).json({ ok: false, error: 'Accès non autorisé.' })
+    }
   }
   next()
 }, wrap((req) => queries.updateReactions(req.body.msgId, req.body.reactionsJson)))

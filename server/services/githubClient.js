@@ -12,6 +12,22 @@
 const { getLumenGithubAuth } = require('../db/models/lumen')
 
 const USER_AGENT = 'Cursus-Lumen/1.0'
+// Cap dur sur les appels GitHub : un reseau lent ou une API hung ne doit pas
+// bloquer la requete Express (qui lock le thread Socket.io derriere). 15s
+// est deja long pour un /repos or /contents normal ; au-dela on coupe.
+const GITHUB_TIMEOUT_MS = 15_000
+
+/**
+ * Fetch avec timeout combinable avec un signal du caller. Utilise par Octokit
+ * via l option `request.fetch` pour enforce le timeout sur TOUS les appels.
+ */
+function fetchWithTimeout(input, init = {}) {
+  const timeout = AbortSignal.timeout(GITHUB_TIMEOUT_MS)
+  const signal = init.signal
+    ? (typeof AbortSignal.any === 'function' ? AbortSignal.any([init.signal, timeout]) : timeout)
+    : timeout
+  return fetch(input, { ...init, signal })
+}
 
 let _OctokitCtor = null
 let _RequestErrorCtor = null
@@ -41,7 +57,11 @@ async function buildClientForUser(userType, userId) {
   const auth = getLumenGithubAuth(userType, userId)
   if (!auth?.access_token) return null
   const Octokit = await loadOctokit()
-  return new Octokit({ auth: auth.access_token, userAgent: USER_AGENT })
+  return new Octokit({
+    auth: auth.access_token,
+    userAgent: USER_AGENT,
+    request: { fetch: fetchWithTimeout },
+  })
 }
 
 /**
@@ -50,7 +70,7 @@ async function buildClientForUser(userType, userId) {
  */
 async function validateToken(token) {
   const Octokit = await loadOctokit()
-  const octokit = new Octokit({ auth: token, userAgent: USER_AGENT })
+  const octokit = new Octokit({ auth: token, userAgent: USER_AGENT, request: { fetch: fetchWithTimeout } })
   const { data, headers } = await octokit.rest.users.getAuthenticated()
   return {
     login: data.login,
@@ -91,6 +111,10 @@ async function mapOctokitError(err) {
     if (status === 404) return { status: 404, code: 'GITHUB_NOT_FOUND', message: 'Ressource GitHub introuvable (organisation ou repo inexistant)' }
     if (status === 422) return { status: 422, code: 'GITHUB_INVALID', message: err.message ?? 'Donnees GitHub invalides' }
     return { status, code: 'GITHUB_ERROR', message: err.message ?? 'Erreur GitHub' }
+  }
+  // Timeout explicite (AbortSignal.timeout).
+  if (err?.name === 'TimeoutError' || err?.name === 'AbortError') {
+    return { status: 504, code: 'GITHUB_TIMEOUT', message: 'GitHub n a pas repondu a temps. Reessaye dans quelques secondes.' }
   }
   // Erreurs reseau (pas de reponse HTTP)
   const msg = err?.message ?? ''

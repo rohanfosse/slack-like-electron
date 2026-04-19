@@ -86,6 +86,40 @@ describe('POST /api/messages/reactions', () => {
     expect(res.status).toBe(200)
     expect(res.body.ok).toBe(true)
   })
+
+  // v2.180 Zod : rejets de payloads malformes / DoS
+  it('rejette un reactionsJson non-JSON (Zod)', async () => {
+    const res = await request(app)
+      .post('/api/messages/reactions')
+      .set('Authorization', `Bearer ${studentToken}`)
+      .send({ msgId: 1, reactionsJson: 'not json at all' })
+    expect(res.status).toBeGreaterThanOrEqual(400)
+  })
+
+  it('rejette un reactionsJson > 4000 chars (DoS)', async () => {
+    const big = JSON.stringify({ x: 'a'.repeat(5000) })
+    const res = await request(app)
+      .post('/api/messages/reactions')
+      .set('Authorization', `Bearer ${studentToken}`)
+      .send({ msgId: 1, reactionsJson: big })
+    expect(res.status).toBeGreaterThanOrEqual(400)
+  })
+
+  it('rejette un reactionsJson qui est un tableau (doit etre objet)', async () => {
+    const res = await request(app)
+      .post('/api/messages/reactions')
+      .set('Authorization', `Bearer ${studentToken}`)
+      .send({ msgId: 1, reactionsJson: '["check","fire"]' })
+    expect(res.status).toBeGreaterThanOrEqual(400)
+  })
+
+  it('rejette un msgId absent', async () => {
+    const res = await request(app)
+      .post('/api/messages/reactions')
+      .set('Authorization', `Bearer ${studentToken}`)
+      .send({ reactionsJson: '{}' })
+    expect(res.status).toBeGreaterThanOrEqual(400)
+  })
 })
 
 // ─── Search-all ──────────────────────────────────────────────────────────────

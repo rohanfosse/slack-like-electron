@@ -11,7 +11,7 @@ const router = require('express').Router()
 const { z } = require('zod')
 const wrap = require('../utils/wrap')
 const authMiddleware = require('../middleware/auth')
-const { requireRole, requirePromo, requirePromoAdmin, promoFromParam, promoFromTravail } = require('../middleware/authorize')
+const { requireRole, requirePromo, requirePromoMember, requirePromoAdmin, promoFromParam, promoFromTravail } = require('../middleware/authorize')
 const { validate } = require('../middleware/validate')
 const { AppError, NotFoundError, ForbiddenError } = require('../utils/errors')
 const { buildClientForUser, validateToken, mapOctokitError } = require('../services/githubClient')
@@ -192,7 +192,7 @@ router.delete('/github/disconnect', wrap(async (req) => {
 
 // ─── Promo GitHub org mapping (admin/teacher seulement) ─────────────────────
 
-router.get('/promos/:id/github-org', requirePromo(promoFromIdParam), wrap(async (req) => {
+router.get('/promos/:id/github-org', requirePromoMember(promoFromIdParam), wrap(async (req) => {
   const promoId = Number(req.params.id)
   return { org: getPromoGithubOrg(promoId) }
 }))
@@ -213,7 +213,7 @@ router.put(
 
 router.get(
   '/repos/promo/:promoId',
-  requirePromo(promoFromParam),
+  requirePromoMember(promoFromParam),
   wrap(async (req) => {
     const promoId = Number(req.params.promoId)
     const repos = getLumenReposForPromo(promoId, { visibleOnly: isStudent(req) }).map(serializeRepo)
@@ -290,7 +290,7 @@ router.post(
 
 router.post(
   '/repos/sync/promo/:promoId',
-  requirePromo(promoFromParam),
+  requirePromoMember(promoFromParam),
   wrap(async (req) => {
     const promoId = Number(req.params.promoId)
     const org = getPromoGithubOrg(promoId)
@@ -309,7 +309,7 @@ router.post(
 
 router.get(
   '/repos/:id',
-  requirePromo(promoFromRepoParam),
+  requirePromoMember(promoFromRepoParam),
   wrap(async (req) => {
     const repo = repoOrThrow(Number(req.params.id))
     if (isStudent(req) && !repo.is_visible) {
@@ -365,7 +365,7 @@ const searchQuerySchema = z.object({
  */
 router.get(
   '/promos/:promoId/search',
-  requirePromo(promoFromParam),
+  requirePromoMember(promoFromParam),
   wrap(async (req) => {
     const promoId = Number(req.params.promoId)
     const parsed = searchQuerySchema.safeParse(req.query)
@@ -442,7 +442,7 @@ router.put(
  */
 router.get(
   '/repos/by-project-name',
-  requirePromo((req) => Number(req.query.promoId) || null),
+  requirePromoMember((req) => Number(req.query.promoId) || null),
   wrap(async (req) => {
     const promoId = Number(req.query.promoId)
     const name = String(req.query.name ?? '').trim()
@@ -515,7 +515,7 @@ router.put(
 
 router.get(
   '/repos/:id/content',
-  requirePromo(promoFromRepoParam),
+  requirePromoMember(promoFromRepoParam),
   wrap(async (req) => {
     const repo = repoOrThrow(Number(req.params.id))
     if (isStudent(req) && !repo.is_visible) {
@@ -621,7 +621,7 @@ router.post(
 router.post(
   '/repos/:id/read',
   requireRole('student'),
-  requirePromo(promoFromRepoParam),
+  requirePromoMember(promoFromRepoParam),
   validate(chapterPathSchema),
   wrap(async (req) => {
     const repoId = Number(req.params.id)
@@ -667,7 +667,7 @@ router.get(
 router.get(
   '/repos/:id/note',
   requireRole('student'),
-  requirePromo(promoFromRepoParam),
+  requirePromoMember(promoFromRepoParam),
   wrap(async (req) => {
     const repoId = Number(req.params.id)
     const path = String(req.query.path ?? '').trim()
@@ -680,7 +680,7 @@ router.get(
 router.put(
   '/repos/:id/note',
   requireRole('student'),
-  requirePromo(promoFromRepoParam),
+  requirePromoMember(promoFromRepoParam),
   validate(noteSchema),
   wrap(async (req) => {
     const repoId = Number(req.params.id)
@@ -692,7 +692,7 @@ router.put(
 router.delete(
   '/repos/:id/note',
   requireRole('student'),
-  requirePromo(promoFromRepoParam),
+  requirePromoMember(promoFromRepoParam),
   validate(chapterPathSchema),
   wrap(async (req) => {
     const repoId = Number(req.params.id)
@@ -732,7 +732,7 @@ const chapterTravailBodySchema = z.object({
  */
 router.get(
   '/repos/:id/chapters/travaux',
-  requirePromo(promoFromRepoParam),
+  requirePromoMember(promoFromRepoParam),
   wrap(async (req) => {
     const repoId = Number(req.params.id)
     const path = String(req.query.path ?? '').trim()

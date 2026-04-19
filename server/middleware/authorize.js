@@ -129,6 +129,55 @@ function requireDmParticipant(req, res, next) {
 }
 
 /**
+ * Comme requirePromo mais verifie AUSSI l appartenance a la promo pour les
+ * teachers non-admin et les TAs. Utile pour les routes de LECTURE sensibles
+ * (Lumen repos privatifs, notes, etc.) ou un teacher externe ne doit pas
+ * pouvoir lire les donnees d une autre promo.
+ *
+ * - admin          : pass
+ * - student        : doit appartenir a la promo
+ * - teacher        : doit etre dans teacher_promos
+ * - ta             : doit etre dans teacher_projects d un projet de la promo
+ */
+function requirePromoMember(getPromoId) {
+  return (req, res, next) => {
+    if (isAdmin(req)) return next()
+    const promoId = getPromoId(req)
+    if (promoId == null) return next()
+
+    if (req.user?.type === 'student') {
+      if (req.user.promo_id !== promoId) {
+        return res.status(403).json({ ok: false, error: 'Accès non autorisé à cette promotion.' })
+      }
+      return next()
+    }
+
+    const teacherId = getTeacherId(req)
+    if (req.user?.type === 'teacher') {
+      if (!teacherOwnsPromo(teacherId, promoId)) {
+        return res.status(403).json({ ok: false, error: 'Vous n\'êtes pas responsable de cette promotion.' })
+      }
+      return next()
+    }
+
+    if (req.user?.type === 'ta') {
+      const assigned = getDb().prepare(`
+        SELECT 1 FROM teacher_projects tp
+        JOIN projects p ON p.id = tp.project_id
+        WHERE tp.teacher_id = ? AND p.promo_id = ?
+        LIMIT 1
+      `).get(teacherId, promoId)
+      if (!assigned) {
+        return res.status(403).json({ ok: false, error: 'Vous n\'êtes pas assigné à un projet de cette promotion.' })
+      }
+      return next()
+    }
+
+    return res.status(403).json({ ok: false, error: 'Accès non autorisé.' })
+  }
+}
+
+/**
  * Vérifie que l'enseignant est responsable de la promo ciblée (via teacher_promos).
  * Les admins passent toujours.
  */
@@ -196,12 +245,38 @@ function requireSessionOwner(table) {
  */
 function requireTravailOwner(req, res, next) {
   if (isAdmin(req)) return next()
-  const travailId = Number(req.params.id ?? req.params.travailId ?? req.body?.travailId)
+  // Supporte :id, :travailId, body.travailId, body.id (utilise par /publish).
+  const travailId = Number(
+    req.params.id ?? req.params.travailId ?? req.body?.travailId ?? req.body?.id,
+  )
   if (!travailId) return res.status(400).json({ ok: false, error: 'ID devoir manquant.' })
   const travail = getDb().prepare('SELECT promo_id FROM travaux WHERE id = ?').get(travailId)
   if (!travail) return res.status(404).json({ ok: false, error: 'Devoir introuvable.' })
   if (!teacherOwnsPromo(getTeacherId(req), travail.promo_id)) {
     return res.status(403).json({ ok: false, error: 'Ce devoir n\'appartient pas à vos promotions.' })
+  }
+  next()
+}
+
+/**
+ * Vérifie que le dépôt cible appartient à une promo géree par l enseignant.
+ * Le depotId est extrait de req.body (normalise : depotId ou depot_id).
+ * Les admins passent toujours.
+ *
+ * Critique pour la notation : sans ce middleware, un prof peut noter les
+ * depots d une autre promo via POST /api/depots/note avec un depotId
+ * arbitraire (cross-promo grade leak). Cf. audit v2.180.
+ */
+function requireDepotOwner(req, res, next) {
+  if (isAdmin(req)) return next()
+  const depotId = Number(req.body?.depotId ?? req.body?.depot_id)
+  if (!depotId) return res.status(400).json({ ok: false, error: 'ID dépôt manquant.' })
+  const row = getDb().prepare(
+    'SELECT t.promo_id FROM depots d JOIN travaux t ON t.id = d.travail_id WHERE d.id = ?'
+  ).get(depotId)
+  if (!row) return res.status(404).json({ ok: false, error: 'Dépôt introuvable.' })
+  if (!teacherOwnsPromo(getTeacherId(req), row.promo_id)) {
+    return res.status(403).json({ ok: false, error: 'Ce dépôt n\'appartient pas à vos promotions.' })
   }
   next()
 }
@@ -328,6 +403,7 @@ function requireReminderOwner(req, res, next) {
 module.exports = {
   requireRole,
   requirePromo,
+  requirePromoMember,
   requirePromoAdmin,
   promoFromChannel,
   promoFromParam,
@@ -337,6 +413,7 @@ module.exports = {
   requireProject,
   requireSessionOwner,
   requireTravailOwner,
+  requireDepotOwner,
   requireActivityOwner,
   requireProjectOwner,
   requireGroupOwner,

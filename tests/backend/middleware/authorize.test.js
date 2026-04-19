@@ -143,3 +143,119 @@ describe('requireMessageOwner', () => {
     expect(res.status).toBe(404)
   })
 })
+
+// ═══════════════════════════════════════════════════════════════════════════
+// v2.180 : requireDepotOwner + requirePromoMember (cross-promo authz)
+// ═══════════════════════════════════════════════════════════════════════════
+describe('requireDepotOwner', () => {
+  beforeAll(() => {
+    // Promo 1 : teacher 1 enseigne ; teacher 2 est ailleurs.
+    db.prepare('INSERT OR IGNORE INTO teachers (id, name, email) VALUES (1, \'Prof A\', \'a@test.fr\')').run()
+    db.prepare('INSERT OR IGNORE INTO teachers (id, name, email) VALUES (2, \'Prof B\', \'b@test.fr\')').run()
+    db.prepare('INSERT OR IGNORE INTO teacher_promos (teacher_id, promo_id) VALUES (1, 1)').run()
+    db.prepare('INSERT OR IGNORE INTO travaux (id, title, channel_id, type, deadline, published, promo_id) VALUES (500, \'T\', 1, \'livrable\', \'2030-12-31\', 1, 1)').run()
+    db.prepare('INSERT OR IGNORE INTO depots (id, travail_id, student_id, file_name, file_path) VALUES (555, 500, 1, \'\', \'\')').run()
+  })
+
+  function buildDepotApp() {
+    const app = express()
+    app.use(express.json())
+    app.set('jwtSecret', JWT_SECRET)
+    const authMiddleware = require('../../../server/middleware/auth')
+    app.post('/depot', authMiddleware, getAuthorize().requireDepotOwner, (req, res) => res.json({ ok: true }))
+    return app
+  }
+
+  it('autorise le prof de la promo', async () => {
+    const res = await request(buildDepotApp())
+      .post('/depot')
+      .set('Authorization', `Bearer ${token({ id: -1, name: 'Prof A', type: 'teacher' })}`)
+      .send({ depotId: 555 })
+    expect(res.status).toBe(200)
+  })
+
+  it('refuse le prof d une autre promo', async () => {
+    const res = await request(buildDepotApp())
+      .post('/depot')
+      .set('Authorization', `Bearer ${token({ id: -2, name: 'Prof B', type: 'teacher' })}`)
+      .send({ depotId: 555 })
+    expect(res.status).toBe(403)
+  })
+
+  it('admin passe toujours', async () => {
+    const res = await request(buildDepotApp())
+      .post('/depot')
+      .set('Authorization', `Bearer ${token({ id: -99, name: 'Admin', type: 'admin' })}`)
+      .send({ depotId: 555 })
+    expect(res.status).toBe(200)
+  })
+
+  it('404 si le depot n existe pas', async () => {
+    const res = await request(buildDepotApp())
+      .post('/depot')
+      .set('Authorization', `Bearer ${token({ id: -1, name: 'Prof A', type: 'teacher' })}`)
+      .send({ depotId: 99999 })
+    expect(res.status).toBe(404)
+  })
+
+  it('400 si depotId absent', async () => {
+    const res = await request(buildDepotApp())
+      .post('/depot')
+      .set('Authorization', `Bearer ${token({ id: -1, name: 'Prof A', type: 'teacher' })}`)
+      .send({})
+    expect(res.status).toBe(400)
+  })
+
+  it('accepte aussi depot_id (snake_case, backward-compat)', async () => {
+    const res = await request(buildDepotApp())
+      .post('/depot')
+      .set('Authorization', `Bearer ${token({ id: -1, name: 'Prof A', type: 'teacher' })}`)
+      .send({ depot_id: 555 })
+    expect(res.status).toBe(200)
+  })
+})
+
+describe('requirePromoMember', () => {
+  function buildApp() {
+    const app = express()
+    app.set('jwtSecret', JWT_SECRET)
+    const authMiddleware = require('../../../server/middleware/auth')
+    app.get('/p/:promoId', authMiddleware, getAuthorize().requirePromoMember((req) => Number(req.params.promoId)), (req, res) => res.json({ ok: true }))
+    return app
+  }
+
+  it('laisse passer un student de la promo', async () => {
+    const res = await request(buildApp())
+      .get('/p/1')
+      .set('Authorization', `Bearer ${token({ id: 1, name: 'Jean', type: 'student', promo_id: 1 })}`)
+    expect(res.status).toBe(200)
+  })
+
+  it('refuse un student d une autre promo', async () => {
+    const res = await request(buildApp())
+      .get('/p/1')
+      .set('Authorization', `Bearer ${token({ id: 99, name: 'Other', type: 'student', promo_id: 2 })}`)
+    expect(res.status).toBe(403)
+  })
+
+  it('laisse passer un teacher de la promo (teacher_promos)', async () => {
+    const res = await request(buildApp())
+      .get('/p/1')
+      .set('Authorization', `Bearer ${token({ id: -1, name: 'Prof A', type: 'teacher' })}`)
+    expect(res.status).toBe(200)
+  })
+
+  it('REFUSE un teacher d une autre promo (fix v2.180)', async () => {
+    const res = await request(buildApp())
+      .get('/p/1')
+      .set('Authorization', `Bearer ${token({ id: -2, name: 'Prof B', type: 'teacher' })}`)
+    expect(res.status).toBe(403)
+  })
+
+  it('admin passe toujours', async () => {
+    const res = await request(buildApp())
+      .get('/p/1')
+      .set('Authorization', `Bearer ${token({ id: -99, name: 'Admin', type: 'admin' })}`)
+    expect(res.status).toBe(200)
+  })
+})

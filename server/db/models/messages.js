@@ -3,6 +3,10 @@ const { encrypt, decrypt, decryptRow, decryptRows } = require('../../utils/crypt
 const { safeAuthorType } = require('../../utils/roles');
 
 const PAGE_SIZE = 50;
+// Plafond des endpoints "full history" (non pagines). Evite qu un canal avec
+// 50 000 messages x 10 KB = 500 MB soit renvoye en une seule requete. Les
+// clients sont censes utiliser getChannelMessagesPage pour le reste.
+const FULL_HISTORY_LIMIT = 500;
 const MESSAGE_SELECT = `
   SELECT m.*,
          m.pinned AS is_pinned,
@@ -15,11 +19,15 @@ const MESSAGE_SELECT = `
 `;
 
 function getChannelMessages(channelId) {
-  return getDb().prepare(
+  // Retourne les FULL_HISTORY_LIMIT messages les plus recents dans l ordre
+  // chronologique (ASC pour l affichage). Au-dela, le client doit pager.
+  const rows = getDb().prepare(
     `${MESSAGE_SELECT}
      AND m.channel_id = ?
-     ORDER BY m.created_at ASC`
-  ).all(channelId);
+     ORDER BY m.id DESC
+     LIMIT ?`
+  ).all(channelId, FULL_HISTORY_LIMIT);
+  return rows.reverse();
 }
 
 function getMessageById(messageId) {
@@ -53,11 +61,13 @@ function getChannelMessagesPage(channelId, beforeId) {
 }
 
 function getDmMessages(studentId) {
-  return decryptRows(getDb().prepare(
+  const rows = getDb().prepare(
     `${MESSAGE_SELECT}
      AND m.dm_student_id = ?
-     ORDER BY m.created_at ASC`
-  ).all(studentId));
+     ORDER BY m.id DESC
+     LIMIT ?`
+  ).all(studentId, FULL_HISTORY_LIMIT);
+  return decryptRows(rows.reverse());
 }
 
 /**
