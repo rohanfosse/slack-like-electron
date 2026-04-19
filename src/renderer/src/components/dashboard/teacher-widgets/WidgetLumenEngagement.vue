@@ -49,17 +49,18 @@ onMounted(async () => {
 }
 
 .wle-value {
-  font-size: var(--text-2xl);
+  font-family: var(--font-display);
+  font-size: 30px;
   font-weight: 700;
   color: var(--text-primary);
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.02em;
+  line-height: 1;
 }
 
 .wle-label {
   font-size: var(--text-xs);
   color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+  font-weight: 500;
 }
 </style>

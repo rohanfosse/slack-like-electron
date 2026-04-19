@@ -133,9 +133,11 @@ body.theme-transitioning *::after {
   --deadline-over-text: #EB5757;
 
   /* Typographie */
-  --font:      'Inter Variable', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  --font-base: 'Inter Variable', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  --font-mono: 'JetBrains Mono', 'SF Mono', 'Cascadia Code', ui-monospace, monospace;
+  --font:         'Inter Variable', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-base:    'Inter Variable', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  /* Display : labels widgets + hero numbers — alignement landing page */
+  --font-display: 'Plus Jakarta Sans Variable', 'Plus Jakarta Sans', 'Inter Variable', 'Inter', sans-serif;
+  --font-mono:    'JetBrains Mono', 'SF Mono', 'Cascadia Code', ui-monospace, monospace;
   --font-size-base: 14px;
 
   /* Densité d'affichage (espacement entre messages) */

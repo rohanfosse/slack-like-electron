@@ -67,10 +67,12 @@ const colorClass = computed(() => {
 
 <style scoped>
 .wcd-value {
-  font-family: var(--font-mono);
-  font-size: var(--text-xl);
+  font-family: var(--font-display);
+  font-size: 26px;
   font-weight: 800;
-  letter-spacing: -0.5px;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
   margin-bottom: var(--space-xs);
 }
 

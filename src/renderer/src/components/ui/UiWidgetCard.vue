@@ -69,18 +69,23 @@
   .uw-header {
     display: flex;
     align-items: center;
-    gap: var(--space-xs);
+    gap: var(--space-sm);
     margin-bottom: var(--space-sm);
   }
   .uw-icon { flex-shrink: 0; }
+  /* Label : sentence case + Plus Jakarta 13px medium — voix landing page,
+     remplace l'ancien UPPERCASE letter-spaced 10px (style 2018). */
   .uw-label {
-    text-transform: uppercase;
-    letter-spacing: .08em;
-    font-size: var(--text-2xs);
-    font-weight: 700;
-    color: var(--text-muted);
+    font-family: var(--font-display);
+    font-size: var(--text-sm);
+    font-weight: 600;
+    color: var(--text-secondary);
+    letter-spacing: -0.01em;
     flex: 1;
     min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
   .uw-header-extra {
     flex-shrink: 0;

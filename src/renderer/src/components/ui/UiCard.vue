@@ -64,11 +64,13 @@
   color: var(--text-primary);
   text-align: left;
   width: 100%;
+  /* Spring easing + transitions allongees pour un feedback "habite",
+     pattern landing page (cf. design-system §motion). */
   transition:
-    transform var(--motion-base) var(--ease-out),
-    border-color var(--motion-fast) var(--ease-out),
-    box-shadow var(--motion-base) var(--ease-out),
-    background var(--motion-fast) var(--ease-out);
+    transform var(--motion-slow) var(--ease-spring),
+    border-color var(--motion-base) var(--ease-out),
+    box-shadow var(--motion-slow) var(--ease-spring),
+    background var(--motion-base) var(--ease-out);
 }
 
 /* Padding scale */
@@ -97,10 +99,13 @@
   user-select: none;
 }
 .ui-card--interactive:hover {
-  border-color: var(--accent);
+  border-color: rgba(var(--accent-rgb), .35);
   background: rgba(var(--accent-rgb), .04);
   transform: translateY(-2px);
-  box-shadow: var(--elevation-2);
+  /* Lift soft + halo accent — signature landing page */
+  box-shadow:
+    0 4px 16px rgba(var(--accent-rgb), .12),
+    0 1px 3px rgba(0, 0, 0, .15);
 }
 .ui-card--interactive:active {
   transform: translateY(0);

@@ -118,9 +118,8 @@ onUnmounted(() => {
 
 <style scoped>
 .wp-state {
-  font-size: var(--text-2xs);
-  font-weight: 700;
-  text-transform: uppercase;
+  font-size: var(--text-xs);
+  font-weight: 600;
   color: var(--text-muted);
 }
 
@@ -134,10 +133,12 @@ onUnmounted(() => {
 
 .wp-time {
   font-family: var(--font-mono);
-  font-size: var(--text-2xl);
+  font-size: 36px;
   font-weight: 700;
   color: var(--text-primary);
-  letter-spacing: 2px;
+  letter-spacing: 1px;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
   transition: color var(--motion-fast) var(--ease-out);
 }
 .wp-time--work  { color: var(--accent); }

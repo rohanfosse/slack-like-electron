@@ -130,17 +130,18 @@ function goToDevoirs() { router.push('/assignments') }
   gap: var(--space-xs);
 }
 .wpv-total {
-  font-size: var(--text-xl);
+  font-family: var(--font-display);
+  font-size: 28px;
   font-weight: 800;
   color: var(--accent);
   font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
   line-height: 1;
 }
 .wpv-label {
   font-size: var(--text-xs);
   color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
+  font-weight: 500;
 }
 .wpv-trend {
   margin-left: auto;

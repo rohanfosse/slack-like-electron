@@ -12,6 +12,17 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '2.166.0',
+    date: '2026-04-19',
+    title: 'Widgets alignes sur la voix Cursus',
+    highlights: [
+      'Plus Jakarta Sans pour les labels widgets et hero numbers',
+      'Headers en sentence case (fini les UPPERCASE letter-spaced)',
+      'Hover spring + halo accent au lieu du simple lift',
+      'Streak, Pomodoro, Clock et autres : chiffres en display tabulaire',
+    ],
+  },
+  {
     version: '2.165.0',
     date: '2026-04-19',
     title: 'Six nouveaux widgets dashboard',

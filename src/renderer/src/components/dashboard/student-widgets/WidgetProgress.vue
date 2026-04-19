@@ -84,10 +84,13 @@ const remaining = computed(() => Math.max(0, props.total - props.submitted))
 
 .wpg-pct {
   position: absolute;
-  font-family: var(--font-mono);
-  font-size: var(--text-lg);
+  font-family: var(--font-display);
+  font-size: 22px;
   font-weight: 700;
   color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+  line-height: 1;
 }
 
 .wpg-detail {

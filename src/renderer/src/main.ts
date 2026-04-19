@@ -3,8 +3,11 @@ import { createPinia } from 'pinia'
 import router from './router'
 import App from './App.vue'
 
-// ── Font ────────────────────────────────────────────────────────────────────
+// ── Fonts ───────────────────────────────────────────────────────────────────
+// Inter : corps de texte. Plus Jakarta Sans : labels widgets + hero numbers
+// (alignement avec la landing page, cf. design-system §typo).
 import '@fontsource-variable/inter'
+import '@fontsource-variable/plus-jakarta-sans'
 
 // ── CSS de base ─────────────────────────────────────────────────────────────
 import '@css/base.css'

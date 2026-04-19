@@ -76,19 +76,19 @@
 }
 
 .ws-count {
-  font-size: var(--text-2xl);
+  font-family: var(--font-display);
+  font-size: 36px;
   font-weight: 800;
   color: var(--text-primary);
   line-height: 1;
-  font-family: var(--font);
-  letter-spacing: -1px;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
 }
 
 .ws-label {
   font-size: var(--text-xs);
   color: var(--text-secondary);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
+  font-weight: 500;
 }
 
 .ws-best {

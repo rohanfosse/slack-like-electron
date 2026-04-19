@@ -53,10 +53,12 @@ onUnmounted(() => {
 
 .wc-time {
   font-family: var(--font-mono);
-  font-size: var(--text-2xl);
+  font-size: 32px;
   font-weight: 700;
   color: var(--text-primary);
-  letter-spacing: 1px;
+  letter-spacing: 0.5px;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
 }
 
 .wc-date {
