@@ -9,6 +9,7 @@
  * une nouvelle instance socket.io est creee (typiquement apres login).
  */
 import type { Socket } from 'socket.io-client'
+import { ipcRenderer } from 'electron'
 import type {
   MsgNewPayload, PresenceEntry, TypingPayload,
   LiveActivityPushedPayload, LiveActivityClosedPayload, LiveResultsUpdatePayload,
@@ -103,5 +104,11 @@ export function bindSocketEvents(socket: Socket): void {
   socket.on('connect_error', (err: Error) => {
     console.warn('[Socket.io] Erreur connexion:', err.message)
     socketState.emit(false)
+  })
+
+  // Le serveur disconnect quand le JWT expire ou est invalide : on propage
+  // via IPC pour que le main declenche le meme flow que le 401 HTTP.
+  socket.on('auth:expired', () => {
+    try { ipcRenderer.send('auth:expired') } catch { /* ignore */ }
   })
 }

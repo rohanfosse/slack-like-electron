@@ -13,6 +13,7 @@
 import { ref, computed } from 'vue'
 import { useToast }     from '@/composables/useToast'
 import { getAuthToken } from '@/utils/auth'
+import { fetchWithTimeout, isAbortError, DEFAULT_UPLOAD_TIMEOUT_MS } from '@/utils/fetchWithTimeout'
 
 // Miroir de server/routes/documents.js : toute modif doit etre synchronisee.
 const BLOCKED_EXTENSIONS = new Set([
@@ -138,19 +139,20 @@ export function useDocumentsFileUpload() {
       const formData = new FormData()
       formData.append('file', file, file.name)
       try {
-        const response = await fetch(`${serverUrl}/api/files/upload`, {
+        const response = await fetchWithTimeout(`${serverUrl}/api/files/upload`, {
           method: 'POST',
           headers: token ? { Authorization: `Bearer ${token}` } : {},
           body: formData,
-        })
+        }, DEFAULT_UPLOAD_TIMEOUT_MS)
         const json = await response.json() as { ok: boolean; data?: string; error?: string }
         if (json.ok && json.data) {
           addPendingIfNew({ path: `${serverUrl}${json.data}`, name: file.name })
         } else {
           showToast(json.error ?? `Erreur upload : ${file.name}`, 'error')
         }
-      } catch {
-        showToast(`Erreur upload : ${file.name}`, 'error')
+      } catch (err) {
+        if (isAbortError(err)) showToast(`Timeout upload : ${file.name}`, 'error')
+        else                   showToast(`Erreur upload : ${file.name}`, 'error')
       }
     }
 

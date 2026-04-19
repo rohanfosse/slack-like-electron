@@ -91,4 +91,45 @@ describe('wrap middleware', () => {
     expect(res.status).toBe(200)
     expect(res.body.data).toBeNull()
   })
+
+  // Non-regression : les 500 doivent renvoyer un message generique pour
+  // eviter la fuite de chemins/colonnes DB/stacks au client.
+  it('masque le message interne sur un 500 (pas de leak)', async () => {
+    const app = buildApp(() => {
+      throw new Error('SQLITE_CONSTRAINT: depots.travail_id FK failure in /srv/cursus/db.sqlite')
+    })
+    const res = await request(app).get('/test')
+    expect(res.status).toBe(500)
+    expect(res.body.error).toBe('Erreur interne du serveur')
+    expect(res.body.error).not.toContain('SQLITE')
+    expect(res.body.error).not.toContain('/srv/')
+  })
+
+  it('conserve le message original sur un 400', async () => {
+    const app = buildApp(() => { throw new Error('Email invalide') })
+    const res = await request(app).get('/test')
+    expect(res.status).toBe(400)
+    expect(res.body.error).toBe('Email invalide')
+  })
+
+  // Non-regression : meme un 4xx ne doit pas laisser passer des leaks
+  // (chemins, constraints SQLite, stack lines) — le keyword matching est
+  // substring-based et peut etre matche par accident.
+  it('sanitise un message 4xx contenant un leak SQLite', async () => {
+    const app = buildApp(() => { throw new Error('introuvable: SQLITE_CONSTRAINT failed: users.email') })
+    const res = await request(app).get('/test')
+    expect(res.body.error).toBe('Requête invalide')
+  })
+
+  it('sanitise un message 4xx contenant un chemin Windows', async () => {
+    const app = buildApp(() => { throw new Error('Email déjà utilisée par C:\\srv\\cursus\\db.sqlite') })
+    const res = await request(app).get('/test')
+    expect(res.body.error).not.toContain('C:\\')
+  })
+
+  it('sanitise un message 4xx contenant un chemin Unix systeme', async () => {
+    const app = buildApp(() => { throw new Error('Email déjà utilisée par /srv/cursus/db.sqlite') })
+    const res = await request(app).get('/test')
+    expect(res.body.error).not.toContain('/srv/')
+  })
 })

@@ -26,11 +26,30 @@ module.exports = function setupSocket(io, queries, SECRET) {
   // ── Presence en ligne ─────────────────────────────────────────────────────
   const onlineUsers = new Map()
 
+  // Fan-out de 30+ clients simultanes (ex. reconnexion Wi-Fi promo)
+  // declenche 30^2 events — debounce pour coalescer en une seule diffusion.
+  let presenceTimer = null
   function broadcastPresence() {
-    const list = [...onlineUsers.entries()].map(([id, info]) => ({
-      id, name: info.name, role: info.role,
-    }))
-    io.to('all').emit('presence:update', list)
+    if (presenceTimer) return
+    presenceTimer = setTimeout(() => {
+      presenceTimer = null
+      const list = [...onlineUsers.entries()].map(([id, info]) => ({
+        id, name: info.name, role: info.role,
+      }))
+      io.to('all').emit('presence:update', list)
+    }, 250)
+  }
+
+  // Limites de taille sur les payloads socket — evite qu un client malveillant
+  // ou bugue bloque la room avec un blob enorme dans le buffer io.
+  const MAX_LIVE_CODE_LEN    = 200_000
+  const MAX_LIVE_LANG_LEN    = 32
+  const MAX_TYPING_NAME_LEN  = 120
+
+  function isValidLiveCode(content, language) {
+    if (typeof content !== 'string' || content.length > MAX_LIVE_CODE_LEN) return false
+    if (language != null && (typeof language !== 'string' || language.length > MAX_LIVE_LANG_LEN)) return false
+    return true
   }
 
   io.on('connection', (socket) => {
@@ -88,23 +107,29 @@ module.exports = function setupSocket(io, queries, SECRET) {
     })
 
     // Live code broadcast (prof seulement)
-    socket.on('live:code-update', ({ activityId, promoId, content, language }) => {
+    socket.on('live:code-update', (payload) => {
       if (!checkTokenValid()) return
       if (socket.user?.role !== 'teacher' && socket.user?.role !== 'admin') return
-      if (!activityId || !promoId) return
-      io.to(`live:${promoId}`).emit('live:code-update', { activityId, content, language })
+      if (!payload || typeof payload !== 'object') return
+      const { activityId, promoId, content, language } = payload
+      if (!Number.isInteger(activityId) || !Number.isInteger(promoId)) return
+      if (!isValidLiveCode(content, language)) return
+      io.to(`live:${promoId}`).emit('live:code-update', { activityId, content, language: language ?? null })
     })
 
-    // Indicateur de frappe
-    socket.on('typing', ({ channelId, dmStudentId, dmPeerId }) => {
+    // Indicateur de frappe — pas de fan-out brut, on tronque le nom
+    socket.on('typing', (payload) => {
       if (!checkTokenValid()) return
-      if (channelId) {
-        socket.to('all').emit('typing', { channelId, userName: socket.user?.name })
-      } else if (dmStudentId) {
-        socket.to(userRoom(dmStudentId)).emit('typing', { dmStudentId, userName: socket.user?.name })
-        const peer = dmPeerId ?? socket.user?.id
+      if (!payload || typeof payload !== 'object') return
+      const { channelId, dmStudentId, dmPeerId } = payload
+      const userName = (socket.user?.name ?? '').toString().slice(0, MAX_TYPING_NAME_LEN)
+      if (Number.isInteger(channelId)) {
+        socket.to('all').emit('typing', { channelId, userName })
+      } else if (Number.isInteger(dmStudentId)) {
+        socket.to(userRoom(dmStudentId)).emit('typing', { dmStudentId, userName })
+        const peer = Number.isInteger(dmPeerId) ? dmPeerId : socket.user?.id
         if (peer && peer !== dmStudentId) {
-          socket.to(userRoom(peer)).emit('typing', { dmStudentId, userName: socket.user?.name })
+          socket.to(userRoom(peer)).emit('typing', { dmStudentId, userName })
         }
       }
     })

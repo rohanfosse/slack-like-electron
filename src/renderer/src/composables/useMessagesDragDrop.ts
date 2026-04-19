@@ -13,6 +13,7 @@ import { ref } from 'vue'
 import { useAppStore } from '@/stores/app'
 import { useToast } from '@/composables/useToast'
 import { useApi } from '@/composables/useApi'
+import { fetchWithTimeout, DEFAULT_UPLOAD_TIMEOUT_MS } from '@/utils/fetchWithTimeout'
 import { injectMd } from '@/composables/useMsgAttachment'
 import { getAuthToken } from '@/utils/auth'
 
@@ -59,11 +60,11 @@ export function useMessagesDragDrop(onAfterDmUpload?: () => void) {
     const formData = new FormData()
     formData.append('file', file, file.name)
     const token = getAuthToken()
-    const resp = await fetch('/api/files/upload', {
+    const resp = await fetchWithTimeout('/api/files/upload', {
       method: 'POST',
       headers: token ? { Authorization: `Bearer ${token}` } : {},
       body: formData,
-    })
+    }, DEFAULT_UPLOAD_TIMEOUT_MS)
     const json = await resp.json() as { ok: boolean; data?: string; file_size?: number }
     if (json.ok && json.data) {
       return { url: window.location.origin + json.data, fileSize: json.file_size || 0 }

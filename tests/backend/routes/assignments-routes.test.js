@@ -208,6 +208,51 @@ describe('POST /api/assignments', () => {
       })
     expect(res.status).toBeGreaterThanOrEqual(400)
   })
+
+  // Non-regression : le serveur doit refuser une deadline pre-2020 (client
+  // casse ou clock drift) et une startDate posterieure a la deadline.
+  it('rejette une deadline pre-2020 (client casse)', async () => {
+    const res = await request(app)
+      .post('/api/assignments')
+      .set('Authorization', `Bearer ${teacherToken}`)
+      .send({
+        title: 'Devoir vintage',
+        channelId: 1,
+        promoId: 1,
+        type: 'livrable',
+        deadline: '1999-12-31',
+      })
+    expect(res.status).toBeGreaterThanOrEqual(400)
+  })
+
+  it('rejette une deadline malformee', async () => {
+    const res = await request(app)
+      .post('/api/assignments')
+      .set('Authorization', `Bearer ${teacherToken}`)
+      .send({
+        title: 'Devoir malforme',
+        channelId: 1,
+        promoId: 1,
+        type: 'livrable',
+        deadline: 'pas-une-date',
+      })
+    expect(res.status).toBeGreaterThanOrEqual(400)
+  })
+
+  it('rejette une startDate posterieure a la deadline', async () => {
+    const res = await request(app)
+      .post('/api/assignments')
+      .set('Authorization', `Bearer ${teacherToken}`)
+      .send({
+        title: 'Devoir incoherent',
+        channelId: 1,
+        promoId: 1,
+        type: 'livrable',
+        startDate: '2027-06-01',
+        deadline:  '2026-12-31',
+      })
+    expect(res.status).toBeGreaterThanOrEqual(400)
+  })
 })
 
 // ═══════════════════════════════════════════

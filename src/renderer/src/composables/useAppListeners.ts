@@ -44,6 +44,9 @@ export function useAppListeners() {
   let unsubUpdaterAvailable: (() => void) | null = null
   let unsubUpdaterDownloaded: (() => void) | null = null
   let unsubGradeNew: (() => void) | null = null
+  let unsubSignature: (() => void) | null = null
+  let unsubDocument:  (() => void) | null = null
+  let unsubAssignment:(() => void) | null = null
   let liveInviteTimer: ReturnType<typeof setTimeout> | null = null
   let tokenRefreshTimer: ReturnType<typeof setInterval> | null = null
 
@@ -113,8 +116,9 @@ export function useAppListeners() {
       window.api?.setBadge?.()
     })
 
-    // Signature updates (etudiants)
-    window.api.onSignatureUpdate?.((data) => {
+    // Signature updates (etudiants) — capture l unsub sinon les callbacks
+    // s accumulent a chaque re-init (logout/login, refresh token).
+    unsubSignature = window.api.onSignatureUpdate?.((data) => {
       if (appStore.isStaff) return
       appStore.addNotification({
         category: 'signature',
@@ -122,10 +126,10 @@ export function useAppListeners() {
         preview: data.signer_name ? `Par ${data.signer_name}` : '',
         channelName: 'Signature',
       })
-    })
+    }) ?? null
 
     // Nouveaux documents (etudiants)
-    window.api.onDocumentNew?.((data: { name: string; category?: string }) => {
+    unsubDocument = window.api.onDocumentNew?.((data: { name: string; category?: string }) => {
       if (appStore.isStaff) return
       appStore.addNotification({
         category: 'document',
@@ -133,10 +137,10 @@ export function useAppListeners() {
         preview: data.name,
         channelName: data.category || 'Document',
       })
-    })
+    }) ?? null
 
     // Nouveaux devoirs (etudiants)
-    window.api.onAssignmentNew?.((data: { title: string; category?: string; deadline?: string }) => {
+    unsubAssignment = window.api.onAssignmentNew?.((data: { title: string; category?: string; deadline?: string }) => {
       if (appStore.isStaff) return
       appStore.addNotification({
         category: 'assignment',
@@ -144,7 +148,7 @@ export function useAppListeners() {
         preview: data.title,
         channelName: data.category || 'Devoir',
       })
-    })
+    }) ?? null
 
   }
 
@@ -160,8 +164,11 @@ export function useAppListeners() {
     unsubUpdaterAvailable?.()
     unsubUpdaterDownloaded?.()
     unsubGradeNew?.()
+    unsubSignature?.()
+    unsubDocument?.()
+    unsubAssignment?.()
     if (liveInviteTimer) clearTimeout(liveInviteTimer)
-    if (tokenRefreshTimer) clearInterval(tokenRefreshTimer)
+    if (tokenRefreshTimer) { clearInterval(tokenRefreshTimer); tokenRefreshTimer = null }
   }
 
   function dismissLiveInvite() {

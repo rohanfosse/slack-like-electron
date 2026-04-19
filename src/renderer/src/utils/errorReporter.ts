@@ -70,18 +70,25 @@ export async function reportError(err: unknown, ctx: ErrorContext = {}): Promise
     const headers: Record<string, string> = { 'Content-Type': 'application/json' }
     if (token) headers.Authorization = `Bearer ${token}`
 
-    await fetch('/api/report-error', {
-      method: 'POST',
-      headers,
-      body: JSON.stringify({
-        message,
-        stack,
-        page: ctx.page ?? (typeof window !== 'undefined' ? window.location.pathname : null),
-        appVersion: (import.meta.env?.VITE_APP_VERSION as string | undefined) ?? null,
-        source: ctx.source ?? 'manual',
-      }),
-      keepalive: true,
-    })
+    // 10s suffit largement ; si le serveur ne repond pas, on ne veut
+    // surtout pas bloquer l app qui tente deja de reporter une autre erreur.
+    const ctrl = new AbortController()
+    const timer = setTimeout(() => ctrl.abort(), 10_000)
+    try {
+      await fetch('/api/report-error', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          message,
+          stack,
+          page: ctx.page ?? (typeof window !== 'undefined' ? window.location.pathname : null),
+          appVersion: (import.meta.env?.VITE_APP_VERSION as string | undefined) ?? null,
+          source: ctx.source ?? 'manual',
+        }),
+        keepalive: true,
+        signal: ctrl.signal,
+      })
+    } finally { clearTimeout(timer) }
   } catch {
     // Silencieux : si le backend est down, on ne peut rien y faire sans boucler
   } finally {

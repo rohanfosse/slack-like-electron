@@ -3,6 +3,7 @@
  * Uses fetch() directly (not window.api) so it works in both Electron and web.
  */
 import { ref, computed } from 'vue'
+import { fetchWithTimeout, isAbortError } from '@/utils/fetchWithTimeout'
 
 const SERVER_URL = (import.meta.env?.VITE_SERVER_URL as string | undefined) || 'http://localhost:3001'
 
@@ -55,12 +56,13 @@ export function usePublicBooking(token: string) {
 
   async function apiFetch<T>(path: string, opts?: RequestInit): Promise<{ ok: boolean; data?: T; error?: string }> {
     try {
-      const res = await fetch(`${SERVER_URL}${path}`, {
+      const res = await fetchWithTimeout(`${SERVER_URL}${path}`, {
         headers: { 'Content-Type': 'application/json' },
         ...opts,
       })
       return await res.json()
-    } catch {
+    } catch (err) {
+      if (isAbortError(err)) return { ok: false, error: 'Temps d attente depasse.' }
       return { ok: false, error: 'Erreur de connexion au serveur.' }
     }
   }

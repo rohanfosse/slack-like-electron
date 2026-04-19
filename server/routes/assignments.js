@@ -6,6 +6,15 @@ const { validate } = require('../middleware/validate')
 const wrap         = require('../utils/wrap')
 const { requireRole, requirePromo, promoFromParam, promoFromChannel, promoFromTravail, requireTravailOwner, requireReminderOwner } = require('../middleware/authorize')
 
+/** Borne temporelle arbitraire (1er janvier 2020) — deadline anterieure = client casse. */
+const MIN_DEADLINE_MS = new Date('2020-01-01T00:00:00Z').getTime()
+
+function parseDateMs(s) {
+  if (!s) return null
+  const t = new Date(s).getTime()
+  return Number.isFinite(t) ? t : null
+}
+
 const createAssignmentSchema = z.object({
   title:       z.string().min(1, 'Titre requis').max(200, 'Titre trop long (max 200 caractères)'),
   description: z.string().max(5000).nullable().optional(),
@@ -27,6 +36,16 @@ const createAssignmentSchema = z.object({
   scheduledPublishAt: z.string().nullable().optional(),
   scheduled_publish_at: z.string().nullable().optional(),
 }).passthrough()
+  .refine(d => {
+    const dl = parseDateMs(d.deadline)
+    return dl != null && dl > MIN_DEADLINE_MS
+  }, { message: 'Date limite invalide', path: ['deadline'] })
+  .refine(d => {
+    const start = parseDateMs(d.startDate ?? d.start_date)
+    if (start == null) return true
+    const dl = parseDateMs(d.deadline)
+    return dl == null || start < dl
+  }, { message: 'La date de début doit précéder la date limite', path: ['startDate'] })
 
 router.get('/teacher-schedule',         requireRole('ta'), wrap(() => queries.getTeacherSchedule()))
 router.get('/categories',               requirePromo(promoFromParam), wrap((req) => queries.getTravailCategories(Number(req.query.promoId))))

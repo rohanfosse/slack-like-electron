@@ -6,6 +6,7 @@ import { ref, onUnmounted, getCurrentInstance } from 'vue'
 import { useAppStore } from '@/stores/app'
 import { useToast } from '@/composables/useToast'
 import { getAuthToken } from '@/utils/auth'
+import { fetchWithTimeout, isAbortError, DEFAULT_UPLOAD_TIMEOUT_MS } from '@/utils/fetchWithTimeout'
 
 export interface DroppedFile {
   name: string
@@ -97,12 +98,12 @@ export function useFileDrop(options: FileDropOptions = {}) {
       formData.append('file', file, file.name)
       const SERVER_URL = window.location.origin
       const token = getAuthToken()
-      const response = await fetch(`${SERVER_URL}/api/files/upload`, {
+      const response = await fetchWithTimeout(`${SERVER_URL}/api/files/upload`, {
         method: 'POST',
         headers: token ? { Authorization: `Bearer ${token}` } : {},
         body: formData,
         signal: ctrl.signal,
-      })
+      }, DEFAULT_UPLOAD_TIMEOUT_MS)
       const raw = await response.json() as unknown
       if (!isUploadResponse(raw)) {
         showToast('Réponse serveur invalide.', 'error')
@@ -114,9 +115,13 @@ export function useFileDrop(options: FileDropOptions = {}) {
         showToast(raw.error ?? 'Erreur lors de l\'upload.', 'error')
       }
     } catch (err) {
-      // Abort volontaire (drop suivant ou unmount) : silencieux
-      if (err instanceof DOMException && err.name === 'AbortError') return
-      if (err instanceof Error && err.name === 'AbortError') return
+      // TimeoutError (AbortSignal.timeout) : toast explicite.
+      if (err instanceof Error && err.name === 'TimeoutError') {
+        showToast('Upload trop long (timeout)', 'error')
+        return
+      }
+      // Abort volontaire (drop suivant ou unmount) : silencieux.
+      if (ctrl.signal.aborted || isAbortError(err)) return
       showToast('Erreur lors de l\'upload du fichier.', 'error')
     } finally {
       if (inflightCtrl === ctrl) inflightCtrl = null

@@ -13,11 +13,13 @@ function emitGradeNotification(req, { note, feedback }) {
     const io = req.app.get('io')
     if (!io) return
     const { getDb } = require('../db/connection')
+    const depotId = req.body.depotId ?? req.body.depot_id
+    if (depotId == null) return
     const depot = getDb().prepare(`
       SELECT d.student_id, d.travail_id, t.title AS devoir_title, t.category, t.type AS devoir_type
       FROM depots d JOIN travaux t ON d.travail_id = t.id
       WHERE d.id = ?
-    `).get(req.body.depot_id)
+    `).get(depotId)
     if (depot) {
       io.to(`user:${depot.student_id}`).emit('grade:new', {
         devoirTitle: depot.devoir_title,
@@ -30,26 +32,70 @@ function emitGradeNotification(req, { note, feedback }) {
   } catch (emitErr) { log.warn('grade_notification_failed', { error: emitErr.message }) }
 }
 
+const MAX_DEPOT_CONTENT = 2000
+
+/**
+ * Valide que le contenu d un depot est acceptable :
+ * - file : chemin relatif /uploads/... (pas d absolu, pas de traversal)
+ * - link : URL http/https uniquement (pas de javascript:, data:, file:)
+ */
+function validateDepotContent(type, content) {
+  if (type === 'link') {
+    let url
+    try { url = new URL(content) } catch { return 'URL invalide' }
+    if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+      return 'Seules les URLs http(s) sont autorisees'
+    }
+    return null
+  }
+  if (type === 'file') {
+    if (content.includes('..')) return 'Chemin de fichier invalide'
+    if (content.includes('\0')) return 'Chemin de fichier invalide'
+    // Refuse les chemins absolus Windows (C:\, D:/) et les chemins UNC (\\server\share)
+    if (/^[a-zA-Z]:[\\\/]/.test(content)) return 'Chemin de fichier invalide'
+    if (content.startsWith('\\\\'))       return 'Chemin de fichier invalide'
+    // Refuse les chemins absolus systeme Unix (/etc, /root, /var, /proc, /sys,
+    // /usr, /srv, /home, macOS /Users, /private). Autorise /uploads/... qui
+    // est la convention des fichiers servis via /api/files/upload.
+    if (content.startsWith('/') && !content.startsWith('/uploads/')) {
+      return 'Chemin de fichier invalide'
+    }
+    return null
+  }
+  return null
+}
+
 const submitDepotSchema = z.object({
   travail_id: z.number().int().positive('Devoir invalide'),
   student_id: z.number().int().optional(),
   studentId:  z.number().int().optional(),
   type:       z.enum(['file', 'link'], { message: 'Type de dépôt invalide (file ou link)' }),
-  content:    z.string().min(1, 'Contenu du dépôt requis'),
-  file_name:  z.string().nullable().optional(),
-  link_url:   z.string().nullable().optional(),
-  deploy_url: z.string().nullable().optional(),
-}).passthrough()
+  content:    z.string().min(1, 'Contenu du dépôt requis').max(MAX_DEPOT_CONTENT, 'Contenu du dépôt trop long'),
+  file_name:  z.string().max(255).nullable().optional(),
+  link_url:   z.string().max(MAX_DEPOT_CONTENT).nullable().optional(),
+  deploy_url: z.string().max(MAX_DEPOT_CONTENT).nullable().optional(),
+}).passthrough().refine(d => validateDepotContent(d.type, d.content) === null, d => ({
+  message: validateDepotContent(d.type, d.content) ?? 'Contenu invalide',
+  path: ['content'],
+}))
 
+// Accepte depotId (client actuel) OU depot_id (legacy + tests backend).
+// Le model submissions.js lit depotId, donc on normalise ici.
 const noteSchema = z.object({
-  depot_id: z.number().int().positive('Dépôt invalide'),
-  note:     z.string().min(1, 'Note requise').max(10),
-})
+  depotId:  z.number().int().positive().optional(),
+  depot_id: z.number().int().positive().optional(),
+  note:     z.string().max(10).nullable(),
+}).refine(d => (d.depotId ?? d.depot_id) != null, { message: 'Dépôt invalide', path: ['depotId'] })
 
 const feedbackSchema = z.object({
-  depot_id: z.number().int().positive('Dépôt invalide'),
-  feedback: z.string().max(5000, 'Feedback trop long (max 5 000 caractères)'),
-})
+  depotId:  z.number().int().positive().optional(),
+  depot_id: z.number().int().positive().optional(),
+  feedback: z.string().max(5000, 'Feedback trop long (max 5 000 caractères)').nullable(),
+}).refine(d => (d.depotId ?? d.depot_id) != null, { message: 'Dépôt invalide', path: ['depotId'] })
+
+function normalizeDepotId(body) {
+  return body.depotId ?? body.depot_id
+}
 
 router.get('/',         requirePromo(promoFromTravail), wrap((req) => {
   const depots = queries.getDepots(Number(req.query.travailId))
@@ -88,7 +134,11 @@ router.post('/note', validate(noteSchema), (req, res) => {
     return res.status(403).json({ ok: false, error: 'Seuls les responsables peuvent attribuer des notes.' })
   }
   try {
-    const result = queries.setNote(req.body)
+    const depotId = normalizeDepotId(req.body)
+    const result = queries.setNote({ depotId, note: req.body.note })
+    if (result.changes === 0) {
+      return res.status(404).json({ ok: false, error: 'Dépôt introuvable.' })
+    }
     emitGradeNotification(req, { note: req.body.note })
     res.json({ ok: true, data: result })
   }
@@ -99,7 +149,11 @@ router.post('/feedback', validate(feedbackSchema), (req, res) => {
     return res.status(403).json({ ok: false, error: 'Seuls les responsables peuvent donner un feedback.' })
   }
   try {
-    const result = queries.setFeedback(req.body)
+    const depotId = normalizeDepotId(req.body)
+    const result = queries.setFeedback({ depotId, feedback: req.body.feedback })
+    if (result.changes === 0) {
+      return res.status(404).json({ ok: false, error: 'Dépôt introuvable.' })
+    }
     emitGradeNotification(req, { feedback: req.body.feedback })
     res.json({ ok: true, data: result })
   }
