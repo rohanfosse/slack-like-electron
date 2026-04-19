@@ -1,6 +1,6 @@
 /**
  * Routes Live unifiees (Spark + Pulse + Code + Board).
- * Remplace /api/live et /api/rex par /api/live-v2.
+ * Montees sur /api/live-v2.
  */
 const router  = require('express').Router()
 const { z }   = require('zod')

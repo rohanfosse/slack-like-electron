@@ -23,7 +23,7 @@ Chaque role herite des permissions des roles inferieurs.
 | **Supprimer une promo** | ✗ | ✓ |
 | **Supprimer un intervenant** | ✗ (peut ajouter/desassigner) | ✓ |
 | **Supprimer une categorie** | ✗ | ✓ |
-| Sessions live/REX (CRUD, status, activites) | ✓ ses propres sessions | ✓ toutes |
+| Sessions live (CRUD, status, activites) | ✓ ses propres sessions | ✓ toutes |
 | Devoirs (modifier, supprimer, mark-missing) | ✓ ses propres promos | ✓ toutes |
 | Projets (modifier, supprimer, lier) | ✓ ses propres projets | ✓ tous |
 | Groupes (supprimer, membres) | ✓ ses propres promos | ✓ tous |
@@ -222,30 +222,6 @@ Chaque role herite des permissions des roles inferieurs.
 
 ---
 
-## REX (`/api/rex`)
-
-| Methode | Route | Student | TA | Teacher | Admin | Condition |
-|---------|-------|---------|-----|---------|-------|-----------|
-| GET | `/sessions/:id` | ✓* | ✓ | ✓ | ✓ | Meme promo |
-| GET | `/sessions/code/:code` | ✓ | ✓ | ✓ | ✓ | Public |
-| GET | `/sessions/promo/:promoId` | ✓* | ✓ | ✓ | ✓ | Meme promo |
-| GET | `/sessions/promo/:promoId/*` | ✓* | ✓ | ✓ | ✓ | Meme promo |
-| GET | `/activities/:id/results` | ✓* | ✓ | ✓ | ✓ | Meme promo |
-| POST | `/activities/:id/respond` | ✓* | ✓ | ✓ | ✓ | Meme promo |
-| POST | `/sessions` | ✗ | ✗ | ✓ | ✓ | — |
-| POST | `/sessions/:id/clone` | ✗ | ✗ | ✓ | ✓ | — |
-| POST | `/sessions/:id/activities` | ✗ | ✗ | ✓* | ✓ | Propre session (`requireSessionOwner`) |
-| PATCH | `/sessions/:id/status` | ✗ | ✗ | ✓* | ✓ | Propre session (`requireSessionOwner`) |
-| PATCH | `/sessions/:id/activities/reorder` | ✗ | ✗ | ✓* | ✓ | Propre session (`requireSessionOwner`) |
-| PATCH | `/activities/:id` | ✗ | ✗ | ✓* | ✓ | Propre activite (`requireActivityOwner`) |
-| PATCH | `/activities/:id/status` | ✗ | ✗ | ✓* | ✓ | Propre activite (`requireActivityOwner`) |
-| POST | `/responses/:id/pin` | ✗ | ✗ | ✓ | ✓ | — |
-| GET | `/sessions/:id/export` | ✗ | ✗ | ✓ | ✓ | — |
-| DELETE | `/sessions/:id` | ✗ | ✗ | ✓* | ✓ | Propre session (`requireSessionOwner`) |
-| DELETE | `/activities/:id` | ✗ | ✗ | ✓* | ✓ | Propre activite (`requireActivityOwner`) |
-
----
-
 ## Rubrics (`/api/rubrics`)
 
 | Methode | Route | Student | TA | Teacher | Admin | Condition |
@@ -413,7 +389,7 @@ Chaque role herite des permissions des roles inferieurs.
 | `requireProject(fn)` | ta | Verifie l'affectation TA-projet |
 | `requireMessageOwner` | student+ | Auteur du message uniquement |
 | `requireDmParticipant` | student+ | Participant du DM (boite partagee / TA scope) |
-| `requireSessionOwner(table)` | teacher | Createur de la session live/rex |
+| `requireSessionOwner(table)` | teacher | Createur de la session live |
 | `requireActivityOwner(actTable, sessTable)` | teacher | Createur de l'activite (via session) |
 | `requireTravailOwner` | teacher | Devoir dans une promo geree par l'enseignant |
 | `requireProjectOwner` | teacher | Createur du projet (`created_by`) |

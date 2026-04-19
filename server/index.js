@@ -171,12 +171,6 @@ app.use('/api/live-v2',         require('./routes/live-unified'))
 app.use('/api/bookings',        require('./routes/bookings'))
 app.use('/api/calendar',        require('./routes/calendar'))
 
-// ── Auto-fermeture des sessions REX async expirées (toutes les 60s) ───────────
-setInterval(() => {
-  try { queries.autoCloseExpiredAsyncSessions() }
-  catch (err) { log.error('rex_autoclose_failed', { error: err.message }) }
-}, 60_000)
-
 // ── Fichiers statiques & SPA ──────────────────────────────────────────────────
 const path = require('path')
 const fs   = require('fs')

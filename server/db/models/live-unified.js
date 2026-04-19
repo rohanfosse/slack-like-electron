@@ -380,7 +380,7 @@ function getLiveStudentRank(sessionId, studentId, mode = 'live') {
   return entry ? entry.rank : board.length + 1;
 }
 
-// ─── Aggregation (fusion live.js + rex.js) ─────────────────────────────────
+// ─── Aggregation ───────────────────────────────────────────────────────────
 
 function getLiveActivityResultsAggregated(activityId, mode = 'live') {
   const db = getDb();

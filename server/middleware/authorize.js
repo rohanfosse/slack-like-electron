@@ -171,9 +171,9 @@ function requireProject(getProjectId) {
 }
 
 /**
- * Vérifie que l'enseignant est le créateur de la session (live ou rex).
+ * Vérifie que l'enseignant est le créateur de la session.
  * Les admins passent toujours.
- * @param {string} table — 'live_sessions' ou 'rex_sessions'
+ * @param {string} table — ex. 'live_sessions' ou 'live_sessions_v2'
  */
 function requireSessionOwner(table) {
   return (req, res, next) => {
@@ -207,10 +207,10 @@ function requireTravailOwner(req, res, next) {
 }
 
 /**
- * Vérifie que l'activité (live ou rex) appartient à une session créée par l'enseignant.
+ * Vérifie que l'activité appartient à une session créée par l'enseignant.
  * Les admins passent toujours.
- * @param {string} activityTable — 'live_activities' ou 'rex_activities'
- * @param {string} sessionTable — 'live_sessions' ou 'rex_sessions'
+ * @param {string} activityTable — ex. 'live_activities'
+ * @param {string} sessionTable — ex. 'live_sessions'
  */
 function requireActivityOwner(activityTable, sessionTable) {
   return (req, res, next) => {
