@@ -50,7 +50,14 @@ export function useAppListeners() {
   let liveInviteTimer: ReturnType<typeof setTimeout> | null = null
   let tokenRefreshTimer: ReturnType<typeof setInterval> | null = null
 
+  let initialized = false
+
   function initListeners() {
+    // Guard double-init : en HMR ou login/logout cycle mal nettoye, un
+    // 2e init creerait des listeners en double (toasts duplicates + leak).
+    if (initialized) return
+    initialized = true
+
     // Refresh proactif du JWT toutes les 6h (expire dans 7j)
     tokenRefreshTimer = setInterval(async () => {
       try {
@@ -167,8 +174,15 @@ export function useAppListeners() {
     unsubSignature?.()
     unsubDocument?.()
     unsubAssignment?.()
-    if (liveInviteTimer) clearTimeout(liveInviteTimer)
+    // Null-out pour que initListeners() puisse etre re-appele proprement
+    // apres un logout/login cycle.
+    unsubUnread = unsubOnline = unsubSocket = unsubTyping = null
+    unsubPresence = unsubAuthExpired = unsubLiveInvite = null
+    unsubUpdaterAvailable = unsubUpdaterDownloaded = unsubGradeNew = null
+    unsubSignature = unsubDocument = unsubAssignment = null
+    if (liveInviteTimer) { clearTimeout(liveInviteTimer); liveInviteTimer = null }
     if (tokenRefreshTimer) { clearInterval(tokenRefreshTimer); tokenRefreshTimer = null }
+    initialized = false
   }
 
   function dismissLiveInvite() {

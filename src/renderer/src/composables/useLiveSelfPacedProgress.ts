@@ -36,23 +36,44 @@ export function useLiveSelfPacedProgress() {
     } catch { /* ignore */ }
   }
 
+  // Memoise l etat "session active" pour que visibilitychange puisse relancer
+  // le poll sans duplicater la logique du watch.
+  let lastActive = false
+
+  function startPoll() {
+    if (interval) return
+    fetchProgress()
+    interval = setInterval(fetchProgress, POLL_INTERVAL_MS)
+  }
+  function stopPoll() {
+    if (interval) { clearInterval(interval); interval = null }
+  }
+
   watch(
     () => liveStore.currentSession?.self_paced && liveStore.currentSession?.status === 'active',
     (active) => {
-      if (interval) { clearInterval(interval); interval = null }
-      if (active) {
-        fetchProgress()
-        interval = setInterval(fetchProgress, POLL_INTERVAL_MS)
-      } else {
-        activityProgress.value = []
-      }
+      lastActive = Boolean(active)
+      stopPoll()
+      if (active && !document.hidden) startPoll()
+      else if (!active) activityProgress.value = []
     },
     { immediate: true },
   )
 
+  // Pause le polling quand la fenetre est cachee (minimisee/arriere-plan).
+  // Une session self-paced active laissee en arriere-plan toute la journee
+  // burn 20 req/min pour rien — ici on reprend juste a la reprise.
+  function onVisibility() {
+    if (disposed) return
+    if (document.hidden) stopPoll()
+    else if (lastActive) startPoll()
+  }
+  document.addEventListener('visibilitychange', onVisibility)
+
   onUnmounted(() => {
     disposed = true
-    if (interval) { clearInterval(interval); interval = null }
+    stopPoll()
+    document.removeEventListener('visibilitychange', onVisibility)
   })
 
   async function launchAllActivities() {

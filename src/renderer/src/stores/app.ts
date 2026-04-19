@@ -394,15 +394,35 @@ export const useAppStore = defineStore('app', () => {
   }
   function isDmMuted(name: string): boolean { return _getMutedDms().has(name) }
 
-  // ── Sons de notification ───────────────────────────────────────────────────
+  // ── Sons de notification — pool 2 instances (message + DM) pour eviter
+  //    d allouer un HTMLAudioElement par notif (200/jour → leak 10-30 MB/j).
   const _notifSoundUrl    = new URL('@/assets/sounds/notif.wav', import.meta.url).href
   const _notifDmSoundUrl  = new URL('@/assets/sounds/notif-dm.wav', import.meta.url).href
+  let _notifAudio:   HTMLAudioElement | null = null
+  let _notifDmAudio: HTMLAudioElement | null = null
+
+  function _getNotifAudio(isDm: boolean): HTMLAudioElement {
+    if (isDm) {
+      if (!_notifDmAudio) {
+        _notifDmAudio = new Audio(_notifDmSoundUrl)
+        _notifDmAudio.volume = 0.3
+        _notifDmAudio.preload = 'auto'
+      }
+      return _notifDmAudio
+    }
+    if (!_notifAudio) {
+      _notifAudio = new Audio(_notifSoundUrl)
+      _notifAudio.volume = 0.3
+      _notifAudio.preload = 'auto'
+    }
+    return _notifAudio
+  }
 
   function _playNotifSound(isDm = false) {
     if (!_prefNotifSound()) return
     try {
-      const audio = new Audio(isDm ? _notifDmSoundUrl : _notifSoundUrl)
-      audio.volume = 0.3
+      const audio = _getNotifAudio(isDm)
+      audio.currentTime = 0
       audio.play().catch(() => {})
     } catch {}
   }

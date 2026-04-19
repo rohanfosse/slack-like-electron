@@ -68,6 +68,25 @@ export const useMessagesStore = defineStore('messages', () => {
   const reactions = reactive<Record<number, Record<string, number>>>({})
   const userVotes = reactive<Record<number, Set<string>>>({})
 
+  /**
+   * Supprime les entrees reactions/userVotes/reactionsData pour les messages
+   * qui ne sont PAS dans la nouvelle liste — appele au switch de conversation.
+   * Sans ca, les reactions s accumulent sur toute la session.
+   */
+  function pruneReactionsForActiveConversation(activeMsgs: Message[]) {
+    const activeIds = new Set(activeMsgs.map((m) => m.id))
+    for (const key of Object.keys(reactions)) {
+      if (!activeIds.has(Number(key))) delete reactions[Number(key)]
+    }
+    for (const key of Object.keys(userVotes)) {
+      if (!activeIds.has(Number(key))) delete userVotes[Number(key)]
+    }
+    // reactionsData declared later dans le setup — access safe au runtime.
+    for (const key of Object.keys(reactionsData)) {
+      if (!activeIds.has(Number(key))) delete reactionsData[Number(key)]
+    }
+  }
+
   // ── Groupement de messages ────────────────────────────────────────────────
   function isGrouped(msg: Message, prev: Message | null): boolean {
     if (!prev || searchTerm.value) return false
@@ -100,7 +119,7 @@ export const useMessagesStore = defineStore('messages', () => {
     markLatestAsRead(message.id)
     // Invalider le cache pour cette conversation
     const ck = _cacheKey()
-    if (ck) _messageCache.set(ck, { messages: messages.value, hasMore: hasMore.value, timestamp: Date.now() })
+    if (ck) _cacheSet(ck, { messages: messages.value, hasMore: hasMore.value, timestamp: Date.now() })
   }
 
   function setPinnedState(messageId: number, isPinned: boolean) {
@@ -126,8 +145,23 @@ export const useMessagesStore = defineStore('messages', () => {
   }
 
   // ── Cache conversations (évite le refetch au switch) ─────────────────────
+  // Cap LRU a 5 conversations : un prof qui ouvre 50 canaux/jour ne garde pas
+  // 500 KB de messages x 50 en memoire. Le Map est insertion-ordered en JS
+  // donc keys().next() = plus ancien → eviction naturelle.
   const _messageCache = new Map<string, { messages: Message[]; hasMore: boolean; timestamp: number }>()
   const CACHE_TTL = 300_000 // 5 minutes
+  const MESSAGE_CACHE_MAX = 5
+
+  function _cacheSet(key: string, value: { messages: Message[]; hasMore: boolean; timestamp: number }) {
+    // Reinsert pour rafraichir la position LRU.
+    if (_messageCache.has(key)) _messageCache.delete(key)
+    _messageCache.set(key, value)
+    while (_messageCache.size > MESSAGE_CACHE_MAX) {
+      const first = _messageCache.keys().next().value
+      if (first === undefined) break
+      _messageCache.delete(first)
+    }
+  }
 
   function _cacheKey(): string | null {
     const { activeChannelId, activeDmStudentId, activeDmPeerId } = appStore
@@ -189,11 +223,17 @@ export const useMessagesStore = defineStore('messages', () => {
 
       messages.value = fetched
 
+      // Purge les reactions/userVotes/reactionsData pour les messages qui
+      // ne sont plus dans la conversation courante. Sans ca, sur 10 switches
+      // un teacher garde en memoire les reactions de tous les messages vus
+      // depuis le debut de la session (10-30 MB/jour).
+      pruneReactionsForActiveConversation(fetched)
+
       // Mettre en cache memoire + disque (hors recherche)
       if (!searchTerm.value) {
         const ck = _cacheKey()
         if (ck) {
-          _messageCache.set(ck, { messages: fetched, hasMore: hasMore.value, timestamp: Date.now() })
+          _cacheSet(ck, { messages: fetched, hasMore: hasMore.value, timestamp: Date.now() })
           if (fetched.length) cacheData(`messages-${ck}`, fetched)
         }
       }

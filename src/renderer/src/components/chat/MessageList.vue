@@ -123,12 +123,20 @@ onBeforeUnmount(() => {
 interface GroupedMessage { msg: Message; grouped: boolean; isFirstUnread: boolean }
 interface DateGroup      { date: string; messages: GroupedMessage[] }
 
-// Cache de date-strings pour eviter de creer un Date par message a chaque recomputation
+// Cache de date-strings pour eviter de creer un Date par message a chaque
+// recomputation. Cap a 2000 entrees pour eviter une croissance non bornee
+// sur une session longue (6-8h).
 const _dateCache = new Map<string, string>()
+const DATE_CACHE_MAX = 2000
 function cachedDateString(createdAt: string): string {
   let ds = _dateCache.get(createdAt)
   if (!ds) {
     ds = new Date(createdAt).toDateString()
+    if (_dateCache.size >= DATE_CACHE_MAX) {
+      // Eviction LRU simpliste : drop la plus ancienne entree.
+      const first = _dateCache.keys().next().value
+      if (first !== undefined) _dateCache.delete(first)
+    }
     _dateCache.set(createdAt, ds)
   }
   return ds
@@ -201,6 +209,16 @@ const dateGroups = computed<DateGroup[]>(() => {
               </div>
 
               <MessageBubble
+                v-memo="[
+                  msg.id,
+                  msg.content,
+                  msg.edited,
+                  msg.is_pinned,
+                  grouped,
+                  store.searchTerm,
+                  store.reactions[msg.id],
+                  store.highlightMessageId === msg.id,
+                ]"
                 :msg="msg"
                 :grouped="grouped"
                 :search-term="store.searchTerm"
