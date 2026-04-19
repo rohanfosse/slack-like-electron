@@ -251,14 +251,14 @@
   font-weight: 600;
 }
 .badge-private {
-  background: rgba(155,135,245,.1);
+  background: rgba(var(--color-cctl-rgb),.1);
   color: var(--color-cctl);
-  border: 1px solid rgba(155,135,245,.2);
+  border: 1px solid rgba(var(--color-cctl-rgb),.2);
 }
 .badge-public {
-  background: rgba(39,174,96,.08);
+  background: rgba(var(--color-success-rgb),.08);
   color: var(--color-success);
-  border: 1px solid rgba(39,174,96,.15);
+  border: 1px solid rgba(var(--color-success-rgb),.15);
 }
 
 /* ── Section label ── */
@@ -349,11 +349,11 @@
 .ch-member-role {
   font-size: 9px; font-weight: 600;
   padding: 1px 5px; border-radius: 8px;
-  background: rgba(74,144,217,.12); color: var(--accent);
+  background: rgba(var(--accent-rgb),.12); color: var(--accent);
   margin-left: 4px;
 }
 .ch-member-role--student {
-  background: rgba(46,204,113,.1); color: var(--color-success, #2ecc71);
+  background: rgba(var(--color-success-rgb),.1); color: var(--color-success);
 }
 
 .ch-remove-btn { color: var(--text-muted); padding: 3px; opacity: 0; transition: opacity .1s, color .1s; }

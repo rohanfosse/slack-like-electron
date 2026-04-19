@@ -26,10 +26,10 @@ const props = defineProps<{
 
 // ── Grade distribution ──────────────────────────────────────────────────────
 const GRADE_META: Record<string, { color: string; bg: string; cls: string }> = {
-  A: { color: 'var(--color-success)', bg: 'rgba(39,174,96,.15)', cls: 'grade-a' },
-  B: { color: 'var(--accent)',        bg: 'rgba(74,144,217,.15)', cls: 'grade-b' },
-  C: { color: 'var(--color-warning)', bg: 'rgba(243,156,18,.12)', cls: 'grade-c' },
-  D: { color: 'var(--color-danger)',  bg: 'rgba(231,76,60,.12)',  cls: 'grade-d' },
+  A: { color: 'var(--color-success)', bg: 'rgba(var(--color-success-rgb),.15)', cls: 'grade-a' },
+  B: { color: 'var(--accent)',        bg: 'rgba(var(--accent-rgb),.15)', cls: 'grade-b' },
+  C: { color: 'var(--color-warning)', bg: 'rgba(var(--color-warning-rgb),.12)', cls: 'grade-c' },
+  D: { color: 'var(--color-danger)',  bg: 'rgba(var(--color-danger-rgb),.12)',  cls: 'grade-d' },
 }
 
 const distribution = computed(() => {
@@ -250,7 +250,7 @@ function toggleExpand(id: number) {
   transition: background .15s cubic-bezier(.4, 0, .2, 1), border-color .15s cubic-bezier(.4, 0, .2, 1);
 }
 .sgt-card:hover { background: var(--bg-elevated); }
-.sgt-card--expanded { border-color: rgba(74,144,217,.25); }
+.sgt-card--expanded { border-color: rgba(var(--accent-rgb),.25); }
 
 .sgt-card-top {
   display: flex; align-items: center; justify-content: space-between; gap: 10px;
@@ -272,10 +272,10 @@ function toggleExpand(id: number) {
   font-size: 12px; font-weight: 800; padding: 3px 10px; border-radius: 6px;
   flex-shrink: 0;
 }
-.sgt-badge--a { background: rgba(39,174,96,.15); color: var(--color-success); }
-.sgt-badge--b { background: rgba(74,144,217,.15); color: var(--accent); }
-.sgt-badge--c { background: rgba(243,156,18,.12); color: var(--color-warning); }
-.sgt-badge--d { background: rgba(231,76,60,.12); color: var(--color-danger); }
+.sgt-badge--a { background: rgba(var(--color-success-rgb),.15); color: var(--color-success); }
+.sgt-badge--b { background: rgba(var(--accent-rgb),.15); color: var(--accent); }
+.sgt-badge--c { background: rgba(var(--color-warning-rgb),.12); color: var(--color-warning); }
+.sgt-badge--d { background: rgba(var(--color-danger-rgb),.12); color: var(--color-danger); }
 
 .sgt-card-meta {
   display: flex; align-items: center; gap: 8px; margin-top: 4px;

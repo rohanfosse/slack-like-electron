@@ -171,7 +171,7 @@ function onToggle(id: string) {
   background: none; border: none; cursor: pointer; font-family: var(--font);
   padding: 4px 8px; border-radius: 6px; transition: background .15s;
 }
-.wpc-btn-reset:hover { background: rgba(74,144,217,.08); }
+.wpc-btn-reset:hover { background: rgba(var(--accent-rgb),.08); }
 .wpc-btn-close {
   display: flex; align-items: center; justify-content: center;
   width: 28px; height: 28px; border-radius: 6px;
@@ -196,7 +196,7 @@ function onToggle(id: string) {
 .wpc-section-count {
   display: inline-flex; align-items: center; justify-content: center;
   min-width: 18px; height: 18px; border-radius: 9px;
-  background: rgba(74,144,217,.1); color: var(--accent);
+  background: rgba(var(--accent-rgb),.1); color: var(--accent);
   font-size: 10px; font-weight: 700; padding: 0 5px;
 }
 
@@ -219,7 +219,7 @@ function onToggle(id: string) {
 .wpc-card--active {
   background: var(--bg-main);
 }
-.wpc-card--active:hover { border-color: rgba(74,144,217,.2); }
+.wpc-card--active:hover { border-color: rgba(var(--accent-rgb),.2); }
 
 /* Inactive card (clickable) */
 .wpc-card--inactive {
@@ -229,8 +229,8 @@ function onToggle(id: string) {
 }
 .wpc-card--inactive:hover {
   opacity: .85;
-  border-color: rgba(74,144,217,.3);
-  background: rgba(74,144,217,.03);
+  border-color: rgba(var(--accent-rgb),.3);
+  background: rgba(var(--accent-rgb),.03);
 }
 
 /* Toggle animation */
@@ -257,7 +257,7 @@ function onToggle(id: string) {
 .wpc-card-icon {
   display: flex; align-items: center; justify-content: center;
   width: 32px; height: 32px; border-radius: 8px;
-  background: rgba(74,144,217,.08); color: var(--accent);
+  background: rgba(var(--accent-rgb),.08); color: var(--accent);
   flex-shrink: 0;
 }
 .wpc-card--inactive .wpc-card-icon {
@@ -290,11 +290,11 @@ function onToggle(id: string) {
   transform: scale(1.1);
 }
 .wpc-toggle--add {
-  background: rgba(74,144,217,.08); color: var(--accent);
+  background: rgba(var(--accent-rgb),.08); color: var(--accent);
   pointer-events: none; /* Parent button handles click */
 }
 .wpc-card--inactive:hover .wpc-toggle--add {
-  background: rgba(74,144,217,.15);
+  background: rgba(var(--accent-rgb),.15);
 }
 
 /* Empty / All active */

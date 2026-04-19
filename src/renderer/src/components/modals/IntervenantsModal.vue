@@ -334,7 +334,7 @@ function assignedSummary(taId: number): string {
   color: var(--accent);
   transition: background .1s;
 }
-.iv-toggle-form:hover { background: rgba(74,144,217,.07); }
+.iv-toggle-form:hover { background: rgba(var(--accent-rgb),.07); }
 
 .iv-chevron {
   margin-left: auto;
@@ -392,7 +392,7 @@ function assignedSummary(taId: number): string {
   font-size: 9.5px; font-weight: 700; padding: 1px 7px; border-radius: 10px;
   vertical-align: middle; margin-left: 6px;
 }
-.iv-role-intervenant { background: rgba(155,135,245,.15); color: #b8a8f7; }
+.iv-role-intervenant { background: rgba(var(--color-cctl-rgb),.15); color: #b8a8f7; }
 
 /* ── Liste ── */
 .iv-list {
@@ -486,9 +486,9 @@ function assignedSummary(taId: number): string {
 }
 .iv-btn-channels:hover,
 .iv-btn-channels.active {
-  background: rgba(74,144,217,.1);
+  background: rgba(var(--accent-rgb),.1);
   color: var(--accent);
-  border-color: rgba(74,144,217,.4);
+  border-color: rgba(var(--accent-rgb),.4);
 }
 
 .iv-expand-icon {
@@ -502,7 +502,7 @@ function assignedSummary(taId: number): string {
   border-radius: 6px;
   transition: color .1s, background .1s;
 }
-.iv-btn-delete:hover { color: var(--color-danger, #e74c3c); background: rgba(231,76,60,.1); }
+.iv-btn-delete:hover { color: var(--color-danger); background: rgba(var(--color-danger-rgb),.1); }
 
 /* ── Panneau canaux ── */
 .iv-channels-panel {
@@ -553,8 +553,8 @@ function assignedSummary(taId: number): string {
 }
 .iv-ch-item:hover { background: var(--bg-hover); }
 .iv-ch-item.checked {
-  background: rgba(74,144,217,.12);
-  border-color: rgba(74,144,217,.4);
+  background: rgba(var(--accent-rgb),.12);
+  border-color: rgba(var(--accent-rgb),.4);
   color: var(--text-primary);
 }
 .iv-ch-item input[type="checkbox"] { display: none; }

@@ -328,8 +328,8 @@ function toggleCollapse(studentId: number) {
 .fv-title-block { display: flex; align-items: center; gap: 12px; }
 .fv-title-icon-wrap {
   width: 36px; height: 36px; border-radius: 10px;
-  background: linear-gradient(135deg, rgba(74,144,217,.2), rgba(74,144,217,.08));
-  border: 1px solid rgba(74,144,217,.2);
+  background: linear-gradient(135deg, rgba(var(--accent-rgb),.2), rgba(var(--accent-rgb),.08));
+  border: 1px solid rgba(var(--accent-rgb),.2);
   display: flex; align-items: center; justify-content: center;
   color: var(--accent); flex-shrink: 0;
 }
@@ -359,7 +359,7 @@ function toggleCollapse(studentId: number) {
   transition: all .15s;
 }
 .fv-view-btn:hover { color: var(--text-secondary); }
-.fv-view-btn.active { background: var(--accent); color: #fff; box-shadow: 0 1px 4px rgba(74,144,217,.3); }
+.fv-view-btn.active { background: var(--accent); color: #fff; box-shadow: 0 1px 4px rgba(var(--accent-rgb),.3); }
 
 /* ═══════════════════════════════════════════
    FILTRES
@@ -410,7 +410,7 @@ function toggleCollapse(studentId: number) {
 
 .fv-filter-count {
   font-size: 11.5px; color: var(--accent); font-weight: 600;
-  background: rgba(74,144,217,.1); border: 1px solid rgba(74,144,217,.2);
+  background: rgba(var(--accent-rgb),.1); border: 1px solid rgba(var(--accent-rgb),.2);
   border-radius: 12px; padding: 3px 10px;
 }
 
@@ -435,8 +435,8 @@ function toggleCollapse(studentId: number) {
   position: relative;
 }
 .fv-card:hover {
-  border-color: rgba(74,144,217,.35);
-  box-shadow: 0 8px 24px rgba(0,0,0,.15), 0 0 0 1px rgba(74,144,217,.1);
+  border-color: rgba(var(--accent-rgb),.35);
+  box-shadow: 0 8px 24px rgba(0,0,0,.15), 0 0 0 1px rgba(var(--accent-rgb),.1);
   transform: translateY(-2px);
 }
 
@@ -508,7 +508,7 @@ function toggleCollapse(studentId: number) {
 }
 .fv-card-btn:hover {
   color: var(--accent); background: var(--bg-hover);
-  border-color: rgba(74,144,217,.3);
+  border-color: rgba(var(--accent-rgb),.3);
 }
 
 /* ═══════════════════════════════════════════
@@ -613,7 +613,7 @@ function toggleCollapse(studentId: number) {
   color: #fff; cursor: pointer; padding: 9px 20px;
   font-size: 13px; font-weight: 600; font-family: var(--font);
   display: flex; align-items: center; gap: 7px;
-  box-shadow: 0 4px 16px rgba(74,144,217,.3);
+  box-shadow: 0 4px 16px rgba(var(--accent-rgb),.3);
   transition: transform .15s;
 }
 .fv-lightbox-dl:hover { transform: translateY(-1px); }

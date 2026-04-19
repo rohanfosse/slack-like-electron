@@ -241,7 +241,7 @@ function notifCategory(n: typeof appStore.notificationHistory[number]): string {
 .notif-title { font-size: 12px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: .5px; }
 .notif-badge {
   font-size: 10px; font-weight: 700; color: #fff;
-  background: var(--color-danger, #dc2626); border-radius: 10px; padding: 1px 6px;
+  background: var(--color-danger); border-radius: 10px; padding: 1px 6px;
 }
 .notif-header-actions { display: flex; align-items: center; gap: 6px; margin-left: auto; }
 .notif-mark-all {
@@ -249,7 +249,7 @@ function notifCategory(n: typeof appStore.notificationHistory[number]): string {
   font-size: 11px; color: var(--accent); background: none; border: none;
   cursor: pointer; padding: 2px 6px; border-radius: 6px; transition: background .1s;
 }
-.notif-mark-all:hover { background: rgba(74,144,217,.12); }
+.notif-mark-all:hover { background: rgba(var(--accent-rgb),.12); }
 .notif-clear-all {
   display: flex; align-items: center; gap: 4px;
   font-size: 11px; color: var(--text-muted); background: none; border: none;
@@ -281,7 +281,7 @@ function notifCategory(n: typeof appStore.notificationHistory[number]): string {
 }
 .notif-empty-icon { opacity: .25; }
 .notif-empty p { margin: 0; }
-.notif-empty-title { font-size: 13px; font-weight: 600; color: var(--text-secondary, #aaa); }
+.notif-empty-title { font-size: 13px; font-weight: 600; color: var(--text-secondary); }
 .notif-empty-desc { font-size: 11px; color: var(--text-muted); text-align: center; max-width: 200px; line-height: 1.4; }
 
 /* Scroll */
@@ -301,8 +301,8 @@ function notifCategory(n: typeof appStore.notificationHistory[number]): string {
   cursor: pointer; text-align: left; transition: background .08s;
 }
 .notif-item:hover { background: var(--bg-hover); }
-.notif-item.unread { background: rgba(74,144,217,.05); }
-.notif-item.unread:hover { background: rgba(74,144,217,.1); }
+.notif-item.unread { background: rgba(var(--accent-rgb),.05); }
+.notif-item.unread:hover { background: rgba(var(--accent-rgb),.1); }
 
 .notif-item-icon {
   width: 28px; height: 28px; border-radius: 8px;

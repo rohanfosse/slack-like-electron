@@ -58,8 +58,8 @@ const menuStyle = computed(() => {
   position: fixed;
   z-index: 10000;
   min-width: 170px;
-  background: var(--bg-primary, #1e1e2e);
-  border: 1px solid var(--border-color, #333);
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
   border-radius: 8px;
   box-shadow: 0 8px 24px rgba(0,0,0,.35);
   padding: 4px 0;
@@ -72,11 +72,11 @@ const menuStyle = computed(() => {
 .ctx-item {
   display: flex; align-items: center; gap: 8px;
   width: 100%; padding: 7px 14px;
-  background: none; border: none; color: var(--text-primary, #cdd6f4);
+  background: none; border: none; color: var(--text-primary);
   font-size: 13px; cursor: pointer; text-align: left;
 }
 .ctx-item:hover { background: var(--bg-hover, var(--border-input)); }
-.ctx-item--danger { color: var(--color-error, #f38ba8); }
+.ctx-item--danger { color: var(--color-error); }
 .ctx-item--danger:hover { background: rgba(243,139,168,.12); }
-.ctx-divider { height: 1px; margin: 4px 8px; background: var(--border-color, #333); }
+.ctx-divider { height: 1px; margin: 4px 8px; background: var(--border-color); }
 </style>

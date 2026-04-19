@@ -386,7 +386,7 @@
 }
 .cc-pill-private.active {
   border-color: var(--color-cctl);
-  background: rgba(155,135,245,.12);
+  background: rgba(var(--color-cctl-rgb),.12);
   color: #b8a8f7;
 }
 .cc-pill-hint {
@@ -405,7 +405,7 @@
   padding: 2px 6px; border-radius: 4px;
   transition: background .15s; font-family: var(--font);
 }
-.cc-select-all-btn:hover { background: rgba(74,144,217,.08); }
+.cc-select-all-btn:hover { background: rgba(var(--accent-rgb),.08); }
 .cc-members-count {
   font-size: 10px;
   font-weight: 500;
@@ -434,7 +434,7 @@
   transition: background .1s;
 }
 .cc-member-row:hover { background: var(--bg-hover); }
-.cc-member-row.checked { background: rgba(155,135,245,.08); }
+.cc-member-row.checked { background: rgba(var(--color-cctl-rgb),.08); }
 
 .cc-checkbox { display: none; }
 .cc-member-avatar {
@@ -452,7 +452,7 @@
   transition: background .1s, color .1s;
 }
 .cc-member-row.checked .cc-member-avatar {
-  background: rgba(155,135,245,.25);
+  background: rgba(var(--color-cctl-rgb),.25);
   color: #b8a8f7;
 }
 .cc-member-name {
@@ -483,7 +483,7 @@
 .cc-select:focus-visible { outline: 2px solid var(--accent); outline-offset: -1px; }
 .cc-select:focus { border-color: var(--accent); }
 .cc-select option, .cc-select optgroup {
-  background: var(--bg-modal, #1e2127);
+  background: var(--bg-modal);
   color: var(--text-primary);
 }
 
@@ -491,8 +491,8 @@
 .cc-new-cat {
   margin-top: 8px;
   padding: 12px;
-  background: rgba(74,144,217,.05);
-  border: 1px solid rgba(74,144,217,.15);
+  background: rgba(var(--accent-rgb),.05);
+  border: 1px solid rgba(var(--accent-rgb),.15);
   border-radius: var(--radius);
   display: flex;
   flex-direction: column;
@@ -517,7 +517,7 @@
   transition: all .1s;
 }
 .cc-icon-btn:hover    { background: var(--bg-hover); border-color: var(--border-input); color: var(--text-primary); }
-.cc-icon-btn.selected { border-color: var(--accent); background: rgba(74,144,217,.15); color: var(--accent); }
+.cc-icon-btn.selected { border-color: var(--accent); background: rgba(var(--accent-rgb),.15); color: var(--accent); }
 
 .cc-icon-input-row {
   display: flex;

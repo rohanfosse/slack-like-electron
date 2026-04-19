@@ -387,7 +387,7 @@ function formatDateRange(start?: string, end?: string): string {
   width: 44px;
   height: 44px;
   border-radius: 10px;
-  background: rgba(74,144,217,.12);
+  background: rgba(var(--accent-rgb),.12);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -434,9 +434,9 @@ function formatDateRange(start?: string, end?: string): string {
   border-radius: 20px;
   border: 1px solid transparent;
 }
-.pf-chip-blue   { background: rgba(74,144,217,.12);  color: var(--accent);        border-color: rgba(74,144,217,.25); }
-.pf-chip-green  { background: rgba(39,174,96,.12);   color: var(--color-success); border-color: rgba(39,174,96,.25); }
-.pf-chip-orange { background: rgba(243,156,18,.12);  color: var(--color-warning); border-color: rgba(243,156,18,.25); }
+.pf-chip-blue   { background: rgba(var(--accent-rgb),.12);  color: var(--accent);        border-color: rgba(var(--accent-rgb),.25); }
+.pf-chip-green  { background: rgba(var(--color-success-rgb),.12);   color: var(--color-success); border-color: rgba(var(--color-success-rgb),.25); }
+.pf-chip-orange { background: rgba(var(--color-warning-rgb),.12);  color: var(--color-warning); border-color: rgba(var(--color-warning-rgb),.25); }
 .pf-chip-muted  { background: var(--bg-elevated); color: var(--text-muted);    border-color: var(--border); }
 .pf-chip-pct    { opacity: .7; font-size: 10.5px; }
 
@@ -523,11 +523,11 @@ function formatDateRange(start?: string, end?: string): string {
   flex-shrink: 0;
 }
 /* inherits .type-* colors from global/parent scope */
-.type-livrable     { background: rgba(74,144,217,.2);   color: var(--accent); }
-.type-soutenance   { background: rgba(243,156,18,.2);   color: var(--color-warning); }
+.type-livrable     { background: rgba(var(--accent-rgb),.2);   color: var(--accent); }
+.type-soutenance   { background: rgba(var(--color-warning-rgb),.2);   color: var(--color-warning); }
 .type-cctl         { background: rgba(123,104,238,.2);  color: var(--color-cctl); }
-.type-etude_de_cas { background: rgba(39,174,96,.2);    color: var(--color-success); }
-.type-memoire      { background: rgba(231,76,60,.2);    color: var(--color-danger); }
+.type-etude_de_cas { background: rgba(var(--color-success-rgb),.2);    color: var(--color-success); }
+.type-memoire      { background: rgba(var(--color-danger-rgb),.2);    color: var(--color-danger); }
 .type-autre        { background: rgba(127,140,141,.2);  color: var(--color-autre); }
 
 .pf-deadline {

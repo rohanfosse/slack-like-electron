@@ -248,7 +248,7 @@ const systemLanguage = navigator.language
 }
 
 .stg-update-state--ready {
-  background: color-mix(in srgb, var(--color-success, #059669) 8%, transparent);
+  background: color-mix(in srgb, var(--color-success) 8%, transparent);
 }
 
 .stg-update-text {
@@ -257,9 +257,9 @@ const systemLanguage = navigator.language
 .stg-update-text strong { color: var(--text-primary); }
 .stg-update-checking { color: var(--accent); }
 .stg-update-available { color: var(--text-primary); font-weight: 500; }
-.stg-update-ready { color: var(--color-success, #059669); font-weight: 600; font-size: 13px; }
-.stg-update-ok { color: var(--color-success, #059669); }
-.stg-update-error { color: var(--color-danger, #dc2626); }
+.stg-update-ready { color: var(--color-success); font-weight: 600; font-size: 13px; }
+.stg-update-ok { color: var(--color-success); }
+.stg-update-error { color: var(--color-danger); }
 
 .stg-update-hint {
   font-size: 11px; color: var(--text-muted); margin: 0; line-height: 1.4;
@@ -285,10 +285,10 @@ const systemLanguage = navigator.language
   display: flex; align-items: flex-start; gap: 10px;
 }
 .stg-update-ready-icon {
-  color: var(--color-success, #059669); flex-shrink: 0; margin-top: 1px;
+  color: var(--color-success); flex-shrink: 0; margin-top: 1px;
 }
-.stg-update-ok-icon { color: var(--color-success, #059669); flex-shrink: 0; }
-.stg-update-error-icon { color: var(--color-danger, #dc2626); flex-shrink: 0; }
+.stg-update-ok-icon { color: var(--color-success); flex-shrink: 0; }
+.stg-update-error-icon { color: var(--color-danger); flex-shrink: 0; }
 
 /* Buttons */
 .stg-update-btn {
@@ -302,7 +302,7 @@ const systemLanguage = navigator.language
 .stg-update-btn:disabled { opacity: .5; cursor: not-allowed; }
 
 .stg-update-btn--install {
-  background: var(--color-success, #059669); color: #fff; border-color: transparent;
+  background: var(--color-success); color: #fff; border-color: transparent;
   padding: 10px 22px; font-size: 13px; width: 100%; justify-content: center;
 }
 .stg-update-btn--install:hover { opacity: .9; }

@@ -503,9 +503,9 @@
 }
 .sort-btn:hover { background: var(--bg-hover); color: var(--text-secondary); }
 .sort-btn.active {
-  background: rgba(74,144,217,.12);
-  border-color: rgba(74,144,217,.35);
-  color: var(--accent-light, #7db8f0);
+  background: rgba(var(--accent-rgb),.12);
+  border-color: rgba(var(--accent-rgb),.35);
+  color: var(--accent-light);
 }
 
 /* ── Zone principale ── */
@@ -564,8 +564,8 @@
 }
 .classe-row:hover { background: var(--bg-elevated); }
 .classe-row.selected {
-  background: rgba(74,144,217,.08);
-  border-color: rgba(74,144,217,.25);
+  background: rgba(var(--accent-rgb),.08);
+  border-color: rgba(var(--accent-rgb),.25);
 }
 
 /* Avatar */
@@ -756,9 +756,9 @@
   flex-shrink: 0;
   white-space: nowrap;
 }
-.status-rendu  { background: rgba(39,174,96,.15);  color: var(--color-success); }
+.status-rendu  { background: rgba(var(--color-success-rgb),.15);  color: var(--color-success); }
 .status-retard { background: rgba(230,126,34,.15); color: var(--color-warning); }
-.status-absent { background: rgba(231,76,60,.12);  color: var(--color-danger);  }
+.status-absent { background: rgba(var(--color-danger-rgb),.12);  color: var(--color-danger);  }
 
 .pt-meta {
   font-size: 11px;

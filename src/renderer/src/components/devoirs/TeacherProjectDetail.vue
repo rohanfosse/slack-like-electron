@@ -224,11 +224,11 @@ async function handlePublishAll() {
 .proj-summary-publish-btn {
   display: inline-flex; align-items: center; gap: 4px;
   font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 6px;
-  background: rgba(46,204,113,.1); color: var(--color-success);
-  border: 1px solid rgba(46,204,113,.25); cursor: pointer; font-family: var(--font);
+  background: rgba(var(--color-success-rgb),.1); color: var(--color-success);
+  border: 1px solid rgba(var(--color-success-rgb),.25); cursor: pointer; font-family: var(--font);
   transition: all var(--t-fast);
 }
-.proj-summary-publish-btn:hover { background: rgba(46,204,113,.2); }
+.proj-summary-publish-btn:hover { background: rgba(var(--color-success-rgb),.2); }
 .proj-summary-stat { display: flex; align-items: center; gap: 3px; }
 .proj-stat-warn { color: var(--color-warning); font-weight: 600; }
 
@@ -323,7 +323,7 @@ async function handlePublishAll() {
   padding: 6px 12px; cursor: pointer; font-family: var(--font);
   transition: all var(--t-fast); margin-top: 6px;
 }
-.dc-add-btn:hover { background: rgba(74,144,217,.06); border-color: var(--accent); }
+.dc-add-btn:hover { background: rgba(var(--accent-rgb),.06); border-color: var(--accent); }
 .dc-add-btn--first { padding: 14px; justify-content: center; font-size: 13px; }
 
 @media (max-width: 600px) {
@@ -335,11 +335,11 @@ async function handlePublishAll() {
   font-size: 10px; font-weight: 800; text-transform: uppercase;
   letter-spacing: 0.5px; padding: 2px 7px; border-radius: 4px;
 }
-.type-livrable     { background: rgba(74,144,217,.2);   color: var(--accent); }
-.type-soutenance   { background: rgba(243,156,18,.2);   color: var(--color-warning); }
+.type-livrable     { background: rgba(var(--accent-rgb),.2);   color: var(--accent); }
+.type-soutenance   { background: rgba(var(--color-warning-rgb),.2);   color: var(--color-warning); }
 .type-cctl         { background: rgba(123,104,238,.2);  color: var(--color-cctl); }
-.type-etude_de_cas { background: rgba(39,174,96,.2);    color: var(--color-success); }
-.type-memoire      { background: rgba(231,76,60,.2);    color: var(--color-danger); }
+.type-etude_de_cas { background: rgba(var(--color-success-rgb),.2);    color: var(--color-success); }
+.type-memoire      { background: rgba(var(--color-danger-rgb),.2);    color: var(--color-danger); }
 .type-autre        { background: rgba(127,140,141,.2);  color: var(--color-autre); }
 
 /* ── Shared ──────────────────────────────────────────────────────────────── */

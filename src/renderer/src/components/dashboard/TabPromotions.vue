@@ -208,8 +208,8 @@ const emit = defineEmits<{
   border-left: 3px solid var(--promo-color, var(--border));
 }
 .tp-card--active {
-  border-color: var(--accent); background: rgba(74,144,217,.04);
-  box-shadow: 0 0 0 1px rgba(74,144,217,.12);
+  border-color: var(--accent); background: rgba(var(--accent-rgb),.04);
+  box-shadow: 0 0 0 1px rgba(var(--accent-rgb),.12);
 }
 
 /* ── Card header ── */
@@ -223,7 +223,7 @@ const emit = defineEmits<{
 .tp-badge-active {
   font-size: 10px; font-weight: 700; text-transform: uppercase;
   padding: 2px 8px; border-radius: 10px;
-  background: rgba(74,144,217,.15); color: var(--accent);
+  background: rgba(var(--accent-rgb),.15); color: var(--accent);
 }
 
 /* ── Ring chart ── */
@@ -244,7 +244,7 @@ const emit = defineEmits<{
   border-radius: 12px; background: var(--bg-hover);
   color: var(--text-secondary); white-space: nowrap;
 }
-.tp-pill--accent { background: rgba(74,144,217,.1); color: var(--accent); }
+.tp-pill--accent { background: rgba(var(--accent-rgb),.1); color: var(--accent); }
 
 /* ── Actions ── */
 .tp-actions { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
@@ -273,7 +273,7 @@ const emit = defineEmits<{
 .tp-btn--sm { font-size: 10px; padding: 2px 7px; border-radius: 4px; }
 .tp-btn--accent { background: var(--accent); color: #fff; border-color: var(--accent); }
 .tp-btn--accent:hover { opacity: .9; }
-.tp-btn--danger { color: var(--color-danger, #f87171); }
+.tp-btn--danger { color: var(--color-danger); }
 .tp-btn--danger:hover { background: rgba(248,113,113,.1); }
 .tp-btn--icon { padding: 4px 6px; }
 
@@ -293,7 +293,7 @@ const emit = defineEmits<{
   background: none; cursor: pointer; font-family: var(--font);
   transition: all var(--motion-fast) var(--ease-out); align-self: flex-start;
 }
-.tp-add-btn:hover { color: var(--accent); border-color: var(--accent); background: rgba(74,144,217,.07); }
+.tp-add-btn:hover { color: var(--accent); border-color: var(--accent); background: rgba(var(--accent-rgb),.07); }
 
 /* ── Empty state ── */
 .tp-empty { font-size: 13px; color: var(--text-muted); text-align: center; padding: 24px 0; }

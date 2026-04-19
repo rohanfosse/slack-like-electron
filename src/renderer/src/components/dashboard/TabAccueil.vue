@@ -344,13 +344,13 @@ function onOptDragEnd() { bento.reorderOptional(draggableOpt.value) }
 .focus--warning .focus-icon { color: var(--color-warning); }
 
 .focus--normal {
-  background: rgba(74, 144, 217, .06);
-  border-color: rgba(74, 144, 217, .2);
+  background: rgba(var(--accent-rgb), .06);
+  border-color: rgba(var(--accent-rgb), .2);
 }
 .focus--normal .focus-icon { color: var(--accent); }
 
 .focus--clear {
-  background: linear-gradient(135deg, rgba(34, 197, 94, .06) 0%, rgba(74, 144, 217, .04) 100%);
+  background: linear-gradient(135deg, rgba(34, 197, 94, .06) 0%, rgba(var(--accent-rgb), .04) 100%);
   border-color: rgba(34, 197, 94, .2);
 }
 .focus--clear .focus-icon { color: var(--color-success); }
@@ -491,7 +491,7 @@ function onOptDragEnd() { bento.reorderOptional(draggableOpt.value) }
 }
 .schedule-current {
   background: var(--accent-subtle);
-  border-color: rgba(74, 144, 217, .3);
+  border-color: rgba(var(--accent-rgb), .3);
 }
 .schedule-time {
   font-size: 12px;
@@ -508,7 +508,7 @@ function onOptDragEnd() { bento.reorderOptional(draggableOpt.value) }
   border-radius: var(--radius-sm);
   flex-shrink: 0;
 }
-.schedule-type-deadline   { background: rgba(74, 144, 217, .15); color: var(--accent); }
+.schedule-type-deadline   { background: rgba(var(--accent-rgb), .15); color: var(--accent); }
 .schedule-type-soutenance { background: rgba(139, 92, 246, .15); color: var(--color-cctl); }
 .schedule-type-reminder   { background: rgba(34, 197, 94, .15); color: var(--color-success); }
 .schedule-title {
@@ -741,7 +741,7 @@ function onOptDragEnd() { bento.reorderOptional(draggableOpt.value) }
   border: 2px dashed transparent;
   animation: bento-jiggle var(--motion-slow) var(--ease-out) infinite alternate;
 }
-.bento-tile--editing:hover { border-color: rgba(74, 144, 217, .3); }
+.bento-tile--editing:hover { border-color: rgba(var(--accent-rgb), .3); }
 
 @keyframes bento-jiggle {
   from { transform: rotate(-0.2deg); }
@@ -764,7 +764,7 @@ function onOptDragEnd() { bento.reorderOptional(draggableOpt.value) }
 .bento-add-tile {
   display: flex; align-items: center; justify-content: center; gap: 8px;
   padding: 16px; border-radius: var(--radius-lg); grid-column: span 4;
-  border: 2px dashed rgba(74, 144, 217, .3);
+  border: 2px dashed rgba(var(--accent-rgb), .3);
   background: var(--accent-subtle);
   color: var(--accent); cursor: pointer;
   transition: all var(--t-base); font-family: var(--font); font-size: 13px; font-weight: 600;

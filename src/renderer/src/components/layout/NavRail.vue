@@ -400,7 +400,7 @@
   height: 8px;
   border-radius: 50%;
   background: #ef4444;
-  border: 2px solid var(--bg-primary, #111214);
+  border: 2px solid var(--bg-primary);
   animation: pulse-dot 2s infinite;
 }
 
@@ -427,7 +427,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 2px solid var(--bg-rail, #161819);
+  border: 2px solid var(--bg-rail);
   line-height: 1;
 }
 
@@ -462,10 +462,10 @@
 
 /* Variantes de badge */
 .nav-badge-mention {
-  background: var(--color-danger, #e74c3c);
+  background: var(--color-danger);
 }
 .nav-badge-unread {
-  background: var(--accent, #4a90d9);
+  background: var(--accent);
 }
 
 /* ── Mini progress bar (devoirs) ── */
@@ -491,7 +491,7 @@
   width: 3px;
   height: 20px;
   border-radius: 0 3px 3px 0;
-  background: var(--accent, #4a90d9);
+  background: var(--accent);
   animation: rail-indicator-in .2s cubic-bezier(.34,1.56,.64,1);
 }
 @keyframes rail-indicator-in {
@@ -558,7 +558,7 @@
   height: 10px;
   border-radius: 50%;
   background: #ef4444;
-  border: 2px solid var(--bg-primary, #111214);
+  border: 2px solid var(--bg-primary);
   animation: pulse-dot 2s infinite;
 }
 @keyframes pulse-dot {
@@ -620,7 +620,7 @@
 
 /* ── Bouton Admin ── */
 .nav-admin-btn :deep(svg) {
-  color: var(--accent, #4a90d9);
+  color: var(--accent);
 }
 
 /* ── Feedback Modal ── */
@@ -629,7 +629,7 @@
   background: rgba(0,0,0,.5); display: flex; align-items: center; justify-content: center;
 }
 .feedback-modal {
-  background: var(--bg-modal, #1e1f21); border-radius: 14px; padding: 20px;
+  background: var(--bg-modal); border-radius: 14px; padding: 20px;
   width: 440px; max-width: 92vw; max-height: 80vh; overflow-y: auto;
   box-shadow: 0 20px 60px rgba(0,0,0,.5);
 }

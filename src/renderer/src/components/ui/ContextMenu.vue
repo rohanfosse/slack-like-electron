@@ -87,7 +87,7 @@ function run(item: ContextMenuItem) {
   position: fixed;
   z-index: 9999;
   min-width: 180px;
-  background: var(--bg-secondary, #1e2025);
+  background: var(--bg-secondary);
   border: 1px solid var(--border, var(--bg-hover));
   border-radius: 8px;
   padding: 4px;
@@ -118,7 +118,7 @@ function run(item: ContextMenuItem) {
   border: none;
   border-radius: 5px;
   background: transparent;
-  color: var(--text-secondary, #ccc);
+  color: var(--text-secondary);
   font-family: var(--font, sans-serif);
   font-size: 13px;
   font-weight: 400;
@@ -129,10 +129,10 @@ function run(item: ContextMenuItem) {
 }
 .ctx-item:hover:not(.ctx-item--disabled) {
   background: var(--bg-hover, rgba(255,255,255,.07));
-  color: var(--text-primary, #fff);
+  color: var(--text-primary);
 }
-.ctx-item--danger       { color: var(--color-danger, #e74c3c); }
-.ctx-item--danger:hover { background: rgba(231,76,60,.12); }
+.ctx-item--danger       { color: var(--color-danger); }
+.ctx-item--danger:hover { background: rgba(var(--color-danger-rgb),.12); }
 .ctx-item--disabled     { opacity: .4; cursor: not-allowed; }
 
 .ctx-icon { flex-shrink: 0; }

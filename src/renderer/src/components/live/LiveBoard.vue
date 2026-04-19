@@ -428,7 +428,7 @@ onBeforeUnmount(() => { unsubscribe?.() })
   background: var(--bg-active); color: var(--text-muted);
   display: inline-flex; align-items: center; gap: 3px;
 }
-.lb-stat--accent { background: rgba(74,144,217,.12); color: var(--accent); }
+.lb-stat--accent { background: rgba(var(--accent-rgb),.12); color: var(--accent); }
 .lb-header-actions { display: flex; gap: 4px; margin-left: auto; }
 .lb-hdr-btn {
   display: flex; align-items: center; justify-content: center;
@@ -455,7 +455,7 @@ onBeforeUnmount(() => { unsubscribe?.() })
   transition: border-color .2s, background .2s;
 }
 .lb-column--dragover {
-  border-color: var(--accent); background: rgba(74,144,217,.04);
+  border-color: var(--accent); background: rgba(var(--accent-rgb),.04);
 }
 .lb-column-header {
   display: flex; align-items: center; gap: 6px;
@@ -517,8 +517,8 @@ onBeforeUnmount(() => { unsubscribe?.() })
   cursor: pointer; transition: all .15s; opacity: 0;
 }
 .lb-card:hover .lb-edit-btn, .lb-card:hover .lb-delete-btn { opacity: 1; }
-.lb-edit-btn:hover { background: rgba(74,144,217,.2); color: var(--accent); }
-.lb-delete-btn:hover { background: rgba(231,76,60,.2); color: #dc2626; }
+.lb-edit-btn:hover { background: rgba(var(--accent-rgb),.2); color: var(--accent); }
+.lb-delete-btn:hover { background: rgba(var(--color-danger-rgb),.2); color: #dc2626; }
 
 /* Edit inline */
 .lb-edit-input {
@@ -570,7 +570,7 @@ onBeforeUnmount(() => { unsubscribe?.() })
   background: transparent; color: var(--text-muted);
   cursor: pointer; font-family: var(--font); transition: all .15s;
 }
-.lb-add-btn:hover { border-color: var(--accent); color: var(--accent); background: rgba(74,144,217,.05); }
+.lb-add-btn:hover { border-color: var(--accent); color: var(--accent); background: rgba(var(--accent-rgb),.05); }
 
 /* Animations */
 .card-list-enter-active { animation: card-in .3s ease; }

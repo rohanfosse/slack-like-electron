@@ -23,8 +23,11 @@ const SRC = path.join(ROOT, 'src', 'renderer', 'src')
 // base.css reste la source des tokens — ne pas migrer
 const SKIP = new Set([path.join(SRC, 'assets', 'css', 'base.css')].map((p) => path.resolve(p)))
 
-// Top offenders identifies via `check-design-tokens.js --full`
+// Top offenders identifies via `check-design-tokens.js --full`.
+// Vague 1 (v2.163.2) : 20 premiers fichiers, 343 remplacements.
+// Vague 2 (cette version) : fichiers suivants avec 5+ violations au baseline.
 const DEFAULT_TARGETS = [
+  // Vague 1 (deja migres, la migration est idempotente)
   'components/projet/StudentProjetFiche.vue',
   'components/projet/StudentProjetDevoirsList.vue',
   'components/modals/StudentTimelineModal.vue',
@@ -45,6 +48,32 @@ const DEFAULT_TARGETS = [
   'App.vue',
   'components/ui/UiCodeEditor.vue',
   'components/modals/TimelineModal.vue',
+  // Vague 2
+  'components/dashboard/StudentGradesTab.vue',
+  'views/FilesView.vue',
+  'components/projet/ProjetFiche.vue',
+  'components/modals/settings/SettingsAbout.vue',
+  'components/modals/devoir/DevoirRendusList.vue',
+  'components/modals/IntervenantsModal.vue',
+  'components/modals/CreateChannelModal.vue',
+  'components/layout/NavRail.vue',
+  'components/dashboard/student-widgets/BentoCustomizer.vue',
+  'components/dashboard/WidgetPicker.vue',
+  'assets/css/devoirs-shared.css',
+  'components/onboarding/OnboardingWizard.vue',
+  'components/modals/ClasseModal.vue',
+  'components/dashboard/student-widgets/WidgetWeekPlanner.vue',
+  'components/dashboard/TabAccueil.vue',
+  'views/MessagesView.vue',
+  'components/panels/ChannelMembersPanel.vue',
+  'components/dashboard/TabPromotions.vue',
+  'assets/css/layout.css',
+  'components/ui/ContextMenu.vue',
+  'components/lumen/LumenRepoSidebar.vue',
+  'components/live/LiveBoard.vue',
+  'components/layout/NotificationPanel.vue',
+  'components/devoirs/TeacherProjectDetail.vue',
+  'components/devoirs/DevoirContextMenu.vue',
 ].map((p) => path.join(SRC, p))
 
 const SUBSTITUTIONS = [

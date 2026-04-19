@@ -12,12 +12,12 @@
   const { week, offset, totalEvents, nextWeek, prevWeek, resetWeek } = useWeekPlanner(devoirs)
 
   const TYPE_COLORS: Record<string, string> = {
-    cctl: 'var(--color-cctl, #9B87F5)',
-    soutenance: 'var(--color-soutenance, #F39C12)',
-    livrable: 'var(--color-livrable, #4A90D9)',
-    etude_de_cas: 'var(--color-etude-de-cas, #2ECC71)',
-    memoire: 'var(--color-memoire, #E74C3C)',
-    autre: 'var(--color-autre, #95A5A6)',
+    cctl: 'var(--color-cctl)',
+    soutenance: 'var(--color-soutenance)',
+    livrable: 'var(--color-livrable)',
+    etude_de_cas: 'var(--color-etude-de-cas)',
+    memoire: 'var(--color-memoire)',
+    autre: 'var(--color-autre)',
   }
 
   function typeColor(type: string): string {
@@ -134,7 +134,7 @@
   box-shadow: inset 0 0 0 1px var(--accent);
 }
 
-.wp-day--has-events { background: rgba(74, 144, 217, 0.04); }
+.wp-day--has-events { background: rgba(var(--accent-rgb), 0.04); }
 
 .wp-day-header {
   display: flex;

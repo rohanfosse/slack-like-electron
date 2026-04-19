@@ -487,7 +487,7 @@
 <style>
 /* Animation surbrillance message depuis la recherche (non-scoped pour toucher MessageBubble) */
 @keyframes msg-flash {
-  0%, 10%  { background: rgba(74, 144, 217, .28); border-radius: 6px; }
+  0%, 10%  { background: rgba(var(--accent-rgb), .28); border-radius: 6px; }
   100%      { background: transparent; }
 }
 .msg-highlight { animation: msg-flash 2s ease forwards !important; }
@@ -527,9 +527,9 @@
 .dm-offline { color: var(--text-muted); }
 
 /* ── Channel type badges ── */
-.channel-type-badge--annonce { background: rgba(231,76,60,.15); color: #e74c3c; display: inline-flex; align-items: center; gap: 3px; }
-.channel-type-badge--chat    { background: rgba(74,144,217,.15); color: var(--accent); display: inline-flex; align-items: center; gap: 3px; }
-.channel-type-badge--dm      { background: rgba(155,135,245,.12); color: var(--color-cctl); font-size: 10px; }
+.channel-type-badge--annonce { background: rgba(var(--color-danger-rgb),.15); color: #e74c3c; display: inline-flex; align-items: center; gap: 3px; }
+.channel-type-badge--chat    { background: rgba(var(--accent-rgb),.15); color: var(--accent); display: inline-flex; align-items: center; gap: 3px; }
+.channel-type-badge--dm      { background: rgba(var(--color-cctl-rgb),.12); color: var(--color-cctl); font-size: 10px; }
 .channel-annonce-hint {
   font-size: 11px;
   color: var(--text-muted);
@@ -571,7 +571,7 @@
   position: absolute;
   inset: 0;
   z-index: 50;
-  background: rgba(74, 144, 217, 0.12);
+  background: rgba(var(--accent-rgb), 0.12);
   backdrop-filter: blur(2px);
   border: 3px dashed var(--accent);
   border-radius: 4px;
@@ -612,7 +612,7 @@
 /* ── Amélioration bannière ── */
 .banner-icon { flex-shrink: 0; }
 .banner-text { flex: 1; min-width: 0; }
-.banner-urgent { color: var(--color-warning, #c8a85a); font-weight: 600; }
+.banner-urgent { color: var(--color-warning); font-weight: 600; }
 .banner-close-btn {
   padding: 3px;
   flex-shrink: 0;

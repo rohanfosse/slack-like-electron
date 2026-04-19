@@ -256,7 +256,7 @@ const enabledCount = computed(() => props.widgets.filter(w => props.isVisible(w.
   transition: all 0.12s;
 }
 .wp-tab:hover { background: var(--bg-hover); color: var(--text-secondary); }
-.wp-tab.active { background: rgba(74, 144, 217, 0.12); color: var(--accent); }
+.wp-tab.active { background: rgba(var(--accent-rgb), 0.12); color: var(--accent); }
 .wp-tab-count {
   font-size: 10px;
   font-weight: 700;
@@ -283,17 +283,17 @@ const enabledCount = computed(() => props.widgets.filter(w => props.isVisible(w.
 }
 .wp-preset-card:hover {
   background: var(--bg-hover);
-  border-color: rgba(74, 144, 217, 0.2);
+  border-color: rgba(var(--accent-rgb), 0.2);
 }
 .wp-preset-card--active {
-  background: rgba(74, 144, 217, 0.08);
+  background: rgba(var(--accent-rgb), 0.08);
   border-color: var(--accent);
 }
 .wp-preset-icon {
   width: 36px;
   height: 36px;
   border-radius: 9px;
-  background: rgba(74, 144, 217, 0.12);
+  background: rgba(var(--accent-rgb), 0.12);
   color: var(--accent);
   display: flex;
   align-items: center;
@@ -320,7 +320,7 @@ const enabledCount = computed(() => props.widgets.filter(w => props.isVisible(w.
   font-size: 10px;
   font-weight: 700;
   color: var(--accent);
-  background: rgba(74, 144, 217, 0.12);
+  background: rgba(var(--accent-rgb), 0.12);
   padding: 2px 8px;
   border-radius: 6px;
   flex-shrink: 0;
@@ -366,7 +366,7 @@ const enabledCount = computed(() => props.widgets.filter(w => props.isVisible(w.
   justify-content: center;
   flex-shrink: 0;
 }
-.wp-cat-essential     { background: rgba(74, 144, 217, 0.15); color: var(--accent); }
+.wp-cat-essential     { background: rgba(var(--accent-rgb), 0.15); color: var(--accent); }
 .wp-cat-communication { background: rgba(139, 92, 246, 0.15); color: #8b5cf6; }
 .wp-cat-tracking      { background: rgba(34, 197, 94, 0.15);  color: #22c55e; }
 .wp-cat-productivity  { background: rgba(245, 158, 11, 0.15); color: #f59e0b; }
@@ -407,7 +407,7 @@ const enabledCount = computed(() => props.widgets.filter(w => props.isVisible(w.
   color: #22c55e;
 }
 .wp-card-toggle--remove {
-  background: rgba(231, 76, 60, 0.1);
+  background: rgba(var(--color-danger-rgb), 0.1);
   color: #e74c3c;
 }
 .wp-card-toggle:hover {
@@ -439,7 +439,7 @@ const enabledCount = computed(() => props.widgets.filter(w => props.isVisible(w.
   color: var(--text-secondary);
 }
 .wp-size-btn.active {
-  background: rgba(74, 144, 217, 0.12);
+  background: rgba(var(--accent-rgb), 0.12);
   border-color: var(--accent);
   color: var(--accent);
 }

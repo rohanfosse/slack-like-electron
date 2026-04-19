@@ -744,7 +744,7 @@ const {
   text-overflow: ellipsis;
 }
 .lumen-repo-item.is-done { opacity: 0.5; }
-.lumen-repo-done { flex-shrink: 0; color: var(--success, #4caf50); }
+.lumen-repo-done { flex-shrink: 0; color: var(--success); }
 
 .lumen-repo-progress {
   flex-shrink: 0;
@@ -780,7 +780,7 @@ const {
   color: var(--text-primary);
 }
 .lumen-repo-visibility.is-visible {
-  color: var(--success, #4caf50);
+  color: var(--success);
 }
 .lumen-repo-visibility:focus-visible {
   outline: 2px solid var(--accent);
@@ -788,7 +788,7 @@ const {
 }
 
 .lumen-repo-warning {
-  color: var(--warning, #d98a00);
+  color: var(--warning);
   flex-shrink: 0;
 }
 
@@ -805,7 +805,7 @@ const {
   border-radius: 4px;
   font-size: 10.5px;
   line-height: 1.35;
-  color: var(--warning, #d98a00);
+  color: var(--warning);
 }
 .lumen-repo-error-banner svg { flex-shrink: 0; margin-top: 1px; }
 
@@ -996,7 +996,7 @@ const {
   text-overflow: ellipsis;
 }
 
-.lumen-chapter-read  { color: var(--success, #4caf50); flex-shrink: 0; }
+.lumen-chapter-read  { color: var(--success); flex-shrink: 0; }
 .lumen-chapter-noted { color: var(--accent); flex-shrink: 0; }
 .lumen-chapter-icon { flex-shrink: 0; }
 .lumen-chapter-icon--marp { color: var(--accent); }

@@ -358,7 +358,7 @@ async function savePhoto() {
 }
 
 .ob-dot.done {
-  background: var(--color-success, #27ae60);
+  background: var(--color-success);
 }
 
 /* ── Content ─────────────────────────────────────────────────────────────── */
@@ -410,7 +410,7 @@ async function savePhoto() {
   font-size: 12px;
   font-weight: 600;
   color: var(--accent);
-  background: rgba(74, 144, 217, 0.12);
+  background: rgba(var(--accent-rgb), 0.12);
   padding: 4px 12px;
   border-radius: 20px;
   margin: 0 0 20px;
@@ -421,7 +421,7 @@ async function savePhoto() {
   width: 80px;
   height: 80px;
   border-radius: 20px;
-  background: rgba(74, 144, 217, 0.12);
+  background: rgba(var(--accent-rgb), 0.12);
   color: var(--accent);
   display: flex;
   align-items: center;
@@ -430,8 +430,8 @@ async function savePhoto() {
 }
 
 .ob-icon-success {
-  background: rgba(39, 174, 96, 0.12);
-  color: var(--color-success, #27ae60);
+  background: rgba(var(--color-success-rgb), 0.12);
+  color: var(--color-success);
 }
 
 /* ── Avatar (Step 2) ─────────────────────────────────────────────────────── */
@@ -553,7 +553,7 @@ async function savePhoto() {
   width: 44px;
   height: 44px;
   border-radius: 12px;
-  background: rgba(74, 144, 217, 0.12);
+  background: rgba(var(--accent-rgb), 0.12);
   color: var(--accent);
   display: flex;
   align-items: center;
@@ -620,7 +620,7 @@ async function savePhoto() {
 }
 
 .ob-btn-secondary:hover {
-  background: rgba(74, 144, 217, 0.08);
+  background: rgba(var(--accent-rgb), 0.08);
 }
 
 .ob-btn-ghost {
