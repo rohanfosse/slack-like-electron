@@ -12,6 +12,17 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '2.166.3',
+    date: '2026-04-19',
+    title: 'Documents : actions dans un menu \u201c\u2026\u201d',
+    highlights: [
+      'Ancien overlay hover satur\u00e9 supprim\u00e9 (visuellement bruyant)',
+      'Bouton \u201c\u2026\u201d top-right ouvre un menu propre avec toutes les actions',
+      'Type chip (Tableur, PDF, etc.) deplac\u00e9 inline dans la meta',
+      'Card respire enfin sans 6 ic\u00f4nes empil\u00e9es',
+    ],
+  },
+  {
     version: '2.166.2',
     date: '2026-04-19',
     title: 'Agenda semaine : jours plus visibles + devoirs apaises',

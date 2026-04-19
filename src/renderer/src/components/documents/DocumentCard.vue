@@ -1,19 +1,22 @@
 <script setup lang="ts">
 /**
  * DocumentCard : card d'un document unique, supporte 3 modes visuels :
- *  - 'grid'  : card verticale avec description, meta, actions (par defaut)
+ *  - 'grid'  : card verticale avec description, meta, action menu (par defaut)
  *  - 'list'  : ligne horizontale compacte avec colonnes
  *  - 'dense' : card minimale avec juste icone + nom + date
- * Les styles correspondants vivent toujours dans DocumentsView (.doc-card--list,
- * .doc-card--dense, etc.) pour eviter la duplication CSS.
+ *
+ * Les styles vivent dans DocumentsView (.doc-card--list, --dense, etc.).
+ * v2.166.3 : actions deplacees dans un menu "..." (ContextMenu) pour
+ * desencombrer la card. L'ancien overlay hover satures est supprime.
  */
-import type { Component } from 'vue'
+import { ref, computed, type Component } from 'vue'
 import {
-  Star, Copy, Eye, ExternalLink, Download, Pencil, Trash2, File, BookMarked,
+  Star, Copy, Eye, ExternalLink, Download, Pencil, Trash2, File, BookMarked, MoreHorizontal,
 } from 'lucide-vue-next'
 import { formatDate } from '@/utils/date'
 import { useAppStore } from '@/stores/app'
 import { useDocumentsStore } from '@/stores/documents'
+import ContextMenu, { type ContextMenuItem } from '@/components/ui/ContextMenu.vue'
 import type { AppDocument } from '@/types'
 import type { DocumentsViewMode } from '@/composables/useDocumentsViewMode'
 
@@ -49,7 +52,6 @@ const docStore = useDocumentsStore()
 const isDense = props.viewMode === 'dense'
 const isList = props.viewMode === 'list'
 const iconSize = isDense ? 18 : (isList ? 20 : 28)
-const actionSize = isDense ? 12 : 14
 const iconBg = props.iconColor + '1A'
 const typeBadgeBg = props.iconColor + '22'
 
@@ -57,6 +59,74 @@ function onCardClick() {
   if (props.selectionMode) emit('toggle-select')
   else emit('open')
 }
+
+// ── Menu "..." ─────────────────────────────────────────────────────────────
+const menuPos = ref<{ x: number; y: number } | null>(null)
+
+function openMenu(event: MouseEvent) {
+  const target = event.currentTarget as HTMLElement
+  const rect = target.getBoundingClientRect()
+  // Ouvre le menu sous le bouton, aligne a droite.
+  menuPos.value = { x: rect.right, y: rect.bottom + 4 }
+}
+
+function closeMenu() {
+  menuPos.value = null
+}
+
+const isFav = computed(() => docStore.isFavorite(props.doc.id))
+
+const menuItems = computed<ContextMenuItem[]>(() => {
+  const items: ContextMenuItem[] = [
+    {
+      label: isFav.value ? 'Retirer des favoris' : 'Ajouter aux favoris',
+      icon: Star,
+      action: () => docStore.toggleFavorite(props.doc.id),
+    },
+    {
+      label: 'Copier le lien',
+      icon: Copy,
+      action: () => emit('copy-link'),
+    },
+    {
+      label: props.doc.type === 'link' ? 'Ouvrir le lien' : 'Prévisualiser',
+      icon: props.doc.type === 'file' ? Eye : ExternalLink,
+      action: () => emit('open'),
+    },
+  ]
+  if (props.doc.type === 'file') {
+    items.push({
+      label: 'Télécharger',
+      icon: Download,
+      action: () => emit('download'),
+    })
+  }
+  if (appStore.isTeacher) {
+    if (!isDense) {
+      items.push({
+        label: 'Modifier',
+        icon: Pencil,
+        separator: true,
+        action: () => emit('edit'),
+      })
+      items.push({
+        label: 'Supprimer',
+        icon: Trash2,
+        danger: true,
+        action: () => emit('delete'),
+      })
+    } else {
+      items.push({
+        label: 'Supprimer',
+        icon: Trash2,
+        danger: true,
+        separator: true,
+        action: () => emit('delete'),
+      })
+    }
+  }
+  return items
+})
 </script>
 
 <template>
@@ -65,8 +135,9 @@ function onCardClick() {
     :class="{
       'doc-card--dense': isDense,
       'doc-card--list': isList,
-      'doc-card--fav': docStore.isFavorite(doc.id),
+      'doc-card--fav': isFav,
       'doc-card--selected': selected,
+      'doc-card--menu-open': menuPos !== null,
     }"
     :title="doc.description ?? doc.name"
     @click="onCardClick"
@@ -83,13 +154,23 @@ function onCardClick() {
       class="doc-card-fav"
       :class="{
         'doc-card-fav--dense': isDense,
-        'doc-card-fav--active': docStore.isFavorite(doc.id),
+        'doc-card-fav--active': isFav,
       }"
-      :title="docStore.isFavorite(doc.id) ? 'Retirer des favoris' : 'Ajouter aux favoris'"
-      :aria-label="docStore.isFavorite(doc.id) ? 'Retirer des favoris' : 'Ajouter aux favoris'"
+      :title="isFav ? 'Retirer des favoris' : 'Ajouter aux favoris'"
+      :aria-label="isFav ? 'Retirer des favoris' : 'Ajouter aux favoris'"
       @click.stop="docStore.toggleFavorite(doc.id)"
     >
       <Star :size="isDense ? 10 : 13" />
+    </button>
+
+    <button
+      class="doc-card-menu-btn"
+      :class="{ 'doc-card-menu-btn--dense': isDense }"
+      title="Plus d'actions"
+      aria-label="Plus d'actions"
+      @click.stop="openMenu"
+    >
+      <MoreHorizontal :size="isDense ? 12 : 14" />
     </button>
 
     <div
@@ -100,10 +181,6 @@ function onCardClick() {
     </div>
 
     <template v-if="!isDense">
-      <span class="doc-card-type-badge" :style="{ background: typeBadgeBg, color: iconColor }">
-        {{ iconLabel }}
-      </span>
-
       <p class="doc-card-name">
         {{ doc.name }}
         <span v-if="isRecent" class="doc-new-badge">Nouveau</span>
@@ -117,8 +194,11 @@ function onCardClick() {
       </span>
 
       <p class="doc-card-meta">
+        <span class="doc-card-type-chip" :style="{ background: typeBadgeBg, color: iconColor }">
+          {{ iconLabel }}
+        </span>
         <span v-if="!appStore.activeChannelId && doc.channel_name">#{{ doc.channel_name }}</span>
-        <span>{{ formatDate(doc.created_at) }}</span>
+        <span class="doc-card-date">{{ formatDate(doc.created_at) }}</span>
         <span v-if="fileSize" class="doc-card-size">{{ fileSize }}</span>
       </p>
     </template>
@@ -131,61 +211,12 @@ function onCardClick() {
       </span>
     </template>
 
-    <div class="doc-card-actions" @click.stop>
-      <button
-        v-if="!isDense"
-        class="doc-card-action-btn"
-        :class="{ 'doc-fav--active': docStore.isFavorite(doc.id) }"
-        :title="docStore.isFavorite(doc.id) ? 'Retirer des favoris' : 'Ajouter aux favoris'"
-        :aria-label="docStore.isFavorite(doc.id) ? 'Retirer des favoris' : 'Ajouter aux favoris'"
-        @click="docStore.toggleFavorite(doc.id)"
-      >
-        <Star :size="actionSize" />
-      </button>
-      <button
-        class="doc-card-action-btn"
-        title="Copier le lien"
-        aria-label="Copier le lien"
-        @click="emit('copy-link')"
-      >
-        <Copy :size="actionSize" />
-      </button>
-      <button
-        class="doc-card-action-btn"
-        :title="doc.type === 'link' ? 'Ouvrir le lien' : 'Previsualiser'"
-        :aria-label="doc.type === 'link' ? 'Ouvrir le lien' : 'Previsualiser'"
-        @click="emit('open')"
-      >
-        <Eye v-if="doc.type === 'file'" :size="actionSize" />
-        <ExternalLink v-else :size="actionSize" />
-      </button>
-      <button
-        v-if="doc.type === 'file'"
-        class="doc-card-action-btn"
-        title="Telecharger"
-        aria-label="Telecharger"
-        @click="emit('download')"
-      >
-        <Download :size="actionSize" />
-      </button>
-      <button
-        v-if="!isDense && appStore.isTeacher"
-        class="doc-card-action-btn"
-        title="Modifier"
-        aria-label="Modifier"
-        @click="emit('edit')"
-      >
-        <Pencil :size="actionSize" />
-      </button>
-      <button
-        v-if="appStore.isTeacher"
-        class="doc-card-action-btn doc-card-action-btn--danger"
-        title="Supprimer"
-        aria-label="Supprimer"
-        @click="emit('delete')"
-      >
-        <Trash2 :size="actionSize" />
-      </button>
-    </div>
+    <ContextMenu
+      v-if="menuPos"
+      :x="menuPos.x"
+      :y="menuPos.y"
+      :items="menuItems"
+      @close="closeMenu"
+    />
   </div>
 </template>
