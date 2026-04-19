@@ -1,6 +1,6 @@
 const { getDb } = require('./connection');
 
-const CURRENT_VERSION = 70;
+const CURRENT_VERSION = 71;
 
 // ─── Schema initial ───────────────────────────────────────────────────────────
 // Crée toutes les tables avec leur schéma complet (colonnes UTC, toutes colonnes incluses).
@@ -1618,6 +1618,20 @@ function runMigrations(db) {
           SELECT id, name, email, 'teacher' AS role FROM teachers
           UNION ALL
           SELECT id, name, email, 'student' AS role FROM students;
+      `);
+    },
+
+    // v71 : OAuth state (Booking Microsoft Graph) en DB au lieu d'en memoire
+    // Resout la perte d'etat sur multi-instance / redemarrage.
+    (db) => {
+      db.exec(`
+        CREATE TABLE IF NOT EXISTS oauth_states (
+          nonce TEXT PRIMARY KEY,
+          teacher_id INTEGER NOT NULL,
+          created_at TEXT NOT NULL DEFAULT (datetime('now')),
+          expires_at TEXT NOT NULL
+        );
+        CREATE INDEX IF NOT EXISTS idx_oauth_states_expires ON oauth_states(expires_at);
       `);
     },
   ];

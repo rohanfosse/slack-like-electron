@@ -3,7 +3,7 @@
  * tokens de reservation et reservations.
  */
 const { getDb } = require('../connection');
-const { v4: uuidv4 } = require('uuid');
+const { secureToken } = require('../../utils/secureToken');
 
 // ── Event Types ─────────────────────────────────────────────────────────
 
@@ -105,7 +105,7 @@ function getOrCreateToken(eventTypeId, studentId) {
     'SELECT * FROM booking_tokens WHERE event_type_id = ? AND student_id = ?'
   ).get(eventTypeId, studentId);
   if (existing) return existing;
-  const token = uuidv4();
+  const token = secureToken();
   const res = db.prepare(
     'INSERT INTO booking_tokens (event_type_id, student_id, token) VALUES (?, ?, ?)'
   ).run(eventTypeId, studentId, token);
@@ -131,19 +131,10 @@ function getTokenData(token) {
 
 // ── Bookings ────────────────────────────────────────────────────────────
 
-function createBooking({ eventTypeId, studentId, teacherId, tutorName, tutorEmail, startDatetime, endDatetime, teamsJoinUrl, outlookEventId }) {
-  const cancelToken = uuidv4();
-  const res = getDb().prepare(`
-    INSERT INTO bookings (event_type_id, student_id, teacher_id, tutor_name, tutor_email, start_datetime, end_datetime, teams_join_url, outlook_event_id, cancel_token)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `).run(eventTypeId, studentId, teacherId, tutorName, tutorEmail, startDatetime, endDatetime, teamsJoinUrl || null, outlookEventId || null, cancelToken);
-  return getDb().prepare('SELECT * FROM bookings WHERE id = ?').get(res.lastInsertRowid);
-}
-
 /** Atomic check-then-insert in a transaction (TOCTOU-safe) */
 function createBookingAtomic({ eventTypeId, studentId, teacherId, tutorName, tutorEmail, startDatetime, endDatetime }) {
   const db = getDb();
-  const cancelToken = uuidv4();
+  const cancelToken = secureToken();
   const tx = db.transaction(() => {
     const conflicts = db.prepare(`
       SELECT id FROM bookings
@@ -224,6 +215,30 @@ function deleteMicrosoftToken(teacherId) {
   getDb().prepare('DELETE FROM microsoft_tokens WHERE teacher_id = ?').run(teacherId);
 }
 
+// ── OAuth State (CSRF protection, DB-backed) ───────────────────────────
+
+function saveOAuthState(nonce, teacherId, ttlMs = 10 * 60 * 1000) {
+  const expiresAt = new Date(Date.now() + ttlMs).toISOString();
+  getDb().prepare(
+    'INSERT INTO oauth_states (nonce, teacher_id, expires_at) VALUES (?, ?, ?)'
+  ).run(nonce, teacherId, expiresAt);
+}
+
+/** Consume a one-time OAuth state nonce. Returns teacherId or null. */
+function consumeOAuthState(nonce) {
+  const db = getDb();
+  const row = db.prepare(
+    "SELECT teacher_id FROM oauth_states WHERE nonce = ? AND expires_at > datetime('now')"
+  ).get(nonce);
+  db.prepare('DELETE FROM oauth_states WHERE nonce = ?').run(nonce);
+  return row?.teacher_id ?? null;
+}
+
+/** Opportunistic cleanup of expired states (called on each generation). */
+function pruneExpiredOAuthStates() {
+  getDb().prepare("DELETE FROM oauth_states WHERE expires_at <= datetime('now')").run();
+}
+
 // ── Reminders ──────────────────────────────────────────────────────────
 
 function createBookingReminder(bookingId, type, scheduledAt) {
@@ -278,9 +293,10 @@ module.exports = {
   getAvailabilityRules, setAvailabilityRules,
   getAvailabilityOverrides, setAvailabilityOverrides,
   getOrCreateToken, getTokenData,
-  createBooking, createBookingAtomic, updateBookingTeamsInfo,
+  createBookingAtomic, updateBookingTeamsInfo,
   getBookingByCancelToken, getBookingById, cancelBooking, rescheduleBooking,
   getBookingsForTeacher, getBookingsForSlot,
   getMicrosoftToken, saveMicrosoftToken, deleteMicrosoftToken,
+  saveOAuthState, consumeOAuthState, pruneExpiredOAuthStates,
   createBookingReminder, getDueReminders, markReminderSent,
 };

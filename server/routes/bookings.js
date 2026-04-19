@@ -15,11 +15,11 @@ const { ForbiddenError, ValidationError } = require('../utils/errors')
 const log     = require('../utils/logger')
 const graph   = require('../services/microsoftGraph')
 const email   = require('../services/email')
-const { encrypt, decrypt } = require('../utils/crypto')
+const { encrypt } = require('../utils/crypto')
 const { getValidMsToken } = require('../utils/msToken')
 const { generateSlots }    = require('../utils/slots')
-const { cancelConfirmationPage } = require('../utils/htmlTemplates')
 const { generateIcs }      = require('../utils/icsGenerator')
+const { secureToken } = require('../utils/secureToken')
 
 const SERVER_URL = process.env.SERVER_URL || 'http://localhost:3001'
 
@@ -31,27 +31,17 @@ const publicBookingLimiter = rateLimit({
   message: { ok: false, error: 'Trop de tentatives. Reessayez dans une minute.' },
 })
 
-// ── OAuth state CSRF protection ───────────────────────────────────────────
-const oauthStates = new Map() // nonce -> { teacherId, expiresAt }
-
+// ── OAuth state CSRF protection (DB-backed pour survivre au redemarrage) ──
 function generateOAuthState(teacherId) {
-  const nonce = crypto.randomBytes(32).toString('hex')
-  oauthStates.set(nonce, { teacherId, expiresAt: Date.now() + 10 * 60 * 1000 }) // 10 min
-  // Cleanup expired states
-  for (const [key, val] of oauthStates) {
-    if (val.expiresAt < Date.now()) oauthStates.delete(key)
-  }
+  const nonce = crypto.randomBytes(32).toString('base64url')
+  queries.pruneExpiredOAuthStates()
+  queries.saveOAuthState(nonce, teacherId)
   return nonce
 }
 
 function validateOAuthState(nonce) {
-  const entry = oauthStates.get(nonce)
-  if (!entry || entry.expiresAt < Date.now()) {
-    oauthStates.delete(nonce)
-    return null
-  }
-  oauthStates.delete(nonce)
-  return entry.teacherId
+  if (!nonce) return null
+  return queries.consumeOAuthState(nonce)
 }
 
 const { escHtml } = require('../utils/escHtml')
@@ -382,7 +372,8 @@ router.post('/public/:token/book', publicBookingLimiter, requireBookingToken, va
     }
 
     // Send confirmation email (echec = log, booking reste confirmee)
-    const cancelUrl = `${SERVER_URL}/api/bookings/public/cancel/${booking.cancel_token}`
+    // Lien pointe vers le frontend (page de confirmation + bouton POST anti-CSRF)
+    const cancelUrl = `${SERVER_URL}/#/book/cancel/${booking.cancel_token}`
     let emailSent = true
     try {
       await email.sendBookingConfirmation({
@@ -441,18 +432,35 @@ router.get('/public/:token/booking/:bookingId/ics', publicBookingLimiter, requir
   }
 })
 
-/** Cancel a booking (public, via cancel token) */
-router.get('/public/cancel/:cancelToken', publicBookingLimiter, async (req, res) => {
+/** GET — ancien lien email : redirige vers la page frontend (anti-CSRF : le GET ne doit rien muter). */
+router.get('/public/cancel/:cancelToken', publicBookingLimiter, (req, res) => {
+  res.redirect(302, `${SERVER_URL}/#/book/cancel/${req.params.cancelToken}`)
+})
+
+/** GET booking snapshot pour la page de confirmation (sans muter). */
+router.get('/public/cancel/:cancelToken/info', publicBookingLimiter, wrap((req) => {
+  const booking = queries.getBookingByCancelToken(req.params.cancelToken)
+  if (!booking) throw Object.assign(new Error('Reservation introuvable'), { statusCode: 404 })
+  return {
+    alreadyCancelled: booking.status !== 'confirmed',
+    eventTitle: booking.event_title,
+    startDatetime: booking.start_datetime,
+    endDatetime: booking.end_datetime,
+    tutorName: booking.tutor_name,
+  }
+}))
+
+/** POST — annulation effective (CSRF-safe, non declenche par link-preview bot). */
+router.post('/public/cancel/:cancelToken', publicBookingLimiter, async (req, res) => {
   try {
     const booking = queries.getBookingByCancelToken(req.params.cancelToken)
-    if (!booking || booking.status !== 'confirmed') {
-      return res.status(404).json({ ok: false, error: 'Reservation introuvable ou deja annulee' })
+    if (!booking) return res.status(404).json({ ok: false, error: 'Reservation introuvable' })
+    if (booking.status !== 'confirmed') {
+      return res.status(200).json({ ok: true, data: { alreadyCancelled: true } })
     }
 
-    // Cancel in DB
     queries.cancelBooking(booking.id)
 
-    // Notify teacher in real-time
     const io = req.app.get('io')
     if (io) {
       io.to(`user:${booking.teacher_id}`).emit('booking:cancelled', {
@@ -462,37 +470,36 @@ router.get('/public/cancel/:cancelToken', publicBookingLimiter, async (req, res)
       })
     }
 
-    // Delete Outlook event if exists
-    if (booking.outlook_event_id) {
-      // Validate eventId format before passing to Graph API
-      if (/^[A-Za-z0-9_=-]{10,200}$/.test(booking.outlook_event_id)) {
-        const msAccessToken = await getValidMsToken(booking.teacher_id)
-        if (msAccessToken) {
-          try {
-            await graph.deleteEvent(msAccessToken, booking.outlook_event_id)
-          } catch (err) {
-            log.warn('Outlook event deletion failed', { error: err.message })
-          }
+    if (booking.outlook_event_id && /^[A-Za-z0-9_=-]{10,200}$/.test(booking.outlook_event_id)) {
+      const msAccessToken = await getValidMsToken(booking.teacher_id)
+      if (msAccessToken) {
+        try {
+          await graph.deleteEvent(msAccessToken, booking.outlook_event_id)
+        } catch (err) {
+          log.warn('Outlook event deletion failed', { error: err.message })
         }
       }
     }
 
-    // Send cancellation email with rebook link
     const tokenRow = queries.getOrCreateToken(booking.event_type_id, booking.student_id)
-    const rebookUrl = `${SERVER_URL}/api/bookings/public/${tokenRow.token}`
-    await email.sendBookingCancellation({
-      to: booking.tutor_email,
-      tutorName: booking.tutor_name,
-      eventTitle: booking.event_title,
-      startDatetime: booking.start_datetime,
-      rebookUrl,
-    })
+    const rebookUrl = `${SERVER_URL}/#/book/${tokenRow.token}`
+    try {
+      await email.sendBookingCancellation({
+        to: booking.tutor_email,
+        tutorName: booking.tutor_name,
+        eventTitle: booking.event_title,
+        startDatetime: booking.start_datetime,
+        rebookUrl,
+      })
+    } catch (err) {
+      log.warn('booking_cancel_email_failed', { bookingId: booking.id, error: err.message })
+    }
 
-    // Return a simple HTML page (tuteur n'a pas Cursus)
-    res.send(cancelConfirmationPage({ eventTitle: booking.event_title, rebookUrl }))
+    log.info('booking_cancelled', { bookingId: booking.id, teacherId: booking.teacher_id })
+    res.json({ ok: true, data: { alreadyCancelled: false, rebookUrl } })
   } catch (err) {
     log.warn('cancel_error', { error: err.message })
-    res.status(400).json({ ok: false, error: 'Erreur lors de l\'annulation.' })
+    res.status(500).json({ ok: false, error: 'Erreur lors de l\'annulation.' })
   }
 })
 
@@ -558,57 +565,56 @@ router.post('/public/:token/book-recurring', publicBookingLimiter, requireBookin
     const data = req.bookingData
     const { tutorName, tutorEmail, startDatetime, recurrenceWeeks } = req.body
     const durationMs = data.duration_minutes * 60000
-    const recurrenceGroupId = require('uuid').v4()
-    const createdBookings = []
-
-    // Atomic: book all weeks in a transaction
+    const recurrenceGroupId = secureToken()
     const { getDb } = require('../db/connection')
     const db = getDb()
-    const { v4: uuidv4 } = require('uuid')
 
+    // Build et atomic insert : la liste est construite a l'interieur de la tx
+    // et retournee uniquement si la tx reussit (evite un array partiel en cas de rollback).
     const tx = db.transaction(() => {
+      const created = []
       for (let w = 0; w < recurrenceWeeks; w++) {
         const start = new Date(new Date(startDatetime).getTime() + w * 7 * 24 * 3600000)
         const end = new Date(start.getTime() + durationMs)
 
-        // Conflict check
         const conflicts = db.prepare(`
           SELECT id FROM bookings WHERE teacher_id = ? AND status = 'confirmed'
           AND start_datetime < ? AND end_datetime > ?
         `).all(data.teacher_id, end.toISOString(), start.toISOString())
 
         if (conflicts.length > 0) {
-          throw new Error(`Conflit semaine ${w + 1} : creneau deja pris`)
+          throw Object.assign(new Error(`Conflit semaine ${w + 1} : creneau deja pris`), { statusCode: 409 })
         }
 
-        const cancelToken = uuidv4()
+        const cancelToken = secureToken()
         const result = db.prepare(`
           INSERT INTO bookings (event_type_id, student_id, teacher_id, tutor_name, tutor_email,
             start_datetime, end_datetime, cancel_token, recurrence_group_id)
           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
         `).run(data.event_type_id, data.student_id, data.teacher_id,
           tutorName, tutorEmail, start.toISOString(), end.toISOString(), cancelToken, recurrenceGroupId)
-        createdBookings.push(db.prepare('SELECT * FROM bookings WHERE id = ?').get(result.lastInsertRowid))
+        created.push(db.prepare('SELECT * FROM bookings WHERE id = ?').get(result.lastInsertRowid))
       }
+      return created
     })
 
-    tx()
+    const createdBookings = tx()
 
-    if (createdBookings.length === 0) {
-      return res.status(409).json({ ok: false, error: 'Aucun creneau disponible.' })
+    const first = createdBookings[0]
+    const cancelUrl = `${SERVER_URL}/#/book/cancel/${first.cancel_token}`
+    try {
+      await email.sendBookingConfirmation({
+        to: tutorEmail, tutorName,
+        teacherName: data.teacher_name, studentName: data.student_name,
+        eventTitle: `${data.event_title} (x${recurrenceWeeks} semaines)`,
+        startDatetime: first.start_datetime, endDatetime: first.end_datetime,
+        teamsJoinUrl: null, cancelUrl,
+      })
+    } catch (err) {
+      log.warn('booking_recurring_email_failed', { bookingId: first.id, error: err.message })
     }
 
-    // Send confirmation email for the first booking
-    const first = createdBookings[0]
-    const cancelUrl = `${SERVER_URL}/api/bookings/public/cancel/${first.cancel_token}`
-    await email.sendBookingConfirmation({
-      to: tutorEmail, tutorName,
-      teacherName: data.teacher_name, studentName: data.student_name,
-      eventTitle: `${data.event_title} (x${recurrenceWeeks} semaines)`,
-      startDatetime: first.start_datetime, endDatetime: first.end_datetime,
-      teamsJoinUrl: null, cancelUrl,
-    })
-
+    log.info('booking_recurring_created', { count: createdBookings.length, teacherId: data.teacher_id, groupId: recurrenceGroupId })
     res.json({
       ok: true,
       data: {
@@ -619,7 +625,8 @@ router.post('/public/:token/book-recurring', publicBookingLimiter, requireBookin
     })
   } catch (err) {
     log.warn('recurring_booking_error', { error: err.message })
-    res.status(err.message?.includes('Conflit') ? 409 : 400).json({ ok: false, error: err.message || 'Erreur lors de la reservation recurrente.' })
+    const status = err.statusCode || (err.message?.includes('Conflit') ? 409 : 400)
+    res.status(status).json({ ok: false, error: err.message || 'Erreur lors de la reservation recurrente.' })
   }
 })
 
