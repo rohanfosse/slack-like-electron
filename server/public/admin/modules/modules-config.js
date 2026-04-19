@@ -3,7 +3,6 @@ import { apiFetch, toast } from '../app.js'
 const MODULES = [
   { key: 'kanban', label: 'Kanban projet', desc: 'Tableau kanban pour la gestion de projet en groupe' },
   { key: 'frise', label: 'Frise chronologique', desc: 'Vue timeline des evenements et jalons' },
-  { key: 'rex', label: 'Retour d\'experience', desc: 'Sessions REX anonymes avec collecte de feedback' },
   { key: 'live', label: 'Quiz interactif', desc: 'Quiz en direct type Kahoot pour les cours' },
   { key: 'signatures', label: 'Signature PDF', desc: 'Demandes de signature electronique de documents' },
 ]

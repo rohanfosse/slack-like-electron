@@ -28,7 +28,6 @@ const router = createRouter({
     { path: '/travaux',    redirect: '/devoirs' },
     { path: '/documents',  component: DocumentsView,  name: 'documents'  },
     { path: '/live',       component: () => import('@/views/LiveView.vue'),   name: 'live',   meta: { requiredModule: 'live' }  },
-    { path: '/rex',        component: () => import('@/views/RexView.vue'),   name: 'rex',    meta: { requiredModule: 'rex' }   },
     { path: '/lumen',      component: () => import('@/views/LumenView.vue'), name: 'lumen',  meta: { requiredModule: 'lumen' } },
     { path: '/agenda',     component: () => import('@/views/AgendaView.vue'), name: 'agenda' },
     { path: '/fichiers',   component: () => import('@/views/FilesView.vue'),  name: 'fichiers', meta: { requiredRole: 'teacher' } },

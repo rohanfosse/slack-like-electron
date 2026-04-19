@@ -1,27 +1,26 @@
 /**
  * useModules — gestion centralisee des modules enrichissement activables/desactivables.
  *
- * Les 5 modules enrichissement (kanban, frise, rex, live, signatures) peuvent etre
- * desactives par l'administrateur. Ce composable charge l'etat depuis le serveur
- * et expose des helpers reactifs pour conditionner l'affichage.
+ * Les modules enrichissement peuvent etre desactives par l'administrateur.
+ * Ce composable charge l'etat depuis le serveur et expose des helpers reactifs
+ * pour conditionner l'affichage.
  */
 import { ref, readonly } from 'vue'
 
-export type ModuleName = 'kanban' | 'frise' | 'rex' | 'live' | 'signatures' | 'lumen'
+export type ModuleName = 'kanban' | 'frise' | 'live' | 'signatures' | 'lumen'
 
-const MODULES: ModuleName[] = ['kanban', 'frise', 'rex', 'live', 'signatures', 'lumen']
+const MODULES: ModuleName[] = ['kanban', 'frise', 'live', 'signatures', 'lumen']
 
 const MODULE_LABELS: Record<ModuleName, string> = {
   kanban: 'Kanban projet',
   frise: 'Frise chronologique',
-  rex: 'Pulse',
   live: 'Live',
   signatures: 'Signature PDF',
   lumen: 'Lumen',
 }
 
 const state = ref<Record<ModuleName, boolean>>({
-  kanban: true, frise: true, rex: true, live: true, signatures: true, lumen: true,
+  kanban: true, frise: true, live: true, signatures: true, lumen: true,
 })
 
 let loaded = false
@@ -52,7 +51,7 @@ export function useModules() {
   /** Force un rechargement (utile apres modification admin) */
   function resetLoaded() {
     loaded = false
-    state.value = { kanban: true, frise: true, rex: true, live: true, signatures: true, lumen: true }
+    state.value = { kanban: true, frise: true, live: true, signatures: true, lumen: true }
   }
 
   return { modules: readonly(state), MODULES, MODULE_LABELS, isEnabled, setEnabled, loadModules, resetLoaded }

@@ -11,7 +11,7 @@ const setModuleEnabledMock = vi.fn()
 
 // useModules uses module-level state, so we must re-import fresh each time
 // We reset by calling resetLoaded() before each test
-import { useModules, type ModuleName } from '@/composables/useModules'
+import { useModules } from '@/composables/useModules'
 
 describe('useModules', () => {
   beforeEach(() => {
@@ -20,13 +20,13 @@ describe('useModules', () => {
     resetLoaded()
   })
 
-  it('MODULES array contains exactly 6 items', () => {
+  it('MODULES array contains exactly 5 items', () => {
     const { MODULES } = useModules()
-    expect(MODULES).toHaveLength(6)
-    expect(MODULES).toEqual(['kanban', 'frise', 'rex', 'live', 'signatures', 'lumen'])
+    expect(MODULES).toHaveLength(5)
+    expect(MODULES).toEqual(['kanban', 'frise', 'live', 'signatures', 'lumen'])
   })
 
-  it('MODULE_LABELS has all 6 modules with string labels', () => {
+  it('MODULE_LABELS has all 5 modules with string labels', () => {
     const { MODULE_LABELS, MODULES } = useModules()
     for (const m of MODULES) {
       expect(typeof MODULE_LABELS[m]).toBe('string')
@@ -44,7 +44,7 @@ describe('useModules', () => {
   it('loadModules fetches and updates state', async () => {
     getModulesMock.mockResolvedValue({
       ok: true,
-      data: { kanban: false, frise: true, rex: false, live: true, signatures: false },
+      data: { kanban: false, frise: true, live: true, signatures: false },
     })
 
     const { loadModules, isEnabled } = useModules()
@@ -53,7 +53,6 @@ describe('useModules', () => {
     expect(getModulesMock).toHaveBeenCalledOnce()
     expect(isEnabled('kanban')).toBe(false)
     expect(isEnabled('frise')).toBe(true)
-    expect(isEnabled('rex')).toBe(false)
     expect(isEnabled('live')).toBe(true)
     expect(isEnabled('signatures')).toBe(false)
   })
@@ -94,11 +93,11 @@ describe('useModules', () => {
     setModuleEnabledMock.mockResolvedValue({ ok: true })
 
     const { setEnabled, isEnabled } = useModules()
-    await setEnabled('rex', false)
-    expect(isEnabled('rex')).toBe(false)
+    await setEnabled('frise', false)
+    expect(isEnabled('frise')).toBe(false)
 
-    await setEnabled('rex', true)
-    expect(isEnabled('rex')).toBe(true)
+    await setEnabled('frise', true)
+    expect(isEnabled('frise')).toBe(true)
     expect(setModuleEnabledMock).toHaveBeenCalledTimes(2)
   })
 

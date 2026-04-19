@@ -404,19 +404,6 @@
   animation: pulse-dot 2s infinite;
 }
 
-/* ── REX dot pulsing indicator (teal) ── */
-.nav-rex-dot {
-  position: absolute;
-  top: 6px;
-  right: 6px;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: #0d9488;
-  border: 2px solid var(--bg-primary, #111214);
-  animation: pulse-dot 2s infinite;
-}
-
 /* ── Message badge (DMs + mentions) ── */
 .nav-icon-wrap {
   position: relative;

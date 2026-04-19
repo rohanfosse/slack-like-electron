@@ -95,14 +95,6 @@ module.exports = function setupSocket(io, queries, SECRET) {
       io.to(`live:${promoId}`).emit('live:code-update', { activityId, content, language })
     })
 
-    // REX
-    socket.on('rex:join', ({ promoId }) => {
-      if (promoId && checkTokenValid()) socket.join(`rex:${promoId}`)
-    })
-    socket.on('rex:leave', ({ promoId }) => {
-      if (promoId) socket.leave(`rex:${promoId}`)
-    })
-
     // Indicateur de frappe
     socket.on('typing', ({ channelId, dmStudentId, dmPeerId }) => {
       if (!checkTokenValid()) return

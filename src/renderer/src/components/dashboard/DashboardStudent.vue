@@ -66,7 +66,7 @@ const bentoRef = ref<InstanceType<typeof StudentBento> | null>(null)
 
 // ── Emits ────────────────────────────────────────────────────────────────────
 const emit = defineEmits<{
-  'update:dashTab': [tab: 'accueil' | 'projets' | 'notes' | 'planning' | 'quiz' | 'rex']
+  'update:dashTab': [tab: 'accueil' | 'projets' | 'notes' | 'planning' | 'quiz']
   'update:friseOffset': [val: number]
   dismissOnboarding: []
   goToProject: [key: string]

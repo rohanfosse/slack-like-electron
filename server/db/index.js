@@ -13,7 +13,6 @@ const rubrics     = require('./models/rubrics');
 const teachers    = require('./models/teachers');
 const admin       = require('./models/admin');
 const live        = require('./models/live');
-const rex         = require('./models/rex');
 const kanban         = require('./models/kanban');
 const teacherNotes   = require('./models/teacherNotes');
 const engagement     = require('./models/engagement')
@@ -44,7 +43,6 @@ module.exports = {
   ...teachers,
   ...admin,
   ...live,
-  ...rex,
   ...kanban,
   ...teacherNotes,
   ...engagement,

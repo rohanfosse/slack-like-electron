@@ -15,8 +15,6 @@ import type {
   LiveSessionStartedPayload, LiveSessionEndedPayload, LiveInvitePayload, LiveScoresUpdatePayload,
   LiveCodeUpdatePayload, LiveBoardUpdatePayload, LiveConfusionUpdatePayload, LiveSelfPacedPayload,
   BookingNewPayload, BookingCancelledPayload,
-  RexActivityPushedPayload, RexActivityClosedPayload, RexResultsUpdatePayload,
-  RexSessionStartedPayload, RexSessionEndedPayload, RexInvitePayload,
   GradeNewPayload, SignatureUpdatePayload, DocumentNewPayload, AssignmentNewPayload,
 } from './socketTypes'
 
@@ -62,14 +60,6 @@ export const liveSelfPaced      = createChannel<LiveSelfPacedPayload>()
 export const bookingNew       = createChannel<BookingNewPayload>()
 export const bookingCancelled = createChannel<BookingCancelledPayload>()
 
-// ── REX ────────────────────────────────────────────────────────────────────
-export const rexActivityPushed = createChannel<RexActivityPushedPayload>()
-export const rexActivityClosed = createChannel<RexActivityClosedPayload>()
-export const rexResultsUpdate  = createChannel<RexResultsUpdatePayload>()
-export const rexSessionStarted = createChannel<RexSessionStartedPayload>()
-export const rexSessionEnded   = createChannel<RexSessionEndedPayload>()
-export const rexInvite         = createChannel<RexInvitePayload>()
-
 // ── Notifications ──────────────────────────────────────────────────────────
 export const gradeNew        = createChannel<GradeNewPayload>()
 export const signatureUpdate = createChannel<SignatureUpdatePayload>()
@@ -99,13 +89,6 @@ export function bindSocketEvents(socket: Socket): void {
 
   socket.on('booking:new',           (data: BookingNewPayload) => bookingNew.emit(data))
   socket.on('booking:cancelled',     (data: BookingCancelledPayload) => bookingCancelled.emit(data))
-
-  socket.on('rex:activity-pushed',   (data: RexActivityPushedPayload) => rexActivityPushed.emit(data))
-  socket.on('rex:activity-closed',   (data: RexActivityClosedPayload) => rexActivityClosed.emit(data))
-  socket.on('rex:results-update',    (data: RexResultsUpdatePayload) => rexResultsUpdate.emit(data))
-  socket.on('rex:session-started',   (data: RexSessionStartedPayload) => rexSessionStarted.emit(data))
-  socket.on('rex:session-ended',     (data: RexSessionEndedPayload) => rexSessionEnded.emit(data))
-  socket.on('rex:invite',            (data: RexInvitePayload) => rexInvite.emit(data))
 
   socket.on('grade:new',             (data: GradeNewPayload) => gradeNew.emit(data))
   socket.on('signature:update',      (data: SignatureUpdatePayload) => signatureUpdate.emit(data))

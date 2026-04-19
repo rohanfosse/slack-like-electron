@@ -21,7 +21,7 @@ router.post('/config', (req, res) => {
 router.post('/modules', (req, res) => {
   try {
     const { module: moduleName, enabled } = req.body
-    const allowed = ['kanban', 'frise', 'rex', 'live', 'signatures', 'lumen']
+    const allowed = ['kanban', 'frise', 'live', 'signatures', 'lumen']
     if (!allowed.includes(moduleName)) {
       return res.status(400).json({ ok: false, error: 'Module inconnu.' })
     }

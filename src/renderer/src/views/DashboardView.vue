@@ -43,8 +43,8 @@ function goToProject(key: string) {
 }
 
 // ── Tabs ────────────────────────────────────────────────────────────────────
-type DashTab = 'accueil' | 'promotions' | 'frise' | 'analytique' | 'reglages' | 'live' | 'rex' | 'suivi' | 'engagement' | 'projets' | 'notes' | 'planning' | 'quiz' | 'booking'
-const VALID_TABS: DashTab[] = ['accueil', 'promotions', 'frise', 'analytique', 'reglages', 'live', 'rex', 'suivi', 'engagement', 'projets', 'notes', 'planning', 'booking']
+type DashTab = 'accueil' | 'promotions' | 'frise' | 'analytique' | 'reglages' | 'live' | 'suivi' | 'engagement' | 'projets' | 'notes' | 'planning' | 'quiz' | 'booking'
+const VALID_TABS: DashTab[] = ['accueil', 'promotions', 'frise', 'analytique', 'reglages', 'live', 'suivi', 'engagement', 'projets', 'notes', 'planning', 'booking']
 const dashTab = ref<DashTab>(
   VALID_TABS.includes(route.query.tab as DashTab) ? (route.query.tab as DashTab) : 'accueil',
 )

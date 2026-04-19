@@ -56,12 +56,6 @@ beforeAll(() => {
     `INSERT OR IGNORE INTO rubrics (id, travail_id, title) VALUES (1, 1, 'Grille TP1')`
   ).run()
 
-  // ── Seed rex session in promo 1 ────────────────────────────────────────────
-  db.prepare(
-    `INSERT OR IGNORE INTO rex_sessions (id, teacher_id, promo_id, title, status, join_code)
-     VALUES (1, 1, 1, 'REX Promo1', 'active', 'REX001')`
-  ).run()
-
   // ── Seed live session in promo 1 ───────────────────────────────────────────
   db.prepare(
     `INSERT OR IGNORE INTO live_sessions (id, teacher_id, promo_id, title, status, join_code)
@@ -114,7 +108,6 @@ beforeAll(() => {
   // Mount routes
   app.use('/api/kanban',      require('../../../server/routes/kanban'))
   app.use('/api/assignments',  require('../../../server/routes/assignments'))
-  app.use('/api/rex',          require('../../../server/routes/rex'))
   app.use('/api/live',         require('../../../server/routes/live'))
   app.use('/api/projects',     require('../../../server/routes/projects'))
   app.use('/api/rubrics',      require('../../../server/routes/rubrics'))
@@ -198,32 +191,6 @@ describe('H1 — Teacher schedule restricted to teachers', () => {
     const res = await request(app)
       .get('/api/assignments/teacher-schedule')
       .set('Authorization', `Bearer ${teacherToken}`)
-    expect(res.status).toBe(200)
-  })
-})
-
-// ═══════════════════════════════════════════════════════════════════════════════
-//  H2 — REX sessions: student from promo 2 CANNOT access promo 1 sessions
-// ═══════════════════════════════════════════════════════════════════════════════
-describe('H2 — REX sessions promo isolation', () => {
-  it('student from promo 2 CANNOT list promo 1 active rex sessions', async () => {
-    const res = await request(app)
-      .get('/api/rex/sessions/promo/1/active')
-      .set('Authorization', `Bearer ${student2Token}`)
-    expect(res.status).toBe(403)
-  })
-
-  it('student from promo 2 CANNOT list promo 1 rex history', async () => {
-    const res = await request(app)
-      .get('/api/rex/sessions/promo/1/history')
-      .set('Authorization', `Bearer ${student2Token}`)
-    expect(res.status).toBe(403)
-  })
-
-  it('student from promo 1 CAN access promo 1 rex sessions', async () => {
-    const res = await request(app)
-      .get('/api/rex/sessions/promo/1/active')
-      .set('Authorization', `Bearer ${studentToken}`)
     expect(res.status).toBe(200)
   })
 })

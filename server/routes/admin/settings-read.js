@@ -16,7 +16,7 @@ function settingsRead(req, res) {
 }
 
 /** GET /api/admin/modules — liste des modules et leur etat */
-const MODULES = ['kanban', 'frise', 'rex', 'live', 'signatures', 'lumen']
+const MODULES = ['kanban', 'frise', 'live', 'signatures', 'lumen']
 
 function modulesRead(req, res) {
   try {

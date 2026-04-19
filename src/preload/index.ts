@@ -10,8 +10,6 @@ import type {
   LiveSessionStartedPayload, LiveSessionEndedPayload, LiveInvitePayload, LiveScoresUpdatePayload,
   LiveCodeUpdatePayload, LiveBoardUpdatePayload, LiveConfusionUpdatePayload, LiveSelfPacedPayload,
   BookingNewPayload, BookingCancelledPayload,
-  RexActivityPushedPayload, RexActivityClosedPayload, RexResultsUpdatePayload,
-  RexSessionStartedPayload, RexSessionEndedPayload, RexInvitePayload,
   GradeNewPayload, SignatureUpdatePayload, DocumentNewPayload, AssignmentNewPayload,
 } from './socketTypes'
 import * as sockEv from './socketEvents'
@@ -416,34 +414,6 @@ contextBridge.exposeInMainWorld('api', {
   onBookingNew:       (cb: (data: BookingNewPayload) => void) => sockEv.bookingNew.add(cb),
   onBookingCancelled: (cb: (data: BookingCancelledPayload) => void) => sockEv.bookingCancelled.add(cb),
 
-  // ── REX (Retour d'Experience) ──────────────────────────────────────────────
-  createRexSession:       (payload: unknown)  => post('/api/rex/sessions', payload),
-  getRexSession:          (id: number)         => get(`/api/rex/sessions/${id}`),
-  getRexSessionByCode:    (code: string)       => get(`/api/rex/sessions/code/${code}`),
-  getActiveRexSession:    (promoId: number)    => get(`/api/rex/sessions/promo/${promoId}/active`),
-  getRexSessionsForPromo: (promoId: number)    => get(`/api/rex/sessions/promo/${promoId}`),
-  cloneRexSession:        (id: number, payload: unknown) => post(`/api/rex/sessions/${id}/clone`, payload),
-  reorderRexActivities:   (sessionId: number, order: number[]) => patch(`/api/rex/sessions/${sessionId}/activities/reorder`, { order }),
-  updateRexSessionStatus: (id: number, status: string) => patch(`/api/rex/sessions/${id}/status`, { status }),
-  deleteRexSession:       (id: number)         => del(`/api/rex/sessions/${id}`),
-  addRexActivity:         (sessionId: number, payload: unknown) => post(`/api/rex/sessions/${sessionId}/activities`, payload),
-  updateRexActivity:      (id: number, payload: unknown) => patch(`/api/rex/activities/${id}`, payload),
-  deleteRexActivity:      (id: number)         => del(`/api/rex/activities/${id}`),
-  setRexActivityStatus:   (id: number, status: string) => patch(`/api/rex/activities/${id}/status`, { status }),
-  submitRexResponse:      (activityId: number, payload: unknown) => post(`/api/rex/activities/${activityId}/respond`, payload),
-  getRexActivityResults:  (activityId: number) => get(`/api/rex/activities/${activityId}/results`),
-  toggleRexPin:           (responseId: number, pinned: boolean) => post(`/api/rex/responses/${responseId}/pin`, { pinned }),
-  exportRexSession:       (sessionId: number, format: string) => get(`/api/rex/sessions/${sessionId}/export?format=${format}`),
-  getRexHistoryForPromo:  (promoId: number, params?: { search?: string; dateFrom?: string; dateTo?: string }) => {
-    const qs = new URLSearchParams()
-    if (params?.search)   qs.set('search', params.search)
-    if (params?.dateFrom) qs.set('dateFrom', params.dateFrom)
-    if (params?.dateTo)   qs.set('dateTo', params.dateTo)
-    const q = qs.toString()
-    return get(`/api/rex/sessions/promo/${promoId}/history${q ? '?' + q : ''}`)
-  },
-  getRexStatsForPromo:    (promoId: number) => get(`/api/rex/sessions/promo/${promoId}/stats`),
-
   // ── Lumen (liseuse cours GitHub) ───────────────────────────────────────────
   // GitHub auth
   getLumenGithubStatus:     ()                      => get('/api/lumen/github/me'),
@@ -582,16 +552,6 @@ contextBridge.exposeInMainWorld('api', {
     post(`/api/signatures/${id}/sign`, { signature_image: signatureImage }),
   rejectSignature: (id: number, reason: string) =>
     post(`/api/signatures/${id}/reject`, { reason }),
-
-  emitRexJoin:  (promoId: number) => { socket?.emit('rex:join', { promoId }) },
-  emitRexLeave: (promoId: number) => { socket?.emit('rex:leave', { promoId }) },
-
-  onRexActivityPushed: (cb: (data: RexActivityPushedPayload) => void) => sockEv.rexActivityPushed.add(cb),
-  onRexActivityClosed: (cb: (data: RexActivityClosedPayload) => void) => sockEv.rexActivityClosed.add(cb),
-  onRexResultsUpdate:  (cb: (data: RexResultsUpdatePayload) => void) => sockEv.rexResultsUpdate.add(cb),
-  onRexSessionStarted: (cb: (data: RexSessionStartedPayload) => void) => sockEv.rexSessionStarted.add(cb),
-  onRexSessionEnded:   (cb: (data: RexSessionEndedPayload) => void) => sockEv.rexSessionEnded.add(cb),
-  onRexInvite:         (cb: (data: RexInvitePayload) => void) => sockEv.rexInvite.add(cb),
 
   // ── Grade notifications ─────────────────────────────────────────────────────
   onGradeNew: (cb: (data: GradeNewPayload) => void) => sockEv.gradeNew.add(cb),

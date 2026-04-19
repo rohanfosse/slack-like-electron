@@ -38,14 +38,6 @@ export type LiveSelfPacedPayload = { sessionId: number; selfPaced: boolean }
 export type BookingNewPayload       = { bookingId: number; tutorName: string; studentName: string; eventTitle: string; startDatetime: string }
 export type BookingCancelledPayload = { bookingId: number; tutorName: string; eventTitle: string }
 
-// ── REX ────────────────────────────────────────────────────────────────────
-export type RexActivityPushedPayload = { activity: unknown }
-export type RexActivityClosedPayload = { activityId: number }
-export type RexResultsUpdatePayload  = { activityId: number; data: unknown }
-export type RexSessionStartedPayload = { sessionId: number }
-export type RexSessionEndedPayload   = { sessionId: number }
-export type RexInvitePayload         = { sessionId: number; title: string; joinCode: string; teacherName: string }
-
 // ── Notifications diverses ─────────────────────────────────────────────────
 export type GradeNewPayload = { devoirTitle: string; note: string | null; feedback: string | null; devoirId: number; category: string | null }
 export type SignatureUpdatePayload = { id: number; status: string; signed_file_url?: string; signer_name?: string; rejection_reason?: string }

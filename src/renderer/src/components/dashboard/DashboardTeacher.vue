@@ -424,18 +424,6 @@ function setTab(tab: DashTabType) {
   50% { opacity: .4; }
 }
 
-/* ── REX tab indicator ── */
-.db-tab-rex { position: relative; }
-.db-tab-rex-dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: #0d9488;
-  display: inline-block;
-  margin-left: 4px;
-  animation: pulse-live-dot 2s infinite;
-}
-
 /* ── Bouton édition bento ── */
 .db-tab-edit-btn {
   margin-left: auto;

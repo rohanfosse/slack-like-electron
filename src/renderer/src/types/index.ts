@@ -321,49 +321,6 @@ export interface BoardCard {
   voted_by_me?: boolean
 }
 
-// ─── REX (Retour d'Experience) ──────────────────────────────────────────────
-
-export interface RexSession {
-  id: number; teacher_id: number; promo_id: number; title: string
-  join_code: string; status: 'waiting' | 'active' | 'ended'
-  is_async: number; open_until: string | null
-  created_at: string; ended_at: string | null; activities?: RexActivity[]
-}
-
-export interface RexActivity {
-  id: number; session_id: number
-  type: 'sondage_libre' | 'nuage' | 'echelle' | 'question_ouverte' | 'sondage' | 'humeur' | 'priorite' | 'matrice'
-  title: string; max_words: number; max_rating: number; options?: string | null
-  position: number; status: 'pending' | 'live' | 'closed'
-  started_at: string | null; closed_at: string | null
-}
-
-export interface RexResults {
-  type: string; total: number
-  counts?: { text: string; count: number }[]
-  freq?: { word: string; count: number }[]
-  average?: number; distribution?: { rating: number; count: number }[]
-  answers?: { id: number; answer: string; pinned: boolean; created_at: string }[]
-  // Humeur
-  emojis?: { emoji: string; count: number }[]
-  // Priorite
-  rankings?: { item: string; avgRank: number }[]
-  // Matrice
-  criteria?: { name: string; average: number }[]
-}
-
-export interface RexSessionWithStats extends RexSession {
-  activity_count: number; participant_count: number
-}
-
-export interface RexStats {
-  totalSessions: number
-  avgParticipationRate: number
-  enrolledStudents: number
-  activityTypeDistribution: { type: string; count: number }[]
-  participationTrend: { sessionId: number; title: string; endedAt: string; participants: number; enrolled: number }[]
-}
-
 // ─── Lumen (liseuse de cours adossee a GitHub) ──────────────────────────────
 
 /**

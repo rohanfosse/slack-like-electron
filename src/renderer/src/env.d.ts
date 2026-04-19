@@ -4,7 +4,6 @@ import type {
   User, Promotion, Channel, Message, Devoir, Depot,
   AppDocument, Ressource, Group, Student, SendMessagePayload,
   Rubric, RubricScore, LiveSession, LiveActivity, LiveResults,
-  RexSession, RexActivity, RexResults,
 } from './types'
 
 // ─── Typage du pont IPC (window.api exposé par preload.ts) ──────────────────
@@ -318,22 +317,6 @@ declare global {
       deleteLiveSession(id: number): Promise<IpcResponse<null>>
       updateLiveActivity(id: number, payload: unknown): Promise<IpcResponse<LiveActivity>>
 
-      // REX (Retour d'Experience)
-      createRexSession(payload: unknown): Promise<IpcResponse<RexSession>>
-      getRexSession(id: number): Promise<IpcResponse<RexSession>>
-      getRexSessionByCode(code: string): Promise<IpcResponse<RexSession>>
-      getActiveRexSession(promoId: number): Promise<IpcResponse<RexSession>>
-      updateRexSessionStatus(id: number, status: string): Promise<IpcResponse<RexSession>>
-      addRexActivity(sessionId: number, payload: unknown): Promise<IpcResponse<RexActivity>>
-      deleteRexActivity(id: number): Promise<IpcResponse<null>>
-      setRexActivityStatus(id: number, status: string): Promise<IpcResponse<RexActivity>>
-      submitRexResponse(activityId: number, payload: unknown): Promise<IpcResponse<unknown>>
-      getRexActivityResults(activityId: number): Promise<IpcResponse<RexResults>>
-      toggleRexPin(responseId: number, pinned: boolean): Promise<IpcResponse<null>>
-      exportRexSession(sessionId: number, format: string): Promise<IpcResponse<unknown>>
-      getRexHistoryForPromo(promoId: number, params?: { search?: string; dateFrom?: string; dateTo?: string }): Promise<IpcResponse<import('./types').RexSessionWithStats[]>>
-      getRexStatsForPromo(promoId: number): Promise<IpcResponse<import('./types').RexStats>>
-
       // Fichiers partagés en DM (prof uniquement)
       getDmFiles(): Promise<IpcResponse<{ message_id: number; student_id: number; student_name: string; file_name: string; file_url: string; is_image: boolean; file_size: number | null; sent_at: string; created_at: string }[]>>
 
@@ -359,19 +342,6 @@ declare global {
       // Modules enrichissement (enable/disable)
       getModules(): Promise<IpcResponse<Record<string, boolean>>>
       setModuleEnabled(module: string, enabled: boolean): Promise<IpcResponse<Record<string, boolean>>>
-      emitRexJoin(promoId: number): void
-      emitRexLeave(promoId: number): void
-      onRexActivityPushed(cb: (data: { activity: unknown }) => void): () => void
-      onRexActivityClosed(cb: (data: { activityId: number }) => void): () => void
-      onRexResultsUpdate(cb: (data: { activityId: number; data: unknown }) => void): () => void
-      onRexSessionStarted(cb: (data: { sessionId: number }) => void): () => void
-      onRexSessionEnded(cb: (data: { sessionId: number }) => void): () => void
-      onRexInvite(cb: (data: { sessionId: number; title: string; joinCode: string; teacherName: string }) => void): () => void
-      getRexSessionsForPromo(promoId: number): Promise<IpcResponse<RexSession[]>>
-      cloneRexSession(id: number, payload: unknown): Promise<IpcResponse<RexSession>>
-      reorderRexActivities(sessionId: number, order: number[]): Promise<IpcResponse<RexSession>>
-      deleteRexSession(id: number): Promise<IpcResponse<null>>
-      updateRexActivity(id: number, payload: unknown): Promise<IpcResponse<RexActivity>>
 
       // Grade notifications
       onGradeNew(cb: (data: { devoirTitle: string; note: string | null; feedback: string | null; devoirId: number; category: string | null }) => void): () => void
