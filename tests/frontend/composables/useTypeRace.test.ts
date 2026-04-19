@@ -39,6 +39,9 @@ describe('useTypeRace', () => {
     api.mockClear()
     typeRaceRandomPhrase.mockReset()
     typeRaceSubmitScore.mockReset()
+    // Default : finish() doit pouvoir resoudre sans throw meme quand le
+    // test ne le mocke pas explicitement (ex : triggered par timeout 60s).
+    typeRaceSubmitScore.mockResolvedValue({ ok: true, data: { id: 1, score: 0 } })
     storage.clear()
     vi.useFakeTimers()
     game = useTypeRace()
@@ -246,6 +249,103 @@ describe('useTypeRace', () => {
       expect(game.state.value).toBe('idle')
       expect(game.typed.value).toBe('')
       expect(game.lastResult.value).toBeNull()
+      expect(game.wpmSamples.value).toEqual([])
+      expect(game.errorTick.value).toBe(0)
+    })
+  })
+
+  // ═══════════════════════════════════════════════════════════════════
+  //  Nouveautes v2.171 : wpmSamples, errorTick, cursorPos
+  // ═══════════════════════════════════════════════════════════════════
+
+  describe('cursorPos', () => {
+    beforeEach(async () => {
+      typeRaceRandomPhrase.mockResolvedValue({ ok: true, data: { id: 1, text: 'Bonjour' } })
+      await game.loadPhrase()
+    })
+
+    it('vaut 0 au depart', () => {
+      expect(game.cursorPos.value).toBe(0)
+    })
+
+    it('suit la longueur de typed', () => {
+      game.onInput('Bon')
+      expect(game.cursorPos.value).toBe(3)
+      game.onInput('Bonjou')
+      expect(game.cursorPos.value).toBe(6)
+    })
+  })
+
+  describe('errorTick (shake trigger)', () => {
+    beforeEach(async () => {
+      typeRaceRandomPhrase.mockResolvedValue({ ok: true, data: { id: 1, text: 'Bonjour' } })
+      await game.loadPhrase()
+    })
+
+    it('reste a 0 quand on tape correctement', () => {
+      game.onInput('B')
+      game.onInput('Bo')
+      game.onInput('Bon')
+      expect(game.errorTick.value).toBe(0)
+    })
+
+    it('incremente sur un char faux', () => {
+      game.onInput('B')
+      expect(game.errorTick.value).toBe(0)
+      game.onInput('BX') // X != 'o'
+      expect(game.errorTick.value).toBe(1)
+    })
+
+    it('incremente encore sur chaque nouveau char faux', () => {
+      game.onInput('X')   // faux
+      game.onInput('XY')  // nouveau faux
+      game.onInput('XYZ') // nouveau faux
+      expect(game.errorTick.value).toBe(3)
+    })
+
+    it('n\'incremente pas sur un backspace (pas de nouveau char)', () => {
+      game.onInput('BX')
+      expect(game.errorTick.value).toBe(1)
+      game.onInput('B') // retour arriere
+      expect(game.errorTick.value).toBe(1) // pas d'increment
+    })
+  })
+
+  describe('wpmSamples', () => {
+    beforeEach(async () => {
+      typeRaceRandomPhrase.mockResolvedValue({
+        ok: true,
+        data: { id: 1, text: 'aaaaa bbbbb ccccc ddddd eeeee' },
+      })
+      await game.loadPhrase()
+    })
+
+    it('vide avant le demarrage', () => {
+      expect(game.wpmSamples.value).toEqual([])
+    })
+
+    it('prend un echantillon toutes les 500ms pendant la partie', () => {
+      game.onInput('a')
+      vi.advanceTimersByTime(2_500) // 5 samples attendus
+      expect(game.wpmSamples.value.length).toBeGreaterThanOrEqual(4)
+      expect(game.wpmSamples.value.length).toBeLessThanOrEqual(6)
+    })
+
+    it('cap a 120 samples (60s / 500ms)', () => {
+      game.onInput('a')
+      vi.advanceTimersByTime(70_000) // au-dela de la fin (60s), mais le cap tient
+      expect(game.wpmSamples.value.length).toBeLessThanOrEqual(120)
+    })
+
+    it('ajoute un sample final quand finish() est appele', async () => {
+      typeRaceSubmitScore.mockResolvedValue({ ok: true, data: { id: 1, score: 0 } })
+      game.onInput('a')
+      vi.advanceTimersByTime(1_200) // ~2-3 samples
+      const countBefore = game.wpmSamples.value.length
+      game.onInput('aaaaa bbbbb ccccc ddddd eeeee') // phrase complete
+      await vi.runAllTimersAsync()
+      // Sample final injecte par finish()
+      expect(game.wpmSamples.value.length).toBeGreaterThan(countBefore)
     })
   })
 })

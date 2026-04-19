@@ -2,19 +2,23 @@
  * useTypeRace — logique du mini-jeu typing speed.
  *
  * Etats :
- *   'idle'    : avant la 1ere frappe, phrase affichee en attente
- *   'playing' : chrono demarre (set au 1er keystroke)
- *   'done'    : 60s ecoulees OU phrase tapee entierement
+ *   'idle'    : phrase chargee, chrono en attente du 1er keystroke
+ *   'playing' : chrono arme, WPM echantillonne toutes les 500ms
+ *   'done'    : 60s ecoulees OU phrase tapee a fond
  *
- * Score : WPM (mots par minute, 1 mot = 5 caracteres conventionnels)
- *   x precision (0-1). Calcule et envoye au serveur a la fin.
+ * Score : WPM (1 mot = 5 caracteres) x precision, 0-1.
  *
- * Anti-triche cote client :
- *   - onPaste est bloque (preventDefault) sur la zone de saisie.
- *   - Le serveur re-valide coherence wpm / durationMs / phrase (cf. route).
+ * Anti-triche :
+ *   - Client : paste bloque dans la view.
+ *   - Serveur : coherence wpm / durationMs / word count (route POST /scores).
  *
- * Anti-rejeu immediat : les 20 derniers ids servis sont persistes en
- * localStorage (cle `typerace:seen`) et envoyes au backend en `exclude=`.
+ * Anti-rejeu : les 20 dernieres phrase_id servies sont persistees dans
+ * localStorage (`typerace:seen`) et envoyees au backend en `exclude=`.
+ *
+ * Signaux exposes pour la view :
+ *   - wpmSamples : WPM a chaque tick 500ms, pour sparkline live
+ *   - errorTick  : incremente a chaque nouveau char faux (trigger shake CSS)
+ *   - cursorPos  : position du curseur (= typed.length)
  */
 import { ref, computed } from 'vue'
 import { useApi } from '@/composables/useApi'
@@ -22,20 +26,14 @@ import { useApi } from '@/composables/useApi'
 const SEEN_KEY = 'typerace:seen'
 const MAX_SEEN = 20
 const GAME_DURATION_MS = 60_000
-/** Convention typing race : 1 mot = 5 caracteres. */
+const SAMPLE_INTERVAL_MS = 500
+const MAX_SAMPLES = 120 // 60s / 500ms
 const CHARS_PER_WORD = 5
 
 type GameState = 'idle' | 'playing' | 'done'
 
-interface Phrase {
-  id: number
-  text: string
-}
-
-interface SubmitResult {
-  id: number
-  score: number
-}
+interface Phrase { id: number; text: string }
+interface SubmitResult { id: number; score: number }
 
 function loadSeenIds(): number[] {
   try {
@@ -53,23 +51,37 @@ function saveSeenId(id: number): void {
     const seen = loadSeenIds()
     const next = [id, ...seen.filter((x) => x !== id)].slice(0, MAX_SEEN)
     localStorage.setItem(SEEN_KEY, JSON.stringify(next))
-  } catch { /* localStorage indisponible : no-op */ }
+  } catch { /* localStorage indisponible */ }
 }
 
 export function useTypeRace() {
   const { api } = useApi()
 
-  const state       = ref<GameState>('idle')
-  const phrase      = ref<Phrase | null>(null)
-  const typed       = ref('')
-  const startedAt   = ref<number | null>(null)
-  const elapsedMs   = ref(0)
-  const loading     = ref(false)
-  const lastResult  = ref<{ wpm: number; accuracy: number; score: number; rank?: number | null } | null>(null)
+  const state      = ref<GameState>('idle')
+  const phrase     = ref<Phrase | null>(null)
+  const typed      = ref('')
+  const startedAt  = ref<number | null>(null)
+  const elapsedMs  = ref(0)
+  const loading    = ref(false)
+  const lastResult = ref<{ wpm: number; accuracy: number; score: number } | null>(null)
+
+  /**
+   * Curseur d'erreur ephemere : incremente quand on ajoute un char faux.
+   * La view ecoute cette ref pour declencher une animation shake.
+   */
+  const errorTick = ref(0)
+
+  /**
+   * Echantillons WPM au fil du jeu (1 toutes les 500ms). Alimente la
+   * sparkline live dans la view et le graphique de l'ecran de fin.
+   */
+  const wpmSamples = ref<number[]>([])
 
   let tickInterval: ReturnType<typeof setInterval> | null = null
 
   // ── Derives ────────────────────────────────────────────────────────────
+
+  const cursorPos = computed(() => typed.value.length)
 
   const remainingMs = computed(() =>
     startedAt.value == null ? GAME_DURATION_MS : Math.max(0, GAME_DURATION_MS - elapsedMs.value),
@@ -82,7 +94,6 @@ export function useTypeRace() {
     return Math.min(1, typed.value.length / phrase.value.text.length)
   })
 
-  /** Nombre de caracteres tapes correctement au fil de la frappe (progression). */
   const correctChars = computed(() => {
     if (!phrase.value) return 0
     let n = 0
@@ -129,35 +140,49 @@ export function useTypeRace() {
     startedAt.value = null
     elapsedMs.value = 0
     lastResult.value = null
+    wpmSamples.value = []
+    errorTick.value = 0
     stopTicker()
   }
 
   function onInput(value: string): void {
     if (state.value === 'done' || !phrase.value) return
 
-    // Demarrage lazy au 1er caractere
+    // Demarrage lazy : chrono arme au 1er char
     if (state.value === 'idle' && value.length > 0) {
       state.value = 'playing'
       startedAt.value = Date.now()
       startTicker()
     }
 
+    // Detection d'un nouveau char FAUX (pour declencher shake) : on
+    // regarde si le char qu'on vient d'ajouter diverge de la cible.
+    if (value.length > typed.value.length && phrase.value) {
+      const lastIdx = value.length - 1
+      if (value[lastIdx] !== phrase.value.text[lastIdx]) {
+        errorTick.value++
+      }
+    }
+
     typed.value = value
 
-    // Fin si phrase tapee integralement
-    if (phrase.value.text === value) {
-      finish()
-    }
+    if (phrase.value.text === value) finish()
   }
 
   function startTicker(): void {
     stopTicker()
+    let lastSampleAt = 0
     tickInterval = setInterval(() => {
       if (startedAt.value == null) return
       elapsedMs.value = Date.now() - startedAt.value
-      if (elapsedMs.value >= GAME_DURATION_MS) {
-        finish()
+
+      // Echantillonner WPM une fois par SAMPLE_INTERVAL_MS
+      if (elapsedMs.value - lastSampleAt >= SAMPLE_INTERVAL_MS) {
+        lastSampleAt = elapsedMs.value
+        wpmSamples.value = [...wpmSamples.value, wpm.value].slice(-MAX_SAMPLES)
       }
+
+      if (elapsedMs.value >= GAME_DURATION_MS) finish()
     }, 100)
   }
 
@@ -172,19 +197,21 @@ export function useTypeRace() {
     elapsedMs.value = durationMs
     stopTicker()
 
+    // Sample final pour que la sparkline se termine sur le score final
+    wpmSamples.value = [...wpmSamples.value, wpm.value].slice(-MAX_SAMPLES)
+
     const finalWpm = wpm.value
     const finalAccuracy = accuracy.value
     const finalScore = Math.round(finalWpm * finalAccuracy)
 
-    lastResult.value = { wpm: finalWpm, accuracy: finalAccuracy, score: finalScore, rank: null }
+    lastResult.value = { wpm: finalWpm, accuracy: finalAccuracy, score: finalScore }
 
-    const payload = {
-      phraseId:   phrase.value.id,
+    await api<SubmitResult>(() => window.api.typeRaceSubmitScore({
+      phraseId:   phrase.value!.id,
       wpm:        Math.round(finalWpm * 10) / 10,
       accuracy:   Math.round(finalAccuracy * 1000) / 1000,
       durationMs,
-    }
-    await api<SubmitResult>(() => window.api.typeRaceSubmitScore(payload))
+    }))
   }
 
   function cleanup(): void {
@@ -193,24 +220,14 @@ export function useTypeRace() {
 
   return {
     // State
-    state,
-    phrase,
-    typed,
-    loading,
-    lastResult,
+    state, phrase, typed, loading, lastResult,
+    wpmSamples, errorTick,
     // Derives
-    remainingMs,
-    remainingSec,
-    progress,
-    correctChars,
-    accuracy,
-    wpm,
-    score,
+    cursorPos, remainingMs, remainingSec, progress,
+    correctChars, accuracy, wpm, score,
     // Actions
-    loadPhrase,
-    resetGame,
-    onInput,
-    finish,
-    cleanup,
+    loadPhrase, resetGame, onInput, finish, cleanup,
+    // Constants
+    GAME_DURATION_MS,
   }
 }
