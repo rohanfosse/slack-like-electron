@@ -66,8 +66,8 @@ Object.defineProperty(globalThis, 'localStorage', { value: localStorageMock, wri
 }
 
 import type { AppDocument } from '@/types'
-import { docIconType, iconColors, iconLabels, TYPE_FILTERS } from '@/composables/useDocumentsData'
-import type { DocIconType } from '@/composables/useDocumentsData'
+import { docIconType, iconColor, iconLabel, TYPE_FILTERS } from '@/utils/documentIcons'
+import type { DocIconType } from '@/utils/documentIcons'
 
 function makeDoc(overrides: Partial<AppDocument> = {}): AppDocument {
   return {
@@ -223,32 +223,32 @@ describe('docIconType', () => {
 // ═════════════════════════════════════════════════════
 //  iconColors & iconLabels — completeness checks
 // ═════════════════════════════════════════════════════
-describe('iconColors', () => {
-  it('has a color for every DocIconType', () => {
+describe('iconColor', () => {
+  it('returns a valid hex color for every DocIconType', () => {
     const expectedTypes: DocIconType[] = [
       'image', 'pdf', 'video', 'link', 'file', 'spreadsheet',
       'moodle', 'github', 'linkedin', 'web', 'package',
       'grille', 'note-peda', 'fiche-validation',
     ]
     for (const t of expectedTypes) {
-      expect(iconColors[t]).toBeDefined()
-      expect(typeof iconColors[t]).toBe('string')
-      expect(iconColors[t]).toMatch(/^#[0-9a-fA-F]{6}$/)
+      expect(iconColor(t)).toBeDefined()
+      expect(typeof iconColor(t)).toBe('string')
+      expect(iconColor(t)).toMatch(/^#[0-9a-fA-F]{6}$/)
     }
   })
 })
 
-describe('iconLabels', () => {
-  it('has a label for every DocIconType', () => {
+describe('iconLabel', () => {
+  it('returns a non-empty label for every DocIconType', () => {
     const expectedTypes: DocIconType[] = [
       'image', 'pdf', 'video', 'link', 'file', 'spreadsheet',
       'moodle', 'github', 'linkedin', 'web', 'package',
       'grille', 'note-peda', 'fiche-validation',
     ]
     for (const t of expectedTypes) {
-      expect(iconLabels[t]).toBeDefined()
-      expect(typeof iconLabels[t]).toBe('string')
-      expect(iconLabels[t].length).toBeGreaterThan(0)
+      expect(iconLabel(t)).toBeDefined()
+      expect(typeof iconLabel(t)).toBe('string')
+      expect(iconLabel(t).length).toBeGreaterThan(0)
     }
   })
 })
