@@ -617,15 +617,33 @@ contextBridge.exposeInMainWorld('api', {
         const token = getJwtToken()
         const headers: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {}
         const res  = await fetch(filePath, { headers })
+        if (!res.ok) {
+          return { ok: false, error: `HTTP ${res.status} ${res.statusText} — ${filePath}` }
+        }
         const blob = await res.blob()
+        // MIME prioritaire : Content-Type du serveur. Sinon devine par extension.
         const ext  = filePath.split('/').pop()?.split('.').pop()?.toLowerCase() ?? 'bin'
+        const extMime: Record<string, string> = {
+          pdf: 'application/pdf', png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg',
+          gif: 'image/gif', webp: 'image/webp', svg: 'image/svg+xml',
+          mp4: 'video/mp4', webm: 'video/webm', mov: 'video/quicktime',
+          docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+          xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+          txt: 'text/plain', csv: 'text/csv', md: 'text/markdown',
+        }
+        const guessedMime = extMime[ext] ?? blob.type ?? 'application/octet-stream'
+        const mime = blob.type && blob.type !== 'application/octet-stream' ? blob.type : guessedMime
         return new Promise<unknown>((resolve) => {
           const reader = new FileReader()
           reader.onload  = () => {
             const b64 = (reader.result as string).split(',')[1] ?? ''
-            resolve({ ok: true, data: { b64, mime: blob.type || 'application/octet-stream', ext } })
+            if (!b64) {
+              resolve({ ok: false, error: 'Fichier vide ou base64 invalide.' })
+              return
+            }
+            resolve({ ok: true, data: { b64, mime, ext } })
           }
-          reader.onerror = () => resolve({ ok: false, error: 'Lecture distante échouée.' })
+          reader.onerror = () => resolve({ ok: false, error: 'Lecture distante échouée (FileReader).' })
           reader.readAsDataURL(blob)
         })
       } catch (err) {

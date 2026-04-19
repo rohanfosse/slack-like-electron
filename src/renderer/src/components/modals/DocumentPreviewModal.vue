@@ -104,9 +104,12 @@ watch(() => props.modelValue, async (open) => {
 
   loading.value = true
   try {
-    const res = await api.readFileBase64(doc.value.content)
+    const res = await api.readFileBase64(doc.value.content) as { ok: boolean; data?: { b64: string; mime: string }; error?: string }
     if (!res?.ok || !res.data) {
-      error.value = 'Impossible de lire le fichier.'
+      console.error('[DocumentPreview] readFileBase64 failed:', { res, content: doc.value.content })
+      error.value = res?.error
+        ? `Lecture echouee : ${res.error}`
+        : 'Impossible de lire le fichier.'
       return
     }
     mime.value = res.data.mime ?? ''
@@ -152,7 +155,9 @@ watch(() => props.modelValue, async (open) => {
       }
     }
   } catch (e) {
-    error.value = 'Erreur lors de la lecture du fichier.'
+    console.error('[DocumentPreview] Parse error:', e, { content: doc.value?.content, mime: mime.value })
+    const detail = e instanceof Error ? e.message : String(e)
+    error.value = `Erreur lors de la lecture du fichier : ${detail}`
   } finally {
     loading.value = false
   }
@@ -199,8 +204,16 @@ function openWith() {
       <!-- Erreur -->
       <div v-else-if="previewType === 'error'" class="preview-state">
         <File :size="36" style="color:var(--color-danger);opacity:.6" />
-        <p style="color:var(--color-danger);font-size:13px">{{ error }}</p>
-        <button class="btn-ghost" @click="openWith">Ouvrir avec…</button>
+        <p style="color:var(--color-danger);font-size:13px;max-width:480px;text-align:center">{{ error }}</p>
+        <p style="color:var(--text-muted);font-size:11px;max-width:480px;text-align:center;margin-top:-6px">
+          Si l'aperçu ne charge pas, télécharge le fichier ou ouvre-le avec une app externe.
+        </p>
+        <div style="display:flex;gap:8px;margin-top:4px">
+          <button class="btn-primary" @click="download">
+            <Download :size="14" /> Télécharger
+          </button>
+          <button class="btn-ghost" @click="openWith">Ouvrir avec…</button>
+        </div>
       </div>
 
       <!-- Image -->

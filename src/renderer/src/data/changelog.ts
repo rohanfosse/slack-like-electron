@@ -12,6 +12,17 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '2.166.4',
+    date: '2026-04-19',
+    title: 'Aper\u00e7u PDF : erreurs explicit\u00e9es + fallbacks',
+    highlights: [
+      'V\u00e9rification HTTP status (401/404/500) au lieu d\'avaler les error pages comme du contenu',
+      'MIME devin\u00e9 par extension quand le serveur renvoie octet-stream',
+      'Erreur visible dans la modal avec d\u00e9tail technique + bouton T\u00e9l\u00e9charger en fallback',
+      'Console log d\u00e9taill\u00e9 pour le debugging',
+    ],
+  },
+  {
     version: '2.166.3',
     date: '2026-04-19',
     title: 'Documents : actions dans un menu \u201c\u2026\u201d',
