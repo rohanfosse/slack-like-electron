@@ -11,6 +11,7 @@
   import { useSwipeNav }    from '@/composables/useSwipeNav'
   import { useModules }     from '@/composables/useModules'
   import { useLumenFocus }  from '@/composables/useLumenFocus'
+  import { useSocketReconnectToast } from '@/composables/useSocketReconnectToast'
   import { reportError }    from '@/utils/errorReporter'
   import { MessageSquare, FileText, Camera, Lock, Trash2, Download, UserX, Download as DownloadIcon, RefreshCw, Shield, Scale, Clock, Mail, Globe, Eye, Pencil, ChevronDown, Server, Zap } from 'lucide-vue-next'
   import Toast        from '@/components/ui/Toast.vue'
@@ -76,23 +77,8 @@
     showNotifBanner.value = false
   }
 
-  // Toast discret pour la connexion socket
-  let _wasDisconnected = false
-  let _disconnectTimer: ReturnType<typeof setTimeout> | null = null
-  watch(() => appStore.socketConnected, (connected) => {
-    if (connected && _wasDisconnected) {
-      if (_disconnectTimer) { clearTimeout(_disconnectTimer); _disconnectTimer = null }
-      showToast('Reconnecté', 'success')
-      // Re-sync : recharger les messages du canal actif pour rattraper les messages manqués
-      try { useMessagesStore().fetchMessages?.() } catch { /* ignore */ }
-    } else if (!connected && appStore.currentUser) {
-      // Afficher le toast seulement après 3s de déconnexion (éviter les micro-coupures)
-      _disconnectTimer = setTimeout(() => {
-        showToast('Reconnexion en cours…', 'info')
-      }, 3000)
-    }
-    _wasDisconnected = !connected
-  })
+  // Toast discret pour la connexion socket (extrait dans useSocketReconnectToast).
+  useSocketReconnectToast()
 
   // ── Mobile sidebar drawer ──────────────────────────────────────────────────
   const sidebarOpen = ref(false)
