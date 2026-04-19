@@ -9,20 +9,25 @@
  *  - retry avec backoff exponentiel en cas d'echec
  *  - clean-up strict des timers a destroy() (pas de save apres unmount)
  *  - generation numero pour ignorer les inits concurrentes
+ *  - flush on tab hide + best-effort on unload (anti perte de donnees)
  */
 import { ref, onBeforeUnmount, type Ref } from 'vue'
 import * as Y from 'yjs'
 import { useAppStore } from '@/stores/app'
 
-// Colors for collaborative cursors
+// Palette curseurs collaborateurs - stable par user id
 const CURSOR_COLORS = [
   '#3b82f6', '#ef4444', '#22c55e', '#f59e0b', '#8b5cf6',
   '#ec4899', '#06b6d4', '#f97316', '#14b8a6', '#6366f1',
 ]
 
+export function colorForUser(userId: number): string {
+  const idx = Math.abs(userId) % CURSOR_COLORS.length
+  return CURSOR_COLORS[idx]
+}
+
 const MAX_YJS_STATE_BYTES = 5 * 1024 * 1024 // mirror serveur
-const DEBOUNCE_MS = 5_000
-const AUTOSAVE_MS = 30_000
+const DEBOUNCE_MS = 2_000   // flush rapide apres une edition
 const MAX_RETRIES = 3
 
 export interface CollabUser {
@@ -64,7 +69,6 @@ export function useCahierCollab(cahierId: Ref<number | null>) {
   const saveError = ref<string | null>(null)
   const connectedUsers = ref<CollabUser[]>([])
 
-  let saveInterval: ReturnType<typeof setInterval> | null = null
   let saveTimeout: ReturnType<typeof setTimeout> | null = null
   let retryTimeout: ReturnType<typeof setTimeout> | null = null
   let pendingSave = false   // une sauvegarde a ete demandee pendant que saving=true
@@ -80,10 +84,10 @@ export function useCahierCollab(cahierId: Ref<number | null>) {
 
     // Load persisted state from server
     try {
-      const res = await (window as any).api.getCahierYjsState(id)
+      const res = await window.api.getCahierYjsState(id)
       if (myGen !== initGeneration) { doc.destroy(); return }
       if (res?.ok && res.data) {
-        const uint8 = base64ToUint8(res.data)
+        const uint8 = base64ToUint8(res.data as string)
         if (uint8) {
           Y.applyUpdate(doc, uint8)
         } else {
@@ -103,10 +107,9 @@ export function useCahierCollab(cahierId: Ref<number | null>) {
 
     const user = appStore.currentUser
     if (user) {
-      const colorIdx = user.id % CURSOR_COLORS.length
       awareness.setLocalStateField('user', {
         name: user.name,
-        color: CURSOR_COLORS[colorIdx],
+        color: colorForUser(user.id),
         userId: user.id,
       })
     }
@@ -124,10 +127,7 @@ export function useCahierCollab(cahierId: Ref<number | null>) {
     provider.value = { awareness, destroy: () => awareness.destroy() }
     connected.value = true
 
-    // Auto-save every 30 seconds
-    saveInterval = setInterval(() => { void save(id) }, AUTOSAVE_MS)
-
-    // Save on document update (debounced)
+    // Save on document update (debounced, flush rapide 2s)
     doc.on('update', () => {
       if (saveTimeout) clearTimeout(saveTimeout)
       saveTimeout = setTimeout(() => { void save(id) }, DEBOUNCE_MS)
@@ -151,7 +151,7 @@ export function useCahierCollab(cahierId: Ref<number | null>) {
         return
       }
       const base64 = uint8ToBase64(state)
-      const res = await (window as any).api.saveCahierYjsState(id, base64)
+      const res = await window.api.saveCahierYjsState(id, base64)
       if (res && res.ok === false) {
         throw new Error(res.error || 'Erreur sauvegarde')
       }
@@ -178,14 +178,28 @@ export function useCahierCollab(cahierId: Ref<number | null>) {
     }
   }
 
+  /** Flush synchrone sur fermeture/passage en background (anti perte). */
+  function flush(): Promise<void> | void {
+    if (!ydoc.value || !cahierId.value) return
+    if (saveTimeout) { clearTimeout(saveTimeout); saveTimeout = null }
+    return save(cahierId.value)
+  }
+
+  // Handlers globaux — enregistres une seule fois
+  function onVisibilityChange() {
+    if (document.visibilityState === 'hidden') void flush()
+  }
+  function onBeforeUnload() { void flush() }
+  document.addEventListener('visibilitychange', onVisibilityChange)
+  window.addEventListener('beforeunload', onBeforeUnload)
+
   /** Cleanup */
   function destroy() {
     initGeneration++ // invalide toute init async en cours
-    if (saveInterval) { clearInterval(saveInterval); saveInterval = null }
     if (saveTimeout)  { clearTimeout(saveTimeout); saveTimeout = null }
     if (retryTimeout) { clearTimeout(retryTimeout); retryTimeout = null }
 
-    // Tentative de sauvegarde finale (best effort, sans retry)
+    // Tentative de sauvegarde finale (best effort, sans await pour ne pas bloquer unmount)
     if (ydoc.value && cahierId.value) {
       void save(cahierId.value)
     }
@@ -198,7 +212,11 @@ export function useCahierCollab(cahierId: Ref<number | null>) {
     pendingSave = false
   }
 
-  onBeforeUnmount(destroy)
+  onBeforeUnmount(() => {
+    document.removeEventListener('visibilitychange', onVisibilityChange)
+    window.removeEventListener('beforeunload', onBeforeUnload)
+    destroy()
+  })
 
   return {
     ydoc,
@@ -209,6 +227,7 @@ export function useCahierCollab(cahierId: Ref<number | null>) {
     connectedUsers,
     init,
     save,
+    flush,
     destroy,
   }
 }

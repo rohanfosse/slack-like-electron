@@ -3,14 +3,14 @@
  * Affiche les curseurs des collaborateurs et sauvegarde automatiquement.
  */
 <script setup lang="ts">
-import { ref, watch, onMounted, onBeforeUnmount, computed } from 'vue'
-import { useEditor, EditorContent } from '@tiptap/vue-3'
+import { ref, shallowRef, watch, onMounted, onBeforeUnmount, computed } from 'vue'
+import { EditorContent, Editor } from '@tiptap/vue-3'
 import StarterKit from '@tiptap/starter-kit'
 import Collaboration from '@tiptap/extension-collaboration'
 import CollaborationCaret from '@tiptap/extension-collaboration-caret'
 import Placeholder from '@tiptap/extension-placeholder'
 import { ArrowLeft, Save, Users, Pencil, AlertTriangle } from 'lucide-vue-next'
-import { useCahierCollab } from '@/composables/useCahierCollab'
+import { useCahierCollab, colorForUser } from '@/composables/useCahierCollab'
 import { useCahierStore } from '@/stores/cahier'
 import { useAppStore } from '@/stores/app'
 
@@ -26,43 +26,46 @@ const currentCahier = computed(() =>
   cahierStore.cahiers.find(c => c.id === cahierId.value),
 )
 
-const editor = useEditor({
-  extensions: [
-    StarterKit,
-    Placeholder.configure({ placeholder: 'Commencez a ecrire...' }),
-    ...(ydoc.value ? [
+// Editor reactif (shallowRef pour eviter proxification profonde par Vue)
+const editor = shallowRef<Editor | null>(null)
+
+function buildEditor() {
+  editor.value?.destroy()
+  editor.value = null
+  if (!ydoc.value) return
+  const user = appStore.currentUser
+  editor.value = new Editor({
+    extensions: [
+      StarterKit.configure({ undoRedo: false }), // undo/redo gere par Collaboration (Yjs history)
+      Placeholder.configure({ placeholder: 'Commencez a ecrire...' }),
       Collaboration.configure({ document: ydoc.value }),
       CollaborationCaret.configure({
         provider: provider.value,
         user: {
-          name: appStore.currentUser?.name ?? 'Anonyme',
-          color: '#3b82f6',
+          name: user?.name ?? 'Anonyme',
+          color: user ? colorForUser(user.id) : '#3b82f6',
         },
       }),
-    ] : []),
-  ],
-  editable: true,
-})
+    ],
+    editable: true,
+  })
+}
 
-// Initialize Yjs when cahierId changes
+// Reinit Yjs + rebuild editor a chaque changement de cahier
 watch(cahierId, async (id) => {
-  if (!id) { destroy(); return }
+  if (!id) { destroy(); editor.value?.destroy(); editor.value = null; return }
   await init(id)
-
-  // Reconfigure editor with Yjs
-  if (editor.value && ydoc.value) {
-    editor.value.destroy()
-  }
-}, { immediate: false })
+  buildEditor()
+}, { immediate: true })
 
 onMounted(async () => {
-  if (cahierId.value) {
-    await init(cahierId.value)
-  }
+  // Si cahierId etait deja set au mount, watch(immediate:true) l'aura traite.
+  // Sinon rien a faire ici.
 })
 
 onBeforeUnmount(() => {
   editor.value?.destroy()
+  editor.value = null
   destroy()
 })
 
