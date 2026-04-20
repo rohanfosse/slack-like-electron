@@ -1,26 +1,17 @@
-/**
- * FileDropZone — zone de drop prete a l'emploi, stylee, accessible.
- *
- * Cas d'usage : tu veux une drop-zone rectangulaire classique (fichier unique
- * ou multiple, avec click fallback) sans reecrire le HTML/CSS/keyboard
- * handlers. Pour des layouts atypiques (avatar circulaire, overlay plein
- * ecran) : utilise directement `useSimpleFileDrop`.
- *
- * Exemple :
- *   <FileDropZone
- *     accept="image/*"
- *     :max-bytes="5 * 1024 * 1024"
- *     label="Glisser une image ou cliquer"
- *     hint="JPG, PNG... max 5 Mo"
- *     @drop="onDrop"
- *   />
- *
- * Slot optionnel pour remplacer l'icone par defaut :
- *   <FileDropZone @drop="onDrop">
- *     <template #icon><MyIcon :size="24" /></template>
- *   </FileDropZone>
- */
 <script setup lang="ts">
+// FileDropZone — zone de drop prete a l'emploi, stylee, accessible.
+//
+// Cas d'usage : tu veux une drop-zone rectangulaire classique (fichier unique
+// ou multiple, avec click fallback) sans reecrire le HTML/CSS/keyboard
+// handlers. Pour des layouts atypiques (avatar circulaire, overlay plein
+// ecran) : utilise directement useSimpleFileDrop.
+//
+// Props cles : accept, allowedExtensions, maxBytes, multiple, disabled,
+// label, hint, dragOverLabel, processingLabel, successLabel,
+// variant ('default' | 'compact'), requireElectronPath.
+//
+// Events : @drop (FileDropItem[]), @click.
+// Slot : #icon pour remplacer l'icone par defaut.
 import { computed } from 'vue'
 import { Upload, CheckCircle2, Loader2, AlertCircle } from 'lucide-vue-next'
 import { useSimpleFileDrop, type FileDropItem } from '@/composables/useSimpleFileDrop'
