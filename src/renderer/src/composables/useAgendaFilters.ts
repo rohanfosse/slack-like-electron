@@ -1,6 +1,6 @@
 /**
  * useAgendaFilters : toggles deadline/start/reminder/outlook + hidden promos
- * + calcul filtre d'evenements pour injection dans VueCal (class + style).
+ * + calcul filtre d'evenements pour les grilles agenda (class + style).
  */
 import { ref, computed } from 'vue'
 import { useAgendaStore } from '@/stores/agenda'

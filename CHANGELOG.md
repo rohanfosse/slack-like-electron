@@ -1,5 +1,16 @@
 # Changelog
 
+## v2.195.1 (2026-04-20)
+
+### Performance
+
+- **Markdown reader** : highlightAuto restreint a 11 langages courants (au lieu des 190 charges par hljs). Gain >10x sur les blocs de code sans langue declaree (~590ms -> ~50ms), reglait un timeout du test `markdown.test.ts:151`.
+
+### Cleanup
+
+- Suppression de la dependance `vue-cal` (plus utilisee depuis la refonte grilles custom), du fichier `vue-cal.d.ts` et des commentaires residuels dans `stores/agenda.ts`, `useAgendaFilters.ts`, `useAgendaIcsExport.ts`, `AgendaMonthGrid.vue`, `AgendaTimeGrid.vue`.
+- `useAgendaViewNav` : retrait des champs vestigiaux `calRef` et `onViewChange` (aucun appelant).
+
 ## v2.195.0 (2026-04-20)
 
 ### Merge main <- branche v2.188

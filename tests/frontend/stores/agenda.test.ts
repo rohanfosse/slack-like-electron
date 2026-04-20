@@ -60,7 +60,7 @@ describe('agenda store', () => {
     expect(s.events[3].start).toBe('2026-04-10')
   })
 
-  it('flags deadline/start_date/date-only reminders as allDay for vue-cal top bar', () => {
+  it('flags deadline/start_date/date-only reminders as allDay for agenda top bar', () => {
     const s = useAgendaStore()
     s.ganttRows = [
       { id: 1, title: 'TP1', deadline: '2026-04-10T00:00:00Z', start_date: '2026-04-01T00:00:00Z' },

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /**
- * AgendaTimeGrid : grille Jour/Semaine custom (remplace VueCal pour ces vues).
+ * AgendaTimeGrid : grille Jour/Semaine custom.
  * - 1 colonne (day) ou 7 colonnes (week)
  * - Plage horaire paramétrable (default 7h-22h, step 30min)
  * - Header sticky, all-day strip conditionnelle, now-line, drag & drop
@@ -655,7 +655,7 @@ const offHoursPmTop = computed(() => Math.max(0, ((18 * 60 - props.timeFrom) / p
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 
-/* Status indicators (repris de l'ancien CSS VueCal) */
+/* Status indicators */
 .tg-event.ag-event--submitted { opacity: 0.55; text-decoration: line-through; }
 .tg-event.ag-event--submitted::after {
   content: ''; position: absolute; right: 5px; top: 5px;

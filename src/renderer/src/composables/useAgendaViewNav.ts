@@ -1,10 +1,8 @@
 /**
- * useAgendaViewNav : etat de la vue calendrier + navigation (prev/next/today).
- * Toutes les vues (Mois/Semaine/Jour) sont des grilles custom : on pilote
- * selectedDate directement, plus de dependance VueCal.
+ * useAgendaViewNav : etat de la vue calendrier (mois/semaine/jour) + navigation
+ * prev/next/today. Toutes les grilles sont custom — on pilote selectedDate.
  */
 import { ref, computed } from 'vue'
-import type { Ref } from 'vue'
 import { startOfISOWeek } from '@/utils/date'
 
 export type AgendaView = 'month' | 'week' | 'day'
@@ -29,8 +27,6 @@ function loadInitialView(): AgendaView {
 }
 
 export function useAgendaViewNav(initialDate?: string) {
-  // calRef conserve pour compat signature, non utilise (toutes les vues sont custom).
-  const calRef: Ref<unknown> = ref(null)
   const activeView = ref<AgendaView>(loadInitialView())
   const selectedDate = ref(initialDate ?? toIso(new Date()))
 
@@ -49,9 +45,6 @@ export function useAgendaViewNav(initialDate?: string) {
       ? `${start.getDate()} - ${end.getDate()} ${start.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })}`
       : `${start.getDate()} ${start.toLocaleDateString('fr-FR', { month: 'short' })} - ${end.getDate()} ${end.toLocaleDateString('fr-FR', { month: 'short', year: 'numeric' })}`
   })
-
-  // Conserve pour retro-compat avec l'ancien @view-change de VueCal ; no-op desormais.
-  function onViewChange(_event: unknown) { /* noop */ }
 
   function shiftDays(days: number) {
     const d = new Date(`${selectedDate.value}T00:00:00`)
@@ -81,5 +74,5 @@ export function useAgendaViewNav(initialDate?: string) {
     try { localStorage.setItem(VIEW_KEY, view) } catch { /* ignore */ }
   }
 
-  return { calRef, activeView, currentTitle, selectedDate, onViewChange, goPrev, goNext, goToday, switchView }
+  return { activeView, currentTitle, selectedDate, goPrev, goNext, goToday, switchView }
 }

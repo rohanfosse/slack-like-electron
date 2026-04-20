@@ -159,7 +159,7 @@ function buildEventLines(meta: CalendarEvent, dtstamp: string): string[] {
     // All-day : DATE-VALUE, end exclusive → on ajoute +1 jour (RFC 5545 3.8.2.2)
     const sd = formatIcsDateOnly(meta.start)
     let endSource = meta.end || meta.start
-    // meta.end est inclusif côté vue-cal ; RFC attend exclusif → +1j
+    // meta.end est inclusif côté grille agenda ; RFC attend exclusif → +1j
     const endDate = new Date(endSource)
     if (!isNaN(endDate.getTime())) {
       endDate.setDate(endDate.getDate() + 1)

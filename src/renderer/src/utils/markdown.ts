@@ -12,6 +12,15 @@ marked.setOptions({
   breaks: true,
 })
 
+// Autodetection limitee a un sous-ensemble de langages frequents. hljs charge
+// ~190 langages par defaut et highlightAuto les essaie TOUS (>500ms par bloc
+// sans langue declaree), ce qui fait timeout les tests et ralentit le reader.
+// Subset = 10x a 20x plus rapide, precision equivalente pour du code usuel.
+const HLJS_AUTO_SUBSET = [
+  'javascript', 'typescript', 'python', 'bash', 'shell',
+  'html', 'css', 'json', 'sql', 'yaml', 'markdown',
+]
+
 // Hook pour highlight.js sur les blocs de code + wrapper avec badge langue.
 // Cas special : `mermaid` est passe tel-quel (echappe) dans un <pre> marque,
 // le viewer se charge du rendu SVG apres montage.
@@ -28,7 +37,7 @@ marked.use({
       const validLang = lang && hljs.getLanguage(lang)
       const highlighted = validLang
         ? hljs.highlight(code, { language: lang }).value
-        : hljs.highlightAuto(code).value
+        : hljs.highlightAuto(code, HLJS_AUTO_SUBSET).value
       const cls = validLang ? `language-${lang}` : ''
       const label = (validLang ? lang : (lang || 'text')).toUpperCase()
       return (

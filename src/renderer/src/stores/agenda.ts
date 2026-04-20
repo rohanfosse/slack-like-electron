@@ -161,7 +161,7 @@ function buildOutlookEvent(ev: OutlookEvent): CalendarEvent | null {
 
   if (ev.isAllDay) {
     startStr = fmtDateOnly(sd)
-    // Outlook semi-open : end exclusive (lendemain 00:00). Reculer d'1 jour pour l'inclusivité vue-cal.
+    // Outlook semi-open : end exclusive (lendemain 00:00). Reculer d'1 jour pour end inclusive cote grille.
     const adjusted = new Date(ed.getTime())
     adjusted.setUTCDate(adjusted.getUTCDate() - 1)
     endStr = fmtDateOnly(adjusted)
@@ -349,7 +349,7 @@ export const useAgendaStore = defineStore('agenda', () => {
 
   /**
    * Replanifie un évènement (drag-to-reschedule). Dispatch sur le bon endpoint
-   * selon le préfixe de l'ID VueCal :
+   * selon le préfixe de l'ID évènement :
    *   - `reminder-<id>`  → updateReminder
    *   - `deadline-<id>`  → updateTravail({ deadline })
    *

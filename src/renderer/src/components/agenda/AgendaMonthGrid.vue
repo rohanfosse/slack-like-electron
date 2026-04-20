@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /**
- * AgendaMonthGrid : vue mois custom (remplace VueCal pour le mois).
+ * AgendaMonthGrid : vue mois custom.
  * 6 rangees x 7 colonnes, multi-day events en bandes, "+N" si cellule pleine.
  */
 import { ref, computed } from 'vue'
