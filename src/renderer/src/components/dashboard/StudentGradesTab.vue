@@ -5,10 +5,15 @@
  */
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { Award, Trophy } from 'lucide-vue-next'
+import { useRouter } from 'vue-router'
+import { Award, Trophy, Copy, FolderOpen } from 'lucide-vue-next'
 import { formatDate } from '@/utils/date'
 import { useStudentBadges } from '@/composables/useStudentBadges'
+import { useContextMenu, type ContextMenuItem } from '@/composables/useContextMenu'
+import { useToast } from '@/composables/useToast'
+import { useAppStore } from '@/stores/app'
 import { parseCategoryIcon } from '@/utils/categoryIcon'
+import ContextMenu from '@/components/ui/ContextMenu.vue'
 
 export interface GradedDevoir {
   id: number
@@ -68,6 +73,39 @@ const timeline = computed(() =>
 const expandedId = ref<number | null>(null)
 function toggleExpand(id: number) {
   expandedId.value = expandedId.value === id ? null : id
+}
+
+// ── Context menu ────────────────────────────────────────────────────────────
+const router = useRouter()
+const appStore = useAppStore()
+const { showToast } = useToast()
+const { state: ctxMenu, open: openCtxMenu, close: closeCtxMenu } = useContextMenu()
+
+function openGradeCtxMenu(ev: MouseEvent, d: GradedDevoir) {
+  const items: ContextMenuItem[] = [
+    { label: 'Copier le titre', icon: Copy, action: async () => {
+      await navigator.clipboard.writeText(d.title)
+      showToast('Titre copie', 'success')
+    } },
+    { label: 'Copier la note', icon: Copy, action: async () => {
+      await navigator.clipboard.writeText(d.note)
+      showToast(`Note ${d.note} copiee`, 'success')
+    } },
+  ]
+  if (d.feedback) {
+    items.push({ label: 'Copier le feedback', icon: Copy, action: async () => {
+      await navigator.clipboard.writeText(d.feedback!)
+      showToast('Feedback copie', 'success')
+    } })
+  }
+  if (d.category) {
+    items.push({ separator: true, label: '' })
+    items.push({ label: 'Ouvrir le projet', icon: FolderOpen, action: () => {
+      appStore.activeProject = d.category
+      router.push('/devoirs')
+    } })
+  }
+  openCtxMenu(ev, items)
 }
 </script>
 
@@ -160,6 +198,7 @@ function toggleExpand(id: number) {
         class="sgt-card"
         :class="{ 'sgt-card--expanded': expandedId === d.id }"
         @click="d.feedback ? toggleExpand(d.id) : undefined"
+        @contextmenu="openGradeCtxMenu($event, d)"
       >
         <div class="sgt-card-top">
           <div class="sgt-card-left">
@@ -179,6 +218,8 @@ function toggleExpand(id: number) {
         >{{ d.feedback }}</p>
       </div>
     </div>
+
+    <ContextMenu v-if="ctxMenu" :x="ctxMenu.x" :y="ctxMenu.y" :items="ctxMenu.items" @close="closeCtxMenu" />
   </div>
 </template>
 

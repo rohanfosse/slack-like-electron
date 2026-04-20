@@ -4,9 +4,13 @@
  * Grid of project cards with MicroRing progress, deadline, overdue badge.
  */
 <script setup lang="ts">
-import { FolderOpen, Clock, AlertTriangle } from 'lucide-vue-next'
+import { FolderOpen, Clock, AlertTriangle, Copy, ExternalLink, CalendarDays } from 'lucide-vue-next'
+import { useRouter } from 'vue-router'
 import { deadlineClass, deadlineLabel } from '@/utils/date'
 import MicroRing from '@/components/ui/MicroRing.vue'
+import { useContextMenu, type ContextMenuItem } from '@/composables/useContextMenu'
+import { useToast } from '@/composables/useToast'
+import ContextMenu from '@/components/ui/ContextMenu.vue'
 import type { StudentProjectCard } from '@/composables/useDashboardStudent'
 
 defineProps<{
@@ -17,6 +21,27 @@ const emit = defineEmits<{
   goToProject: [key: string]
   navigateDevoirs: []
 }>()
+
+const router = useRouter()
+const { showToast } = useToast()
+const { state: ctxMenu, open: openCtxMenu, close: closeCtxMenu } = useContextMenu()
+
+function openProjectCtx(ev: MouseEvent, p: StudentProjectCard) {
+  const items: ContextMenuItem[] = [
+    { label: 'Ouvrir le projet', icon: ExternalLink, action: () => emit('goToProject', p.key) },
+    { label: 'Copier le nom',    icon: Copy,         action: async () => {
+      await navigator.clipboard.writeText(p.label)
+      showToast('Nom copie', 'success')
+    } },
+  ]
+  if (p.nextDeadline) {
+    items.push({ separator: true, label: '' })
+    items.push({ label: 'Voir sur le calendrier', icon: CalendarDays, action: () => {
+      router.push({ name: 'agenda', query: { date: p.nextDeadline!.slice(0, 10) } })
+    } })
+  }
+  openCtxMenu(ev, items)
+}
 </script>
 
 <template>
@@ -34,6 +59,7 @@ const emit = defineEmits<{
         v-for="p in studentProjectCards" :key="p.key"
         class="spt-card"
         @click="emit('goToProject', p.key)"
+        @contextmenu="openProjectCtx($event, p)"
       >
         <div class="spt-card-head">
           <div class="spt-card-icon">
@@ -65,6 +91,8 @@ const emit = defineEmits<{
         </div>
       </div>
     </div>
+
+    <ContextMenu v-if="ctxMenu" :x="ctxMenu.x" :y="ctxMenu.y" :items="ctxMenu.items" @close="closeCtxMenu" />
   </div>
 </template>
 
