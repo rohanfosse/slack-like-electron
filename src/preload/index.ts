@@ -5,7 +5,7 @@ import {
   get, post, put, patch, del,
 } from './httpClient'
 import type {
-  MsgNewPayload, PresenceEntry, TypingPayload,
+  MsgNewPayload, PresenceEntry, TypingPayload, PollUpdatePayload,
   LiveActivityPushedPayload, LiveActivityClosedPayload, LiveResultsUpdatePayload,
   LiveSessionStartedPayload, LiveSessionEndedPayload, LiveInvitePayload, LiveScoresUpdatePayload,
   LiveCodeUpdatePayload, LiveBoardUpdatePayload, LiveConfusionUpdatePayload, LiveSelfPacedPayload,
@@ -192,6 +192,8 @@ contextBridge.exposeInMainWorld('api', {
   togglePinMessage:  (payload: unknown) => post('/api/messages/pin', payload),
   updateReactions:   (msgId: number, reactionsJson: string) =>
     post('/api/messages/reactions', { msgId, reactionsJson }),
+  voteOnPoll:     (messageId: number, options: number[]) =>
+    post(`/api/messages/${messageId}/vote`, { options }),
   deleteMessage:  (id: number)                  => del(`/api/messages/${id}`),
   editMessage:    (id: number, content: string) => patch(`/api/messages/${id}`, { content }),
   reportMessage:  (messageId: number, reason: string) => post(`/api/messages/${messageId}/report`, { reason }),
@@ -714,8 +716,8 @@ contextBridge.exposeInMainWorld('api', {
     ipcRenderer.on('updater:available', listener)
     return () => ipcRenderer.removeListener('updater:available', listener)
   },
-  onUpdaterDownloaded: (cb: (version: string) => void) => {
-    const listener = (_event: Electron.IpcRendererEvent, version: string) => cb(version)
+  onUpdaterDownloaded: (cb: (payload: { version: string; releaseNotes: string | null } | string) => void) => {
+    const listener = (_event: Electron.IpcRendererEvent, payload: { version: string; releaseNotes: string | null } | string) => cb(payload)
     ipcRenderer.on('updater:downloaded', listener)
     return () => ipcRenderer.removeListener('updater:downloaded', listener)
   },
@@ -731,6 +733,8 @@ contextBridge.exposeInMainWorld('api', {
   },
   updaterQuitAndInstall: () => ipcRenderer.send('updater:quitAndInstall'),
   checkForUpdates: () => ipcRenderer.invoke('updater:checkNow'),
+  getUpdaterRemoteConfig: () => ipcRenderer.invoke('updater:getRemoteConfig'),
+  setUpdaterBetaOptIn: (enabled: boolean) => ipcRenderer.invoke('updater:setBetaOptIn', enabled),
 
   // ── Onboarding wizard ───────────────────────────────────────────────────────
   getOnboardingStatus: (studentId: number) => ipcRenderer.invoke('get-onboarding-status', { studentId }),
@@ -743,6 +747,7 @@ contextBridge.exposeInMainWorld('api', {
 
   // ── Temps reel (Socket.io) ───────────────────────────────────────────────────
   onNewMessage:        (cb: (data: MsgNewPayload) => void) => sockEv.msgNew.add(cb),
+  onPollUpdate:        (cb: (data: PollUpdatePayload) => void) => sockEv.pollUpdate.add(cb),
   onSocketStateChange: (cb: (connected: boolean) => void) => sockEv.socketState.add(cb),
   onPresenceUpdate:    (cb: (data: PresenceEntry[]) => void) => sockEv.presenceUpdate.add(cb),
 

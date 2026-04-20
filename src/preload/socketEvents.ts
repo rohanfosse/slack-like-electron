@@ -11,7 +11,7 @@
 import type { Socket } from 'socket.io-client'
 import { ipcRenderer } from 'electron'
 import type {
-  MsgNewPayload, PresenceEntry, TypingPayload,
+  MsgNewPayload, PresenceEntry, TypingPayload, PollUpdatePayload,
   LiveActivityPushedPayload, LiveActivityClosedPayload, LiveResultsUpdatePayload,
   LiveSessionStartedPayload, LiveSessionEndedPayload, LiveInvitePayload, LiveScoresUpdatePayload,
   LiveCodeUpdatePayload, LiveBoardUpdatePayload, LiveConfusionUpdatePayload, LiveSelfPacedPayload,
@@ -40,6 +40,7 @@ function createChannel<T>() {
 export const msgNew = createChannel<MsgNewPayload>()
 export const presenceUpdate = createChannel<PresenceEntry[]>()
 export const typing = createChannel<TypingPayload>()
+export const pollUpdate = createChannel<PollUpdatePayload>()
 
 // ── Socket state (connected / disconnected) ────────────────────────────────
 export const socketState = createChannel<boolean>()
@@ -73,6 +74,7 @@ export const assignmentNew   = createChannel<AssignmentNewPayload>()
  */
 export function bindSocketEvents(socket: Socket): void {
   socket.on('msg:new',               (data: MsgNewPayload) => msgNew.emit(data))
+  socket.on('msg:poll-update',       (data: PollUpdatePayload) => pollUpdate.emit(data))
   socket.on('presence:update',       (data: PresenceEntry[]) => presenceUpdate.emit(data))
   socket.on('typing',                (data: TypingPayload) => typing.emit(data))
 

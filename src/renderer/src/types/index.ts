@@ -70,6 +70,7 @@ export interface Message {
   content: string
   created_at: string
   reactions: string | null
+  poll_votes?: string | null
   is_pinned: boolean | 0 | 1
   edited:    0 | 1 | boolean
   reply_to_id?:      number | null

@@ -193,6 +193,100 @@ function updateReactions(msgId, reactionsJson) {
     .run(reactionsJson, msgId).changes;
 }
 
+// ── Sondages ─────────────────────────────────────────────────────────────────
+
+const { POLL_MARKER } = require('../../constants/poll');
+
+/** Extrait la definition poll depuis content (1re ligne). Retourne null sinon. */
+function parsePollDefinition(content) {
+  if (!content || !content.startsWith(POLL_MARKER)) return null;
+  const firstLine = content.split('\n', 1)[0];
+  const json = firstLine.slice(POLL_MARKER.length).trim();
+  if (!json) return null;
+  try {
+    const def = JSON.parse(json);
+    if (!def || !Array.isArray(def.o) || def.o.length < 2) return null;
+    return { ...def, o: def.o.slice(0, 10) };
+  } catch { return null; }
+}
+
+/** Parse l etat de vote stocke dans poll_votes (string JSON ou null). */
+function parseVotesState(raw, optionCount) {
+  const empty = { totals: Array(optionCount).fill(0), voters: {} };
+  if (!raw) return empty;
+  try {
+    const parsed = JSON.parse(raw);
+    if (!parsed || typeof parsed !== 'object') return empty;
+    const totals = Array.isArray(parsed.totals) && parsed.totals.length === optionCount
+      ? parsed.totals.map((n) => Math.max(0, Number(n) || 0))
+      : Array(optionCount).fill(0);
+    const voters = parsed.voters && typeof parsed.voters === 'object' ? parsed.voters : {};
+    // Sanitize: keep only arrays of valid indexes
+    const cleanVoters = {};
+    for (const [k, v] of Object.entries(voters)) {
+      if (Array.isArray(v)) {
+        cleanVoters[k] = v
+          .map((n) => Number(n))
+          .filter((n) => Number.isInteger(n) && n >= 0 && n < optionCount);
+      }
+    }
+    return { totals, voters: cleanVoters };
+  } catch { return empty; }
+}
+
+/**
+ * Enregistre un vote sur un sondage. Retourne { state, definition } ou throw.
+ *   messageId   : ID du message porteur du sondage
+ *   userKey     : cle stable de voter (typiquement l id signe)
+ *   optionIdxs  : array d'indices selectionnes (plusieurs si multi=true)
+ */
+function voteOnPoll(messageId, userKey, optionIdxs) {
+  const db = getDb();
+  // SELECT + UPDATE doivent etre atomiques : sans transaction, deux votes
+  // simultanes peuvent lire le meme totals, incrementer chacun, et le 2e
+  // write ecrase le 1er (perte de vote).
+  const txn = db.transaction(() => {
+    const row = db.prepare('SELECT content, poll_votes FROM messages WHERE id = ? AND deleted_at IS NULL').get(messageId);
+    if (!row) { const e = new Error('Message introuvable.'); e.statusCode = 404; throw e; }
+
+    const def = parsePollDefinition(row.content);
+    if (!def) { const e = new Error('Ce message n\'est pas un sondage.'); e.statusCode = 400; throw e; }
+
+    const state = parseVotesState(row.poll_votes, def.o.length);
+
+    const uniq = Array.from(new Set(
+      (optionIdxs || [])
+        .map((n) => Number(n))
+        .filter((n) => Number.isInteger(n) && n >= 0 && n < def.o.length),
+    ));
+    if (!def.multi) uniq.splice(1);
+
+    const k = String(userKey);
+    const prev = state.voters[k] || [];
+    for (const i of prev) state.totals[i] = Math.max(0, (state.totals[i] || 0) - 1);
+    for (const i of uniq) state.totals[i] = (state.totals[i] || 0) + 1;
+
+    if (uniq.length === 0) delete state.voters[k];
+    else state.voters[k] = uniq;
+
+    db.prepare('UPDATE messages SET poll_votes = ? WHERE id = ? AND deleted_at IS NULL')
+      .run(JSON.stringify(state), messageId);
+
+    return { state, definition: def };
+  });
+  return txn();
+}
+
+/** Lecture seule : l'etat des votes d'un message poll (ou null). */
+function getPollState(messageId) {
+  const row = getDb().prepare('SELECT content, poll_votes, channel_id, dm_student_id FROM messages WHERE id = ? AND deleted_at IS NULL').get(messageId);
+  if (!row) return null;
+  const def = parsePollDefinition(row.content);
+  if (!def) return null;
+  const state = parseVotesState(row.poll_votes, def.o.length);
+  return { state, definition: def, channelId: row.channel_id, dmStudentId: row.dm_student_id };
+}
+
 /** Soft delete — marque le message comme supprimé sans le retirer de la base. */
 function deleteMessage(id) {
   return getDb().prepare("UPDATE messages SET deleted_at = datetime('now') WHERE id = ? AND deleted_at IS NULL")
@@ -451,4 +545,5 @@ module.exports = {
   getPinnedMessages, togglePinMessage, updateReactions,
   deleteMessage, editMessage, getRecentDmContacts,
   getDmFiles, resolveUserName,
+  voteOnPoll, getPollState, parsePollDefinition,
 };

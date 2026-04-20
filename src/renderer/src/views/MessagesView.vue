@@ -198,12 +198,6 @@
             >
               <Megaphone :size="10" /> Annonce
             </span>
-            <span
-              v-else-if="channelHeader?.type === 'chat'"
-              class="channel-type-badge channel-type-badge--chat"
-            >
-              <MessageSquare :size="10" /> Chat
-            </span>
           </div>
           <span v-if="appStore.activeDmStudentId" class="dm-status">
             <span v-if="messagesStore.typingText" class="dm-typing">{{ messagesStore.typingText }}</span>

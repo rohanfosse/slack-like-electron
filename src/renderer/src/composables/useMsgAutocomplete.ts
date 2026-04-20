@@ -51,6 +51,13 @@ function normalize(s: string) {
   return s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
 }
 
+export interface SlashHandlers {
+  /** Appele quand /sondage est execute. Retourner true pour skip le template. */
+  onOpenPoll?: () => void
+  /** Appele quand /aide est execute. */
+  onOpenHelp?: () => void
+}
+
 /**
  * Unified autocomplete: @mention, #channel, /devoir, /doc.
  */
@@ -58,6 +65,7 @@ export function useMsgAutocomplete(
   content: Ref<string>,
   inputEl: Ref<HTMLTextAreaElement | null>,
   autoResize: () => void,
+  handlers: SlashHandlers = {},
 ) {
   const appStore = useAppStore()
 
@@ -378,8 +386,10 @@ export function useMsgAutocomplete(
         activeRef.value = null
       },
       sondage() {
-        content.value = before + '**Sondage** - Votre question ?\n\n1. Option A\n2. Option B\n3. Option C\n\n*Répondez en réaction avec 1️⃣ 2️⃣ 3️⃣*' + after
+        // Efface le "/sondage" et ouvre le modal de composition.
+        content.value = before + after
         activeRef.value = null
+        handlers.onOpenPoll?.()
       },
       tableau() {
         content.value = before + '| Colonne 1 | Colonne 2 | Colonne 3 |\n|---|---|---|\n| … | … | … |\n| … | … | … |' + after
@@ -392,15 +402,10 @@ export function useMsgAutocomplete(
         nextTick(() => { const pos = before.length + 6; el.setSelectionRange(pos, pos) })
       },
       aide() {
-        content.value = before + [
-          '**Raccourcis Cursus**',
-          '',
-          '`@nom` Mentionner · `#canal` Référencer · `\\titre` Devoir',
-          '`/commande` Menu commandes',
-          '`**gras**` · `*italique*` · `` `code` `` · `~~barré~~`',
-          '`> citation` · `- liste`',
-        ].join('\n') + after
+        // Efface le "/aide" et ouvre la modale d'aide riche.
+        content.value = before + after
         activeRef.value = null
+        handlers.onOpenHelp?.()
       },
       date() {
         const d = new Date()

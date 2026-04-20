@@ -20,6 +20,11 @@ export type MsgNewPayload = {
 export type PresenceEntry = { id: number; name: string; role: string }
 export type TypingPayload = { channelId?: number; dmStudentId?: number; userName: string }
 
+export type PollUpdatePayload = {
+  messageId: number
+  poll_votes: { totals: number[]; voters: Record<string, number[]> }
+}
+
 // ── Live Quiz / Live v2 ────────────────────────────────────────────────────
 export type LiveActivityPushedPayload = { activity: unknown }
 export type LiveActivityClosedPayload = { activityId: number }

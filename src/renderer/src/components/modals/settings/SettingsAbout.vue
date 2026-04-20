@@ -1,16 +1,23 @@
 /** SettingsAbout — section A propos du modal Settings. */
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
-import { Info, Globe, Monitor, Heart, Github, ExternalLink, Download, RefreshCw, CheckCircle, AlertCircle, RotateCw } from 'lucide-vue-next'
+import { Info, Globe, Monitor, Heart, Github, ExternalLink, Download, RefreshCw, CheckCircle, AlertCircle, RotateCw, FlaskConical } from 'lucide-vue-next'
 import logoUrl from '@/assets/logo.png'
 import { version } from '../../../../../../package.json'
 
 // ── Mise a jour ─────────────────────────────────────────────────────────────
-type UpdateStatus = 'idle' | 'checking' | 'available' | 'downloading' | 'downloaded' | 'up-to-date' | 'error'
-const updateStatus  = ref<UpdateStatus>('idle')
-const updateVersion = ref('')
-const updateError   = ref('')
+type UpdateStatus = 'idle' | 'checking' | 'available' | 'downloading' | 'downloaded' | 'up-to-date' | 'error' | 'disabled'
+const updateStatus    = ref<UpdateStatus>('idle')
+const updateVersion   = ref('')
+const updateError     = ref('')
+const updateMessage   = ref<string | null>(null)
+const releaseNotes    = ref<string | null>(null)
 const downloadPercent = ref(0)
+
+// Canal beta (opt-in local, persiste en localStorage)
+const BETA_STORAGE_KEY = 'cursus:updater:beta'
+const betaOptIn         = ref(false)
+const betaRestartNeeded = ref(false)
 
 // Listeners auto-update (enregistres au mount, nettoyes au unmount)
 let unsubAvailable: (() => void) | null = null
@@ -18,14 +25,35 @@ let unsubDownloaded: (() => void) | null = null
 let unsubProgress: (() => void) | null = null
 let unsubError: (() => void) | null = null
 
-onMounted(() => {
+onMounted(async () => {
+  // Restaurer la preference beta et l'envoyer au main (effet au prochain restart)
+  try {
+    betaOptIn.value = localStorage.getItem(BETA_STORAGE_KEY) === '1'
+    if (betaOptIn.value) await window.api.setUpdaterBetaOptIn?.(true)
+  } catch { /* ignore */ }
+
+  // Recuperer la config distante (message optionnel, canal impose serveur)
+  try {
+    const cfg = await window.api.getUpdaterRemoteConfig?.()
+    if (cfg?.ok && cfg.data) {
+      if (cfg.data.disabled) updateStatus.value = 'disabled'
+      if (cfg.data.message) updateMessage.value = cfg.data.message
+    }
+  } catch { /* ignore */ }
+
   unsubAvailable = window.api.onUpdaterAvailable?.((v: string) => {
     updateVersion.value = v
     updateStatus.value = 'downloading'
     downloadPercent.value = 0
   })
-  unsubDownloaded = window.api.onUpdaterDownloaded?.((v: string) => {
-    updateVersion.value = v
+  unsubDownloaded = window.api.onUpdaterDownloaded?.((payload) => {
+    if (typeof payload === 'string') {
+      updateVersion.value = payload
+      releaseNotes.value  = null
+    } else {
+      updateVersion.value = payload.version
+      releaseNotes.value  = payload.releaseNotes
+    }
     updateStatus.value = 'downloaded'
     downloadPercent.value = 100
   })
@@ -56,6 +84,11 @@ async function checkUpdate() {
       updateError.value = res?.error ?? 'Impossible de verifier les mises a jour.'
       return
     }
+    if (res.data?.disabled) {
+      updateStatus.value = 'disabled'
+      if (res.data.message) updateMessage.value = res.data.message
+      return
+    }
     if (res.data?.available) {
       updateStatus.value = 'available'
       updateVersion.value = res.data.version
@@ -69,6 +102,15 @@ async function checkUpdate() {
 }
 
 function installUpdate() { window.api.updaterQuitAndInstall() }
+
+async function toggleBeta(enabled: boolean) {
+  betaOptIn.value = enabled
+  try {
+    localStorage.setItem(BETA_STORAGE_KEY, enabled ? '1' : '0')
+    const res = await window.api.setUpdaterBetaOptIn?.(enabled)
+    if (res?.ok && res.data?.restartRequired) betaRestartNeeded.value = true
+  } catch { /* ignore */ }
+}
 
 const systemPlatform = navigator.platform
 const systemLanguage = navigator.language
@@ -97,8 +139,22 @@ const systemLanguage = navigator.language
         <h4 class="stg-group-title">Mise a jour</h4>
       </div>
       <div class="stg-update-section">
+        <!-- Message distant (annonce serveur, maintenance, etc.) -->
+        <div v-if="updateMessage" class="stg-update-banner">
+          <Info :size="14" /> <span>{{ updateMessage }}</span>
+        </div>
+
+        <!-- Desactive par le serveur (kill switch) -->
+        <div v-if="updateStatus === 'disabled'" class="stg-update-state">
+          <div class="stg-update-spinner-row">
+            <AlertCircle :size="16" class="stg-update-error-icon" />
+            <span class="stg-update-text">Les mises a jour sont temporairement desactivees.</span>
+          </div>
+          <p class="stg-update-hint">Version actuelle : <strong>v{{ version }}</strong></p>
+        </div>
+
         <!-- Idle -->
-        <div v-if="updateStatus === 'idle'" class="stg-update-state">
+        <div v-else-if="updateStatus === 'idle'" class="stg-update-state">
           <p class="stg-update-text">Version actuelle : <strong>v{{ version }}</strong></p>
           <button class="stg-update-btn" @click="checkUpdate">
             <RefreshCw :size="14" /> Chercher une mise a jour
@@ -135,6 +191,10 @@ const systemLanguage = navigator.language
               <p class="stg-update-hint">Redemarrez pour appliquer la mise a jour.</p>
             </div>
           </div>
+          <details v-if="releaseNotes" class="stg-release-notes">
+            <summary>Voir les nouveautes</summary>
+            <pre class="stg-release-notes-body">{{ releaseNotes }}</pre>
+          </details>
           <button class="stg-update-btn stg-update-btn--install" @click="installUpdate">
             <RotateCw :size="14" /> Redemarrer maintenant
           </button>
@@ -161,6 +221,15 @@ const systemLanguage = navigator.language
             Reessayer
           </button>
         </div>
+
+        <!-- Canal beta (opt-in) -->
+        <label class="stg-beta-row" :title="'Recevez les nouveautes avant tout le monde (versions pre-release).'">
+          <input type="checkbox" :checked="betaOptIn" @change="toggleBeta(($event.target as HTMLInputElement).checked)" />
+          <span class="stg-beta-label">
+            <FlaskConical :size="13" /> Recevoir les versions beta
+          </span>
+          <span v-if="betaRestartNeeded" class="stg-beta-hint">Effet au prochain redemarrage</span>
+        </label>
       </div>
     </div>
 
@@ -342,5 +411,47 @@ const systemLanguage = navigator.language
 }
 @keyframes stg-spin {
   to { transform: rotate(360deg); }
+}
+
+/* Banner message distant */
+.stg-update-banner {
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px 14px; font-size: 12px; color: var(--text-secondary);
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+  border-bottom: 1px solid var(--border);
+}
+.stg-update-banner :first-child { flex-shrink: 0; color: var(--accent); }
+
+/* Release notes accordion */
+.stg-release-notes {
+  font-size: 12px; color: var(--text-secondary);
+  border-top: 1px dashed var(--border); padding-top: 10px;
+}
+.stg-release-notes summary {
+  cursor: pointer; user-select: none; font-weight: 600; color: var(--text-primary);
+  padding: 2px 0;
+}
+.stg-release-notes summary:hover { color: var(--accent); }
+.stg-release-notes-body {
+  margin: 8px 0 0 0; padding: 10px 12px;
+  background: var(--bg-hover); border-radius: 6px;
+  font-family: var(--font); font-size: 11.5px; line-height: 1.5;
+  white-space: pre-wrap; word-break: break-word;
+  max-height: 180px; overflow-y: auto;
+}
+
+/* Canal beta */
+.stg-beta-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 12px 16px; border-top: 1px solid var(--border);
+  cursor: pointer; user-select: none;
+}
+.stg-beta-row input[type="checkbox"] { cursor: pointer; margin: 0; }
+.stg-beta-label {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 12.5px; color: var(--text-primary);
+}
+.stg-beta-hint {
+  margin-left: auto; font-size: 11px; color: var(--text-muted); font-style: italic;
 }
 </style>

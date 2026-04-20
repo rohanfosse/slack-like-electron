@@ -9,7 +9,15 @@ const { MODULE_KEYS } = require('../../constants/modules')
 router.post('/config', (req, res) => {
   try {
     const { key, value } = req.body
-    const allowed = ['read_only']
+    const allowed = [
+      'read_only',
+      // Kill switch + rollout auto-updater
+      'update_disabled',
+      'update_min_version',
+      'update_channel',
+      'update_message',
+      'update_check_every_minutes',
+    ]
     if (!allowed.includes(key)) return res.status(400).json({ ok: false, error: 'Clé non autorisée.' })
     queries.setAppConfig(key, value)
     res.json({ ok: true, data: null })

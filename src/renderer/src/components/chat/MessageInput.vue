@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, nextTick } from 'vue'
 import { Loader2, X as XIcon, Reply, Pen } from 'lucide-vue-next'
 import { useAppStore }      from '@/stores/app'
 import { useMessagesStore } from '@/stores/messages'
@@ -8,6 +8,7 @@ import { avatarColor, initials } from '@/utils/format'
 
 import { useMsgDraft }        from '@/composables/useMsgDraft'
 import { useMsgAutocomplete, COMMAND_CATEGORIES, type SlashCommand } from '@/composables/useMsgAutocomplete'
+import { useModalsStore }    from '@/stores/modals'
 import {
   BookOpen, FileText, Bell, Megaphone, BarChart2 as BarChart2Icon, Table, Code2, HelpCircle, Calendar, Minus,
 } from 'lucide-vue-next'
@@ -19,12 +20,15 @@ import { useMsgAttachment }   from '@/composables/useMsgAttachment'
 import { useMsgSend }         from '@/composables/useMsgSend'
 import { useMsgFormatting }   from '@/composables/useMsgFormatting'
 import MessageInputToolbar   from './MessageInputToolbar.vue'
+import CreatePollModal       from '@/components/modals/CreatePollModal.vue'
+import HelpModal             from '@/components/modals/HelpModal.vue'
 import { useModules }         from '@/composables/useModules'
 import { ROLE_LABELS }        from '@/constants'
 import type { RefChannel, RefDevoir, RefDoc } from '@/composables/useMsgAutocomplete'
 
 const appStore      = useAppStore()
 const messagesStore = useMessagesStore()
+const modals        = useModalsStore()
 const { getPref }   = usePrefs()
 const { isEnabled: moduleEnabled } = useModules()
 
@@ -67,7 +71,10 @@ const {
   wrapperEl, popupStyle,
   detectTriggers, scrollMentionIntoView,
   triggerMention, triggerChannel, triggerDevoir, executeCommand, dismissAll,
-} = useMsgAutocomplete(content, inputEl, autoResize)
+} = useMsgAutocomplete(content, inputEl, autoResize, {
+  onOpenPoll: () => { modals.createPoll = true },
+  onOpenHelp: () => { modals.help = true },
+})
 
 const { attaching, attachFile, uploadProgress } = useMsgAttachment(content, inputEl, autoResize)
 
@@ -117,6 +124,16 @@ watch(
   () => [appStore.activeChannelId, appStore.activeDmStudentId],
   () => { mentionActive.value = false },
 )
+
+// ── /sondage submit: remplir le champ + envoyer immediatement ─────────────
+async function onPollSubmit(payload: { content: string }) {
+  if (appStore.isReadonly) return
+  // On met le contenu poll dans le champ puis on declenche le flow send() standard.
+  content.value = payload.content
+  await nextTick()
+  await send()
+}
+
 
 // ── Keydown handler ───────────────────────────────────────────────────────
 function onKeydown(e: KeyboardEvent) {
@@ -407,6 +424,15 @@ function onKeydown(e: KeyboardEvent) {
     </template>
 
     <p v-else class="readonly-notice">Canal d'annonces - seuls les responsables peuvent publier ici.</p>
+
+    <!-- Modal de composition de sondage (declenche par /sondage) -->
+    <CreatePollModal
+      v-model="modals.createPoll"
+      @submit="onPollSubmit"
+    />
+
+    <!-- Modal d'aide riche (declenche par /aide) -->
+    <HelpModal v-model="modals.help" />
   </div>
 </template>
 

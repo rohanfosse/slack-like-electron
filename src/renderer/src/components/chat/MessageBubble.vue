@@ -3,6 +3,7 @@ import {
   Check, Reply, AlertTriangle, Flame, Pin,
 } from 'lucide-vue-next'
 import UiRoleBadge from '@/components/ui/UiRoleBadge.vue'
+import { computed } from 'vue'
 import { useAppStore }      from '@/stores/app'
 import { useMessagesStore } from '@/stores/messages'
 import Avatar       from '@/components/ui/Avatar.vue'
@@ -10,6 +11,9 @@ import ContextMenu  from '@/components/ui/ContextMenu.vue'
 import MessageActionPill from '@/components/chat/MessageActionPill.vue'
 import MessageLightbox from '@/components/chat/MessageLightbox.vue'
 import MessageReportDialog from '@/components/chat/MessageReportDialog.vue'
+import PollRenderer from '@/components/chat/PollRenderer.vue'
+import { parsePoll, contentWithoutPoll } from '@/utils/poll'
+import { renderMessageContent } from '@/utils/html'
 import { formatTime }      from '@/utils/date'
 import { authUrl }         from '@/utils/auth'
 import { useBubbleActions }   from '@/composables/useBubbleActions'
@@ -86,6 +90,15 @@ function onTextClick(e: MouseEvent) {
   if (img?.src) { lightboxUrl.value = img.src; return }
   onMsgClick(e)
 }
+
+// ── Sondage embarque : detecte le marqueur, rend le bloc, masque la 1re ligne
+const pollDefinition = computed(() => parsePoll(props.msg.content))
+const renderedContentWithoutPoll = computed(() => {
+  if (!pollDefinition.value) return null
+  const rest = contentWithoutPoll(props.msg.content)
+  if (!rest) return ''
+  return renderMessageContent(rest, props.searchTerm, appStore.currentUser?.name ?? '')
+})
 </script>
 
 <template>
@@ -143,14 +156,31 @@ function onTextClick(e: MouseEvent) {
 
       <!-- Texte - mode lecture -->
       <template v-if="!editing">
-        <!-- eslint-disable vue/no-v-html -->
-        <div class="msg-text" v-html="content" @click="onTextClick" />
-        <!-- eslint-enable vue/no-v-html -->
+        <!-- Sondage structure (si le message commence par ::poll::) -->
+        <template v-if="pollDefinition">
+          <PollRenderer :msg="msg" :definition="pollDefinition" />
+          <!-- Texte complementaire eventuel apres le sondage (eslint-disable vue/no-v-html) -->
+          <!-- eslint-disable vue/no-v-html -->
+          <div
+            v-if="renderedContentWithoutPoll"
+            class="msg-text msg-text--after-poll"
+            v-html="renderedContentWithoutPoll"
+            @click="onTextClick"
+          />
+          <!-- eslint-enable vue/no-v-html -->
+        </template>
 
-        <!-- Prévisualisation image inline (bare URL hors markdown, ex. lien collé) -->
-        <div v-if="imagePreviewUrl" class="msg-img-preview">
-          <img :src="authUrl(imagePreviewUrl)" alt="Aperçu" loading="lazy" @click="lightboxUrl = imagePreviewUrl!" />
-        </div>
+        <!-- Message standard -->
+        <template v-else>
+          <!-- eslint-disable vue/no-v-html -->
+          <div class="msg-text" v-html="content" @click="onTextClick" />
+          <!-- eslint-enable vue/no-v-html -->
+
+          <!-- Prévisualisation image inline (bare URL hors markdown, ex. lien collé) -->
+          <div v-if="imagePreviewUrl" class="msg-img-preview">
+            <img :src="authUrl(imagePreviewUrl)" alt="Aperçu" loading="lazy" @click="lightboxUrl = imagePreviewUrl!" />
+          </div>
+        </template>
       </template>
 
       <!-- Texte - mode édition inline -->
@@ -248,6 +278,13 @@ function onTextClick(e: MouseEvent) {
 </template>
 
 <style scoped>
+/* Texte complementaire eventuel apres un sondage : compact, sous le bloc */
+.msg-text--after-poll {
+  margin-top: 8px;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
 /* ════════════════════════════════════════════
    LIGNE DE MESSAGE - hover + états
 ════════════════════════════════════════════ */

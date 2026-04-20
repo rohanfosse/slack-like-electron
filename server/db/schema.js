@@ -1,6 +1,6 @@
 const { getDb } = require('./connection');
 
-const CURRENT_VERSION = 77;
+const CURRENT_VERSION = 78;
 
 // ─── Schema initial ───────────────────────────────────────────────────────────
 // Crée toutes les tables avec leur schéma complet (colonnes UTC, toutes colonnes incluses).
@@ -1755,6 +1755,16 @@ function runMigrations(db) {
         CREATE INDEX IF NOT EXISTS idx_depots_group ON depots(travail_id, group_id)
           WHERE group_id IS NOT NULL;
       `);
+    },
+
+    // v78 : Sondages structures dans les messages. Le marqueur poll (definition)
+    // vit en debut de messages.content, les votes sont stockes separement dans
+    // une colonne dediee pour ne pas polluer les reactions emoji ni le chiffrement
+    // DM (les votes ne sont pas sensibles mais on prefere les sortir du contenu).
+    // Structure du JSON stocke : { totals: [n,n,...], voters: { "<userKey>": [i,...] } }
+    // ou userKey est l'id signe (positif etudiant, negatif enseignant).
+    (db) => {
+      tryAlter(db, 'ALTER TABLE messages ADD COLUMN poll_votes TEXT DEFAULT NULL');
     },
   ];
 

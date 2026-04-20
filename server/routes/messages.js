@@ -62,6 +62,11 @@ const reactionsSchema = z.object({
   ),
 })
 
+// Vote sondage : liste d'indices choisis (toujours un array, meme en single-choice).
+const voteSchema = z.object({
+  options: z.array(z.number().int().nonnegative().max(50)).max(10),
+})
+
 const searchAllSchema = z.object({
   query:   z.string().min(1).max(200),
   limit:   z.number().int().min(1).max(50).optional(),
@@ -173,6 +178,66 @@ router.post('/pin', requireRole('teacher'), validate(pinSchema), wrap((req) => {
   }
   return queries.togglePinMessage(req.body.messageId, req.body.pinned)
 }))
+
+// ── Vote sondage ─────────────────────────────────────────────────────────────
+// POST /api/messages/:id/vote  body: { options: [0, 2] }
+// Access control : meme regle que les reactions (membre de la promo ou participant du DM).
+router.post('/:id/vote', validate(voteSchema), (req, res) => {
+  try {
+    const messageId = Number(req.params.id)
+    if (!Number.isInteger(messageId) || messageId <= 0) {
+      return res.status(400).json({ ok: false, error: 'ID de message invalide.' })
+    }
+
+    const { getDb } = require('../db/connection')
+    const msg = getDb().prepare('SELECT channel_id, dm_student_id FROM messages WHERE id = ? AND deleted_at IS NULL').get(messageId)
+    if (!msg) return res.status(404).json({ ok: false, error: 'Message introuvable.' })
+
+    // Access control : etudiants restreints a leur promo / leur DM
+    let targetPromo = null
+    if (req.user?.type === 'student') {
+      if (msg.dm_student_id) {
+        if (msg.dm_student_id !== req.user.id) {
+          return res.status(403).json({ ok: false, error: 'Acces non autorise.' })
+        }
+      } else if (msg.channel_id) {
+        const ch = getDb().prepare('SELECT promo_id FROM channels WHERE id = ?').get(msg.channel_id)
+        if (ch && ch.promo_id !== req.user.promo_id) {
+          return res.status(403).json({ ok: false, error: 'Acces non autorise.' })
+        }
+        targetPromo = ch?.promo_id ?? null
+      }
+    } else if (msg.channel_id) {
+      const ch = getDb().prepare('SELECT promo_id FROM channels WHERE id = ?').get(msg.channel_id)
+      targetPromo = ch?.promo_id ?? null
+    }
+
+    const userKey = req.user?.id
+    if (!userKey) return res.status(401).json({ ok: false, error: 'Session requise.' })
+
+    const { state } = queries.voteOnPoll(messageId, userKey, req.body.options)
+
+    audit(req, 'message:poll-vote', `message:${messageId}`, { options: req.body.options })
+
+    // Broadcast temps reel aux autres clients concernes
+    const io = req.app.get('io')
+    if (io) {
+      const payload = { messageId, poll_votes: state }
+      if (msg.dm_student_id) {
+        io.to(`user:${msg.dm_student_id}`).emit('msg:poll-update', payload)
+        // Le pair (ex: le prof dans un DM etudiant-prof) n'est pas dans cette room,
+        // on ne connait pas son id ici. Le frontend se rafraichit au prochain mount.
+      } else if (targetPromo) {
+        io.to(`promo:${targetPromo}`).emit('msg:poll-update', payload)
+      }
+    }
+
+    res.json({ ok: true, data: state })
+  } catch (err) {
+    const status = err.statusCode || 400
+    res.status(status).json({ ok: false, error: err.message })
+  }
+})
 
 router.post('/reactions', validate(reactionsSchema), (req, res, next) => {
   // Verifie l appartenance a la promo/DM avant d ecrire en DB.

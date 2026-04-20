@@ -1,6 +1,6 @@
 import { app, BrowserWindow, dialog, ipcMain, nativeImage, Tray, Menu } from 'electron'
 import { join } from 'path'
-import { autoUpdater } from 'electron-updater'
+import { initUpdater, stopUpdater, getPendingUpdate, quitAndInstall } from './updater'
 
 // Modules CommonJS - import default : Rollup + @rollup/plugin-commonjs convertit
 // module.exports en export default, ce qui permet le bundling correct.
@@ -205,67 +205,38 @@ app.whenReady().then(() => {
   // ── System tray ────────────────────────────────────────────────────────────
   const trayIconPath = join(__dirname, '../../resources/icon-tray.png')
   tray = new Tray(nativeImage.createFromPath(trayIconPath).resize({ width: 16, height: 16 }))
-  tray.setToolTip('Cursus')
-  tray.setContextMenu(Menu.buildFromTemplate([
-    { label: 'Afficher Cursus', click: () => { mainWin?.show(); mainWin?.focus() } },
-    { type: 'separator' },
-    { label: 'Quitter', click: () => { isQuitting = true; app.quit() } },
-  ]))
+
+  function rebuildTrayMenu(): void {
+    if (!tray) return
+    const pending = getPendingUpdate()
+    const items: Electron.MenuItemConstructorOptions[] = [
+      { label: 'Afficher Cursus', click: () => { mainWin?.show(); mainWin?.focus() } },
+    ]
+    if (pending) {
+      items.push({ type: 'separator' })
+      items.push({
+        label: `Redemarrer pour installer v${pending.version}`,
+        click: () => { isQuitting = true; quitAndInstall() },
+      })
+    }
+    items.push({ type: 'separator' })
+    items.push({ label: 'Quitter', click: () => { isQuitting = true; app.quit() } })
+    tray.setContextMenu(Menu.buildFromTemplate(items))
+    tray.setToolTip(pending ? `Cursus — mise a jour v${pending.version} prete` : 'Cursus')
+  }
+
+  rebuildTrayMenu()
   tray.on('double-click', () => { mainWin?.show(); mainWin?.focus() })
 
   // ── Auto-update (production uniquement) ──────────────────────────────────
-  if (app.isPackaged) {
-    autoUpdater.autoDownload = true
-    autoUpdater.autoInstallOnAppQuit = true
-
-    function sendToRenderer(channel: string, ...args: unknown[]) {
-      if (mainWin && !mainWin.isDestroyed()) {
-        mainWin.webContents.send(channel, ...args)
-      }
-    }
-
-    autoUpdater.on('update-available', (info) => {
-      console.log('[Updater] Mise a jour disponible:', info.version)
-      sendToRenderer('updater:available', info.version)
-    })
-
-    autoUpdater.on('update-downloaded', (info) => {
-      console.log('[Updater] Mise a jour telechargee:', info.version)
-      sendToRenderer('updater:downloaded', info.version)
-    })
-
-    autoUpdater.on('download-progress', (progress) => {
-      sendToRenderer('updater:progress', Math.round(progress.percent))
-    })
-
-    autoUpdater.on('error', (err) => {
-      console.error('[Updater] Erreur:', err.message)
-      sendToRenderer('updater:error', err.message)
-    })
-
-    ipcMain.on('updater:quitAndInstall', () => {
-      autoUpdater.quitAndInstall()
-    })
-
-    // Verification manuelle depuis les settings
-    ipcMain.handle('updater:checkNow', async () => {
-      try {
-        const result = await autoUpdater.checkForUpdates()
-        if (result?.updateInfo?.version) {
-          return { ok: true, data: { version: result.updateInfo.version, available: true } }
-        }
-        return { ok: true, data: { version: app.getVersion(), available: false } }
-      } catch (err) {
-        return { ok: false, error: (err as Error).message }
-      }
-    })
-
-    // Verification initiale + periodique (toutes les 4h)
-    autoUpdater.checkForUpdatesAndNotify()
-    setInterval(() => {
-      autoUpdater.checkForUpdatesAndNotify().catch(() => {})
-    }, 4 * 60 * 60 * 1000)
-  }
+  // Kill switch serveur + telemetrie + notification systeme + tray entry
+  initUpdater({
+    mainWin,
+    tray,
+    rebuildTrayMenu,
+  }).catch((err) => {
+    console.warn('[Main] updater init failed:', err.message)
+  })
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()
@@ -287,5 +258,6 @@ app.on('window-all-closed', () => {
 app.on('before-quit', () => {
   isQuitting = true
   notifications.stop()
+  stopUpdater()
   db.close()
 })

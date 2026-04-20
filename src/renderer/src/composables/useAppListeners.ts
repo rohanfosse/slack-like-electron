@@ -36,6 +36,7 @@ export function useAppListeners() {
   let unsubOnline:   (() => void) | null = null
   let unsubSocket:   (() => void) | null = null
   let unsubTyping:   (() => void) | null = null
+  let unsubPollUpdate: (() => void) | null = null
   let unsubPresence: (() => void) | null = null
   let unsubAuthExpired: (() => void) | null = null
 
@@ -75,6 +76,7 @@ export function useAppListeners() {
 
     const messagesStore = useMessagesStore()
     unsubTyping = messagesStore.initTypingListener()
+    unsubPollUpdate = messagesStore.initPollListener()
 
     // Sync au retour en ligne
     watch(() => appStore.isOnline, (online, wasOnline) => {
@@ -102,8 +104,8 @@ export function useAppListeners() {
       updateVersion.value = version
       updateState.value = 'downloading'
     })
-    unsubUpdaterDownloaded = window.api.onUpdaterDownloaded((version: string) => {
-      updateVersion.value = version
+    unsubUpdaterDownloaded = window.api.onUpdaterDownloaded((payload) => {
+      updateVersion.value = typeof payload === 'string' ? payload : payload.version
       updateState.value = 'ready'
     })
 
@@ -165,6 +167,7 @@ export function useAppListeners() {
     unsubOnline?.()
     unsubSocket?.()
     unsubTyping?.()
+    unsubPollUpdate?.()
     unsubPresence?.()
     unsubAuthExpired?.()
     unsubLiveInvite?.()
@@ -176,7 +179,7 @@ export function useAppListeners() {
     unsubAssignment?.()
     // Null-out pour que initListeners() puisse etre re-appele proprement
     // apres un logout/login cycle.
-    unsubUnread = unsubOnline = unsubSocket = unsubTyping = null
+    unsubUnread = unsubOnline = unsubSocket = unsubTyping = unsubPollUpdate = null
     unsubPresence = unsubAuthExpired = unsubLiveInvite = null
     unsubUpdaterAvailable = unsubUpdaterDownloaded = unsubGradeNew = null
     unsubSignature = unsubDocument = unsubAssignment = null

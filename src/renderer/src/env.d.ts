@@ -42,6 +42,7 @@ declare global {
       searchAllMessages(args: { promoId: number | null; query: string; limit?: number; userId?: number | null }): Promise<IpcResponse<{ id: number; content: string; author_name: string; created_at: string; channel_id: number; channel_name: string; promo_id: number; source_type?: string }[]>>
       sendMessage(payload: SendMessagePayload): Promise<IpcResponse<Message>>
       updateReactions(msgId: number, reactionsJson: string): Promise<IpcResponse<number>>
+      voteOnPoll(messageId: number, options: number[]): Promise<IpcResponse<{ totals: number[]; voters: Record<string, number[]> }>>
 
       // Travaux / Devoirs
       getTravaux(channelId: number): Promise<IpcResponse<Devoir[]>>
@@ -217,6 +218,7 @@ declare global {
         message?:        unknown
       }) => void): () => void
       onSocketStateChange(cb: (connected: boolean) => void): () => void
+      onPollUpdate?(cb: (data: { messageId: number; poll_votes: { totals: number[]; voters: Record<string, number[]> } }) => void): () => void
       onPresenceUpdate?(cb: (data: { id: number; name: string; role: string }[]) => void): () => void
       emitTyping?(channelId: number): void
       emitDmTyping?(dmStudentId: number, dmPeerId?: number): void
@@ -462,11 +464,13 @@ declare global {
       onDocumentNew(cb: (data: { name: string; category?: string }) => void): () => void
       onAssignmentNew(cb: (data: { title: string; category?: string; deadline?: string }) => void): () => void
       onUpdaterAvailable(cb: (version: string) => void): () => void
-      onUpdaterDownloaded(cb: (version: string) => void): () => void
+      onUpdaterDownloaded(cb: (payload: { version: string; releaseNotes: string | null } | string) => void): () => void
       onUpdaterProgress(cb: (percent: number) => void): () => void
       onUpdaterError(cb: (error: string) => void): () => void
       updaterQuitAndInstall(): void
-      checkForUpdates(): Promise<{ ok: boolean; data?: { version: string; available: boolean }; error?: string }>
+      checkForUpdates(): Promise<{ ok: boolean; data?: { version: string; available: boolean; disabled?: boolean; message?: string | null }; error?: string }>
+      getUpdaterRemoteConfig(): Promise<{ ok: boolean; data?: { disabled: boolean; minVersion: string | null; channel: 'stable' | 'beta'; message: string | null; checkEveryMinutes: number }; error?: string }>
+      setUpdaterBetaOptIn(enabled: boolean): Promise<{ ok: boolean; data?: { enabled: boolean; restartRequired: boolean }; error?: string }>
     }
   }
 }

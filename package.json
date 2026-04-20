@@ -1,6 +1,6 @@
 {
   "name": "cursus",
-  "version": "2.202.2",
+  "version": "2.203.0",
   "description": "Cursus - Suivez votre parcours de formation",
   "main": "out/main/index.js",
   "scripts": {
@@ -163,7 +163,10 @@
     "win": {
       "target": "nsis",
       "icon": "resources/icon.ico",
-      "artifactName": "Cursus-${version}-win.${ext}"
+      "artifactName": "Cursus-${version}-win.${ext}",
+      "signAndEditExecutable": true,
+      "signingHashAlgorithms": ["sha256"],
+      "rfc3161TimeStampServer": "http://timestamp.digicert.com"
     },
     "mac": {
       "target": "dmg",
@@ -181,6 +184,7 @@
       "repo": "cursus"
     },
     "compression": "maximum",
+    "differentialPackage": true,
     "nsis": {
       "oneClick": true,
       "installerIcon": "resources/icon.ico",
@@ -193,6 +197,7 @@
       "menuCategory": "Cursus",
       "deleteAppDataOnUninstall": false,
       "perMachine": false,
+      "differentialPackage": true,
       "artifactName": "Cursus-Setup-${version}.${ext}",
       "uninstallDisplayName": "Cursus ${version}",
       "unicode": true

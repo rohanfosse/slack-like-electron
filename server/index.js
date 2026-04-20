@@ -84,6 +84,9 @@ app.use('/api/auth', authLimiter, require('./routes/auth'))
 // ── Error reporting (sans auth — le frontend peut reporter avant login) ─────
 app.use('/api/report-error', require('./routes/error-report'))
 
+// ── Update config + telemetrie (public, appele par l'auto-updater au boot) ──
+app.use('/api/update', require('./routes/update-config'))
+
 // ── Abonnement iCal public (/ical/:token.ics) — sans JWT, auth par token opaque
 app.use('/ical', require('./routes/public-ical'))
 

@@ -75,6 +75,25 @@ function parseMentions(content) {
   return { mentionEveryone, mentionNames }
 }
 
+const { POLL_MARKER } = require('../constants/poll');
+
+/**
+ * Substitue le marqueur poll par "Sondage : <question>" dans les previews de
+ * notification — sinon le JSON brut leak dans les toasts et les push mobiles.
+ */
+function buildPreview(raw) {
+  const src = raw ?? '';
+  if (src.startsWith(POLL_MARKER)) {
+    const firstLine = src.split('\n', 1)[0];
+    try {
+      const def = JSON.parse(firstLine.slice(POLL_MARKER.length));
+      const q = typeof def?.q === 'string' ? def.q : '';
+      return ('Sondage : ' + q).slice(0, 80);
+    } catch { /* fallback au nettoyage standard */ }
+  }
+  return src.replace(/[*_`>#[\]!]/g, '').slice(0, 80);
+}
+
 /**
  * Construit le payload de push notification Socket.io.
  */
@@ -85,7 +104,7 @@ function buildPushPayload(payload, user, message, mentions) {
     authorName: user.name ?? null,
     channelName: payload.channelName ?? null,
     promoId: payload.promoId ?? null,
-    preview: (payload.content ?? '').replace(/[*_`>#[\]!]/g, '').slice(0, 80),
+    preview: buildPreview(payload.content),
     mentionEveryone: mentions.mentionEveryone,
     mentionNames: mentions.mentionNames,
     message: payload.dmStudentId ? message : undefined,

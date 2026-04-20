@@ -55,11 +55,16 @@ jobs:
       - name: Check runtime dependencies
         run: node scripts/check-runtime-deps.js
 
+      # Code signing conditionnel : s'active automatiquement quand les secrets
+      # WIN_CSC_LINK (base64 du .pfx) et WIN_CSC_KEY_PASSWORD sont presents.
+      # Tant qu'ils sont absents, CSC_IDENTITY_AUTO_DISCOVERY reste false.
       - name: Build & package
         env:
-          CSC_IDENTITY_AUTO_DISCOVERY: false
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           VITE_SERVER_URL: ${{ secrets.VITE_SERVER_URL }}
+          CSC_LINK: ${{ secrets.WIN_CSC_LINK }}
+          CSC_KEY_PASSWORD: ${{ secrets.WIN_CSC_KEY_PASSWORD }}
+          CSC_IDENTITY_AUTO_DISCOVERY: ${{ secrets.WIN_CSC_LINK != '' && 'true' || 'false' }}
         run: npm run build:win
 
       - name: Upload .exe to release

@@ -495,6 +495,35 @@ export const useMessagesStore = defineStore('messages', () => {
     })
   }
 
+  // ── Sondages : vote optimiste + broadcast socket ─────────────────────────
+  async function voteOnPoll(messageId: number, options: number[]): Promise<boolean> {
+    if (!window.api.voteOnPoll) return false
+    const msg = messages.value.find((m) => m.id === messageId)
+    if (!msg) return false
+
+    const previous = msg.poll_votes ?? null
+    // Rendu optimiste : on met a jour immediatement, on rollback si echec API.
+    const res = await window.api.voteOnPoll(messageId, options)
+    if (!res?.ok || !res.data) {
+      msg.poll_votes = previous
+      return false
+    }
+    msg.poll_votes = JSON.stringify(res.data)
+    return true
+  }
+
+  /** Sync temps reel : un autre client a vote, on met a jour localement. */
+  function applyPollUpdate(payload: { messageId: number; poll_votes: { totals: number[]; voters: Record<string, number[]> } }): void {
+    const msg = messages.value.find((m) => m.id === payload.messageId)
+    if (!msg) return
+    msg.poll_votes = JSON.stringify(payload.poll_votes)
+  }
+
+  function initPollListener(): () => void {
+    if (!window.api.onPollUpdate) return () => {}
+    return window.api.onPollUpdate(applyPollUpdate)
+  }
+
   return {
     messages, pinned, loading, loadingMore, hasMore, sendError, MAX_MESSAGE_LENGTH,
     searchTerm, firstUnreadId, highlightMessageId,
@@ -505,5 +534,6 @@ export const useMessagesStore = defineStore('messages', () => {
     sendMessage, flushDmQueue, togglePin,
     initReactions, toggleReaction, getReactionUsers, clearSearch,
     deleteMessage, editMessage,
+    voteOnPoll, initPollListener,
   }
 })
