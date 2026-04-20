@@ -37,6 +37,7 @@ const modals       = useModalsStore()
 
 const hasDevoirsAtAll     = computed(() => travauxStore.ganttData.length > 0)
 const hasPublishedDevoirs = computed(() => travauxStore.ganttData.some(t => t.is_published))
+const publishedCount      = computed(() => travauxStore.ganttData.filter(t => t.is_published).length)
 
 /** Cached projectStats per category */
 const cachedProjectStats = computed(() => {
@@ -134,13 +135,13 @@ function scrollTo(target: StatTarget) {
         </button>
         <button
           type="button" class="dv-stats-btn"
-          :disabled="travauxStore.ganttData.filter(t => t.is_published).length === 0"
+          :disabled="publishedCount === 0"
           title="Voir les prochaines échéances"
           @click="scrollTo('upcoming')"
         >
           <UiPill size="md" tone="success">
             <template #leading><BarChart2 :size="14" /></template>
-            <strong>{{ travauxStore.ganttData.filter(t => t.is_published).length }}</strong>&nbsp;publiés
+            <strong>{{ publishedCount }}</strong>&nbsp;publiés
           </UiPill>
         </button>
         <button
