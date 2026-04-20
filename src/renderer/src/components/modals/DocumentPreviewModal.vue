@@ -217,13 +217,14 @@ function openWith() {
         </div>
       </div>
 
-      <!-- PDF → pdf.js via LumenPdfViewer (fix Electron 35+ sandbox) -->
-      <LumenPdfViewer
-        v-else-if="previewType === 'pdf'"
-        :content="pdfBytes"
-        :title="doc?.name"
-        class="preview-pdf"
-      />
+      <!-- PDF → pdf.js via LumenPdfViewer (fix Electron 35+ sandbox)
+           Wrapper pour fournir un contexte flex que LumenPdfViewer peut remplir
+           (la visionneuse interne utilise height:0; flex-grow:1 pour grandir dans
+           son parent; sans ce wrapper, la zone pages n'a pas de hauteur et le
+           scroll interne ne fonctionne plus). -->
+      <div v-else-if="previewType === 'pdf'" class="preview-pdf-wrap">
+        <LumenPdfViewer :content="pdfBytes" :title="doc?.name" />
+      </div>
 
       <!-- Vidéo -->
       <div v-else-if="previewType === 'video'" class="preview-video-wrap">
@@ -407,14 +408,18 @@ function openWith() {
   transform-origin: center center;
 }
 
-/* ── PDF ── */
-.preview-pdf {
+/* ── PDF ──
+ * Wrapper fournit un contexte flex column stretchable. La visionneuse interne
+ * (LumenPdfViewer) utilise height:0 + flex-grow:1 -> remplit ce wrapper, et
+ * sa propre zone ".lumen-pdf-pages" devient scrollable. */
+.preview-pdf-wrap {
   width: 100%;
   height: 68vh;
   min-height: 420px;
-  border: none;
-  display: block;
-  background: #fff;
+  align-self: stretch;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-rail, #1e1e1e);
 }
 
 /* ── Vidéo ── */
