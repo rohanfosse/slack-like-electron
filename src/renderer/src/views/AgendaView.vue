@@ -4,6 +4,7 @@
 <script setup lang="ts">
 import ErrorBoundary from '@/components/ui/ErrorBoundary.vue'
 import AgendaDayNotes from '@/components/agenda/AgendaDayNotes.vue'
+import AgendaTimeGrid from '@/components/agenda/AgendaTimeGrid.vue'
 import ContextMenu, { type ContextMenuItem } from '@/components/ui/ContextMenu.vue'
 import { ref, computed, onMounted, onBeforeUnmount, watch, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
@@ -431,6 +432,43 @@ async function onEventDrop(e: VueCalDropEvent): Promise<void> {
   showToast(`${label} deplace${meta.eventType === 'deadline' ? 'e' : ''} au ${fmtFrDate(e.newDate)}.`, 'success')
 }
 
+// ── Wrappers grille custom (AgendaTimeGrid) ────────────────────────────
+type GridEvent = { _meta: CalendarEvent; start: string; end: string; allDay: boolean; draggable: boolean }
+
+function onGridCellClick(date: Date) { onCellClick(date) }
+function onGridCellDblClick(date: Date) { onCellDblClick(date) }
+function onGridEventClick(ev: GridEvent) { selectedEvent.value = ev._meta ?? null; detailOpen.value = true }
+function onGridEventContextMenu(e: MouseEvent, ev: GridEvent) { onEventContextMenu(e, { _meta: ev._meta }) }
+function onGridCellContextMenu(e: MouseEvent, date: Date) { onCellContextMenu(e, date) }
+
+async function onGridEventDrop(ev: GridEvent, newDate: Date) {
+  const meta = ev._meta
+  if (!meta || !meta.draggable) return
+  if (meta.eventType === 'deadline' && !isTeacher.value) return
+
+  if (meta.eventType === 'deadline') {
+    const suffix = meta.depotsCount && meta.depotsCount > 0
+      ? ` (${meta.depotsCount} depot${meta.depotsCount > 1 ? 's' : ''} deja soumis)`
+      : ''
+    const ok = await confirm(
+      `Deplacer "${meta.title}" au ${fmtFrDate(newDate)} ?${suffix}`,
+      'warning',
+      'Deplacer',
+    )
+    if (!ok) return
+  }
+
+  // Pour les rappels timed : garder l'heure du drop, sinon date pure
+  const iso = meta.allDay || ev.allDay
+    ? newDate.toISOString().slice(0, 10)
+    : `${newDate.toISOString().slice(0, 10)} ${String(newDate.getHours()).padStart(2, '0')}:${String(newDate.getMinutes()).padStart(2, '0')}`
+  const success = await agenda.updateEventDate(meta.id, iso)
+  if (!success) return
+
+  const label = meta.eventType === 'deadline' ? 'Echeance' : 'Rappel'
+  showToast(`${label} deplace${meta.eventType === 'deadline' ? 'e' : ''} au ${fmtFrDate(newDate)}.`, 'success')
+}
+
 // ── Export ICS (iCalendar) ───────────────────────────────────────────────
 const { exportIcs: exportIcsRaw } = useAgendaIcsExport()
 function exportIcs() { exportIcsRaw(filteredEvents.value) }
@@ -611,17 +649,15 @@ watch(() => route.query, (q) => {
             width: (50 + (i * 13) % 40) + '%',
           }" />
         </div>
+        <!-- Vue Mois : VueCal (marche bien pour month) -->
         <VueCal
+          v-if="activeView === 'month'"
           ref="calRef"
-          :active-view="activeView"
+          active-view="month"
           :selected-date="selectedDate"
           :locale="locale"
           :events="filteredEvents"
-          :time="activeView !== 'month'"
-          :time-from="7 * 60"
-          :time-to="22 * 60"
-          :time-step="30"
-          :time-cell-height="28"
+          :time="false"
           :disable-views="['years', 'year']"
           :editable-events="{ drag: true }"
           hide-title-bar
@@ -633,22 +669,9 @@ watch(() => route.query, (q) => {
           @cell-dblclick="onCellDblClick"
           @event-drop="onEventDrop"
         >
-          <template #weekday-heading="{ heading, view }">
-            <div
-              class="ag-day-head"
-              :class="{
-                'ag-day-head--today': isHeadingToday(heading),
-                'ag-day-head--weekend': heading.dayOfMonth !== undefined && isHeadingWeekend(heading),
-                'ag-day-head--month': view === 'month',
-              }"
-            >
-              <template v-if="view !== 'month'">
-                <span class="ag-day-num">{{ heading.dayOfMonth }}</span>
-                <span class="ag-day-name">{{ heading.small || heading.full }}</span>
-              </template>
-              <template v-else>
-                <span class="ag-day-name-mo">{{ heading.full }}</span>
-              </template>
+          <template #weekday-heading="{ heading }">
+            <div class="ag-day-head ag-day-head--month">
+              <span class="ag-day-name-mo">{{ heading.full }}</span>
             </div>
           </template>
 
@@ -674,6 +697,21 @@ watch(() => route.query, (q) => {
             </div>
           </template>
         </VueCal>
+
+        <!-- Vues Jour & Semaine : grille custom (plus fiable que VueCal) -->
+        <AgendaTimeGrid
+          v-else
+          :view="activeView"
+          :selected-date="selectedDate"
+          :events="filteredEvents"
+          :is-teacher="isTeacher"
+          @cell-click="onGridCellClick"
+          @cell-dblclick="onGridCellDblClick"
+          @event-click="onGridEventClick"
+          @event-contextmenu="onGridEventContextMenu"
+          @cell-contextmenu="onGridCellContextMenu"
+          @event-drop="onGridEventDrop"
+        />
         <!-- Empty state : pas de chargement en cours + aucun event -->
         <div v-if="!agenda.loading && filteredEvents.length === 0" class="ag-empty-state" role="status">
           <!-- SVG illustré : mini-calendrier avec 3 events qui flottent doucement -->
