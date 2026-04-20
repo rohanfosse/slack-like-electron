@@ -1,5 +1,20 @@
 # Changelog
 
+## v2.196.0 (2026-04-20)
+
+### Performance
+
+Pass complet d'audit + optimisations ciblees sur le cold start, le bundle renderer et la couche DB.
+
+- **Cold start** : le splash screen est peint **avant** `db.init()` — l'utilisateur voit un retour visuel immediat meme quand SQLite rejoue les migrations (500-1500 ms sur bump de version).
+- **Bundle renderer** : `@marp-team/marp-core` (~1 MB) devient `await import()` dynamique dans `LumenSlideDeck` — plus embarque dans le bundle principal tant qu'un chapitre Marp n'est pas ouvert.
+- **Modales async** : 18 modales passent en `defineAsyncComponent` (SettingsModal, NewDevoirModal, etc.). Chacune devient un chunk separe, charge au 1er usage. Economie ~400-800 Ko de JS parse au boot. Restent synchrones : `ConfirmModal`, `CmdPalette` (hot paths), `ChangePasswordModal` (1re connexion).
+- **DB** : migration v75 ajoute `idx_travaux_channel ON travaux(channel_id)` — accelere `getTravaux(channelId)` et le TeacherProjectHome sur promos chargees (full scan -> index lookup).
+
+### Notes d'audit
+
+L'audit a aussi liste des recommandations plus lourdes (normaliser `channels.members` JSON en table dediee, reduire les `COUNT(*)` correles dans `getTeacherSchedule`, adopter `v-memo`/`shallowRef` dans MessageList). Elles sont laissees pour une release dediee car plus risquees.
+
 ## v2.195.1 (2026-04-20)
 
 ### Performance

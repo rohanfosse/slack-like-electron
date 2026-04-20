@@ -1,6 +1,6 @@
 const { getDb } = require('./connection');
 
-const CURRENT_VERSION = 74;
+const CURRENT_VERSION = 75;
 
 // ─── Schema initial ───────────────────────────────────────────────────────────
 // Crée toutes les tables avec leur schéma complet (colonnes UTC, toutes colonnes incluses).
@@ -1695,6 +1695,15 @@ function runMigrations(db) {
         );
         CREATE INDEX IF NOT EXISTS idx_game_scores_game_day ON game_scores(game_id, created_at);
         CREATE INDEX IF NOT EXISTS idx_game_scores_user ON game_scores(game_id, user_type, user_id, created_at);
+      `);
+    },
+
+    // v75 : Index sur travaux(channel_id) — getTravaux(channelId) et les
+    // requetes du TeacherProjectHome filtrent sur channel_id sans index
+    // (full scan sur plusieurs centaines de travaux par promo).
+    (db) => {
+      db.exec(`
+        CREATE INDEX IF NOT EXISTS idx_travaux_channel ON travaux(channel_id);
       `);
     },
   ];

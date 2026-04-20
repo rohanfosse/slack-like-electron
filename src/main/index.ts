@@ -165,22 +165,11 @@ function createWindow(splash: BrowserWindow | null): void {
 }
 
 app.whenReady().then(() => {
-  try {
-    db.init()
-  } catch (dbErr: unknown) {
-    const msg = dbErr instanceof Error ? dbErr.message : String(dbErr)
-    console.error('[Main] DB init failed:', dbErr)
-    dialog.showErrorBox(
-      'Erreur de base de données',
-      `Impossible d\'initialiser la base de données.\n\n${msg}\n\nSi le problème persiste, supprimez le fichier de données dans %APPDATA%\\Cursus.`,
-    )
-    app.quit()
-    return
-  }
-  ipc.register()
-  notifications.start()
-
-  // ── Splash screen ──────────────────────────────────────────────────────────
+  // Splash AVANT db.init : better-sqlite3 est synchrone, les migrations peuvent
+  // prendre 500-1500ms sur une DB a seed ou apres bump de version. On affiche
+  // d'abord le splash pour que l'utilisateur ait un retour visuel immediat,
+  // puis on lance l'init (qui bloque brievement le thread principal mais la
+  // fenetre splash est deja peinte par le GPU).
   const splash = new BrowserWindow({
     width: 360,
     height: 360,
@@ -194,6 +183,22 @@ app.whenReady().then(() => {
     webPreferences: { contextIsolation: true, nodeIntegration: false },
   })
   splash.loadFile(join(__dirname, '../../resources/splash.html'))
+
+  try {
+    db.init()
+  } catch (dbErr: unknown) {
+    const msg = dbErr instanceof Error ? dbErr.message : String(dbErr)
+    console.error('[Main] DB init failed:', dbErr)
+    splash.destroy()
+    dialog.showErrorBox(
+      'Erreur de base de données',
+      `Impossible d\'initialiser la base de données.\n\n${msg}\n\nSi le problème persiste, supprimez le fichier de données dans %APPDATA%\\Cursus.`,
+    )
+    app.quit()
+    return
+  }
+  ipc.register()
+  notifications.start()
 
   createWindow(splash)
 

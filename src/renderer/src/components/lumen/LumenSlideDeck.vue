@@ -17,10 +17,19 @@
  * et le focus-ring partage.
  */
 import { computed, onMounted, onBeforeUnmount, ref, watch } from 'vue'
-import { Marp } from '@marp-team/marp-core'
 import { ChevronLeft, ChevronRight, Maximize2, Minimize2, AlertTriangle } from 'lucide-vue-next'
 import DOMPurify from 'dompurify'
 import { MARP_CURSUS_THEME } from '@/utils/marpCursusTheme'
+
+// @marp-team/marp-core est lazy : ~1MB (compris wasm de KaTeX) qu'on n'embarque
+// dans le bundle renderer principal que quand l'utilisateur ouvre reellement
+// un chapitre `marp: true`.
+type MarpCtor = typeof import('@marp-team/marp-core')['Marp']
+let MarpClass: MarpCtor | null = null
+async function loadMarp(): Promise<MarpCtor> {
+  if (!MarpClass) MarpClass = (await import('@marp-team/marp-core')).Marp
+  return MarpClass
+}
 
 interface Props {
   /** Markdown brut (frontmatter incluse — Marp la consomme nativement) */
@@ -56,13 +65,14 @@ const rendered = ref<RenderedDeck>({ slides: [], count: 0 })
  * plus affecter le reste de l'app, et reciproquement les styles parents
  * ne polluent pas le rendu de la slide.
  */
-function renderDeck(): void {
+async function renderDeck(): Promise<void> {
   renderError.value = null
   if (!props.source) {
     rendered.value = { slides: [], count: 0 }
     return
   }
   try {
+    const Marp = await loadMarp()
     const marp = new Marp({
       // html:true necessaire pour les templates qui utilisent <div class="columns">
       // ou autres elements HTML inline. Le contenu vient d'un repo GitHub
@@ -199,7 +209,7 @@ function onFullscreenChange(): void {
 }
 
 onMounted(() => {
-  renderDeck()
+  void renderDeck()
   document.addEventListener('keydown', onKeydown)
   document.addEventListener('fullscreenchange', onFullscreenChange)
 })
@@ -211,7 +221,7 @@ onBeforeUnmount(() => {
 
 watch(() => props.source, () => {
   currentIndex.value = 0
-  renderDeck()
+  void renderDeck()
 })
 </script>
 

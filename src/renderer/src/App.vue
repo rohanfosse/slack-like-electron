@@ -1,5 +1,5 @@
 <script setup lang="ts">
-  import { onMounted, onUnmounted, ref, computed, watch, watchEffect, onErrorCaptured } from 'vue'
+  import { onMounted, onUnmounted, ref, computed, watch, watchEffect, onErrorCaptured, defineAsyncComponent } from 'vue'
   import { useRouter, useRoute } from 'vue-router'
   import { useAppStore }      from '@/stores/app'
   import { useModalsStore }   from '@/stores/modals'
@@ -22,28 +22,32 @@
   import TitleBar   from '@/components/layout/TitleBar.vue'
   import SidebarWrapper from '@/components/sidebar/SidebarWrapper.vue'
   import LoginOverlay        from '@/components/auth/LoginOverlay.vue'
-  import ChangePasswordModal from '@/components/modals/ChangePasswordModal.vue'
-  // Modales
+  // Modales frequentes gardees synchrones : ConfirmModal (hot via useConfirm),
+  // CmdPalette (Ctrl+K instant), ChangePasswordModal (force a la 1re connexion).
   import CmdPalette           from '@/components/modals/CmdPalette.vue'
-  import SettingsModal        from '@/components/modals/SettingsModal.vue'
-  import CreateChannelModal   from '@/components/modals/CreateChannelModal.vue'
-  import NewDevoirModal       from '@/components/modals/NewDevoirModal.vue'
-  import DepotsModal          from '@/components/modals/DepotsModal.vue'
-  import SuiviModal           from '@/components/modals/SuiviModal.vue'
-  import GestionDevoirModal   from '@/components/modals/GestionDevoirModal.vue'
-  import RessourcesModal      from '@/components/modals/RessourcesModal.vue'
-  import TimelineModal        from '@/components/modals/TimelineModal.vue'
-  import EcheancierModal      from '@/components/modals/EcheancierModal.vue'
-  import DocumentPreviewModal from '@/components/modals/DocumentPreviewModal.vue'
-  import ImpersonateModal        from '@/components/modals/ImpersonateModal.vue'
-  import StudentTimelineModal    from '@/components/modals/StudentTimelineModal.vue'
-  import RubricModal             from '@/components/modals/RubricModal.vue'
-  import ImportStudentsModal     from '@/components/modals/ImportStudentsModal.vue'
-  import IntervenantsModal       from '@/components/modals/IntervenantsModal.vue'
-  import ClasseModal             from '@/components/modals/ClasseModal.vue'
-  import CreatePromoModal        from '@/components/modals/CreatePromoModal.vue'
-  import SignatureModal           from '@/components/modals/SignatureModal.vue'
-  import OnboardingWizard         from '@/components/onboarding/OnboardingWizard.vue'
+  import ChangePasswordModal from '@/components/modals/ChangePasswordModal.vue'
+
+  // Modales rares => async : chunk separe, charge au 1er usage seulement.
+  // Economise ~400-800 Ko de JS au boot du renderer.
+  const SettingsModal        = defineAsyncComponent(() => import('@/components/modals/SettingsModal.vue'))
+  const CreateChannelModal   = defineAsyncComponent(() => import('@/components/modals/CreateChannelModal.vue'))
+  const NewDevoirModal       = defineAsyncComponent(() => import('@/components/modals/NewDevoirModal.vue'))
+  const DepotsModal          = defineAsyncComponent(() => import('@/components/modals/DepotsModal.vue'))
+  const SuiviModal           = defineAsyncComponent(() => import('@/components/modals/SuiviModal.vue'))
+  const GestionDevoirModal   = defineAsyncComponent(() => import('@/components/modals/GestionDevoirModal.vue'))
+  const RessourcesModal      = defineAsyncComponent(() => import('@/components/modals/RessourcesModal.vue'))
+  const TimelineModal        = defineAsyncComponent(() => import('@/components/modals/TimelineModal.vue'))
+  const EcheancierModal      = defineAsyncComponent(() => import('@/components/modals/EcheancierModal.vue'))
+  const DocumentPreviewModal = defineAsyncComponent(() => import('@/components/modals/DocumentPreviewModal.vue'))
+  const ImpersonateModal     = defineAsyncComponent(() => import('@/components/modals/ImpersonateModal.vue'))
+  const StudentTimelineModal = defineAsyncComponent(() => import('@/components/modals/StudentTimelineModal.vue'))
+  const RubricModal          = defineAsyncComponent(() => import('@/components/modals/RubricModal.vue'))
+  const ImportStudentsModal  = defineAsyncComponent(() => import('@/components/modals/ImportStudentsModal.vue'))
+  const IntervenantsModal    = defineAsyncComponent(() => import('@/components/modals/IntervenantsModal.vue'))
+  const ClasseModal          = defineAsyncComponent(() => import('@/components/modals/ClasseModal.vue'))
+  const CreatePromoModal     = defineAsyncComponent(() => import('@/components/modals/CreatePromoModal.vue'))
+  const SignatureModal       = defineAsyncComponent(() => import('@/components/modals/SignatureModal.vue'))
+  const OnboardingWizard     = defineAsyncComponent(() => import('@/components/onboarding/OnboardingWizard.vue'))
 
   const appStore = useAppStore()
   const modals   = useModalsStore()
