@@ -4,7 +4,7 @@
  * stats, projects grid, and frise sub-components.
  */
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, onMounted, onBeforeUnmount } from 'vue'
 import { FolderOpen, Award, CalendarDays, Home, Menu, Zap, Settings } from 'lucide-vue-next'
 import type { StudentProjectCard } from '@/composables/useDashboardStudent'
 import type { FriseMilestone, FrisePromo } from '@/composables/useFrise'
@@ -16,9 +16,11 @@ import StudentGradesTab from './StudentGradesTab.vue'
 import StudentLiveTab from './StudentLiveTab.vue'
 import TabFrise from './TabFrise.vue'
 import { useModules } from '@/composables/useModules'
+import { useToast } from '@/composables/useToast'
 import SkeletonLoader from '@/components/ui/SkeletonLoader.vue'
 
 const { isEnabled } = useModules()
+const { showToast } = useToast()
 
 // ── Props ────────────────────────────────────────────────────────────────────
 const props = defineProps<{
@@ -79,6 +81,43 @@ const emit = defineEmits<{
   openStudentTimeline: []
   navigateDevoirs: []
 }>()
+
+// ── Raccourcis clavier dashboard etudiant ──────────────────────────────────
+// 1: accueil | 2: projets | 3: notes | 4: planning (si frise) | 5: live (si live) | ?: aide
+type StudentDashTab = 'accueil' | 'projets' | 'notes' | 'planning' | 'quiz'
+function isEditableTarget(target: EventTarget | null): boolean {
+  if (!(target instanceof HTMLElement)) return false
+  const tag = target.tagName
+  if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return true
+  if (target.isContentEditable) return true
+  if (target.closest('[contenteditable="true"], [contenteditable=""]')) return true
+  return false
+}
+function onDashKeydown(e: KeyboardEvent) {
+  if (e.isComposing || e.keyCode === 229) return
+  if (isEditableTarget(e.target)) return
+  if (e.ctrlKey || e.metaKey || e.altKey) return
+  const map: Record<string, StudentDashTab | 'help'> = {
+    '1': 'accueil',
+    '2': 'projets',
+    '3': 'notes',
+    '4': 'planning',
+    '5': 'quiz',
+    '?': 'help',
+  }
+  const next = map[e.key]
+  if (!next) return
+  if (next === 'help') {
+    showToast('Raccourcis : 1 Accueil, 2 Projets, 3 Notes, 4 Planning, 5 Live', 'info')
+    return
+  }
+  if (next === 'planning' && !isEnabled('frise')) return
+  if (next === 'quiz' && !isEnabled('live')) return
+  e.preventDefault()
+  emit('update:dashTab', next)
+}
+onMounted(() => window.addEventListener('keydown', onDashKeydown))
+onBeforeUnmount(() => window.removeEventListener('keydown', onDashKeydown))
 </script>
 
 <template>
