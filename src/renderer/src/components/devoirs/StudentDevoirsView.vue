@@ -82,25 +82,24 @@ const isAccueil = computed(() => !appStore.activeProject && props.studentCategor
 
 // ── Scroll to top button ──────────────────────────────────────────────────
 const showScrollTop = ref(false)
+let scrollEl: HTMLElement | null = null
 function onDevoirsScroll() {
-  const el = document.querySelector('.devoirs-scroll-area') as HTMLElement | null
-  showScrollTop.value = !!el && el.scrollTop > 200
+  showScrollTop.value = !!scrollEl && scrollEl.scrollTop > 200
 }
 function scrollToTop() {
-  const el = document.querySelector('.devoirs-scroll-area') as HTMLElement | null
-  el?.scrollTo({ top: 0, behavior: 'smooth' })
+  scrollEl?.scrollTo({ top: 0, behavior: 'smooth' })
 }
 
 // ── Raccourci clavier : '/' focalise la recherche (convention cross-vues) ──
 useSlashFocusSearch('.sdv-search-input')
 
 onMounted(() => {
-  const el = document.querySelector('.devoirs-scroll-area')
-  el?.addEventListener('scroll', onDevoirsScroll, { passive: true })
+  scrollEl = document.querySelector('.devoirs-scroll-area') as HTMLElement | null
+  scrollEl?.addEventListener('scroll', onDevoirsScroll, { passive: true })
 })
 onBeforeUnmount(() => {
-  const el = document.querySelector('.devoirs-scroll-area')
-  el?.removeEventListener('scroll', onDevoirsScroll)
+  scrollEl?.removeEventListener('scroll', onDevoirsScroll)
+  scrollEl = null
 })
 
 /** Shared deposit props forwarded to every group */

@@ -7,27 +7,36 @@ defineProps<{
   stats: { total: number; pending: number; urgent: number; submitted: number }
 }>()
 
-type Target = 'overdue' | 'urgent' | 'pending' | 'submitted'
+type Target = 'top' | 'urgent' | 'pending' | 'submitted'
+
+const GROUP_CLASS: Record<Exclude<Target, 'top'>, string> = {
+  urgent:    'group-header--warning',
+  pending:   'group-header--accent',
+  submitted: 'group-header--success',
+}
 
 function scrollTo(target: Target) {
-  const selector = `.group-header--${target === 'overdue' ? 'danger' : target === 'urgent' ? 'warning' : target === 'pending' ? 'accent' : 'success'}`
-  const el = document.querySelector(selector) as HTMLElement | null
-  if (el) {
-    el.scrollIntoView({ behavior: 'smooth', block: 'start' })
-    el.animate(
-      [
-        { boxShadow: '0 0 0 2px var(--accent)' },
-        { boxShadow: '0 0 0 0 transparent' },
-      ],
-      { duration: 900, easing: 'ease-out' },
-    )
+  if (target === 'top') {
+    const scrollArea = document.querySelector('.devoirs-scroll-area') as HTMLElement | null
+    scrollArea?.scrollTo({ top: 0, behavior: 'smooth' })
+    return
   }
+  const el = document.querySelector(`.${GROUP_CLASS[target]}`) as HTMLElement | null
+  if (!el) return
+  el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  el.animate(
+    [
+      { boxShadow: '0 0 0 2px var(--accent)' },
+      { boxShadow: '0 0 0 0 transparent' },
+    ],
+    { duration: 900, easing: 'ease-out' },
+  )
 }
 </script>
 
 <template>
   <div class="student-stats-bar">
-    <button type="button" class="stat-chip stat-chip-neutral" :disabled="stats.total === 0" @click="scrollTo('submitted')">
+    <button type="button" class="stat-chip stat-chip-neutral" :disabled="stats.total === 0" @click="scrollTo('top')">
       <span class="stat-dot dot-neutral" />
       <strong>{{ stats.total }}</strong>&nbsp;total
     </button>

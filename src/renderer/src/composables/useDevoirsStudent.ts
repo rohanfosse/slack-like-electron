@@ -10,6 +10,7 @@ import { parseCategoryIcon } from '@/utils/categoryIcon'
 import { nextUpcoming } from '@/utils/devoirFilters'
 import { groupByCategory } from '@/utils/projectGrouping'
 import { safeGetJSON, safeSetJSON } from '@/utils/safeStorage'
+import { useDebounce } from '@/composables/useDebounce'
 import type { Devoir } from '@/types'
 
 type StudentSort = 'deadline' | 'title' | 'type'
@@ -22,8 +23,11 @@ export function useDevoirsStudent(now: Ref<number>) {
   const studentSearch = ref<string>(safeGetJSON<string>(SEARCH_KEY, ''))
   const studentSort = ref<StudentSort>(safeGetJSON<StudentSort>(SORT_KEY, 'deadline'))
 
-  watch(studentSearch, v => safeSetJSON(SEARCH_KEY, v))
-  watch(studentSort,   v => safeSetJSON(SORT_KEY, v))
+  // Persistance : sort immediat (rare), search debounce pour eviter un write
+  // sur chaque touche frappee.
+  const debouncedSearch = useDebounce(studentSearch, 400)
+  watch(debouncedSearch, v => safeSetJSON(SEARCH_KEY, v))
+  watch(studentSort,     v => safeSetJSON(SORT_KEY, v))
 
   // ── Groupes urgence étudiant (single-pass) ────────────────────────────────────
   const studentGroups = computed(() => {

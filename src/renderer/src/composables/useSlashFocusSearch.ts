@@ -15,11 +15,17 @@ import { onMounted, onBeforeUnmount } from 'vue'
 
 type Target = string | (() => HTMLInputElement | HTMLTextAreaElement | null)
 
-function isEditable(target: EventTarget | null): boolean {
+/**
+ * Exporte : true si la cible d'un evenement clavier est un champ editable
+ * (input, textarea, select, contenteditable et leurs descendants).
+ * Partage entre les handlers de raccourcis clavier.
+ */
+export function isEditableTarget(target: EventTarget | null): boolean {
   if (!(target instanceof HTMLElement)) return false
   const tag = target.tagName
   if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return true
   if (target.isContentEditable) return true
+  if (target.closest('[contenteditable="true"], [contenteditable=""]')) return true
   return false
 }
 
@@ -35,7 +41,7 @@ export function useSlashFocusSearch(target: Target): void {
     if (e.isComposing || e.keyCode === 229) return
     if (e.ctrlKey || e.metaKey || e.altKey) return
     if (e.key !== '/') return
-    if (isEditable(e.target)) return
+    if (isEditableTarget(e.target)) return
     const el = resolve(target)
     if (!el) return
     e.preventDefault()

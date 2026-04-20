@@ -62,14 +62,17 @@ function onReminderClick(ev: MouseEvent) {
     return
   }
   reminderOpen.value = !reminderOpen.value
-  if (reminderOpen.value) document.addEventListener('click', closeReminder, { once: true })
+  if (reminderOpen.value) document.addEventListener('click', closeReminder)
 }
 
-function closeReminder() { reminderOpen.value = false }
+function closeReminder() {
+  reminderOpen.value = false
+  document.removeEventListener('click', closeReminder)
+}
 
 function pickReminder(hours: number) {
   addReminder(props.devoir.id, props.devoir.title, props.devoir.deadline, hours)
-  reminderOpen.value = false
+  closeReminder()
 }
 
 onBeforeUnmount(() => document.removeEventListener('click', closeReminder))

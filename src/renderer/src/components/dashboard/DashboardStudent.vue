@@ -17,6 +17,7 @@ import StudentLiveTab from './StudentLiveTab.vue'
 import TabFrise from './TabFrise.vue'
 import { useModules } from '@/composables/useModules'
 import { useToast } from '@/composables/useToast'
+import { isEditableTarget } from '@/composables/useSlashFocusSearch'
 import SkeletonLoader from '@/components/ui/SkeletonLoader.vue'
 
 const { isEnabled } = useModules()
@@ -85,14 +86,6 @@ const emit = defineEmits<{
 // ── Raccourcis clavier dashboard etudiant ──────────────────────────────────
 // 1: accueil | 2: projets | 3: notes | 4: planning (si frise) | 5: live (si live) | ?: aide
 type StudentDashTab = 'accueil' | 'projets' | 'notes' | 'planning' | 'quiz'
-function isEditableTarget(target: EventTarget | null): boolean {
-  if (!(target instanceof HTMLElement)) return false
-  const tag = target.tagName
-  if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return true
-  if (target.isContentEditable) return true
-  if (target.closest('[contenteditable="true"], [contenteditable=""]')) return true
-  return false
-}
 function onDashKeydown(e: KeyboardEvent) {
   if (e.isComposing || e.keyCode === 229) return
   if (isEditableTarget(e.target)) return
