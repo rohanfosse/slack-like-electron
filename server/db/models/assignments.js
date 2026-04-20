@@ -50,9 +50,14 @@ function updateTravail(id, fields) {
   return db.prepare(`UPDATE travaux SET ${sets.join(', ')} WHERE id = ?`).run(...vals)
 }
 
+// Types evenement en salle (examens, soutenances) : jamais "a rendre".
+// requires_submission est force a 0 peu importe ce que le client envoie.
+const EVENT_TYPES = new Set(['cctl', 'soutenance', 'etude_de_cas']);
+
 function createTravail({ promoId, channelId, groupId, title, description, startDate, deadline, category, type, published, room, aavs, requiresSubmission, scheduledPublishAt }) {
   const db = getDb();
-  const reqSub = requiresSubmission != null ? (requiresSubmission ? 1 : 0) : 1;
+  const isEvent = EVENT_TYPES.has(type);
+  const reqSub = isEvent ? 0 : (requiresSubmission != null ? (requiresSubmission ? 1 : 0) : 1);
   return db.transaction(() => {
     const result = db.prepare(`
       INSERT INTO travaux (promo_id, channel_id, group_id, title, description, start_date, deadline, category, type, published, room, aavs, requires_submission, scheduled_publish_at)

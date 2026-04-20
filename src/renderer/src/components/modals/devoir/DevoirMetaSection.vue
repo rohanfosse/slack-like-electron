@@ -3,7 +3,7 @@
   import { Clock, ExternalLink, Calendar, MapPin, Calculator, BookOpen, FileText, Award } from 'lucide-vue-next'
   import { deadlineClass, deadlineLabel, formatDate } from '@/utils/date'
   import ProgressBar from '@/components/ui/ProgressBar.vue'
-  import { typeLabel } from '@/utils/devoir'
+  import { typeLabel, isEventType } from '@/utils/devoir'
   import type { Devoir } from '@/types'
 
   interface Props {
@@ -39,13 +39,15 @@
     const t = props.travail
     if (t.scheduled_publish_at) return { label: 'Programme', cls: 'status-scheduled' }
     if (!t.is_published) return { label: 'Brouillon', cls: 'status-draft' }
-    if (props.depotsCounts.total > 0 && props.depotsCounts.submitted >= props.depotsCounts.total)
+    // "Complet" (tous les depots recus) ne s'applique pas aux evaluations en salle
+    if (!isEventType(t.type) && props.depotsCounts.total > 0 && props.depotsCounts.submitted >= props.depotsCounts.total)
       return { label: 'Complet', cls: 'status-complete' }
     if (new Date(t.deadline).getTime() < Date.now()) return { label: 'Expire', cls: 'status-expired' }
     return { label: 'Publie', cls: 'status-published' }
   })
 
   const requiresSubmission = computed(() => props.travail.requires_submission !== 0)
+  const isEvent = computed(() => isEventType(props.travail.type))
 </script>
 
 <template>
@@ -65,8 +67,8 @@
       <span v-if="depotsCounts.total" class="gd-meta-pct">{{ submitPct }}%</span>
     </div>
 
-    <!-- Progress bar (compact) -->
-    <div v-if="depotsCounts.total" class="gd-meta-progress">
+    <!-- Progress bar (compact) : masquee pour les evenements (pas de depot attendu) -->
+    <div v-if="depotsCounts.total && !isEvent" class="gd-meta-progress">
       <ProgressBar :value="submitPct" />
       <span class="gd-meta-progress-label">
         {{ depotsCounts.submitted }}/{{ depotsCounts.total }} rendus
@@ -133,8 +135,9 @@
       </div>
     </div>
 
-    <!-- Toggle requires_submission -->
-    <label class="gd-toggle-row" @click.prevent="emit('toggle-requires-submission')">
+    <!-- Toggle requires_submission : masque pour CCTL / soutenance / etude de
+         cas (evaluations en salle, jamais de depot) -->
+    <label v-if="!isEvent" class="gd-toggle-row" @click.prevent="emit('toggle-requires-submission')">
       <span class="gd-toggle-track" :class="{ active: requiresSubmission }">
         <span class="gd-toggle-thumb" />
       </span>

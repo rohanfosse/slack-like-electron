@@ -9,14 +9,11 @@
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import type { Ref } from 'vue'
 import { useTravauxStore } from '@/stores/travaux'
+import { isEventType } from '@/utils/devoir'
 import type { Devoir } from '@/types'
 
 const CLOCK_TICK_MS = 30_000
 const SOON_THRESHOLD_MS = 3 * 86_400_000
-
-function isEventType(type: string): boolean {
-  return type === 'soutenance' || type === 'cctl'
-}
 
 export function useStudentProjetDevoirs(
   projectKey: Ref<string>,

@@ -8,7 +8,7 @@ import { useTravauxStore } from '@/stores/travaux'
 import { useModalsStore }  from '@/stores/modals'
 import { useToast }        from '@/composables/useToast'
 import { deadlineClass }   from '@/utils/date'
-import { isRattrapage }    from '@/utils/devoir'
+import { isRattrapage, isEventType } from '@/utils/devoir'
 import type { GanttRow }   from '@/types'
 
 // ── Types locaux ────────────────────────────────────────────────────────────────
@@ -207,7 +207,7 @@ export function useDevoirsTeacher() {
         const dc = t.depots_count ?? 0
         const st = t.students_total ?? 0
         const noted = travauxStore.allRendus.filter(r => r.travail_id === t.id && r.note != null).length
-        const isEvent = t.type === 'soutenance' || t.type === 'cctl'
+        const isEvent = isEventType(t.type)
 
         let statusLabel = 'Publié'
         let statusCls = 'status-pub'

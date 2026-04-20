@@ -1,6 +1,6 @@
 const { getDb } = require('./connection');
 
-const CURRENT_VERSION = 75;
+const CURRENT_VERSION = 76;
 
 // ─── Schema initial ───────────────────────────────────────────────────────────
 // Crée toutes les tables avec leur schéma complet (colonnes UTC, toutes colonnes incluses).
@@ -1704,6 +1704,20 @@ function runMigrations(db) {
     (db) => {
       db.exec(`
         CREATE INDEX IF NOT EXISTS idx_travaux_channel ON travaux(channel_id);
+      `);
+    },
+
+    // v76 : backfill requires_submission = 0 pour les types CCTL / soutenance /
+    // etude_de_cas. Ce sont des examens/evaluations en salle, pas des devoirs
+    // a rendre. Les anciennes instances creees avant le correctif du NewDevoirModal
+    // peuvent avoir requires_submission=1 et apparaitre par erreur dans la
+    // liste "A rendre" cote etudiant.
+    (db) => {
+      db.exec(`
+        UPDATE travaux
+        SET requires_submission = 0
+        WHERE type IN ('cctl', 'soutenance', 'etude_de_cas')
+          AND requires_submission != 0;
       `);
     },
   ];

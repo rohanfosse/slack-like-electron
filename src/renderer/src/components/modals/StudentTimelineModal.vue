@@ -9,6 +9,7 @@ import { useAppStore }     from '@/stores/app'
 import { parseCategoryIcon } from '@/utils/categoryIcon'
 import { formatDate, deadlineClass, deadlineLabel } from '@/utils/date'
 import { numericGradeClass } from '@/utils/grade'
+import { isEventType } from '@/utils/devoir'
 import Modal from '@/components/ui/Modal.vue'
 import FriseCalendar from '@/components/frise/FriseCalendar.vue'
 import {
@@ -75,9 +76,9 @@ const sorted = computed(() => {
   let list = travauxStore.devoirs.slice()
 
   // Tab filter
-  if (activeFilter.value === 'pending') list = list.filter(t => t.depot_id == null && !isEventType(t))
+  if (activeFilter.value === 'pending') list = list.filter(t => t.depot_id == null && !isEventType(t.type))
   else if (activeFilter.value === 'done') list = list.filter(t => t.depot_id != null)
-  else if (activeFilter.value === 'event') list = list.filter(t => isEventType(t))
+  else if (activeFilter.value === 'event') list = list.filter(t => isEventType(t.type))
 
   // Search filter
   const q = searchQuery.value.trim().toLowerCase()
@@ -101,10 +102,9 @@ const byMonth = computed(() => {
 })
 
 function isExpired(d: string)  { return now.value >= new Date(d).getTime() }
-function isEventType(t: Devoir){ return t.type === 'soutenance' || t.type === 'cctl' }
-function isOverdue(t: Devoir)  { return t.depot_id == null && !isEventType(t) && isExpired(t.deadline) }
+function isOverdue(t: Devoir)  { return t.depot_id == null && !isEventType(t.type) && isExpired(t.deadline) }
 function isUrgent(t: Devoir)   {
-  if (t.depot_id != null || isExpired(t.deadline) || isEventType(t)) return false
+  if (t.depot_id != null || isExpired(t.deadline) || isEventType(t.type)) return false
   return new Date(t.deadline).getTime() - now.value < 3 * 86_400_000
 }
 
@@ -112,7 +112,7 @@ function statusIcon(t: Devoir) {
   if (t.depot_id != null) return 'done'
   if (isOverdue(t))       return 'overdue'
   if (isUrgent(t))        return 'urgent'
-  if (isEventType(t))     return 'event'
+  if (isEventType(t.type)) return 'event'
   return 'pending'
 }
 

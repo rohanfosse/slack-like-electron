@@ -1,5 +1,25 @@
 # Changelog
 
+## v2.198.0 (2026-04-20)
+
+### Fix
+
+Les types CCTL, soutenance et etude de cas ne doivent jamais apparaitre comme "a rendre" ni "non rendu" — ce sont des evaluations en salle, pas des devoirs a deposer.
+
+**5 sites avaient un check isEventType incomplet** (oubliaient `etude_de_cas`), causant l'apparition de ces examens dans la liste "A rendre" cote etudiant + les stats de pending :
+- `useDevoirsTeacher.ts` (statut Complet calcule sur les soutenances)
+- `StudentTimelineModal.vue` + `StudentProjetDevoirsList.vue` (filtre overdue/urgent)
+- `useStudentProjetDevoirs.ts` (pending computed)
+- `FriseCalendar.vue` (forme diamant dans le calendrier)
+
+Tous migres vers `isEventType` centralise dans `utils/devoir.ts`.
+
+### Defense en profondeur
+
+- **Migration DB v76** : `UPDATE travaux SET requires_submission = 0 WHERE type IN ('cctl', 'soutenance', 'etude_de_cas')` — corrige les devoirs crees avant le fix auto du `NewDevoirModal`.
+- **Backend `createTravail`** : force `requires_submission = 0` pour les types evenement peu importe ce que le client envoie.
+- **`DevoirMetaSection` (modal gestion)** : le toggle "Requiert un depot", la progress bar "X/Y rendus" et le statut "Complet" sont masques pour les types evenement.
+
 ## v2.197.0 (2026-04-20)
 
 ### Bundle + perf

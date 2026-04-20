@@ -7,6 +7,7 @@ import {
 } from 'lucide-vue-next'
 import { formatDate, deadlineClass, deadlineLabel } from '@/utils/date'
 import { numericGradeClass } from '@/utils/grade'
+import { isEventType } from '@/utils/devoir'
 import type { Devoir } from '@/types'
 
 const TYPE_LABELS: Record<string, string> = {
@@ -51,7 +52,6 @@ const emit = defineEmits<{
 }>()
 
 function isExpired(deadline: string)   { return props.now >= new Date(deadline).getTime() }
-function isEventType(type: string)     { return type === 'soutenance' || type === 'cctl' }
 function isOverdue(t: Devoir)          { return t.depot_id == null && !isEventType(t.type) && isExpired(t.deadline) }
 function isUrgent(t: Devoir) {
   if (t.depot_id != null || isExpired(t.deadline) || isEventType(t.type)) return false

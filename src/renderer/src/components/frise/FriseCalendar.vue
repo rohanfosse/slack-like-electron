@@ -6,6 +6,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { formatDate } from '@/utils/date'
+import { isEventType } from '@/utils/devoir'
 import FriseDotPopup from './FriseDotPopup.vue'
 import type { EnrichedMilestone, PositionedGroup } from '@/composables/useFrise'
 
@@ -50,7 +51,7 @@ function truncateLabel(text: string, max = 18): string {
 }
 
 function dotClassForGroup(group: PositionedGroup) {
-  const allDiamond = group.items.every(ms => ms.type === 'soutenance' || ms.type === 'cctl')
+  const allDiamond = group.items.every(ms => isEventType(ms.type))
   return {
     'fc-dot--diamond': allDiamond,
     'fc-dot--multi': group.items.length > 1,
