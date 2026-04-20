@@ -1,5 +1,31 @@
 # Changelog
 
+## v2.199.0 (2026-04-20)
+
+### Devoirs de groupe — modele "un depot = toute l'equipe"
+
+Refonte du workflow depot pour les devoirs de groupe, suite deep-interview `deep-interview-devoirs-groupe-depot-v1.md` (ambiguite finale 9%).
+
+**Avant** : chaque membre d'un groupe devait redeposer son propre fichier. Alice rendait → Bob/Chloe/David voyaient "pas rendu" sur leur propre vue, le prof voyait 1/4. Bug serieux : `markNonSubmittedAsD` mettait D aux 3 membres dont le groupe avait pourtant rendu via Alice.
+
+**Apres v2.199** : un seul depot represente le groupe. N'importe quel membre peut soumettre ou ecraser. Note et feedback partages entre tous. L'etudiant voit "Rendu par Alice" dans sa propre vue si un autre membre a soumis.
+
+### Implementation
+
+- **Migration DB v77** : `depots.group_id` + backfill + dedup (garde le depot le plus recent par (travail, groupe)) + index partial `idx_depots_group`.
+- **Backend `addDepot`** : chemin groupe separe — SELECT existant par `(travail_id, group_id)` → UPDATE ou INSERT. `student_id` sur depot = dernier uploader (pas d'historique v1, conforme a la spec).
+- **Backend `getStudentTravaux` + `getTravauxSuivi`** : le LEFT JOIN depots matche soit le depot individuel (s.id) soit le depot partage du groupe (group_id = t.group_id). Expose `depot_author_id` et `depot_author_name`.
+- **Backend `markNonSubmittedAsD`** : pour un travail de groupe, insere au plus 1 D pour le groupe entier (pas 4 D sur les 4 membres). Skip si le groupe a deja rendu.
+- **Frontend `StudentDevoirCard`** : affiche "Rendu par Alice" quand le depot est un depot de groupe soumis par un autre membre.
+- **5 nouveaux tests** couvrent : creation de depot de groupe, ecrasement inter-membres, visibilite cross-membre (Chloe voit le depot de Bob), immunite de `markNonSubmittedAsD`, fallback D sur groupe sans depot.
+
+### Hors scope v1
+
+- Override note-par-membre (free-rider problem) → v2 si le retour terrain le demande.
+- Feedback individuel differencie → meme feedback pour tous en v1.
+- Historique de versions → ecrasement = perte de version precedente.
+- Designation d'un leader / co-signature.
+
 ## v2.198.0 (2026-04-20)
 
 ### Fix

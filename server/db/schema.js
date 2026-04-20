@@ -1,6 +1,6 @@
 const { getDb } = require('./connection');
 
-const CURRENT_VERSION = 76;
+const CURRENT_VERSION = 77;
 
 // ─── Schema initial ───────────────────────────────────────────────────────────
 // Crée toutes les tables avec leur schéma complet (colonnes UTC, toutes colonnes incluses).
@@ -1718,6 +1718,42 @@ function runMigrations(db) {
         SET requires_submission = 0
         WHERE type IN ('cctl', 'soutenance', 'etude_de_cas')
           AND requires_submission != 0;
+      `);
+    },
+
+    // v77 : Devoirs de groupe — modele "un depot = toute l'equipe".
+    // Jusqu'ici chaque membre d'un groupe devait redeposer son propre fichier.
+    // Desormais un seul depot represente le groupe : n'importe quel membre
+    // peut soumettre ou ecraser. La colonne `group_id` sur depots permet
+    // l'upsert par (travail_id, group_id) pour les devoirs de groupe.
+    //
+    // Backfill : pour les depots existants appartenant a un travail de groupe,
+    // on set depots.group_id = travaux.group_id. Si plusieurs membres avaient
+    // depose pour un meme travail de groupe, on garde uniquement le depot le
+    // plus recent (dedup) pour s'aligner sur le nouveau modele.
+    (db) => {
+      db.exec(`
+        ALTER TABLE depots ADD COLUMN group_id INTEGER REFERENCES groups(id) ON DELETE SET NULL;
+
+        UPDATE depots
+        SET group_id = (SELECT t.group_id FROM travaux t WHERE t.id = depots.travail_id)
+        WHERE EXISTS (
+          SELECT 1 FROM travaux t WHERE t.id = depots.travail_id AND t.group_id IS NOT NULL
+        );
+
+        -- Dedup : pour chaque (travail_id, group_id), ne garder que le depot
+        -- le plus recent. Les autres depots du groupe sont supprimes
+        -- (leur contenu etait redondant dans le modele "un pour tous").
+        DELETE FROM depots
+        WHERE group_id IS NOT NULL
+          AND id NOT IN (
+            SELECT MAX(id) FROM depots
+            WHERE group_id IS NOT NULL
+            GROUP BY travail_id, group_id
+          );
+
+        CREATE INDEX IF NOT EXISTS idx_depots_group ON depots(travail_id, group_id)
+          WHERE group_id IS NOT NULL;
       `);
     },
   ];

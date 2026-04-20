@@ -86,16 +86,23 @@ function updateTravailPublished({ travailId, published }) {
 // ─── Suivi (vue enseignant) ───────────────────────────────────────────────────
 
 function getTravauxSuivi(travailId) {
+  // Vue suivi cote prof : chaque etudiant voit son propre depot (travail solo)
+  // OU le depot partage de son groupe (travail de groupe v2.199). Tous les
+  // membres d'un groupe ayant rendu affichent le meme depot_id / note / feedback.
   return getDb().prepare(`
     SELECT
       s.id AS student_id, s.name AS student_name, s.avatar_initials, s.photo_data,
       d.id AS depot_id, d.file_name, d.file_path, d.link_url, d.deploy_url,
       d.note, d.feedback, d.submitted_at,
+      d.student_id AS depot_author_id,
       tgm.group_id   AS travail_group_id,
       tg.name        AS travail_group_name
     FROM travaux t
     JOIN students s ON s.promo_id = t.promo_id
-    LEFT JOIN depots d   ON d.travail_id = t.id AND d.student_id = s.id
+    LEFT JOIN depots d ON d.travail_id = t.id AND (
+      d.student_id = s.id
+      OR (t.group_id IS NOT NULL AND d.group_id = t.group_id)
+    )
     LEFT JOIN travail_group_members tgm ON tgm.travail_id = t.id AND tgm.student_id = s.id
     LEFT JOIN groups tg  ON tg.id = tgm.group_id
     WHERE t.id = ?
@@ -111,17 +118,26 @@ function getTravauxSuivi(travailId) {
 // ─── Vue étudiant ─────────────────────────────────────────────────────────────
 
 function getStudentTravaux(studentId) {
+  // Modele "un depot = toute l'equipe" v2.199 : pour un travail de groupe,
+  // l'etudiant voit le depot du groupe (peu importe qui l'a soumis). Le JOIN
+  // matche soit son propre depot (travail individuel), soit le depot partage
+  // du groupe auquel il appartient (travail de groupe).
   return getDb().prepare(`
     SELECT
       t.id, t.title, t.description, t.deadline, t.group_id, t.category, t.type,
       t.room, t.aavs, t.requires_submission,
       tgm_g.name AS group_name,
-      d.id    AS depot_id, d.file_name, d.link_url, d.deploy_url, d.note, d.feedback, d.submitted_at
+      d.id    AS depot_id, d.file_name, d.link_url, d.deploy_url, d.note, d.feedback, d.submitted_at,
+      d.student_id AS depot_author_id, ds.name AS depot_author_name
     FROM students s
     JOIN travaux t ON t.promo_id = s.promo_id
     LEFT JOIN travail_group_members tgm ON tgm.travail_id = t.id AND tgm.student_id = s.id
     LEFT JOIN groups tgm_g ON tgm_g.id = tgm.group_id
-    LEFT JOIN depots d  ON d.travail_id = t.id AND d.student_id = s.id
+    LEFT JOIN depots d ON d.travail_id = t.id AND (
+      d.student_id = s.id
+      OR (t.group_id IS NOT NULL AND d.group_id = t.group_id)
+    )
+    LEFT JOIN students ds ON ds.id = d.student_id
     WHERE s.id = ?
       AND t.published = 1
       AND (
@@ -282,11 +298,34 @@ function getTeacherSchedule() {
 
 function markNonSubmittedAsD(travailId) {
   const db      = getDb();
-  const travail = db.prepare('SELECT promo_id, requires_submission FROM travaux WHERE id = ?').get(travailId);
+  const travail = db.prepare('SELECT promo_id, requires_submission, group_id FROM travaux WHERE id = ?').get(travailId);
   if (!travail) return 0;
   // Ne pas marquer les événements sans soumission requise
   if (!travail.requires_submission) return 0;
 
+  // ── Devoir de groupe : tout repose sur le depot du groupe (v2.199) ──────
+  // Un membre dont l'equipe a rendu ne doit PAS etre marque D. On marque D
+  // sur le "groupe entier" si aucun depot group_id n'existe. On materialise
+  // ce D avec un seul insert bidon (student_id = 1er membre du groupe, le
+  // frontend lira ce depot partage comme la note de l'equipe).
+  if (travail.group_id) {
+    const existing = db.prepare(
+      'SELECT 1 FROM depots WHERE travail_id = ? AND group_id = ?'
+    ).get(travailId, travail.group_id);
+    if (existing) return 0;
+    const firstMember = db.prepare(
+      'SELECT student_id FROM group_members WHERE group_id = ? ORDER BY student_id ASC LIMIT 1'
+    ).get(travail.group_id);
+    if (!firstMember) return 0;
+    db.prepare(`
+      INSERT INTO depots (travail_id, student_id, group_id, file_name, file_path, note)
+      VALUES (?, ?, ?, '-', '', 'D')
+    `).run(travailId, firstMember.student_id, travail.group_id);
+    return 1;
+  }
+
+  // ── Devoir individuel : un D par etudiant non-rendu (comportement v1) ───
+  //
   // SELECT + INSERT doivent etre atomiques : sans transaction globale, un
   // etudiant qui submit entre les deux echapperait au D (ou pire,
   // son vrai depot serait ecrase par un INSERT OR IGNORE qui succede).

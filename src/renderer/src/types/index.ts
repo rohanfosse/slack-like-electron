@@ -100,6 +100,15 @@ export interface Devoir {
   requires_submission?: number | 0 | 1
   promo_id?: number | null
   scheduled_publish_at?: string | null
+  // Devoirs de groupe v2.199 : auteur du dernier upload du depot partage.
+  // null si pas de depot encore soumis ou si depot individuel ou si l'API
+  // ancienne n'a pas renvoye le champ.
+  depot_author_id?: number | null
+  depot_author_name?: string | null
+  file_name?: string | null
+  link_url?: string | null
+  deploy_url?: string | null
+  submitted_at?: string | null
 }
 
 // backward compat alias - le backend renvoie toujours Travail, on l'aliase ici

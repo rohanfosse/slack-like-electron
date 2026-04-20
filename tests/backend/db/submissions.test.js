@@ -95,6 +95,95 @@ describe('addDepot', () => {
   })
 })
 
+describe('addDepot — devoirs de groupe v2.199', () => {
+  beforeAll(() => {
+    const db = getTestDb()
+    // Seed : 3 etudiants de plus, 1 groupe de 4, 1 travail de groupe.
+    db.exec(`
+      INSERT OR IGNORE INTO students (id, promo_id, name, email, avatar_initials, password, must_change_password)
+      VALUES
+        (10, 1, 'Alice Martin',  'alice@test.fr',  'AM', 'h', 0),
+        (11, 1, 'Bob Durand',    'bob@test.fr',    'BD', 'h', 0),
+        (12, 1, 'Chloe Leroux',  'chloe@test.fr',  'CL', 'h', 0),
+        (13, 1, 'David Moreau',  'david@test.fr',  'DM', 'h', 0);
+
+      INSERT OR IGNORE INTO groups (id, promo_id, name) VALUES (100, 1, 'Equipe A');
+      INSERT OR IGNORE INTO group_members (group_id, student_id) VALUES
+        (100, 10), (100, 11), (100, 12), (100, 13);
+
+      INSERT OR IGNORE INTO travaux (id, promo_id, channel_id, group_id, title, deadline, type, published, requires_submission)
+      VALUES (30, 1, 1, 100, 'Projet de groupe', '2099-12-31T23:59:00Z', 'livrable', 1, 1);
+    `)
+  })
+
+  it('Alice depose pour le groupe → un seul depot avec group_id renseigne', () => {
+    queries.addDepot({
+      travail_id: 30,
+      student_id: 10,
+      type: 'file',
+      file_name: 'projet-v1.pdf',
+      content: '/uploads/projet-v1.pdf',
+    })
+    const depots = queries.getDepots(30)
+    expect(depots.length).toBe(1)
+    expect(depots[0].student_id).toBe(10)
+    expect(depots[0].group_id).toBe(100)
+    expect(depots[0].file_name).toBe('projet-v1.pdf')
+  })
+
+  it("Bob ecrase le depot d'Alice → toujours 1 seul depot, student_id = Bob", () => {
+    queries.addDepot({
+      travail_id: 30,
+      student_id: 11,
+      type: 'file',
+      file_name: 'projet-v2.pdf',
+      content: '/uploads/projet-v2.pdf',
+    })
+    const depots = queries.getDepots(30)
+    expect(depots.length).toBe(1)
+    expect(depots[0].student_id).toBe(11)
+    expect(depots[0].group_id).toBe(100)
+    expect(depots[0].file_name).toBe('projet-v2.pdf')
+  })
+
+  it("Chloe et David voient le depot partage quand ils ouvrent leur vue devoirs", () => {
+    const assignments = require('../../../server/db/models/assignments')
+    const chloeTravaux = assignments.getStudentTravaux(12)
+    const groupTravail = chloeTravaux.find(t => t.id === 30)
+    expect(groupTravail).toBeDefined()
+    expect(groupTravail.depot_id).not.toBeNull()
+    expect(groupTravail.depot_author_id).toBe(11)
+    expect(groupTravail.depot_author_name).toBe('Bob Durand')
+    expect(groupTravail.file_name).toBe('projet-v2.pdf')
+  })
+
+  it("markNonSubmittedAsD ne marque PAS D sur les membres d'un groupe qui a rendu", () => {
+    const assignments = require('../../../server/db/models/assignments')
+    const touched = assignments.markNonSubmittedAsD(30)
+    expect(touched).toBe(0) // aucun D ajoute car le groupe a rendu
+    const depots = queries.getDepots(30)
+    expect(depots.length).toBe(1) // toujours 1 seul depot (celui de Bob)
+    expect(depots[0].note).toBeNull() // pas de D sur ce depot
+  })
+
+  it("markNonSubmittedAsD ajoute 1 D de groupe si aucun depot existant", () => {
+    const db = getTestDb()
+    db.exec(`
+      INSERT OR IGNORE INTO groups (id, promo_id, name) VALUES (101, 1, 'Equipe B');
+      INSERT OR IGNORE INTO group_members (group_id, student_id) VALUES (101, 10), (101, 11);
+      INSERT OR IGNORE INTO travaux (id, promo_id, channel_id, group_id, title, deadline, type, published, requires_submission)
+      VALUES (31, 1, 1, 101, 'Projet sans rendu', '2020-01-01T00:00:00Z', 'livrable', 1, 1);
+    `)
+    const assignments = require('../../../server/db/models/assignments')
+    const touched = assignments.markNonSubmittedAsD(31)
+    expect(touched).toBe(1)
+    const depots = queries.getDepots(31)
+    expect(depots.length).toBe(1)
+    expect(depots[0].group_id).toBe(101)
+    expect(depots[0].note).toBe('D')
+  })
+})
+
 describe('getDepots', () => {
   it('returns depots for a travail with student info', () => {
     const depots = queries.getDepots(20)

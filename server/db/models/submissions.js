@@ -21,9 +21,10 @@ function getDepots(travailId) {
 function addDepot(payload) {
   // Accepte snake_case (frontend) ou camelCase (legacy)
   const travailId  = payload.travail_id  ?? payload.travailId
+  const db = getDb()
 
   // ── Guard : blocage strict post-échéance ─────────────────────────────────
-  const travail = getDb().prepare('SELECT deadline, type, requires_submission FROM travaux WHERE id = ?').get(travailId)
+  const travail = db.prepare('SELECT deadline, type, requires_submission, group_id FROM travaux WHERE id = ?').get(travailId)
   if (travail && travail.requires_submission) {
     if (Date.now() > new Date(travail.deadline).getTime()) {
       throw new Error('Délai expiré - dépôt refusé.')
@@ -38,7 +39,36 @@ function addDepot(payload) {
   const linkUrl    = type === 'link' ? content : (payload.linkUrl  ?? null)
   const deployUrl  = payload.deploy_url  ?? payload.deployUrl ?? null
 
-  return getDb().prepare(`
+  // ── Devoirs de groupe : modele "un depot = toute l'equipe" ──────────────
+  // N'importe quel membre peut soumettre OU ecraser le depot du groupe.
+  // student_id sur le depot = dernier uploader (coherent avec "pas d'historique v1").
+  // On ne peut pas utiliser ON CONFLICT(travail_id, group_id) car l'index
+  // est partiel (WHERE group_id IS NOT NULL) — SQLite refuse l'upsert dans
+  // ce cas. On fait donc un SELECT + UPDATE/INSERT manuel.
+  if (travail && travail.group_id) {
+    const existing = db.prepare(
+      'SELECT id FROM depots WHERE travail_id = ? AND group_id = ?'
+    ).get(travailId, travail.group_id)
+    if (existing) {
+      return db.prepare(`
+        UPDATE depots SET
+          student_id   = ?,
+          file_name    = ?,
+          file_path    = ?,
+          link_url     = ?,
+          deploy_url   = ?,
+          submitted_at = datetime('now')
+        WHERE id = ?
+      `).run(studentId, fileName, filePath, linkUrl, deployUrl, existing.id)
+    }
+    return db.prepare(`
+      INSERT INTO depots (travail_id, student_id, group_id, file_name, file_path, link_url, deploy_url)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `).run(travailId, studentId, travail.group_id, fileName, filePath, linkUrl, deployUrl)
+  }
+
+  // ── Devoir individuel : upsert classique sur (travail_id, student_id) ───
+  return db.prepare(`
     INSERT INTO depots (travail_id, student_id, file_name, file_path, link_url, deploy_url)
     VALUES (?, ?, ?, ?, ?, ?)
     ON CONFLICT(travail_id, student_id) DO UPDATE SET

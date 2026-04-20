@@ -51,6 +51,17 @@ const t = props.devoir
 const showDepositForm = props.variant !== 'overdue' && props.variant !== 'event' && props.variant !== 'submitted'
 const { addReminder, removeReminder, hasReminder } = useStudentReminders()
 
+// Depot groupe : si soumis par un autre membre, afficher "Rendu par X".
+// v2.199 — modele "un depot = toute l'equipe".
+const appStoreForAuthor = useAppStore()
+const groupSubmitterName = (): string | null => {
+  const d = props.devoir
+  if (!d.group_id || !d.depot_author_id) return null
+  const myId = appStoreForAuthor.currentUser?.id
+  if (myId && d.depot_author_id === myId) return null
+  return d.depot_author_name || null
+}
+
 // ── Popover choix de rappel ──────────────────────────────────────────────
 const reminderOpen = ref(false)
 const REMINDER_OPTIONS: { hours: number; label: string }[] = [
@@ -186,7 +197,8 @@ function formatDesc(text: string): string {
     <template v-else-if="variant === 'submitted'">
       <div class="devoir-submitted-info">
         <CheckCircle2 :size="14" />
-        <span>Rendu déposé</span>
+        <span v-if="groupSubmitterName()">Rendu par {{ groupSubmitterName() }}</span>
+        <span v-else>Rendu déposé</span>
         <span v-if="devoir.note" class="devoir-graded-badge">Noté</span>
         <span v-else class="devoir-pending-badge">En attente de note</span>
       </div>
