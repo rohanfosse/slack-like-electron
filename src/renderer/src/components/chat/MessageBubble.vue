@@ -43,7 +43,7 @@ const {
 } = useBubbleActions(msgGetter)
 
 const {
-  QUICK_REACTS, showPicker, quickReact, pickEmojiReact, reactionsToShow,
+  REACT_TYPES, QUICK_REACTS, showPicker, quickReact, pickEmojiReact, reactionsToShow,
 } = useBubbleReactions(msgGetter)
 
 const { isBookmarked, toggleBookmark } = useBubbleBookmarks(msgGetter)
@@ -63,7 +63,8 @@ const {
   togglePin:    () => { _togglePin(); showMenu.value = false },
   deleteMessage: () => { showMenu.value = false; _deleteMessage() },
   reportingMsg,
-  reactWithEmoji: (emoji: string) => { pickEmojiReact(emoji) },
+  quickReactTypes: REACT_TYPES,
+  reactWithType: (type: string) => { quickReact(type) },
   bookmark: {
     isBookmarked: () => isBookmarked.value,
     toggle:       () => { toggleBookmark(); showMenu.value = false },

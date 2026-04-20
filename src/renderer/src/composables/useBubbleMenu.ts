@@ -8,9 +8,10 @@ import { useAppStore }      from '@/stores/app'
 import { useToast }         from '@/composables/useToast'
 import { avatarColor }      from '@/utils/format'
 import { renderMessageContent } from '@/utils/html'
-import { getQuickEmojis, addFrequentEmoji } from '@/composables/useEmojiFrequency'
 import type { ContextMenuItem, ContextMenuQuickEmoji } from '@/components/ui/ContextMenu.vue'
 import type { Message } from '@/types'
+
+export interface MenuReactType { type: string; emoji: string }
 
 interface MenuDeps {
   isMine:   () => boolean
@@ -23,7 +24,9 @@ interface MenuDeps {
   togglePin:    () => void
   deleteMessage: () => void
   reportingMsg: { value: boolean }
-  reactWithEmoji?: (emoji: string) => void
+  /** Set de reactions rapides (aligne sur le hover pill : meme types/emojis). */
+  quickReactTypes?: readonly MenuReactType[]
+  reactWithType?: (type: string) => void
   bookmark?: {
     isBookmarked: () => boolean
     toggle:       () => void
@@ -51,15 +54,11 @@ export function useBubbleMenu(
   const ctxVisible = ref(false)
   const ctxX       = ref(0)
   const ctxY       = ref(0)
-  // Snapshot pris a l ouverture du menu : evite que la row emoji se reordonne
-  // pendant l utilisation si l utilisateur clique rapidement plusieurs fois.
-  const ctxQuickEmojis = ref<string[]>([])
 
   function onContextMenu(e: MouseEvent) {
     e.preventDefault()
     ctxX.value = e.clientX
     ctxY.value = e.clientY
-    ctxQuickEmojis.value = getQuickEmojis(8)
     ctxVisible.value = true
   }
 
@@ -163,11 +162,12 @@ export function useBubbleMenu(
   }
 
   const ctxQuickEmojiItems = computed<ContextMenuQuickEmoji[]>(() => {
-    if (!deps.reactWithEmoji) return []
-    return ctxQuickEmojis.value.map(emoji => ({
-      emoji,
-      label: `Réagir avec ${emoji}`,
-      action: () => { deps.reactWithEmoji!(emoji); addFrequentEmoji(emoji) },
+    const types = deps.quickReactTypes ?? []
+    if (!deps.reactWithType || types.length === 0) return []
+    return types.map(r => ({
+      emoji: r.emoji,
+      label: `Réagir avec ${r.emoji}`,
+      action: () => { deps.reactWithType!(r.type) },
     }))
   })
 

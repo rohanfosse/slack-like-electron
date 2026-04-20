@@ -163,39 +163,46 @@ function run(item: ContextMenuItem) {
 
 .ctx-icon { flex-shrink: 0; }
 
-/* ── Quick emojis row ── */
+/* ── Quick emojis row (aligne sur le hover pill .pill-emoji-btn) ── */
 .ctx-emoji-row {
   display: flex;
-  gap: 2px;
-  padding: 4px 3px;
+  gap: 1px;
+  padding: 3px 2px;
   align-items: center;
+  justify-content: space-between;
 }
 .ctx-emoji-btn {
-  flex: 1;
-  min-width: 0;
+  flex: 1 1 0;
+  min-width: 32px;
+  height: 32px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  height: 30px;
-  padding: 0 6px;
   border: none;
-  border-radius: 6px;
   background: transparent;
-  font-size: 18px;
-  line-height: 1;
+  color: var(--text-primary);
+  border-radius: 5px;
   cursor: pointer;
-  transition: background 0.12s, transform 0.1s;
+  font-size: 16px;
+  line-height: 1;
+  padding: 0;
+  transition: background .1s, transform .1s;
   font-family: 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', sans-serif;
 }
 .ctx-emoji-btn:hover {
   background: var(--bg-hover, rgba(255,255,255,.08));
-  transform: scale(1.18);
+  transform: scale(1.25);
 }
 .ctx-emoji-btn:active {
-  transform: scale(0.95);
+  transform: scale(0.92);
 }
 .ctx-emoji-btn:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: -2px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .ctx-emoji-btn { transition: background .1s; }
+  .ctx-emoji-btn:hover { transform: none; }
+  .ctx-emoji-btn:active { transform: none; }
 }
 </style>
