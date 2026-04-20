@@ -12,9 +12,18 @@ interface VueCalInstance {
   next?: () => void
 }
 
+const VIEW_KEY = 'cc_agenda_view'
+function loadInitialView(): AgendaView {
+  try {
+    const v = localStorage.getItem(VIEW_KEY)
+    if (v === 'month' || v === 'week' || v === 'day') return v
+  } catch { /* ignore */ }
+  return 'week'
+}
+
 export function useAgendaViewNav(initialDate?: string) {
   const calRef: Ref<VueCalInstance | null> = ref(null)
-  const activeView = ref<AgendaView>('month')
+  const activeView = ref<AgendaView>(loadInitialView())
   const currentTitle = ref('')
   const selectedDate = ref(initialDate ?? new Date().toISOString().slice(0, 10))
 
@@ -38,7 +47,10 @@ export function useAgendaViewNav(initialDate?: string) {
   function goPrev() { calRef.value?.previous?.() }
   function goNext() { calRef.value?.next?.() }
   function goToday() { selectedDate.value = new Date().toISOString().slice(0, 10) }
-  function switchView(view: AgendaView) { activeView.value = view }
+  function switchView(view: AgendaView) {
+    activeView.value = view
+    try { localStorage.setItem(VIEW_KEY, view) } catch { /* ignore */ }
+  }
 
   return { calRef, activeView, currentTitle, selectedDate, onViewChange, goPrev, goNext, goToday, switchView }
 }

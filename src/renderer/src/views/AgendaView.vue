@@ -9,7 +9,7 @@ import { ref, computed, onMounted, onBeforeUnmount, watch, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import VueCal from 'vue-cal'
 import 'vue-cal/dist/vuecal.css'
-import { Plus, Trash2, RefreshCw, X, Clock, Tag, ExternalLink, ChevronLeft, ChevronRight, Check, AlertCircle, Download, Filter, Copy, Edit3, Calendar as CalIcon, Video, MapPin, User } from 'lucide-vue-next'
+import { Plus, Trash2, RefreshCw, X, Clock, Tag, ExternalLink, ChevronLeft, ChevronRight, Check, AlertCircle, Download, Filter, Copy, Edit3, Calendar as CalIcon, Video, MapPin, User, MoreHorizontal } from 'lucide-vue-next'
 import { useAppStore }   from '@/stores/app'
 import { useAgendaStore } from '@/stores/agenda'
 import { useToast } from '@/composables/useToast'
@@ -44,28 +44,69 @@ const {
 // ── Calendar ref + view control ──────────────────────────────────────────
 const { calRef, activeView, currentTitle, selectedDate, onViewChange, goPrev, goNext, goToday, switchView } = useAgendaViewNav()
 
-// ── Day view hero : résumé du jour sélectionné ───────────────────────────
+// ── View hero : résumé contextuel pour day ET week ──────────────────────
+// On réutilise la même bannière pour les vues day et week afin d'uniformiser
+// le design. En week, la plage affichée va du lundi au dimanche de la semaine
+// contenant selectedDate.
+function startOfWeek(d: Date): Date {
+  const day = d.getDay() // 0=Dim .. 6=Sam
+  const diff = day === 0 ? -6 : 1 - day  // lundi debut de semaine
+  const r = new Date(d); r.setDate(d.getDate() + diff); r.setHours(0, 0, 0, 0); return r
+}
+
 const dayHero = computed(() => {
-  if (activeView.value !== 'day') return null
+  if (activeView.value !== 'day' && activeView.value !== 'week') return null
   const d = new Date(selectedDate.value)
   if (isNaN(d.getTime())) return null
-  const iso = selectedDate.value
 
-  // Comptage single-pass : total + deadlines + teams en un seul parcours
+  const todayIso = new Date().toISOString().slice(0, 10)
+
+  if (activeView.value === 'day') {
+    const iso = selectedDate.value
+    let total = 0, deadlines = 0, teams = 0
+    for (const ev of filteredEvents.value) {
+      const meta = ev._meta
+      if (typeof meta?.start !== 'string' || meta.start.slice(0, 10) !== iso) continue
+      total++
+      if (meta.eventType === 'deadline') deadlines++
+      if (meta.teamsJoinUrl) teams++
+    }
+    return {
+      kind: 'day' as const,
+      weekday: d.toLocaleDateString('fr-FR', { weekday: 'long' }),
+      dateFull: d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }),
+      weekNum: getISOWeekNumber(d),
+      isToday: iso === todayIso,
+      total, deadlines, teams,
+    }
+  }
+
+  // Week
+  const start = startOfWeek(d)
+  const end = new Date(start); end.setDate(start.getDate() + 6)
+  const startIso = start.toISOString().slice(0, 10)
+  const endIso = end.toISOString().slice(0, 10)
   let total = 0, deadlines = 0, teams = 0
   for (const ev of filteredEvents.value) {
     const meta = ev._meta
-    if (typeof meta?.start !== 'string' || meta.start.slice(0, 10) !== iso) continue
+    if (typeof meta?.start !== 'string') continue
+    const iso = meta.start.slice(0, 10)
+    if (iso < startIso || iso > endIso) continue
     total++
     if (meta.eventType === 'deadline') deadlines++
     if (meta.teamsJoinUrl) teams++
   }
-
+  const sameMonth = start.getMonth() === end.getMonth()
+  const dateFull = sameMonth
+    ? `${start.getDate()} - ${end.getDate()} ${start.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })}`
+    : `${start.getDate()} ${start.toLocaleDateString('fr-FR', { month: 'short' })} - ${end.getDate()} ${end.toLocaleDateString('fr-FR', { month: 'short', year: 'numeric' })}`
+  const isCurrentWeek = todayIso >= startIso && todayIso <= endIso
   return {
-    weekday: d.toLocaleDateString('fr-FR', { weekday: 'long' }),
-    dateFull: d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }),
-    weekNum: getISOWeekNumber(d),
-    isToday: iso === new Date().toISOString().slice(0, 10),
+    kind: 'week' as const,
+    weekday: 'Semaine',
+    dateFull,
+    weekNum: getISOWeekNumber(start),
+    isToday: isCurrentWeek,
     total, deadlines, teams,
   }
 })
@@ -424,6 +465,19 @@ function statusLabel(s?: string): string {
   return ''
 }
 
+// ── More menu (kebab) ───────────────────────────────────────────────────
+const moreOpen = ref(false)
+function toggleMore(ev: MouseEvent) {
+  ev.stopPropagation()
+  moreOpen.value = !moreOpen.value
+  if (moreOpen.value) document.addEventListener('click', closeMore)
+}
+function closeMore() {
+  moreOpen.value = false
+  document.removeEventListener('click', closeMore)
+}
+onBeforeUnmount(() => document.removeEventListener('click', closeMore))
+
 // ── Load ─────────────────────────────────────────────────────────────────
 let cleanupListener: (() => void) | null = null
 
@@ -493,18 +547,31 @@ watch(() => route.query, (q) => {
           <button type="button" class="ag-view-btn" :class="{ active: activeView === 'week' }" @click="switchView('week')" title="Vue semaine (S)" :aria-pressed="activeView === 'week'">Semaine</button>
           <button type="button" class="ag-view-btn" :class="{ active: activeView === 'day' }" @click="switchView('day')" title="Vue jour (J)" :aria-pressed="activeView === 'day'">Jour</button>
         </div>
-        <button class="ag-btn ag-btn--ghost" title="Filtres" :aria-label="showFilters ? 'Masquer les filtres' : 'Afficher les filtres'" :aria-expanded="showFilters" :class="{ 'ag-btn--active': showFilters }" @click="showFilters = !showFilters">
-          <Filter :size="14" aria-hidden="true" />
-        </button>
-        <button class="ag-btn ag-btn--ghost" title="Exporter en ICS (Outlook, Google Calendar)" aria-label="Exporter le calendrier en ICS" @click="exportIcs">
-          <Download :size="14" aria-hidden="true" />
-        </button>
         <button v-if="isTeacher" class="ag-btn ag-btn--accent" @click="showForm = !showForm" title="Nouveau rappel (N)" aria-label="Créer un nouveau rappel">
           <Plus :size="14" aria-hidden="true" /> Rappel
         </button>
-        <button class="ag-btn ag-btn--ghost" :disabled="agenda.loading" @click="load" :aria-label="agenda.loading ? 'Rafraîchissement en cours' : 'Rafraîchir le calendrier'" :aria-busy="agenda.loading" title="Rafraîchir">
-          <RefreshCw :size="14" :class="{ 'ag-spin': agenda.loading }" aria-hidden="true" />
-        </button>
+        <div class="ag-more-wrap">
+          <button
+            class="ag-btn ag-btn--ghost"
+            title="Plus d'options"
+            aria-label="Plus d'options"
+            :aria-expanded="moreOpen"
+            @click="toggleMore"
+          >
+            <MoreHorizontal :size="16" aria-hidden="true" />
+          </button>
+          <div v-if="moreOpen" class="ag-more-menu" role="menu" @click.stop>
+            <button class="ag-more-item" role="menuitem" :class="{ 'ag-more-item--active': showFilters }" @click="showFilters = !showFilters; closeMore()">
+              <Filter :size="14" /> {{ showFilters ? 'Masquer les filtres' : 'Afficher les filtres' }}
+            </button>
+            <button class="ag-more-item" role="menuitem" @click="exportIcs(); closeMore()">
+              <Download :size="14" /> Exporter (.ics)
+            </button>
+            <button class="ag-more-item" role="menuitem" :disabled="agenda.loading" @click="load(); closeMore()">
+              <RefreshCw :size="14" :class="{ 'ag-spin': agenda.loading }" /> {{ agenda.loading ? 'Rafraichissement...' : 'Rafraichir' }}
+            </button>
+          </div>
+        </div>
       </div>
     </header>
 
@@ -804,8 +871,8 @@ watch(() => route.query, (q) => {
 /* ── Toolbar ── */
 .agenda-toolbar {
   display: flex; align-items: center; justify-content: space-between; gap: 16px;
-  padding: 12px 20px; background: var(--bg-main); border-bottom: 1px solid var(--border);
-  flex-shrink: 0; min-height: 56px;
+  padding: 8px 20px; background: var(--bg-main); border-bottom: 1px solid var(--border);
+  flex-shrink: 0; min-height: 48px;
 }
 .agenda-toolbar-left { display: flex; align-items: center; gap: 12px; }
 .agenda-toolbar-right { display: flex; align-items: center; gap: 8px; }
@@ -825,8 +892,8 @@ watch(() => route.query, (q) => {
   flex-shrink: 0;
 }
 .ag-filter-check {
-  display: inline-flex; align-items: center; gap: 5px;
-  font-size: 12px; color: var(--text-secondary); cursor: pointer;
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 13px; font-weight: 500; color: var(--text-primary); cursor: pointer;
   accent-color: var(--accent);
 }
 .ag-filter-count {
@@ -884,6 +951,31 @@ watch(() => route.query, (q) => {
 .ag-view-btn:hover { color: var(--text-primary); }
 .ag-view-btn.active { background: var(--accent); color: white; box-shadow: 0 1px 3px rgba(0,0,0,0.15); }
 
+/* Kebab menu (plus d'options) */
+.ag-more-wrap { position: relative; }
+.ag-more-menu {
+  position: absolute; top: calc(100% + 6px); right: 0; z-index: 50;
+  min-width: 210px; padding: 6px;
+  display: flex; flex-direction: column; gap: 2px;
+  background: var(--bg-modal, var(--bg-elevated));
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: 0 10px 28px rgba(0,0,0,0.35);
+}
+.ag-more-item {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 10px; border: none; border-radius: 6px;
+  background: transparent; color: var(--text-primary);
+  font-family: var(--font); font-size: 13px; font-weight: 500;
+  cursor: pointer; text-align: left;
+  transition: background .12s, color .12s;
+}
+.ag-more-item:hover:not(:disabled) { background: var(--bg-hover); }
+.ag-more-item:disabled { opacity: .5; cursor: not-allowed; }
+.ag-more-item--active { color: var(--accent); background: rgba(var(--accent-rgb), .08); }
+.ag-more-item svg { flex-shrink: 0; color: var(--text-secondary); }
+.ag-more-item--active svg { color: var(--accent); }
+
 /* ── Body ── */
 .agenda-body { flex: 1; display: flex; overflow: hidden; position: relative; }
 .agenda-cal-wrap { flex: 1; overflow: auto; padding: 0; }
@@ -896,24 +988,25 @@ watch(() => route.query, (q) => {
 }
 :deep(.vuecal__heading) {
   font-size: 12px !important; font-weight: 600 !important;
-  color: var(--text-primary) !important; padding: 4px 0 !important;
+  color: var(--text-primary) !important; padding: 0 !important;
   height: auto !important;
-  min-height: 3.4em;
+  min-height: 2.4em;
 }
 
-/* ── Day heading custom slot — name top, number bottom (style Apple Calendar) ── */
+/* ── Day heading custom slot — name top, number bottom (style Apple Calendar)
+ * Compact pour ne pas manger d'espace vertical au-dessus du grid horaire. ── */
 .ag-day-head {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 4px;
-  padding: 10px 4px 8px;
+  gap: 2px;
+  padding: 6px 4px 5px;
   width: 100%;
   box-sizing: border-box;
   position: relative;
 }
-.ag-day-head--month { padding: 8px 4px; }
+.ag-day-head--month { padding: 6px 4px; }
 .ag-day-name {
   font-family: var(--font-display);
   font-size: 12px;
@@ -971,11 +1064,16 @@ watch(() => route.query, (q) => {
 }
 
 /* Today : tint subtil pour coller au style Outlook.
- * Week/day view : tres legere coloration de la colonne ; le highlight principal
- * est porte par le heading (ag-day-head--today).
+ * Week/day view : la colonne du jour courant est mise en valeur comme dans
+ * la vue "jour" pour unifier le rendu.
  * Month view : tint plus marque (sinon le jour n'est pas reperable). */
+:deep(.vuecal--week-view .vuecal__cell--today),
+:deep(.vuecal--day-view .vuecal__cell--today) {
+  background: rgba(var(--accent-rgb), 0.08) !important;
+  box-shadow: inset 2px 0 0 var(--accent), inset -1px 0 0 rgba(var(--accent-rgb), 0.2);
+}
 :deep(.vuecal__cell--today) {
-  background: rgba(var(--accent-rgb), 0.05) !important;
+  background: rgba(var(--accent-rgb), 0.06) !important;
 }
 :deep(.vuecal--month-view .vuecal__cell--today) {
   background: rgba(var(--accent-rgb), 0.10) !important;
@@ -1023,21 +1121,21 @@ watch(() => route.query, (q) => {
   width: 2.8em !important;
 }
 :deep(.vuecal__time-cell) {
-  color: var(--text-muted) !important;
-  font-size: 10.5px !important; font-weight: 500 !important;
+  color: var(--text-secondary) !important;
+  font-size: 11px !important; font-weight: 600 !important;
   text-align: right; padding-right: 6px;
-  opacity: 0.7;
+  opacity: 0.95;
   font-variant-numeric: tabular-nums;
 }
-/* Demi-heures : tres discretes (presque invisibles) */
+/* Demi-heures : discretes mais visibles */
 :deep(.vuecal__time-cell-line) {
   border-top: 1px dashed var(--border) !important;
-  opacity: 0.25;
+  opacity: 0.4;
 }
-/* Heures pleines : ligne pleine mais legere */
+/* Heures pleines : ligne pleine, plus lisible pour se reperer */
 :deep(.vuecal__time-cell-line.hours::before) {
   border-top: 1px solid var(--border) !important;
-  opacity: 0.4;
+  opacity: 0.7;
 }
 /* Separateurs de colonnes (entre jours) adoucis */
 :deep(.vuecal__cell:before) {
@@ -1149,9 +1247,9 @@ watch(() => route.query, (q) => {
   text-overflow: ellipsis;
 }
 :deep(.ag-event-subtitle) {
-  font-size: 9.5px;
-  font-weight: 500;
-  opacity: 0.75;
+  font-size: 10px;
+  font-weight: 600;
+  opacity: 0.92;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1412,11 +1510,11 @@ watch(() => route.query, (q) => {
 .ag-spin { animation: ag-spin 1s linear infinite; }
 @keyframes ag-spin { to { transform: rotate(360deg); } }
 
-/* ══════════════ Day view hero banner ══════════════ */
+/* ══════════════ Day/Week view hero banner ══════════════ */
 .ag-day-hero {
-  display: flex; align-items: flex-end; justify-content: space-between;
+  display: flex; align-items: center; justify-content: space-between;
   gap: 16px; flex-wrap: wrap;
-  padding: 16px 24px 12px;
+  padding: 10px 20px 10px;
   background: linear-gradient(
     to bottom,
     color-mix(in srgb, var(--accent) 6%, var(--bg-main)) 0%,
@@ -1434,7 +1532,7 @@ watch(() => route.query, (q) => {
   color: var(--text-muted);
 }
 .ag-day-hero-date {
-  font-size: 24px; font-weight: 500; color: var(--text-primary);
+  font-size: 20px; font-weight: 600; color: var(--text-primary);
   margin: 0; line-height: 1.15;
   letter-spacing: -0.02em;
   display: flex; align-items: center; gap: 10px;
