@@ -36,14 +36,22 @@ export function useBubbleReactions(msg: () => Message) {
     showPicker.value = false
   }
 
+  // Map des types 'legacy' (check/thumb/fire/...) vers leur emoji.
+  // Les reactions arbitraires (via context menu ou picker) sont keyed par
+  // emoji directement : key = emoji.
+  const TYPE_TO_EMOJI = new Map(REACT_TYPES.map(t => [t.type, t.emoji]))
+
   const reactionsToShow = computed(() => {
     const r    = messagesStore.reactions[msg().id] ?? {}
     const mine = messagesStore.userVotes[msg().id] ?? new Set()
-    return REACT_TYPES.filter((t) => (r[t.type] ?? 0) > 0).map((t) => ({
-      ...t,
-      count:  r[t.type] as number,
-      isMine: mine.has(t.type),
-    }))
+    const out: { type: string; emoji: string; count: number; isMine: boolean }[] = []
+    for (const [key, count] of Object.entries(r)) {
+      const n = count as number
+      if (!n || n <= 0) continue
+      const emoji = TYPE_TO_EMOJI.get(key) ?? key
+      out.push({ type: key, emoji, count: n, isMine: mine.has(key) })
+    }
+    return out
   })
 
   return {

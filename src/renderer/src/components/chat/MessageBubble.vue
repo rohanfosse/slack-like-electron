@@ -43,14 +43,14 @@ const {
 } = useBubbleActions(msgGetter)
 
 const {
-  QUICK_REACTS, showPicker, quickReact, pickEmojiReact, reactionsToShow,
+  REACT_TYPES, QUICK_REACTS, showPicker, quickReact, pickEmojiReact, reactionsToShow,
 } = useBubbleReactions(msgGetter)
 
 const { isBookmarked, toggleBookmark } = useBubbleBookmarks(msgGetter)
 
 const {
   lightboxUrl, showMenu,
-  ctxVisible, ctxX, ctxY, onContextMenu, ctxItems,
+  ctxVisible, ctxX, ctxY, onContextMenu, ctxItems, ctxQuickEmojiItems,
   content, color, imagePreviewUrl, closeAll: _closeAll,
 } = useBubbleMenu(msgGetter, searchGetter, {
   isMine:   () => isMine.value,
@@ -63,6 +63,12 @@ const {
   togglePin:    () => { _togglePin(); showMenu.value = false },
   deleteMessage: () => { showMenu.value = false; _deleteMessage() },
   reportingMsg,
+  quickReactTypes: REACT_TYPES,
+  reactWithType: (type: string) => { quickReact(type) },
+  bookmark: {
+    isBookmarked: () => isBookmarked.value,
+    toggle:       () => { toggleBookmark(); showMenu.value = false },
+  },
 })
 
 // ── Wrappers that also close menu (used by inline template menu)
@@ -221,6 +227,7 @@ function onTextClick(e: MouseEvent) {
       :x="ctxX"
       :y="ctxY"
       :items="ctxItems"
+      :quick-emojis="ctxQuickEmojiItems"
       @close="ctxVisible = false"
     />
 

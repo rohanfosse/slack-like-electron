@@ -1,15 +1,25 @@
 /**
  * useAgendaViewNav : etat de la vue calendrier + navigation (prev/next/today).
- * Expose `calRef` que le composant doit binder sur <VueCal :ref="...">.
+ * Toutes les vues (Mois/Semaine/Jour) sont des grilles custom : on pilote
+ * selectedDate directement, plus de dependance VueCal.
  */
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import type { Ref } from 'vue'
 
 export type AgendaView = 'month' | 'week' | 'day'
 
-interface VueCalInstance {
-  previous?: () => void
-  next?: () => void
+function pad(n: number): string { return String(n).padStart(2, '0') }
+function toIso(d: Date): string { return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}` }
+
+function getWeekBounds(iso: string): [Date, Date] {
+  const d = new Date(`${iso}T00:00:00`)
+  const day = d.getDay()
+  const mondayOffset = day === 0 ? -6 : 1 - day
+  const monday = new Date(d)
+  monday.setDate(d.getDate() + mondayOffset)
+  const sunday = new Date(monday)
+  sunday.setDate(monday.getDate() + 6)
+  return [monday, sunday]
 }
 
 const VIEW_KEY = 'cc_agenda_view'
@@ -22,31 +32,53 @@ function loadInitialView(): AgendaView {
 }
 
 export function useAgendaViewNav(initialDate?: string) {
-  const calRef: Ref<VueCalInstance | null> = ref(null)
+  // calRef conserve pour compat signature, non utilise (toutes les vues sont custom).
+  const calRef: Ref<unknown> = ref(null)
   const activeView = ref<AgendaView>(loadInitialView())
-  const currentTitle = ref('')
-  const selectedDate = ref(initialDate ?? new Date().toISOString().slice(0, 10))
+  const selectedDate = ref(initialDate ?? toIso(new Date()))
 
-  function onViewChange(event: { view: string; startDate: Date; endDate: Date }) {
-    const view = event.view as AgendaView
-    if (view === 'month' || view === 'week' || view === 'day') activeView.value = view
-    const start = event.startDate
-    const end = event.endDate
-    if (view === 'month') {
-      currentTitle.value = start.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })
-    } else if (view === 'day') {
-      currentTitle.value = start.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })
-    } else {
-      const sameMonth = start.getMonth() === end.getMonth()
-      currentTitle.value = sameMonth
-        ? `${start.getDate()} - ${end.getDate()} ${start.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })}`
-        : `${start.getDate()} ${start.toLocaleDateString('fr-FR', { month: 'short' })} - ${end.getDate()} ${end.toLocaleDateString('fr-FR', { month: 'short', year: 'numeric' })}`
+  const currentTitle = computed(() => {
+    const d = new Date(`${selectedDate.value}T00:00:00`)
+    if (isNaN(d.getTime())) return ''
+    if (activeView.value === 'month') {
+      return d.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })
     }
+    if (activeView.value === 'day') {
+      return d.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })
+    }
+    const [start, end] = getWeekBounds(selectedDate.value)
+    const sameMonth = start.getMonth() === end.getMonth()
+    return sameMonth
+      ? `${start.getDate()} - ${end.getDate()} ${start.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })}`
+      : `${start.getDate()} ${start.toLocaleDateString('fr-FR', { month: 'short' })} - ${end.getDate()} ${end.toLocaleDateString('fr-FR', { month: 'short', year: 'numeric' })}`
+  })
+
+  // Conserve pour retro-compat avec l'ancien @view-change de VueCal ; no-op desormais.
+  function onViewChange(_event: unknown) { /* noop */ }
+
+  function shiftDays(days: number) {
+    const d = new Date(`${selectedDate.value}T00:00:00`)
+    d.setDate(d.getDate() + days)
+    selectedDate.value = toIso(d)
   }
 
-  function goPrev() { calRef.value?.previous?.() }
-  function goNext() { calRef.value?.next?.() }
-  function goToday() { selectedDate.value = new Date().toISOString().slice(0, 10) }
+  function shiftMonths(delta: number) {
+    const d = new Date(`${selectedDate.value}T00:00:00`)
+    d.setMonth(d.getMonth() + delta)
+    selectedDate.value = toIso(d)
+  }
+
+  function goPrev() {
+    if (activeView.value === 'month') shiftMonths(-1)
+    else if (activeView.value === 'week') shiftDays(-7)
+    else shiftDays(-1)
+  }
+  function goNext() {
+    if (activeView.value === 'month') shiftMonths(1)
+    else if (activeView.value === 'week') shiftDays(7)
+    else shiftDays(1)
+  }
+  function goToday() { selectedDate.value = toIso(new Date()) }
   function switchView(view: AgendaView) {
     activeView.value = view
     try { localStorage.setItem(VIEW_KEY, view) } catch { /* ignore */ }

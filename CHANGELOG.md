@@ -1,5 +1,43 @@
 # Changelog
 
+## v2.195.0 (2026-04-20)
+
+### Merge main <- branche v2.188
+
+Reconciliation des deux axes de travail paralleles autour de l'agenda et des menus contextuels.
+
+- **Agenda** : adoption des grilles custom `AgendaMonthGrid` + `AgendaTimeGrid` (remplacent VueCal), avec conservation du persist localStorage de la vue active (`cc_agenda_view`) et de la barre de recherche avec raccourci `/`.
+- **`useContextMenu`** : composable unifie supportant les deux patterns utilises dans le codebase :
+  - **Mode items** (`const { state, open, close } = useContextMenu()`) : items passes directement a `open(ev, items)`.
+  - **Mode target** (`const { ctx, open, close } = useContextMenu<T>()`) : la cible sert a calculer les items dans un `computed`.
+- **`useAgendaViewNav`** : navigation prev/next par vue (mois/semaine/jour) + persistance localStorage de la vue active.
+- **CSS AgendaView** : suppression des overrides VueCal (plus utilises).
+
+## v2.188.0 (2026-04-20)
+
+### Nouvelles fonctionnalites
+
+- **Menus contextuels (clic droit)** sur 17 nouvelles zones + enrichissement du menu message :
+  - Nouveau composable `useContextMenu<T>()` pour factoriser le pattern
+  - `CahierList` : ouvrir, copier titre, renommer, supprimer
+  - `AgendaDayNotes` : copier texte, supprimer
+  - `ProjectListPanel` : copier nom, renommer, supprimer
+  - `LumenOutline` : aller a la section, copier titre/ancre
+  - `PinnedBanner` : aller au message, copier contenu, desepingler
+  - `LumenChapterPickerModal` : lier, copier titre/chemin/repo
+  - `IntervenantsModal` : gerer canaux, copier email/nom, mailto, supprimer
+  - `ClasseModal` : profil, DM, copier nom/note
+  - `WidgetNotationPending` : ouvrir rendus/devoir, copier titre
+  - `WidgetAtRisk` : profil, DM, copier nom/score
+  - `LumenRepoSidebar` : ouvrir chapitre, copier titre/chemin/lumen://, marquer lu
+  - `SidebarFichiers` : voir fichiers, DM, filtrer images/docs, copier nom
+  - `Leaderboard` : copier nom/score, DM, encourager
+  - `MessageWall` : copier, aimer, masquer, supprimer, signaler
+  - `LumenAnnotations` : copier passage/commentaire, modifier, supprimer
+  - `BookingPage` : reserver, copier date/lien, ajouter a Google Calendar
+  - `AccueilActivityTile` : ouvrir rendus/devoir, copier libelle
+  - `MessageBubble` enrichi : copier lien/ID/auteur, mettre en signet, DM a l'auteur
+
 ## v2.2.3 (2026-03-29)
 
 ### Nouvelles fonctionnalites

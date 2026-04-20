@@ -32,40 +32,52 @@ function buildEventStyle(color: string): string {
   return style
 }
 
+/** Normalisation accent/casse-insensible pour la recherche. */
+function normalize(s: string): string {
+  return s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+}
+
+// État partagé (module-level) : sidebar et AgendaView écrivent dans les MÊMES refs.
+// Evite la divergence ou un toggle dans la sidebar n'avait aucun effet sur le calendrier.
+const showDeadlines  = ref(true)
+const showStartDates = ref(true)
+const showReminders  = ref(true)
+const showOutlook    = ref(true)
+const hiddenPromos   = ref(new Set<number>())
+const showFilters    = ref(false)
+const searchQuery    = ref('')
+
 export function useAgendaFilters() {
   const agenda = useAgendaStore()
 
-  const showDeadlines  = ref(true)
-  const showStartDates = ref(true)
-  const showReminders  = ref(true)
-  const showOutlook    = ref(true)
-  const hiddenPromos   = ref(new Set<number>())
-  const showFilters    = ref(false)
-
-  const filteredEvents = computed(() =>
-    agenda.events.filter((e) => {
+  const filteredEvents = computed(() => {
+    const q = normalize(searchQuery.value.trim())
+    return agenda.events.filter((e) => {
       if (e.eventType === 'deadline'   && !showDeadlines.value)  return false
       if (e.eventType === 'start_date' && !showStartDates.value) return false
       if (e.eventType === 'reminder'   && !showReminders.value)  return false
       if (e.eventType === 'outlook'    && !showOutlook.value)    return false
       if (e.promoId && hiddenPromos.value.has(e.promoId))        return false
+      if (q) {
+        const hay = `${normalize(e.title)} ${normalize(e.promoName ?? '')} ${normalize(e.category ?? '')} ${normalize(e.organizer ?? '')} ${normalize(e.location ?? '')}`
+        if (!hay.includes(q)) return false
+      }
       return true
     }).map((e) => ({
       start: e.start,
       end:   e.end,
       title: e.title,
       allDay: e.allDay === true,
-      // VueCal utilise `draggable` au niveau de l'event pour opt-in/out en plus de `editable-events`
       draggable: e.draggable === true,
       class: (e.allDay ? 'ag-event--all-day ' : '') + statusClass(e),
-      // Style "pill" via color-mix : un seul signal de couleur cohérent light+dark.
       style: buildEventStyle(e.color),
       _meta: e,
-    })),
-  )
+    }))
+  })
 
   return {
     showDeadlines, showStartDates, showReminders, showOutlook, hiddenPromos, showFilters,
+    searchQuery,
     filteredEvents,
   }
 }

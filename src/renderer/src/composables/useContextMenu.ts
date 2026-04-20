@@ -1,49 +1,83 @@
 /**
- * useContextMenu - pattern uniformise pour afficher un menu contextuel.
+ * useContextMenu - composable unifie pour afficher un menu contextuel (clic droit).
  *
- * Encapsule la state locale {x, y, items}, la gestion preventDefault/stopPropagation
- * et la fonction de fermeture. Le composant <ContextMenu> reste responsable du
- * rendu + positionnement + fermeture sur clic exterieur / Escape.
+ * Supporte deux modes d'utilisation :
  *
- * Usage :
- *   const { state, open, close } = useContextMenu()
- *   function onRightClick(ev: MouseEvent) {
- *     open(ev, [{ label: 'Copier', icon: Copy, action: doCopy }])
- *   }
- *   // template :
- *   <div @contextmenu="onRightClick">...</div>
- *   <ContextMenu v-if="state" :x="state.x" :y="state.y" :items="state.items" @close="close" />
+ * 1) Mode items (items passes directement a open) :
+ *      const { state, open, close } = useContextMenu()
+ *      function onRightClick(ev: MouseEvent) {
+ *        open(ev, [{ label: 'Copier', icon: Copy, action: doCopy }])
+ *      }
+ *      <div @contextmenu="onRightClick">...</div>
+ *      <ContextMenu v-if="state" :x="state.x" :y="state.y" :items="state.items" @close="close" />
+ *
+ * 2) Mode target (la cible sert a calculer les items dans un computed) :
+ *      const { ctx, open: openCtx, close: closeCtx } = useContextMenu<Student>()
+ *      const items = computed(() => ctx.value?.target ? [...] : [])
+ *      <div @contextmenu="openCtx($event, student, true)">...</div>
+ *      <ContextMenu v-if="ctx" :x="ctx.x" :y="ctx.y" :items="items" @close="closeCtx" />
+ *
+ * Le composant <ContextMenu> reste responsable du rendu + positionnement +
+ * fermeture sur clic exterieur / Escape.
  */
 import { ref, type Ref } from 'vue'
 import type { ContextMenuItem } from '@/components/ui/ContextMenu.vue'
 
-export interface ContextMenuState {
+export interface ContextMenuItemsState {
   x: number
   y: number
   items: ContextMenuItem[]
 }
 
-export interface UseContextMenuReturn {
-  state: Ref<ContextMenuState | null>
-  open: (ev: MouseEvent, items: ContextMenuItem[]) => void
+export interface ContextMenuTargetState<T> {
+  x: number
+  y: number
+  target: T
+}
+
+export interface UseContextMenuReturn<T> {
+  state: Ref<ContextMenuItemsState | null>
+  ctx: Ref<ContextMenuTargetState<T> | null>
+  open: {
+    (ev: MouseEvent, items: ContextMenuItem[]): void
+    (ev: MouseEvent, target: T, stopPropagation?: boolean): void
+  }
   close: () => void
 }
 
-export function useContextMenu(): UseContextMenuReturn {
-  const state = ref<ContextMenuState | null>(null)
+function isContextMenuItemList(value: unknown): value is ContextMenuItem[] {
+  if (!Array.isArray(value)) return false
+  return value.every(
+    (item): item is ContextMenuItem =>
+      !!item && typeof item === 'object' && 'label' in item,
+  )
+}
 
-  function open(ev: MouseEvent, items: ContextMenuItem[]) {
-    if (!items.length) return
+export function useContextMenu<T = unknown>(): UseContextMenuReturn<T> {
+  const state = ref<ContextMenuItemsState | null>(null) as Ref<ContextMenuItemsState | null>
+  const ctx = ref<ContextMenuTargetState<T> | null>(null) as Ref<ContextMenuTargetState<T> | null>
+
+  function open(ev: MouseEvent, payload: ContextMenuItem[] | T, stopPropagation = false): void {
     ev.preventDefault()
-    ev.stopPropagation()
-    state.value = { x: ev.clientX, y: ev.clientY, items }
+
+    if (isContextMenuItemList(payload)) {
+      // Mode items : on stop toujours la propagation (evite les double-menus).
+      ev.stopPropagation()
+      if (!payload.length) return
+      state.value = { x: ev.clientX, y: ev.clientY, items: payload }
+      return
+    }
+
+    if (stopPropagation) ev.stopPropagation()
+    ctx.value = { x: ev.clientX, y: ev.clientY, target: payload }
   }
 
-  function close() {
+  function close(): void {
     state.value = null
+    ctx.value = null
   }
 
-  return { state, open, close }
+  return { state, ctx, open, close }
 }
 
 export type { ContextMenuItem }
