@@ -11,13 +11,25 @@ export interface ContextMenuItem {
   disabled?:  boolean
 }
 
+export interface ContextMenuQuickEmoji {
+  emoji:  string
+  label?: string
+  action: () => void
+}
+
 const props = defineProps<{
-  x:     number
-  y:     number
-  items: ContextMenuItem[]
+  x:           number
+  y:           number
+  items:       ContextMenuItem[]
+  quickEmojis?: ContextMenuQuickEmoji[]
 }>()
 
 const emit = defineEmits<{ close: [] }>()
+
+function runEmoji(q: ContextMenuQuickEmoji) {
+  q.action()
+  emit('close')
+}
 
 const menuEl = ref<HTMLElement | null>(null)
 // Position ajustée pour rester dans le viewport
@@ -64,6 +76,20 @@ function run(item: ContextMenuItem) {
       :style="{ left: adjustedX + 'px', top: adjustedY + 'px' }"
       role="menu"
     >
+      <!-- Quick emojis : rangee de reactions rapides tout en haut -->
+      <div v-if="quickEmojis && quickEmojis.length" class="ctx-emoji-row" role="group" aria-label="Réactions rapides">
+        <button
+          v-for="(q, qi) in quickEmojis"
+          :key="qi"
+          type="button"
+          class="ctx-emoji-btn"
+          :title="q.label || 'Réagir'"
+          :aria-label="q.label || `Réagir avec ${q.emoji}`"
+          @click.stop="runEmoji(q)"
+        >{{ q.emoji }}</button>
+      </div>
+      <div v-if="quickEmojis && quickEmojis.length" class="ctx-separator" />
+
       <template v-for="(item, i) in items" :key="i">
         <div v-if="item.separator" class="ctx-separator" />
         <button
@@ -136,4 +162,40 @@ function run(item: ContextMenuItem) {
 .ctx-item--disabled     { opacity: .4; cursor: not-allowed; }
 
 .ctx-icon { flex-shrink: 0; }
+
+/* ── Quick emojis row ── */
+.ctx-emoji-row {
+  display: flex;
+  gap: 2px;
+  padding: 4px 3px;
+  align-items: center;
+}
+.ctx-emoji-btn {
+  flex: 1;
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 30px;
+  padding: 0 6px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.12s, transform 0.1s;
+  font-family: 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', sans-serif;
+}
+.ctx-emoji-btn:hover {
+  background: var(--bg-hover, rgba(255,255,255,.08));
+  transform: scale(1.18);
+}
+.ctx-emoji-btn:active {
+  transform: scale(0.95);
+}
+.ctx-emoji-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
 </style>

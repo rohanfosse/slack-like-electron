@@ -50,7 +50,7 @@ const { isBookmarked, toggleBookmark } = useBubbleBookmarks(msgGetter)
 
 const {
   lightboxUrl, showMenu,
-  ctxVisible, ctxX, ctxY, onContextMenu, ctxItems,
+  ctxVisible, ctxX, ctxY, onContextMenu, ctxItems, ctxQuickEmojiItems,
   content, color, imagePreviewUrl, closeAll: _closeAll,
 } = useBubbleMenu(msgGetter, searchGetter, {
   isMine:   () => isMine.value,
@@ -63,6 +63,7 @@ const {
   togglePin:    () => { _togglePin(); showMenu.value = false },
   deleteMessage: () => { showMenu.value = false; _deleteMessage() },
   reportingMsg,
+  reactWithEmoji: (emoji: string) => { pickEmojiReact(emoji) },
   bookmark: {
     isBookmarked: () => isBookmarked.value,
     toggle:       () => { toggleBookmark(); showMenu.value = false },
@@ -225,6 +226,7 @@ function onTextClick(e: MouseEvent) {
       :x="ctxX"
       :y="ctxY"
       :items="ctxItems"
+      :quick-emojis="ctxQuickEmojiItems"
       @close="ctxVisible = false"
     />
 

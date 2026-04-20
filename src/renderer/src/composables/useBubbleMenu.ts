@@ -8,7 +8,8 @@ import { useAppStore }      from '@/stores/app'
 import { useToast }         from '@/composables/useToast'
 import { avatarColor }      from '@/utils/format'
 import { renderMessageContent } from '@/utils/html'
-import type { ContextMenuItem } from '@/components/ui/ContextMenu.vue'
+import { getQuickEmojis, addFrequentEmoji } from '@/composables/useEmojiFrequency'
+import type { ContextMenuItem, ContextMenuQuickEmoji } from '@/components/ui/ContextMenu.vue'
 import type { Message } from '@/types'
 
 interface MenuDeps {
@@ -22,6 +23,7 @@ interface MenuDeps {
   togglePin:    () => void
   deleteMessage: () => void
   reportingMsg: { value: boolean }
+  reactWithEmoji?: (emoji: string) => void
   bookmark?: {
     isBookmarked: () => boolean
     toggle:       () => void
@@ -49,11 +51,15 @@ export function useBubbleMenu(
   const ctxVisible = ref(false)
   const ctxX       = ref(0)
   const ctxY       = ref(0)
+  // Snapshot pris a l ouverture du menu : evite que la row emoji se reordonne
+  // pendant l utilisation si l utilisateur clique rapidement plusieurs fois.
+  const ctxQuickEmojis = ref<string[]>([])
 
   function onContextMenu(e: MouseEvent) {
     e.preventDefault()
     ctxX.value = e.clientX
     ctxY.value = e.clientY
+    ctxQuickEmojis.value = getQuickEmojis(8)
     ctxVisible.value = true
   }
 
@@ -156,9 +162,18 @@ export function useBubbleMenu(
     confirmingDelete.value = false
   }
 
+  const ctxQuickEmojiItems = computed<ContextMenuQuickEmoji[]>(() => {
+    if (!deps.reactWithEmoji) return []
+    return ctxQuickEmojis.value.map(emoji => ({
+      emoji,
+      label: `Réagir avec ${emoji}`,
+      action: () => { deps.reactWithEmoji!(emoji); addFrequentEmoji(emoji) },
+    }))
+  })
+
   return {
     lightboxUrl, showMenu,
-    ctxVisible, ctxX, ctxY, onContextMenu, ctxItems,
+    ctxVisible, ctxX, ctxY, onContextMenu, ctxItems, ctxQuickEmojiItems,
     content, color, imagePreviewUrl,
     closeAll,
   }
