@@ -16,12 +16,14 @@ vi.mock('vue-router', () => ({
 const mockFetchMessages = vi.fn()
 const mockFlushDmQueue = vi.fn()
 const mockInitTypingListener = vi.fn(() => vi.fn())
+const mockInitPollListener = vi.fn(() => vi.fn())
 
 vi.mock('@/stores/messages', () => ({
   useMessagesStore: () => ({
     fetchMessages: mockFetchMessages,
     flushDmQueue: mockFlushDmQueue,
     initTypingListener: mockInitTypingListener,
+    initPollListener: mockInitPollListener,
   }),
 }))
 

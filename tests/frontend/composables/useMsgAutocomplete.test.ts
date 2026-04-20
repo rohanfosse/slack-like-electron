@@ -37,12 +37,12 @@ function makeTextarea(): HTMLTextAreaElement {
   return el
 }
 
-function setup(initialContent = '') {
+function setup(initialContent = '', handlers?: { onOpenPoll?: () => void; onOpenHelp?: () => void }) {
   const content = ref(initialContent)
   const textarea = makeTextarea()
   const inputEl = ref<HTMLTextAreaElement | null>(textarea)
   const autoResize = vi.fn()
-  const result = useMsgAutocomplete(content, inputEl, autoResize)
+  const result = useMsgAutocomplete(content, inputEl, autoResize, handlers)
   return { content, inputEl, textarea, autoResize, ...result }
 }
 
@@ -307,13 +307,26 @@ describe('executeCommand', () => {
     expect(s.content.value).toContain('---')
   })
 
-  it('handles sondage command', () => {
-    const s = setup('/')
+  it('handles sondage command by clearing input and invoking onOpenPoll', () => {
+    const onOpenPoll = vi.fn()
+    const s = setup('/', { onOpenPoll })
     Object.defineProperty(s.textarea, 'selectionStart', { value: 1, writable: true })
     s.detectTriggers()
     const cmd = SLASH_COMMANDS.find(c => c.name === 'sondage')!
     s.executeCommand(cmd)
-    expect(s.content.value).toContain('**Sondage**')
+    expect(s.content.value).toBe('')
+    expect(onOpenPoll).toHaveBeenCalledOnce()
+  })
+
+  it('handles aide command by clearing input and invoking onOpenHelp', () => {
+    const onOpenHelp = vi.fn()
+    const s = setup('/', { onOpenHelp })
+    Object.defineProperty(s.textarea, 'selectionStart', { value: 1, writable: true })
+    s.detectTriggers()
+    const cmd = SLASH_COMMANDS.find(c => c.name === 'aide')!
+    s.executeCommand(cmd)
+    expect(s.content.value).toBe('')
+    expect(onOpenHelp).toHaveBeenCalledOnce()
   })
 
   it('handles unknown command gracefully', () => {
