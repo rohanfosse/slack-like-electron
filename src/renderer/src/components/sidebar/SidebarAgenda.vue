@@ -7,6 +7,7 @@ import { ChevronLeft, ChevronRight, Download, ExternalLink, AlertCircle, Clock }
 import { useAgendaStore } from '@/stores/agenda'
 import { useAppStore } from '@/stores/app'
 import { useToast } from '@/composables/useToast'
+import { useAgendaFilters } from '@/composables/useAgendaFilters'
 import { countdown } from '@/utils/date'
 
 const agenda = useAgendaStore()
@@ -107,8 +108,9 @@ const nextDeadline = computed(() => {
 })
 
 // ── Promos toggleables (style Outlook) ────────────────────────────────
-const hiddenPromos = ref(new Set<number>())
-const showReminders = ref(true)
+// State partage avec AgendaView via useAgendaFilters singleton : un toggle
+// ici se repercute immediatement sur le calendrier.
+const { hiddenPromos, showReminders } = useAgendaFilters()
 
 function togglePromo(promoId: number) {
   const next = new Set(hiddenPromos.value)
@@ -116,8 +118,6 @@ function togglePromo(promoId: number) {
   else next.add(promoId)
   hiddenPromos.value = next
 }
-
-defineExpose({ hiddenPromos, showReminders })
 
 // ── Sync ──────────────────────────────────────────────────────────────
 function copyIcalUrl() {

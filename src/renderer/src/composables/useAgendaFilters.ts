@@ -37,16 +37,18 @@ function normalize(s: string): string {
   return s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
 }
 
+// État partagé (module-level) : sidebar et AgendaView écrivent dans les MÊMES refs.
+// Evite la divergence ou un toggle dans la sidebar n'avait aucun effet sur le calendrier.
+const showDeadlines  = ref(true)
+const showStartDates = ref(true)
+const showReminders  = ref(true)
+const showOutlook    = ref(true)
+const hiddenPromos   = ref(new Set<number>())
+const showFilters    = ref(false)
+const searchQuery    = ref('')
+
 export function useAgendaFilters() {
   const agenda = useAgendaStore()
-
-  const showDeadlines  = ref(true)
-  const showStartDates = ref(true)
-  const showReminders  = ref(true)
-  const showOutlook    = ref(true)
-  const hiddenPromos   = ref(new Set<number>())
-  const showFilters    = ref(false)
-  const searchQuery    = ref('')
 
   const filteredEvents = computed(() => {
     const q = normalize(searchQuery.value.trim())
