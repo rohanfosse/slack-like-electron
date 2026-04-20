@@ -1,7 +1,8 @@
 <script setup lang="ts">
   import { computed, ref, watch } from 'vue'
   import { useRouter, useRoute } from 'vue-router'
-  import { MessageSquare, BookOpen, FileText, LayoutDashboard, Bell, Flame, Search, Shield, Bug, Zap, Paperclip, Lightbulb, Calendar, Gamepad2, PanelLeftClose, PanelLeftOpen } from 'lucide-vue-next'
+  import { MessageSquare, BookOpen, FileText, LayoutDashboard, Bell, Flame, Search, Shield, Bug, Zap, Paperclip, Lightbulb, Calendar, Gamepad2, PanelLeftClose, PanelLeftOpen, EyeOff, Eye, ArrowUp, ArrowDown, RotateCcw } from 'lucide-vue-next'
+  import ContextMenu, { type ContextMenuItem } from '@/components/ui/ContextMenu.vue'
   import logoUrl from '@/assets/logo.png'
   import { useAppStore }    from '@/stores/app'
   import { useModalsStore } from '@/stores/modals'
@@ -120,7 +121,31 @@
   // canonique est celui d'origine ; l'utilisateur peut drag-and-drop pour
   // reordonner, avec persistance locale.
   const DEFAULT_ORDER = ['dashboard', 'messages', 'devoirs', 'lumen', 'documents', 'fichiers', 'agenda', 'live', 'jeux'] as const
-  const { effectiveOrder: navOrder, move: moveNavItem } = useNavRailOrder(DEFAULT_ORDER)
+  const {
+    effectiveOrder: navOrder,
+    hiddenIds: navHiddenIds,
+    isHidden: isNavHidden,
+    move: moveNavItem,
+    moveTo: moveNavItemTo,
+    hide: hideNavItem,
+    show: showNavItem,
+    reset: resetNavOrder,
+  } = useNavRailOrder(DEFAULT_ORDER)
+
+  function navItemLabel(id: string): string {
+    switch (id) {
+      case 'dashboard': return 'Accueil'
+      case 'messages':  return 'Messages'
+      case 'devoirs':   return 'Devoirs'
+      case 'lumen':     return 'Cours'
+      case 'documents': return 'Documents'
+      case 'fichiers':  return 'Fichiers'
+      case 'agenda':    return 'Calendrier'
+      case 'live':      return 'Live'
+      case 'jeux':      return 'Jeux'
+      default:          return id
+    }
+  }
 
   // Visibilite par id, evaluee de maniere reactive cote template
   function isNavVisible(id: string): boolean {
@@ -136,6 +161,42 @@
       case 'jeux':      return appStore.isTeacher || isEnabled('games')
       default:          return false
     }
+  }
+
+  // ── Context menu (clic-droit) ──────────────────────────────────────────
+  const navCtx = ref<{ x: number; y: number; items: ContextMenuItem[] } | null>(null)
+  function closeNavCtx() { navCtx.value = null }
+
+  function openItemContextMenu(ev: MouseEvent, id: string) {
+    ev.preventDefault(); ev.stopPropagation()
+    const items: ContextMenuItem[] = [
+      { label: 'Masquer ' + navItemLabel(id), icon: EyeOff, action: () => hideNavItem(id) },
+      { separator: true, label: '' },
+      { label: 'Deplacer en haut', icon: ArrowUp,   action: () => moveNavItemTo(id, 'top') },
+      { label: 'Deplacer en bas',  icon: ArrowDown, action: () => moveNavItemTo(id, 'bottom') },
+      { separator: true, label: '' },
+      { label: 'Reinitialiser l\'ordre', icon: RotateCcw, action: () => resetNavOrder() },
+    ]
+    navCtx.value = { x: ev.clientX, y: ev.clientY, items }
+  }
+
+  function openRailContextMenu(ev: MouseEvent) {
+    // Si on a clique sur un bouton, le handler de l'item a deja gere
+    if ((ev.target as HTMLElement)?.closest('.nav-btn')) return
+    ev.preventDefault(); ev.stopPropagation()
+    const hidden = navHiddenIds.value.filter(id => isNavVisible(id))
+    const items: ContextMenuItem[] = []
+    if (hidden.length) {
+      for (const id of hidden) {
+        items.push({ label: 'Afficher ' + navItemLabel(id), icon: Eye, action: () => showNavItem(id) })
+      }
+      items.push({ separator: true, label: '' })
+    } else {
+      items.push({ label: 'Aucun bouton masque', disabled: true })
+      items.push({ separator: true, label: '' })
+    }
+    items.push({ label: 'Reinitialiser l\'ordre', icon: RotateCcw, action: () => resetNavOrder() })
+    navCtx.value = { x: ev.clientX, y: ev.clientY, items }
   }
 
   // ── Drag & drop : l'utilisateur deplace les boutons ─────────────────────
@@ -173,7 +234,7 @@
 </script>
 
 <template>
-  <nav class="nav-rail" aria-label="Navigation principale">
+  <nav class="nav-rail" aria-label="Navigation principale" @contextmenu="openRailContextMenu">
     <!-- Logo - cliquable pour le prof -->
     <div class="nav-logo">
       <button
@@ -207,7 +268,7 @@
     <!-- ── Navigation principale (ordre personnalisable via drag-and-drop) ── -->
     <template v-for="id in navOrder" :key="id">
       <button
-        v-if="isNavVisible(id)"
+        v-if="isNavVisible(id) && !isNavHidden(id)"
         class="nav-btn"
         :class="{
           active: id === 'dashboard' ? route.name === 'dashboard'
@@ -233,6 +294,7 @@
         @dragleave="onNavDragLeave(id)"
         @drop="onNavDrop($event, id)"
         @dragend="onNavDragEnd"
+        @contextmenu="openItemContextMenu($event, id)"
         @click="router.push(id === 'dashboard' ? '/dashboard' : id === 'jeux' ? '/jeux' : `/${id}`)"
       >
         <!-- Icones par id -->
@@ -365,6 +427,9 @@
       <span v-else>{{ user?.avatar_initials }}</span>
     </button>
   </nav>
+
+  <!-- Context menu (clic-droit sur un bouton ou sur la nav) -->
+  <ContextMenu v-if="navCtx" :x="navCtx.x" :y="navCtx.y" :items="navCtx.items" @close="closeNavCtx" />
 
   <!-- Modale Feedback -->
   <Teleport to="body">
