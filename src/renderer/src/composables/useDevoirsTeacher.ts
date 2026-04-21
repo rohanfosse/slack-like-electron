@@ -171,6 +171,9 @@ export function useDevoirsTeacher() {
   }
 
   // ── Devoirs par type (pour la vue projet sélectionné) ─────────────────────────
+  // Chaque groupe expose une liste de paires {devoir initial, rattrapages attaches}
+  // pour afficher le rattrapage DIRECTEMENT sous son initiale plutot que dans une
+  // section separee (moins de navigation visuelle, meilleure comprehension du lien).
   const devoirsByType = computed(() => {
     const groups: Record<string, typeof unifiedFlat.value> = {}
     for (const t of unifiedFlat.value) {
@@ -181,9 +184,29 @@ export function useDevoirsTeacher() {
       .filter(type => groups[type]?.length)
       .map(type => {
         const items = groups[type]
-        const initiales = items.filter(t => !isRattrapage(t)).sort((a, b) => new Date(a.deadline).getTime() - new Date(b.deadline).getTime())
-        const rattrapages = items.filter(t => isRattrapage(t)).sort((a, b) => new Date(a.deadline).getTime() - new Date(b.deadline).getTime())
-        return { type, initiales, rattrapages, total: items.length }
+        const sortByDeadline = (a: UnifiedFlatRow, b: UnifiedFlatRow) =>
+          new Date(a.deadline).getTime() - new Date(b.deadline).getTime()
+        const initiales = items.filter(t => !isRattrapage(t)).sort(sortByDeadline)
+        const rattrapages = items.filter(t => isRattrapage(t)).sort(sortByDeadline)
+
+        // Appariement rattrapage -> initial : un rattrapage "Foo (Rattrapage)"
+        // rattache au devoir intitule "Foo". Fallback startsWith pour les cas
+        // ou le suffixe a derive.
+        const normalize = (s: string): string =>
+          s.replace(/\s*\(Rattrapage\)\s*$/i, '').trim().toLowerCase()
+        const pairs = initiales.map(devoir => ({ devoir, rattrapages: [] as UnifiedFlatRow[] }))
+        const attached = new Set<number>()
+        for (const r of rattrapages) {
+          const rBase = normalize(r.title)
+          const pair = pairs.find(p => normalize(p.devoir.title) === rBase)
+          if (pair) {
+            pair.rattrapages.push(r)
+            attached.add(r.id)
+          }
+        }
+        const orphanRattrapages = rattrapages.filter(r => !attached.has(r.id))
+
+        return { type, pairs, orphanRattrapages, total: items.length }
       })
   })
 

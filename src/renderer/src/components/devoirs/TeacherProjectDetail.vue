@@ -18,9 +18,20 @@ import { useModules } from '@/composables/useModules'
 
 const { isEnabled } = useModules()
 
+interface DevoirPair {
+  devoir: UnifiedFlatRow
+  rattrapages: UnifiedFlatRow[]
+}
+interface DevoirGroup {
+  type: string
+  pairs: DevoirPair[]
+  orphanRattrapages: UnifiedFlatRow[]
+  total: number
+}
+
 const props = defineProps<{
   unifiedFlat: UnifiedFlatRow[]
-  devoirsByType: { type: string; initiales: UnifiedFlatRow[]; rattrapages: UnifiedFlatRow[]; total: number }[]
+  devoirsByType: DevoirGroup[]
   projectTypeCounts: (cat: string) => { type: string; count: number }[]
   projectStats: (cat: string) => { totalDepots: number; totalExpected: number; pct: number; noted: number; toGrade: number; drafts: number }
   projectNextDeadline: (cat: string) => string | null
@@ -60,10 +71,9 @@ async function handlePublishAll() {
 }
 
 // Label de deadline contextuel :
-// - devoir non publie : "Prevu le 12 avr" (neutre, gris, pas anxiogene)
-// - devoir publie : deadlineLabel par defaut ("Retard de Xj", "Dans N jours", ...)
-// Raison : afficher "Retard" en rouge sur un brouillon est une fausse alerte,
-// ca masque les vraies urgences (rendus publies manquants, notes a faire).
+// - devoir non publie : "Prevu le 12 avr" (gris, brouillon)
+// - devoir publie : deadlineLabel standard (qui utilise "Le 12 avr" pour les
+//   dates passees depuis v2.211 — plus de "Retard de Xj" anxiogene).
 function displayDeadlineLabel(t: UnifiedFlatRow): string {
   if (!t.is_published) {
     const d = new Date(t.deadline)
@@ -156,65 +166,82 @@ function cardStats(t: UnifiedFlatRow): CardStats {
             <span class="dc-section-count">{{ group.total }}</span>
           </div>
 
-          <!-- Cartes initiales -->
+          <!-- Cartes : chaque initiale montre son rattrapage attache en dessous -->
           <div class="dc-cards">
             <div
-              v-for="t in group.initiales"
-              :key="t.id"
-              class="dc-card"
-              :class="{ 'dc-card--draft': !t.is_published, [`dc-card--${group.type}`]: true }"
-              @click="openDevoir(t.id)"
-              @contextmenu="openCtxMenu($event, t)"
+              v-for="pair in group.pairs"
+              :key="pair.devoir.id"
+              class="dc-pair"
             >
-              <div class="dc-card-top">
-                <span class="dc-card-title">{{ t.title }}</span>
-                <button v-if="!t.is_published" class="dc-publish-btn" title="Publier" @click="publishDevoir(t.id, $event)">
-                  <Eye :size="12" />
-                </button>
-              </div>
-              <div class="dc-card-meta">
-                <span class="dc-card-date deadline-badge" :class="displayDeadlineClass(t)">{{ displayDeadlineLabel(t) }}</span>
-                <span v-if="extractDuration(t.description)" class="dc-card-duration">{{ extractDuration(t.description) }}</span>
-                <span v-if="t.room" class="dc-card-duration">{{ t.room }}</span>
-              </div>
-              <template v-if="cardStats(t).submission">
-                <div class="dc-card-submission">
-                  <div class="dc-card-progress">
-                    <div class="dc-card-progress-fill" :style="{ width: cardStats(t).progress + '%' }" />
+              <div
+                class="dc-card"
+                :class="{ 'dc-card--draft': !pair.devoir.is_published, [`dc-card--${group.type}`]: true }"
+                @click="openDevoir(pair.devoir.id)"
+                @contextmenu="openCtxMenu($event, pair.devoir)"
+              >
+                <div class="dc-card-top">
+                  <span class="dc-card-title">{{ pair.devoir.title }}</span>
+                  <button v-if="!pair.devoir.is_published" class="dc-publish-btn" title="Publier" @click="publishDevoir(pair.devoir.id, $event)">
+                    <Eye :size="12" />
+                  </button>
+                </div>
+                <div class="dc-card-meta">
+                  <span class="dc-card-date deadline-badge" :class="displayDeadlineClass(pair.devoir)">{{ displayDeadlineLabel(pair.devoir) }}</span>
+                  <span v-if="extractDuration(pair.devoir.description)" class="dc-card-duration">{{ extractDuration(pair.devoir.description) }}</span>
+                  <span v-if="pair.devoir.room" class="dc-card-duration">{{ pair.devoir.room }}</span>
+                </div>
+                <template v-if="cardStats(pair.devoir).submission">
+                  <div class="dc-card-submission">
+                    <div class="dc-card-progress">
+                      <div class="dc-card-progress-fill" :style="{ width: cardStats(pair.devoir).progress + '%' }" />
+                    </div>
+                    <span class="dc-card-submission-label">{{ cardStats(pair.devoir).submission }}</span>
                   </div>
-                  <span class="dc-card-submission-label">{{ cardStats(t).submission }}</span>
+                  <div v-if="cardStats(pair.devoir).toGrade > 0" class="dc-card-tograde">
+                    {{ cardStats(pair.devoir).toGrade }} à noter
+                  </div>
+                </template>
+                <span v-if="!pair.devoir.is_published" class="dc-card-draft-tag">Brouillon</span>
+              </div>
+
+              <!-- Rattrapages attaches, sous l'initiale, visuellement lies par une bordure gauche -->
+              <div v-if="pair.rattrapages.length" class="dc-ratt-wrap">
+                <div
+                  v-for="r in pair.rattrapages"
+                  :key="r.id"
+                  class="dc-ratt"
+                  :class="{ 'dc-ratt--draft': !r.is_published }"
+                  :title="`Rattrapage de « ${pair.devoir.title} »`"
+                  @click="openDevoir(r.id)"
+                  @contextmenu="openCtxMenu($event, r)"
+                >
+                  <RotateCw :size="10" class="dc-ratt-icon" />
+                  <span class="dc-ratt-label-text">Rattrapage</span>
+                  <span class="dc-ratt-date deadline-badge" :class="displayDeadlineClass(r)">{{ displayDeadlineLabel(r) }}</span>
+                  <button v-if="!r.is_published" class="dc-publish-btn dc-publish-btn--sm" title="Publier" @click.stop="publishDevoir(r.id, $event)">
+                    <Eye :size="10" />
+                  </button>
                 </div>
-                <div v-if="cardStats(t).toGrade > 0" class="dc-card-tograde">
-                  {{ cardStats(t).toGrade }} à noter
-                </div>
-              </template>
-              <span v-if="!t.is_published" class="dc-card-draft-tag">Brouillon</span>
+              </div>
             </div>
           </div>
 
-          <!-- Rattrapages -->
-          <template v-if="group.rattrapages.length">
-            <div class="dc-ratt-label"><RotateCw :size="10" /> Rattrapages</div>
-            <div class="dc-cards dc-cards--ratt">
-              <div
-                v-for="t in group.rattrapages"
-                :key="t.id"
-                class="dc-card dc-card--ratt dc-card--ratt-border"
-                :class="{ 'dc-card--draft': !t.is_published, [`dc-card--${group.type}`]: true }"
-                @click="openDevoir(t.id)"
-                @contextmenu="openCtxMenu($event, t)"
-              >
-                <span class="dc-card-title">{{ t.title }}</span>
-                <div class="dc-card-meta">
-                  <span class="dc-card-date deadline-badge" :class="displayDeadlineClass(t)">{{ displayDeadlineLabel(t) }}</span>
-                  <span v-if="extractDuration(t.description)" class="dc-card-duration">{{ extractDuration(t.description) }}</span>
-                </div>
-                <button v-if="!t.is_published" class="dc-publish-btn" title="Publier" @click="publishDevoir(t.id, $event)">
-                  <Eye :size="12" />
-                </button>
-              </div>
+          <!-- Rattrapages orphelins (sans initiale correspondante — cas rare) -->
+          <div v-if="group.orphanRattrapages.length" class="dc-ratt-orphans">
+            <div class="dc-ratt-orphans-label"><RotateCw :size="10" /> Rattrapages sans devoir initial</div>
+            <div
+              v-for="r in group.orphanRattrapages"
+              :key="r.id"
+              class="dc-ratt"
+              :class="{ 'dc-ratt--draft': !r.is_published }"
+              @click="openDevoir(r.id)"
+              @contextmenu="openCtxMenu($event, r)"
+            >
+              <RotateCw :size="10" class="dc-ratt-icon" />
+              <span class="dc-ratt-label-text">{{ r.title }}</span>
+              <span class="dc-ratt-date deadline-badge" :class="displayDeadlineClass(r)">{{ displayDeadlineLabel(r) }}</span>
             </div>
-          </template>
+          </div>
 
           <!-- CTA minimal (le bouton principal "Nouveau" est dans le header) -->
           <button class="dc-add-link" @click="addDevoirOfType(group.type)">
@@ -297,20 +324,67 @@ function cardStats(t: UnifiedFlatRow): CardStats {
 }
 
 .dc-cards {
-  display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
   gap: 8px; margin-bottom: 8px;
 }
-.dc-cards--ratt {
-  opacity: .6;
-  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+
+/* Paire devoir initial + ses rattrapages attaches (affiches directement sous
+   la carte initiale pour rendre le lien visible sans navigation) */
+.dc-pair {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.dc-ratt-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin: 2px 0 0 12px; /* indente pour marquer le rattachement a l'initiale */
+  padding-left: 10px;
+  border-left: 2px dashed var(--border-input);
+}
+.dc-ratt {
+  display: flex;
+  align-items: center;
   gap: 6px;
+  padding: 4px 8px;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 10.5px;
+  cursor: pointer;
+  transition: background var(--t-fast), color var(--t-fast);
+  position: relative;
 }
-.dc-cards--ratt .dc-card {
-  padding: 7px 10px;
-  font-size: 11px;
+.dc-ratt:hover {
+  background: var(--bg-hover);
+  color: var(--text-secondary);
 }
-.dc-cards--ratt .dc-card-title { font-size: 11px; }
-.dc-cards--ratt:hover { opacity: .85; }
+.dc-ratt--draft { font-style: italic; opacity: .75; }
+.dc-ratt-icon { color: var(--color-warning); flex-shrink: 0; opacity: .8; }
+.dc-ratt-label-text {
+  flex: 1;
+  font-weight: 500;
+  font-size: 10.5px;
+}
+.dc-ratt-date { font-size: 9.5px !important; padding: 1px 6px !important; }
+.dc-publish-btn--sm { padding: 1px !important; }
+
+/* Rattrapages orphelins (pas d'initiale matchante) */
+.dc-ratt-orphans {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px dashed var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.dc-ratt-orphans-label {
+  display: flex; align-items: center; gap: 4px;
+  font-size: 9.5px; font-weight: 700; color: var(--text-muted);
+  text-transform: uppercase; letter-spacing: .3px;
+  padding-bottom: 2px;
+}
 
 .dc-card {
   padding: 10px 12px; border-radius: 8px; cursor: pointer;
@@ -370,18 +444,6 @@ function cardStats(t: UnifiedFlatRow): CardStats {
   color: var(--text-muted); transition: color var(--t-fast);
 }
 .dc-publish-btn:hover { color: var(--color-success); }
-
-.dc-card--ratt-border {
-  border-left: 3px solid var(--color-warning) !important;
-  border-style: dashed;
-}
-
-.dc-ratt-label {
-  display: flex; align-items: center; gap: 4px;
-  font-size: 10px; font-weight: 700; color: var(--color-warning);
-  text-transform: uppercase; letter-spacing: .3px;
-  padding: 4px 0 2px; border-top: 1px dashed var(--border); margin-top: 4px;
-}
 
 @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 .spin-icon { animation: spin 1s linear infinite; }

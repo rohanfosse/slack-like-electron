@@ -54,13 +54,15 @@ export function deadlineClass(deadlineStr: string): DeadlineClass {
 }
 
 export function deadlineLabel(deadlineStr: string): string {
-  const diff = new Date(deadlineStr).getTime() - Date.now()
+  const date = new Date(deadlineStr)
+  const diff = date.getTime() - Date.now()
+  // Dates passees : on affiche juste la date, sans notion de "retard"
+  // (evite l'anxiete inutile ; le contexte fait comprendre le statut).
   if (diff < 0) {
-    const d = Math.ceil(-diff / (24 * 3600 * 1000))
-    return d === 1 ? "Retard d'1 jour" : `Retard de ${d}j`
+    return `Le ${date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}`
   }
   const h = diff / (3600 * 1000)
-  if (h < 1)   return "Moins d'1h !"
+  if (h < 1)   return "Moins d'1h"
   if (h < 24)  return `Dans ${Math.ceil(h)}h`
   const d = Math.ceil(h / 24)
   if (d === 1) return 'Demain'

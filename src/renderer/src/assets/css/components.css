@@ -593,7 +593,9 @@ button { font-family: var(--font); }
 }
 .deadline-ok     { background: var(--deadline-ok-bg);   color: var(--deadline-ok-text);   border-color: rgba(var(--color-success-rgb),.25); }
 .deadline-soon   { background: var(--deadline-soon-bg);  color: var(--deadline-soon-text); border-color: rgba(var(--color-warning-rgb),.3); }
-.deadline-passed { background: var(--deadline-over-bg);  color: var(--deadline-over-text); border-color: rgba(var(--color-danger-rgb),.3);  }
+/* Dates passees : style neutre (pas de rouge alarmant). On reste factuel :
+   le contexte fait comprendre le statut sans crier "retard". */
+.deadline-passed { background: var(--bg-hover); color: var(--text-muted); border-color: var(--border-input); }
 
 .note-badge {
   background: var(--accent-dark);
