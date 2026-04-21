@@ -28,15 +28,23 @@ const modals   = useModalsStore()
     <template #title>
       <div class="dh-title">
         <BookOpen :size="18" />
-        <span class="dh-title-text">Devoirs</span>
         <template v-if="appStore.activeProject">
+          <button
+            type="button"
+            class="dh-back"
+            title="Voir tous les projets"
+            @click="appStore.activeProject = null"
+          >Devoirs</button>
           <span class="dh-sep">&rsaquo;</span>
-          <span class="dh-project">{{ appStore.activeProject.replace(/^\S+\s/, '') }}</span>
-          <button class="dh-project-clear" title="Voir tous les devoirs" @click="appStore.activeProject = null">&times;</button>
+          <span class="dh-project" :title="appStore.activeProject">{{ appStore.activeProject }}</span>
+          <button class="dh-project-clear" title="Voir tous les projets" @click="appStore.activeProject = null">&times;</button>
         </template>
-        <span v-else-if="appStore.activeChannelName" class="dh-channel">
-          # {{ appStore.activeChannelName }}
-        </span>
+        <template v-else>
+          <span class="dh-title-text">Devoirs</span>
+          <span v-if="appStore.activeChannelName" class="dh-channel">
+            # {{ appStore.activeChannelName }}
+          </span>
+        </template>
       </div>
     </template>
 
@@ -59,6 +67,20 @@ const modals   = useModalsStore()
   min-width: 0;
 }
 .dh-title-text { flex-shrink: 0; }
+
+.dh-back {
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: color var(--motion-fast) var(--ease-out);
+}
+.dh-back:hover { color: var(--text-primary); }
 
 .dh-channel {
   font-size: 13px;

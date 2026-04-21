@@ -9,7 +9,7 @@ import { useTravauxStore } from '@/stores/travaux'
 import { useModalsStore }  from '@/stores/modals'
 import { useConfirm }      from '@/composables/useConfirm'
 import { deadlineClass, deadlineLabel } from '@/utils/date'
-import { typeLabel, extractDuration, isRattrapage } from '@/utils/devoir'
+import { typeLabel, extractDuration } from '@/utils/devoir'
 import type { GanttRow } from '@/types'
 import type { UnifiedFlatRow } from '@/composables/useDevoirsTeacher'
 import KanbanBoard from './KanbanBoard.vue'
@@ -58,6 +58,46 @@ async function handlePublishAll() {
   publishingAll.value = true
   try { await props.publishAllDrafts() } finally { publishingAll.value = false }
 }
+
+// Label de deadline contextuel :
+// - devoir non publie : "Prevu le 12 avr" (neutre, gris, pas anxiogene)
+// - devoir publie : deadlineLabel par defaut ("Retard de Xj", "Dans N jours", ...)
+// Raison : afficher "Retard" en rouge sur un brouillon est une fausse alerte,
+// ca masque les vraies urgences (rendus publies manquants, notes a faire).
+function displayDeadlineLabel(t: UnifiedFlatRow): string {
+  if (!t.is_published) {
+    const d = new Date(t.deadline)
+    return `Prévu le ${d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}`
+  }
+  return deadlineLabel(t.deadline)
+}
+
+function displayDeadlineClass(t: UnifiedFlatRow): string {
+  if (!t.is_published) return 'deadline-draft'
+  return deadlineClass(t.deadline)
+}
+
+// Micro-stats d'une carte publiee : "3/27 rendus", "2 a noter"
+// Retourne null pour les events (pas de rendu attendu) ou les drafts.
+interface CardStats {
+  submission: string | null
+  progress: number | null
+  toGrade: number
+}
+function cardStats(t: UnifiedFlatRow): CardStats {
+  if (!t.is_published || !t.hasSubmission || t.students_total === 0) {
+    return { submission: null, progress: null, toGrade: 0 }
+  }
+  const dc = t.depots_count ?? 0
+  const st = t.students_total ?? 0
+  const progress = st > 0 ? Math.round((dc / st) * 100) : 0
+  const toGrade = Math.max(0, dc - (t.noted_count ?? 0))
+  return {
+    submission: `${dc}/${st} rendus`,
+    progress,
+    toGrade,
+  }
+}
 </script>
 
 <template>
@@ -81,14 +121,15 @@ async function handlePublishAll() {
         </span>
       </div>
       <div class="proj-summary-stats">
-        <div class="proj-summary-progress">
+        <div v-if="currentProjectStats.totalExpected > 0" class="proj-summary-progress">
           <div class="proj-summary-progress-bar">
             <div class="proj-summary-progress-fill" :style="{ width: currentProjectStats.pct + '%' }" />
           </div>
           <span class="proj-summary-pct">{{ currentProjectStats.pct }}% soumis</span>
         </div>
-        <span class="proj-summary-stat">{{ currentProjectStats.noted }} notés</span>
+        <span v-if="currentProjectStats.noted > 0" class="proj-summary-stat">{{ currentProjectStats.noted }} notés</span>
         <span v-if="currentProjectStats.toGrade > 0" class="proj-summary-stat proj-stat-warn">{{ currentProjectStats.toGrade }} à noter</span>
+        <span v-if="currentProjectStats.drafts > 0" class="proj-summary-stat proj-stat-draft">{{ currentProjectStats.drafts }} brouillon{{ currentProjectStats.drafts > 1 ? 's' : '' }}</span>
         <span v-if="projectNextDeadline(appStore.activeProject!)" class="proj-summary-stat">
           <Clock :size="11" /> {{ deadlineLabel(projectNextDeadline(appStore.activeProject!)!) }}
         </span>
@@ -132,16 +173,21 @@ async function handlePublishAll() {
                 </button>
               </div>
               <div class="dc-card-meta">
-                <span class="dc-card-date deadline-badge" :class="deadlineClass(t.deadline)">{{ deadlineLabel(t.deadline) }}</span>
+                <span class="dc-card-date deadline-badge" :class="displayDeadlineClass(t)">{{ displayDeadlineLabel(t) }}</span>
                 <span v-if="extractDuration(t.description)" class="dc-card-duration">{{ extractDuration(t.description) }}</span>
                 <span v-if="t.room" class="dc-card-duration">{{ t.room }}</span>
               </div>
-              <div v-if="t.hasSubmission && t.students_total > 0" class="dc-card-submission">
-                <div class="dc-card-progress">
-                  <div class="dc-card-progress-fill" :style="{ width: Math.round((t.depots_count / t.students_total) * 100) + '%' }" />
+              <template v-if="cardStats(t).submission">
+                <div class="dc-card-submission">
+                  <div class="dc-card-progress">
+                    <div class="dc-card-progress-fill" :style="{ width: cardStats(t).progress + '%' }" />
+                  </div>
+                  <span class="dc-card-submission-label">{{ cardStats(t).submission }}</span>
                 </div>
-                <span class="dc-card-submission-label">{{ t.depots_count }}/{{ t.students_total }}</span>
-              </div>
+                <div v-if="cardStats(t).toGrade > 0" class="dc-card-tograde">
+                  {{ cardStats(t).toGrade }} à noter
+                </div>
+              </template>
               <span v-if="!t.is_published" class="dc-card-draft-tag">Brouillon</span>
             </div>
           </div>
@@ -160,7 +206,7 @@ async function handlePublishAll() {
               >
                 <span class="dc-card-title">{{ t.title }}</span>
                 <div class="dc-card-meta">
-                  <span class="dc-card-date deadline-badge" :class="deadlineClass(t.deadline)">{{ deadlineLabel(t.deadline) }}</span>
+                  <span class="dc-card-date deadline-badge" :class="displayDeadlineClass(t)">{{ displayDeadlineLabel(t) }}</span>
                   <span v-if="extractDuration(t.description)" class="dc-card-duration">{{ extractDuration(t.description) }}</span>
                 </div>
                 <button v-if="!t.is_published" class="dc-publish-btn" title="Publier" @click="publishDevoir(t.id, $event)">
@@ -170,9 +216,9 @@ async function handlePublishAll() {
             </div>
           </template>
 
-          <!-- Bouton ajouter -->
-          <button class="dc-add-btn" @click="addDevoirOfType(group.type)">
-            <Plus :size="13" /> Ajouter {{ typeLabel(group.type).toLowerCase().startsWith('é') ? 'une' : 'un' }} {{ typeLabel(group.type) }}
+          <!-- CTA minimal (le bouton principal "Nouveau" est dans le header) -->
+          <button class="dc-add-link" @click="addDevoirOfType(group.type)">
+            <Plus :size="11" /> Ajouter {{ typeLabel(group.type).toLowerCase().startsWith('é') ? 'une' : 'un' }} {{ typeLabel(group.type) }}
           </button>
         </div>
       </template>
@@ -207,10 +253,10 @@ async function handlePublishAll() {
 <style scoped>
 /* ── Résumé projet ──────────────────────────────────────────────────────── */
 .proj-summary {
-  padding: 16px 20px; border-bottom: 1px solid var(--border); margin-bottom: 8px;
+  padding: 10px 20px 12px; border-bottom: 1px solid var(--border); margin-bottom: 8px;
 }
-.proj-summary-name { font-size: 18px; font-weight: 700; color: var(--text-primary); margin-bottom: 8px; }
-.proj-summary-pills { display: flex; gap: 5px; flex-wrap: wrap; margin-bottom: 10px; }
+.proj-summary-name { font-size: 17px; font-weight: 700; color: var(--text-primary); margin-bottom: 6px; }
+.proj-summary-pills { display: flex; gap: 5px; flex-wrap: wrap; margin-bottom: 8px; }
 .proj-summary-stats {
   display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
   font-size: 12px; color: var(--text-secondary);
@@ -229,6 +275,7 @@ async function handlePublishAll() {
 .proj-summary-publish-btn:hover { background: rgba(var(--color-success-rgb),.2); }
 .proj-summary-stat { display: flex; align-items: center; gap: 3px; }
 .proj-stat-warn { color: var(--color-warning); font-weight: 600; }
+.proj-stat-draft { color: var(--text-muted); font-style: italic; }
 
 .proj-type-pill {
   font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 10px;
@@ -253,7 +300,17 @@ async function handlePublishAll() {
   display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
   gap: 8px; margin-bottom: 8px;
 }
-.dc-cards--ratt { opacity: .65; }
+.dc-cards--ratt {
+  opacity: .6;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 6px;
+}
+.dc-cards--ratt .dc-card {
+  padding: 7px 10px;
+  font-size: 11px;
+}
+.dc-cards--ratt .dc-card-title { font-size: 11px; }
+.dc-cards--ratt:hover { opacity: .85; }
 
 .dc-card {
   padding: 10px 12px; border-radius: 8px; cursor: pointer;
@@ -286,6 +343,21 @@ async function handlePublishAll() {
 }
 .dc-card-progress-fill { height: 100%; background: var(--color-success); border-radius: 1px; }
 
+.dc-card-tograde {
+  margin-top: 4px;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--color-warning);
+  letter-spacing: .2px;
+}
+
+/* Deadline-draft : neutre pour les brouillons (pas de "Retard" rouge alarmant) */
+.deadline-draft {
+  background: var(--bg-hover);
+  color: var(--text-muted);
+  border: 1px dashed var(--border-input);
+}
+
 .dc-card-draft-tag {
   position: absolute; top: 4px; right: 4px;
   font-size: 8px; font-weight: 700; text-transform: uppercase;
@@ -314,6 +386,19 @@ async function handlePublishAll() {
 @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 .spin-icon { animation: spin 1s linear infinite; }
 
+/* CTA minimal par section : le bouton principal "+ Nouveau" est dans le header */
+.dc-add-link {
+  display: inline-flex; align-items: center; gap: 3px;
+  font-size: 10.5px; font-weight: 500; color: var(--text-muted);
+  background: none; border: none;
+  padding: 5px 8px 5px 4px; cursor: pointer; font-family: var(--font);
+  border-radius: 4px;
+  transition: color var(--t-fast), background var(--t-fast);
+  margin-top: 4px;
+}
+.dc-add-link:hover { color: var(--accent); background: var(--bg-hover); }
+
+/* Empty state : seul cas ou on veut un bouton visible */
 .dc-add-btn {
   display: flex; align-items: center; gap: 4px;
   font-size: 11px; font-weight: 600; color: var(--accent);
