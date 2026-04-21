@@ -4,7 +4,7 @@
   import {
     Send, Paperclip, Loader2,
     Bold, Italic, Code, SquareCode, Strikethrough, Quote, List, ListOrdered,
-    Smile, Eye, EyeOff,
+    Smile, Eye, EyeOff, Clock,
   } from 'lucide-vue-next'
 
   const showEmojiPicker = ref(false)
@@ -34,6 +34,7 @@
     triggerDevoir: []
     attachFile: []
     send: []
+    schedule: []
     'update:showPreview': [v: boolean]
     'update:requestSignature': [v: boolean]
     insertEmoji: [emoji: string]
@@ -111,6 +112,15 @@
       <span v-if="showCharCount" class="mi-char-count" :class="{ over: charCountOver }">
         {{ charCount }}/{{ maxMessageLength }}
       </span>
+      <button
+        class="mi-icon-btn"
+        :disabled="!content.trim() || sending || charCountOver"
+        title="Programmer l'envoi"
+        aria-label="Programmer l'envoi"
+        @click="emit('schedule')"
+      >
+        <Clock :size="15" />
+      </button>
       <button
         id="btn-send"
         class="mi-send-btn"

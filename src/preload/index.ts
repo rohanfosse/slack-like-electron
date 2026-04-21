@@ -198,6 +198,26 @@ contextBridge.exposeInMainWorld('api', {
   editMessage:    (id: number, content: string) => patch(`/api/messages/${id}`, { content }),
   reportMessage:  (messageId: number, reason: string) => post(`/api/messages/${messageId}/report`, { reason }),
 
+  // ── Messages programmes (scheduled) ─────────────────────────────────────────
+  listScheduledMessages:  () => get('/api/messages/scheduled/mine'),
+  createScheduledMessage: (payload: unknown) => post('/api/messages/scheduled', payload),
+  updateScheduledMessage: (id: number, payload: unknown) => patch(`/api/messages/scheduled/${id}`, payload),
+  deleteScheduledMessage: (id: number) => del(`/api/messages/scheduled/${id}`),
+
+  // ── Signets (bookmarks) ─────────────────────────────────────────────────────
+  listBookmarks:     (beforeId?: number, limit?: number) => {
+    const params = new URLSearchParams()
+    if (beforeId != null) params.set('before', String(beforeId))
+    if (limit != null) params.set('limit', String(limit))
+    const qs = params.toString() ? `?${params}` : ''
+    return get(`/api/bookmarks${qs}`)
+  },
+  listBookmarkIds:   () => get('/api/bookmarks/ids'),
+  addBookmark:       (messageId: number, note?: string | null) =>
+    post('/api/bookmarks', { messageId, note: note ?? null }),
+  removeBookmark:    (messageId: number) => del(`/api/bookmarks/${messageId}`),
+  importBookmarks:   (messageIds: number[]) => post('/api/bookmarks/import', { messageIds }),
+
   // Feedback
   // Rappels prof
   getTeacherReminders: () => get('/api/admin/rappels'),

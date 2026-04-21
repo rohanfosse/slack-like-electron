@@ -35,6 +35,7 @@ const router = createRouter({
     { path: '/snake',          component: () => import('@/views/SnakeView.vue'),          name: 'snake',          meta: { requiredModule: 'games' } },
     { path: '/space-invaders', component: () => import('@/views/SpaceInvadersView.vue'),  name: 'space-invaders', meta: { requiredModule: 'games' } },
     { path: '/fichiers',   component: () => import('@/views/FilesView.vue'),  name: 'fichiers', meta: { requiredRole: 'teacher' } },
+    { path: '/signets',    component: () => import('@/views/BookmarksView.vue'), name: 'signets' },
     // Public booking pages (no auth required)
     { path: '/book/:token',          component: () => import('@/views/BookingPublicView.vue'),  name: 'booking-public', meta: { public: true } },
     { path: '/book/cancel/:token',   component: () => import('@/views/BookingCancelView.vue'),  name: 'booking-cancel', meta: { public: true } },

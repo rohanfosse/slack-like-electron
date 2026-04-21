@@ -2,7 +2,7 @@
   import ErrorBoundary from '@/components/ui/ErrorBoundary.vue'
   import EmptyState from '@/components/ui/EmptyState.vue'
   import { computed, watch, ref, nextTick, onMounted, onUnmounted } from 'vue'
-  import { Search, X as XIcon, ClipboardList, BookCheck, FileText, FolderPlus, X as Close, CalendarRange, Users, FolderOpen, Menu, MessageSquare, Megaphone, Paperclip, Image as ImageIcon, ExternalLink } from 'lucide-vue-next'
+  import { Search, X as XIcon, ClipboardList, BookCheck, FileText, FolderPlus, X as Close, CalendarRange, Users, FolderOpen, Menu, MessageSquare, Megaphone, Paperclip, Image as ImageIcon, ExternalLink, Clock } from 'lucide-vue-next'
   import { useAppStore }      from '@/stores/app'
   import { useMessagesStore } from '@/stores/messages'
   import { useTravauxStore }  from '@/stores/travaux'
@@ -13,6 +13,8 @@
   import MessageList         from '@/components/chat/MessageList.vue'
   import MessageInput        from '@/components/chat/MessageInput.vue'
   import PinnedBanner        from '@/components/chat/PinnedBanner.vue'
+  import ScheduledMessagesModal from '@/components/modals/ScheduledMessagesModal.vue'
+  import { useScheduledMessages } from '@/composables/useScheduledMessages'
   import ChannelMembersPanel from '@/components/panels/ChannelMembersPanel.vue'
   import ChannelDocsPanel      from '@/components/panels/ChannelDocsPanel.vue'
   import ChannelTravauxPanel   from '@/components/panels/ChannelTravauxPanel.vue'
@@ -28,6 +30,9 @@
 
   const bannerDismissed  = ref(false)
   const rightPanel       = ref<'members' | 'docs' | 'travaux' | 'dm-files' | null>(null)
+  const showScheduledModal = ref(false)
+  const scheduled = useScheduledMessages()
+  onMounted(() => { scheduled.load() })
 
   // ── Indicateur en ligne du peer DM ─────────────────────────────────────
   const peerIsOnline = computed(() => {
@@ -264,6 +269,17 @@
           <CalendarRange :size="16" />
         </button>
 
+        <!-- Messages programmes (user-scope) -->
+        <button
+          class="btn-icon header-scheduled-btn"
+          :title="scheduled.pendingCount.value > 0 ? `${scheduled.pendingCount.value} message(s) programme(s)` : 'Messages programmés'"
+          aria-label="Messages programmés"
+          @click="showScheduledModal = true"
+        >
+          <Clock :size="16" />
+          <span v-if="scheduled.pendingCount.value > 0" class="header-scheduled-badge">{{ scheduled.pendingCount.value }}</span>
+        </button>
+
         <!-- Membres du canal (canal uniquement) -->
         <button
           v-if="!appStore.activeDmStudentId"
@@ -457,6 +473,9 @@
       </EmptyState>
     </div>
 
+    <!-- Modal gestion messages programmes -->
+    <ScheduledMessagesModal v-model="showScheduledModal" />
+
     <!-- Overlay drag & drop -->
     <Transition name="drop-fade">
       <div v-if="isDragOver && (appStore.activeChannelId || appStore.activeDmStudentId)" class="drop-overlay">
@@ -540,6 +559,23 @@
 /* ── Badge compteur membres ── */
 .header-member-btn { position: relative; }
 .header-member-count {
+  position: absolute;
+  top: -4px; right: -6px;
+  min-width: 16px; height: 16px;
+  padding: 0 4px;
+  border-radius: 8px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 9px;
+  font-weight: 700;
+  line-height: 16px;
+  text-align: center;
+  pointer-events: none;
+}
+
+/* ── Badge compteur messages programmes ── */
+.header-scheduled-btn { position: relative; }
+.header-scheduled-badge {
   position: absolute;
   top: -4px; right: -6px;
   min-width: 16px; height: 16px;

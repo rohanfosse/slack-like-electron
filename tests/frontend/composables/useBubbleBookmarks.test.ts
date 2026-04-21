@@ -1,16 +1,12 @@
 /**
- * Tests pour useBubbleBookmarks — favoris de messages via localStorage.
+ * Tests pour useBubbleBookmarks — delegue au store Pinia bookmarksStore.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { setActivePinia, createPinia } from 'pinia'
 import type { Message } from '@/types'
 
-// ── Mocks ────────────────────────────────────────────────────────────────────
-
-const mockAppStore = {
-  activeChannelName: 'general',
-}
-vi.mock('@/stores/app', () => ({
-  useAppStore: () => mockAppStore,
+vi.mock('@/composables/useApi', () => ({
+  useApi: () => ({ api: vi.fn().mockResolvedValue({ ok: true, data: { ids: [] } }) }),
 }))
 
 vi.mock('@/constants', () => ({
@@ -18,8 +14,7 @@ vi.mock('@/constants', () => ({
 }))
 
 import { useBubbleBookmarks } from '@/composables/useBubbleBookmarks'
-
-// ── Helpers ──────────────────────────────────────────────────────────────────
+import { useBookmarksStore } from '@/stores/bookmarks'
 
 function makeMsg(overrides: Partial<Message> = {}): Message {
   return {
@@ -44,135 +39,62 @@ function makeMsg(overrides: Partial<Message> = {}): Message {
 }
 
 beforeEach(() => {
-  localStorage.clear()
-  vi.clearAllMocks()
-  mockAppStore.activeChannelName = 'general'
+  setActivePinia(createPinia())
 })
 
-// ── Tests ────────────────────────────────────────────────────────────────────
-
 describe('isBookmarked', () => {
-  it('is false when localStorage is empty', () => {
+  it('est false quand le store est vide', () => {
     const { isBookmarked } = useBubbleBookmarks(() => makeMsg({ id: 1 }))
     expect(isBookmarked.value).toBe(false)
   })
 
-  it('is true when message is in bookmarks', () => {
-    localStorage.setItem('cesia:bookmarks', JSON.stringify([
-      { id: 1, authorName: 'Bob', authorInitials: 'BO', content: 'Hi', createdAt: '', isDm: false, channelName: null, dmStudentId: null },
-    ]))
-    const { isBookmarked } = useBubbleBookmarks(() => makeMsg({ id: 1 }))
+  it('est true quand le message figure dans le store', () => {
+    const store = useBookmarksStore()
+    store.ids.add(42)
+    const { isBookmarked } = useBubbleBookmarks(() => makeMsg({ id: 42 }))
     expect(isBookmarked.value).toBe(true)
   })
 
-  it('is false when different message is bookmarked', () => {
-    localStorage.setItem('cesia:bookmarks', JSON.stringify([
-      { id: 99, authorName: 'X', authorInitials: 'X', content: '', createdAt: '', isDm: false, channelName: null, dmStudentId: null },
-    ]))
-    const { isBookmarked } = useBubbleBookmarks(() => makeMsg({ id: 1 }))
-    expect(isBookmarked.value).toBe(false)
-  })
-
-  it('handles corrupted localStorage gracefully', () => {
-    localStorage.setItem('cesia:bookmarks', 'not-json')
-    const { isBookmarked } = useBubbleBookmarks(() => makeMsg({ id: 1 }))
-    expect(isBookmarked.value).toBe(false)
-  })
-
-  it('handles old number[] format gracefully', () => {
-    localStorage.setItem('cesia:bookmarks', JSON.stringify([1, 2, 3]))
-    const { isBookmarked } = useBubbleBookmarks(() => makeMsg({ id: 1 }))
-    expect(isBookmarked.value).toBe(false)
-  })
-
-  it('handles non-array JSON gracefully', () => {
-    localStorage.setItem('cesia:bookmarks', JSON.stringify({ id: 1 }))
+  it('est false pour un autre message que celui bookmarke', () => {
+    const store = useBookmarksStore()
+    store.ids.add(99)
     const { isBookmarked } = useBubbleBookmarks(() => makeMsg({ id: 1 }))
     expect(isBookmarked.value).toBe(false)
   })
 })
 
 describe('toggleBookmark', () => {
-  it('adds a bookmark when not bookmarked', () => {
-    const msg = makeMsg({ id: 5, author_name: 'Alice', author_initials: 'AL', content: 'Test message', created_at: '2026-03-01' })
-    const { isBookmarked, toggleBookmark } = useBubbleBookmarks(() => msg)
+  it('ajoute le message au store quand il n est pas bookmarke', () => {
+    const store = useBookmarksStore()
+    const toggleSpy = vi.spyOn(store, 'toggle')
+    const { toggleBookmark } = useBubbleBookmarks(() => makeMsg({ id: 5 }))
+    toggleBookmark()
+    expect(toggleSpy).toHaveBeenCalledWith(5)
+  })
+
+  it('retire le message quand il est deja bookmarke', () => {
+    const store = useBookmarksStore()
+    store.ids.add(5)
+    const toggleSpy = vi.spyOn(store, 'toggle')
+    const { toggleBookmark } = useBubbleBookmarks(() => makeMsg({ id: 5 }))
+    toggleBookmark()
+    expect(toggleSpy).toHaveBeenCalledWith(5)
+  })
+
+  it('la reactivite suit le store (add)', async () => {
+    const store = useBookmarksStore()
+    const { isBookmarked } = useBubbleBookmarks(() => makeMsg({ id: 7 }))
     expect(isBookmarked.value).toBe(false)
-
-    toggleBookmark()
-
+    store.ids.add(7)
     expect(isBookmarked.value).toBe(true)
-    const saved = JSON.parse(localStorage.getItem('cesia:bookmarks')!)
-    expect(saved).toHaveLength(1)
-    expect(saved[0]).toMatchObject({
-      id: 5,
-      authorName: 'Alice',
-      authorInitials: 'AL',
-      content: 'Test message',
-      createdAt: '2026-03-01',
-      isDm: false,
-      channelName: 'general',
-      dmStudentId: null,
-    })
   })
 
-  it('removes a bookmark when already bookmarked', () => {
-    localStorage.setItem('cesia:bookmarks', JSON.stringify([
-      { id: 5, authorName: 'Alice', authorInitials: 'AL', content: 'Test', createdAt: '', isDm: false, channelName: null, dmStudentId: null },
-    ]))
-    const { isBookmarked, toggleBookmark } = useBubbleBookmarks(() => makeMsg({ id: 5 }))
+  it('la reactivite suit le store (remove)', () => {
+    const store = useBookmarksStore()
+    store.ids.add(8)
+    const { isBookmarked } = useBubbleBookmarks(() => makeMsg({ id: 8 }))
     expect(isBookmarked.value).toBe(true)
-
-    toggleBookmark()
-
+    store.ids.delete(8)
     expect(isBookmarked.value).toBe(false)
-    const saved = JSON.parse(localStorage.getItem('cesia:bookmarks')!)
-    expect(saved).toHaveLength(0)
-  })
-
-  it('marks DM messages correctly', () => {
-    const msg = makeMsg({ id: 7, dm_student_id: 42 })
-    const { toggleBookmark } = useBubbleBookmarks(() => msg)
-    toggleBookmark()
-    const saved = JSON.parse(localStorage.getItem('cesia:bookmarks')!)
-    expect(saved[0].isDm).toBe(true)
-    expect(saved[0].dmStudentId).toBe(42)
-  })
-
-  it('truncates content to 200 characters', () => {
-    const longContent = 'A'.repeat(300)
-    const msg = makeMsg({ id: 8, content: longContent })
-    const { toggleBookmark } = useBubbleBookmarks(() => msg)
-    toggleBookmark()
-    const saved = JSON.parse(localStorage.getItem('cesia:bookmarks')!)
-    expect(saved[0].content).toHaveLength(200)
-  })
-
-  it('uses fallback initials from author_name when author_initials is undefined', () => {
-    const msg = makeMsg({ id: 9, author_name: 'Charlie', author_initials: undefined as any })
-    const { toggleBookmark } = useBubbleBookmarks(() => msg)
-    toggleBookmark()
-    const saved = JSON.parse(localStorage.getItem('cesia:bookmarks')!)
-    expect(saved[0].authorInitials).toBe('CH')
-  })
-
-  it('sets channelName to null when activeChannelName is empty', () => {
-    mockAppStore.activeChannelName = ''
-    const msg = makeMsg({ id: 10 })
-    const { toggleBookmark } = useBubbleBookmarks(() => msg)
-    toggleBookmark()
-    const saved = JSON.parse(localStorage.getItem('cesia:bookmarks')!)
-    expect(saved[0].channelName).toBeNull()
-  })
-
-  it('preserves other bookmarks when toggling', () => {
-    localStorage.setItem('cesia:bookmarks', JSON.stringify([
-      { id: 1, authorName: 'A', authorInitials: 'A', content: '', createdAt: '', isDm: false, channelName: null, dmStudentId: null },
-    ]))
-    const { toggleBookmark } = useBubbleBookmarks(() => makeMsg({ id: 2 }))
-    toggleBookmark()
-    const saved = JSON.parse(localStorage.getItem('cesia:bookmarks')!)
-    expect(saved).toHaveLength(2)
-    expect(saved[0].id).toBe(1)
-    expect(saved[1].id).toBe(2)
   })
 })

@@ -1,11 +1,11 @@
 // ─── Composable : widgets du Dashboard (DMs, bookmarks, canaux, agenda…) ────
-import { ref, computed, onUnmounted } from 'vue'
+import { ref, computed } from 'vue'
 import { useRouter }       from 'vue-router'
 import { useAppStore }     from '@/stores/app'
 import { useModalsStore }  from '@/stores/modals'
+import { useBookmarksStore } from '@/stores/bookmarks'
 import { useApi }          from '@/composables/useApi'
 import { useToast }        from '@/composables/useToast'
-import { STORAGE_KEYS }    from '@/constants'
 import type { Ref }        from 'vue'
 import type { GanttRow }   from './useDashboardTeacher'
 
@@ -41,6 +41,7 @@ export function useDashboardWidgets(
 ) {
   const appStore = useAppStore()
   const modals   = useModalsStore()
+  const bookmarksStore = useBookmarksStore()
   const router   = useRouter()
   const { api }  = useApi()
   const { showToast } = useToast()
@@ -64,23 +65,21 @@ export function useDashboardWidgets(
     }
   }
 
-  // ── Messages enregistrés ────────────────────────────────────────────────
-  function getSavedMessages(): SavedMessage[] {
-    try {
-      const raw = JSON.parse(localStorage.getItem(STORAGE_KEYS.BOOKMARKS) || '[]')
-      if (!Array.isArray(raw)) return []
-      if (raw.length > 0 && typeof raw[0] === 'number') return []
-      return raw as SavedMessage[]
-    } catch (e) { console.warn('[DashboardWidgets] Failed to parse bookmarks from localStorage:', e); return [] }
-  }
+  // ── Messages enregistrés (synchronises via bookmarksStore) ──────────────
+  const savedMessages = computed<SavedMessage[]>(() => bookmarksStore.items.map(b => ({
+    id:             b.id,
+    authorName:     b.author_name,
+    authorInitials: b.author_initials,
+    content:        b.content.slice(0, 200),
+    createdAt:      b.created_at,
+    isDm:           b.dm_student_id != null,
+    channelName:    b.channel_name,
+    dmStudentId:    b.dm_student_id,
+  })))
 
-  const savedMessages = ref<SavedMessage[]>(getSavedMessages())
-
-  function removeSavedMessage(msgId: number) {
-    const filtered = getSavedMessages().filter(m => m.id !== msgId)
-    localStorage.setItem(STORAGE_KEYS.BOOKMARKS, JSON.stringify(filtered))
-    savedMessages.value = filtered
-    showToast('Message retiré des favoris.', 'info')
+  async function removeSavedMessage(msgId: number) {
+    const ok = await bookmarksStore.remove(msgId)
+    if (ok) showToast('Message retiré des favoris.', 'info')
   }
 
   function goToSavedMessage(msg: SavedMessage) {
@@ -93,11 +92,7 @@ export function useDashboardWidgets(
     router.push('/messages')
   }
 
-  function onStorageChange(e: StorageEvent) {
-    if (e.key === STORAGE_KEYS.BOOKMARKS) savedMessages.value = getSavedMessages()
-  }
-  if (typeof window !== 'undefined') window.addEventListener('storage', onStorageChange)
-  function cleanupStorage() { window.removeEventListener('storage', onStorageChange) }
+  function cleanupStorage(): void { /* legacy no-op : plus de listener localStorage */ }
 
   // ── Derniers messages de canal ──────────────────────────────────────────
   const recentChannelActivity = computed(() =>

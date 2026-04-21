@@ -54,6 +54,32 @@ Object.defineProperty(globalThis, 'localStorage', { value: localStorageMock, wri
 
 import { useDashboardWidgets } from '../../../src/renderer/src/composables/useDashboardWidgets'
 import { useAppStore } from '../../../src/renderer/src/stores/app'
+import { useBookmarksStore, type BookmarkItem } from '../../../src/renderer/src/stores/bookmarks'
+
+function makeBookmark(over: Partial<BookmarkItem>): BookmarkItem {
+  return {
+    bookmark_id: 1,
+    bookmark_note: null,
+    bookmarked_at: '2026-04-21T00:00:00Z',
+    id: 1,
+    channel_id: 10,
+    dm_student_id: null,
+    author_id: 2,
+    author_name: 'A',
+    author_type: 'student',
+    author_initials: 'A',
+    author_photo: null,
+    content: 'test',
+    created_at: '2026-04-21T00:00:00Z',
+    edited: 0,
+    is_pinned: 0,
+    reply_to_author: null,
+    reply_to_preview: null,
+    channel_name: 'ch',
+    dm_peer_name: null,
+    ...over,
+  }
+}
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -142,37 +168,29 @@ describe('useDashboardWidgets', () => {
   // ── Saved messages (bookmarks) ────────────────────────────────────────
 
   describe('saved messages', () => {
-    it('loads saved messages from localStorage', () => {
-      const msgs = [{ id: 1, authorName: 'A', authorInitials: 'A', content: 'test', createdAt: '', isDm: false, channelName: 'ch', dmStudentId: null }]
-      localStorageMock.store['cesia:bookmarks'] = JSON.stringify(msgs)
+    it('expose les signets du store Pinia', () => {
+      const store = useBookmarksStore()
+      store.items = [makeBookmark({ id: 1, bookmark_id: 10, content: 'test' })]
       const { result } = setup()
-      expect(result.savedMessages.value.length).toBe(1)
-    })
-
-    it('returns empty on corrupt data', () => {
-      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
-      localStorageMock.store['cesia:bookmarks'] = '{broken'
-      const { result } = setup()
-      expect(result.savedMessages.value).toEqual([])
-      warnSpy.mockRestore()
-    })
-
-    it('returns empty if data is old format (array of numbers)', () => {
-      localStorageMock.store['cesia:bookmarks'] = JSON.stringify([1, 2, 3])
-      const { result } = setup()
-      expect(result.savedMessages.value).toEqual([])
-    })
-
-    it('removeSavedMessage filters out message and shows toast', () => {
-      const msgs = [
-        { id: 1, authorName: 'A', authorInitials: 'A', content: 'keep', createdAt: '', isDm: false, channelName: 'ch', dmStudentId: null },
-        { id: 2, authorName: 'B', authorInitials: 'B', content: 'remove', createdAt: '', isDm: false, channelName: 'ch', dmStudentId: null },
-      ]
-      localStorageMock.store['cesia:bookmarks'] = JSON.stringify(msgs)
-      const { result } = setup()
-      result.removeSavedMessage(2)
       expect(result.savedMessages.value.length).toBe(1)
       expect(result.savedMessages.value[0].id).toBe(1)
+    })
+
+    it('retourne vide quand le store est vide', () => {
+      const { result } = setup()
+      expect(result.savedMessages.value).toEqual([])
+    })
+
+    it('removeSavedMessage delegue au store et affiche un toast', async () => {
+      const store = useBookmarksStore()
+      store.items = [
+        makeBookmark({ id: 1, bookmark_id: 1, content: 'keep' }),
+        makeBookmark({ id: 2, bookmark_id: 2, content: 'remove' }),
+      ]
+      const removeSpy = vi.spyOn(store, 'remove').mockResolvedValue(true)
+      const { result } = setup()
+      await result.removeSavedMessage(2)
+      expect(removeSpy).toHaveBeenCalledWith(2)
       expect(showToastMock).toHaveBeenCalledWith('Message retiré des favoris.', 'info')
     })
   })
@@ -317,13 +335,12 @@ describe('useDashboardWidgets', () => {
     })
   })
 
-  // ── cleanupStorage ────────────────────────────────────────────────────
+  // ── cleanupStorage (no-op legacy apres migration serveur) ─────────────
 
   describe('cleanupStorage', () => {
-    it('removes storage event listener', () => {
+    it('est un no-op safe apres migration vers le store serveur', () => {
       const { result } = setup()
-      result.cleanupStorage()
-      expect(window.removeEventListener).toHaveBeenCalledWith('storage', expect.any(Function))
+      expect(() => result.cleanupStorage()).not.toThrow()
     })
   })
 })

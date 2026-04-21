@@ -1,7 +1,7 @@
 <script setup lang="ts">
   import { computed, ref, watch } from 'vue'
   import { useRouter, useRoute } from 'vue-router'
-  import { MessageSquare, BookOpen, FileText, LayoutDashboard, Bell, Flame, Search, Shield, Bug, Zap, Paperclip, Lightbulb, Calendar, Gamepad2, PanelLeftClose, PanelLeftOpen, EyeOff, Eye, ArrowUp, ArrowDown, RotateCcw } from 'lucide-vue-next'
+  import { MessageSquare, BookOpen, FileText, LayoutDashboard, Bell, Flame, Search, Shield, Bug, Zap, Paperclip, Lightbulb, Calendar, Gamepad2, PanelLeftClose, PanelLeftOpen, EyeOff, Eye, ArrowUp, ArrowDown, RotateCcw, Bookmark } from 'lucide-vue-next'
   import ContextMenu from '@/components/ui/ContextMenu.vue'
   import { useContextMenu, type ContextMenuItem } from '@/composables/useContextMenu'
   import logoUrl from '@/assets/logo.png'
@@ -121,7 +121,7 @@
   // Les ids doivent correspondre aux blocs de rendu dans le template. L'ordre
   // canonique est celui d'origine ; l'utilisateur peut drag-and-drop pour
   // reordonner, avec persistance locale.
-  const DEFAULT_ORDER = ['dashboard', 'messages', 'devoirs', 'lumen', 'documents', 'fichiers', 'agenda', 'live', 'jeux'] as const
+  const DEFAULT_ORDER = ['dashboard', 'messages', 'signets', 'devoirs', 'lumen', 'documents', 'fichiers', 'agenda', 'live', 'jeux'] as const
   const {
     effectiveOrder: navOrder,
     hiddenIds: navHiddenIds,
@@ -137,6 +137,7 @@
     switch (id) {
       case 'dashboard': return 'Accueil'
       case 'messages':  return 'Messages'
+      case 'signets':   return 'Signets'
       case 'devoirs':   return 'Devoirs'
       case 'lumen':     return 'Cours'
       case 'documents': return 'Documents'
@@ -153,6 +154,7 @@
     switch (id) {
       case 'dashboard': return true
       case 'messages':  return true
+      case 'signets':   return true
       case 'devoirs':   return true
       case 'lumen':     return isEnabled('lumen')
       case 'documents': return appStore.isStaff
@@ -277,6 +279,7 @@
         }"
         :title="id === 'dashboard' ? 'Tableau de bord'
               : id === 'messages'  ? 'Messages'
+              : id === 'signets'   ? 'Signets (messages sauvegardés)'
               : id === 'devoirs'   ? 'Devoirs'
               : id === 'lumen'     ? 'Cours'
               : id === 'documents' ? 'Documents'
@@ -303,6 +306,7 @@
             <span v-if="msgBadgeCount > 0" class="nav-msg-badge">{{ msgBadgeCount > 9 ? '9+' : msgBadgeCount }}</span>
           </span>
         </template>
+        <Bookmark     v-else-if="id === 'signets'"   :size="20" />
         <BookOpen     v-else-if="id === 'devoirs'"   :size="20" />
         <Lightbulb    v-else-if="id === 'lumen'"     :size="20" />
         <FileText     v-else-if="id === 'documents'" :size="20" />
@@ -315,6 +319,7 @@
         <span class="nav-label">
           {{ id === 'dashboard' ? 'Accueil'
              : id === 'messages' ? 'Messages'
+             : id === 'signets' ? 'Signets'
              : id === 'devoirs' ? 'Devoirs'
              : id === 'lumen' ? 'Cours'
              : id === 'documents' ? 'Documents'

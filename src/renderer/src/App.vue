@@ -5,6 +5,7 @@
   import { useModalsStore }   from '@/stores/modals'
   import { useMessagesStore } from '@/stores/messages'
   import { useLiveStore }     from '@/stores/live'
+  import { useBookmarksStore } from '@/stores/bookmarks'
   import { usePrefs }       from '@/composables/usePrefs'
   import { useToast }       from '@/composables/useToast'
   import { useAppListeners } from '@/composables/useAppListeners'
@@ -52,6 +53,7 @@
   const appStore = useAppStore()
   const modals   = useModalsStore()
   const liveStore = useLiveStore()
+  const bookmarksStore = useBookmarksStore()
   const router   = useRouter()
   const { getPref } = usePrefs()
   const { showToast } = useToast()
@@ -294,7 +296,14 @@
     if (restored) {
       router.replace('/messages')
       loadModules()
+      bookmarksStore.initIds()
     }
+
+    // Init/reset bookmarks store suivant l'etat de session
+    watch(() => appStore.currentUser?.id ?? null, (uid, prev) => {
+      if (uid && uid !== prev) bookmarksStore.initIds()
+      else if (!uid && prev) bookmarksStore.reset()
+    })
 
     // Tous les listeners IPC sont geres par useAppListeners (liveInvite, updater, grade, signature, document, assignment)
   })

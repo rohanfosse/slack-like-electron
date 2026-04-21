@@ -156,6 +156,7 @@ app.use('/api', (req, _res, next) => {
 // ── Routes protégées ─────────────────────────────────────────────────────────
 app.use('/api/promotions',  require('./routes/promotions'))
 app.use('/api/students',    require('./routes/students'))
+app.use('/api/messages/scheduled', require('./routes/scheduled'))
 app.use('/api/messages',    require('./routes/messages'))
 app.use('/api/assignments', require('./routes/assignments'))
 app.use('/api/depots',      require('./routes/depots'))
@@ -178,6 +179,7 @@ app.use('/api/bookings',        require('./routes/bookings'))
 app.use('/api/calendar',        require('./routes/calendar'))
 app.use('/api/typerace',        require('./routes/typerace'))
 app.use('/api/games',           require('./routes/games'))
+app.use('/api/bookmarks',       require('./routes/bookmarks'))
 
 // ── Fichiers statiques & SPA ──────────────────────────────────────────────────
 const path = require('path')

@@ -1,37 +1,26 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { Bookmark } from 'lucide-vue-next'
-import { STORAGE_KEYS } from '@/constants'
+import { useBookmarksStore } from '@/stores/bookmarks'
 import UiWidgetCard from '@/components/ui/UiWidgetCard.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
 
-interface BookmarkEntry {
-  id: string | number
-  content: string
-  authorName: string
-  channelName: string
-  date: string
-}
-
 const router = useRouter()
-const bookmarks = ref<BookmarkEntry[]>([])
+const store = useBookmarksStore()
+
+const bookmarks = computed(() => store.items.slice(0, 3))
 
 onMounted(() => {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEYS.BOOKMARKS)
-    if (raw) bookmarks.value = JSON.parse(raw) as BookmarkEntry[]
-  } catch (err) {
-    console.warn('[WidgetBookmarks] Erreur lecture localStorage', err)
-  }
+  if (!store.loaded) store.loadItems()
 })
 
 function truncate(text: string, max: number): string {
   return text.length > max ? text.slice(0, max) + '…' : text
 }
 
-function goToMessages() {
-  router.push('/messages')
+function goToBookmarks() {
+  router.push('/signets')
 }
 </script>
 
@@ -43,18 +32,18 @@ function goToMessages() {
   >
     <div v-if="bookmarks.length" class="wb-list">
       <div
-        v-for="b in bookmarks.slice(0, 3)"
-        :key="b.id"
+        v-for="b in bookmarks"
+        :key="b.bookmark_id"
         class="wb-item"
         role="button"
         tabindex="0"
-        @click="goToMessages"
-        @keydown.enter="goToMessages"
-        @keydown.space.prevent="goToMessages"
+        @click="goToBookmarks"
+        @keydown.enter="goToBookmarks"
+        @keydown.space.prevent="goToBookmarks"
       >
-        <span class="wb-author">{{ b.authorName }}</span>
+        <span class="wb-author">{{ b.author_name }}</span>
         <span class="wb-content">{{ truncate(b.content, 40) }}</span>
-        <span class="wb-channel">#{{ b.channelName }}</span>
+        <span class="wb-channel">{{ b.channel_name ? '#' + b.channel_name : '@' + (b.dm_peer_name ?? 'DM') }}</span>
       </div>
     </div>
     <EmptyState v-else size="sm" tone="muted" title="Aucun message sauvegardé" />

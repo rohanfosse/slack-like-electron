@@ -22,6 +22,7 @@ import { useMsgFormatting }   from '@/composables/useMsgFormatting'
 import MessageInputToolbar   from './MessageInputToolbar.vue'
 import CreatePollModal       from '@/components/modals/CreatePollModal.vue'
 import HelpModal             from '@/components/modals/HelpModal.vue'
+import ScheduleMessageModal  from '@/components/modals/ScheduleMessageModal.vue'
 import { useModules }         from '@/composables/useModules'
 import { ROLE_LABELS }        from '@/constants'
 import type { RefChannel, RefDevoir, RefDoc } from '@/composables/useMsgAutocomplete'
@@ -36,6 +37,7 @@ const inputEl = ref<HTMLTextAreaElement | null>(null)
 const content = ref('')
 const showEmojiPicker = ref(false)
 const requestSignature = ref(false)
+const showScheduleModal = ref(false)
 
 // Detecter si le contenu contient un fichier attache (pour afficher le toggle signature)
 const hasFileAttachment = computed(() => content.value.includes('📎'))
@@ -399,6 +401,7 @@ function onKeydown(e: KeyboardEvent) {
           @trigger-devoir="triggerDevoir"
           @attach-file="attachFile"
           @send="send"
+          @schedule="showScheduleModal = true"
           @update:show-preview="showPreview = $event"
           @update:request-signature="requestSignature = $event"
           @insert-emoji="(e) => { content += e; inputEl?.focus() }"
@@ -433,6 +436,19 @@ function onKeydown(e: KeyboardEvent) {
 
     <!-- Modal d'aide riche (declenche par /aide) -->
     <HelpModal v-model="modals.help" />
+
+    <!-- Modal de programmation d'envoi -->
+    <ScheduleMessageModal
+      v-model="showScheduleModal"
+      :content="content"
+      :channel-id="appStore.activeChannelId"
+      :dm-student-id="appStore.activeDmStudentId"
+      :dm-peer-id="appStore.activeDmPeerId"
+      :reply-to-id="messagesStore.quotedMessage?.id ?? null"
+      :reply-to-author="messagesStore.quotedMessage?.author_name ?? null"
+      :reply-to-preview="messagesStore.quotedMessage?.content?.slice(0, 100) ?? null"
+      @scheduled="clearDraft(); content = ''; messagesStore.clearQuote()"
+    />
   </div>
 </template>
 

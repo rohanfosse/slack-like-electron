@@ -152,6 +152,70 @@ declare global {
       togglePinMessage(payload: { messageId: number; pinned: boolean }): Promise<IpcResponse<number>>
       deleteMessage(id: number): Promise<IpcResponse<number>>
       reportMessage(messageId: number, reason: string): Promise<IpcResponse<null>>
+
+      // Messages programmes
+      listScheduledMessages(): Promise<IpcResponse<Array<{
+        id: number
+        channel_id: number | null
+        channel_name: string | null
+        channel_promo_id: number | null
+        dm_student_id: number | null
+        dm_peer_id: number | null
+        dm_peer_name: string | null
+        author_id: number
+        author_name: string
+        author_type: 'student' | 'teacher'
+        content: string
+        reply_to_id: number | null
+        reply_to_author: string | null
+        reply_to_preview: string | null
+        attachments_json: string | null
+        send_at: string
+        sent: number
+        failed_at: string | null
+        error: string | null
+        created_at: string
+      }>>>
+      createScheduledMessage(payload: {
+        channelId?: number | null
+        dmStudentId?: number | null
+        dmPeerId?: number | null
+        content: string
+        sendAt: string
+        replyToId?: number | null
+        replyToAuthor?: string | null
+        replyToPreview?: string | null
+        attachments?: unknown
+      }): Promise<IpcResponse<{ id: number }>>
+      updateScheduledMessage(id: number, payload: { content?: string; sendAt?: string }): Promise<IpcResponse<{ updated: number }>>
+      deleteScheduledMessage(id: number): Promise<IpcResponse<{ removed: number }>>
+
+      // Signets (bookmarks)
+      listBookmarks(beforeId?: number | null, limit?: number | null): Promise<IpcResponse<Array<{
+        bookmark_id: number
+        bookmark_note: string | null
+        bookmarked_at: string
+        id: number
+        channel_id: number | null
+        dm_student_id: number | null
+        author_id: number
+        author_name: string
+        author_type: 'student' | 'teacher'
+        author_initials: string
+        author_photo: string | null
+        content: string
+        created_at: string
+        edited: number
+        is_pinned: number
+        reply_to_author: string | null
+        reply_to_preview: string | null
+        channel_name: string | null
+        dm_peer_name: string | null
+      }>>>
+      listBookmarkIds(): Promise<IpcResponse<{ ids: number[]; count: number }>>
+      addBookmark(messageId: number, note?: string | null): Promise<IpcResponse<{ messageId: number; note: string | null }>>
+      removeBookmark(messageId: number): Promise<IpcResponse<{ removed: number }>>
+      importBookmarks(messageIds: number[]): Promise<IpcResponse<{ inserted: number }>>
       getTeacherReminders(): Promise<IpcResponse<{ id: number; promo_tag: string; date: string; title: string; description: string; bloc: string | null; done: number }[]>>
       toggleReminderDone(id: number, done: boolean): Promise<IpcResponse<null>>
       submitFeedback(type: string, title: string, description: string): Promise<IpcResponse<{ id: number }>>

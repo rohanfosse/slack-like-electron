@@ -1,6 +1,6 @@
 const { getDb } = require('./connection');
 
-const CURRENT_VERSION = 78;
+const CURRENT_VERSION = 80;
 
 // ─── Schema initial ───────────────────────────────────────────────────────────
 // Crée toutes les tables avec leur schéma complet (colonnes UTC, toutes colonnes incluses).
@@ -128,6 +128,17 @@ function initSchema() {
       submitted_at TEXT NOT NULL DEFAULT (datetime('now')),
       UNIQUE(travail_id, student_id)
     );
+
+    CREATE TABLE IF NOT EXISTS bookmarks (
+      id         INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id    INTEGER NOT NULL,
+      user_type  TEXT NOT NULL CHECK(user_type IN ('student','teacher','admin','ta')),
+      message_id INTEGER NOT NULL REFERENCES messages(id) ON DELETE CASCADE,
+      note       TEXT,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      UNIQUE(user_id, message_id)
+    );
+    CREATE INDEX IF NOT EXISTS idx_bookmarks_user ON bookmarks(user_id, created_at DESC);
   `);
 
   runMigrations(db);
@@ -1765,6 +1776,72 @@ function runMigrations(db) {
     // ou userKey est l'id signe (positif etudiant, negatif enseignant).
     (db) => {
       tryAlter(db, 'ALTER TABLE messages ADD COLUMN poll_votes TEXT DEFAULT NULL');
+    },
+
+    // v79 : Signets de messages cote serveur. Auparavant stockes en localStorage
+    // (non synchronises entre devices). user_id est l'id signe (positif etudiant,
+    // negatif enseignant) pour aligner sur la convention messages.author_id.
+    (db) => {
+      db.exec(`
+        CREATE TABLE IF NOT EXISTS bookmarks (
+          id         INTEGER PRIMARY KEY AUTOINCREMENT,
+          user_id    INTEGER NOT NULL,
+          user_type  TEXT NOT NULL CHECK(user_type IN ('student','teacher','admin','ta')),
+          message_id INTEGER NOT NULL REFERENCES messages(id) ON DELETE CASCADE,
+          note       TEXT,
+          created_at TEXT NOT NULL DEFAULT (datetime('now')),
+          UNIQUE(user_id, message_id)
+        );
+        CREATE INDEX IF NOT EXISTS idx_bookmarks_user ON bookmarks(user_id, created_at DESC);
+      `);
+    },
+
+    // v80 : Messages programmes user-scope. Jusqu'ici reserve aux admins via
+    // /api/admin/scheduled (pas d'auteur, channel_id NOT NULL, pas de DM, pas
+    // de reply, pas de suivi des echecs). On etend pour exposer la feature a
+    // tous les users (profs + etudiants) avec :
+    //   - author_id (id signe pour ownership)
+    //   - dm_student_id / dm_peer_id (DMs programmes)
+    //   - reply_to_id / reply_to_author / reply_to_preview (citation)
+    //   - attachments_json (pieces jointes programmees)
+    //   - failed_at / error (crash-safe : le worker marque l'echec au lieu
+    //     de perdre le message dans un log obscur)
+    // channel_id devient NULLABLE (DM = channel_id NULL). SQLite force la
+    // recreation de la table pour passer NOT NULL -> NULLABLE.
+    (db) => {
+      db.exec(`
+        CREATE TABLE scheduled_messages_v80 (
+          id                INTEGER PRIMARY KEY AUTOINCREMENT,
+          channel_id        INTEGER REFERENCES channels(id) ON DELETE CASCADE,
+          dm_student_id     INTEGER REFERENCES students(id) ON DELETE CASCADE,
+          dm_peer_id        INTEGER,
+          author_id         INTEGER,
+          author_name       TEXT NOT NULL,
+          author_type       TEXT NOT NULL DEFAULT 'teacher',
+          content           TEXT NOT NULL,
+          reply_to_id       INTEGER,
+          reply_to_author   TEXT,
+          reply_to_preview  TEXT,
+          attachments_json  TEXT,
+          send_at           TEXT NOT NULL,
+          sent              INTEGER NOT NULL DEFAULT 0,
+          failed_at         TEXT,
+          error             TEXT,
+          created_at        TEXT NOT NULL DEFAULT (datetime('now')),
+          CHECK(
+            (channel_id IS NULL AND dm_student_id IS NOT NULL) OR
+            (channel_id IS NOT NULL AND dm_student_id IS NULL)
+          )
+        );
+        INSERT INTO scheduled_messages_v80
+          (id, channel_id, author_name, author_type, content, send_at, sent, created_at)
+          SELECT id, channel_id, author_name, author_type, content, send_at, sent, created_at
+            FROM scheduled_messages;
+        DROP TABLE scheduled_messages;
+        ALTER TABLE scheduled_messages_v80 RENAME TO scheduled_messages;
+        CREATE INDEX IF NOT EXISTS idx_scheduled_send   ON scheduled_messages(send_at, sent);
+        CREATE INDEX IF NOT EXISTS idx_scheduled_author ON scheduled_messages(author_id, sent);
+      `);
     },
   ];
 
