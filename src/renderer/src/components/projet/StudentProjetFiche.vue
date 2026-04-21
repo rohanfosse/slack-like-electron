@@ -114,7 +114,7 @@ function gradeColor(note: string | null | undefined): string {
       />
     </header>
 
-    <!-- Cours Lumen lies au projet (cache si aucun repo lie) -->
+    <!-- Pill compact "Cours Lumen" (cache si aucun repo lie) -->
     <LumenProjectSection
       :promo-id="promoId"
       :project-name="projectKey"

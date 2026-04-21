@@ -92,6 +92,12 @@ async function handlePublishAll() {
         <span v-if="projectNextDeadline(appStore.activeProject!)" class="proj-summary-stat">
           <Clock :size="11" /> {{ deadlineLabel(projectNextDeadline(appStore.activeProject!)!) }}
         </span>
+        <LumenProjectSection
+          v-if="appStore.activePromoId"
+          :promo-id="appStore.activePromoId"
+          :project-name="appStore.activeProject ?? ''"
+          :is-teacher="true"
+        />
         <button v-if="currentProjectStats.drafts > 0" class="proj-summary-publish-btn" :disabled="publishingAll" @click="handlePublishAll">
           <RotateCw v-if="publishingAll" :size="12" class="spin-icon" />
           <Eye v-else :size="12" />
@@ -99,14 +105,6 @@ async function handlePublishAll() {
         </button>
       </div>
     </div>
-
-    <!-- Cours Lumen lies au projet (toujours visible teacher, avec empty state + CTA) -->
-    <LumenProjectSection
-      v-if="appStore.activePromoId"
-      :promo-id="appStore.activePromoId"
-      :project-name="appStore.activeProject ?? ''"
-      :is-teacher="true"
-    />
 
     <!-- Devoirs par type -->
     <div class="dc-sections">

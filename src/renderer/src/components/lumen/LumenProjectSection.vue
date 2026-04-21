@@ -1,23 +1,17 @@
 <script setup lang="ts">
 /**
- * Section "Cours Lumen" integree dans une vue projet Cursus.
- * Reutilise des deux cotes :
- *  - StudentProjetFiche.vue (read-only, cachee si 0 repos)
- *  - TeacherProjectDetail.vue (cachee pour 0 repos mais avec CTA "Lier")
+ * Pill compact "Cours Lumen" integre dans la barre de stats d'un projet.
  *
- * Props :
- *  - promoId : id de la promo du projet (pour scope)
- *  - projectName : nom string du projet (Cursus utilise name-as-key legacy)
- *  - isTeacher : true = affiche empty state avec CTA, false = cache si 0 repos
+ * Comportements :
+ *  - 0 repo + teacher : petit lien "+ Lier un cours" (ouvre LumenLinkRepoModal)
+ *  - 0 repo + student : rend rien
+ *  - >=1 repo : pill cliquable "N cours Lumen" avec dropdown listant repos + chapitres
  *
- * Comportement :
- *  - Fetch les repos lies au mount et au changement de projet
- *  - Liste chaque repo avec ses chapitres cliquables (deep-link /lumen)
- *  - CTA teacher ouvre un modal de liaison (LumenLinkRepoModal)
+ * Place inline dans le header projet, n'impose plus aucun bloc vertical.
  */
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { BookOpen, FileText, Link2, AlertTriangle, Plus } from 'lucide-vue-next'
+import { BookOpen, FileText, Plus, ChevronDown, AlertTriangle } from 'lucide-vue-next'
 import { useLumenStore } from '@/stores/lumen'
 import { useToast } from '@/composables/useToast'
 import type { LumenRepo } from '@/types'
@@ -37,8 +31,10 @@ const { showToast } = useToast()
 const linkedRepos = ref<LumenRepo[]>([])
 const loading = ref(false)
 const linkModalOpen = ref(false)
+const dropdownOpen = ref(false)
+const wrapperRef = ref<HTMLElement | null>(null)
 
-async function loadRepos() {
+async function loadRepos(): Promise<void> {
   if (!props.promoId || !props.projectName) return
   loading.value = true
   try {
@@ -48,94 +44,117 @@ async function loadRepos() {
   }
 }
 
-onMounted(loadRepos)
+onMounted(() => {
+  loadRepos()
+  document.addEventListener('mousedown', onClickAway, { capture: true })
+  document.addEventListener('keydown', onKey)
+})
+onBeforeUnmount(() => {
+  document.removeEventListener('mousedown', onClickAway, { capture: true })
+  document.removeEventListener('keydown', onKey)
+})
 watch(() => [props.promoId, props.projectName], loadRepos)
 
-/** Caches entierement pour students quand 0 repos. */
-const shouldRender = computed(() => {
-  if (loading.value) return props.isTeacher
-  return props.isTeacher || linkedRepos.value.length > 0
-})
+const hasRepos = computed(() => linkedRepos.value.length > 0)
+const shouldRender = computed(() => props.isTeacher || hasRepos.value)
 
-function openChapter(repo: LumenRepo, chapterPath: string) {
-  router.push({
-    name: 'lumen',
-    query: { repo: String(repo.id), chapter: chapterPath },
-  })
+function onClickAway(e: MouseEvent): void {
+  if (!dropdownOpen.value) return
+  if (wrapperRef.value && !wrapperRef.value.contains(e.target as Node)) dropdownOpen.value = false
+}
+function onKey(e: KeyboardEvent): void {
+  if (e.key === 'Escape' && dropdownOpen.value) dropdownOpen.value = false
 }
 
-function openFirstChapter(repo: LumenRepo) {
+function openChapter(repo: LumenRepo, chapterPath: string): void {
+  dropdownOpen.value = false
+  router.push({ name: 'lumen', query: { repo: String(repo.id), chapter: chapterPath } })
+}
+
+function openFirstChapter(repo: LumenRepo): void {
   const first = repo.manifest?.chapters?.[0]
-  if (!first) return
-  openChapter(repo, first.path)
+  if (first) openChapter(repo, first.path)
 }
 
-async function handleLinked(repoId: number) {
-  // Modal emet un event apres liaison reussie : on refresh la liste
+function handleLinked(): void {
   linkModalOpen.value = false
-  showToast('Cours lie au projet', 'success')
-  await loadRepos()
+  showToast('Cours lié au projet', 'success')
+  loadRepos()
 }
 </script>
 
 <template>
-  <section v-if="shouldRender" class="lumen-project-section">
-    <header class="lps-head">
-      <div class="lps-title">
-        <BookOpen :size="14" />
-        <span>Cours Lumen</span>
-        <span v-if="linkedRepos.length" class="lps-count">{{ linkedRepos.length }}</span>
-      </div>
+  <span v-if="shouldRender" ref="wrapperRef" class="lumen-inline">
+    <!-- Teacher + 0 repo : lien discret -->
+    <button
+      v-if="!loading && !hasRepos && isTeacher"
+      type="button"
+      class="lumen-inline-link"
+      title="Lier un cours Lumen à ce projet"
+      @click="linkModalOpen = true"
+    >
+      <Plus :size="11" />
+      <span>Lier un cours</span>
+    </button>
+
+    <!-- >=1 repo : pill + dropdown -->
+    <template v-else-if="hasRepos">
       <button
-        v-if="isTeacher"
         type="button"
-        class="lps-link-btn"
-        :title="linkedRepos.length ? 'Lier un autre cours a ce projet' : 'Lier un cours Lumen a ce projet'"
-        @click="linkModalOpen = true"
+        class="lumen-inline-pill"
+        :class="{ 'lumen-inline-pill--open': dropdownOpen }"
+        :title="`${linkedRepos.length} cours Lumen lié${linkedRepos.length > 1 ? 's' : ''}`"
+        @click="dropdownOpen = !dropdownOpen"
       >
-        <Plus :size="12" />
-        Lier un cours
+        <BookOpen :size="11" />
+        <span>{{ linkedRepos.length }} cours Lumen</span>
+        <ChevronDown :size="11" class="lumen-inline-chev" />
       </button>
-    </header>
 
-    <div v-if="loading" class="lps-loading">Chargement...</div>
-
-    <div v-else-if="linkedRepos.length === 0" class="lps-empty">
-      <Link2 :size="24" />
-      <p>Aucun cours lie a ce projet pour l'instant.</p>
-      <p class="lps-empty-hint">
-        Clique sur "Lier un cours" pour associer un repo Lumen a ce projet.
-      </p>
-    </div>
-
-    <ul v-else class="lps-repo-list">
-      <li v-for="repo in linkedRepos" :key="repo.id" class="lps-repo">
-        <header class="lps-repo-head">
+      <div v-if="dropdownOpen" class="lumen-inline-panel" role="menu">
+        <div class="lumen-inline-panel-header">
+          <span>Cours liés</span>
           <button
+            v-if="isTeacher"
             type="button"
-            class="lps-repo-title"
-            :title="`Ouvrir ${repo.manifest?.project ?? repo.fullName} dans Lumen`"
-            @click="openFirstChapter(repo)"
+            class="lumen-inline-add"
+            title="Lier un autre cours"
+            @click="linkModalOpen = true; dropdownOpen = false"
           >
-            <span>{{ repo.manifest?.project ?? repo.fullName }}</span>
-            <span v-if="repo.manifest?.module" class="lps-repo-module">— {{ repo.manifest.module }}</span>
+            <Plus :size="10" /> Ajouter
           </button>
-          <span v-if="repo.manifestError" class="lps-repo-err" :title="repo.manifestError">
-            <AlertTriangle :size="12" />
-          </span>
-        </header>
-        <ol v-if="repo.manifest?.chapters?.length" class="lps-chapter-list">
-          <li v-for="(ch, i) in repo.manifest.chapters" :key="ch.path">
-            <button type="button" class="lps-chapter" @click="openChapter(repo, ch.path)">
-              <span class="lps-chapter-num">{{ String(i + 1).padStart(2, '0') }}</span>
-              <FileText :size="12" />
-              <span class="lps-chapter-title">{{ ch.title }}</span>
-              <span v-if="ch.duration" class="lps-chapter-duration">{{ ch.duration }} min</span>
+        </div>
+
+        <ul class="lumen-inline-repo-list">
+          <li v-for="repo in linkedRepos" :key="repo.id" class="lumen-inline-repo">
+            <button
+              type="button"
+              class="lumen-inline-repo-title"
+              :title="`Ouvrir ${repo.manifest?.project ?? repo.fullName}`"
+              @click="openFirstChapter(repo)"
+            >
+              <span class="lumen-inline-repo-name">{{ repo.manifest?.project ?? repo.fullName }}</span>
+              <span v-if="repo.manifest?.module" class="lumen-inline-repo-module">{{ repo.manifest.module }}</span>
+              <AlertTriangle v-if="repo.manifestError" :size="11" class="lumen-inline-err" :title="repo.manifestError ?? undefined" />
             </button>
+            <ol v-if="repo.manifest?.chapters?.length" class="lumen-inline-chapters">
+              <li v-for="(ch, i) in repo.manifest.chapters" :key="ch.path">
+                <button
+                  type="button"
+                  class="lumen-inline-chapter"
+                  @click="openChapter(repo, ch.path)"
+                >
+                  <span class="lumen-inline-chapter-num">{{ String(i + 1).padStart(2, '0') }}</span>
+                  <FileText :size="10" />
+                  <span class="lumen-inline-chapter-title">{{ ch.title }}</span>
+                  <span v-if="ch.duration" class="lumen-inline-chapter-duration">{{ ch.duration }} min</span>
+                </button>
+              </li>
+            </ol>
           </li>
-        </ol>
-      </li>
-    </ul>
+        </ul>
+      </div>
+    </template>
 
     <LumenLinkRepoModal
       v-if="linkModalOpen"
@@ -144,184 +163,207 @@ async function handleLinked(repoId: number) {
       @close="linkModalOpen = false"
       @linked="handleLinked"
     />
-  </section>
+  </span>
 </template>
 
 <style scoped>
-.lumen-project-section {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  padding: 16px 20px;
-  background: var(--bg-secondary);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  margin: 12px 0;
+.lumen-inline {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  font-family: var(--font);
 }
 
-.lps-head {
-  display: flex;
+/* Tiny text-link version (teacher + 0 repo) */
+.lumen-inline-link {
+  display: inline-flex;
   align-items: center;
-  justify-content: space-between;
-}
-.lps-title {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 12px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
+  gap: 3px;
+  padding: 3px 6px;
+  border: none;
+  background: transparent;
   color: var(--text-muted);
-}
-.lps-count {
-  background: var(--bg-primary);
-  color: var(--text-muted);
-  padding: 1px 7px;
-  border-radius: 10px;
   font-size: 11px;
-  text-transform: none;
-  letter-spacing: 0;
-  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: color .1s, background .1s;
+}
+.lumen-inline-link:hover {
+  color: var(--accent);
+  background: var(--accent-subtle, rgba(var(--accent-rgb), .1));
 }
 
-.lps-link-btn {
+/* Pill version (>=1 repo) */
+.lumen-inline-pill {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  padding: 5px 10px;
-  background: var(--accent);
-  color: white;
-  border: none;
-  border-radius: 6px;
+  padding: 3px 8px;
+  background: var(--bg-hover, rgba(255, 255, 255, .05));
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--text-secondary);
   font-size: 11px;
   font-weight: 500;
   cursor: pointer;
+  transition: background .1s, color .1s, border-color .1s;
   font-family: inherit;
 }
-.lps-link-btn:hover { opacity: 0.9; }
-
-.lps-loading {
-  font-size: 12px;
-  color: var(--text-muted);
-  padding: 12px 0;
-  text-align: center;
+.lumen-inline-pill:hover,
+.lumen-inline-pill--open {
+  background: var(--accent-subtle, rgba(var(--accent-rgb), .1));
+  color: var(--accent);
+  border-color: rgba(var(--accent-rgb), .4);
+}
+.lumen-inline-chev {
+  transition: transform .15s ease;
+}
+.lumen-inline-pill--open .lumen-inline-chev {
+  transform: rotate(180deg);
 }
 
-.lps-empty {
+/* Dropdown panel */
+.lumen-inline-panel {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  z-index: 100;
+  min-width: 280px;
+  max-width: 380px;
+  max-height: 60vh;
+  overflow-y: auto;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, .35), 0 2px 8px rgba(0, 0, 0, .25);
+  animation: lumen-inline-in .12s ease;
+  padding: 4px;
+}
+@keyframes lumen-inline-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: none; }
+}
+.lumen-inline-panel-header {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  gap: 10px;
-  padding: 20px;
+  justify-content: space-between;
+  padding: 6px 8px 4px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
   color: var(--text-muted);
-  text-align: center;
 }
-.lps-empty p {
-  margin: 0;
-  font-size: 12.5px;
-  line-height: 1.5;
-  max-width: 420px;
+.lumen-inline-add {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 6px;
+  background: transparent;
+  border: none;
+  color: var(--accent);
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: none;
+  letter-spacing: 0;
+  cursor: pointer;
+  border-radius: 4px;
+  font-family: inherit;
 }
-.lps-empty-hint {
-  font-size: 11px;
-  opacity: 0.8;
-}
-.lps-empty code {
-  background: var(--bg-primary);
-  padding: 1px 5px;
-  border-radius: 3px;
-  font-family: var(--font-mono);
-  font-size: 10.5px;
-}
+.lumen-inline-add:hover { background: var(--accent-subtle, rgba(var(--accent-rgb), .1)); }
 
-.lps-repo-list {
+.lumen-inline-repo-list {
   list-style: none;
   margin: 0;
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 2px;
 }
-.lps-repo {
-  background: var(--bg-primary);
-  border: 1px solid var(--border);
-  border-radius: 8px;
+.lumen-inline-repo {
+  border-radius: 6px;
   overflow: hidden;
 }
-.lps-repo-head {
+.lumen-inline-repo-title {
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 8px 12px;
-  border-bottom: 1px solid var(--border);
-}
-.lps-repo-title {
-  flex: 1;
-  background: none;
+  width: 100%;
+  padding: 6px 8px;
+  background: transparent;
   border: none;
-  cursor: pointer;
   color: var(--text-primary);
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 600;
   font-family: inherit;
   text-align: left;
-  padding: 0;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.lps-repo-title:hover { color: var(--accent); }
-.lps-repo-module {
-  font-weight: 400;
-  color: var(--text-muted);
-  font-size: 12px;
-}
-.lps-repo-err { color: var(--warning, #d98a00); flex-shrink: 0; }
-
-.lps-chapter-list {
-  list-style: none;
-  margin: 0;
-  padding: 4px 0;
-}
-.lps-chapter {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  width: 100%;
-  padding: 6px 12px 6px 16px;
-  background: none;
-  border: none;
-  color: var(--text-secondary);
   cursor: pointer;
-  font-family: inherit;
-  font-size: 12.5px;
-  text-align: left;
-  transition: all var(--t-fast, 150ms) ease;
-  border-left: 2px solid transparent;
+  border-radius: 5px;
+  transition: background .1s;
 }
-.lps-chapter:hover {
-  background: var(--bg-hover);
-  color: var(--text-primary);
-  border-left-color: var(--accent);
-}
-.lps-chapter-num {
-  font-variant-numeric: tabular-nums;
-  font-size: 10px;
-  color: var(--text-muted);
-  font-weight: 500;
-  flex-shrink: 0;
-  width: 20px;
-}
-.lps-chapter-title {
+.lumen-inline-repo-title:hover { background: var(--bg-hover, rgba(255, 255, 255, .06)); }
+.lumen-inline-repo-name {
   flex: 1;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.lps-chapter-duration {
-  font-size: 10px;
+.lumen-inline-repo-module {
+  font-size: 10.5px;
+  color: var(--text-muted);
+  font-weight: 400;
+  flex-shrink: 0;
+}
+.lumen-inline-err { color: var(--color-warning, #d98a00); flex-shrink: 0; }
+
+.lumen-inline-chapters {
+  list-style: none;
+  margin: 0 0 4px;
+  padding: 0 4px 2px 6px;
+}
+.lumen-inline-chapter {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 4px 8px 4px 18px;
+  background: transparent;
+  border: none;
+  border-left: 2px solid transparent;
+  color: var(--text-secondary);
+  font-size: 11.5px;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background .1s, border-left-color .1s, color .1s;
+}
+.lumen-inline-chapter:hover {
+  background: var(--bg-hover, rgba(255, 255, 255, .05));
+  color: var(--text-primary);
+  border-left-color: var(--accent);
+}
+.lumen-inline-chapter-num {
+  font-variant-numeric: tabular-nums;
+  font-size: 9.5px;
+  color: var(--text-muted);
+  width: 16px;
+  flex-shrink: 0;
+}
+.lumen-inline-chapter-title {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.lumen-inline-chapter-duration {
+  font-size: 9.5px;
   color: var(--text-muted);
   flex-shrink: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lumen-inline-panel,
+  .lumen-inline-chev { animation: none; transition: none; }
 }
 </style>
