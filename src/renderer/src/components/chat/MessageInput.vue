@@ -8,6 +8,7 @@ import { avatarColor, initials } from '@/utils/format'
 
 import { useMsgDraft }        from '@/composables/useMsgDraft'
 import { useMsgAutocomplete, COMMAND_CATEGORIES, type SlashCommand } from '@/composables/useMsgAutocomplete'
+import type { EmojiShortcode } from '@/utils/emojiShortcodes'
 import { useModalsStore }    from '@/stores/modals'
 import {
   BookOpen, FileText, Bell, Megaphone, BarChart2 as BarChart2Icon, Table, Code2, HelpCircle, Calendar, Minus,
@@ -177,6 +178,7 @@ function onKeydown(e: KeyboardEvent) {
       else if (activeRef.value === 'channel') insertRef('#' + (item as { name: string }).name)
       else if (activeRef.value === 'devoir') insertRef('\\[' + (item as RefDevoir).title + '](devoir:' + (item as RefDevoir).id + ')')
       else if (activeRef.value === 'doc') insertRef('📄 [' + (item as RefDoc).name + '](doc:' + (item as RefDoc).id + ')')
+      else if (activeRef.value === 'emoji') insertRef((item as EmojiShortcode).emoji)
       return
     }
     if (e.key === 'Escape') { e.preventDefault(); activeRef.value = null; return }
@@ -301,7 +303,7 @@ function onKeydown(e: KeyboardEvent) {
         </Transition>
         </Teleport>
 
-        <!-- Popup autocomplete #canal, /devoir, /doc -->
+        <!-- Popup autocomplete #canal, /devoir, /doc, :emoji -->
         <Teleport to="body">
         <Transition name="mention-pop">
           <div
@@ -309,10 +311,10 @@ function onKeydown(e: KeyboardEvent) {
             class="mi-mention-popup"
             :style="popupStyle"
             role="listbox"
-            :aria-label="activeRef === 'command' ? 'Commandes' : activeRef === 'channel' ? 'Canaux' : activeRef === 'devoir' ? 'Devoirs' : 'Ressources'"
+            :aria-label="activeRef === 'command' ? 'Commandes' : activeRef === 'channel' ? 'Canaux' : activeRef === 'devoir' ? 'Devoirs' : activeRef === 'emoji' ? 'Emojis' : 'Ressources'"
           >
             <div class="mi-mention-header">
-              {{ activeRef === 'command' ? 'Commandes' : activeRef === 'channel' ? 'Canaux' : activeRef === 'devoir' ? 'Devoirs' : 'Ressources' }}
+              {{ activeRef === 'command' ? 'Commandes' : activeRef === 'channel' ? 'Canaux' : activeRef === 'devoir' ? 'Devoirs' : activeRef === 'emoji' ? 'Emojis' : 'Ressources' }}
             </div>
             <!-- Commandes slash -->
             <template v-if="activeRef === 'command'">
@@ -380,6 +382,19 @@ function onKeydown(e: KeyboardEvent) {
                 <span class="mi-ref-icon">📄</span>
                 <span class="mi-mention-name">{{ (d as RefDoc).name }}</span>
                 <span v-if="(d as RefDoc).category" class="mi-mention-hint">{{ (d as RefDoc).category }}</span>
+              </button>
+            </template>
+            <template v-else-if="activeRef === 'emoji'">
+              <button
+                v-for="(e, i) in refResults"
+                :key="(e as EmojiShortcode).shortcode"
+                class="mi-mention-item mi-emoji-item"
+                :class="{ 'mi-mention-selected': i === refIndex }"
+                @mousedown.prevent="insertRef((e as EmojiShortcode).emoji)"
+                @mouseenter="refIndex = i"
+              >
+                <span class="mi-emoji-char">{{ (e as EmojiShortcode).emoji }}</span>
+                <span class="mi-mention-name">:{{ (e as EmojiShortcode).shortcode }}:</span>
               </button>
             </template>
           </div>
@@ -683,6 +698,18 @@ function onKeydown(e: KeyboardEvent) {
 .mi-mention-everyone .mi-mention-name {
   color: var(--color-danger);
   font-weight: 700;
+}
+.mi-emoji-item .mi-mention-name {
+  font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace);
+  font-size: 12px;
+  color: var(--text-muted);
+}
+.mi-emoji-char {
+  font-size: 20px;
+  line-height: 1;
+  width: 26px;
+  text-align: center;
+  flex-shrink: 0;
 }
 .mi-mention-hint {
   margin-left: auto;

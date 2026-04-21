@@ -4,9 +4,10 @@
  */
 import { ref, computed, watch, nextTick, onMounted, type Ref } from 'vue'
 import { useAppStore } from '@/stores/app'
+import { searchEmojiShortcodes, type EmojiShortcode } from '@/utils/emojiShortcodes'
 
 // ── Types ────────────────────────────────────────────────────────────────────
-export type RefType = 'mention' | 'channel' | 'devoir' | 'doc' | 'command'
+export type RefType = 'mention' | 'channel' | 'devoir' | 'doc' | 'command' | 'emoji'
 
 export interface SlashCommand {
   name: string
@@ -187,6 +188,9 @@ export function useMsgAutocomplete(
     if (activeRef.value === 'doc') {
       return docList.value.filter(d => normalize(d.name).includes(q)).slice(0, 8)
     }
+    if (activeRef.value === 'emoji') {
+      return searchEmojiShortcodes(refSearch.value)
+    }
     return []
   })
 
@@ -268,6 +272,11 @@ export function useMsgAutocomplete(
     const matchSlash   = before.match(/^\/([^\s]*)$/i) // "/" au début de la ligne
     const matchDevoir  = before.match(/\/devoir\s?(.*)$/i)
     const matchDoc     = before.match(/\/doc\s?(.*)$/i)
+    // Emoji shortcode — `:` doit etre precede d'un espace ou debut de ligne
+    // pour eviter de declencher sur les URLs `https://...`. On exige au moins
+    // 1 caractere apres le `:` pour ne pas polluer la saisie avec des popups
+    // intempestifs (par ex. quand l'utilisateur tape un deux-points normal).
+    const matchEmoji   = before.match(/(?:^|\s)(:([a-z0-9_+\-]{1,30}))$/i)
 
     if (matchMention) {
       mentionSearch.value = matchMention[1]
@@ -305,6 +314,12 @@ export function useMsgAutocomplete(
       refStart.value  = cursor - matchDoc[0].length
       mentionActive.value = false
       loadDocs()
+    } else if (matchEmoji) {
+      activeRef.value = 'emoji'
+      // matchEmoji[1] = ':xxx', matchEmoji[2] = 'xxx'
+      refSearch.value = matchEmoji[2]
+      refStart.value  = cursor - matchEmoji[1].length
+      mentionActive.value = false
     } else {
       mentionActive.value = false
       activeRef.value = null
