@@ -32,12 +32,12 @@ const parsed = computed(() => parseCategoryIcon(props.name))
 </script>
 
 <template>
-  <UiCard interactive padding="md" @click="(ev) => emit('click', ev)">
+  <UiCard interactive padding="sm" @click="(ev) => emit('click', ev)">
     <div class="dpc-header">
-      <component :is="parsed.icon" v-if="parsed.icon" :size="16" class="dpc-icon" />
-      <FolderOpen v-else :size="16" class="dpc-icon" />
-      <span class="dpc-name">{{ parsed.label }}</span>
-      <ChevronRight :size="14" class="dpc-chevron" />
+      <component :is="parsed.icon" v-if="parsed.icon" :size="15" class="dpc-icon" />
+      <FolderOpen v-else :size="15" class="dpc-icon" />
+      <span class="dpc-name" :title="parsed.label">{{ parsed.label }}</span>
+      <ChevronRight :size="13" class="dpc-chevron" />
     </div>
 
     <!-- Types de devoirs dans ce projet -->
@@ -47,21 +47,19 @@ const parsed = computed(() => parseCategoryIcon(props.name))
       </span>
     </div>
 
-    <!-- Stats -->
-    <div class="dpc-stats">
-      <template v-if="total > 0">
-        <span>{{ submitted }}/{{ total }} soumis</span>
-        <span v-if="toGrade && toGrade > 0" class="dpc-stat-warn">{{ toGrade }} à noter</span>
-      </template>
-      <span v-else class="dpc-stat-info">Aucun dépôt attendu</span>
+    <!-- Stats compactes : "N/M soumis · K à noter" + barre progression sur une ligne -->
+    <div v-if="total > 0" class="dpc-stats-row">
+      <span class="dpc-submitted">{{ submitted }}/{{ total }}</span>
+      <div class="dv-progress dpc-progress">
+        <div class="dv-progress-fill" :style="{ width: pct + '%' }" />
+      </div>
+      <span v-if="toGrade && toGrade > 0" class="dpc-stat-warn">{{ toGrade }} à noter</span>
+    </div>
+    <div v-else class="dpc-stats-row dpc-stats-row--empty">
+      <span class="dpc-stat-info">Aucun dépôt attendu</span>
     </div>
 
-    <!-- Barre de progression -->
-    <div v-if="total > 0" class="dv-progress dpc-progress">
-      <div class="dv-progress-fill" :style="{ width: pct + '%' }" />
-    </div>
-
-    <!-- Footer -->
+    <!-- Footer compact -->
     <div class="dpc-footer">
       <span class="dpc-total">{{ devoirCount }} devoir{{ devoirCount > 1 ? 's' : '' }}</span>
       <span v-if="drafts && drafts > 0" class="dpc-drafts">{{ drafts }} brouillon{{ drafts > 1 ? 's' : '' }}</span>
@@ -77,12 +75,12 @@ const parsed = computed(() => parseCategoryIcon(props.name))
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: var(--space-sm);
-  margin-bottom: var(--space-md);
+  gap: 6px;
+  margin-bottom: 6px;
 }
 .dpc-icon { color: var(--text-muted); flex-shrink: 0; }
 .dpc-name {
-  font-size: 15px;
+  font-size: 13.5px;
   font-weight: 700;
   color: var(--text-primary);
   flex: 1;
@@ -104,30 +102,32 @@ const parsed = computed(() => parseCategoryIcon(props.name))
 
 .dpc-types {
   display: flex;
-  gap: var(--space-xs);
+  gap: 3px;
   flex-wrap: wrap;
-  margin-bottom: var(--space-md);
+  margin-bottom: 6px;
 }
 
-.dpc-stats {
+/* Stats sur UNE ligne : N/M + barre de progression + "K a noter" */
+.dpc-stats-row {
   display: flex;
-  gap: var(--space-sm);
-  font-size: 12px;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+  font-size: 11.5px;
   color: var(--text-muted);
-  margin-bottom: var(--space-sm);
-  flex-wrap: wrap;
 }
-.dpc-stat-warn { color: var(--color-warning); font-weight: 600; }
+.dpc-stats-row--empty { color: var(--text-muted); }
+.dpc-submitted { font-weight: 600; color: var(--text-secondary); font-variant-numeric: tabular-nums; flex-shrink: 0; }
+.dpc-progress { flex: 1; margin: 0; min-width: 40px; }
+.dpc-stat-warn { color: var(--color-warning); font-weight: 600; flex-shrink: 0; font-size: 11px; }
 .dpc-stat-info { color: var(--text-muted); font-style: italic; font-size: 11px; }
-
-.dpc-progress { margin-bottom: var(--space-md); }
 
 .dpc-footer {
   display: flex;
   align-items: center;
-  gap: var(--space-sm);
+  gap: 8px;
   flex-wrap: wrap;
-  font-size: 12px;
+  font-size: 11px;
   color: var(--text-muted);
 }
 .dpc-total { font-weight: 600; }

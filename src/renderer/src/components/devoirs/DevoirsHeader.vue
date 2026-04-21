@@ -41,16 +41,13 @@ const modals   = useModalsStore()
         </template>
         <template v-else>
           <span class="dh-title-text">Devoirs</span>
-          <span v-if="appStore.activeChannelName" class="dh-channel">
-            # {{ appStore.activeChannelName }}
-          </span>
         </template>
       </div>
     </template>
 
     <template #actions>
       <button v-if="appStore.isTeacher" class="btn-primary dh-new" @click="modals.newDevoir = true">
-        <Plus :size="14" /> Nouveau
+        <Plus :size="14" /> Nouveau devoir
       </button>
     </template>
   </UiPageHeader>

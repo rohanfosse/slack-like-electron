@@ -1,21 +1,22 @@
 /**
- * Accueil projets enseignant : cartes prochains événements par type,
- * résumé promo, grille de projets enrichie.
+ * Accueil devoirs prof — redesign v2.213 :
+ *  - Section "A traiter" compacte en haut (action-first)
+ *  - Timeline unique des prochaines echeances (tous types melanges, tri date)
+ *  - Grille projets dense (cartes plus petites, plus d'info par pixel)
  */
 <script setup lang="ts">
 import { computed } from 'vue'
 import {
-  BookOpen, Clock, ChevronRight, PlusCircle, FolderOpen,
-  FileText, Mic, Award, BarChart2, AlertTriangle,
+  BookOpen, Clock, PlusCircle, FolderOpen,
+  FileText, Mic, Award, Check, AlertTriangle,
 } from 'lucide-vue-next'
 import { useAppStore }     from '@/stores/app'
 import { useTravauxStore } from '@/stores/travaux'
 import { useModalsStore }  from '@/stores/modals'
-import { deadlineClass, deadlineLabel, formatDate } from '@/utils/date'
-import { typeLabel, extractDuration } from '@/utils/devoir'
+import { deadlineClass, deadlineLabel } from '@/utils/date'
+import { typeLabel, isRattrapage } from '@/utils/devoir'
 import DevoirsProjectCard from './DevoirsProjectCard.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
-import UiPill from '@/components/ui/UiPill.vue'
 import type { GanttRow } from '@/types'
 
 const props = defineProps<{
@@ -37,58 +38,59 @@ const modals       = useModalsStore()
 
 const hasDevoirsAtAll     = computed(() => travauxStore.ganttData.length > 0)
 const hasPublishedDevoirs = computed(() => travauxStore.ganttData.some(t => t.is_published))
-const publishedCount      = computed(() => travauxStore.ganttData.filter(t => t.is_published).length)
 
-/** Cached projectStats per category */
+/** Cache pour eviter de recalculer projectStats() a chaque acces dans le template. */
 const cachedProjectStats = computed(() => {
   const map: Record<string, ReturnType<typeof props.projectStats>> = {}
   for (const cat of props.teacherCategories) map[cat] = props.projectStats(cat)
   return map
 })
 
-// ── Prochains par type ──────────────────────────────────────────────────────
+// ── Timeline unifiee : tous types melanges, tri par date, max 8 items ──
+// Avant : 3 cartes cote-a-cote par type (CCTL / Livrables / Soutenances), avec
+// colonnes vides quand un type etait absent. Maintenant : une liste dense triee
+// par echeance pour scanner tout en un coup d'oeil.
 const now = Date.now()
-
-const nextExams = computed(() =>
-  travauxStore.ganttData
-    .filter(t => t.is_published && (t.type === 'cctl' || t.type === 'etude_de_cas') && new Date(t.deadline).getTime() > now)
+interface UpcomingItem extends GanttRow { iconKey: 'exam' | 'livrable' | 'soutenance' }
+const upcoming = computed<UpcomingItem[]>(() => {
+  return travauxStore.ganttData
+    .filter(t =>
+      t.is_published
+      && new Date(t.deadline).getTime() > now
+      && !isRattrapage(t),
+    )
+    .map(t => {
+      const iconKey: UpcomingItem['iconKey'] =
+        t.type === 'soutenance' ? 'soutenance'
+          : t.type === 'livrable' ? 'livrable'
+            : 'exam'
+      return { ...t, iconKey }
+    })
     .sort((a, b) => new Date(a.deadline).getTime() - new Date(b.deadline).getTime())
-    .slice(0, 3),
+    .slice(0, 8)
+})
+
+function iconForType(key: 'exam' | 'livrable' | 'soutenance') {
+  if (key === 'soutenance') return Mic
+  if (key === 'livrable') return FileText
+  return Award
+}
+
+// ── Etat "A traiter" : indicateur action-first ──
+// Si 0 brouillon + 0 a noter + pas d'echeance proche, on affiche "Tout est a jour".
+const nothingToDo = computed(() =>
+  props.globalToGrade === 0 && props.globalDrafts === 0,
 )
 
-const nextLivrable = computed(() =>
-  travauxStore.ganttData
-    .filter(t => t.is_published && t.type === 'livrable' && new Date(t.deadline).getTime() > now)
-    .sort((a, b) => new Date(a.deadline).getTime() - new Date(b.deadline).getTime())
-    .slice(0, 3),
-)
+function openDrafts() {
+  // Placeholder : aucun filtre URL pour "drafts only" aujourd'hui, on scrolle a
+  // la grille projets ou l'utilisateur voit les brouillons par projet.
+  document.querySelector('.dh-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+}
 
-const nextSoutenance = computed(() =>
-  travauxStore.ganttData
-    .filter(t => t.is_published && t.type === 'soutenance' && new Date(t.deadline).getTime() > now)
-    .sort((a, b) => new Date(a.deadline).getTime() - new Date(b.deadline).getTime())
-    .slice(0, 3),
-)
-
-// ── Scroll-to-section depuis les stat pills ──────────────────────────────
-type StatTarget = 'top' | 'upcoming' | 'projects'
-function scrollTo(target: StatTarget) {
-  if (target === 'top') {
-    const scrollArea = document.querySelector('.devoirs-content') as HTMLElement | null
-    scrollArea?.scrollTo({ top: 0, behavior: 'smooth' })
-    return
-  }
-  const selector = target === 'upcoming' ? '.dh-next-section' : '.dh-section'
-  const el = document.querySelector(selector) as HTMLElement | null
-  if (!el) return
-  el.scrollIntoView({ behavior: 'smooth', block: 'start' })
-  el.animate(
-    [
-      { boxShadow: '0 0 0 2px var(--accent)' },
-      { boxShadow: '0 0 0 0 transparent' },
-    ],
-    { duration: 900, easing: 'ease-out' },
-  )
+function openToGrade() {
+  // Idem : pas de filtre dedie, on laisse l'utilisateur choisir le projet.
+  document.querySelector('.dh-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
 }
 </script>
 
@@ -120,123 +122,59 @@ function scrollTo(target: StatTarget) {
   <template v-else>
     <div class="dv-page">
 
-      <!-- ── Résumé promo ──────────────────────────────────────────── -->
-      <div class="dv-stats-row">
-        <button
-          type="button" class="dv-stats-btn"
-          :disabled="travauxStore.ganttData.length === 0"
-          title="Voir tous les projets"
-          @click="scrollTo('projects')"
-        >
-          <UiPill size="md" tone="neutral">
-            <template #leading><BookOpen :size="14" /></template>
-            <strong>{{ travauxStore.ganttData.length }}</strong>&nbsp;devoirs
-          </UiPill>
-        </button>
-        <button
-          type="button" class="dv-stats-btn"
-          :disabled="publishedCount === 0"
-          title="Voir les prochaines échéances"
-          @click="scrollTo('upcoming')"
-        >
-          <UiPill size="md" tone="success">
-            <template #leading><BarChart2 :size="14" /></template>
-            <strong>{{ publishedCount }}</strong>&nbsp;publiés
-          </UiPill>
-        </button>
-        <button
-          v-if="globalToGrade > 0"
-          type="button" class="dv-stats-btn"
-          title="Voir les projets à noter"
-          @click="scrollTo('projects')"
-        >
-          <UiPill size="md" tone="warning">
-            <template #leading><AlertTriangle :size="14" /></template>
-            <strong>{{ globalToGrade }}</strong>&nbsp;à noter
-          </UiPill>
-        </button>
-        <button
-          v-if="globalDrafts > 0"
-          type="button" class="dv-stats-btn"
-          title="Voir les projets avec brouillons"
-          @click="scrollTo('projects')"
-        >
-          <UiPill size="md" tone="muted">
-            <template #leading><FileText :size="14" /></template>
-            <strong>{{ globalDrafts }}</strong>&nbsp;brouillons
-          </UiPill>
-        </button>
+      <!-- ── A TRAITER : section action-first en haut ──────────────── -->
+      <div class="dh-todo">
+        <span class="dh-todo-label">À traiter</span>
+        <template v-if="nothingToDo">
+          <span class="dh-todo-ok"><Check :size="12" /> Tout est à jour</span>
+        </template>
+        <template v-else>
+          <button
+            v-if="globalToGrade > 0"
+            type="button"
+            class="dh-todo-item dh-todo-item--warn"
+            title="Voir les projets avec dépôts à noter"
+            @click="openToGrade"
+          >
+            <AlertTriangle :size="12" />
+            <strong>{{ globalToGrade }}</strong> {{ globalToGrade > 1 ? 'rendus à noter' : 'rendu à noter' }}
+          </button>
+          <button
+            v-if="globalDrafts > 0"
+            type="button"
+            class="dh-todo-item dh-todo-item--draft"
+            title="Voir les projets avec brouillons"
+            @click="openDrafts"
+          >
+            <FileText :size="12" />
+            <strong>{{ globalDrafts }}</strong> {{ globalDrafts > 1 ? 'brouillons' : 'brouillon' }}
+          </button>
+        </template>
       </div>
 
-      <!-- ── Prochains événements par type ─────────────────────────── -->
-      <div v-if="nextExams.length || nextLivrable.length || nextSoutenance.length" class="dh-next-section">
+      <!-- ── Timeline unique des prochaines echeances ──────────────── -->
+      <div v-if="upcoming.length" class="dh-next-section">
         <h4 class="dv-section-title"><Clock :size="14" /> Prochaines échéances</h4>
-        <p class="dv-section-desc">Les devoirs à venir regroupés par type, pour anticiper votre planning.</p>
-
-        <div class="dv-next-grid">
-          <!-- CCTL / Étude de cas -->
-          <div v-if="nextExams.length" class="dv-next-card dv-next-card--exam">
-            <div class="dv-next-card-header dh-next-header--exam">
-              <Award :size="16" />
-              <span>CCTL &amp; Études de cas</span>
-            </div>
-            <div class="dh-next-card-list">
-              <div
-                v-for="d in nextExams" :key="d.id"
-                class="dv-next-item"
-                @click="openDevoir(d.id)"
-                @contextmenu="openCtxMenu($event, d)"
-              >
-                <span class="dv-next-item-title">{{ d.title }}</span>
-                <span class="deadline-badge" :class="deadlineClass(d.deadline)">{{ deadlineLabel(d.deadline) }}</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- Livrables -->
-          <div v-if="nextLivrable.length" class="dv-next-card dv-next-card--livrable">
-            <div class="dv-next-card-header dh-next-header--livrable">
-              <FileText :size="16" />
-              <span>Livrables</span>
-            </div>
-            <div class="dh-next-card-list">
-              <div
-                v-for="d in nextLivrable" :key="d.id"
-                class="dv-next-item"
-                @click="openDevoir(d.id)"
-                @contextmenu="openCtxMenu($event, d)"
-              >
-                <span class="dv-next-item-title">{{ d.title }}</span>
-                <span class="deadline-badge" :class="deadlineClass(d.deadline)">{{ deadlineLabel(d.deadline) }}</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- Soutenances -->
-          <div v-if="nextSoutenance.length" class="dv-next-card dv-next-card--soutenance">
-            <div class="dv-next-card-header dh-next-header--soutenance">
-              <Mic :size="16" />
-              <span>Soutenances</span>
-            </div>
-            <div class="dh-next-card-list">
-              <div
-                v-for="d in nextSoutenance" :key="d.id"
-                class="dv-next-item"
-                @click="openDevoir(d.id)"
-                @contextmenu="openCtxMenu($event, d)"
-              >
-                <span class="dv-next-item-title">{{ d.title }}</span>
-                <span class="deadline-badge" :class="deadlineClass(d.deadline)">{{ deadlineLabel(d.deadline) }}</span>
-              </div>
-            </div>
-          </div>
-        </div>
+        <ul class="dh-timeline">
+          <li
+            v-for="d in upcoming" :key="d.id"
+            class="dh-timeline-item"
+            :title="d.title"
+            @click="openDevoir(d.id)"
+            @contextmenu="openCtxMenu($event, d)"
+          >
+            <component :is="iconForType(d.iconKey)" :size="14" class="dh-timeline-icon" :class="`dh-timeline-icon--${d.iconKey}`" />
+            <span class="dh-timeline-title">{{ d.title }}</span>
+            <span class="dh-timeline-type">{{ typeLabel(d.type) }}</span>
+            <span v-if="d.category" class="dh-timeline-proj">{{ d.category }}</span>
+            <span class="deadline-badge" :class="deadlineClass(d.deadline)">{{ deadlineLabel(d.deadline) }}</span>
+          </li>
+        </ul>
       </div>
 
-      <!-- ── Projets ───────────────────────────────────────────────── -->
+      <!-- ── Projets : grille dense ─────────────────────────────────── -->
       <div class="dh-section">
-        <h4 class="dv-section-title"><FolderOpen :size="14" /> Projets</h4>
-        <p class="dv-section-desc">Cliquez sur un projet pour voir ses devoirs en détail.</p>
+        <h4 class="dv-section-title"><FolderOpen :size="14" /> Projets <span class="dv-section-count">{{ teacherCategories.length }}</span></h4>
 
         <div class="dv-proj-grid">
           <DevoirsProjectCard
@@ -260,25 +198,138 @@ function scrollTo(target: StatTarget) {
 </template>
 
 <style scoped>
-/* ── Teacher-specific styles (header colors, loading, empty button) ──────── */
-.dh-next-section { margin-bottom: 4px; }
-.dh-next-card-list { display: flex; flex-direction: column; gap: 8px; }
-.dh-next-header--exam      { color: var(--color-cctl, #9b87f5); }
-.dh-next-header--livrable  { color: var(--accent); }
-.dh-next-header--soutenance { color: var(--color-warning); }
+/* ── Section "A traiter" : ribbon compact en haut ──────────────────────── */
+.dh-todo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 8px 0 12px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 16px;
+}
+.dh-todo-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  padding-right: 4px;
+}
+.dh-todo-ok {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  color: var(--color-success);
+  font-weight: 500;
+}
+.dh-todo-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--bg-elevated);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: background var(--t-fast), border-color var(--t-fast), color var(--t-fast);
+}
+.dh-todo-item strong { font-weight: 700; color: var(--text-primary); font-variant-numeric: tabular-nums; }
+.dh-todo-item:hover { background: var(--bg-hover); border-color: var(--border-input); }
+.dh-todo-item--warn { color: var(--color-warning); }
+.dh-todo-item--warn strong { color: var(--color-warning); }
+.dh-todo-item--draft { color: var(--text-muted); }
+
+/* ── Timeline unique des echeances ─────────────────────────────────────── */
+.dh-next-section { margin-bottom: 20px; }
+
+.dh-timeline {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--bg-elevated);
+}
+.dh-timeline-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  cursor: pointer;
+  border-bottom: 1px solid var(--border);
+  transition: background var(--t-fast);
+}
+.dh-timeline-item:last-child { border-bottom: none; }
+.dh-timeline-item:hover { background: var(--bg-hover); }
+
+.dh-timeline-icon { flex-shrink: 0; }
+.dh-timeline-icon--exam       { color: var(--color-cctl, #9b87f5); }
+.dh-timeline-icon--livrable   { color: var(--accent); }
+.dh-timeline-icon--soutenance { color: var(--color-warning); }
+
+.dh-timeline-title {
+  flex: 1;
+  min-width: 0;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.dh-timeline-type {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  color: var(--text-muted);
+  font-weight: 600;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: var(--bg-hover);
+  flex-shrink: 0;
+}
+.dh-timeline-proj {
+  font-size: 11px;
+  color: var(--text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 180px;
+  flex-shrink: 0;
+}
+
+/* ── Section projets ───────────────────────────────────────────────────── */
+.dh-section { margin-bottom: 4px; }
+.dv-section-count {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  background: var(--bg-hover);
+  padding: 1px 6px;
+  border-radius: 8px;
+  margin-left: 4px;
+}
+
+/* Grille plus dense par defaut (220px min au lieu de 260px) */
+.dv-proj-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 10px;
+}
 
 .dh-loading { padding: 24px 28px; }
-.dh-empty-btn { margin-top: 16px; }
 
-/* ── Stat pills cliquables (scroll vers section) ──────────────────────── */
-.dv-stats-btn {
-  background: none;
-  border: none;
-  padding: 0;
-  cursor: pointer;
-  font-family: var(--font);
-  transition: transform .12s ease, filter .12s ease;
+@media (max-width: 600px) {
+  .dh-timeline-type, .dh-timeline-proj { display: none; }
 }
-.dv-stats-btn:hover:not(:disabled) { transform: translateY(-1px); filter: brightness(1.1); }
-.dv-stats-btn:disabled             { cursor: default; opacity: .7; }
 </style>
