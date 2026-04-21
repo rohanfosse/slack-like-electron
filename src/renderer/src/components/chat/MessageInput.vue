@@ -23,6 +23,9 @@ import MessageInputToolbar   from './MessageInputToolbar.vue'
 import CreatePollModal       from '@/components/modals/CreatePollModal.vue'
 import HelpModal             from '@/components/modals/HelpModal.vue'
 import ScheduleMessageModal  from '@/components/modals/ScheduleMessageModal.vue'
+import ScheduledMessagesModal from '@/components/modals/ScheduledMessagesModal.vue'
+import { Clock } from 'lucide-vue-next'
+import { useScheduledStore } from '@/stores/scheduled'
 import { useModules }         from '@/composables/useModules'
 import { ROLE_LABELS }        from '@/constants'
 import type { RefChannel, RefDevoir, RefDoc } from '@/composables/useMsgAutocomplete'
@@ -38,6 +41,14 @@ const content = ref('')
 const showEmojiPicker = ref(false)
 const requestSignature = ref(false)
 const showScheduleModal = ref(false)
+const showScheduledListModal = ref(false)
+
+// Banner rappel : messages programmes pour le canal / DM courant
+const scheduledStore = useScheduledStore()
+const scheduledHereCount = computed(() => scheduledStore.countForContext({
+  channelId: appStore.activeChannelId,
+  dmStudentId: appStore.activeDmStudentId,
+}))
 
 // Detecter si le contenu contient un fichier attache (pour afficher le toggle signature)
 const hasFileAttachment = computed(() => content.value.includes('📎'))
@@ -195,6 +206,23 @@ function onKeydown(e: KeyboardEvent) {
 <template>
   <div id="message-input-area" class="message-input-area" :class="{ readonly: appStore.isReadonly }">
     <template v-if="!appStore.isReadonly">
+
+      <!-- Banner : messages programmes dans ce canal/DM (style Slack) -->
+      <Transition name="sched-banner">
+        <button
+          v-if="scheduledHereCount > 0"
+          class="mi-scheduled-banner"
+          :aria-label="`${scheduledHereCount} message(s) programme(s) ici`"
+          @click="showScheduledListModal = true"
+        >
+          <Clock :size="13" />
+          <span class="mi-scheduled-text">
+            Vous avez <strong>{{ scheduledHereCount }}</strong>
+            {{ scheduledHereCount > 1 ? 'messages programmés' : 'message programmé' }} ici.
+          </span>
+          <span class="mi-scheduled-action">Voir les messages programmés</span>
+        </button>
+      </Transition>
 
       <!-- Indicateur de frappe -->
       <div class="mi-typing" aria-live="polite">
@@ -437,6 +465,9 @@ function onKeydown(e: KeyboardEvent) {
     <!-- Modal d'aide riche (declenche par /aide) -->
     <HelpModal v-model="modals.help" />
 
+    <!-- Modal liste des messages programmes (ouvert via la banner) -->
+    <ScheduledMessagesModal v-model="showScheduledListModal" />
+
     <!-- Modal de programmation d'envoi -->
     <ScheduleMessageModal
       v-model="showScheduleModal"
@@ -453,6 +484,47 @@ function onKeydown(e: KeyboardEvent) {
 </template>
 
 <style scoped>
+/* ── Banner messages programmes ── */
+.mi-scheduled-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 6px 12px;
+  margin: 0 0 4px;
+  background: rgba(var(--accent-rgb), .10);
+  border: 1px solid rgba(var(--accent-rgb), .25);
+  border-radius: 6px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  text-align: left;
+  transition: background .15s, border-color .15s;
+}
+.mi-scheduled-banner:hover {
+  background: rgba(var(--accent-rgb), .16);
+  border-color: var(--accent);
+}
+.mi-scheduled-text {
+  flex: 1;
+  min-width: 0;
+  color: var(--text-primary);
+}
+.mi-scheduled-text strong { color: var(--accent); font-weight: 700; }
+.mi-scheduled-action {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--accent);
+  flex-shrink: 0;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.sched-banner-enter-active,
+.sched-banner-leave-active { transition: opacity .2s var(--ease-out), transform .2s var(--ease-out); }
+.sched-banner-enter-from,
+.sched-banner-leave-to { opacity: 0; transform: translateY(4px); }
+
 /* ── Indicateur de frappe ── */
 .mi-typing {
   min-height: 18px;

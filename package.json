@@ -1,6 +1,6 @@
 {
   "name": "cursus",
-  "version": "2.205.0",
+  "version": "2.206.0",
   "description": "Cursus - Suivez votre parcours de formation",
   "main": "out/main/index.js",
   "scripts": {
@@ -87,6 +87,7 @@
     "mermaid": "^11.14.0",
     "multer": "^2.1.1",
     "nodemailer": "^8.0.5",
+    "open-graph-scraper": "^6.11.0",
     "pdf-lib": "^1.17.1",
     "pdfjs-dist": "^5.6.205",
     "pinia": "^2.3.1",
@@ -166,7 +167,9 @@
       "artifactName": "Cursus-${version}-win.${ext}",
       "signAndEditExecutable": true,
       "signtoolOptions": {
-        "signingHashAlgorithms": ["sha256"],
+        "signingHashAlgorithms": [
+          "sha256"
+        ],
         "rfc3161TimeStampServer": "http://timestamp.digicert.com"
       }
     },

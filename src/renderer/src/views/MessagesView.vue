@@ -272,12 +272,12 @@
         <!-- Messages programmes (user-scope) -->
         <button
           class="btn-icon header-scheduled-btn"
-          :title="scheduled.pendingCount.value > 0 ? `${scheduled.pendingCount.value} message(s) programme(s)` : 'Messages programmés'"
+          :title="scheduled.pendingCount > 0 ? `${scheduled.pendingCount} message(s) programme(s)` : 'Messages programmés'"
           aria-label="Messages programmés"
           @click="showScheduledModal = true"
         >
           <Clock :size="16" />
-          <span v-if="scheduled.pendingCount.value > 0" class="header-scheduled-badge">{{ scheduled.pendingCount.value }}</span>
+          <span v-if="scheduled.pendingCount > 0" class="header-scheduled-badge">{{ scheduled.pendingCount }}</span>
         </button>
 
         <!-- Membres du canal (canal uniquement) -->

@@ -3,7 +3,7 @@ import {
   Check, Reply, AlertTriangle, Flame, Pin,
 } from 'lucide-vue-next'
 import UiRoleBadge from '@/components/ui/UiRoleBadge.vue'
-import { computed } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useAppStore }      from '@/stores/app'
 import { useMessagesStore } from '@/stores/messages'
 import Avatar       from '@/components/ui/Avatar.vue'
@@ -12,6 +12,7 @@ import MessageActionPill from '@/components/chat/MessageActionPill.vue'
 import MessageLightbox from '@/components/chat/MessageLightbox.vue'
 import MessageReportDialog from '@/components/chat/MessageReportDialog.vue'
 import PollRenderer from '@/components/chat/PollRenderer.vue'
+import LinkPreviewCard from '@/components/chat/LinkPreviewCard.vue'
 import { parsePoll, contentWithoutPoll } from '@/utils/poll'
 import { renderMessageContent } from '@/utils/html'
 import { formatTime }      from '@/utils/date'
@@ -20,6 +21,8 @@ import { useBubbleActions }   from '@/composables/useBubbleActions'
 import { useBubbleReactions } from '@/composables/useBubbleReactions'
 import { useBubbleBookmarks } from '@/composables/useBubbleBookmarks'
 import { useBubbleMenu }      from '@/composables/useBubbleMenu'
+import { useLinkPreviews, extractUrls, type LinkPreview } from '@/composables/useLinkPreviews'
+import { usePrefs } from '@/composables/usePrefs'
 import type { Message } from '@/types'
 
 interface Props {
@@ -90,6 +93,21 @@ function onTextClick(e: MouseEvent) {
   if (img?.src) { lightboxUrl.value = img.src; return }
   onMsgClick(e)
 }
+
+// ── Link preview (unfurl) — resolution async, respect de la pref user
+const { getPref } = usePrefs()
+const { resolve: resolveLinks } = useLinkPreviews()
+const linkPreviews = ref<LinkPreview[]>([])
+
+async function loadLinkPreviews() {
+  if (getPref('unfurlEnabled') === false) { linkPreviews.value = []; return }
+  const urls = extractUrls(props.msg.content)
+  if (!urls.length) { linkPreviews.value = []; return }
+  const res = await resolveLinks(urls)
+  linkPreviews.value = res
+}
+loadLinkPreviews()
+watch(() => props.msg.content, loadLinkPreviews)
 
 // ── Sondage embarque : detecte le marqueur, rend le bloc, masque la 1re ligne
 const pollDefinition = computed(() => parsePoll(props.msg.content))
@@ -180,6 +198,13 @@ const renderedContentWithoutPoll = computed(() => {
           <div v-if="imagePreviewUrl" class="msg-img-preview">
             <img :src="authUrl(imagePreviewUrl)" alt="Aperçu" loading="lazy" @click="lightboxUrl = imagePreviewUrl!" />
           </div>
+
+          <!-- Link previews (unfurl OpenGraph) -->
+          <LinkPreviewCard
+            v-for="p in linkPreviews"
+            :key="p.url"
+            :preview="p"
+          />
         </template>
       </template>
 

@@ -1,6 +1,6 @@
 const { getDb } = require('./connection');
 
-const CURRENT_VERSION = 81;
+const CURRENT_VERSION = 82;
 
 // ─── Schema initial ───────────────────────────────────────────────────────────
 // Crée toutes les tables avec leur schéma complet (colonnes UTC, toutes colonnes incluses).
@@ -149,6 +149,19 @@ function initSchema() {
       updated_at TEXT NOT NULL DEFAULT (datetime('now'))
     );
     CREATE INDEX IF NOT EXISTS idx_user_statuses_expires ON user_statuses(expires_at) WHERE expires_at IS NOT NULL;
+
+    CREATE TABLE IF NOT EXISTS link_previews (
+      url_hash    TEXT PRIMARY KEY,
+      url         TEXT NOT NULL,
+      title       TEXT,
+      description TEXT,
+      image       TEXT,
+      site_name   TEXT,
+      status      INTEGER,
+      fetched_at  TEXT NOT NULL DEFAULT (datetime('now')),
+      expires_at  TEXT NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_link_previews_expires ON link_previews(expires_at);
   `);
 
   runMigrations(db);
@@ -1870,6 +1883,28 @@ function runMigrations(db) {
           updated_at TEXT NOT NULL DEFAULT (datetime('now'))
         );
         CREATE INDEX IF NOT EXISTS idx_user_statuses_expires ON user_statuses(expires_at) WHERE expires_at IS NOT NULL;
+      `);
+    },
+
+    // v82 : Cache des previews de liens (OpenGraph). url_hash = sha256 de
+    // l'URL normalisee, partage entre tous les messages qui referencent la
+    // meme URL. TTL par defaut 24h (expires_at). `status` stocke le HTTP
+    // status ou 0 si erreur de fetch — evite de re-fetcher en boucle les
+    // liens morts.
+    (db) => {
+      db.exec(`
+        CREATE TABLE IF NOT EXISTS link_previews (
+          url_hash    TEXT PRIMARY KEY,
+          url         TEXT NOT NULL,
+          title       TEXT,
+          description TEXT,
+          image       TEXT,
+          site_name   TEXT,
+          status      INTEGER,
+          fetched_at  TEXT NOT NULL DEFAULT (datetime('now')),
+          expires_at  TEXT NOT NULL
+        );
+        CREATE INDEX IF NOT EXISTS idx_link_previews_expires ON link_previews(expires_at);
       `);
     },
   ];

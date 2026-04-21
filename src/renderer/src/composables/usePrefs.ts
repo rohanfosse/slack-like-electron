@@ -28,6 +28,8 @@ interface Prefs {
   borderRadius: 'sharp' | 'default' | 'round'
   customAccent: string
   highContrast: boolean
+  // Link previews (unfurl) — affiche une carte quand un message contient un lien
+  unfurlEnabled: boolean
 }
 
 const DEFAULTS: Prefs = {
@@ -55,6 +57,7 @@ const DEFAULTS: Prefs = {
   borderRadius: 'default',
   customAccent: '',
   highContrast: false,
+  unfurlEnabled: true,
 }
 
 function loadPrefs(): Prefs {

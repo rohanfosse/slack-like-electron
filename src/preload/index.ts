@@ -198,6 +198,10 @@ contextBridge.exposeInMainWorld('api', {
   editMessage:    (id: number, content: string) => patch(`/api/messages/${id}`, { content }),
   reportMessage:  (messageId: number, reason: string) => post(`/api/messages/${messageId}/report`, { reason }),
 
+  // ── Link preview (unfurl) ──────────────────────────────────────────────────
+  resolveLinkPreviews: (urls: string[]) => post('/api/link-preview/resolve', { urls }),
+  linkPreviewImageUrl: (url: string) => `${SERVER_URL}/api/link-preview/image?url=${encodeURIComponent(url)}`,
+
   // ── Statuts personnalises ───────────────────────────────────────────────────
   getMyStatus:       () => get('/api/me/status'),
   setMyStatus:       (payload: { emoji: string | null; text: string | null; expiresAt: string | null }) =>

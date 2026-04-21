@@ -285,6 +285,17 @@ declare global {
       onPollUpdate?(cb: (data: { messageId: number; poll_votes: { totals: number[]; voters: Record<string, number[]> } }) => void): () => void
       onPresenceUpdate?(cb: (data: Array<{ id: number; name: string; role: string; status?: { emoji: string | null; text: string | null; expiresAt: string | null } | null }>) => void): () => void
 
+      // Link preview (unfurl)
+      resolveLinkPreviews(urls: string[]): Promise<IpcResponse<Array<{
+        url: string
+        title: string | null
+        description: string | null
+        image: string | null
+        site_name: string | null
+        status: number
+      }>>>
+      linkPreviewImageUrl(url: string): string
+
       // Statuts personnalises
       getMyStatus(): Promise<IpcResponse<{ userId: number; emoji: string | null; text: string | null; expiresAt: string | null; updatedAt: string } | null>>
       setMyStatus(payload: { emoji: string | null; text: string | null; expiresAt: string | null }): Promise<IpcResponse<{ userId: number; emoji: string | null; text: string | null; expiresAt: string | null; updatedAt: string } | null>>

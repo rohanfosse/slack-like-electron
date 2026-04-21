@@ -7,6 +7,7 @@
   import { useLiveStore }     from '@/stores/live'
   import { useBookmarksStore } from '@/stores/bookmarks'
   import { useStatusesStore } from '@/stores/statuses'
+  import { useScheduledStore } from '@/stores/scheduled'
   import { usePrefs }       from '@/composables/usePrefs'
   import { useToast }       from '@/composables/useToast'
   import { useAppListeners } from '@/composables/useAppListeners'
@@ -56,6 +57,7 @@
   const liveStore = useLiveStore()
   const bookmarksStore = useBookmarksStore()
   const statusesStore = useStatusesStore()
+  const scheduledStore = useScheduledStore()
   const router   = useRouter()
   const { getPref } = usePrefs()
   const { showToast } = useToast()
@@ -300,6 +302,7 @@
       loadModules()
       bookmarksStore.initIds()
       statusesStore.init(appStore.currentUser?.id ?? null)
+      scheduledStore.load()
     }
 
     // Init/reset stores par-user suivant l'etat de session
@@ -307,9 +310,11 @@
       if (uid && uid !== prev) {
         bookmarksStore.initIds()
         statusesStore.init(uid)
+        scheduledStore.load(true)
       } else if (!uid && prev) {
         bookmarksStore.reset()
         statusesStore.reset()
+        scheduledStore.reset()
       }
     })
 
