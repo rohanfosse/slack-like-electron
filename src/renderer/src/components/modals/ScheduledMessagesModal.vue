@@ -3,22 +3,30 @@
  * Liste des messages programmes de l'utilisateur. Edition inline de la date,
  * suppression, re-programmation des messages en echec.
  */
-import { onMounted, ref } from 'vue'
+import { onMounted, ref, watch } from 'vue'
+import { storeToRefs } from 'pinia'
 import { Clock, Trash2, AlertTriangle, CheckCircle2, Hash, User, Edit3 } from 'lucide-vue-next'
 import Modal from '@/components/ui/Modal.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
 import { useScheduledMessages, type ScheduledMessage } from '@/composables/useScheduledMessages'
 import { formatDate, formatTime } from '@/utils/date'
 
-defineProps<{ modelValue: boolean }>()
+const props = defineProps<{ modelValue: boolean }>()
 const emit = defineEmits<{ 'update:modelValue': [v: boolean] }>()
 
-const { items, loading, load, update, remove } = useScheduledMessages()
+const store = useScheduledMessages()
+// storeToRefs preserve la reactivite des refs (items, loading). Le destructuring
+// direct casse la reactivity sur les setup stores Pinia.
+const { items, loading } = storeToRefs(store)
 const editingId = ref<number | null>(null)
 const editDate = ref('')
 const editTime = ref('')
 
-onMounted(() => { load() })
+// Force un reload a chaque ouverture pour refleter l'etat backend courant
+// (messages envoyes / echoues depuis la derniere fois). load(false) retourne
+// immediatement si deja loaded — on force avec true.
+onMounted(() => { store.load(true) })
+watch(() => props.modelValue, (open) => { if (open) store.load(true) })
 
 function contextLabel(m: ScheduledMessage): string {
   if (m.channel_name) return `#${m.channel_name}`
@@ -40,7 +48,7 @@ function startEdit(m: ScheduledMessage) {
 async function saveEdit(m: ScheduledMessage) {
   if (!editDate.value || !editTime.value) return
   const iso = new Date(`${editDate.value}T${editTime.value}`).toISOString()
-  const ok = await update(m.id, { sendAt: iso })
+  const ok = await store.update(m.id, { sendAt: iso })
   if (ok) editingId.value = null
 }
 
@@ -100,7 +108,7 @@ function cancelEdit() {
             <button class="smm-btn" @click="startEdit(m)">
               <Edit3 :size="12" /> Modifier
             </button>
-            <button class="smm-btn smm-btn-danger" @click="remove(m.id)">
+            <button class="smm-btn smm-btn-danger" @click="store.remove(m.id)">
               <Trash2 :size="12" /> Supprimer
             </button>
           </div>
