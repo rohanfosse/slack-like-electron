@@ -144,11 +144,15 @@ function deleteUserScheduledMessage(authorId, id) {
  * le payload (auteur, destinataire, reply, attachments).
  */
 function getDueScheduledMessagesV2() {
+  // send_at est stocke en ISO-8601 cote client ("2026-04-21T10:36:00.000Z")
+  // alors que datetime('now') renvoie "2026-04-21 10:36:00". La comparaison
+  // lexicographique directe echoue (T > espace). On normalise les deux cotes
+  // via datetime() pour que la comparaison soit temporelle.
   return getDb().prepare(
     `SELECT * FROM scheduled_messages
       WHERE sent = 0
         AND failed_at IS NULL
-        AND send_at <= datetime('now')
+        AND datetime(send_at) <= datetime('now')
       LIMIT 100`
   ).all();
 }

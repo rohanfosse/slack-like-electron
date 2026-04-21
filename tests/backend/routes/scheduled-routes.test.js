@@ -308,4 +308,38 @@ describe('Worker : traitement du due + markScheduledFailed', () => {
     const sm = db.prepare("SELECT sent FROM scheduled_messages WHERE content = 'programme pret' ORDER BY id DESC LIMIT 1").get()
     expect(sm.sent).toBe(1)
   })
+
+  // Regression test : le client envoie send_at en ISO-8601 ("2026-04-21T10:36:00.000Z")
+  // alors que datetime('now') renvoie "2026-04-21 10:36:00". La comparaison
+  // lexicographique directe ratait (T > espace), le worker ne voyait jamais
+  // ces messages. Le fix : datetime(send_at) <= datetime('now').
+  test('traite les send_at au format ISO-8601 (avec T et Z)', () => {
+    const db = getTestDb()
+    const isoPast = new Date(Date.now() - 60_000).toISOString() // 1 min dans le passe
+    db.prepare(
+      `INSERT INTO scheduled_messages (channel_id, author_id, author_name, author_type, content, send_at)
+       VALUES (1, 1, 'Jean Dupont', 'student', 'iso past', ?)`
+    ).run(isoPast)
+    const processScheduledMessages = require('../../../server/services/schedulerTasks/messages')
+    const fakeIo = { to: () => ({ emit: () => {} }) }
+    const queries = require('../../../server/db/index')
+    processScheduledMessages(fakeIo, queries)
+    const sm = db.prepare("SELECT sent FROM scheduled_messages WHERE content = 'iso past' ORDER BY id DESC LIMIT 1").get()
+    expect(sm.sent).toBe(1)
+  })
+
+  test('NE traite PAS les send_at ISO-8601 dans le futur', () => {
+    const db = getTestDb()
+    const isoFuture = new Date(Date.now() + 60 * 60 * 1000).toISOString() // +1h
+    db.prepare(
+      `INSERT INTO scheduled_messages (channel_id, author_id, author_name, author_type, content, send_at)
+       VALUES (1, 1, 'Jean Dupont', 'student', 'iso future', ?)`
+    ).run(isoFuture)
+    const processScheduledMessages = require('../../../server/services/schedulerTasks/messages')
+    const fakeIo = { to: () => ({ emit: () => {} }) }
+    const queries = require('../../../server/db/index')
+    processScheduledMessages(fakeIo, queries)
+    const sm = db.prepare("SELECT sent FROM scheduled_messages WHERE content = 'iso future' ORDER BY id DESC LIMIT 1").get()
+    expect(sm.sent).toBe(0)
+  })
 })

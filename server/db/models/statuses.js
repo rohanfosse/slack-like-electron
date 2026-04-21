@@ -67,13 +67,13 @@ function listActiveStatuses(userIds = null) {
       `SELECT user_id, emoji, text, expires_at
          FROM user_statuses
         WHERE user_id IN (${placeholders})
-          AND (expires_at IS NULL OR expires_at > datetime('now'))`
+          AND (expires_at IS NULL OR datetime(expires_at) > datetime('now'))`
     ).all(...userIds);
   } else {
     rows = db.prepare(
       `SELECT user_id, emoji, text, expires_at
          FROM user_statuses
-        WHERE expires_at IS NULL OR expires_at > datetime('now')`
+        WHERE expires_at IS NULL OR datetime(expires_at) > datetime('now')`
     ).all();
   }
   return rows.map(r => ({
@@ -88,7 +88,7 @@ function listActiveStatuses(userIds = null) {
 function purgeExpiredStatuses() {
   const db = getDb();
   const expired = db.prepare(
-    `SELECT user_id FROM user_statuses WHERE expires_at IS NOT NULL AND expires_at <= datetime('now')`
+    `SELECT user_id FROM user_statuses WHERE expires_at IS NOT NULL AND datetime(expires_at) <= datetime('now')`
   ).all().map(r => r.user_id);
   if (!expired.length) return [];
   const placeholders = expired.map(() => '?').join(',');

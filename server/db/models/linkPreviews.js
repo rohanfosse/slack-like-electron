@@ -20,7 +20,7 @@ function getLinkPreview(url) {
     `SELECT url, title, description, image, site_name, status, fetched_at, expires_at
        FROM link_previews
       WHERE url_hash = ?
-        AND expires_at > datetime('now')`
+        AND datetime(expires_at) > datetime('now')`
   ).get(hash);
   return row ?? null;
 }
@@ -48,7 +48,7 @@ function upsertLinkPreview({ url, title = null, description = null, image = null
 /** Purge les entrees expirees. Appele par le scheduler. */
 function purgeExpiredLinkPreviews() {
   return getDb().prepare(
-    `DELETE FROM link_previews WHERE expires_at <= datetime('now')`
+    `DELETE FROM link_previews WHERE datetime(expires_at) <= datetime('now')`
   ).run().changes;
 }
 

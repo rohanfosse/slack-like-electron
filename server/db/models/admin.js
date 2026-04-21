@@ -439,9 +439,11 @@ function deleteScheduledMessage(id) {
 }
 
 function getDueScheduledMessages() {
+  // datetime(send_at) pour normaliser ISO-8601 vs format SQLite datetime.
+  // Cf. getDueScheduledMessagesV2 dans models/scheduled.js pour le detail.
   return getDb().prepare(`
     SELECT * FROM scheduled_messages
-    WHERE sent = 0 AND send_at <= datetime('now')
+    WHERE sent = 0 AND datetime(send_at) <= datetime('now')
   `).all()
 }
 

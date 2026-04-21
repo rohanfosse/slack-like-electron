@@ -9,7 +9,7 @@ import { Clock, Trash2, AlertTriangle, CheckCircle2, Hash, User, Edit3 } from 'l
 import Modal from '@/components/ui/Modal.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
 import { useScheduledMessages, type ScheduledMessage } from '@/composables/useScheduledMessages'
-import { formatDate, formatTime } from '@/utils/date'
+import { formatDate } from '@/utils/date'
 
 const props = defineProps<{ modelValue: boolean }>()
 const emit = defineEmits<{ 'update:modelValue': [v: boolean] }>()
@@ -35,7 +35,8 @@ function contextLabel(m: ScheduledMessage): string {
 }
 
 function formatWhen(iso: string): string {
-  try { return `${formatDate(iso)} ${formatTime(iso)}` } catch { return iso }
+  // formatDate inclut deja l'heure (toLocaleDateString avec hour/minute)
+  try { return formatDate(iso) } catch { return iso }
 }
 
 function startEdit(m: ScheduledMessage) {
