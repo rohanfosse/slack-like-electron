@@ -1,14 +1,22 @@
 /** StudentProjetDevoirsList.vue - Grouped devoirs list (a rendre, evenements, rendus) */
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import {
   ChevronDown, ChevronRight, Clock, CalendarDays, Upload, X,
-  FileText, Link2, CheckCircle2, Lock, Award, Users,
+  FileText, Link2, CheckCircle2, Lock, Award, Users, ExternalLink, Loader2,
 } from 'lucide-vue-next'
 import { formatDate, deadlineClass, deadlineLabel } from '@/utils/date'
 import { numericGradeClass } from '@/utils/grade'
 import { isEventType } from '@/utils/devoir'
 import type { Devoir } from '@/types'
+
+/** Formate une taille de fichier en unites lisibles (1.3 MB, 42 KB, ...). */
+function formatFileSize(bytes: number | null | undefined): string {
+  if (bytes == null || bytes < 0) return ''
+  if (bytes < 1024) return `${bytes} o`
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} Ko`
+  return `${(bytes / (1024 * 1024)).toFixed(1)} Mo`
+}
 
 const TYPE_LABELS: Record<string, string> = {
   livrable: 'Livrable', soutenance: 'Soutenance', cctl: 'CCTL',
@@ -34,7 +42,9 @@ const props = defineProps<{
   depositLink: string
   depositFile: string | null
   depositFileName: string | null
+  depositFileSize?: number | null
   depositing: boolean
+  uploading?: boolean
   dragOver: boolean
 }>()
 
@@ -44,6 +54,7 @@ const emit = defineEmits<{
   pickFile: []
   clearDepositFile: []
   submitDeposit: [t: Devoir]
+  openDepot: [t: Devoir]
   'update:depositMode': [v: 'file' | 'link']
   'update:depositLink': [v: string]
   dragOver: [e: DragEvent]
@@ -68,12 +79,43 @@ function gradeColor(note: string | null | undefined): string {
 
 const collapsedSections = ref<Record<string, boolean>>({})
 function toggleSection(key: string) { collapsedSections.value[key] = !collapsedSections.value[key] }
+
+// Validation cote client de l'etat du bouton "Deposer" — desactive si :
+//  - upload en cours (fichier en chargement)
+//  - soumission en cours
+//  - mode file sans fichier OU mode link avec champ vide
+const submitDisabled = computed(() => {
+  if (props.depositing || props.uploading) return true
+  if (props.depositMode === 'file') return !props.depositFile
+  return !props.depositLink.trim()
+})
+
+// Raccourci clavier Ctrl+Enter dans le formulaire : submit
+// (Escape pour annuler est gere par le @keydown.escape sur le champ)
+function onFormKeydown(e: KeyboardEvent, t: Devoir): void {
+  if (e.key === 'Escape') {
+    e.preventDefault()
+    emit('cancelDeposit')
+    return
+  }
+  if (e.key === 'Enter' && (e.ctrlKey || e.metaKey) && !submitDisabled.value) {
+    e.preventDefault()
+    emit('submitDeposit', t)
+  }
+}
 </script>
 
 <template>
   <!-- A rendre (overdue + urgent + pending) -->
   <template v-if="devoirsPending.length">
-    <div class="spf-section-label spf-section-toggle" @click="toggleSection('pending')">
+    <div
+      class="spf-section-label spf-section-toggle"
+      tabindex="0"
+      role="button"
+      :aria-expanded="!collapsedSections.pending"
+      @click="toggleSection('pending')"
+      @keydown.enter.space.prevent="toggleSection('pending')"
+    >
       <component :is="collapsedSections.pending ? ChevronRight : ChevronDown" :size="12" />
       <Clock :size="12" /> A rendre
       <span class="spf-section-count">{{ devoirsPending.length }}</span>
@@ -94,7 +136,7 @@ function toggleSection(key: string) { collapsedSections.value[key] = !collapsedS
         </div>
         <div class="spf-card-sub">
           <span class="spf-card-date">
-            {{ isOverdue(t) ? 'Délai expiré' : 'Échéance : ' + formatDate(t.deadline) }}
+            {{ isOverdue(t) ? 'Date dépassée' : 'Échéance : ' + formatDate(t.deadline) }}
           </span>
           <span v-if="t.group_name" class="spf-card-group"><Users :size="10" /> {{ t.group_name }}</span>
         </div>
@@ -102,7 +144,7 @@ function toggleSection(key: string) { collapsedSections.value[key] = !collapsedS
 
         <!-- Formulaire de depot -->
         <template v-if="depositingDevoirId === t.id">
-          <div class="spf-deposit-form">
+          <div class="spf-deposit-form" @keydown="onFormKeydown($event, t)">
             <div class="spf-deposit-toggle">
               <button class="spf-toggle-btn" :class="{ active: depositMode === 'file' }" @click="emit('update:depositMode', 'file')">
                 <FileText :size="12" /> Fichier
@@ -115,37 +157,51 @@ function toggleSection(key: string) { collapsedSections.value[key] = !collapsedS
               <div v-if="depositFile" class="spf-file-selected">
                 <CheckCircle2 :size="14" class="spf-file-ok" />
                 <span class="spf-file-name">{{ depositFileName }}</span>
-                <button class="spf-file-clear" @click.stop="emit('clearDepositFile')"><X :size="11" /></button>
+                <span v-if="depositFileSize" class="spf-file-size">{{ formatFileSize(depositFileSize) }}</span>
+                <button class="spf-file-clear" :disabled="depositing || uploading" @click.stop="emit('clearDepositFile')"><X :size="11" /></button>
               </div>
               <div
                 v-else
                 class="spf-file-zone"
-                :class="{ 'spf-file-zone--drag': dragOver }"
-                @click="emit('pickFile')"
+                :class="{ 'spf-file-zone--drag': dragOver, 'spf-file-zone--loading': uploading }"
+                @click="!uploading && emit('pickFile')"
                 @dragover="emit('dragOver', $event)"
                 @dragleave="emit('dragLeave')"
                 @drop="emit('drop', $event)"
               >
-                <Upload :size="18" class="spf-file-zone-icon" />
-                <span>{{ dragOver ? 'Relâcher pour déposer' : 'Glisser un fichier ou cliquer' }}</span>
+                <Loader2 v-if="uploading" :size="18" class="spf-file-zone-icon spf-upload-spin" />
+                <Upload v-else :size="18" class="spf-file-zone-icon" />
+                <span>{{ uploading ? 'Chargement…' : dragOver ? 'Relâcher pour déposer' : 'Glisser un fichier ou cliquer' }}</span>
+                <span class="spf-file-zone-hint">Max 50 Mo · .exe, .bat, .sh refusés</span>
               </div>
             </div>
-            <input v-else :value="depositLink" class="form-input" placeholder="https://..." type="url" @input="emit('update:depositLink', ($event.target as HTMLInputElement).value)" />
+            <input
+              v-else
+              :value="depositLink"
+              class="form-input"
+              placeholder="https://..."
+              type="url"
+              autofocus
+              @input="emit('update:depositLink', ($event.target as HTMLInputElement).value)"
+            />
             <div class="spf-deposit-actions">
+              <span class="spf-deposit-hint">
+                <kbd>Esc</kbd> annuler · <kbd>Ctrl</kbd>+<kbd>↵</kbd> déposer
+              </span>
               <button class="btn-ghost" @click="emit('cancelDeposit')"><X :size="12" /> Annuler</button>
               <button
                 class="btn-primary"
-                :disabled="depositing || (depositMode === 'file' ? !depositFile : !depositLink.trim())"
+                :disabled="submitDisabled"
                 @click="emit('submitDeposit', t)"
               >
-                <Upload :size="12" />{{ depositing ? 'Dépôt...' : 'Déposer' }}
+                <Upload :size="12" />{{ depositing ? 'Dépôt…' : 'Déposer' }}
               </button>
             </div>
           </div>
         </template>
         <div v-else class="spf-card-actions">
           <button v-if="isOverdue(t)" class="spf-btn-expired" disabled>
-            <Lock :size="12" /> Délai expiré
+            <Lock :size="12" /> Date dépassée
           </button>
           <button v-else class="btn-primary spf-btn-deposit" @click="emit('startDeposit', t)">
             <Upload :size="12" /> Déposer
@@ -157,7 +213,15 @@ function toggleSection(key: string) { collapsedSections.value[key] = !collapsedS
 
   <!-- Evenements (soutenance / CCTL) -->
   <template v-if="devoirsEvent.length">
-    <div class="spf-section-label spf-section-toggle" style="margin-top:16px" @click="toggleSection('events')">
+    <div
+      class="spf-section-label spf-section-toggle"
+      style="margin-top:16px"
+      tabindex="0"
+      role="button"
+      :aria-expanded="!collapsedSections.events"
+      @click="toggleSection('events')"
+      @keydown.enter.space.prevent="toggleSection('events')"
+    >
       <component :is="collapsedSections.events ? ChevronRight : ChevronDown" :size="12" />
       <CalendarDays :size="12" /> Événements
       <span class="spf-section-count">{{ devoirsEvent.length }}</span>
@@ -184,7 +248,15 @@ function toggleSection(key: string) { collapsedSections.value[key] = !collapsedS
 
   <!-- Rendus -->
   <template v-if="devoirsSubmitted.length">
-    <div class="spf-section-label spf-section-toggle" style="margin-top:16px" @click="toggleSection('submitted')">
+    <div
+      class="spf-section-label spf-section-toggle"
+      style="margin-top:16px"
+      tabindex="0"
+      role="button"
+      :aria-expanded="!collapsedSections.submitted"
+      @click="toggleSection('submitted')"
+      @keydown.enter.space.prevent="toggleSection('submitted')"
+    >
       <component :is="collapsedSections.submitted ? ChevronRight : ChevronDown" :size="12" />
       <CheckCircle2 :size="12" /> Rendus
       <span class="spf-section-count">{{ devoirsSubmitted.length }}</span>
@@ -194,12 +266,83 @@ function toggleSection(key: string) { collapsedSections.value[key] = !collapsedS
         <div class="spf-card-top">
           <span class="spf-type-badge" :class="`type-${t.type}`">{{ TYPE_LABELS[t.type] ?? t.type }}</span>
           <span class="spf-card-title">{{ t.title }}</span>
-          <span v-if="hasFeedback(t)" class="badge-new">Nouveau feedback</span>
+          <span v-if="hasFeedback(t) && !t.note" class="badge-new">Nouveau feedback</span>
           <CheckCircle2 :size="14" class="spf-done-check" />
         </div>
         <div class="spf-card-sub">
           <span class="spf-card-date">Échéance : {{ formatDate(t.deadline) }}</span>
+          <button
+            type="button"
+            class="spf-view-depot"
+            title="Ouvrir mon dépôt"
+            @click.stop="emit('openDepot', t)"
+          ><ExternalLink :size="11" /> Voir mon dépôt</button>
+          <!-- Remplacer : possible tant que la deadline n'est pas passee. L'API
+               fait un upsert, donc re-deposer ecrase proprement l'ancien depot. -->
+          <button
+            v-if="!isExpired(t.deadline) && !t.note"
+            type="button"
+            class="spf-view-depot spf-replace-btn"
+            title="Remplacer mon dépôt (tant que la date n'est pas passée)"
+            @click.stop="emit('startDeposit', t)"
+          ><Upload :size="11" /> Remplacer</button>
         </div>
+        <!-- Formulaire de depot (affichable aussi pour un remplacement) -->
+        <template v-if="depositingDevoirId === t.id">
+          <div class="spf-deposit-form" @keydown="onFormKeydown($event, t)">
+            <div class="spf-deposit-toggle">
+              <button class="spf-toggle-btn" :class="{ active: depositMode === 'file' }" @click="emit('update:depositMode', 'file')">
+                <FileText :size="12" /> Fichier
+              </button>
+              <button class="spf-toggle-btn" :class="{ active: depositMode === 'link' }" @click="emit('update:depositMode', 'link')">
+                <Link2 :size="12" /> Lien
+              </button>
+            </div>
+            <div v-if="depositMode === 'file'">
+              <div v-if="depositFile" class="spf-file-selected">
+                <CheckCircle2 :size="14" class="spf-file-ok" />
+                <span class="spf-file-name">{{ depositFileName }}</span>
+                <span v-if="depositFileSize" class="spf-file-size">{{ formatFileSize(depositFileSize) }}</span>
+                <button class="spf-file-clear" :disabled="depositing || uploading" @click.stop="emit('clearDepositFile')"><X :size="11" /></button>
+              </div>
+              <div
+                v-else
+                class="spf-file-zone"
+                :class="{ 'spf-file-zone--drag': dragOver, 'spf-file-zone--loading': uploading }"
+                @click="!uploading && emit('pickFile')"
+                @dragover="emit('dragOver', $event)"
+                @dragleave="emit('dragLeave')"
+                @drop="emit('drop', $event)"
+              >
+                <Loader2 v-if="uploading" :size="18" class="spf-file-zone-icon spf-upload-spin" />
+                <Upload v-else :size="18" class="spf-file-zone-icon" />
+                <span>{{ uploading ? 'Chargement…' : dragOver ? 'Relâcher pour déposer' : 'Glisser un fichier ou cliquer' }}</span>
+                <span class="spf-file-zone-hint">Max 50 Mo · .exe, .bat, .sh refusés</span>
+              </div>
+            </div>
+            <input
+              v-else
+              :value="depositLink"
+              class="form-input"
+              placeholder="https://..."
+              type="url"
+              @input="emit('update:depositLink', ($event.target as HTMLInputElement).value)"
+            />
+            <div class="spf-deposit-actions">
+              <span class="spf-deposit-hint">
+                <kbd>Esc</kbd> annuler · <kbd>Ctrl</kbd>+<kbd>↵</kbd> remplacer
+              </span>
+              <button class="btn-ghost" @click="emit('cancelDeposit')"><X :size="12" /> Annuler</button>
+              <button
+                class="btn-primary"
+                :disabled="submitDisabled"
+                @click="emit('submitDeposit', t)"
+              >
+                <Upload :size="12" />{{ depositing ? 'Remplacement…' : 'Remplacer' }}
+              </button>
+            </div>
+          </div>
+        </template>
         <!-- Note + feedback -->
         <div v-if="t.note" class="spf-grade-row">
           <span class="spf-grade-badge" :class="gradeColor(t.note)">{{ t.note }}</span>
@@ -224,6 +367,11 @@ function toggleSection(key: string) { collapsedSections.value[key] = !collapsedS
 }
 .spf-section-toggle { cursor: pointer; user-select: none; }
 .spf-section-toggle:hover { color: var(--text-secondary); }
+.spf-section-toggle:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 3px;
+}
 .spf-section-count {
   font-size: 10px; font-weight: 600;
   background: var(--bg-hover); padding: 1px 5px;
@@ -239,7 +387,9 @@ function toggleSection(key: string) { collapsedSections.value[key] = !collapsedS
   display: flex; flex-direction: column; gap: 6px;
   transition: background var(--t-fast);
 }
-.spf-card--overdue { border-color: rgba(var(--color-danger-rgb),.3); background: rgba(var(--color-danger-rgb),.04); }
+/* Date depassee : bordure neutre dashed + fond tres subtil. Evite la panique
+   rouge sans masquer le signal (la card reste visuellement distincte). */
+.spf-card--overdue { border-color: var(--border-input); border-style: dashed; background: var(--bg-hover); }
 .spf-card--urgent  { border-color: rgba(var(--color-warning-rgb),.3); background: rgba(var(--color-warning-rgb),.04); }
 .spf-card--event   { border-color: rgba(var(--color-cctl-rgb),.25); background: rgba(var(--color-cctl-rgb),.04); }
 .spf-card--done    { opacity: .75; }
@@ -262,8 +412,9 @@ function toggleSection(key: string) { collapsedSections.value[key] = !collapsedS
 .deadline-ok       { background: rgba(var(--color-success-rgb),.1);  color: var(--color-success); }
 .deadline-warning  { background: rgba(var(--color-warning-rgb),.1); color: #F39C12; }
 .deadline-soon     { background: rgba(var(--color-warning-rgb),.12); color: var(--color-warning); }
-.deadline-critical,
-.deadline-passed   { background: rgba(var(--color-danger-rgb),.12); color: #ff7b6b; }
+.deadline-critical { background: rgba(var(--color-danger-rgb),.12); color: #ff7b6b; }
+/* Dates passees : neutre (anti-anxiogene), coherent avec l'app globale */
+.deadline-passed   { background: var(--bg-hover); color: var(--text-muted); }
 
 .spf-card-sub { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .spf-card-date  { font-size: 11px; color: var(--text-muted); }
@@ -345,5 +496,77 @@ function toggleSection(key: string) { collapsedSections.value[key] = !collapsedS
   border-radius: 4px; flex-shrink: 0; transition: color var(--t-fast);
 }
 .spf-file-clear:hover { color: var(--color-danger); }
-.spf-deposit-actions { display: flex; justify-content: flex-end; gap: 6px; }
+.spf-deposit-actions { display: flex; justify-content: flex-end; gap: 6px; align-items: center; }
+.spf-deposit-hint {
+  flex: 1;
+  font-size: 10.5px;
+  color: var(--text-muted);
+  letter-spacing: .02em;
+}
+.spf-deposit-hint kbd {
+  font-family: var(--font-mono, 'SF Mono', Consolas, monospace);
+  font-size: 10px;
+  padding: 1px 5px;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  background: var(--bg-elevated);
+  color: var(--text-secondary);
+  margin: 0 1px;
+}
+
+.spf-file-size {
+  font-size: 10.5px;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+  padding: 0 4px;
+  flex-shrink: 0;
+}
+
+.spf-file-zone--loading {
+  cursor: progress;
+  opacity: .85;
+  border-style: solid;
+}
+.spf-upload-spin { animation: spf-spin 1s linear infinite; }
+@keyframes spf-spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+.spf-file-zone-hint {
+  font-size: 10px;
+  color: var(--text-muted);
+  opacity: .7;
+  margin-top: 2px;
+}
+
+/* Lien "Voir mon dépôt" : discret, inline dans la ligne des sous-infos */
+.spf-view-depot {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  background: transparent;
+  border: none;
+  color: var(--accent);
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 4px;
+  transition: background var(--t-fast), color var(--t-fast);
+}
+.spf-view-depot:hover { background: rgba(var(--accent-rgb), .1); color: var(--accent-hover, var(--accent)); }
+/* Contourne l'opacite .75 de .spf-card--done pour garder les liens lisibles */
+.spf-card--done .spf-view-depot { opacity: 1.33; filter: none; }
+
+/* Bouton "Remplacer" : meme style que "Voir mon depot" mais couleur warning
+   plus subtile pour signaler que c'est une action modificatrice. */
+.spf-replace-btn {
+  color: var(--color-warning);
+}
+.spf-replace-btn:hover {
+  background: rgba(var(--color-warning-rgb), .12);
+  color: var(--color-warning);
+}
 </style>

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, toRef } from 'vue'
+import { computed, nextTick, ref, toRef, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import {
   Link2, Hash, Megaphone, ExternalLink,
@@ -16,11 +16,12 @@ import { useStudentProjetDevoirs } from '@/composables/useStudentProjetDevoirs'
 import { useStudentProjetGroup } from '@/composables/useStudentProjetGroup'
 import { useStudentProjetResources } from '@/composables/useStudentProjetResources'
 import { useStudentDepositInline } from '@/composables/useStudentDepositInline'
+import { useToast } from '@/composables/useToast'
 import StudentProjetHeader      from './StudentProjetHeader.vue'
 import StudentProjetStats       from './StudentProjetStats.vue'
 import StudentProjetDevoirsList from './StudentProjetDevoirsList.vue'
 import LumenProjectSection      from '@/components/lumen/LumenProjectSection.vue'
-import type { AppDocument, Channel } from '@/types'
+import type { AppDocument, Channel, Devoir } from '@/types'
 import type { ProjectMeta } from '@/components/modals/NewProjectModal.vue'
 
 const props = defineProps<{ projectKey: string; promoId: number }>()
@@ -30,6 +31,8 @@ const appStore     = useAppStore()
 const travauxStore = useTravauxStore()
 const docStore     = useDocumentsStore()
 const modals       = useModalsStore()
+const { showToast } = useToast()
+const mainColRef   = ref<HTMLElement | null>(null)
 
 // ── Metadonnees projet (localStorage) ────────────────────────────────────────
 const projectMeta = computed((): ProjectMeta | null => {
@@ -67,7 +70,9 @@ const {
   link: depositLink,
   file: depositFile,
   fileName: depositFileName,
+  fileSize: depositFileSize,
   depositing,
+  uploading: depositUploading,
   dragOver,
   start: startDeposit,
   cancel: cancelDeposit,
@@ -76,6 +81,44 @@ const {
   onDragOver, onDragLeave, onDrop,
   submit: submitDeposit,
 } = useStudentDepositInline(isExpired)
+
+// ── Ouvrir son propre depot (fichier ou lien) ──────────────────────────────
+/**
+ * Pour les depots de type "link" on peut utiliser le champ link_url deja
+ * expose sur Devoir. Pour les fichiers, il faut recuperer file_path via
+ * l'API /api/depots — le champ n'est pas denormalise cote student.
+ */
+async function openDepot(t: Devoir): Promise<void> {
+  if (t.link_url) {
+    window.api.openExternal(t.link_url)
+    return
+  }
+  try {
+    const res = await window.api.getDepots(t.id)
+    if (!res?.ok || !res.data?.length) {
+      showToast('Dépôt introuvable.', 'error')
+      return
+    }
+    const mine = res.data.find(d => d.student_id === appStore.currentUser?.id) ?? res.data[0]
+    const url = mine.link_url || (mine as { file_path?: string | null }).file_path
+    if (!url) {
+      showToast('URL du dépôt indisponible.', 'error')
+      return
+    }
+    window.api.openExternal(url)
+  } catch (err) {
+    console.warn('[openDepot] erreur', err)
+    showToast('Impossible d\'ouvrir le dépôt.', 'error')
+  }
+}
+
+// ── Scroll-to-top quand le projet change ─────────────────────────────────
+// Sinon l'etudiant qui clique sur un autre projet reste a la meme hauteur
+// que dans le precedent, ce qui desoriente (position memorise bizarrement).
+watch(() => props.projectKey, async () => {
+  await nextTick()
+  mainColRef.value?.scrollTo({ top: 0, behavior: 'auto' })
+})
 
 // ── Navigation ────────────────────────────────────────────────────────────────
 function goToChannel(ch: Channel) {
@@ -125,7 +168,7 @@ function gradeColor(note: string | null | undefined): string {
     <div class="spf-body">
 
       <!-- ── Colonne principale : Devoirs ─────────────────────────────── -->
-      <section class="spf-col-main">
+      <section ref="mainColRef" class="spf-col-main">
 
         <!-- Squelettes chargement -->
         <div v-if="travauxStore.loading" class="spf-loading">
@@ -151,13 +194,16 @@ function gradeColor(note: string | null | undefined): string {
             :deposit-link="depositLink"
             :deposit-file="depositFile"
             :deposit-file-name="depositFileName"
+            :deposit-file-size="depositFileSize"
             :depositing="depositing"
+            :uploading="depositUploading"
             :drag-over="dragOver"
             @start-deposit="startDeposit"
             @cancel-deposit="cancelDeposit"
             @pick-file="pickFile"
             @clear-deposit-file="clearDepositFile"
             @submit-deposit="submitDeposit"
+            @open-depot="openDepot"
             @update:deposit-mode="depositMode = $event"
             @update:deposit-link="depositLink = $event"
             @drag-over="onDragOver"
@@ -552,8 +598,10 @@ function gradeColor(note: string | null | undefined): string {
 .deadline-ok       { background: rgba(var(--color-success-rgb),.1);  color: var(--color-success); }
 .deadline-warning  { background: rgba(var(--color-warning-rgb),.1); color: #F39C12; }
 .deadline-soon     { background: rgba(var(--color-warning-rgb),.12); color: var(--color-warning); }
-.deadline-critical,
-.deadline-passed   { background: rgba(var(--color-danger-rgb),.12); color: #ff7b6b; }
+.deadline-critical { background: rgba(var(--color-danger-rgb),.12); color: #ff7b6b; }
+/* Dates passees : style neutre (anti-anxiogene). Le contexte fait comprendre
+   le statut, pas besoin d'une bordure rouge qui stresse l'etudiant. */
+.deadline-passed   { background: var(--bg-hover); color: var(--text-muted); }
 
 .spf-card-sub {
   display: flex;

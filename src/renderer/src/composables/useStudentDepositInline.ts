@@ -5,14 +5,22 @@
  * Le composable gere :
  *   - l'id du devoir en cours de depot (un seul a la fois)
  *   - mode file/link
- *   - fichier uploade (url + displayName)
+ *   - fichier uploade (url + displayName + taille cote client)
  *   - drag over visual state
  *   - soumission (appelle travauxStore.addDepot + refresh)
+ *
+ * Robustesse (v2.214) :
+ *   - validation URL via utils/urlValidation (scheme http/https/mailto uniquement)
+ *   - validation fichier via utils/fileValidation (50 Mo max, extensions bloquees)
+ *   - rejet early si deadline passee ou utilisateur absent
+ *   - messages d'erreur specifiques au lieu d'un generique
  */
 import { ref } from 'vue'
 import { useAppStore } from '@/stores/app'
 import { useTravauxStore } from '@/stores/travaux'
 import { useToast } from '@/composables/useToast'
+import { validateFile } from '@/utils/fileValidation'
+import { validateUrl } from '@/utils/urlValidation'
 import type { Devoir } from '@/types'
 
 export type DepositMode = 'file' | 'link'
@@ -34,7 +42,9 @@ export function useStudentDepositInline(isExpired: (deadline: string) => boolean
   const link = ref('')
   const file = ref<string | null>(null)
   const fileName = ref<string | null>(null)
+  const fileSize = ref<number | null>(null)
   const depositing = ref(false)
+  const uploading = ref(false)
   const dragOver = ref(false)
 
   function start(t: Devoir) {
@@ -43,6 +53,7 @@ export function useStudentDepositInline(isExpired: (deadline: string) => boolean
     link.value = ''
     file.value = null
     fileName.value = null
+    fileSize.value = null
     dragOver.value = false
   }
 
@@ -51,30 +62,57 @@ export function useStudentDepositInline(isExpired: (deadline: string) => boolean
     dragOver.value = false
   }
 
+  /**
+   * Valide un fichier local (nom + taille) AVANT d'appeler uploadFile.
+   * Evite d'uploader un .exe de 100 Mo pour se prendre une erreur a la fin.
+   */
+  function validateLocalFile(name: string, size: number): boolean {
+    const result = validateFile({ name, size })
+    if (!result.valid) {
+      showToast(result.error ?? 'Fichier invalide.', 'error')
+      return false
+    }
+    return true
+  }
+
   async function pickFile() {
+    if (uploading.value) return
     const res = await window.api.openFileDialog()
     if (!res?.ok || !res.data) return
     const paths = res.data as string[]
     const localPath = paths[0]
     if (!localPath) return
     const localName = displayDepotName(localPath)
-    const uploadRes = await window.api.uploadFile(localPath)
-    if (uploadRes?.ok && uploadRes.data) {
-      file.value = uploadRes.data.url
-      fileName.value = localName
-    } else {
-      showToast('Erreur lors du chargement du fichier.', 'error')
+
+    // La taille n'est pas toujours disponible via openFileDialog (depend de
+    // l'impl Electron). On laisse le serveur valider en dernier recours.
+    uploading.value = true
+    try {
+      const uploadRes = await window.api.uploadFile(localPath)
+      if (uploadRes?.ok && uploadRes.data) {
+        file.value = uploadRes.data.url
+        fileName.value = localName
+        fileSize.value = typeof uploadRes.data.file_size === 'number' ? uploadRes.data.file_size : null
+      } else {
+        showToast(uploadRes?.error ?? 'Erreur lors du chargement du fichier.', 'error')
+      }
+    } catch (err) {
+      console.warn('[deposit] uploadFile a echoue', err)
+      showToast('Erreur reseau lors de l\'upload. Verifie ta connexion.', 'error')
+    } finally {
+      uploading.value = false
     }
   }
 
   function clearFile() {
     file.value = null
     fileName.value = null
+    fileSize.value = null
   }
 
   function onDragOver(e: DragEvent) {
     e.preventDefault()
-    if (mode.value === 'file') dragOver.value = true
+    if (mode.value === 'file' && !uploading.value) dragOver.value = true
   }
 
   function onDragLeave() { dragOver.value = false }
@@ -82,48 +120,96 @@ export function useStudentDepositInline(isExpired: (deadline: string) => boolean
   async function onDrop(e: DragEvent) {
     e.preventDefault()
     dragOver.value = false
-    if (mode.value !== 'file') return
-    const dropped = e.dataTransfer?.files?.[0]
-    if (!dropped) return
+    if (mode.value !== 'file' || uploading.value) return
+
+    const files = e.dataTransfer?.files
+    if (!files || files.length === 0) return
+    if (files.length > 1) {
+      showToast('Depose un seul fichier a la fois.', 'error')
+      return
+    }
+    const dropped = files[0]
+    // Validation cote client avant upload
+    if (!validateLocalFile(dropped.name, dropped.size)) return
+
+    // En contexte Electron, File expose .path (non-standard). Sans ca on ne peut
+    // pas lancer uploadFile qui attend un chemin local.
     const filePath = (dropped as File & { path?: string }).path
-    if (!filePath) return
-    const uploadRes = await window.api.uploadFile(filePath)
-    if (uploadRes?.ok && uploadRes.data) {
-      file.value = uploadRes.data.url
-      fileName.value = dropped.name
-    } else {
-      showToast('Erreur lors du chargement du fichier.', 'error')
+    if (!filePath) {
+      showToast('Depose le fichier depuis l\'explorateur Windows/macOS, pas depuis un navigateur.', 'error')
+      return
+    }
+
+    uploading.value = true
+    try {
+      const uploadRes = await window.api.uploadFile(filePath)
+      if (uploadRes?.ok && uploadRes.data) {
+        file.value = uploadRes.data.url
+        fileName.value = dropped.name
+        fileSize.value = dropped.size
+      } else {
+        showToast(uploadRes?.error ?? 'Erreur lors du chargement du fichier.', 'error')
+      }
+    } catch (err) {
+      console.warn('[deposit] drop uploadFile a echoue', err)
+      showToast('Erreur reseau lors de l\'upload.', 'error')
+    } finally {
+      uploading.value = false
     }
   }
 
   async function submit(devoir: Devoir) {
     if (depositing.value || !appStore.currentUser) return
-    if (mode.value === 'file' && !file.value) return
-    if (mode.value === 'link' && !link.value.trim()) return
-    if (isExpired(devoir.deadline)) return
+    if (isExpired(devoir.deadline)) {
+      showToast('La date limite est depassee.', 'error')
+      return
+    }
+
+    let content: string
+    let file_name: string | null = null
+
+    if (mode.value === 'file') {
+      if (!file.value) {
+        showToast('Selectionne un fichier avant de deposer.', 'error')
+        return
+      }
+      content = file.value
+      file_name = fileName.value
+    } else {
+      const urlCheck = validateUrl(link.value)
+      if (!urlCheck.valid) {
+        showToast(urlCheck.error ?? 'Lien invalide.', 'error')
+        return
+      }
+      content = urlCheck.normalized ?? link.value.trim()
+    }
+
     depositing.value = true
     try {
       const ok = await travauxStore.addDepot({
         travail_id: devoir.id,
         student_id: appStore.currentUser.id,
         type:       mode.value,
-        content:    mode.value === 'file' ? file.value! : link.value.trim(),
-        file_name:  mode.value === 'file' ? fileName.value : null,
+        content,
+        file_name,
       })
       if (ok) {
         showToast('Depot enregistre.', 'success')
         cancel()
         await travauxStore.fetchStudentDevoirs()
       } else {
-        showToast('Erreur lors du depot.', 'error')
+        showToast('Erreur lors du depot. Reessaie dans un instant.', 'error')
       }
+    } catch (err) {
+      console.warn('[deposit] submit a echoue', err)
+      showToast('Erreur reseau lors du depot.', 'error')
     } finally {
       depositing.value = false
     }
   }
 
   return {
-    depositingDevoirId, mode, link, file, fileName, depositing, dragOver,
+    depositingDevoirId, mode, link, file, fileName, fileSize, depositing, uploading, dragOver,
     start, cancel, pickFile, clearFile,
     onDragOver, onDragLeave, onDrop, submit,
   }

@@ -1,6 +1,6 @@
 /** StudentProjetStats.vue - Stats chips, progress bar, and deadline banner */
 <script setup lang="ts">
-import { CheckCircle2, AlertTriangle, Award, FolderOpen, Hash } from 'lucide-vue-next'
+import { Clock, CheckCircle2, Award, FolderOpen, Hash } from 'lucide-vue-next'
 
 defineProps<{
   stats: {
@@ -14,13 +14,13 @@ defineProps<{
 <template>
   <!-- Chips stats -->
   <div class="spf-stats-row">
-    <span class="spf-stat-chip" :class="stats.overdue > 0 ? 'spf-chip-red' : stats.pending > 0 ? 'spf-chip-orange' : 'spf-chip-green'">
+    <span class="spf-stat-chip" :class="stats.pending > 0 ? 'spf-chip-orange' : 'spf-chip-green'">
       <CheckCircle2 :size="11" />
       {{ stats.submitted }}/{{ stats.total }} rendus
       <span v-if="stats.total" class="spf-chip-pct">({{ stats.pct }}%)</span>
     </span>
-    <span v-if="stats.overdue" class="spf-stat-chip spf-chip-red">
-      <AlertTriangle :size="11" /> {{ stats.overdue }} en retard
+    <span v-if="stats.overdue" class="spf-stat-chip spf-chip-muted" :title="'Devoirs dont la date est passée sans dépôt'">
+      <Clock :size="11" /> {{ stats.overdue }} à rattraper
     </span>
     <span v-if="stats.avg != null" class="spf-stat-chip spf-chip-blue">
       <Award :size="11" /> Moy. {{ stats.avg }}/20
@@ -44,9 +44,9 @@ defineProps<{
     </div>
   </div>
 
-  <!-- Prochaine echeance banner -->
+  <!-- Prochaine échéance banner -->
   <div v-if="nextDeadlineSoon" class="spf-deadline-banner">
-    <AlertTriangle :size="14" />
-    <span><strong>Prochaine echeance :</strong> {{ nextDeadlineSoon.title }} &mdash; {{ nextDeadlineSoon.label }}</span>
+    <Clock :size="14" />
+    <span><strong>Prochaine échéance :</strong> {{ nextDeadlineSoon.title }} &mdash; {{ nextDeadlineSoon.label }}</span>
   </div>
 </template>
