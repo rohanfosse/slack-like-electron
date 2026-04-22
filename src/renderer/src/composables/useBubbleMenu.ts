@@ -176,5 +176,8 @@ export function useBubbleMenu(
     ctxVisible, ctxX, ctxY, onContextMenu, ctxItems, ctxQuickEmojiItems,
     content, color, imagePreviewUrl,
     closeAll,
+    // Actions aussi exposees a la pill d'actions (MessageActionPill) pour
+    // eviter la duplication avec le menu contextuel clic-droit.
+    copyPermalink, openDmWithAuthor,
   }
 }

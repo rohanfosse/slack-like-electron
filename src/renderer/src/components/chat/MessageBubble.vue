@@ -59,6 +59,7 @@ const {
   lightboxUrl, showMenu,
   ctxVisible, ctxX, ctxY, onContextMenu, ctxItems, ctxQuickEmojiItems,
   content, color, imagePreviewUrl, closeAll: _closeAll,
+  copyPermalink,
 } = useBubbleMenu(msgGetter, searchGetter, {
   isMine:   () => isMine.value,
   isPinned: () => isPinned.value,
@@ -78,12 +79,19 @@ const {
   },
 })
 
-// ── Wrappers that also close menu (used by inline template menu)
+// ── Wrappers qui ferment aussi le menu (utilises par la pill d'actions)
 function onReply()      { _onReply(); showMenu.value = false }
 function togglePin()    { _togglePin(); showMenu.value = false }
 function copyMessage()  { _copyMessage(); showMenu.value = false }
 function startEdit()    { showMenu.value = false; _startEdit() }
 function deleteMessage(){ showMenu.value = false; _deleteMessage() }
+function copyMessageLink() { copyPermalink(); showMenu.value = false }
+function dmAuthor()        { openDmWithAuthor(); showMenu.value = false }
+function reportMessageFromPill() { reportingMsg.value = true; showMenu.value = false }
+
+// ── Capacites derivees pour la pill d'actions (props explicites)
+const canReport = computed(() => !isMine.value)
+const canDmAuthor = computed(() => !isMine.value && props.msg.author_id != null)
 
 function closeAll() { _closeAll(showPicker, confirmingDelete) }
 
@@ -262,6 +270,8 @@ const renderedContentWithoutPoll = computed(() => {
       :is-bookmarked="isBookmarked"
       :can-edit="canEdit"
       :can-delete="canDelete"
+      :can-report="canReport"
+      :can-dm-author="canDmAuthor"
       :show-picker="showPicker"
       :show-menu="showMenu"
       @update:show-picker="showPicker = $event"
@@ -272,8 +282,11 @@ const renderedContentWithoutPoll = computed(() => {
       @toggle-pin="togglePin"
       @toggle-bookmark="toggleBookmark"
       @copy="copyMessage"
+      @copy-link="copyMessageLink"
+      @dm-author="dmAuthor"
       @edit="startEdit"
       @delete="deleteMessage"
+      @report="reportMessageFromPill"
     />
 
     <!-- Menu contextuel (clic droit) -->
@@ -505,17 +518,20 @@ const renderedContentWithoutPoll = computed(() => {
   gap: 1px;
   opacity: 0;
   pointer-events: none;
-  transition: opacity var(--motion-fast) var(--ease-out), transform var(--motion-fast) var(--ease-out);
+  transition: opacity var(--motion-fast) var(--ease-out),
+              transform var(--motion-fast) var(--ease-out);
   transform: translateY(4px);
   background: var(--bg-modal);
   border: 1px solid var(--border);
-  border-radius: 8px;
-  box-shadow: 0 2px 10px rgba(0,0,0,.3), 0 0 0 1px rgba(255,255,255,.04) inset;
+  border-radius: var(--radius);
+  box-shadow: var(--elevation-2);
   padding: 2px 4px;
   z-index: 30;
 }
 
-.msg-row:hover .msg-action-pill {
+/* Pill visible au survol OU au focus (a11y clavier). */
+.msg-row:hover .msg-action-pill,
+.msg-row:focus-within .msg-action-pill {
   opacity: 1;
   pointer-events: auto;
   transform: translateY(0);
@@ -525,27 +541,37 @@ const renderedContentWithoutPoll = computed(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 34px;
+  width: 32px;
   height: 32px;
   border: none;
   background: transparent;
   color: var(--text-muted);
-  border-radius: 5px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
-  font-size: 15px;
+  font-size: 14px;
   line-height: 1;
-  transition: background .1s, color .1s, transform .1s;
+  transition: background var(--motion-fast) var(--ease-out),
+              color      var(--motion-fast) var(--ease-out),
+              transform  var(--motion-fast) var(--ease-spring);
   padding: 0;
 }
 .pill-btn:hover:not(:disabled) {
   background: var(--bg-active);
   color: var(--text-primary);
-  transform: scale(1.1);
+  transform: scale(1.08);
+}
+.pill-btn:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+  color: var(--text-primary);
 }
 .pill-btn:disabled { opacity: .35; cursor: default; }
 
-.pill-emoji-btn { width: 32px; font-size: 16px; }
-.pill-emoji-btn:hover:not(:disabled) { transform: scale(1.25); background: var(--bg-hover); }
+.pill-emoji-btn { font-size: 16px; }
+.pill-emoji-btn:hover:not(:disabled) {
+  transform: scale(1.15);
+  background: var(--bg-hover);
+}
 
 .pill-sep {
   display: block;
@@ -572,12 +598,12 @@ const renderedContentWithoutPoll = computed(() => {
   right: 0;
   top: calc(100% + 6px);
   z-index: 60;
-  min-width: 168px;
+  min-width: 200px;
   background: var(--bg-modal);
   border: 1px solid var(--border);
-  border-radius: 8px;
-  box-shadow: 0 8px 32px rgba(0,0,0,.5), 0 0 0 1px rgba(255,255,255,.04) inset;
-  padding: 4px;
+  border-radius: var(--radius);
+  box-shadow: var(--elevation-3);
+  padding: var(--space-xs);
   display: flex;
   flex-direction: column;
   gap: 1px;
@@ -585,22 +611,29 @@ const renderedContentWithoutPoll = computed(() => {
 .msg-menu-item {
   display: flex;
   align-items: center;
-  gap: 9px;
+  gap: var(--space-sm);
   padding: 7px 10px;
   border: none;
   background: transparent;
   color: var(--text-secondary);
   font-family: var(--font);
   font-size: 13px;
-  border-radius: 5px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
   width: 100%;
   text-align: left;
-  transition: background .1s, color .1s;
+  transition: background var(--motion-fast) var(--ease-out),
+              color      var(--motion-fast) var(--ease-out);
 }
-.msg-menu-item:hover { background: var(--bg-hover); color: var(--text-primary); }
+.msg-menu-item:hover,
+.msg-menu-item:focus-visible {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+  outline: none;
+}
 .msg-menu-danger       { color: var(--color-danger); }
-.msg-menu-danger:hover {
+.msg-menu-danger:hover,
+.msg-menu-danger:focus-visible {
   background: color-mix(in srgb, var(--color-danger) 12%, transparent);
   color: var(--color-danger);
 }
@@ -752,7 +785,9 @@ const renderedContentWithoutPoll = computed(() => {
 .pill-bookmarked {
   color: var(--color-warning) !important;
 }
-.pill-bookmarked:hover { background: rgba(232,137,26,.12) !important; }
+.pill-bookmarked:hover {
+  background: color-mix(in srgb, var(--color-warning) 12%, transparent) !important;
+}
 
 /* ══════════════ Motion polish ══════════════ */
 
