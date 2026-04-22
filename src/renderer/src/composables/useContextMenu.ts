@@ -47,6 +47,9 @@ export interface UseContextMenuReturn<T> {
     (ev: MouseEvent, items: ContextMenuItem[]): void
     (ev: MouseEvent, target: T, stopPropagation?: boolean): void
   }
+  /** Ouvre le menu à des coordonnées écran explicites — utile pour ancrer
+   *  sur un bouton plutôt que sur un `click` natif. */
+  openAt: (x: number, y: number, items: ContextMenuItem[]) => void
   close: () => void
 }
 
@@ -77,12 +80,17 @@ export function useContextMenu<T = unknown>(): UseContextMenuReturn<T> {
     ctx.value = { x: ev.clientX, y: ev.clientY, target: payload }
   }
 
+  function openAt(x: number, y: number, items: ContextMenuItem[]): void {
+    if (!items.length) return
+    state.value = { x, y, items }
+  }
+
   function close(): void {
     state.value = null
     ctx.value = null
   }
 
-  return { state, ctx, open, close }
+  return { state, ctx, open, openAt, close }
 }
 
 export type { ContextMenuItem }
