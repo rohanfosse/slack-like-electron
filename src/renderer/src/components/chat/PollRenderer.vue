@@ -151,8 +151,8 @@ const winner = computed(() => winnerIndex())
   text-transform: uppercase; letter-spacing: .5px; font-weight: 700;
   margin-bottom: 8px;
 }
-.poll-head-icon { color: #1ABC9C; }
-.poll-head-label { color: #1ABC9C; }
+.poll-head-icon { color: var(--color-success); }
+.poll-head-label { color: var(--color-success); }
 .poll-badge {
   display: inline-flex; align-items: center; gap: 3px;
   padding: 2px 7px; border-radius: 999px;
@@ -189,21 +189,21 @@ const winner = computed(() => winnerIndex())
 .poll-opt:hover:not(:disabled) { border-color: var(--accent); }
 
 .poll-opt--selected {
-  border-color: #1ABC9C;
-  background: color-mix(in srgb, #1ABC9C 10%, transparent);
+  border-color: var(--color-success);
+  background: color-mix(in srgb, var(--color-success) 10%, transparent);
 }
-.poll-opt--selected:hover:not(:disabled) { border-color: #1ABC9C; }
+.poll-opt--selected:hover:not(:disabled) { border-color: var(--color-success); }
 
 .poll-opt--winner .poll-opt-label { font-weight: 700; }
 
 .poll-opt-bar {
   position: absolute; top: 0; left: 0; bottom: 0;
-  background: color-mix(in srgb, #1ABC9C 18%, transparent);
+  background: color-mix(in srgb, var(--color-success) 18%, transparent);
   transition: width .35s var(--ease-out, ease-out);
   pointer-events: none; z-index: 0;
 }
 .poll-opt--selected .poll-opt-bar {
-  background: color-mix(in srgb, #1ABC9C 28%, transparent);
+  background: color-mix(in srgb, var(--color-success) 28%, transparent);
 }
 
 .poll-opt-content {
@@ -222,7 +222,7 @@ const winner = computed(() => winnerIndex())
   transition: background .15s, border-color .15s;
 }
 .poll-opt--selected .poll-opt-check {
-  background: #1ABC9C; border-color: #1ABC9C;
+  background: var(--color-success); border-color: var(--color-success);
 }
 .poll-opt-check-placeholder { width: 10px; height: 10px; }
 

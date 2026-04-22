@@ -274,18 +274,20 @@
   padding: 4px 10px 4px 8px;
   border: none;
   border-radius: 6px;
-  background: var(--accent, #4a90d9);
+  background: var(--accent);
   color: #fff;
   font-family: var(--font);
   font-size: 12px;
   font-weight: 600;
   cursor: pointer;
-  transition: opacity .15s, background .15s, transform .12s;
+  transition: opacity   var(--motion-fast) var(--ease-out),
+              background var(--motion-fast) var(--ease-out),
+              transform  var(--motion-fast) var(--ease-spring);
   white-space: nowrap;
   line-height: 1;
 }
 .mi-send-btn:not(:disabled):hover {
-  background: var(--accent-hover, #5a9fe6);
+  background: var(--accent-hover);
   transform: scale(1.02);
 }
 .mi-send-btn:not(:disabled):active {

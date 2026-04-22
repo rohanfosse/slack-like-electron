@@ -41,7 +41,7 @@ const msgGetter   = () => props.msg
 const searchGetter = () => props.searchTerm
 
 const {
-  isOwnMessage, isMine, isPinned, isEdited, canEdit, canDelete, hasQuote,
+  isMine, isPinned, isEdited, canEdit, canDelete, hasQuote,
   openDmWithAuthor, onReply: _onReply, togglePin: _togglePin,
   copyMessage: _copyMessage, startEdit: _startEdit,
   editing, editContent, editEl, commitEdit, cancelEdit, onEditKeydown,
@@ -157,10 +157,10 @@ const renderedContentWithoutPoll = computed(() => {
         <div class="msg-meta">
           <span
             class="msg-author"
-            :class="{ clickable: !isOwnMessage }"
-            :role="isOwnMessage ? undefined : 'button'"
-            :tabindex="isOwnMessage ? undefined : 0"
-            :title="isOwnMessage ? '' : 'Cliquer pour envoyer un message direct'"
+            :class="{ clickable: !isMine }"
+            :role="isMine ? undefined : 'button'"
+            :tabindex="isMine ? undefined : 0"
+            :title="isMine ? '' : 'Cliquer pour envoyer un message direct'"
             @click="openDmWithAuthor"
             @keydown.enter="openDmWithAuthor"
           >{{ msg.author_name }}</span>

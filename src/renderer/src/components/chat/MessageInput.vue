@@ -39,7 +39,6 @@ const { isEnabled: moduleEnabled } = useModules()
 
 const inputEl = ref<HTMLTextAreaElement | null>(null)
 const content = ref('')
-const showEmojiPicker = ref(false)
 const requestSignature = ref(false)
 const showScheduleModal = ref(false)
 const showScheduledListModal = ref(false)
@@ -55,8 +54,6 @@ const scheduledHereCount = computed(() => scheduledStore.countForContext({
 const hasFileAttachment = computed(() => content.value.includes('📎'))
 const isDm = computed(() => !!appStore.activeDmStudentId)
 const showSignatureToggle = computed(() => moduleEnabled('signatures') && isDm.value && hasFileAttachment.value && !appStore.isTeacher)
-
-defineExpose({ requestSignature })
 
 // ── Auto-resize textarea ──────────────────────────────────────────────────
 function autoResize() {

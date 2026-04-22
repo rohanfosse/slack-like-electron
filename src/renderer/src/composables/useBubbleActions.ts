@@ -28,7 +28,6 @@ export function useBubbleActions(msg: () => Message) {
   const { showToast }    = useToast()
 
   // ── Computed helpers
-  const isOwnMessage = computed(() => msg().author_name === appStore.currentUser?.name)
   const isMine       = computed(() => msg().author_name === appStore.currentUser?.name)
   const isPinned     = computed(() => !!msg().is_pinned)
   const isEdited     = computed(() => !!msg().edited)
@@ -38,7 +37,7 @@ export function useBubbleActions(msg: () => Message) {
 
   // ── DM avec l'auteur
   async function openDmWithAuthor() {
-    if (isOwnMessage.value) return
+    if (isMine.value) return
     try {
       const res = await window.api.findUserByName(msg().author_name)
       if (res?.ok && res.data) {
@@ -208,7 +207,7 @@ export function useBubbleActions(msg: () => Message) {
 
   return {
     // computed
-    isOwnMessage, isMine, isPinned, isEdited, canEdit, canDelete, hasQuote,
+    isMine, isPinned, isEdited, canEdit, canDelete, hasQuote,
     // DM
     openDmWithAuthor,
     // reply / pin / copy

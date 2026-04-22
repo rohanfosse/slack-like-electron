@@ -28,11 +28,18 @@ watch(
 const showScrollBtn  = ref(false)
 const unreadBelowCount = ref(0)
 
+// Throttle via requestAnimationFrame : scroll fire jusqu'a 100+ fois/sec,
+// le calcul n'a besoin d'etre fait qu'une fois par frame.
+let _scrollRaf: number | null = null
 function onScroll() {
-  if (!listEl.value) return
-  const el = listEl.value
-  const distFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight
-  showScrollBtn.value = distFromBottom > 200
+  if (_scrollRaf != null) return
+  _scrollRaf = requestAnimationFrame(() => {
+    _scrollRaf = null
+    if (!listEl.value) return
+    const el = listEl.value
+    const distFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight
+    showScrollBtn.value = distFromBottom > 200
+  })
 }
 
 function scrollToBottom() {
@@ -172,7 +179,15 @@ const dateGroups = computed<DateGroup[]>(() => {
 </script>
 
 <template>
-  <div ref="listEl" id="messages-list" class="messages-list">
+  <div
+    ref="listEl"
+    id="messages-list"
+    class="messages-list"
+    role="log"
+    aria-live="polite"
+    aria-relevant="additions"
+    aria-label="Messages du canal"
+  >
 
     <!-- Squelette de chargement -->
     <Transition name="skel-fade">

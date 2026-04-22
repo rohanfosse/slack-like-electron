@@ -193,12 +193,24 @@ export function applyInlineRefs(html: string): string {
 
 // ─── Formatage du contenu d'un message ───────────────────────────────────────
 
-// Cache de rendu markdown : evite de re-parser le meme message a chaque rerender
+// Cache de rendu markdown : evite de re-parser le meme message a chaque rerender.
+// Key : hash FNV-1a du contenu complet + searchTerm + currentUserName.
+// (Avant v2.228.0 on hashait seulement raw.length + slice(0,50), ce qui
+// collisionnait sur 2 messages de meme longueur et meme prefix.)
 const _renderCache = new Map<string, string>()
 const RENDER_CACHE_MAX = 500
 
+function fnv1a(str: string): string {
+  let h = 0x811c9dc5
+  for (let i = 0; i < str.length; i++) {
+    h ^= str.charCodeAt(i)
+    h = (h + ((h << 1) + (h << 4) + (h << 7) + (h << 8) + (h << 24))) >>> 0
+  }
+  return h.toString(36)
+}
+
 export function renderMessageContent(raw: string, searchTerm = '', currentUserName = ''): string {
-  const cacheKey = `${raw.length}:${raw.slice(0, 50)}:${searchTerm}:${currentUserName}`
+  const cacheKey = `${fnv1a(raw)}:${searchTerm}:${currentUserName}`
   const cached = _renderCache.get(cacheKey)
   if (cached) return cached
   // Traiter les refs devoir/lumen/doc AVANT le markdown (sinon le parser
@@ -233,7 +245,11 @@ export function renderMessageContent(raw: string, searchTerm = '', currentUserNa
   if (searchTerm) html = highlightInHtml(html, searchTerm)
   const result = DOMPurify.sanitize(html, {
     ALLOWED_TAGS: ['p', 'br', 'strong', 'em', 'code', 'pre', 'a', 'span', 'div', 'mark', 'ul', 'ol', 'li', 'blockquote', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'hr', 'img', 'del', 's'],
-    ALLOWED_ATTR: ['class', 'data-url', 'data-channel', 'data-devoir-id', 'data-doc-id', 'data-lumen-id', 'data-lumen-file', 'data-file-name', 'role', 'href', 'tabindex', 'style', 'src', 'alt', 'loading'],
+    // `style` retire : marked n'en emet pas, surface XSS inutile (url()/:has selectors).
+    ALLOWED_ATTR: ['class', 'data-url', 'data-channel', 'data-devoir-id', 'data-doc-id', 'data-lumen-id', 'data-lumen-file', 'data-file-name', 'role', 'href', 'tabindex', 'src', 'alt', 'loading'],
+    // Whitelist des schemes URI : bloque javascript:, data: et autres exotiques
+    // avant meme le filtrage per-attribut.
+    ALLOWED_URI_REGEXP: /^(?:https?|cursus|mailto|tel|#):/i,
   })
   // Evicter le cache si trop gros
   if (_renderCache.size >= RENDER_CACHE_MAX) {

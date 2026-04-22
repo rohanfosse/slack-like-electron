@@ -50,14 +50,6 @@
     load: loadDmFiles,
   } = useDmFiles()
 
-  function dmInitials(name: string) {
-    return name.split(' ').map(w => w[0]?.toUpperCase() ?? '').slice(0, 2).join('')
-  }
-  function dmAvatarColor(name: string) {
-    const colors = ['#4a90d9','#9b87f5','#2ecc71','#e67e22','#e91e8c','#00bcd4']
-    let h = 0; for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) & 0xffff
-    return colors[h % colors.length]
-  }
 
   // ── Rafraîchir les DMs en temps réel ────────────────────────────────────
   function onDmLive(msg?: unknown) {
@@ -531,16 +523,17 @@
 
 /* ── DM status indicator ── */
 .dm-status { font-size: 12px; font-weight: 500; }
-.dm-online { display: inline-flex; align-items: center; gap: 5px; color: #4ade80; }
+.dm-online { display: inline-flex; align-items: center; gap: 5px; color: var(--color-success); }
 .dm-online-dot {
-  width: 7px; height: 7px; border-radius: 50%; background: #4ade80;
-  box-shadow: 0 0 4px rgba(74, 222, 128, .4); display: inline-block;
+  width: 7px; height: 7px; border-radius: 50%; background: var(--color-success);
+  box-shadow: 0 0 4px color-mix(in srgb, var(--color-success) 40%, transparent);
+  display: inline-block;
 }
 .dm-typing { color: var(--accent); font-style: italic; }
 .dm-offline { color: var(--text-muted); }
 
 /* ── Channel type badges ── */
-.channel-type-badge--annonce { background: rgba(var(--color-danger-rgb),.15); color: #e74c3c; display: inline-flex; align-items: center; gap: 3px; }
+.channel-type-badge--annonce { background: color-mix(in srgb, var(--color-danger) 15%, transparent); color: var(--color-danger); display: inline-flex; align-items: center; gap: 3px; }
 .channel-type-badge--chat    { background: rgba(var(--accent-rgb),.15); color: var(--accent); display: inline-flex; align-items: center; gap: 3px; }
 .channel-type-badge--dm      { background: rgba(var(--color-cctl-rgb),.12); color: var(--color-cctl); font-size: 10px; }
 .channel-annonce-hint {
