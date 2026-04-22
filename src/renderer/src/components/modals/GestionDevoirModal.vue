@@ -1,7 +1,7 @@
 <script setup lang="ts">
   import { ref, computed, watch } from 'vue'
   import {
-    Eye, EyeOff, Bell, Copy, Star, Clock,
+    Eye, EyeOff, Bell, Copy, Star, Clock, MoreHorizontal, Trash2, ChevronDown,
   } from 'lucide-vue-next'
   import { useTravauxStore } from '@/stores/travaux'
   import { useAppStore }     from '@/stores/app'
@@ -38,10 +38,29 @@
       editingTitle.value = false
       editingDeadline.value = false
       showReminder.value = false
+      showMoreActions.value = false
       await travauxStore.openTravail(appStore.currentTravailId)
       loadRubric()
       loadRessources()
+    } else if (!open) {
+      showMoreActions.value = false
     }
+  })
+
+  // ── Menu "Plus d'actions" (dropdown secondaires) ─────────────────────────
+  const showMoreActions = ref(false)
+  function toggleMoreActions(e?: Event) { e?.stopPropagation(); showMoreActions.value = !showMoreActions.value }
+  function closeMoreActions() { showMoreActions.value = false }
+
+  // Fermer au clic exterieur. Listener pose uniquement quand le menu est ouvert
+  // pour ne pas polluer le DOM global.
+  function handleOutsideClick(e: MouseEvent) {
+    const target = e.target as HTMLElement | null
+    if (!target?.closest('.gd-more-wrap')) closeMoreActions()
+  }
+  watch(showMoreActions, (open) => {
+    if (open) setTimeout(() => document.addEventListener('click', handleOutsideClick), 0)
+    else document.removeEventListener('click', handleOutsideClick)
   })
 
   const travail = computed(() => travauxStore.currentDevoir)
@@ -108,10 +127,14 @@
   }
 
   // ── Toggle requires_submission ────────────────────────────────────────────
-  function toggleRequiresSubmission() {
+  async function toggleRequiresSubmission() {
     if (!travail.value) return
     const newVal = travail.value.requires_submission === 0 ? 1 : 0
-    saveField('requires_submission', newVal)
+    const result = await api(() => window.api.updateTravail(travail.value!.id, { requires_submission: newVal }))
+    if (result !== null) {
+      showToast(newVal ? 'Depot de fichiers ouvert.' : 'Depot de fichiers ferme.', 'success')
+      await travauxStore.openTravail(travail.value.id)
+    }
   }
 
   // ── Publish / Unpublish ───────────────────────────────────────────────────
@@ -319,43 +342,6 @@
           @open-ressources-modal="openRessourcesModal"
         />
 
-        <!-- Separator -->
-        <hr class="gd-separator" />
-
-        <!-- ═══ 4. ACTIONS ═══ -->
-        <div class="gd-actions-bar">
-          <template v-if="travail.scheduled_publish_at">
-            <button class="gd-action-btn gd-action-btn--primary" @click="publishNow">
-              <Eye :size="13" /> Publier maintenant
-            </button>
-            <button class="gd-action-btn" @click="cancelScheduledPublish">
-              <Clock :size="13" /> Annuler la programmation
-            </button>
-          </template>
-          <template v-else-if="!travail.is_published">
-            <button class="gd-action-btn gd-action-btn--primary" @click="publishAndNotify">
-              <Eye :size="13" /> Publier et notifier
-            </button>
-            <button class="gd-action-btn" @click="togglePublish">
-              <Eye :size="13" /> Publier sans notifier
-            </button>
-          </template>
-          <template v-else>
-            <button class="gd-action-btn" @click="showReminder = !showReminder">
-              <Bell :size="13" /> Envoyer un rappel
-            </button>
-            <button class="gd-action-btn" @click="togglePublish">
-              <EyeOff :size="13" /> Depublier
-            </button>
-          </template>
-          <button class="gd-action-btn" @click="duplicateDevoir">
-            <Copy :size="13" /> Dupliquer
-          </button>
-          <button class="gd-action-btn gd-action-btn--danger" @click="deleteDevoir">
-            Supprimer
-          </button>
-        </div>
-
         <!-- Reminder builder (inline, toggled) -->
         <DevoirReminderBuilder
           v-if="showReminder"
@@ -399,10 +385,69 @@
         </details>
       </div>
 
-      <!-- Keyboard hints -->
-      <div class="gd-kbd-hints">
-        <span><kbd>Esc</kbd> Fermer</span>
-        <span v-if="editingTitle || editingDeadline"><kbd>Enter</kbd> Sauvegarder</span>
+      <!-- ═══ ACTIONS : footer sticky pour rester accessible au scroll ═══ -->
+      <!-- Hierarchie : 1 CTA primaire dominant + 1 action secondaire visible +
+           menu "Plus" pour les options moins frequentes (dupliquer, supprimer...).
+           Evite l'ancien mur de 5+ boutons cote a cote ou "Supprimer" (danger)
+           etait adjacent aux actions vertes. -->
+      <div class="gd-footer" @click.self="closeMoreActions">
+        <div class="gd-footer-actions">
+          <!-- CTA primaire : varie selon l'etat du devoir -->
+          <template v-if="travail.scheduled_publish_at">
+            <button class="gd-btn gd-btn--primary" @click="publishNow">
+              <Eye :size="14" /> Publier maintenant
+            </button>
+            <button class="gd-btn gd-btn--secondary" @click="cancelScheduledPublish">
+              <Clock :size="13" /> Annuler la programmation
+            </button>
+          </template>
+          <template v-else-if="!travail.is_published">
+            <button class="gd-btn gd-btn--primary" title="Publie et envoie un message dans le canal associe" @click="publishAndNotify">
+              <Eye :size="14" /> Publier et notifier
+            </button>
+            <button class="gd-btn gd-btn--secondary" title="Publie sans envoyer de message" @click="togglePublish">
+              Publier sans notifier
+            </button>
+          </template>
+          <template v-else>
+            <button class="gd-btn gd-btn--primary" @click="showReminder = !showReminder">
+              <Bell :size="14" /> Envoyer un rappel
+            </button>
+            <button class="gd-btn gd-btn--secondary" @click="togglePublish">
+              <EyeOff :size="13" /> Dépublier
+            </button>
+          </template>
+
+          <!-- Menu "Plus d'actions" : dupliquer + supprimer (danger isole) -->
+          <div class="gd-more-wrap">
+            <button
+              class="gd-btn gd-btn--ghost"
+              :class="{ 'is-open': showMoreActions }"
+              :aria-expanded="showMoreActions"
+              aria-haspopup="menu"
+              title="Plus d'actions"
+              @click="toggleMoreActions"
+            >
+              <MoreHorizontal :size="15" />
+              <ChevronDown :size="11" class="gd-more-chevron" />
+            </button>
+            <div v-if="showMoreActions" class="gd-more-menu" role="menu" @click="closeMoreActions">
+              <button class="gd-more-item" role="menuitem" @click="duplicateDevoir">
+                <Copy :size="13" /> Dupliquer
+              </button>
+              <div class="gd-more-divider" />
+              <button class="gd-more-item gd-more-item--danger" role="menuitem" @click="deleteDevoir">
+                <Trash2 :size="13" /> Supprimer le devoir
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Keyboard hints (inline dans le footer : gain de place) -->
+        <div class="gd-kbd-hints">
+          <span><kbd>Esc</kbd> Fermer</span>
+          <span v-if="editingTitle || editingDeadline"><kbd>Enter</kbd> Sauvegarder</span>
+        </div>
       </div>
     </template>
   </Modal>
@@ -423,22 +468,122 @@
   margin: 4px 20px;
 }
 
-/* Actions */
-.gd-actions-bar {
-  display: flex; gap: 6px; flex-wrap: wrap; padding: 8px 20px;
+/* ── Footer sticky avec actions + kbd hints ──────────────────────────────── */
+.gd-footer {
+  position: sticky;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 5;
+  background: var(--bg-main);
+  border-top: 1px solid var(--border);
+  padding: 10px 20px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
-.gd-action-btn {
-  display: inline-flex; align-items: center; gap: 4px;
-  font-size: 12px; font-weight: 500; padding: 5px 10px; border-radius: 6px;
-  background: var(--bg-hover); color: var(--text-secondary);
-  border: 1px solid var(--border-input); cursor: pointer; font-family: var(--font);
-  transition: all var(--t-fast);
+.gd-footer-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
 }
-.gd-action-btn:hover { background: var(--bg-elevated); color: var(--text-primary); }
-.gd-action-btn--primary { background: rgba(46,204,113,.1); color: var(--color-success); border-color: rgba(46,204,113,.25); }
-.gd-action-btn--primary:hover { background: rgba(46,204,113,.2); }
-.gd-action-btn--danger { color: var(--color-danger); }
-.gd-action-btn--danger:hover { background: rgba(231,76,60,.1); }
+
+/* Boutons d'action : hierarchie claire (primaire > secondaire > ghost) */
+.gd-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-family: var(--font);
+  font-size: 13px; font-weight: 600;
+  padding: 7px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background var(--t-fast), border-color var(--t-fast), color var(--t-fast), box-shadow var(--t-fast);
+}
+
+/* CTA principal : vert, appuye, visuellement dominant */
+.gd-btn--primary {
+  background: var(--color-success);
+  color: #fff;
+  border: 1px solid var(--color-success);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, .15);
+}
+.gd-btn--primary:hover {
+  background: color-mix(in srgb, var(--color-success) 85%, black);
+  border-color: color-mix(in srgb, var(--color-success) 85%, black);
+}
+
+/* Secondaire : outline, meme poids typo mais pas de fond plein */
+.gd-btn--secondary {
+  background: transparent;
+  color: var(--text-secondary);
+  border: 1px solid var(--border-input);
+}
+.gd-btn--secondary:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+  border-color: var(--text-muted);
+}
+
+/* Ghost (menu "Plus") : discret, icone seule */
+.gd-btn--ghost {
+  background: transparent;
+  color: var(--text-muted);
+  border: 1px solid transparent;
+  padding: 6px 8px;
+  margin-left: auto;
+}
+.gd-btn--ghost:hover, .gd-btn--ghost.is-open {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+  border-color: var(--border-input);
+}
+.gd-more-chevron { opacity: .6; }
+
+/* Dropdown "Plus d'actions" : ouvre vers le haut pour rester dans le viewport */
+.gd-more-wrap { position: relative; margin-left: auto; }
+.gd-more-menu {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 4px);
+  min-width: 200px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, .2);
+  padding: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  animation: gd-more-in .12s var(--ease-out);
+}
+@keyframes gd-more-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.gd-more-item {
+  display: flex; align-items: center; gap: 8px;
+  font-family: var(--font);
+  font-size: 12.5px; font-weight: 500;
+  color: var(--text-secondary);
+  background: transparent;
+  border: none;
+  padding: 7px 10px;
+  border-radius: 5px;
+  cursor: pointer;
+  text-align: left;
+  transition: background var(--t-fast), color var(--t-fast);
+}
+.gd-more-item:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+.gd-more-item--danger { color: var(--color-danger); }
+.gd-more-item--danger:hover { background: rgba(231, 76, 60, .1); color: var(--color-danger); }
+.gd-more-divider {
+  height: 1px;
+  background: var(--border);
+  margin: 2px 4px;
+}
 
 /* Rubrique collapsible */
 .gd-rubrique-details {
@@ -477,15 +622,16 @@
   text-align: center; color: var(--text-muted); font-size: 13px; padding: 12px 0;
 }
 
-/* Keyboard hints */
+/* Keyboard hints (dans le footer, alignes a gauche - contexte discret) */
 .gd-kbd-hints {
-  display: flex; gap: 14px; justify-content: center; padding: 6px 20px;
-  font-size: 10px; color: var(--text-muted); border-top: 1px solid var(--border);
+  display: flex; gap: 12px; justify-content: flex-start; padding: 0;
+  font-size: 10px; color: var(--text-muted);
 }
 .gd-kbd-hints kbd {
-  display: inline-block; padding: 1px 4px; border-radius: 3px; font-size: 9px;
+  display: inline-block; padding: 1px 5px; border-radius: 3px; font-size: 9.5px;
   background: var(--bg-hover); border: 1px solid var(--border);
   font-family: var(--font); margin-right: 2px;
+  font-variant-numeric: tabular-nums;
 }
 
 /* Links */

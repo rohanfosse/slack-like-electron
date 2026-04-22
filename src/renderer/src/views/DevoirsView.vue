@@ -28,7 +28,7 @@ const modals       = useModalsStore()
 const { now } = useRealtimeClock()
 
 const {
-  unifiedFlat, globalDrafts, globalToGrade,
+  unifiedFlat, globalDrafts, globalToGrade, globalSubmission,
   upcomingDevoirs, devoirsByType, teacherCategories, rendusByDevoir,
   publishDevoir, publishAllDrafts, addDevoirOfType,
   projectDevoirCount, projectNextDeadline, projectTypeCounts, projectStats,
@@ -138,6 +138,7 @@ watch(() => appStore.activeChannelId, () => {
         :teacher-categories="teacherCategories"
         :global-drafts="globalDrafts"
         :global-to-grade="globalToGrade"
+        :global-submission="globalSubmission"
         :upcoming-devoirs="upcomingDevoirs"
         :project-devoir-count="projectDevoirCount"
         :project-next-deadline="projectNextDeadline"

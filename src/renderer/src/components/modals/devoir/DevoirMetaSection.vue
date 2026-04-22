@@ -1,6 +1,6 @@
 <script setup lang="ts">
   import { computed } from 'vue'
-  import { Clock, ExternalLink, Calendar, MapPin, Calculator, BookOpen, FileText, Award } from 'lucide-vue-next'
+  import { Clock, ExternalLink, Calendar } from 'lucide-vue-next'
   import { deadlineClass, deadlineLabel, formatDate } from '@/utils/date'
   import ProgressBar from '@/components/ui/ProgressBar.vue'
   import { typeLabel, isEventType } from '@/utils/devoir'
@@ -48,6 +48,11 @@
 
   const requiresSubmission = computed(() => props.travail.requires_submission !== 0)
   const isEvent = computed(() => isEventType(props.travail.type))
+  const submissionToggleLabel = computed(() => {
+    if (!isEvent.value) return 'Requiert un depot'
+    if (props.travail.type === 'soutenance') return 'Autoriser le depot des slides'
+    return 'Autoriser le depot de fichiers'
+  })
 </script>
 
 <template>
@@ -96,8 +101,8 @@
       </template>
     </div>
 
-    <!-- Info grid -->
-    <div class="gd-info-grid">
+    <!-- Ligne principale : deadline editable + canal (les 2 infos les plus accedees) -->
+    <div class="gd-info-main">
       <div class="gd-info-field">
         <Calendar :size="12" class="gd-info-icon" />
         <template v-if="!editingDeadline">
@@ -119,30 +124,46 @@
         </template>
       </div>
 
-      <div v-if="travail.scheduled_publish_at" class="gd-info-field gd-field-scheduled">
-        <Clock :size="12" class="gd-info-icon" />
-        <span>Publication le {{ formatDate(travail.scheduled_publish_at) }}</span>
-      </div>
-
       <div v-if="travail.channel_name" class="gd-info-field">
         <button class="gd-link-btn" @click="emit('go-to-channel')">
           # {{ travail.channel_name }} <ExternalLink :size="10" />
         </button>
       </div>
 
-      <div class="gd-info-field">
-        <span class="gd-info-label">{{ travail.assigned_to === 'group' ? `Groupe ${travail.group_name ?? ''}` : 'Toute la promo' }}</span>
+      <!-- Badge programme (visible uniquement si applicable) : haute importance,
+           reste au premier niveau pour ne pas surprendre le prof -->
+      <div v-if="travail.scheduled_publish_at" class="gd-info-field gd-field-scheduled" :title="`Sera publie le ${formatDate(travail.scheduled_publish_at)}`">
+        <Clock :size="12" class="gd-info-icon" />
+        <span>Publication le {{ formatDate(travail.scheduled_publish_at) }}</span>
       </div>
     </div>
 
-    <!-- Toggle requires_submission : masque pour CCTL / soutenance / etude de
-         cas (evaluations en salle, jamais de depot) -->
-    <label v-if="!isEvent" class="gd-toggle-row" @click.prevent="emit('toggle-requires-submission')">
-      <span class="gd-toggle-track" :class="{ active: requiresSubmission }">
-        <span class="gd-toggle-thumb" />
-      </span>
-      <span class="gd-toggle-label">Requiert un depot</span>
-    </label>
+    <!-- Accordion : infos secondaires + toggle de depot. Referme par defaut pour
+         garder la modale compacte ; le prof l'ouvre si besoin. -->
+    <details class="gd-meta-details">
+      <summary class="gd-meta-details-summary">
+        Détails
+        <span class="gd-meta-details-summary-hint">
+          {{ travail.assigned_to === 'group' ? `Groupe ${travail.group_name ?? ''}` : 'Toute la promo' }}
+          · {{ requiresSubmission ? 'dépôt ouvert' : 'pas de dépôt' }}
+        </span>
+      </summary>
+      <div class="gd-meta-details-body">
+        <div class="gd-info-row">
+          <span class="gd-info-label">Destinataires</span>
+          <span class="gd-info-value">{{ travail.assigned_to === 'group' ? `Groupe ${travail.group_name ?? ''}` : 'Toute la promo' }}</span>
+        </div>
+
+        <!-- Toggle requires_submission : pour les evenements (CCTL / soutenance /
+             etude de cas), ouvre/ferme un creneau de depot optionnel (ex : slides). -->
+        <label class="gd-toggle-row" @click.prevent="emit('toggle-requires-submission')">
+          <span class="gd-toggle-track" :class="{ active: requiresSubmission }">
+            <span class="gd-toggle-thumb" />
+          </span>
+          <span class="gd-toggle-label">{{ submissionToggleLabel }}</span>
+        </label>
+      </div>
+    </details>
   </div>
 </template>
 
@@ -189,15 +210,53 @@
   color: var(--text-primary); font-family: var(--font);
 }
 
-/* Info grid */
-.gd-info-grid {
+/* Ligne principale : ce que le prof regarde 90% du temps. */
+.gd-info-main {
   display: flex; gap: 14px; flex-wrap: wrap; align-items: center;
-  font-size: 12px; color: var(--text-secondary); margin-bottom: 8px;
+  font-size: 12px; color: var(--text-secondary); margin-bottom: 6px;
 }
 .gd-info-field { display: inline-flex; align-items: center; gap: 4px; }
 .gd-field-scheduled { color: #f59e0b; font-weight: 600; font-size: 11px; }
 .gd-info-icon { color: var(--text-muted); flex-shrink: 0; }
-.gd-info-label { color: var(--text-muted); }
+.gd-info-label { color: var(--text-muted); font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .3px; min-width: 92px; }
+.gd-info-value { font-size: 12px; color: var(--text-secondary); }
+
+/* Accordion infos secondaires : details natif pour l'a11y (chevron visuel) */
+.gd-meta-details {
+  margin-top: 6px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg-elevated);
+}
+.gd-meta-details-summary {
+  display: flex; align-items: center; gap: 6px;
+  padding: 6px 10px;
+  font-size: 11px; font-weight: 700; color: var(--text-secondary);
+  text-transform: uppercase; letter-spacing: .4px;
+  cursor: pointer; user-select: none; list-style: none;
+  transition: background var(--t-fast);
+}
+.gd-meta-details-summary:hover { background: var(--bg-hover); }
+.gd-meta-details-summary::-webkit-details-marker { display: none; }
+.gd-meta-details-summary::before {
+  content: '\25B6'; font-size: 8px; color: var(--text-muted);
+  transition: transform var(--motion-fast) var(--ease-out);
+}
+.gd-meta-details[open] > .gd-meta-details-summary::before { transform: rotate(90deg); }
+.gd-meta-details-summary-hint {
+  font-size: 10.5px; font-weight: 500; color: var(--text-muted);
+  text-transform: none; letter-spacing: 0;
+  margin-left: auto;
+}
+.gd-meta-details-body {
+  padding: 8px 12px 10px;
+  border-top: 1px solid var(--border);
+  display: flex; flex-direction: column; gap: 8px;
+}
+.gd-info-row {
+  display: flex; align-items: center; gap: 10px;
+  font-size: 12px;
+}
 
 /* Toggle */
 .gd-toggle-row {

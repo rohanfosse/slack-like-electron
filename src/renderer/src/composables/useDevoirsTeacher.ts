@@ -2,7 +2,7 @@
  * Vue enseignant des devoirs : Gantt, liste, rendus, filtres, stats par type/promo.
  * Used by DevoirsView.vue
  */
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useAppStore }     from '@/stores/app'
 import { useTravauxStore } from '@/stores/travaux'
 import { useModalsStore }  from '@/stores/modals'
@@ -10,6 +10,17 @@ import { useToast }        from '@/composables/useToast'
 import { deadlineClass }   from '@/utils/date'
 import { isRattrapage, isEventType } from '@/utils/devoir'
 import type { GanttRow }   from '@/types'
+
+// ── LocalStorage keys : preferences prof ──────────────────────────────────────
+const LS_TEACHER_VIEW       = 'devoirs_teacher_view'
+const LS_FILTER_RENDUS      = 'devoirs_teacher_filter_rendus'
+
+function readStored<T extends string>(key: string, allowed: readonly T[], fallback: T): T {
+  try {
+    const v = localStorage.getItem(key)
+    return (allowed as readonly string[]).includes(v ?? '') ? (v as T) : fallback
+  } catch { return fallback }
+}
 
 // ── Types locaux ────────────────────────────────────────────────────────────────
 type UnifiedRow = GanttRow & { noted_count: number; statusLabel: string; statusCls: string }
@@ -27,12 +38,18 @@ export function useDevoirsTeacher() {
   const modals       = useModalsStore()
   const { showToast } = useToast()
 
-  // ── Vue locale enseignant ─────────────────────────────────────────────────────
-  const teacherView = ref<'gantt' | 'liste' | 'rendus'>('gantt')
+  // ── Vue locale enseignant (persistee) ────────────────────────────────────────
+  const teacherView = ref<'gantt' | 'liste' | 'rendus'>(
+    readStored(LS_TEACHER_VIEW, ['gantt', 'liste', 'rendus'] as const, 'gantt'),
+  )
+  watch(teacherView, (v) => { try { localStorage.setItem(LS_TEACHER_VIEW, v) } catch { /* noop */ } })
 
   // ── Filtres prof ──────────────────────────────────────────────────────────────
   const filterCategory    = ref<string>('')
-  const filterRendusStatus = ref<'all' | 'ungraded' | 'graded' | 'missing'>('all')
+  const filterRendusStatus = ref<'all' | 'ungraded' | 'graded' | 'missing'>(
+    readStored(LS_FILTER_RENDUS, ['all', 'ungraded', 'graded', 'missing'] as const, 'all'),
+  )
+  watch(filterRendusStatus, (v) => { try { localStorage.setItem(LS_FILTER_RENDUS, v) } catch { /* noop */ } })
   const sortRendus        = ref<'name' | 'date'>('name')
   const teacherSearch     = ref('')
   const filterStatus      = ref<'all' | 'draft' | 'expired' | 'pending'>('all')
@@ -100,6 +117,9 @@ export function useDevoirsTeacher() {
   async function publishAllDrafts() {
     const drafts = unifiedFlat.value.filter(t => !t.is_published)
     if (!drafts.length) return
+    // Toast initial : confirme le lancement du batch (le bouton loader peut etre
+    // hors ecran si la modale a ete fermee, on garantit un retour visuel global).
+    showToast(`Publication de ${drafts.length} brouillon${drafts.length > 1 ? 's' : ''}...`, 'info')
     const results = await Promise.allSettled(
       drafts.map(d => window.api.updateTravailPublished({ travailId: d.id, published: true })),
     )
@@ -107,7 +127,10 @@ export function useDevoirsTeacher() {
     const failed = results.filter(r => r.status === 'rejected').length
     if (failed > 0) {
       console.warn(`[publishAllDrafts] ${failed}/${drafts.length} publications échouées`)
-      showToast(`${succeeded} publié${succeeded > 1 ? 's' : ''}, ${failed} erreur${failed > 1 ? 's' : ''}.`, 'error')
+      showToast(
+        `${succeeded}/${drafts.length} publié${succeeded > 1 ? 's' : ''} - ${failed} échec${failed > 1 ? 's' : ''}`,
+        'error',
+      )
     } else {
       showToast(`${succeeded} devoir${succeeded > 1 ? 's' : ''} publié${succeeded > 1 ? 's' : ''}.`, 'success')
     }
@@ -127,6 +150,15 @@ export function useDevoirsTeacher() {
   const globalToGrade = computed(() => {
     const all = travauxStore.allRendus
     return all.filter(r => !r.note && r.submitted_at).length
+  })
+
+  /** Vue d'ensemble des rendus (publies uniquement, hors events) : soumis / attendu / % */
+  const globalSubmission = computed(() => {
+    const rows = travauxStore.ganttData.filter(t => t.is_published && !isEventType(t.type))
+    const expected = rows.reduce((s, t) => s + (t.students_total ?? 0), 0)
+    const submitted = rows.reduce((s, t) => s + (t.depots_count ?? 0), 0)
+    const pct = expected > 0 ? Math.round((submitted / expected) * 100) : 0
+    return { expected, submitted, pct }
   })
 
   // ── Prochains événements (tous types, triés par deadline) ─────────────────────
@@ -367,6 +399,7 @@ export function useDevoirsTeacher() {
     unifiedGrouped,
     globalDrafts,
     globalToGrade,
+    globalSubmission,
     upcomingDevoirs,
     devoirsByType,
     unifiedFlat,

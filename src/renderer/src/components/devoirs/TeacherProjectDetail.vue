@@ -3,7 +3,7 @@
  */
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { BookOpen, Clock, Plus, Eye, RotateCw, LayoutDashboard, ChevronDown, ChevronRight } from 'lucide-vue-next'
+import { BookOpen, Clock, Plus, Eye, RotateCw, LayoutDashboard, ChevronDown, ChevronRight, Lock } from 'lucide-vue-next'
 import { useAppStore }     from '@/stores/app'
 import { useTravauxStore } from '@/stores/travaux'
 import { useModalsStore }  from '@/stores/modals'
@@ -261,7 +261,10 @@ function cardStats(t: UnifiedFlatRow): CardStats {
       <div class="kb-section-header">
         <LayoutDashboard :size="15" />
         <span class="kb-section-title">Kanbans de groupe</span>
-        <span class="kb-section-sub">Lecture seule · {{ groupDevoirs.length }} travail{{ groupDevoirs.length > 1 ? 'x' : '' }}</span>
+        <span class="kb-section-readonly" title="Les étudiants gèrent ces statuts : vous voyez leur progression.">
+          <Lock :size="10" /> Lecture seule
+        </span>
+        <span class="kb-section-sub">· {{ groupDevoirs.length }} travail{{ groupDevoirs.length > 1 ? 'x' : '' }}</span>
       </div>
       <div v-for="t in groupDevoirs" :key="t.id" class="kb-item">
         <button class="kb-item-header" @click="kanbanExpanded[t.id] = !kanbanExpanded[t.id]">
@@ -392,7 +395,27 @@ function cardStats(t: UnifiedFlatRow): CardStats {
   transition: all var(--t-fast); position: relative;
 }
 .dc-card:hover { background: var(--bg-hover); border-color: var(--border-input); }
-.dc-card--draft { border-style: dashed; opacity: .7; }
+/* Brouillon : fond teinte + hachures subtiles plutot que juste opacity (plus scanable). */
+.dc-card--draft {
+  border-style: dashed;
+  background:
+    repeating-linear-gradient(
+      135deg,
+      rgba(127, 127, 127, .03) 0 6px,
+      transparent 6px 12px
+    ),
+    var(--bg-elevated);
+}
+.dc-card--draft .dc-card-title { color: var(--text-secondary); }
+.dc-card--draft:hover {
+  background:
+    repeating-linear-gradient(
+      135deg,
+      rgba(127, 127, 127, .05) 0 6px,
+      transparent 6px 12px
+    ),
+    var(--bg-hover);
+}
 .dc-card--cctl { border-left: 3px solid #a569bd; }
 .dc-card--soutenance { border-left: 3px solid var(--color-warning); }
 .dc-card--etude_de_cas { border-left: 3px solid var(--color-success); }
@@ -434,9 +457,9 @@ function cardStats(t: UnifiedFlatRow): CardStats {
 
 .dc-card-draft-tag {
   position: absolute; top: 4px; right: 4px;
-  font-size: 8px; font-weight: 700; text-transform: uppercase;
-  padding: 1px 4px; border-radius: 3px;
-  background: var(--bg-hover); color: var(--text-muted); border: 1px dashed var(--border-input);
+  font-size: 8px; font-weight: 700; text-transform: uppercase; letter-spacing: .4px;
+  padding: 2px 6px; border-radius: 3px;
+  background: var(--bg-active); color: var(--text-secondary); border: 1px dashed var(--border-input);
 }
 
 .dc-publish-btn {
@@ -500,9 +523,18 @@ function cardStats(t: UnifiedFlatRow): CardStats {
 
 /* ── Kanban section (teacher read-only) ── */
 .kb-section { padding: 16px 20px; border-top: 1px solid var(--border); margin-top: 8px; display: flex; flex-direction: column; gap: 10px; }
-.kb-section-header { display: flex; align-items: center; gap: 8px; color: #3b82f6; }
+.kb-section-header { display: flex; align-items: center; gap: 8px; color: #3b82f6; flex-wrap: wrap; }
 .kb-section-title { font-size: 14px; font-weight: 700; color: var(--text-primary); }
-.kb-section-sub { font-size: 11px; color: var(--text-muted); margin-left: 4px; }
+.kb-section-readonly {
+  display: inline-flex; align-items: center; gap: 3px;
+  font-size: 10.5px; font-weight: 700; letter-spacing: .3px;
+  padding: 2px 7px; border-radius: 10px;
+  background: rgba(59, 130, 246, .12); color: #60a5fa;
+  border: 1px solid rgba(59, 130, 246, .25);
+  text-transform: uppercase;
+  cursor: help;
+}
+.kb-section-sub { font-size: 11px; color: var(--text-muted); }
 .kb-item { border-radius: 8px; border: 1px solid var(--border); overflow: hidden; }
 .kb-item-header {
   display: flex; align-items: center; gap: 8px; width: 100%;

@@ -2,8 +2,8 @@
  * Vue rendus enseignant : rendus groupés par devoir, notation inline avec note et feedback.
  */
 <script setup lang="ts">
-import { ref, computed } from 'vue'
-import { Users, ChevronRight, Link2, FileText, Award, X, Download, Clock } from 'lucide-vue-next'
+import { ref, computed, watch } from 'vue'
+import { Users, ChevronRight, Link2, FileText, Award, X, Download, Clock, Filter } from 'lucide-vue-next'
 import EmptyState from '@/components/ui/EmptyState.vue'
 import { useTravauxStore } from '@/stores/travaux'
 import { avatarColor, initials } from '@/utils/format'
@@ -24,8 +24,17 @@ const props = defineProps<{
   openDevoir: (id: number) => void
 }>()
 
-/** Local filter for rendus */
-const localFilter = ref<'all' | 'ungraded' | 'graded' | 'late'>('all')
+/** Local filter for rendus, persist between sessions */
+const LS_LOCAL_FILTER = 'devoirs_rendus_local_filter'
+type LocalFilter = 'all' | 'ungraded' | 'graded' | 'late'
+const storedFilter = (() => {
+  try {
+    const v = localStorage.getItem(LS_LOCAL_FILTER)
+    return (['all', 'ungraded', 'graded', 'late'] as const).includes(v as LocalFilter) ? (v as LocalFilter) : 'all'
+  } catch { return 'all' as const }
+})()
+const localFilter = ref<LocalFilter>(storedFilter)
+watch(localFilter, (v) => { try { localStorage.setItem(LS_LOCAL_FILTER, v) } catch { /* noop */ } })
 
 /** Filtered rendus based on local filter */
 const displayedRendus = computed(() => {
@@ -118,6 +127,16 @@ function isLate(r: any, group: { devoir: Partial<GanttRow> }): boolean {
   if (!r.submitted_at || !group.devoir.deadline) return false
   return new Date(r.submitted_at).getTime() > new Date(group.devoir.deadline).getTime()
 }
+
+/** Label humain du filtre (pour empty state) */
+function filterLabel(f: LocalFilter): string {
+  switch (f) {
+    case 'ungraded': return 'Non notés'
+    case 'graded':   return 'Notés'
+    case 'late':     return 'En retard'
+    default:         return 'Tous'
+  }
+}
 </script>
 
 <template>
@@ -162,6 +181,16 @@ function isLate(r: any, group: { devoir: Partial<GanttRow> }): boolean {
       </div>
       <button class="btn-ghost rendus-export-btn" @click="exportCSV">
         <Download :size="13" /> Exporter CSV
+      </button>
+    </div>
+
+    <!-- Empty state quand un filtre est actif mais ne retourne aucun rendu -->
+    <div v-if="displayedRendus.length === 0 && localFilter !== 'all'" class="rendus-empty-filter">
+      <Filter :size="22" class="rendus-empty-filter-icon" />
+      <p class="rendus-empty-filter-title">Aucun rendu ne correspond au filtre « {{ filterLabel(localFilter) }} »</p>
+      <p class="rendus-empty-filter-hint">Essayez un autre filtre ou réinitialisez pour voir tous les rendus.</p>
+      <button class="rendus-empty-filter-btn" @click="localFilter = 'all'">
+        <X :size="11" /> Voir tous les rendus
       </button>
     </div>
 
@@ -317,6 +346,40 @@ function isLate(r: any, group: { devoir: Partial<GanttRow> }): boolean {
 }
 .rendus-pill:hover { background: var(--bg-hover); color: var(--text-primary); }
 .rendus-pill.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+/* Empty state filtre : distinct du empty state "aucun rendu du tout" */
+.rendus-empty-filter {
+  max-width: 780px;
+  margin: 0 auto;
+  padding: 36px 20px;
+  text-align: center;
+  border: 1px dashed var(--border-input);
+  border-radius: 10px;
+  background: var(--bg-elevated);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+.rendus-empty-filter-icon { color: var(--text-muted); opacity: .5; margin-bottom: 4px; }
+.rendus-empty-filter-title {
+  font-size: 13px; font-weight: 700; color: var(--text-primary); margin: 0;
+}
+.rendus-empty-filter-hint {
+  font-size: 12px; color: var(--text-muted); margin: 0;
+}
+.rendus-empty-filter-btn {
+  display: inline-flex; align-items: center; gap: 4px;
+  margin-top: 6px;
+  font-family: inherit; font-size: 12px; font-weight: 600;
+  padding: 5px 12px; border-radius: 6px;
+  background: var(--bg-hover);
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: background var(--t-fast), border-color var(--t-fast);
+}
+.rendus-empty-filter-btn:hover { background: var(--bg-active); border-color: var(--accent); color: var(--accent); }
 
 /* ── Grade distribution ──────────────────────────────────────────────────── */
 .grade-dist { display: flex; gap: 4px; flex-wrap: wrap; }

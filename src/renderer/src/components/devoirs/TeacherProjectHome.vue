@@ -3,18 +3,20 @@
  *  - Section "A traiter" compacte en haut (action-first)
  *  - Timeline unique des prochaines echeances (tous types melanges, tri date)
  *  - Grille projets dense (cartes plus petites, plus d'info par pixel)
+ *  - v2.214 : filtre focus (brouillons / a noter) + recherche projet + '/' raccourci
  */
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import {
   BookOpen, Clock, PlusCircle, FolderOpen,
-  FileText, Mic, Award, Check, AlertTriangle,
+  FileText, Mic, Award, Check, AlertTriangle, Search, X,
 } from 'lucide-vue-next'
 import { useAppStore }     from '@/stores/app'
 import { useTravauxStore } from '@/stores/travaux'
 import { useModalsStore }  from '@/stores/modals'
 import { deadlineClass, deadlineLabel } from '@/utils/date'
 import { typeLabel, isRattrapage } from '@/utils/devoir'
+import { useSlashFocusSearch } from '@/composables/useSlashFocusSearch'
 import DevoirsProjectCard from './DevoirsProjectCard.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
 import type { GanttRow } from '@/types'
@@ -23,6 +25,7 @@ const props = defineProps<{
   teacherCategories: string[]
   globalDrafts: number
   globalToGrade: number
+  globalSubmission: { expected: number; submitted: number; pct: number }
   upcomingDevoirs: GanttRow[]
   projectDevoirCount: (cat: string) => number
   projectNextDeadline: (cat: string) => string | null
@@ -44,6 +47,42 @@ const cachedProjectStats = computed(() => {
   const map: Record<string, ReturnType<typeof props.projectStats>> = {}
   for (const cat of props.teacherCategories) map[cat] = props.projectStats(cat)
   return map
+})
+
+// ── Recherche projet + raccourci '/' ─────────────────────────────────────────
+const searchQuery = ref('')
+useSlashFocusSearch('.dh-search-input')
+
+// ── Filtre focus : rien / seulement brouillons / seulement a noter ───────────
+// Cliquer sur le pill "5 brouillons" ne doit pas juste scroller : il doit
+// reduire la grille aux projets concernes. Un clic repete = reset.
+type FocusFilter = 'all' | 'drafts' | 'toGrade'
+const focusFilter = ref<FocusFilter>('all')
+
+function toggleFocus(target: Exclude<FocusFilter, 'all'>) {
+  focusFilter.value = focusFilter.value === target ? 'all' : target
+  // Scroll doux vers la grille pour materialiser le filtrage
+  requestAnimationFrame(() => {
+    document.querySelector('.dh-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  })
+}
+function resetFocus() { focusFilter.value = 'all'; searchQuery.value = '' }
+
+const displayedCategories = computed(() => {
+  const q = searchQuery.value.trim().toLowerCase()
+  return props.teacherCategories.filter(cat => {
+    if (q && !cat.toLowerCase().includes(q)) return false
+    const st = cachedProjectStats.value[cat]
+    if (focusFilter.value === 'drafts' && (!st || st.drafts <= 0)) return false
+    if (focusFilter.value === 'toGrade' && (!st || st.toGrade <= 0)) return false
+    return true
+  })
+})
+
+const focusLabel = computed(() => {
+  if (focusFilter.value === 'drafts') return 'Projets avec brouillons'
+  if (focusFilter.value === 'toGrade') return 'Projets avec rendus à noter'
+  return ''
 })
 
 // ── Timeline unifiee : tous types melanges, tri par date, max 8 items ──
@@ -81,17 +120,6 @@ function iconForType(key: 'exam' | 'livrable' | 'soutenance') {
 const nothingToDo = computed(() =>
   props.globalToGrade === 0 && props.globalDrafts === 0,
 )
-
-function openDrafts() {
-  // Placeholder : aucun filtre URL pour "drafts only" aujourd'hui, on scrolle a
-  // la grille projets ou l'utilisateur voit les brouillons par projet.
-  document.querySelector('.dh-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-}
-
-function openToGrade() {
-  // Idem : pas de filtre dedie, on laisse l'utilisateur choisir le projet.
-  document.querySelector('.dh-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-}
 </script>
 
 <template>
@@ -133,8 +161,10 @@ function openToGrade() {
             v-if="globalToGrade > 0"
             type="button"
             class="dh-todo-item dh-todo-item--warn"
-            title="Voir les projets avec dépôts à noter"
-            @click="openToGrade"
+            :class="{ 'is-active': focusFilter === 'toGrade' }"
+            :aria-pressed="focusFilter === 'toGrade'"
+            title="Filtrer : projets avec des rendus à noter"
+            @click="toggleFocus('toGrade')"
           >
             <AlertTriangle :size="12" />
             <strong>{{ globalToGrade }}</strong> {{ globalToGrade > 1 ? 'rendus à noter' : 'rendu à noter' }}
@@ -143,17 +173,45 @@ function openToGrade() {
             v-if="globalDrafts > 0"
             type="button"
             class="dh-todo-item dh-todo-item--draft"
-            title="Voir les projets avec brouillons"
-            @click="openDrafts"
+            :class="{ 'is-active': focusFilter === 'drafts' }"
+            :aria-pressed="focusFilter === 'drafts'"
+            title="Filtrer : projets contenant des brouillons"
+            @click="toggleFocus('drafts')"
           >
             <FileText :size="12" />
             <strong>{{ globalDrafts }}</strong> {{ globalDrafts > 1 ? 'brouillons' : 'brouillon' }}
           </button>
         </template>
+        <span v-if="globalSubmission.expected > 0" class="dh-todo-stat" title="Rendus attendus toutes promos confondues">
+          {{ globalSubmission.submitted }}/{{ globalSubmission.expected }} rendus
+          <span class="dh-todo-stat-pct">· {{ globalSubmission.pct }}%</span>
+        </span>
+
+        <!-- Recherche projet (raccourci '/' pour focus) -->
+        <div class="dh-search">
+          <Search :size="12" class="dh-search-icon" />
+          <input
+            v-model="searchQuery"
+            type="text"
+            class="dh-search-input"
+            placeholder="Rechercher un projet…"
+            aria-label="Rechercher un projet"
+          />
+          <kbd v-if="!searchQuery" class="dh-search-kbd" aria-hidden="true">/</kbd>
+          <button
+            v-else
+            type="button"
+            class="dh-search-clear"
+            aria-label="Effacer la recherche"
+            @click="searchQuery = ''"
+          >
+            <X :size="11" />
+          </button>
+        </div>
       </div>
 
       <!-- ── Timeline unique des prochaines echeances ──────────────── -->
-      <div v-if="upcoming.length" class="dh-next-section">
+      <div v-if="upcoming.length && focusFilter === 'all' && !searchQuery" class="dh-next-section">
         <h4 class="dv-section-title"><Clock :size="14" /> Prochaines échéances</h4>
         <ul class="dh-timeline">
           <li
@@ -174,11 +232,32 @@ function openToGrade() {
 
       <!-- ── Projets : grille dense ─────────────────────────────────── -->
       <div class="dh-section">
-        <h4 class="dv-section-title"><FolderOpen :size="14" /> Projets <span class="dv-section-count">{{ teacherCategories.length }}</span></h4>
+        <div class="dh-section-bar">
+          <h4 class="dv-section-title">
+            <FolderOpen :size="14" /> Projets
+            <span class="dv-section-count">{{ displayedCategories.length }}<span v-if="displayedCategories.length !== teacherCategories.length">/{{ teacherCategories.length }}</span></span>
+          </h4>
+          <button
+            v-if="focusFilter !== 'all' || searchQuery"
+            type="button"
+            class="dh-filter-chip"
+            :title="focusLabel || 'Filtre actif'"
+            @click="resetFocus"
+          >
+            <span v-if="focusLabel">Filtre : {{ focusLabel }}</span>
+            <span v-else>Recherche : « {{ searchQuery }} »</span>
+            <X :size="11" />
+          </button>
+        </div>
 
-        <div class="dv-proj-grid">
+        <div v-if="!displayedCategories.length" class="dh-empty-filter">
+          <p>Aucun projet ne correspond à ce filtre.</p>
+          <button class="dh-empty-filter-btn" @click="resetFocus">Réinitialiser</button>
+        </div>
+
+        <div v-else class="dv-proj-grid">
           <DevoirsProjectCard
-            v-for="cat in teacherCategories" :key="cat"
+            v-for="cat in displayedCategories" :key="cat"
             :name="cat"
             :type-counts="projectTypeCounts(cat)"
             :submitted="cachedProjectStats[cat].totalDepots"
@@ -245,6 +324,90 @@ function openToGrade() {
 .dh-todo-item--warn strong { color: var(--color-warning); }
 .dh-todo-item--draft { color: var(--text-muted); }
 
+/* Etat actif : le pill clique reste marque visuellement */
+.dh-todo-item.is-active {
+  background: var(--bg-hover);
+  border-color: currentColor;
+  box-shadow: 0 0 0 2px rgba(var(--accent-rgb), .08);
+}
+.dh-todo-item--warn.is-active {
+  background: rgba(var(--color-warning-rgb), .1);
+  border-color: var(--color-warning);
+}
+.dh-todo-item--draft.is-active {
+  background: var(--bg-hover);
+  border-color: var(--text-secondary);
+  color: var(--text-secondary);
+}
+
+/* Stat globale (soumis/attendu) */
+.dh-todo-stat {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+.dh-todo-stat-pct { color: var(--text-secondary); font-weight: 600; }
+
+/* Recherche : pousse a droite grace a margin-left:auto */
+.dh-search {
+  margin-left: auto;
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.dh-search-icon {
+  position: absolute;
+  left: 8px;
+  color: var(--text-muted);
+  pointer-events: none;
+}
+.dh-search-input {
+  font-family: inherit;
+  font-size: 12px;
+  padding: 4px 26px 4px 26px;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text-primary);
+  width: 180px;
+  transition: border-color var(--t-fast), width var(--t-fast);
+}
+.dh-search-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  width: 220px;
+}
+.dh-search-kbd {
+  position: absolute;
+  right: 6px;
+  font-family: inherit;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 1px 5px;
+  border-radius: 3px;
+  background: var(--bg-hover);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  pointer-events: none;
+}
+.dh-search-clear {
+  position: absolute;
+  right: 4px;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 2px;
+  border-radius: 3px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.dh-search-clear:hover { background: var(--bg-hover); color: var(--text-primary); }
+
 /* ── Timeline unique des echeances ─────────────────────────────────────── */
 .dh-next-section { margin-bottom: 20px; }
 
@@ -310,6 +473,13 @@ function openToGrade() {
 
 /* ── Section projets ───────────────────────────────────────────────────── */
 .dh-section { margin-bottom: 4px; }
+.dh-section-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
 .dv-section-count {
   font-size: 11px;
   font-weight: 600;
@@ -319,6 +489,46 @@ function openToGrade() {
   border-radius: 8px;
   margin-left: 4px;
 }
+
+/* Chip filtre actif : rappel permanent + bouton close */
+.dh-filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 8px 3px 10px;
+  border-radius: 12px;
+  background: rgba(var(--accent-rgb), .1);
+  color: var(--accent);
+  border: 1px solid rgba(var(--accent-rgb), .3);
+  cursor: pointer;
+  font-family: inherit;
+  transition: background var(--t-fast);
+}
+.dh-filter-chip:hover { background: rgba(var(--accent-rgb), .18); }
+
+.dh-empty-filter {
+  text-align: center;
+  padding: 24px 12px;
+  border: 1px dashed var(--border-input);
+  border-radius: 8px;
+  color: var(--text-muted);
+}
+.dh-empty-filter p { font-size: 13px; margin: 0 0 10px; }
+.dh-empty-filter-btn {
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 5px 14px;
+  border-radius: 6px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: background var(--t-fast);
+}
+.dh-empty-filter-btn:hover { background: var(--bg-hover); border-color: var(--accent); color: var(--accent); }
 
 /* Grille plus dense par defaut (220px min au lieu de 260px) */
 .dv-proj-grid {
@@ -331,5 +541,8 @@ function openToGrade() {
 
 @media (max-width: 600px) {
   .dh-timeline-type, .dh-timeline-proj { display: none; }
+  .dh-search { width: 100%; margin-left: 0; }
+  .dh-search-input { width: 100%; }
+  .dh-search-input:focus { width: 100%; }
 }
 </style>
