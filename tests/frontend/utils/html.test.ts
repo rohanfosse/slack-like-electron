@@ -121,4 +121,27 @@ describe('renderMessageContent', () => {
     const result = renderMessageContent('\\[cfg](lumen:1:config/app.json)')
     expect(result).toContain('data-lumen-file="config/app.json"')
   })
+
+  // Regression : avant v2.225.0, le pattern `📄 [Nom](doc:ID)` etait matche
+  // APRES que marked ait transforme `[Nom](doc:ID)` en `<a href="doc:ID">`,
+  // donc la regex ne matchait jamais et le click ouvrait `doc:8` dans le
+  // navigateur. Le fix deplace le preprocessing AVANT marked.
+  it('transforme 📄 [Nom](doc:8) en span doc-ref clickable', () => {
+    const result = renderMessageContent('Voir 📄 [Rapport.pdf](doc:8)')
+    expect(result).toContain('class="doc-ref"')
+    expect(result).toContain('data-doc-id="8"')
+    expect(result).toContain('>📄 Rapport.pdf<')
+  })
+
+  it('n\'emet pas de <a href="doc:..."> qui fuirait vers le navigateur', () => {
+    const result = renderMessageContent('📄 [Rapport](doc:8)')
+    expect(result).not.toContain('href="doc:8"')
+    expect(result).not.toContain('data-url="doc:8"')
+  })
+
+  it('echappe le titre d\'une ref document (XSS)', () => {
+    const result = renderMessageContent('📄 [<script>](doc:1)')
+    expect(result).not.toContain('<script>')
+    expect(result).toContain('&lt;script&gt;')
+  })
 })

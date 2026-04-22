@@ -182,11 +182,9 @@ export function applyInlineRefs(html: string): string {
   html = html.replace(/📋\s*\[([^\]]+)\]/g, (_m, title) => {
     return `<span class="devoir-ref">📋 ${escapeHtml(title)}</span>`
   })
-  // 📄 [Nom](doc:ID) — référence document cliquable
-  html = html.replace(/📄\s*\[([^\]]+)\]\(doc:(\d+)\)/g, (_m, title, id) => {
-    return `<span class="doc-ref" data-doc-id="${escapeHtml(id)}" role="link" tabindex="0">📄 ${escapeHtml(title)}</span>`
-  })
-  // 📄 [Nom du document] — legacy (sans ID, non cliquable)
+  // 📄 [Nom du document] — legacy (sans ID, non cliquable).
+  // La variante `📄 [Nom](doc:ID)` est gérée en preprocessing avant marked
+  // dans renderMessageContent (sinon marked consommerait la syntaxe lien).
   html = html.replace(/📄\s*\[([^\]]+)\]/g, (_m, title) => {
     return `<span class="doc-ref">📄 ${escapeHtml(title)}</span>`
   })
@@ -203,7 +201,9 @@ export function renderMessageContent(raw: string, searchTerm = '', currentUserNa
   const cacheKey = `${raw.length}:${raw.slice(0, 50)}:${searchTerm}:${currentUserName}`
   const cached = _renderCache.get(cacheKey)
   if (cached) return cached
-  // Traiter les refs devoir/lumen AVANT le markdown (sinon \ et ~ sont consommés par marked)
+  // Traiter les refs devoir/lumen/doc AVANT le markdown (sinon le parser
+  // marked consomme la syntaxe `[..](scheme:id)` comme un lien standard et
+  // produit un `<a href="doc:8">` qui finit ouvert dans le navigateur).
   let preprocessed = raw
   // \[Title](devoir:ID) et ~[Title](devoir:ID) → placeholder HTML
   preprocessed = preprocessed.replace(/[\\~]\[([^\]]+)\]\(devoir:(\d+)\)/g, (_m, title, id) => {
@@ -216,6 +216,12 @@ export function renderMessageContent(raw: string, searchTerm = '', currentUserNa
   preprocessed = preprocessed.replace(/[\\~]\[([^\]]+)\]\(lumen:(\d+)(?::([^\)]+))?\)/g, (_m, title, id, filePath) => {
     const fileAttr = filePath ? ` data-lumen-file="${escapeHtml(filePath)}"` : ''
     return `<span class="lumen-ref" data-lumen-id="${escapeHtml(id)}"${fileAttr} role="link" tabindex="0">${escapeHtml(title)}</span>`
+  })
+  // 📄 [Nom](doc:ID) → ref document cliquable. Insere via MessageInput quand
+  // on selectionne un document dans l'autocomplete `📄`. Au clic, ouvre le
+  // DocumentPreviewModal (cf. useBubbleActions).
+  preprocessed = preprocessed.replace(/📄\s*\[([^\]]+)\]\(doc:(\d+)\)/g, (_m, title, id) => {
+    return `<span class="doc-ref" data-doc-id="${escapeHtml(id)}" role="link" tabindex="0">📄 ${escapeHtml(title)}</span>`
   })
   let html = marked.parse(preprocessed) as string
   // marked encode les apostrophes en &#39; ce qui casse l'affichage du texte francais
