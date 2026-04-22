@@ -74,12 +74,12 @@ document.addEventListener('DOMContentLoaded', () => {
       if (el) el.textContent = data.stargazers_count + ' stars'
     }).catch(() => {})
 
-  // ── Version fetch ─────────────────────────────────────────────────────
-  fetch('/download')
+  // ── Version fetch (GitHub releases — fallback silencieux sur les valeurs hardcodees) ─
+  fetch('https://api.github.com/repos/rohanfosse/cursus/releases/latest')
     .then(r => r.ok ? r.json() : null)
     .then(data => {
-      if (!data?.version) return
-      const v = data.version
+      if (!data?.tag_name) return
+      const v = data.tag_name.startsWith('v') ? data.tag_name : 'v' + data.tag_name
       ;['pill-version', 'footer-version'].forEach(id => {
         const el = document.getElementById(id)
         if (el) el.textContent = v
@@ -307,7 +307,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // ── Devoirs demo: expandable items ──────────────────────────────────────
   const devoirDetails = {
     'Projet Web E4': { type: 'Livrable', date: '15 mars 2026', note: 'A', desc: 'Application web responsive avec authentification et CRUD.' },
-    'TP Algo': { type: 'TP individuel', date: '30 mars 2026', note: 'En attente', desc: 'Implémentation d\'un arbre AVL avec rotations.' },
+    'TP Algo':       { type: 'TP individuel', date: '30 mars 2026', note: 'En attente', desc: 'Implémentation d\'un arbre AVL avec rotations.' },
     'Rapport stage': { type: 'Mémoire', date: '15 juin 2026', note: 'En attente', desc: 'Rapport de stage de fin d\'études (40-60 pages).' },
   }
 
@@ -345,7 +345,19 @@ document.addEventListener('DOMContentLoaded', () => {
     const textEl = document.getElementById('live-q-text')
     const countEl = document.getElementById('live-q-count')
     const timerEl = document.getElementById('live-q-timer')
-    let qIdx = 0, revealed = false, revealT = null, nextT = null
+    let qIdx = 0, revealed = false, revealT = null, nextT = null, timerIv = null
+
+    function startTimer(seconds) {
+      if (timerIv) clearInterval(timerIv)
+      let remaining = seconds
+      timerEl.textContent = `0:${String(remaining).padStart(2, '0')}`
+      if (prefersReducedMotion) return
+      timerIv = setInterval(() => {
+        remaining--
+        if (remaining <= 0) { clearInterval(timerIv); timerIv = null; return }
+        timerEl.textContent = `0:${String(remaining).padStart(2, '0')}`
+      }, 1000)
+    }
 
     function renderQuiz(idx) {
       const q = quizQuestions[idx]
@@ -354,7 +366,7 @@ document.addEventListener('DOMContentLoaded', () => {
       badgeEl.textContent = `Question ${idx + 1}/${quizQuestions.length}`
       textEl.textContent = q.q
       countEl.textContent = `${q.count} réponses`
-      timerEl.textContent = '0:30'
+      startTimer(30)
       optsEl.innerHTML = q.opts.map((o, i) =>
         `<div class="live-opt" data-idx="${i}" data-correct="${i === q.correct ? 1 : 0}" tabindex="0" role="button"><span class="live-opt-letter">${'ABCD'[i]}</span><span class="live-opt-text">${o}</span><span class="live-check">&#10003;</span></div>`
       ).join('')
@@ -374,6 +386,7 @@ document.addEventListener('DOMContentLoaded', () => {
       opt.classList.add('selected')
       revealT = setTimeout(() => {
         revealed = true
+        if (timerIv) { clearInterval(timerIv); timerIv = null }
         optsEl.querySelectorAll('.live-opt').forEach((o, i) => {
           o.style.transitionDelay = `${i * 80}ms`
           o.classList.add(parseInt(o.dataset.idx) === q.correct ? 'revealed-correct' : 'revealed-wrong')
@@ -387,64 +400,83 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // ══════════════════════════════════════════════════════════════════════
-  //  REX - multi-questions par onglet avec navigation
+  //  RDV (mini-Calendly) — 3 onglets : Types / Disponibilités / Mes RDV
   // ══════════════════════════════════════════════════════════════════════
-  const rexData = {
-    nuage: [
-      { q: 'Qu\'avez-vous le plus apprécié cette semaine ?', words: [{t:'travail d\'équipe',s:1.5,o:1},{t:'TP pratique',s:1.15,o:.85},{t:'autonomie',s:.85,o:.6},{t:'entraide',s:1.05,o:.75},{t:'gestion du temps',s:.8,o:.5},{t:'projet concret',s:1.3,o:.9},{t:'créativité',s:.75,o:.45},{t:'communication',s:1.1,o:.8}] },
-      { q: 'Un mot pour décrire le cours d\'aujourd\'hui ?', words: [{t:'dense',s:1.4,o:1},{t:'intéressant',s:1.3,o:.9},{t:'rapide',s:1.0,o:.7},{t:'pratique',s:1.2,o:.85},{t:'complexe',s:.9,o:.6},{t:'motivant',s:1.1,o:.8},{t:'clair',s:.85,o:.55}] },
+  const rdvData = {
+    types: [
+      { name: 'Suivi individuel',    duration: 30, color: '#0EA5E9', desc: 'Point hebdomadaire projet' },
+      { name: 'Soutenance',          duration: 60, color: '#8B5CF6', desc: 'Jury + 2 intervenants' },
+      { name: 'Rattrapage CCTL',     duration: 45, color: '#F59E0B', desc: 'Session de recuperation' },
     ],
-    echelle: [
-      { q: 'Comment évaluez-vous la semaine ? (1-5)', scores: [4,4,8,33,42], avg: '4.1' },
-      { q: 'Le rythme du cours était adapté ? (1-5)', scores: [2,8,21,38,31], avg: '3.9' },
+    disponibilites: [
+      { day: 'Lun', slots: ['09:00', '10:00', '14:00', '15:30'] },
+      { day: 'Mar', slots: ['10:00', '14:00'] },
+      { day: 'Jeu', slots: ['09:00', '11:00', '14:00', '15:00', '16:00'] },
+      { day: 'Ven', slots: ['10:30', '14:00'] },
     ],
-    ouverte: [
-      { q: 'Un point à améliorer pour la prochaine fois ?', resp: ['Plus de temps pour les TP pratiques','Les consignes du projet étaient floues','Ajouter un créneau de questions/réponses'], pin: 'Très bonne dynamique de groupe !' },
-      { q: 'Qu\'aimeriez-vous voir dans le prochain module ?', resp: ['Plus de cas pratiques en entreprise','Des projets en groupe plus longs','Un intervenant externe du secteur'], pin: 'Le format actuel est super !' },
+    bookings: [
+      { who: 'Emma L.',  when: 'Jeu. 9h00',   type: 'Suivi individuel', teams: true },
+      { who: 'Jean D.',  when: 'Jeu. 14h00',  type: 'Suivi individuel', teams: true },
+      { who: 'Sara B.',  when: 'Ven. 10h30',  type: 'Soutenance',       teams: false },
     ],
   }
 
   const rexDemo = document.getElementById('rex-demo')
   if (rexDemo) {
-    const st = { tab: 'nuage', idx: { nuage: 0, echelle: 0, ouverte: 0 } }
-    const prevBtn = document.getElementById('rex-prev')
-    const nextBtn = document.getElementById('rex-next')
-    const navCount = document.getElementById('rex-nav-count')
-
-    function renderRex(tab, idx) {
+    function renderRdv(tab) {
       const panel = rexDemo.querySelector(`[data-rex-panel="${tab}"]`)
       if (!panel) return
-      const items = rexData[tab]; const item = items[idx]
-      let h = `<div class="rex-question">${item.q}</div>`
-      if (tab === 'nuage') {
-        h += '<div class="rex-cloud">' + item.words.map((w, i) => `<span class="rex-word" style="--size:${w.s};--o:${w.o};--d:${i}">${w.t}</span>`).join('') + '</div>'
-      } else if (tab === 'echelle') {
-        h += '<div class="rex-scale">' + [5,4,3,2,1].map((n,i) => `<div class="rex-scale-row"><span class="rex-scale-label">${n}</span><div class="rex-scale-bar"><div class="rex-scale-fill" style="--w:${item.scores[4-i]}%"></div></div><span class="rex-scale-pct">${item.scores[4-i]}%</span></div>`).join('') + '</div>'
-        h += `<div class="rex-scale-avg">Moyenne : <strong>${item.avg}</strong> / 5</div>`
-      } else {
-        h += '<div class="rex-responses">' + item.resp.map(r => `<div class="rex-response"><span class="rex-resp-dot"></span>${r}</div>`).join('')
-        if (item.pin) h += `<div class="rex-response rex-response--pinned"><span class="rex-resp-pin">📌</span>${item.pin}</div>`
-        h += '</div>'
+      let h = ''
+      if (tab === 'types') {
+        h = '<div class="rdv-types">' + rdvData.types.map((t, i) => `
+          <div class="rdv-type" style="--ic:${t.color};--d:${i * 100}ms">
+            <span class="rdv-type-dot"></span>
+            <div class="rdv-type-info">
+              <span class="rdv-type-name">${t.name}</span>
+              <span class="rdv-type-desc">${t.desc}</span>
+            </div>
+            <span class="rdv-type-duration">${t.duration} min</span>
+          </div>
+        `).join('') + '</div>'
+      } else if (tab === 'disponibilites') {
+        h = '<div class="rdv-week">' + rdvData.disponibilites.map((row, i) => `
+          <div class="rdv-day" style="--d:${i * 80}ms">
+            <span class="rdv-day-label">${row.day}</span>
+            <div class="rdv-day-slots">
+              ${row.slots.map(s => `<span class="rdv-slot">${s}</span>`).join('')}
+            </div>
+          </div>
+        `).join('') + '</div>'
+      } else if (tab === 'bookings') {
+        h = '<div class="rdv-bookings">' + rdvData.bookings.map((b, i) => `
+          <div class="rdv-booking" style="--d:${i * 100}ms">
+            <div class="rdv-booking-when">${b.when}</div>
+            <div class="rdv-booking-info">
+              <span class="rdv-booking-who">${b.who}</span>
+              <span class="rdv-booking-type">${b.type}</span>
+            </div>
+            ${b.teams ? '<span class="rdv-booking-teams" title="Reunion Teams auto">Teams</span>' : ''}
+          </div>
+        `).join('') + '</div>'
       }
       panel.innerHTML = h
-      navCount.textContent = `${idx + 1} / ${items.length}`
-      prevBtn.disabled = idx === 0
-      nextBtn.disabled = idx === items.length - 1
-      // Animer les barres d'échelle
-      if (tab === 'echelle') requestAnimationFrame(() => panel.querySelectorAll('.rex-scale-fill').forEach(f => { f.style.width = f.style.getPropertyValue('--w') }))
     }
 
     function switchTab(tab) {
-      st.tab = tab
-      rexDemo.querySelectorAll('.rex-tab').forEach(t => t.classList.toggle('rex-tab--active', t.dataset.rexTab === tab))
+      rexDemo.querySelectorAll('.rex-tab').forEach(t => {
+        const isActive = t.dataset.rexTab === tab
+        t.classList.toggle('rex-tab--active', isActive)
+        t.setAttribute('aria-selected', String(isActive))
+      })
       rexDemo.querySelectorAll('.rex-panel').forEach(p => p.classList.toggle('rex-panel--active', p.dataset.rexPanel === tab))
-      renderRex(tab, st.idx[tab])
+      renderRdv(tab)
     }
 
-    rexDemo.querySelectorAll('.rex-tab').forEach(t => t.addEventListener('click', () => switchTab(t.dataset.rexTab)))
-    prevBtn.addEventListener('click', () => { st.idx[st.tab] = Math.max(0, st.idx[st.tab] - 1); renderRex(st.tab, st.idx[st.tab]) })
-    nextBtn.addEventListener('click', () => { st.idx[st.tab] = Math.min(rexData[st.tab].length - 1, st.idx[st.tab] + 1); renderRex(st.tab, st.idx[st.tab]) })
-    switchTab('nuage')
+    rexDemo.querySelectorAll('.rex-tab').forEach(t => {
+      t.addEventListener('click', () => switchTab(t.dataset.rexTab))
+      t.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); t.click() } })
+    })
+    switchTab('types')
   }
 
   // ── Docs demo: clickable files with preview ─────────────────────────────

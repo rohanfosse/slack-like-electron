@@ -1453,7 +1453,27 @@ img { max-width: 100%; display: block; }
   .mini-demo { order: 2; }
 
   .demo-window { max-width: 100%; }
-  .demo-sidebar-mini { display: none; }
+
+  /* Chat : sidebar devient une barre horizontale scrollable */
+  .demo-chat-body { flex-direction: column; }
+  .demo-sidebar-mini {
+    width: 100%;
+    border-right: none;
+    border-bottom: 1px solid var(--border-glass);
+    padding: 8px 10px;
+    display: flex;
+    flex-direction: row;
+    gap: 4px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .demo-sidebar-mini::-webkit-scrollbar { display: none; }
+  .demo-sidebar-mini .sidebar-ch {
+    flex-shrink: 0;
+    font-size: 11px;
+    padding: 4px 10px;
+    white-space: nowrap;
+  }
 }
 
 @media (max-width: 520px) {
@@ -1845,6 +1865,120 @@ img { max-width: 100%; display: block; }
   opacity: 0;
   animation: msgAppear 350ms var(--ease-smooth) forwards;
   animation-delay: var(--delay, 0ms);
+}
+
+/* ── Mini-Calendly : Types / Disponibilites / Bookings ────────────── */
+.rdv-types, .rdv-week, .rdv-bookings {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.rdv-type {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  opacity: 0;
+  transform: translateY(4px);
+  animation: msgAppear 400ms var(--ease-smooth) forwards;
+  animation-delay: var(--d, 0ms);
+}
+.rdv-type-dot {
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  background: var(--ic, var(--color-rex));
+  flex-shrink: 0;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--ic) 20%, transparent);
+}
+.rdv-type-info { flex: 1; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.rdv-type-name { font-size: 13px; font-weight: 600; color: var(--text); }
+.rdv-type-desc { font-size: 11px; color: var(--text-3); }
+.rdv-type-duration {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ic) 15%, transparent);
+  color: var(--ic);
+  font-family: var(--font-mono);
+  flex-shrink: 0;
+}
+
+.rdv-day {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  opacity: 0;
+  transform: translateY(4px);
+  animation: msgAppear 400ms var(--ease-smooth) forwards;
+  animation-delay: var(--d, 0ms);
+}
+.rdv-day-label {
+  font-size: 11px;
+  font-weight: 700;
+  width: 36px;
+  color: var(--color-rex);
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  flex-shrink: 0;
+}
+.rdv-day-slots { display: flex; flex-wrap: wrap; gap: 4px; }
+.rdv-slot {
+  font-size: 11px;
+  font-family: var(--font-mono);
+  font-weight: 500;
+  padding: 2px 8px;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--color-rex) 12%, transparent);
+  color: var(--color-rex);
+  border: 1px solid color-mix(in srgb, var(--color-rex) 25%, transparent);
+}
+
+.rdv-booking {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  opacity: 0;
+  transform: translateY(4px);
+  animation: msgAppear 400ms var(--ease-smooth) forwards;
+  animation-delay: var(--d, 0ms);
+}
+.rdv-booking-when {
+  font-size: 11px;
+  font-family: var(--font-mono);
+  font-weight: 600;
+  color: var(--color-rex);
+  padding: 4px 8px;
+  background: color-mix(in srgb, var(--color-rex) 10%, transparent);
+  border-radius: 6px;
+  flex-shrink: 0;
+  min-width: 80px;
+  text-align: center;
+}
+.rdv-booking-info { flex: 1; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.rdv-booking-who { font-size: 13px; font-weight: 600; color: var(--text); }
+.rdv-booking-type { font-size: 11px; color: var(--text-3); }
+.rdv-booking-teams {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: linear-gradient(135deg, #4F52B2, #7378E9);
+  color: #fff;
+  letter-spacing: .04em;
+  flex-shrink: 0;
 }
 
 /* ── Reduced Motion ────────────────────────────────────────────────── */
