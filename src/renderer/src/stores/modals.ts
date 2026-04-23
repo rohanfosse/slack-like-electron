@@ -29,6 +29,7 @@ export const useModalsStore = defineStore('modals', () => {
   const signatureRequest  = ref<SignatureRequest | null>(null)
   const createPoll        = ref(false)
   const createTable       = ref(false)
+  const createCode        = ref(false)
   const help              = ref(false)
 
   function closeAll() {
@@ -54,6 +55,7 @@ export const useModalsStore = defineStore('modals', () => {
     signatureRequest.value  = null
     createPoll.value        = false
     createTable.value       = false
+    createCode.value        = false
     help.value              = false
   }
 
@@ -63,7 +65,7 @@ export const useModalsStore = defineStore('modals', () => {
     newDevoir, createChannel, cmdPalette, impersonate, newProject,
     studentTimeline, rubric, importStudents, intervenants, classe, createPromo,
     signatureRequest,
-    createPoll, createTable, help,
+    createPoll, createTable, createCode, help,
     closeAll,
   }
 })

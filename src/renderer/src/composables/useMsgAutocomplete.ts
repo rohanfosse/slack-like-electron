@@ -60,6 +60,9 @@ export interface SlashHandlers {
   /** Appele quand /tableau est execute : ouvre le builder visuel au lieu
    *  d'inserer un template markdown brut dans le textarea. */
   onOpenTable?: () => void
+  /** Appele quand /code est execute : ouvre le builder avec selecteur de
+   *  langage + preview highlight.js. Fallback sur l'ancien template js vide. */
+  onOpenCode?: () => void
 }
 
 /**
@@ -422,10 +425,17 @@ export function useMsgAutocomplete(
         }
       },
       code() {
-        content.value = before + '```js\n\n```' + after
-        activeRef.value = null
-        // Placer le curseur au milieu du bloc
-        nextTick(() => { const pos = before.length + 6; el.setSelectionRange(pos, pos) })
+        // Preferable : ouvrir le builder avec selecteur de langage + preview.
+        // Fallback (si aucun handler) : ancien template ```js\n\n```.
+        if (handlers.onOpenCode) {
+          content.value = before + after
+          activeRef.value = null
+          handlers.onOpenCode()
+        } else {
+          content.value = before + '```js\n\n```' + after
+          activeRef.value = null
+          nextTick(() => { const pos = before.length + 6; el.setSelectionRange(pos, pos) })
+        }
       },
       aide() {
         // Efface le "/aide" et ouvre la modale d'aide riche.

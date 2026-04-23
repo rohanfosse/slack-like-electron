@@ -23,6 +23,7 @@ import { useMsgFormatting }   from '@/composables/useMsgFormatting'
 import MessageInputToolbar   from './MessageInputToolbar.vue'
 import CreatePollModal       from '@/components/modals/CreatePollModal.vue'
 import CreateTableModal      from '@/components/modals/CreateTableModal.vue'
+import CreateCodeModal       from '@/components/modals/CreateCodeModal.vue'
 import HelpModal             from '@/components/modals/HelpModal.vue'
 import ScheduleMessageModal  from '@/components/modals/ScheduleMessageModal.vue'
 import ScheduledMessagesModal from '@/components/modals/ScheduledMessagesModal.vue'
@@ -87,6 +88,7 @@ const {
   onOpenPoll:  () => { modals.createPoll = true },
   onOpenHelp:  () => { modals.help = true },
   onOpenTable: () => { modals.createTable = true },
+  onOpenCode:  () => { modals.createCode = true },
 })
 
 const { attaching, attachFile, uploadProgress } = useMsgAttachment(content, inputEl, autoResize)
@@ -147,17 +149,16 @@ async function onPollSubmit(payload: { content: string }) {
   await send()
 }
 
-// ── /tableau submit : insere le markdown au curseur (n'envoie pas tout seul :
-// l'utilisateur peut vouloir ajouter du texte autour du tableau). ───────────
-async function onTableSubmit(payload: { markdown: string }) {
+// ── Insertion d'un bloc markdown au curseur (tableau, code, ...) ─────────
+// Factorise la logique entre /tableau et /code : isole le bloc avec une
+// ligne vide avant/apres pour que le moteur markdown le detecte comme un
+// vrai bloc (certains renderers sont stricts la-dessus).
+async function insertBlockAtCursor(md: string) {
   const el = inputEl.value
-  const md = payload.markdown
   if (!el) { content.value = content.value + '\n' + md + '\n'; return }
   const pos = el.selectionStart ?? content.value.length
   const before = content.value.slice(0, pos)
   const after  = content.value.slice(pos)
-  // Isole le tableau avec une ligne vide avant/apres pour que le moteur
-  // markdown le detecte comme un bloc (certains renderers sont stricts).
   const needsNewlineBefore = before.length > 0 && !before.endsWith('\n')
   const needsNewlineAfter  = after.length > 0 && !after.startsWith('\n')
   const insertion = (needsNewlineBefore ? '\n' : '')
@@ -170,6 +171,8 @@ async function onTableSubmit(payload: { markdown: string }) {
   el.focus()
   el.setSelectionRange(newPos, newPos)
 }
+function onTableSubmit(p: { markdown: string }) { insertBlockAtCursor(p.markdown) }
+function onCodeSubmit(p:  { markdown: string }) { insertBlockAtCursor(p.markdown) }
 
 // ── Keydown handler ───────────────────────────────────────────────────────
 function onKeydown(e: KeyboardEvent) {
@@ -503,6 +506,12 @@ function onKeydown(e: KeyboardEvent) {
     <CreateTableModal
       v-model="modals.createTable"
       @submit="onTableSubmit"
+    />
+
+    <!-- Modal de composition de bloc de code (declenche par /code) -->
+    <CreateCodeModal
+      v-model="modals.createCode"
+      @submit="onCodeSubmit"
     />
 
     <!-- Modal d'aide riche (declenche par /aide) -->
