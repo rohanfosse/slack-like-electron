@@ -57,6 +57,9 @@ export interface SlashHandlers {
   onOpenPoll?: () => void
   /** Appele quand /aide est execute. */
   onOpenHelp?: () => void
+  /** Appele quand /tableau est execute : ouvre le builder visuel au lieu
+   *  d'inserer un template markdown brut dans le textarea. */
+  onOpenTable?: () => void
 }
 
 /**
@@ -407,8 +410,16 @@ export function useMsgAutocomplete(
         handlers.onOpenPoll?.()
       },
       tableau() {
-        content.value = before + '| Colonne 1 | Colonne 2 | Colonne 3 |\n|---|---|---|\n| … | … | … |\n| … | … | … |' + after
-        activeRef.value = null
+        // Efface le "/tableau" et ouvre le builder visuel. Si aucun handler
+        // n'est branche (ex. tests unitaires), fallback sur l'ancien template.
+        if (handlers.onOpenTable) {
+          content.value = before + after
+          activeRef.value = null
+          handlers.onOpenTable()
+        } else {
+          content.value = before + '| Colonne 1 | Colonne 2 | Colonne 3 |\n|---|---|---|\n| … | … | … |\n| … | … | … |' + after
+          activeRef.value = null
+        }
       },
       code() {
         content.value = before + '```js\n\n```' + after

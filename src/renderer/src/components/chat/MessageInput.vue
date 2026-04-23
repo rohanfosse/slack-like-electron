@@ -22,6 +22,7 @@ import { useMsgSend }         from '@/composables/useMsgSend'
 import { useMsgFormatting }   from '@/composables/useMsgFormatting'
 import MessageInputToolbar   from './MessageInputToolbar.vue'
 import CreatePollModal       from '@/components/modals/CreatePollModal.vue'
+import CreateTableModal      from '@/components/modals/CreateTableModal.vue'
 import HelpModal             from '@/components/modals/HelpModal.vue'
 import ScheduleMessageModal  from '@/components/modals/ScheduleMessageModal.vue'
 import ScheduledMessagesModal from '@/components/modals/ScheduledMessagesModal.vue'
@@ -83,8 +84,9 @@ const {
   detectTriggers, scrollMentionIntoView,
   triggerMention, triggerChannel, triggerDevoir, executeCommand, dismissAll,
 } = useMsgAutocomplete(content, inputEl, autoResize, {
-  onOpenPoll: () => { modals.createPoll = true },
-  onOpenHelp: () => { modals.help = true },
+  onOpenPoll:  () => { modals.createPoll = true },
+  onOpenHelp:  () => { modals.help = true },
+  onOpenTable: () => { modals.createTable = true },
 })
 
 const { attaching, attachFile, uploadProgress } = useMsgAttachment(content, inputEl, autoResize)
@@ -145,6 +147,29 @@ async function onPollSubmit(payload: { content: string }) {
   await send()
 }
 
+// ── /tableau submit : insere le markdown au curseur (n'envoie pas tout seul :
+// l'utilisateur peut vouloir ajouter du texte autour du tableau). ───────────
+async function onTableSubmit(payload: { markdown: string }) {
+  const el = inputEl.value
+  const md = payload.markdown
+  if (!el) { content.value = content.value + '\n' + md + '\n'; return }
+  const pos = el.selectionStart ?? content.value.length
+  const before = content.value.slice(0, pos)
+  const after  = content.value.slice(pos)
+  // Isole le tableau avec une ligne vide avant/apres pour que le moteur
+  // markdown le detecte comme un bloc (certains renderers sont stricts).
+  const needsNewlineBefore = before.length > 0 && !before.endsWith('\n')
+  const needsNewlineAfter  = after.length > 0 && !after.startsWith('\n')
+  const insertion = (needsNewlineBefore ? '\n' : '')
+    + md
+    + (needsNewlineAfter ? '\n' : '')
+  content.value = before + insertion + after
+  await nextTick()
+  autoResize()
+  const newPos = before.length + insertion.length
+  el.focus()
+  el.setSelectionRange(newPos, newPos)
+}
 
 // ── Keydown handler ───────────────────────────────────────────────────────
 function onKeydown(e: KeyboardEvent) {
@@ -472,6 +497,12 @@ function onKeydown(e: KeyboardEvent) {
     <CreatePollModal
       v-model="modals.createPoll"
       @submit="onPollSubmit"
+    />
+
+    <!-- Modal de composition de tableau (declenche par /tableau) -->
+    <CreateTableModal
+      v-model="modals.createTable"
+      @submit="onTableSubmit"
     />
 
     <!-- Modal d'aide riche (declenche par /aide) -->
