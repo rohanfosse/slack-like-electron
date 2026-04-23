@@ -136,16 +136,10 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
+  <!-- Ordre aligne sur Slack : [emojis rapides] → [ajouter reaction] → [repondre]
+       → [transferer] → [bookmark] → [···]. Pin est deplace dans le menu ···
+       pour garder la pill directe minimale comme dans Slack. -->
   <div class="msg-action-pill" role="toolbar" aria-label="Actions du message">
-    <button
-      class="pill-btn"
-      title="Répondre"
-      aria-label="Répondre au message"
-      @click.stop="$emit('reply')"
-    >
-      <Reply :size="14" aria-hidden="true" />
-    </button>
-
     <button
       v-for="r in quickReacts"
       :key="r.type"
@@ -173,18 +167,22 @@ onBeforeUnmount(() => {
       </div>
     </div>
 
-    <span class="pill-sep" aria-hidden="true" />
+    <button
+      class="pill-btn"
+      title="Répondre"
+      aria-label="Répondre au message"
+      @click.stop="$emit('reply')"
+    >
+      <Reply :size="14" aria-hidden="true" />
+    </button>
 
     <button
-      v-if="appStore.isTeacher"
       class="pill-btn"
-      :title="isPinned ? 'Désépingler' : 'Épingler'"
-      :aria-label="isPinned ? 'Désépingler le message' : 'Épingler le message'"
-      :aria-pressed="isPinned"
-      @click.stop="$emit('toggle-pin')"
+      title="Transférer"
+      aria-label="Transférer le message"
+      @click.stop="$emit('forward')"
     >
-      <PinOff v-if="isPinned" :size="14" aria-hidden="true" />
-      <Pin v-else :size="14" aria-hidden="true" />
+      <Forward :size="14" aria-hidden="true" />
     </button>
 
     <button
@@ -221,28 +219,23 @@ onBeforeUnmount(() => {
         role="menu"
         @keydown="onMenuKeydown"
       >
-        <!-- Actions rapides (doublon avec les icones de la pill mais utile au
-             clavier / accessibilite et aligne avec Slack/Discord qui listent
-             toutes les actions dans le menu ···). -->
-        <button class="msg-menu-item" role="menuitem" @click="$emit('reply')">
-          <Reply :size="12" aria-hidden="true" /> Répondre
-        </button>
+        <!-- Les actions majeures (Repondre / Transferer / Signet) sont deja
+             en acces direct dans la pill comme dans Slack — le menu ···
+             regroupe les actions secondaires et administratives. -->
         <button
+          v-if="appStore.isTeacher"
           class="msg-menu-item"
-          :class="{ 'msg-menu-item--active': isBookmarked }"
+          :class="{ 'msg-menu-item--active': isPinned }"
           role="menuitemcheckbox"
-          :aria-checked="isBookmarked"
-          @click="$emit('toggle-bookmark')"
+          :aria-checked="isPinned"
+          @click="$emit('toggle-pin')"
         >
-          <BookmarkCheck v-if="isBookmarked" :size="12" aria-hidden="true" />
-          <Bookmark v-else :size="12" aria-hidden="true" />
-          {{ isBookmarked ? 'Retirer le signet' : 'Mettre en signet' }}
-        </button>
-        <button class="msg-menu-item" role="menuitem" @click="$emit('forward')">
-          <Forward :size="12" aria-hidden="true" /> Transférer
+          <PinOff v-if="isPinned" :size="12" aria-hidden="true" />
+          <Pin v-else :size="12" aria-hidden="true" />
+          {{ isPinned ? 'Désépingler' : 'Épingler' }}
         </button>
 
-        <div class="msg-menu-sep" role="separator" aria-hidden="true" />
+        <div v-if="appStore.isTeacher" class="msg-menu-sep" role="separator" aria-hidden="true" />
 
         <button class="msg-menu-item" role="menuitem" @click="$emit('copy')">
           <Copy :size="12" aria-hidden="true" /> Copier le texte

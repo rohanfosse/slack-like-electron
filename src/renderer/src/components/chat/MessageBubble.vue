@@ -667,6 +667,8 @@ const renderedContentWithoutPoll = computed(() => {
   box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 60%, transparent);
 }
 
+/* Separateur vertical : conserve pour compat, mais plus utilise par defaut
+   depuis la refonte Slack (le flux d'icones est volontairement continu). */
 .pill-sep {
   display: block;
   width: 1px;
