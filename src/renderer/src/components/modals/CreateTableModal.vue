@@ -30,7 +30,10 @@ interface Props {
 const props = defineProps<Props>()
 const emit = defineEmits<{
   'update:modelValue': [v: boolean]
+  /** Insertion uniquement (dans le textarea, pour ajouter du texte autour). */
   'submit': [payload: { markdown: string }]
+  /** Envoi immediat dans le canal (skip le textarea, 1 clic de moins). */
+  'submit-send': [payload: { markdown: string }]
 }>()
 
 // ── Limites ────────────────────────────────────────────────────────────────
@@ -154,6 +157,35 @@ const csvPreview = computed(() => {
 
 const canImportCsv = computed(() => csvPreview.value !== null && csvPreview.value.cols >= 1)
 
+/**
+ * Remplit la grille a partir d'un texte CSV/TSV arbitraire. Factorise entre
+ * l'onglet CSV (bouton "Importer") et le paste direct dans une cellule de
+ * la grille.
+ */
+function fillGridFromText(text: string, hasHeader: boolean): boolean {
+  const clean = text.trim()
+  if (!clean) return false
+  const sep = detectSeparator(clean)
+  const parsed = parseCsv(clean, sep)
+  if (!parsed.length) return false
+  const cols = Math.min(MAX_COLS, Math.max(...parsed.map(r => r.length)))
+  const norm = parsed.map(r => {
+    const padded = r.slice(0, cols)
+    while (padded.length < cols) padded.push('')
+    return padded
+  })
+  if (hasHeader && norm.length > 0) {
+    headers.value = norm[0]
+    rows.value = norm.slice(1, 1 + MAX_ROWS)
+  } else {
+    headers.value = new Array(cols).fill('')
+    rows.value = norm.slice(0, MAX_ROWS)
+  }
+  if (rows.value.length === 0) rows.value = [new Array(cols).fill('')]
+  aligns.value = new Array(cols).fill('left')
+  return true
+}
+
 function importCsv() {
   if (!canImportCsv.value) return
   const text = csvText.value.trim()
@@ -256,13 +288,45 @@ function onCellKeydown(e: KeyboardEvent, row: number, col: number) {
     else focusCell(row + 1, col)
     return
   }
-  // Ctrl/Cmd + Enter : insere le tableau
+  // Ctrl/Cmd + Enter : envoie directement (1 clic de moins, action la plus
+  // demandee). Shift+Ctrl+Enter = juste inserer dans le textarea.
   if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
     e.preventDefault()
-    if (canSubmit.value) submit()
+    if (!canSubmit.value) return
+    if (e.shiftKey) submit()
+    else submitAndSend()
     return
   }
 }
+
+/**
+ * Paste detection dans une cellule : si l'utilisateur colle un texte CSV/TSV
+ * multi-lignes depuis Excel/Sheets directement dans une cellule, on bascule
+ * en mode "import" et on remplit la grille entiere. Reduit un clic : plus
+ * besoin d'aller dans l'onglet "Coller un CSV" explicitement.
+ */
+function onCellPaste(e: ClipboardEvent, row: number, col: number) {
+  const text = e.clipboardData?.getData('text') ?? ''
+  // Heuristique : c'est un bloc multi-cellules si on a un tab OU plusieurs
+  // lignes. Un simple texte avec virgule ne declenche PAS l'import (evite
+  // les faux positifs sur "Salut, ca va ?").
+  const hasTab = text.includes('\t')
+  const hasMultiline = /\r?\n.+/.test(text.trim())
+  if (!hasTab && !hasMultiline) return
+  e.preventDefault()
+  // Premiere ligne = header seulement si on colle dans la ligne d'entete (-1).
+  const useHeader = row === -1
+  const ok = fillGridFromText(text, useHeader)
+  if (!ok) return
+  pasteFlash.value = true
+  setTimeout(() => { pasteFlash.value = false }, 1800)
+  // Remonte le focus sur la cellule origine pour continuer l'edition si
+  // la grille a ete remplie en place.
+  focusCell(useHeader ? -1 : Math.min(row, rows.value.length - 1), col)
+}
+
+/** Flash visible apres un paste CSV detecte dans une cellule. */
+const pasteFlash = ref(false)
 
 // ── Validation ────────────────────────────────────────────────────────────
 // Au moins 1 cellule d'entete remplie OU 1 cellule de donnee remplie
@@ -304,6 +368,12 @@ function close() { emit('update:modelValue', false) }
 function submit() {
   if (!canSubmit.value) return
   emit('submit', { markdown: markdownPreview.value })
+  close()
+}
+/** Envoie directement dans le canal (1 clic de moins vs insert + send manuel). */
+function submitAndSend() {
+  if (!canSubmit.value) return
+  emit('submit-send', { markdown: markdownPreview.value })
   close()
 }
 </script>
@@ -352,6 +422,9 @@ function submit() {
             </button>
             <span v-if="csvJustImported" class="ctm-tabs-flash" aria-live="polite">
               <CheckIcon :size="12" /> Importé dans la grille
+            </span>
+            <span v-else-if="pasteFlash" class="ctm-tabs-flash" aria-live="polite">
+              <CheckIcon :size="12" /> Collage détecté — grille remplie
             </span>
           </div>
 
@@ -410,6 +483,7 @@ function submit() {
                           :placeholder="`Colonne ${col + 1}`"
                           :aria-label="`En-tête colonne ${col + 1}`"
                           @keydown="onCellKeydown($event, -1, col)"
+                          @paste="onCellPaste($event, -1, col)"
                         />
                         <button
                           v-if="headers.length > MIN_COLS"
@@ -451,6 +525,7 @@ function submit() {
                         :style="{ textAlign: aligns[col] }"
                         :aria-label="`Ligne ${row + 1} colonne ${col + 1}`"
                         @keydown="onCellKeydown($event, row, col)"
+                        @paste="onCellPaste($event, row, col)"
                       />
                     </td>
                     <td class="ctm-row-action">
@@ -492,7 +567,8 @@ function submit() {
             <div class="ctm-hints">
               <span><kbd>Tab</kbd> cellule suivante</span>
               <span><kbd>Enter</kbd> ligne suivante</span>
-              <span><kbd>Ctrl</kbd>+<kbd>Enter</kbd> insérer</span>
+              <span><kbd>Ctrl</kbd>+<kbd>Enter</kbd> envoyer directement</span>
+              <span class="ctm-hint-muted">(collage multi-cellules détecté automatiquement)</span>
             </div>
           </div>
 
@@ -556,11 +632,27 @@ function submit() {
             </p>
           </div>
 
-          <!-- Footer -->
+          <!-- Footer : CTA primaire = envoi direct (1 clic de moins),
+               secondaire = inserer dans le textarea pour ajouter du texte. -->
           <div class="ctm-footer">
             <button class="btn-ghost" @click="close">Annuler</button>
-            <button class="btn-primary" :disabled="!canSubmit" @click="submit">
-              <Send :size="13" /> Insérer le tableau
+            <button
+              type="button"
+              class="ctm-btn-secondary"
+              :disabled="!canSubmit"
+              title="Insérer dans le message pour ajouter du texte autour"
+              @click="submit"
+            >
+              Insérer dans le message
+            </button>
+            <button
+              type="button"
+              class="ctm-btn-primary"
+              :disabled="!canSubmit"
+              title="Envoyer directement dans le canal"
+              @click="submitAndSend"
+            >
+              <Send :size="14" /> Envoyer le tableau
             </button>
           </div>
         </div>
@@ -981,6 +1073,7 @@ function submit() {
   font-family: var(--font);
   margin: 0 2px;
 }
+.ctm-hint-muted { opacity: .7; font-style: italic; }
 
 /* ══════════════════════════════════════════════════════════════════════════
    ONGLET CSV : import par copier-coller depuis Excel / Sheets / fichier
@@ -1142,5 +1235,59 @@ function submit() {
   padding: 12px 18px;
   border-top: 1px solid var(--border);
   background: var(--bg-elevated);
+}
+
+/* Bouton secondaire "Inserer dans le message" : outline, meme poids que le
+   CTA primaire pour laisser le choix clairement au user. */
+.ctm-btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font);
+  font-size: 12.5px;
+  font-weight: 600;
+  padding: 8px 14px;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-secondary);
+  border: 1px solid var(--border-input);
+  cursor: pointer;
+  transition: background var(--t-fast), color var(--t-fast), border-color var(--t-fast);
+}
+.ctm-btn-secondary:hover:not(:disabled) {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+  border-color: var(--text-muted);
+}
+.ctm-btn-secondary:disabled { opacity: .45; cursor: not-allowed; }
+
+/* Bouton primaire "Envoyer le tableau" : accent plein, emphase dominante */
+.ctm-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font);
+  font-size: 13px;
+  font-weight: 600;
+  padding: 8px 16px;
+  border-radius: var(--radius-sm);
+  background: var(--accent);
+  color: #fff;
+  border: 1px solid var(--accent);
+  cursor: pointer;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, .12);
+  transition: background var(--t-fast), transform var(--t-fast);
+}
+.ctm-btn-primary:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--accent) 88%, black);
+  transform: translateY(-1px);
+}
+.ctm-btn-primary:disabled {
+  opacity: .45;
+  cursor: not-allowed;
+  background: var(--bg-hover);
+  color: var(--text-muted);
+  border-color: var(--border);
+  box-shadow: none;
 }
 </style>

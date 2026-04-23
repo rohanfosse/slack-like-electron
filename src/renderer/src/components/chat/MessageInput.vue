@@ -177,6 +177,15 @@ function onTableSubmit(p:    { markdown: string }) { insertBlockAtCursor(p.markd
 function onCodeSubmit(p:     { markdown: string }) { insertBlockAtCursor(p.markdown) }
 function onAnnounceSubmit(p: { markdown: string }) { insertBlockAtCursor(p.markdown) }
 
+/** Insere + envoie directement : 1 clic de moins quand le bloc est auto-
+ *  suffisant (tableau, bloc de code) et n'a pas besoin de texte autour. */
+async function insertBlockAndSend(md: string) {
+  if (appStore.isReadonly) return
+  await insertBlockAtCursor(md)
+  await send()
+}
+function onTableSubmitSend(p: { markdown: string })    { insertBlockAndSend(p.markdown) }
+
 // ── Keydown handler ───────────────────────────────────────────────────────
 function onKeydown(e: KeyboardEvent) {
   if (mentionActive.value && mentionResults.value.length) {
@@ -509,6 +518,7 @@ function onKeydown(e: KeyboardEvent) {
     <CreateTableModal
       v-model="modals.createTable"
       @submit="onTableSubmit"
+      @submit-send="onTableSubmitSend"
     />
 
     <!-- Modal de composition de bloc de code (declenche par /code) -->

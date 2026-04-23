@@ -244,9 +244,9 @@ export function renderMessageContent(raw: string, searchTerm = '', currentUserNa
   html = applyInlineRefs(html)
   if (searchTerm) html = highlightInHtml(html, searchTerm)
   const result = DOMPurify.sanitize(html, {
-    ALLOWED_TAGS: ['p', 'br', 'strong', 'em', 'code', 'pre', 'a', 'span', 'div', 'mark', 'ul', 'ol', 'li', 'blockquote', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'hr', 'img', 'del', 's'],
+    ALLOWED_TAGS: ['p', 'br', 'strong', 'em', 'code', 'pre', 'a', 'span', 'div', 'mark', 'ul', 'ol', 'li', 'blockquote', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'hr', 'img', 'del', 's', 'table', 'thead', 'tbody', 'tr', 'th', 'td'],
     // `style` retire : marked n'en emet pas, surface XSS inutile (url()/:has selectors).
-    ALLOWED_ATTR: ['class', 'data-url', 'data-channel', 'data-devoir-id', 'data-doc-id', 'data-lumen-id', 'data-lumen-file', 'data-file-name', 'role', 'href', 'tabindex', 'src', 'alt', 'loading'],
+    ALLOWED_ATTR: ['class', 'data-url', 'data-channel', 'data-devoir-id', 'data-doc-id', 'data-lumen-id', 'data-lumen-file', 'data-file-name', 'role', 'href', 'tabindex', 'src', 'alt', 'loading', 'align'],
     // Whitelist des schemes URI : bloque javascript:, data: et autres exotiques
     // avant meme le filtrage per-attribut.
     ALLOWED_URI_REGEXP: /^(?:https?|cursus|mailto|tel|#):/i,

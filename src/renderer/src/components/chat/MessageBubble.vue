@@ -561,6 +561,69 @@ const renderedContentWithoutPoll = computed(() => {
 }
 
 /* ════════════════════════════════════════════
+   TABLEAUX MARKDOWN - style Notion / Linear
+════════════════════════════════════════════ */
+/* Wrapper scroll horizontal sur petit ecran sans deformer la bubble */
+:deep(.msg-text table) {
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
+  margin: 10px 0;
+  border-collapse: separate;
+  border-spacing: 0;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg-elevated);
+  box-shadow: var(--elevation-1);
+  font-variant-numeric: tabular-nums;
+  /* tab-size pour code imbrique eventuel */
+  tab-size: 2;
+}
+:deep(.msg-text table thead) {
+  background: var(--bg-active);
+}
+:deep(.msg-text table th),
+:deep(.msg-text table td) {
+  padding: 8px 14px;
+  font-size: 13px;
+  line-height: 1.5;
+  text-align: left;
+  vertical-align: top;
+  border-bottom: 1px solid var(--border);
+  border-right: 1px solid var(--border);
+}
+:deep(.msg-text table th:last-child),
+:deep(.msg-text table td:last-child) {
+  border-right: none;
+}
+:deep(.msg-text table th) {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .4px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+/* Zebra striping pour lisibilite sur tables denses */
+:deep(.msg-text table tbody tr:nth-child(even)) {
+  background: rgba(255, 255, 255, .015);
+}
+:deep(.msg-text table tbody tr:hover) {
+  background: rgba(var(--accent-rgb), .05);
+}
+:deep(.msg-text table tbody tr:last-child td) {
+  border-bottom: none;
+}
+/* Code inline dans une cellule : plus discret pour ne pas etouffer */
+:deep(.msg-text table code) {
+  font-size: .85em;
+  padding: 1px 5px;
+  color: var(--accent);
+  background: rgba(var(--accent-rgb), .1);
+  border: 1px solid rgba(var(--accent-rgb), .2);
+}
+
+/* ════════════════════════════════════════════
    PRÉVISUALISATION IMAGE
 ════════════════════════════════════════════ */
 .msg-img-preview {
