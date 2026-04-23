@@ -350,38 +350,93 @@ const dateGroups = computed<DateGroup[]>(() => {
   40%           { transform: scale(1);  opacity: 1; }
 }
 
-/* ── Séparateur de date ── */
+/* ── Separateur de date (v2.240) ──
+   Avant : barres horizontales qui traversaient l'ecran et cachaient du
+   contenu lorsque sticky. Desormais une pill compacte centree, sans
+   barres, avec un halo blur pour rester lisible au-dessus des messages. */
 .date-separator {
-  display: flex; align-items: center; gap: 10px;
-  margin: 4px 20px 2px;
-  position: sticky; top: 0; z-index: 10;
+  display: flex;
+  justify-content: center;
+  margin: 10px 0 4px;
+  position: sticky;
+  top: 6px;
+  z-index: 10;
+  pointer-events: none; /* laisse le clic traverser vers les messages */
   isolation: isolate;
 }
-.date-separator::before, .date-separator::after {
-  content: ''; flex: 1; height: 1px; background: var(--border);
-}
 .date-separator span {
-  font-size: 11px; font-weight: 700; color: var(--text-muted);
-  white-space: nowrap; padding: 4px 14px; border-radius: 20px;
-  background: color-mix(in srgb, var(--bg-main) 88%, transparent);
-  backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+  pointer-events: auto; /* mais la pill reste selectionnable / inspectable */
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  padding: 5px 12px;
+  border-radius: 999px;
+  /* Fond plus soutenu + blur -> lisible quand colle au-dessus d'un message */
+  background: color-mix(in srgb, var(--bg-elevated) 92%, transparent);
+  backdrop-filter: blur(10px) saturate(1.3);
+  -webkit-backdrop-filter: blur(10px) saturate(1.3);
   border: 1px solid var(--border);
   letter-spacing: .3px;
   text-transform: capitalize;
+  box-shadow:
+    0 2px 8px rgba(0, 0, 0, .18),
+    0 0 0 4px color-mix(in srgb, var(--bg-main) 60%, transparent);
+  /* Le ring de 4px (box-shadow) cree un "halo" qui flou les pixels du message
+     directement sous la pill -> zero chevauchement visuel avec le contenu. */
+  transition: box-shadow var(--motion-fast) var(--ease-out);
+}
+@media (prefers-reduced-motion: reduce) {
+  .date-separator span { transition: none; }
 }
 
-/* ── Séparateur non-lus ── */
+/* ── Separateur non-lus (v2.240) ──
+   La ligne rouge pleine largeur etait justifiee ici (elle signale un boundary
+   important), mais on la rend plus fine + gradient qui fade sur les cotes
+   pour ne pas couper brutalement un message long. */
 .unread-divider {
-  display: flex; align-items: center; gap: 10px;
-  margin: 8px 20px; position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 10px 20px;
+  position: relative;
 }
-.unread-divider::before, .unread-divider::after {
-  content: ''; flex: 1; height: 1px;
-  background: var(--color-danger); opacity: .5;
+.unread-divider::before,
+.unread-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(
+    to right,
+    transparent,
+    var(--color-danger) 25%,
+    var(--color-danger) 75%,
+    transparent
+  );
+  opacity: .55;
+}
+/* L'apres-label fade a droite (miroir) */
+.unread-divider::after {
+  background: linear-gradient(
+    to left,
+    transparent,
+    var(--color-danger) 25%,
+    var(--color-danger) 75%,
+    transparent
+  );
 }
 .unread-divider-label {
-  font-size: 11px; font-weight: 700; color: var(--color-danger);
-  white-space: nowrap; padding: 0 8px; flex-shrink: 0;
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--color-danger);
+  white-space: nowrap;
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--bg-main) 85%, transparent);
+  border: 1px solid rgba(var(--color-danger-rgb), .3);
+  letter-spacing: .3px;
+  text-transform: uppercase;
+  flex-shrink: 0;
 }
 
 /* ── Highlight résultat de recherche ── */
