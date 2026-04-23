@@ -25,8 +25,9 @@ export const SLASH_COMMANDS: SlashCommand[] = [
   // Formatage
   { name: 'annonce',  description: 'Message d\'annonce officiel',         icon: 'Megaphone',    category: 'format', color: '#4A90D9' },
   { name: 'sondage',  description: 'Sondage avec options de vote',        icon: 'BarChart2',    category: 'format', color: '#1ABC9C' },
-  { name: 'tableau',  description: 'Tableau en colonnes',                 icon: 'Table',        category: 'format', color: '#E67E22' },
-  { name: 'code',     description: 'Bloc de code avec coloration',        icon: 'Code2',        category: 'format', color: '#8E44AD' },
+  { name: 'tableau',   description: 'Tableau en colonnes',                 icon: 'Table',        category: 'format', color: '#E67E22' },
+  { name: 'checklist', description: 'Liste de tâches cochables',           icon: 'ListChecks',   category: 'format', color: '#16A085' },
+  { name: 'code',      description: 'Bloc de code avec coloration',        icon: 'Code2',        category: 'format', color: '#8E44AD' },
   // Utilitaires
   { name: 'aide',     description: 'Raccourcis et syntaxe disponibles',   icon: 'HelpCircle',   category: 'util',   color: '#95A5A6' },
   { name: 'date',     description: 'Insérer la date du jour',             icon: 'Calendar',     category: 'util',   color: '#3498DB' },
@@ -66,6 +67,12 @@ export interface SlashHandlers {
   /** Appele quand /annonce est execute : ouvre le builder qui genere un
    *  bloc formate (emoji type + titre + message + blockquote). */
   onOpenAnnounce?: () => void
+  /** Appele quand /checklist est execute : ouvre le builder qui genere une
+   *  liste de taches markdown `- [ ] item` (GFM task list). */
+  onOpenChecklist?: () => void
+  /** Appele quand /date est execute : ouvre le date-picker (vs insertion
+   *  immediate de la date du jour en fallback). */
+  onOpenDate?: () => void
 }
 
 /**
@@ -448,6 +455,18 @@ export function useMsgAutocomplete(
           nextTick(() => { const pos = before.length + 6; el.setSelectionRange(pos, pos) })
         }
       },
+      checklist() {
+        // Builder de liste de taches GFM (- [ ] / - [x]). Si pas de handler,
+        // fallback sur 3 items vides.
+        if (handlers.onOpenChecklist) {
+          content.value = before + after
+          activeRef.value = null
+          handlers.onOpenChecklist()
+        } else {
+          content.value = before + '- [ ] Tâche 1\n- [ ] Tâche 2\n- [ ] Tâche 3' + after
+          activeRef.value = null
+        }
+      },
       aide() {
         // Efface le "/aide" et ouvre la modale d'aide riche.
         content.value = before + after
@@ -455,10 +474,18 @@ export function useMsgAutocomplete(
         handlers.onOpenHelp?.()
       },
       date() {
-        const d = new Date()
-        const formatted = d.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
-        content.value = before + formatted + after
-        activeRef.value = null
+        // Builder si un handler est branche (picker + formats + chips).
+        // Sinon fallback sur insertion directe de la date du jour, format long.
+        if (handlers.onOpenDate) {
+          content.value = before + after
+          activeRef.value = null
+          handlers.onOpenDate()
+        } else {
+          const d = new Date()
+          const formatted = d.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
+          content.value = before + formatted + after
+          activeRef.value = null
+        }
       },
       hr() {
         content.value = before + '\n---\n' + after

@@ -658,6 +658,70 @@ const renderedContentWithoutPoll = computed(() => {
 }
 
 /* ════════════════════════════════════════════
+   CHECKLISTS GFM (- [ ] / - [x])
+════════════════════════════════════════════ */
+/* Marked genere :
+   <ul><li><input type="checkbox" disabled> Tâche...</li></ul>
+   On retire les puces de la liste et on style la checkbox custom.
+*/
+:deep(.msg-text ul:has(> li > input[type="checkbox"])) {
+  list-style: none;
+  padding-left: 0;
+  margin: 6px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+:deep(.msg-text li:has(> input[type="checkbox"])) {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 3px 6px;
+  border-radius: 5px;
+  line-height: 1.5;
+  transition: background var(--motion-fast) var(--ease-out);
+}
+:deep(.msg-text li:has(> input[type="checkbox"]):hover) {
+  background: rgba(255, 255, 255, .025);
+}
+:deep(.msg-text input[type="checkbox"]) {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  margin: 3px 0 0;
+  flex-shrink: 0;
+  background: var(--bg-input);
+  border: 1.5px solid var(--border-input);
+  border-radius: 4px;
+  cursor: default;
+  position: relative;
+  transition: background var(--motion-fast) var(--ease-out),
+              border-color var(--motion-fast) var(--ease-out);
+}
+:deep(.msg-text input[type="checkbox"]:checked) {
+  background: var(--color-success);
+  border-color: var(--color-success);
+}
+:deep(.msg-text input[type="checkbox"]:checked::after) {
+  content: '';
+  position: absolute;
+  top: 1px;
+  left: 4px;
+  width: 4px;
+  height: 8px;
+  border: solid #fff;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+/* Texte de tache cochee : raye + dim */
+:deep(.msg-text li:has(> input[type="checkbox"]:checked)) {
+  color: var(--text-muted);
+  text-decoration: line-through;
+  text-decoration-color: rgba(var(--color-success-rgb), .5);
+}
+
+/* ════════════════════════════════════════════
    TABLEAUX MARKDOWN - style Notion / Linear
 ════════════════════════════════════════════ */
 /* Wrapper scroll horizontal sur petit ecran sans deformer la bubble */

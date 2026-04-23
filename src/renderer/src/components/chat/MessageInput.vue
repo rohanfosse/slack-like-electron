@@ -11,11 +11,11 @@ import { useMsgAutocomplete, COMMAND_CATEGORIES, type SlashCommand } from '@/com
 import type { EmojiShortcode } from '@/utils/emojiShortcodes'
 import { useModalsStore }    from '@/stores/modals'
 import {
-  BookOpen, FileText, Bell, Megaphone, BarChart2 as BarChart2Icon, Table, Code2, HelpCircle, Calendar, Minus,
+  BookOpen, FileText, Bell, Megaphone, BarChart2 as BarChart2Icon, Table, Code2, HelpCircle, Calendar, Minus, ListChecks,
 } from 'lucide-vue-next'
 
 const CMD_ICONS: Record<string, object> = {
-  BookOpen, FileText, Bell, Megaphone, BarChart2: BarChart2Icon, Table, Code2, HelpCircle, Calendar, Minus,
+  BookOpen, FileText, Bell, Megaphone, BarChart2: BarChart2Icon, Table, Code2, HelpCircle, Calendar, Minus, ListChecks,
 }
 import { useMsgAttachment }   from '@/composables/useMsgAttachment'
 import { useMsgSend }         from '@/composables/useMsgSend'
@@ -25,6 +25,8 @@ import CreatePollModal       from '@/components/modals/CreatePollModal.vue'
 import CreateTableModal      from '@/components/modals/CreateTableModal.vue'
 import CreateCodeModal       from '@/components/modals/CreateCodeModal.vue'
 import CreateAnnounceModal   from '@/components/modals/CreateAnnounceModal.vue'
+import CreateChecklistModal  from '@/components/modals/CreateChecklistModal.vue'
+import CreateDateModal       from '@/components/modals/CreateDateModal.vue'
 import HelpModal             from '@/components/modals/HelpModal.vue'
 import ScheduleMessageModal  from '@/components/modals/ScheduleMessageModal.vue'
 import ScheduledMessagesModal from '@/components/modals/ScheduledMessagesModal.vue'
@@ -86,11 +88,13 @@ const {
   detectTriggers, scrollMentionIntoView,
   triggerMention, triggerChannel, triggerDevoir, executeCommand, dismissAll,
 } = useMsgAutocomplete(content, inputEl, autoResize, {
-  onOpenPoll:     () => { modals.createPoll = true },
-  onOpenHelp:     () => { modals.help = true },
-  onOpenTable:    () => { modals.createTable = true },
-  onOpenCode:     () => { modals.createCode = true },
-  onOpenAnnounce: () => { modals.createAnnounce = true },
+  onOpenPoll:      () => { modals.createPoll = true },
+  onOpenHelp:      () => { modals.help = true },
+  onOpenTable:     () => { modals.createTable = true },
+  onOpenCode:      () => { modals.createCode = true },
+  onOpenAnnounce:  () => { modals.createAnnounce = true },
+  onOpenChecklist: () => { modals.createChecklist = true },
+  onOpenDate:      () => { modals.createDate = true },
 })
 
 const { attaching, attachFile, uploadProgress } = useMsgAttachment(content, inputEl, autoResize)
@@ -184,8 +188,11 @@ async function insertBlockAndSend(md: string) {
   await insertBlockAtCursor(md)
   await send()
 }
-function onTableSubmitSend(p: { markdown: string }) { insertBlockAndSend(p.markdown) }
-function onCodeSubmitSend(p:  { markdown: string }) { insertBlockAndSend(p.markdown) }
+function onTableSubmitSend(p:     { markdown: string }) { insertBlockAndSend(p.markdown) }
+function onCodeSubmitSend(p:      { markdown: string }) { insertBlockAndSend(p.markdown) }
+function onChecklistSubmit(p:     { markdown: string }) { insertBlockAtCursor(p.markdown) }
+function onChecklistSubmitSend(p: { markdown: string }) { insertBlockAndSend(p.markdown) }
+function onDateSubmit(p:          { markdown: string }) { insertBlockAtCursor(p.markdown) }
 
 // ── Keydown handler ───────────────────────────────────────────────────────
 function onKeydown(e: KeyboardEvent) {
@@ -533,6 +540,19 @@ function onKeydown(e: KeyboardEvent) {
     <CreateAnnounceModal
       v-model="modals.createAnnounce"
       @submit="onAnnounceSubmit"
+    />
+
+    <!-- Modal de composition de checklist (declenche par /checklist) -->
+    <CreateChecklistModal
+      v-model="modals.createChecklist"
+      @submit="onChecklistSubmit"
+      @submit-send="onChecklistSubmitSend"
+    />
+
+    <!-- Modal de choix de date (declenche par /date) -->
+    <CreateDateModal
+      v-model="modals.createDate"
+      @submit="onDateSubmit"
     />
 
     <!-- Modal d'aide riche (declenche par /aide) -->
