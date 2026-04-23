@@ -298,14 +298,7 @@ describe('executeCommand', () => {
     expect(s.activeRef.value).toBeNull()
   })
 
-  it('handles hr command', () => {
-    const s = setup('/')
-    Object.defineProperty(s.textarea, 'selectionStart', { value: 1, writable: true })
-    s.detectTriggers()
-    const cmd = SLASH_COMMANDS.find(c => c.name === 'hr')!
-    s.executeCommand(cmd)
-    expect(s.content.value).toContain('---')
-  })
+  // `hr` et `rappel` retires en v2.238 (audit slash) : plus de tests dedies.
 
   it('handles sondage command by clearing input and invoking onOpenPoll', () => {
     const onOpenPoll = vi.fn()
