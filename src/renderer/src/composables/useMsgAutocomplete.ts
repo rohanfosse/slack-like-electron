@@ -63,6 +63,9 @@ export interface SlashHandlers {
   /** Appele quand /code est execute : ouvre le builder avec selecteur de
    *  langage + preview highlight.js. Fallback sur l'ancien template js vide. */
   onOpenCode?: () => void
+  /** Appele quand /annonce est execute : ouvre le builder qui genere un
+   *  bloc formate (emoji type + titre + message + blockquote). */
+  onOpenAnnounce?: () => void
 }
 
 /**
@@ -403,8 +406,16 @@ export function useMsgAutocomplete(
         loadDevoirs()
       },
       annonce() {
-        content.value = before + '**Annonce** - ' + after
-        activeRef.value = null
+        // Builder avec type / titre / message + preview si un handler est
+        // branche. Sinon (tests), fallback sur l'ancien template inline.
+        if (handlers.onOpenAnnounce) {
+          content.value = before + after
+          activeRef.value = null
+          handlers.onOpenAnnounce()
+        } else {
+          content.value = before + '**Annonce** - ' + after
+          activeRef.value = null
+        }
       },
       sondage() {
         // Efface le "/sondage" et ouvre le modal de composition.

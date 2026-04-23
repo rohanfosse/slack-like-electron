@@ -24,6 +24,7 @@ import MessageInputToolbar   from './MessageInputToolbar.vue'
 import CreatePollModal       from '@/components/modals/CreatePollModal.vue'
 import CreateTableModal      from '@/components/modals/CreateTableModal.vue'
 import CreateCodeModal       from '@/components/modals/CreateCodeModal.vue'
+import CreateAnnounceModal   from '@/components/modals/CreateAnnounceModal.vue'
 import HelpModal             from '@/components/modals/HelpModal.vue'
 import ScheduleMessageModal  from '@/components/modals/ScheduleMessageModal.vue'
 import ScheduledMessagesModal from '@/components/modals/ScheduledMessagesModal.vue'
@@ -85,10 +86,11 @@ const {
   detectTriggers, scrollMentionIntoView,
   triggerMention, triggerChannel, triggerDevoir, executeCommand, dismissAll,
 } = useMsgAutocomplete(content, inputEl, autoResize, {
-  onOpenPoll:  () => { modals.createPoll = true },
-  onOpenHelp:  () => { modals.help = true },
-  onOpenTable: () => { modals.createTable = true },
-  onOpenCode:  () => { modals.createCode = true },
+  onOpenPoll:     () => { modals.createPoll = true },
+  onOpenHelp:     () => { modals.help = true },
+  onOpenTable:    () => { modals.createTable = true },
+  onOpenCode:     () => { modals.createCode = true },
+  onOpenAnnounce: () => { modals.createAnnounce = true },
 })
 
 const { attaching, attachFile, uploadProgress } = useMsgAttachment(content, inputEl, autoResize)
@@ -171,8 +173,9 @@ async function insertBlockAtCursor(md: string) {
   el.focus()
   el.setSelectionRange(newPos, newPos)
 }
-function onTableSubmit(p: { markdown: string }) { insertBlockAtCursor(p.markdown) }
-function onCodeSubmit(p:  { markdown: string }) { insertBlockAtCursor(p.markdown) }
+function onTableSubmit(p:    { markdown: string }) { insertBlockAtCursor(p.markdown) }
+function onCodeSubmit(p:     { markdown: string }) { insertBlockAtCursor(p.markdown) }
+function onAnnounceSubmit(p: { markdown: string }) { insertBlockAtCursor(p.markdown) }
 
 // ── Keydown handler ───────────────────────────────────────────────────────
 function onKeydown(e: KeyboardEvent) {
@@ -512,6 +515,12 @@ function onKeydown(e: KeyboardEvent) {
     <CreateCodeModal
       v-model="modals.createCode"
       @submit="onCodeSubmit"
+    />
+
+    <!-- Modal de composition d'annonce (declenche par /annonce) -->
+    <CreateAnnounceModal
+      v-model="modals.createAnnounce"
+      @submit="onAnnounceSubmit"
     />
 
     <!-- Modal d'aide riche (declenche par /aide) -->
