@@ -5,27 +5,14 @@
 import { ref, computed, watch, nextTick, onUnmounted, getCurrentInstance, type Ref } from 'vue'
 import { useAppStore } from '@/stores/app'
 import { renderMessageContent } from '@/utils/html'
+import { safeGet, safeSet, safeRemove } from '@/utils/safeStorage'
+import { STORAGE_KEYS } from '@/constants'
 
 const DRAFT_DEBOUNCE_MS = 500
 
-function safeGet(key: string): string | null {
-  try { return localStorage.getItem(key) }
-  catch { return null }
-}
-
-function safeSet(key: string, value: string): void {
-  try { localStorage.setItem(key, value) }
-  catch { /* quota dépassé / stockage indisponible : on ignore, pas d'erreur UI pour un draft */ }
-}
-
-function safeRemove(key: string): void {
-  try { localStorage.removeItem(key) }
-  catch { /* idem */ }
-}
-
 function keyFor(channelId: number | null | undefined, dmStudentId: number | null | undefined): string | null {
-  if (channelId)   return `draft_ch_${channelId}`
-  if (dmStudentId) return `draft_dm_${dmStudentId}`
+  if (channelId)   return STORAGE_KEYS.draftChannel(channelId)
+  if (dmStudentId) return STORAGE_KEYS.draftDm(dmStudentId)
   return null
 }
 

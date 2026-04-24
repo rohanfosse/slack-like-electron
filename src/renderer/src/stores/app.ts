@@ -147,6 +147,19 @@ export const useAppStore = defineStore('app', () => {
     }
   }
 
+  /** Restaure canal/DM/promo actifs depuis localStorage si l'etat en memoire est vide. */
+  function _restoreNavState(): void {
+    if (activeChannelId.value || activeDmStudentId.value) return
+    try {
+      const nav = JSON.parse(localStorage.getItem(STORAGE_KEYS.NAV_STATE) || '{}')
+      if (nav.channelId) { activeChannelId.value = nav.channelId; activeChannelName.value = nav.channelName ?? '' }
+      if (nav.promoId) activePromoId.value = nav.promoId
+      if (nav.dmStudentId) activeDmStudentId.value = nav.dmStudentId
+    } catch (e) {
+      console.warn('[app] _restoreNavState: état de navigation corrompu, réinitialisation', e)
+    }
+  }
+
   function restoreSession(): boolean {
     try {
       const raw = localStorage.getItem(STORAGE_KEYS.SESSION)
@@ -156,15 +169,7 @@ export const useAppStore = defineStore('app', () => {
         // Reconnecter le socket avec le token JWT stocké
         if (parsed?.token) window.api.setToken(parsed.token)
         if (currentUser.value?.type === 'ta') loadTaChannels()
-        // Restaurer le canal actif
-        try {
-          const nav = JSON.parse(localStorage.getItem(STORAGE_KEYS.NAV_STATE) || '{}')
-          if (nav.channelId) { activeChannelId.value = nav.channelId; activeChannelName.value = nav.channelName ?? '' }
-          if (nav.promoId) activePromoId.value = nav.promoId
-          if (nav.dmStudentId) activeDmStudentId.value = nav.dmStudentId
-        } catch (e) {
-          console.warn('[app] restoreSession: état de navigation corrompu, réinitialisation', e)
-        }
+        _restoreNavState()
         return true
       }
     } catch {
@@ -190,6 +195,9 @@ export const useAppStore = defineStore('app', () => {
       showToast('Impossible de sauvegarder la session localement.', 'error')
     }
     if (user.type === 'ta') loadTaChannels()
+    // Si l'utilisateur revient apres une expiration de session, restaurer
+    // le canal qu'il consultait (no-op si deja dans un canal/DM).
+    _restoreNavState()
   }
 
   function logout(): void {
@@ -197,17 +205,39 @@ export const useAppStore = defineStore('app', () => {
     activeChannelId.value   = null
     activeDmStudentId.value = null
     try { localStorage.removeItem(STORAGE_KEYS.SESSION) } catch (e) { console.warn('[app] logout: impossible de supprimer la session localStorage', e) }
+    // Purge le JWT + socket cote preload pour eviter que le prochain utilisateur
+    // herite des messages temps-reel de l'ancienne session sur la meme machine.
+    try { window.api?.clearAuth?.() } catch { /* preload absent en mode web */ }
+  }
+
+  /** Persiste un nouveau JWT dans localStorage apres refresh proactif. */
+  function updateSessionToken(newToken: string): void {
+    if (!currentUser.value) return
+    currentUser.value = { ...currentUser.value, token: newToken }
+    try { localStorage.setItem(STORAGE_KEYS.SESSION, JSON.stringify(currentUser.value)) } catch (e) {
+      console.warn('[app] updateSessionToken: impossible de persister le nouveau token', e)
+    }
   }
 
   // ── Écouter l'expiration de session (émis par apiFetch sur 401) ──────────
+  // Deux sources :
+  //  - Web (src/web/api-shim.ts)     : dispatch d'un CustomEvent sur window
+  //  - Electron (src/preload/*.ts)   : channel `authExpired` expose via IPC
   const sessionExpiredMessage = ref('')
   function initAuthExpiredListener(): () => void {
+    // Idempotent : un dogpile de 401 (10 requetes en vol quand le token expire)
+    // ne doit declencher qu'un seul logout + un seul banner.
     const handler = () => {
+      if (sessionExpiredMessage.value) return
       sessionExpiredMessage.value = 'Votre session a expiré. Veuillez vous reconnecter.'
       logout()
     }
     window.addEventListener('cursus:auth-expired', handler)
-    return () => window.removeEventListener('cursus:auth-expired', handler)
+    const unsubIpc = window.api?.onAuthExpired?.(handler) ?? (() => {})
+    return () => {
+      window.removeEventListener('cursus:auth-expired', handler)
+      unsubIpc()
+    }
   }
 
   function clearMustChangePassword(): void {
@@ -549,7 +579,7 @@ export const useAppStore = defineStore('app', () => {
     // calculs
     isStudent, isTeacher, isAdmin, isStaff, userRole, isSimulating, isReadonly,
     // actions
-    restoreSession, login, logout, impersonate, clearMustChangePassword,
+    restoreSession, login, logout, updateSessionToken, impersonate, clearMustChangePassword,
     startSimulation, stopSimulation,
     openChannel, openDm, markRead, markDmRead, markAllRead, loadTaChannels,
     addNotification, muteDm, unmuteDm, isDmMuted,

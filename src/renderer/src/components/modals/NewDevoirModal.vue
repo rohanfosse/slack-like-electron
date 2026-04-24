@@ -11,12 +11,13 @@
   import { useAppStore }     from '@/stores/app'
   import { useTravauxStore } from '@/stores/travaux'
   import { useToast }        from '@/composables/useToast'
+  import { useFormDraft }    from '@/composables/useFormDraft'
   import { parseCategoryIcon } from '@/utils/categoryIcon'
   import Modal from '@/components/ui/Modal.vue'
   import DateTimePicker from '@/components/ui/DateTimePicker.vue'
   import { isoForDatetimeLocal } from '@/utils/date'
   import type { Component } from 'vue'
-  import { COLORS } from '@/constants'
+  import { COLORS, STORAGE_KEYS } from '@/constants'
 
   const props = defineProps<{ modelValue: boolean }>()
   const emit  = defineEmits<{ 'update:modelValue': [v: boolean] }>()
@@ -93,6 +94,15 @@
     title.value.trim().length > 0 && channelId.value != null && !creating.value,
   )
 
+  // ── Brouillon auto-save (prof qui ferme accidentellement la modale ne perd rien) ──
+  const draftKey = computed(() =>
+    appStore.activePromoId ? STORAGE_KEYS.draftNewDevoir(appStore.activePromoId) : null,
+  )
+  const draft = useFormDraft(draftKey.value, {
+    title, description, category, deadline, startDate, room, aavs,
+    duration, calculatrice, ressources, session, requiresSubmission,
+  })
+
   // ── Init ────────────────────────────────────────────────────────────────
   watch(() => props.modelValue, async (open) => {
     if (!open || !appStore.activePromoId) return
@@ -129,6 +139,9 @@
     ressources.value = 'Aucune'
     session.value = 'Initiale'
     requiresSubmission.value = true
+
+    // Restaurer un brouillon existant (prof qui avait ferme la modale sans submit)
+    draft.restore()
   })
 
   // Adapter requiresSubmission quand le type change
@@ -183,6 +196,7 @@
         scheduledPublishAt: scheduledPublishAt.value || null,
       })
       if (!res) { showToast('Erreur lors de la création.', 'error'); return }
+      draft.clear()
       const msg = scheduledPublishAt.value
         ? 'Publication programmee.'
         : isDraft.value ? 'Brouillon enregistré.' : 'Devoir publié.'

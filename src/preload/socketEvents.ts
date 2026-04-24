@@ -9,7 +9,6 @@
  * une nouvelle instance socket.io est creee (typiquement apres login).
  */
 import type { Socket } from 'socket.io-client'
-import { ipcRenderer } from 'electron'
 import type {
   MsgNewPayload, PresenceEntry, TypingPayload, PollUpdatePayload, StatusChangePayload,
   LiveActivityPushedPayload, LiveActivityClosedPayload, LiveResultsUpdatePayload,
@@ -45,6 +44,9 @@ export const pollUpdate = createChannel<PollUpdatePayload>()
 
 // ── Socket state (connected / disconnected) ────────────────────────────────
 export const socketState = createChannel<boolean>()
+
+// ── Auth expired (401 HTTP ou socket `auth:expired`) ───────────────────────
+export const authExpired = createChannel<void>()
 
 // ── Live ───────────────────────────────────────────────────────────────────
 export const liveActivityPushed = createChannel<LiveActivityPushedPayload>()
@@ -110,9 +112,7 @@ export function bindSocketEvents(socket: Socket): void {
     socketState.emit(false)
   })
 
-  // Le serveur disconnect quand le JWT expire ou est invalide : on propage
-  // via IPC pour que le main declenche le meme flow que le 401 HTTP.
-  socket.on('auth:expired', () => {
-    try { ipcRenderer.send('auth:expired') } catch { /* ignore */ }
-  })
+  // Le serveur disconnect quand le JWT expire ou est invalide : on emet
+  // le meme channel que le flow 401 HTTP pour declencher logout cote renderer.
+  socket.on('auth:expired', () => { authExpired.emit() })
 }

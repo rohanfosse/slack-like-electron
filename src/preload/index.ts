@@ -25,7 +25,11 @@ function connectSocket(token: string): void {
     socket.disconnect()
   }
   socket = io(SERVER_URL, {
-    auth: { token },
+    // Fonction au lieu d'objet : sur auto-reconnect (wake-up PC, perte reseau)
+    // socket.io rappelle cette fonction et recupere le token courant depuis
+    // le singleton httpClient — donc toujours la version la plus fraiche
+    // apres un refresh proactif, meme sans passer par setToken().
+    auth: (cb) => cb({ token: getJwtToken() ?? token }),
     transports: ['websocket', 'polling'],
     reconnectionAttempts: Infinity,
     reconnectionDelay: 1000,
@@ -56,6 +60,18 @@ contextBridge.exposeInMainWorld('api', {
       const payload = JSON.parse(atob(token.split('.')[1]))
       ipcRenderer.send('auth:setUser', { id: payload.id, name: payload.name, type: payload.type, promo_id: payload.promo_id })
     } catch { /* token invalide — ignore */ }
+  },
+
+  /** Purge totale de l'etat auth : JWT singleton + socket ouvert.
+   *  A appeler depuis logout() pour eviter qu'un utilisateur suivant
+   *  sur la meme machine heritage temps-reel de la session precedente. */
+  clearAuth: () => {
+    setJwtToken(null)
+    if (socket) {
+      socket.removeAllListeners()
+      socket.disconnect()
+      socket = null
+    }
   },
 
   async refreshToken(): Promise<{ token: string } | null> {
@@ -810,11 +826,23 @@ contextBridge.exposeInMainWorld('api', {
   offlineRead:  (key: string) => ipcRenderer.invoke('offline:read', key),
   offlineClear: () => ipcRenderer.invoke('offline:clear'),
 
+  // ── Diagnostic / logs ──────────────────────────────────────────────────────
+  /** Main notifie le renderer d'une erreur runtime (après startup complet).
+   *  Le renderer affiche un toast non-bloquant au lieu d'une modale. */
+  onRuntimeError: (cb: (data: { message: string }) => void) => {
+    const handler = (_e: Electron.IpcRendererEvent, data: { message: string }) => cb(data)
+    ipcRenderer.on('main:runtime-error', handler)
+    return () => { ipcRenderer.removeListener('main:runtime-error', handler) }
+  },
+  /** Ouvre le dossier des logs (utile pour le support pilote). */
+  openLogsFolder: () => ipcRenderer.invoke('logs:open-folder'),
+
   // ── Temps reel (Socket.io) ───────────────────────────────────────────────────
   onNewMessage:        (cb: (data: MsgNewPayload) => void) => sockEv.msgNew.add(cb),
   onPollUpdate:        (cb: (data: PollUpdatePayload) => void) => sockEv.pollUpdate.add(cb),
   onSocketStateChange: (cb: (connected: boolean) => void) => sockEv.socketState.add(cb),
   onPresenceUpdate:    (cb: (data: PresenceEntry[]) => void) => sockEv.presenceUpdate.add(cb),
+  onAuthExpired:       (cb: () => void) => sockEv.authExpired.add(cb),
 
   // Typing indicator
   emitTyping:   (channelId: number) => { socket?.emit('typing', { channelId }) },

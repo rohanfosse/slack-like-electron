@@ -9,11 +9,13 @@ import { useMessagesStore } from '@/stores/messages'
 import { useTravauxStore }  from '@/stores/travaux'
 import { useDocumentsStore } from '@/stores/documents'
 import { useModalsStore }   from '@/stores/modals'
+import { useToast }         from '@/composables/useToast'
 
 export function useAppListeners() {
   const router   = useRouter()
   const appStore = useAppStore()
   const modals   = useModalsStore()
+  const { showToast } = useToast()
 
   // ── State expose au template App.vue ─────────────────────────────────────
   const liveInvite = ref<{ sessionId: number; title: string; joinCode: string; teacherName: string } | null>(null)
@@ -48,10 +50,33 @@ export function useAppListeners() {
   let unsubSignature: (() => void) | null = null
   let unsubDocument:  (() => void) | null = null
   let unsubAssignment:(() => void) | null = null
+  let unsubRuntimeError: (() => void) | null = null
   let liveInviteTimer: ReturnType<typeof setTimeout> | null = null
   let tokenRefreshTimer: ReturnType<typeof setInterval> | null = null
+  let lastTokenRefreshAt = 0
+  const MIN_REFRESH_INTERVAL_MS = 10 * 60_000 // pas plus d'un refresh par 10 min
 
   let initialized = false
+
+  /** Refresh JWT + persistance localStorage. Partage entre timer 6h et reprise de visibilite. */
+  async function refreshJwtIfNeeded(force = false): Promise<void> {
+    if (!force && Date.now() - lastTokenRefreshAt < MIN_REFRESH_INTERVAL_MS) return
+    if (!appStore.currentUser) return
+    try {
+      const res = await window.api.refreshToken?.()
+      if (res?.token) {
+        window.api.setToken(res.token)
+        appStore.updateSessionToken(res.token)
+        lastTokenRefreshAt = Date.now()
+      }
+    } catch { /* silencieux — prochaine tentative au 6h tick ou a la reprise */ }
+  }
+
+  /** Au retour de veille / onglet masque, le token peut etre proche de l'expiration
+   *  alors que le timer setInterval n'a pas tire (throttling OS pendant le sommeil). */
+  function onVisibilityChange() {
+    if (document.visibilityState === 'visible') refreshJwtIfNeeded()
+  }
 
   function initListeners() {
     // Guard double-init : en HMR ou login/logout cycle mal nettoye, un
@@ -59,13 +84,10 @@ export function useAppListeners() {
     if (initialized) return
     initialized = true
 
-    // Refresh proactif du JWT toutes les 6h (expire dans 7j)
-    tokenRefreshTimer = setInterval(async () => {
-      try {
-        const res = await window.api.refreshToken?.()
-        if (res?.token) window.api.setToken(res.token)
-      } catch { /* silencieux — le prochain appel re-tentera */ }
-    }, 6 * 60 * 60_000)
+    // Refresh proactif du JWT toutes les 6h (expire dans 7j).
+    // Le token rafraichi est persiste en localStorage pour survivre au redemarrage.
+    tokenRefreshTimer = setInterval(() => { void refreshJwtIfNeeded(true) }, 6 * 60 * 60_000)
+    document.addEventListener('visibilitychange', onVisibilityChange)
     document.addEventListener('keydown', onGlobalShortcut)
 
     unsubUnread = appStore.initUnreadListener()
@@ -73,6 +95,12 @@ export function useAppListeners() {
     unsubSocket = appStore.initSocketListener()
     unsubPresence = appStore.initPresenceListener()
     unsubAuthExpired = appStore.initAuthExpiredListener()
+
+    // Erreurs runtime du main process (apres startup) → toast non-bloquant.
+    // Log cote main suffit comme source de verite ; ici on informe l'utilisateur.
+    unsubRuntimeError = window.api?.onRuntimeError?.((data) => {
+      showToast('Une erreur inattendue est survenue.', 'error', data.message)
+    }) ?? null
 
     const messagesStore = useMessagesStore()
     unsubTyping = messagesStore.initTypingListener()
@@ -163,6 +191,7 @@ export function useAppListeners() {
 
   function cleanupListeners() {
     document.removeEventListener('keydown', onGlobalShortcut)
+    document.removeEventListener('visibilitychange', onVisibilityChange)
     unsubUnread?.()
     unsubOnline?.()
     unsubSocket?.()
@@ -177,12 +206,13 @@ export function useAppListeners() {
     unsubSignature?.()
     unsubDocument?.()
     unsubAssignment?.()
+    unsubRuntimeError?.()
     // Null-out pour que initListeners() puisse etre re-appele proprement
     // apres un logout/login cycle.
     unsubUnread = unsubOnline = unsubSocket = unsubTyping = unsubPollUpdate = null
     unsubPresence = unsubAuthExpired = unsubLiveInvite = null
     unsubUpdaterAvailable = unsubUpdaterDownloaded = unsubGradeNew = null
-    unsubSignature = unsubDocument = unsubAssignment = null
+    unsubSignature = unsubDocument = unsubAssignment = unsubRuntimeError = null
     if (liveInviteTimer) { clearTimeout(liveInviteTimer); liveInviteTimer = null }
     if (tokenRefreshTimer) { clearInterval(tokenRefreshTimer); tokenRefreshTimer = null }
     initialized = false

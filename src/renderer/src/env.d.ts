@@ -23,6 +23,7 @@ declare global {
 
       // Auth / session
       setToken(token: string): void
+      clearAuth(): void
       refreshToken(): Promise<{ token: string } | null>
 
       // Structure
@@ -321,6 +322,7 @@ declare global {
         message?:        unknown
       }) => void): () => void
       onSocketStateChange(cb: (connected: boolean) => void): () => void
+      onAuthExpired(cb: () => void): () => void
       onPollUpdate?(cb: (data: { messageId: number; poll_votes: { totals: number[]; voters: Record<string, number[]> } }) => void): () => void
       onPresenceUpdate?(cb: (data: Array<{ id: number; name: string; role: string; status?: { emoji: string | null; text: string | null; expiresAt: string | null } | null }>) => void): () => void
 
@@ -579,6 +581,10 @@ declare global {
       offlineWrite(key: string, data: unknown): Promise<IpcResponse<null>>
       offlineRead(key: string): Promise<IpcResponse<unknown>>
       offlineClear(): Promise<IpcResponse<null>>
+
+      // Diagnostic / logs
+      onRuntimeError(cb: (data: { message: string }) => void): () => void
+      openLogsFolder(): Promise<IpcResponse<null>>
 
       // Auto-update
       onSignatureUpdate(cb: (data: { id: number; status: string; signed_file_url?: string; signer_name?: string; rejection_reason?: string }) => void): () => void

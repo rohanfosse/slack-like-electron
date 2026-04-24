@@ -39,16 +39,20 @@ const localStorageMock = {
 Object.defineProperty(globalThis, 'localStorage', { value: localStorageMock, writable: true })
 
 const setTokenMock = vi.fn()
+const clearAuthMock = vi.fn()
 const onSocketStateChangeMock = vi.fn(() => () => {})
 const onNewMessageMock = vi.fn(() => () => {})
 const onPresenceUpdateMock = vi.fn(() => () => {})
+const onAuthExpiredMock = vi.fn(() => () => {})
 const getTeacherChannelsMock = vi.fn().mockResolvedValue({ ok: true, data: [] })
 
 ;(window as unknown as { api: Record<string, unknown> }).api = {
   setToken: setTokenMock,
+  clearAuth: clearAuthMock,
   onSocketStateChange: onSocketStateChangeMock,
   onNewMessage: onNewMessageMock,
   onPresenceUpdate: onPresenceUpdateMock,
+  onAuthExpired: onAuthExpiredMock,
   getTeacherChannels: getTeacherChannelsMock,
 }
 
@@ -130,6 +134,34 @@ describe('app store', () => {
     expect(localStorageMock.setItem).toHaveBeenCalledWith('cc_session', JSON.stringify(user))
   })
 
+  it('login restores active channel from NAV_STATE after session expiration', () => {
+    // Simulate: user was in channel 42, session expired, logs back in.
+    // NAV_STATE survives logout (only SESSION is cleared), so re-login
+    // should put them back in the same channel.
+    store['cc_nav_state'] = JSON.stringify({
+      channelId: 42,
+      channelName: 'general',
+      promoId: 7,
+      dmStudentId: null,
+    })
+    const s = useAppStore()
+    s.login(makeUser())
+    expect(s.activeChannelId).toBe(42)
+    expect(s.activeChannelName).toBe('general')
+    expect(s.activePromoId).toBe(7)
+  })
+
+  it('login does not override an already-active channel (photo update path)', () => {
+    // useSettingsAccount.ts calls login({ ...currentUser, photo_data }) to
+    // patch the user after photo upload. Nav state should be untouched.
+    store['cc_nav_state'] = JSON.stringify({ channelId: 99, channelName: 'other', promoId: 8 })
+    const s = useAppStore()
+    s.openChannel(5, 7, 'general')
+    s.login(makeUser({ photo_data: 'data:image/png;base64,AAA' }))
+    expect(s.activeChannelId).toBe(5)
+    expect(s.activeChannelName).toBe('general')
+  })
+
   it('logout clears currentUser and removes session', () => {
     const s = useAppStore()
     s.login(makeUser())
@@ -138,6 +170,30 @@ describe('app store', () => {
     expect(s.activeChannelId).toBeNull()
     expect(s.activeDmStudentId).toBeNull()
     expect(localStorageMock.removeItem).toHaveBeenCalledWith('cc_session')
+  })
+
+  it('logout calls clearAuth to purge preload JWT and socket', () => {
+    const s = useAppStore()
+    s.login(makeUser())
+    clearAuthMock.mockClear()
+    s.logout()
+    expect(clearAuthMock).toHaveBeenCalledTimes(1)
+  })
+
+  it('updateSessionToken persists new JWT into localStorage session', () => {
+    const s = useAppStore()
+    const user = { ...makeUser(), token: 'jwt-v1' } as unknown as ReturnType<typeof makeUser> & { token: string }
+    s.login(user)
+    s.updateSessionToken('jwt-v2')
+    const persisted = JSON.parse(store['cc_session'])
+    expect(persisted.token).toBe('jwt-v2')
+    expect(persisted.id).toBe(user.id)
+  })
+
+  it('updateSessionToken is a no-op when no user logged in', () => {
+    const s = useAppStore()
+    s.updateSessionToken('jwt-v2')
+    expect(store['cc_session']).toBeUndefined()
   })
 
   // ── restoreSession ─────────────────────────────────────────────────────────

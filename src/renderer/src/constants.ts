@@ -21,6 +21,8 @@ export const STORAGE_KEYS = {
   draftChannel:    (channelId: number) => `draft_ch_${channelId}` as const,
   /** Clé brouillon DM : `draft_dm_{dmStudentId}` */
   draftDm:         (dmStudentId: number) => `draft_dm_${dmStudentId}` as const,
+  /** Clé brouillon formulaire "Nouveau devoir" par promo */
+  draftNewDevoir:  (promoId: number) => `draft_new_devoir_${promoId}` as const,
   /** Métadonnées projets par promo */
   projectsMeta:    (promoId: number) => `cc_projects_${promoId}` as const,
 } as const

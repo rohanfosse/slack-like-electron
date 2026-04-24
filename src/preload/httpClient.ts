@@ -6,10 +6,10 @@
  * L'etat du token vit dans ce module (singleton) ; les autres modules
  * passent par setJwtToken / getJwtToken pour le modifier / le lire.
  *
- * Sur 401 : le token est vide + un event IPC `auth:expired` est envoye
- * au main process pour que le renderer soit invite a se reconnecter.
+ * Sur 401 : le token est vide + le channel `authExpired` est emis pour
+ * que le renderer soit invite a se reconnecter.
  */
-import { ipcRenderer } from 'electron'
+import { authExpired } from './socketEvents'
 
 export const SERVER_URL: string = process.env.VITE_SERVER_URL || (
   process.env.NODE_ENV === 'development' ? 'http://localhost:3001' : 'https://app.cursus.school'
@@ -51,7 +51,7 @@ export async function apiFetch(path: string, options: RequestInit = {}, retries 
       if (res.status === 401) {
         jwtToken = null
         onUnauthorized?.()
-        try { ipcRenderer.send('auth:expired') } catch { /* ignore */ }
+        authExpired.emit()
         return { ok: false, error: 'Session expiree. Veuillez vous reconnecter.' }
       }
       try {

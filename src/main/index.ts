@@ -1,4 +1,4 @@
-import { app, BrowserWindow, dialog, ipcMain, nativeImage, Tray, Menu } from 'electron'
+import { app, BrowserWindow, dialog, ipcMain, nativeImage, shell, Tray, Menu } from 'electron'
 import { join } from 'path'
 import { initUpdater, stopUpdater, getPendingUpdate, quitAndInstall } from './updater'
 
@@ -15,19 +15,45 @@ const db            = dbRaw            as unknown as { init: () => void; close: 
 const ipc           = ipcRaw           as unknown as { register: () => void }
 const notifications = notificationsRaw as unknown as { start: () => void; stop: () => void }
 
+// ── Logging persistant (rotation quotidienne dans %APPDATA%/Cursus/logs) ───
+// electron-log auto-capte console.log/warn/error + uncaughtException.
+// Path: %APPDATA%/Cursus/logs/main.log (macOS: ~/Library/Logs/Cursus).
+import log from 'electron-log/main'
+log.initialize()
+log.transports.file.maxSize = 5 * 1024 * 1024 // 5 MB avant rotation
+log.transports.file.level = 'info'
+log.transports.console.level = app.isPackaged ? 'warn' : 'debug'
+// Redirige console.* du main process vers electron-log (fichier + console dev)
+Object.assign(console, log.functions)
+
+// Flag : fenêtre principale pas encore créée → on affiche un dialog bloquant.
+// Après, les erreurs async routinières (fetch, IPC) ne doivent pas interrompre
+// l'utilisateur — juste logger et rapporter au renderer s'il est là.
+let startupComplete = false
+
 // ── Gestionnaires d'erreurs globaux ──────────────────────────────────────────
 process.on('uncaughtException', (err) => {
-  console.error('[Main] uncaughtException:', err)
-  dialog.showErrorBox('Erreur inattendue', `${err.message}\n\nL'application va continuer, mais redémarrez si le problème persiste.`)
+  log.error('[Main] uncaughtException:', err)
+  if (!startupComplete) {
+    dialog.showErrorBox('Erreur inattendue', `${err.message}\n\nL'application va continuer, mais redémarrez si le problème persiste.`)
+  } else {
+    // En runtime : on log + on notifie le renderer (qui affichera un toast).
+    // Pas de modal bloquant sur chaque promesse qui casse.
+    mainWin?.webContents.send('main:runtime-error', { message: err.message })
+  }
 })
 
 process.on('unhandledRejection', (reason) => {
-  console.error('[Main] unhandledRejection:', reason)
-  const msg = reason instanceof Error ? reason.message : String(reason)
-  dialog.showErrorBox(
-    'Erreur au démarrage',
-    `${msg}\n\nSi le problème persiste, supprimez le dossier :\n%APPDATA%\\Cursus`
-  )
+  log.error('[Main] unhandledRejection:', reason)
+  if (!startupComplete) {
+    const msg = reason instanceof Error ? reason.message : String(reason)
+    dialog.showErrorBox(
+      'Erreur au démarrage',
+      `${msg}\n\nSi le problème persiste, supprimez le dossier :\n%APPDATA%\\Cursus`,
+    )
+  }
+  // Apres startup : silencieux (log only) — un fetch en echec ou un unfurl
+  // qui crashe ne doit pas interrompre l'utilisateur.
 })
 
 let mainWin: BrowserWindow | null = null
@@ -76,9 +102,10 @@ function createWindow(splash: BrowserWindow | null): void {
       // spellcheck desactive : on est une app FR avec editeurs qui ont leur
       // propre logique. L engine spell par defaut alloue ~20-40 MB.
       spellcheck: false,
-      // Limite le background throttling pour ne PAS ralentir les sockets
-      // quand la fenetre est cachee (false = pas de throttle).
-      backgroundThrottling: true,
+      // Desactive le background throttling : sinon Chromium ralentit les
+      // timers (setInterval, refresh JWT 6h) et throttle les sockets quand
+      // la fenetre est cachee/minimisee → session qui expire la nuit.
+      backgroundThrottling: false,
     },
     autoHideMenuBar: true,
   })
@@ -88,6 +115,9 @@ function createWindow(splash: BrowserWindow | null): void {
     if (splash && !splash.isDestroyed()) splash.destroy()
     win.show()
     win.focus()
+    // A partir d'ici, les erreurs async routinieres ne doivent plus afficher
+    // de dialog bloquant — juste logger et notifier le renderer.
+    startupComplete = true
   })
 
   // Fallback : forcer l'affichage si ready-to-show ne se déclenche pas dans les 5s
@@ -109,16 +139,18 @@ function createWindow(splash: BrowserWindow | null): void {
 
   // Diagnostic : échec de chargement du renderer
   win.webContents.on('did-fail-load', (_event, code, desc, url) => {
-    console.error(`[Main] did-fail-load  code=${code}  desc=${desc}  url=${url}`)
+    log.error(`[Main] did-fail-load  code=${code}  desc=${desc}  url=${url}`)
+    // Code -3 = request aborted (navigation vers une autre URL, HMR, ...) : bruit dev.
+    if (code === -3) return
     dialog.showErrorBox(
       'Erreur de chargement',
-      `Impossible de charger l'interface.\n\nCode : ${code}\nDétail : ${desc}\nURL : ${url}`
+      `Impossible de charger l'interface.\n\nCode : ${code}\nDétail : ${desc}\nURL : ${url}`,
     )
   })
 
   // Diagnostic : crash du renderer - proposer de relancer
   win.webContents.on('render-process-gone', (_event, details) => {
-    console.error('[Main] render-process-gone', details)
+    log.error('[Main] render-process-gone', details)
     dialog.showMessageBox(win, {
       type: 'error',
       title: 'Processus renderer terminé',
@@ -151,6 +183,17 @@ function createWindow(splash: BrowserWindow | null): void {
   ipcMain.on('badge:clear', () => {
     if (!win.isDestroyed()) {
       win.setOverlayIcon(null, '')
+    }
+  })
+
+  // Ouvre le dossier des logs dans l'explorateur — utile support pilote.
+  ipcMain.handle('logs:open-folder', () => {
+    try {
+      shell.showItemInFolder(log.transports.file.getFile().path)
+      return { ok: true, data: null }
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e)
+      return { ok: false, error: msg }
     }
   })
 
@@ -188,16 +231,39 @@ app.whenReady().then(() => {
     db.init()
   } catch (dbErr: unknown) {
     const msg = dbErr instanceof Error ? dbErr.message : String(dbErr)
-    console.error('[Main] DB init failed:', dbErr)
+    log.error('[Main] DB init failed:', dbErr)
+    splash.destroy()
+    // Dialog enrichie : proposer d'ouvrir les logs plutot que demander
+    // a l'utilisateur de supprimer a l'aveugle son dossier de donnees.
+    dialog.showMessageBox({
+      type: 'error',
+      title: 'Erreur de base de données',
+      message: 'Impossible d\'initialiser la base de données.',
+      detail: `${msg}\n\nConsultez les logs pour plus de detail, ou contactez le support.`,
+      buttons: ['Ouvrir les logs', 'Quitter'],
+      defaultId: 0,
+      cancelId: 1,
+    }).then(({ response }) => {
+      if (response === 0) {
+        try { shell.showItemInFolder(log.transports.file.getFile().path) }
+        catch (err) { log.error('[Main] open logs folder failed:', err) }
+      }
+      app.quit()
+    })
+    return
+  }
+  try {
+    ipc.register()
+  } catch (ipcErr) {
+    log.error('[Main] IPC register failed:', ipcErr)
     splash.destroy()
     dialog.showErrorBox(
-      'Erreur de base de données',
-      `Impossible d\'initialiser la base de données.\n\n${msg}\n\nSi le problème persiste, supprimez le fichier de données dans %APPDATA%\\Cursus.`,
+      'Erreur critique',
+      'Impossible d\'initialiser les handlers IPC. L\'application va fermer.',
     )
     app.quit()
     return
   }
-  ipc.register()
   notifications.start()
 
   createWindow(splash)
@@ -220,6 +286,14 @@ app.whenReady().then(() => {
       })
     }
     items.push({ type: 'separator' })
+    items.push({
+      label: 'Ouvrir le dossier des logs',
+      click: () => {
+        try { shell.showItemInFolder(log.transports.file.getFile().path) }
+        catch (err) { log.error('[Main] open logs folder failed:', err) }
+      },
+    })
+    items.push({ type: 'separator' })
     items.push({ label: 'Quitter', click: () => { isQuitting = true; app.quit() } })
     tray.setContextMenu(Menu.buildFromTemplate(items))
     tray.setToolTip(pending ? `Cursus — mise a jour v${pending.version} prete` : 'Cursus')
@@ -241,12 +315,21 @@ app.whenReady().then(() => {
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()
   })
-}).catch((err: Error) => {
-  console.error('[Main] startup error:', err)
-  dialog.showErrorBox(
-    'Erreur au démarrage',
-    `${err.message}\n\nSi le problème persiste, supprimez le dossier :\n%APPDATA%\\Cursus`
-  )
+}).catch(async (err: Error) => {
+  log.error('[Main] startup error:', err)
+  const { response } = await dialog.showMessageBox({
+    type: 'error',
+    title: 'Erreur au démarrage',
+    message: 'Cursus n\'a pas pu demarrer correctement.',
+    detail: `${err.message}\n\nConsultez les logs pour plus de detail.`,
+    buttons: ['Ouvrir les logs', 'Quitter'],
+    defaultId: 0,
+    cancelId: 1,
+  })
+  if (response === 0) {
+    try { shell.showItemInFolder(log.transports.file.getFile().path) }
+    catch { /* best-effort */ }
+  }
   app.quit()
 })
 

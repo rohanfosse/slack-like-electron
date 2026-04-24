@@ -41,3 +41,18 @@ export function safeSetJSON(key: string, value: unknown): boolean {
     return false
   }
 }
+
+/** Lecture brute (sans parse JSON). Retourne null si absent ou storage indisponible. */
+export function safeGet(key: string): string | null {
+  try { return localStorage.getItem(key) } catch { return null }
+}
+
+/** Écriture brute. Ignore silencieusement les erreurs (quota, mode privé). */
+export function safeSet(key: string, value: string): void {
+  try { localStorage.setItem(key, value) } catch { /* silencieux */ }
+}
+
+/** Suppression. Ignore silencieusement les erreurs. */
+export function safeRemove(key: string): void {
+  try { localStorage.removeItem(key) } catch { /* silencieux */ }
+}

@@ -11,7 +11,11 @@ vi.mock('@/utils/html', () => ({
 }))
 
 vi.mock('@/constants', () => ({
-  STORAGE_KEYS: { SESSION: 's', NAV_STATE: 'n', PREFS: 'p', MUTED_DMS: 'm' },
+  STORAGE_KEYS: {
+    SESSION: 's', NAV_STATE: 'n', PREFS: 'p', MUTED_DMS: 'm',
+    draftChannel: (id: number) => `draft_ch_${id}`,
+    draftDm:      (id: number) => `draft_dm_${id}`,
+  },
   NOTIFICATION_HISTORY_LIMIT: 50,
   MAX_MESSAGE_LENGTH: 5000,
   MESSAGE_PAGE_SIZE: 50,
