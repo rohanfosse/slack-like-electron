@@ -11,6 +11,10 @@ export interface User {
   promo_name: string | null
   must_change_password?: number  // 1 = doit changer, 0 = ok
   onboarding_done?: number       // 1 = onboarding termine, 0 = a faire
+  // JWT issu de /api/auth/login ou /api/auth/refresh. Persiste dans
+  // localStorage.SESSION pour survivre au redemarrage + etre rafraichi
+  // proactivement par le timer 6h.
+  token?: string
 }
 
 export interface RubricCriterion {
