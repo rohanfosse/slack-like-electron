@@ -45,19 +45,26 @@ function updateTravail(id, fields) {
   if (fields.description !== undefined)        { sets.push('description = ?');          vals.push(fields.description) }
   if (fields.room !== undefined)               { sets.push('room = ?');                 vals.push(fields.room) }
   if (fields.scheduledPublishAt !== undefined) { sets.push('scheduled_publish_at = ?'); vals.push(fields.scheduledPublishAt) }
+  if (fields.requires_submission !== undefined) {
+    sets.push('requires_submission = ?')
+    vals.push(fields.requires_submission ? 1 : 0)
+  }
   if (sets.length === 0) return { changes: 0 }
   vals.push(id)
   return db.prepare(`UPDATE travaux SET ${sets.join(', ')} WHERE id = ?`).run(...vals)
 }
 
-// Types evenement en salle (examens, soutenances) : jamais "a rendre".
-// requires_submission est force a 0 peu importe ce que le client envoie.
+// Types evenement en salle (examens, soutenances) : pas de rendu par defaut.
+// requires_submission est a 0 par defaut, mais le prof peut l'activer pour
+// ouvrir un creneau de depot (slides soutenance, doc etude de cas).
 const EVENT_TYPES = new Set(['cctl', 'soutenance', 'etude_de_cas']);
 
 function createTravail({ promoId, channelId, groupId, title, description, startDate, deadline, category, type, published, room, aavs, requiresSubmission, scheduledPublishAt }) {
   const db = getDb();
   const isEvent = EVENT_TYPES.has(type);
-  const reqSub = isEvent ? 0 : (requiresSubmission != null ? (requiresSubmission ? 1 : 0) : 1);
+  const reqSub = requiresSubmission != null
+    ? (requiresSubmission ? 1 : 0)
+    : (isEvent ? 0 : 1);
   return db.transaction(() => {
     const result = db.prepare(`
       INSERT INTO travaux (promo_id, channel_id, group_id, title, description, start_date, deadline, category, type, published, room, aavs, requires_submission, scheduled_publish_at)

@@ -13,7 +13,7 @@
  */
 import { computed, onMounted, onBeforeUnmount, ref, watch, nextTick, toRef, defineAsyncComponent } from 'vue'
 import { useRouter } from 'vue-router'
-import { Loader2, FileText, FileDown, FileCode, Clock, User, ChevronLeft, ChevronRight, Copy, Check, ClipboardList, Plus, Calendar, RefreshCw, ChevronRight as CrumbSep, Presentation, Pencil, Save, X, Eye, EyeOff, Columns2, Link2, Printer, Sun, Moon, Search } from 'lucide-vue-next'
+import { Loader2, FileText, FileDown, FileCode, Clock, User, ChevronLeft, ChevronRight, Copy, Check, ClipboardList, Plus, Calendar, RefreshCw, ChevronRight as CrumbSep, Presentation, Pencil, Save, X, Eye, EyeOff, Columns2, Link2, Printer, Sun, Moon, Search, Terminal } from 'lucide-vue-next'
 import { renderMarkdown } from '@/utils/markdown'
 import { renderTex } from '@/utils/texRenderer'
 import { renderIpynb } from '@/utils/ipynbRenderer'
@@ -36,6 +36,9 @@ import LumenAnnotations from '@/components/lumen/LumenAnnotations.vue'
 // PDF ou slides. Economise ~5 MB de parse JS au startup de chaque route.
 const LumenPdfViewer = defineAsyncComponent(() => import('@/components/lumen/LumenPdfViewer.vue'))
 const LumenSlideDeck = defineAsyncComponent(() => import('@/components/lumen/LumenSlideDeck.vue'))
+// Lazy aussi : le runner .ipynb pull CodeMirror python + pyodide (CDN au
+// runtime mais l'editor python n'est importe qu'en mode execution).
+const LumenIpynbRunner = defineAsyncComponent(() => import('@/components/lumen/LumenIpynbRunner.vue'))
 import UiCodeEditor from '@/components/ui/UiCodeEditor.vue'
 import type { LumenChapter, LumenRepo, LumenLinkedTravail } from '@/types'
 
@@ -232,6 +235,11 @@ const ipynbHtml = computed(() => {
   if (!isIpynb.value || !props.content) return ''
   return renderIpynb(props.content, props.chapter.path)
 })
+
+// Mode execution d'un .ipynb (phase 2 Lumen) : toggle local au chapitre,
+// reinitialise a false au changement de chapitre via watch plus bas.
+const ipynbExecMode = ref(false)
+watch(() => props.chapter.path, () => { ipynbExecMode.value = false })
 
 const html = computed(() => {
   if (!props.content) return ''
@@ -474,6 +482,17 @@ watch(() => [props.content, props.chapter?.path], () => {
             <Printer :size="11" />
           </button>
           <button
+            v-if="isIpynb && !editMode"
+            type="button"
+            class="lumen-viewer-chip lumen-viewer-chip--exec"
+            :class="{ active: ipynbExecMode }"
+            :title="ipynbExecMode ? 'Revenir à la lecture statique' : 'Activer l\'exécution Python (Pyodide)'"
+            @click="ipynbExecMode = !ipynbExecMode"
+          >
+            <Terminal :size="11" />
+            <span>{{ ipynbExecMode ? 'Lecture' : 'Exécuter' }}</span>
+          </button>
+          <button
             type="button"
             class="lumen-viewer-chip lumen-viewer-chip--link-copy"
             :class="{ copied: linkCopied }"
@@ -618,9 +637,19 @@ watch(() => [props.content, props.chapter?.path], () => {
         <div class="lumen-viewer-body markdown-body" :class="{ 'lumen-reading-light': readingLight }" v-html="texHtml" />
       </div>
 
-      <!-- Rendu Jupyter Notebook -->
+      <!-- Rendu Jupyter Notebook : statique par défaut, runner Pyodide si mode exécution -->
       <div v-else-if="isIpynb" class="lumen-viewer-main lumen-viewer-main--ipynb">
-        <div class="lumen-viewer-body markdown-body" :class="{ 'lumen-reading-light': readingLight }" v-html="ipynbHtml" />
+        <LumenIpynbRunner
+          v-if="ipynbExecMode && content"
+          :source="content"
+          :chapter-path="chapter.path"
+        />
+        <div
+          v-else
+          class="lumen-viewer-body markdown-body"
+          :class="{ 'lumen-reading-light': readingLight }"
+          v-html="ipynbHtml"
+        />
       </div>
 
       <!-- Rendu Marp : slide deck dedie quand `marp: true` dans la frontmatter -->
@@ -964,6 +993,19 @@ button.lumen-viewer-chip:focus-visible {
 .lumen-viewer-chip--print:hover {
   background: var(--bg-hover);
   color: var(--text-primary);
+}
+.lumen-viewer-chip--exec {
+  color: var(--text-muted);
+  border-color: var(--border);
+}
+.lumen-viewer-chip--exec:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+.lumen-viewer-chip--exec.active {
+  color: var(--accent);
+  border-color: color-mix(in srgb, var(--accent) 40%, transparent);
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
 }
 
 /* Edition inline (v2.104) */

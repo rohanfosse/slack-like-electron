@@ -3,13 +3,18 @@ const { ipcMain, app } = require('electron')
 const fs = require('fs')
 const path = require('path')
 
-const CACHE_DIR = path.join(app.getPath('userData'), 'offline-cache')
+// Lazy : app.getPath() n'est fiable qu'apres app ready, et le bundling CJS
+// d'electron-vite peut evaluer ce module avant que electron ait peuple app.
+function getCacheDir() {
+  return path.join(app.getPath('userData'), 'offline-cache')
+}
 
-// Creer le dossier de cache s'il n'existe pas
 function ensureCacheDir() {
-  if (!fs.existsSync(CACHE_DIR)) {
-    fs.mkdirSync(CACHE_DIR, { recursive: true })
+  const dir = getCacheDir()
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true })
   }
+  return dir
 }
 
 function safeName(key) {
@@ -21,8 +26,8 @@ function registerOfflineHandlers() {
   // Ecrire dans le cache
   ipcMain.handle('offline:write', async (_event, key, data) => {
     try {
-      ensureCacheDir()
-      const filePath = path.join(CACHE_DIR, `${safeName(key)}.json`)
+      const dir = ensureCacheDir()
+      const filePath = path.join(dir, `${safeName(key)}.json`)
       fs.writeFileSync(filePath, JSON.stringify(data), 'utf-8')
       return { ok: true, data: null }
     } catch (err) {
@@ -34,7 +39,7 @@ function registerOfflineHandlers() {
   // Lire depuis le cache
   ipcMain.handle('offline:read', async (_event, key) => {
     try {
-      const filePath = path.join(CACHE_DIR, `${safeName(key)}.json`)
+      const filePath = path.join(getCacheDir(), `${safeName(key)}.json`)
       if (!fs.existsSync(filePath)) return { ok: true, data: null }
       const raw = fs.readFileSync(filePath, 'utf-8')
       return { ok: true, data: JSON.parse(raw) }
@@ -47,10 +52,11 @@ function registerOfflineHandlers() {
   // Vider tout le cache
   ipcMain.handle('offline:clear', async () => {
     try {
-      if (fs.existsSync(CACHE_DIR)) {
-        const files = fs.readdirSync(CACHE_DIR)
+      const dir = getCacheDir()
+      if (fs.existsSync(dir)) {
+        const files = fs.readdirSync(dir)
         for (const file of files) {
-          fs.unlinkSync(path.join(CACHE_DIR, file))
+          fs.unlinkSync(path.join(dir, file))
         }
       }
       return { ok: true, data: null }

@@ -17,12 +17,14 @@ export interface PromoCalendar {
 export interface GanttRow {
   id: number
   title: string
+  type?: string | null
   deadline?: string | null
   start_date?: string | null
   category?: string | null
   depot_id?: number | null
   depots_count?: number | null
   students_total?: number | null
+  requires_submission?: number | null
   promo_id?: number | null
   promo_name?: string | null
   promo_color?: string | null
@@ -82,6 +84,7 @@ function buildDeadlineEvent(row: GanttRow, nowDate: string): CalendarEvent | nul
   const promoColor = normalizePromoColor(row.promo_color, row.promo_name)
   let status: CalendarEvent['submissionStatus'] = 'upcoming'
   if (row.depot_id != null) status = 'submitted'
+  else if (row.requires_submission === 0) status = 'pending'
   else if (deadlineDate < nowDate) status = 'late'
   else status = 'pending'
 

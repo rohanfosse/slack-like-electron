@@ -267,9 +267,17 @@
             <input v-model="calculatrice" type="checkbox" />
             <Calculator :size="13" /> Calculatrice autorisée
           </label>
-          <label v-if="type === 'etude_de_cas'" class="nd-option">
+          <label class="nd-option">
             <input v-model="requiresSubmission" type="checkbox" />
-            <FileText :size="13" /> Rendu attendu
+            <FileText :size="13" /> Autoriser le dépôt de fichiers
+          </label>
+        </div>
+
+        <!-- Depot optionnel pour soutenance (slides) -->
+        <div v-else class="nd-options">
+          <label class="nd-option">
+            <input v-model="requiresSubmission" type="checkbox" />
+            <FileText :size="13" /> Autoriser le dépôt des slides
           </label>
         </div>
 

@@ -6,18 +6,20 @@
     <meta name="theme-color" content="#4A90D9" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <!-- 'wasm-unsafe-eval' + jsdelivr + blob: requis pour Pyodide (runner .ipynb dans Lumen). -->
     <meta
       http-equiv="Content-Security-Policy"
       content="
         default-src 'self';
-        script-src  'self';
+        script-src  'self' 'wasm-unsafe-eval' blob: https://cdn.jsdelivr.net;
         style-src   'self';
+        worker-src  'self' blob:;
         img-src     'self' data: blob: https: http:;
         media-src   'self' data: blob: https: http:;
         font-src    'self' data:;
         frame-src   'self' blob:;
         object-src  'none';
-        connect-src 'self' https: http: wss: ws:;
+        connect-src 'self' https: http: wss: ws: data: blob:;
       "
     />
     <title>Cursus - Plateforme pédagogique</title>
