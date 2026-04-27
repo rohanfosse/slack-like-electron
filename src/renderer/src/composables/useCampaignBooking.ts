@@ -8,9 +8,7 @@
  *   4. Reservation -> mail tripartite + ICS attache
  */
 import { ref } from 'vue'
-import { fetchWithTimeout, isAbortError } from '@/utils/fetchWithTimeout'
-
-const SERVER_URL = (import.meta.env?.VITE_SERVER_URL as string | undefined) || 'http://localhost:3001'
+import { bookingApi } from '@/composables/useBookingApi'
 
 export interface CampaignInfo {
   campaignTitle: string
@@ -60,22 +58,9 @@ export function useCampaignBooking(token: string) {
   const errorCode = ref('')
   const result = ref<BookingResult | null>(null)
 
-  async function api<T>(path: string, opts?: RequestInit): Promise<{ ok: boolean; data?: T; error?: string; code?: string }> {
-    try {
-      const res = await fetchWithTimeout(`${SERVER_URL}${path}`, {
-        headers: { 'Content-Type': 'application/json' },
-        ...opts,
-      })
-      return await res.json()
-    } catch (err) {
-      if (isAbortError(err)) return { ok: false, error: 'Temps d attente depasse.' }
-      return { ok: false, error: 'Erreur de connexion au serveur.' }
-    }
-  }
-
   async function fetchInfo() {
     loading.value = true; error.value = ''; errorCode.value = ''
-    const r = await api<CampaignInfo>(`/api/bookings/public/campaign/${token}`)
+    const r = await bookingApi<CampaignInfo>(`/api/bookings/public/campaign/${token}`)
     if (r.ok && r.data) {
       info.value = r.data
       if (r.data.existingBooking) {
@@ -98,7 +83,7 @@ export function useCampaignBooking(token: string) {
 
   async function fetchSlots() {
     loading.value = true
-    const r = await api<{ slots: Slot[] }>(`/api/bookings/public/campaign/${token}/slots`)
+    const r = await bookingApi<{ slots: Slot[] }>(`/api/bookings/public/campaign/${token}/slots`)
     if (r.ok && r.data) slots.value = r.data.slots
     loading.value = false
   }
@@ -114,7 +99,7 @@ export function useCampaignBooking(token: string) {
       body.tutorName = opts.tutorName
       body.tutorEmail = opts.tutorEmail
     }
-    const r = await api<BookingResult>(`/api/bookings/public/campaign/${token}/book`, {
+    const r = await bookingApi<BookingResult>(`/api/bookings/public/campaign/${token}/book`, {
       method: 'POST', body: JSON.stringify(body),
     })
     if (r.ok && r.data) {

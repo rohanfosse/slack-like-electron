@@ -3,9 +3,7 @@
  * Uses fetch() directly (not window.api) so it works in both Electron and web.
  */
 import { ref } from 'vue'
-import { fetchWithTimeout, isAbortError } from '@/utils/fetchWithTimeout'
-
-const SERVER_URL = (import.meta.env?.VITE_SERVER_URL as string | undefined) || 'http://localhost:3001'
+import { bookingApi, buildIcsUrl } from '@/composables/useBookingApi'
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -62,24 +60,11 @@ export function usePublicBooking(identifier: string, mode: PublicBookingMode = '
     ? `/api/bookings/public/event/${encodeURIComponent(identifier)}`
     : `/api/bookings/public/${encodeURIComponent(identifier)}`
 
-  async function apiFetch<T>(path: string, opts?: RequestInit): Promise<{ ok: boolean; data?: T; error?: string; code?: string }> {
-    try {
-      const res = await fetchWithTimeout(`${SERVER_URL}${path}`, {
-        headers: { 'Content-Type': 'application/json' },
-        ...opts,
-      })
-      return await res.json()
-    } catch (err) {
-      if (isAbortError(err)) return { ok: false, error: 'Temps d attente depasse.' }
-      return { ok: false, error: 'Erreur de connexion au serveur.' }
-    }
-  }
-
   async function fetchEventInfo() {
     loading.value = true
     error.value = ''
     errorCode.value = ''
-    const res = await apiFetch<BookingEventInfo>(basePath)
+    const res = await bookingApi<BookingEventInfo>(basePath)
     if (res.ok && res.data) {
       eventInfo.value = res.data
     } else {
@@ -98,7 +83,7 @@ export function usePublicBooking(identifier: string, mode: PublicBookingMode = '
     loading.value = true
     try {
       const fetches = Array.from({ length: weeks }, (_, i) =>
-        apiFetch<{ slots: BookingSlot[]; weekStart: string }>(`${basePath}/slots?weekOffset=${i}`),
+        bookingApi<{ slots: BookingSlot[]; weekStart: string }>(`${basePath}/slots?weekOffset=${i}`),
       )
       const results = await Promise.all(fetches)
       const seen = new Set<string>()
@@ -138,7 +123,7 @@ export function usePublicBooking(identifier: string, mode: PublicBookingMode = '
     const body = mode === 'event'
       ? { attendeeName, attendeeEmail, startDatetime: selectedSlot.value.start, captchaToken }
       : { tutorName: attendeeName, tutorEmail: attendeeEmail, startDatetime: selectedSlot.value.start }
-    const res = await apiFetch<BookingResult>(`${basePath}/book`, {
+    const res = await bookingApi<BookingResult>(`${basePath}/book`, {
       method: 'POST',
       body: JSON.stringify(body),
     })
@@ -157,7 +142,7 @@ export function usePublicBooking(identifier: string, mode: PublicBookingMode = '
   // ICS download URL
   function icsUrl(): string | null {
     if (!bookingResult.value) return null
-    return `${SERVER_URL}${basePath}/booking/${bookingResult.value.bookingId}/ics`
+    return buildIcsUrl(basePath, bookingResult.value.bookingId)
   }
 
   return {

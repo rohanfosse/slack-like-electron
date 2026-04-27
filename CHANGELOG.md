@@ -1,5 +1,32 @@
 # Changelog
 
+## v2.251.1 (2026-04-27)
+
+### Refacto booking : DRY composables + extraction BookingShell
+
+Suite a l'audit du systeme de booking, extraction des duplications haute valeur :
+
+**Nouveau composable `useBookingApi.ts`** (40 lignes) :
+
+- Mutualise le wrapper `fetchWithTimeout` + parsing JSON + mapping AbortError/network qui etait duplique a l'identique entre `usePublicBooking` (wrapper `apiFetch`, 12 lignes) et `useCampaignBooking` (wrapper `api`, 12 lignes).
+- Centralise la resolution `SERVER_URL` via env (etait redeclare dans les 2 fichiers).
+- Expose `buildIcsUrl(basePath, bookingId)` reutilise par `usePublicBooking.icsUrl()`.
+- Type `ApiResult<T>` partage : enveloppe `{ ok, data, error, code }`.
+
+`usePublicBooking.ts` passe de 169 -> 144 lignes ; `useCampaignBooking.ts` passe de 136 -> 110 lignes. Total : ~50 lignes de duplication eliminees, signatures inchangees pour les callers.
+
+**Nouveau composant `BookingShell.vue`** (30 lignes) :
+
+- Coque visuelle (background, centrage, padding responsive, dark mode via `prefers-color-scheme`) qui etait dupliquee mot pour mot dans les 3 wrappers `BookingPublicView`, `BookingPublicEventView`, `BookingCampaignView`.
+- Les 3 vues passent en wrappers minimaux (~10 lignes chacune au lieu de 30).
+
+**Nouveaux tests (32)** :
+
+- `useBookingApi.test.ts` : 10 tests sur le wrapper (success, ok=false, AbortError, TimeoutError, erreurs reseau, prefixage SERVER_URL, opts.method/headers, buildIcsUrl token+event).
+- `usePublicBooking.test.ts` : 22 tests sur le composable public (modes token/event, encodage de l'identifiant, fetchEventInfo + erreurs, fetchSlotsRange parallele + dedup + tri, selectSlot/back, bookSlot avec contrats de payload differents par mode, icsUrl token vs event).
+
+Tests : 1898 passants (32 nouveaux). Typecheck clean. Lint clean.
+
 ## v2.251.0 (2026-04-27)
 
 ### Tests booking + retrait Teams + refonte UX CampaignManager

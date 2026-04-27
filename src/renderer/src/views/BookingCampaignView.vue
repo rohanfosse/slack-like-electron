@@ -8,6 +8,7 @@ import { computed, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { useCampaignBooking } from '@/composables/useCampaignBooking'
 import BookingFlow from '@/components/booking/BookingFlow.vue'
+import BookingShell from '@/components/booking/BookingShell.vue'
 import type { BookingFlowInfo } from '@/components/booking/bookingFlow.types'
 
 const route = useRoute()
@@ -63,7 +64,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="campaign-shell">
+  <BookingShell>
     <BookingFlow
       :info="flowInfo"
       :slots="slots"
@@ -81,23 +82,5 @@ onMounted(async () => {
       @back-to-calendar="backToCalendar"
       @submit-details="onSubmit"
     />
-  </div>
+  </BookingShell>
 </template>
-
-<style scoped>
-.campaign-shell {
-  min-height: 100vh;
-  background: #f4f6fa;
-  display: flex;
-  align-items: flex-start;
-  justify-content: center;
-  padding: 48px 16px;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-}
-@media (prefers-color-scheme: dark) {
-  .campaign-shell { background: #0b1220; }
-}
-@media (max-width: 640px) {
-  .campaign-shell { padding: 0; }
-}
-</style>
