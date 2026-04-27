@@ -1,5 +1,43 @@
 # Changelog
 
+## v2.251.2 (2026-04-27)
+
+### Tests useBooking + extraction helpers BookingFlow + a11y baseline
+
+**Tests `useBooking.ts`** (35 tests, etait 0) :
+
+- `fetchAll` (parallele, erreur reseau, ok=false par appel)
+- `sortedBookings` (tri sans mutation), `rulesByDay` (groupage)
+- `createEventType` (ok / erreur backend / exception)
+- `toggleActive` (flip + patch local optimiste)
+- `togglePublic` : cas critique du slug allonge cote backend (anti-enumeration), cas no-data fallback patch local, toast "active" vs "desactive"
+- `toggleJitsi`, `getPublicUrl`, `deleteEventType` (avec confirm() = false / true / erreur)
+- `generateLink`, `generateBulkLinks` (ratio dans le toast)
+- `addSlot` (validation horaires invalides, id negatif), `removeSlot` (par reference)
+- `saveAvailability` (serialisation sans id, refetch, reset savingAvailability sur exception)
+- Socket listeners : `initSocketListeners` souscrit, `onBookingNew` toast + refetch, `disposeSocketListeners` idempotent
+- `statusLabel`, `statusClass` (mapping + fallback)
+
+**Extraction helpers purs** (`utils/bookingHelpers.ts` + 13 tests) :
+
+- `toIso`, `fmtDateLong`, `fmtTime`, `detectUserTimezone`, `bookingErrorTitle`, `DAY_INITIALS_FR`.
+- Auparavant inlines dans `BookingFlow.vue` (donc impossibles a tester directement). BookingFlow passe sur ces imports.
+- Mutualisation : `useBooking` reutilise `SERVER_URL` depuis `useBookingApi` (etait redeclare).
+
+**A11y baseline `BookingFlow.vue`** :
+
+- `role="alert"` + `aria-live="assertive"` sur l'etat erreur, `role="status"` + `aria-live="polite"` sur loading et confirmation.
+- `aria-label` sur les jours du calendrier ("lundi 27 avril 2026 (creneaux disponibles)") et `aria-pressed` sur le jour selectionne.
+- `aria-label` sur les boutons de creneau ("Reserver 14:00").
+- `aria-required="true"` sur les inputs requis du formulaire.
+- `aria-busy` sur le bouton de soumission pendant la requete.
+- `role="alert"` + `aria-live="polite"` sur les messages d'erreur captcha et backend.
+- `aria-hidden="true"` sur les icones decoratives.
+- `type="button"` explicite sur tous les boutons hors form (evite les submit non voulus).
+- `novalidate` sur le form (validation custom via canSubmit).
+
+Tests : 1946 passants (48 nouveaux). Typecheck clean. Lint clean.
+
 ## v2.251.1 (2026-04-27)
 
 ### Refacto booking : DRY composables + extraction BookingShell

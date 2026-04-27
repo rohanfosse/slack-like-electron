@@ -25,6 +25,10 @@ import type {
   BookingFlowResult,
   BookingFlowSubmitPayload,
 } from '@/components/booking/bookingFlow.types'
+import {
+  toIso, fmtDateLong, fmtTime, detectUserTimezone, bookingErrorTitle,
+  DAY_INITIALS_FR,
+} from '@/utils/bookingHelpers'
 
 const props = withDefaults(defineProps<{
   info: BookingFlowInfo | null
@@ -108,10 +112,6 @@ const monthGrid = computed<MonthCell[]>(() => {
   }
   return cells
 })
-
-function toIso(d: Date): string {
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
-}
 
 const selectedDate = ref<string>('')
 
@@ -258,39 +258,19 @@ watch(() => props.error, (err) => {
   }
 })
 
-// ── Helpers d'affichage ────────────────────────────────────────────────
+// ── Helpers d'affichage (logiques pures extraites dans utils/bookingHelpers.ts) ──
 
-function fmtDateLong(iso: string): string {
-  return new Date(iso).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
-}
-function fmtTime(iso: string): string {
-  return new Date(iso).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
-}
-
-const userTimezone = computed(() => {
-  try { return Intl.DateTimeFormat().resolvedOptions().timeZone } catch { return 'Europe/Paris' }
-})
-
-const errorTitle = computed(() => {
-  switch (props.errorCode) {
-    case 'closed':         return 'Reservations fermees'
-    case 'inactive':       return 'Type de RDV indisponible'
-    case 'not_found':      return 'Lien introuvable'
-    case 'already_booked': return 'Tu as deja reserve'
-    case 'invalid_link':   return 'Lien invalide'
-    default:               return 'Lien invalide'
-  }
-})
-
-const dayInitials = ['L', 'M', 'M', 'J', 'V', 'S', 'D']
+const userTimezone = computed(() => detectUserTimezone())
+const errorTitle = computed(() => bookingErrorTitle(props.errorCode))
+const dayInitials = DAY_INITIALS_FR
 </script>
 
 <template>
   <div class="bf" :style="info ? { '--accent': info.color } : {}">
 
     <!-- Etat erreur -->
-    <div v-if="error && !info" class="bf-error">
-      <AlertCircle :size="32" />
+    <div v-if="error && !info" class="bf-error" role="alert" aria-live="assertive">
+      <AlertCircle :size="32" aria-hidden="true" />
       <h1>{{ errorTitle }}</h1>
       <p>{{ error }}</p>
       <p v-if="errorCode === 'closed'" class="bf-error-hint">
@@ -299,14 +279,14 @@ const dayInitials = ['L', 'M', 'M', 'J', 'V', 'S', 'D']
     </div>
 
     <!-- Loading initial -->
-    <div v-else-if="loading && !info" class="bf-loading">
-      <Loader2 :size="20" class="spin" />
+    <div v-else-if="loading && !info" class="bf-loading" role="status" aria-live="polite">
+      <Loader2 :size="20" class="spin" aria-hidden="true" />
       <span>Chargement...</span>
     </div>
 
     <!-- Confirmation pleine largeur -->
-    <div v-else-if="step === 'confirmation' && result && info" class="bf-confirmation">
-      <div class="bf-success-icon"><Check :size="36" /></div>
+    <div v-else-if="step === 'confirmation' && result && info" class="bf-confirmation" role="status" aria-live="polite">
+      <div class="bf-success-icon" aria-hidden="true"><Check :size="36" /></div>
       <h1 class="bf-conf-title">Confirme</h1>
       <p class="bf-conf-subtitle">{{ info.title }}</p>
 
@@ -375,8 +355,8 @@ const dayInitials = ['L', 'M', 'M', 'J', 'V', 'S', 'D']
 
         <!-- Recap RDV en mode details -->
         <div v-if="step === 'details' && selectedSlot" class="bf-side-summary">
-          <button class="bf-back" @click="emit('back-to-calendar')">
-            <ArrowLeft :size="14" /> Modifier le RDV
+          <button type="button" class="bf-back" @click="emit('back-to-calendar')">
+            <ArrowLeft :size="14" aria-hidden="true" /> Modifier le RDV
           </button>
           <div class="bf-summary-card">
             <div class="bf-summary-date">
@@ -402,21 +382,22 @@ const dayInitials = ['L', 'M', 'M', 'J', 'V', 'S', 'D']
             <!-- Calendrier mensuel -->
             <div class="bf-month">
               <div class="bf-month-nav">
-                <button class="bf-icon-btn" :disabled="!canGoPrev" @click="prevMonth" aria-label="Mois precedent">
-                  <ChevronLeft :size="16" />
+                <button type="button" class="bf-icon-btn" :disabled="!canGoPrev" aria-label="Mois precedent" @click="prevMonth">
+                  <ChevronLeft :size="16" aria-hidden="true" />
                 </button>
-                <span class="bf-month-label">{{ monthLabel }}</span>
-                <button class="bf-icon-btn" @click="nextMonth" aria-label="Mois suivant">
-                  <ChevronRight :size="16" />
+                <span class="bf-month-label" aria-live="polite">{{ monthLabel }}</span>
+                <button type="button" class="bf-icon-btn" aria-label="Mois suivant" @click="nextMonth">
+                  <ChevronRight :size="16" aria-hidden="true" />
                 </button>
               </div>
-              <div class="bf-month-weekdays">
+              <div class="bf-month-weekdays" aria-hidden="true">
                 <span v-for="(d, i) in dayInitials" :key="i">{{ d }}</span>
               </div>
-              <div class="bf-month-grid">
+              <div class="bf-month-grid" role="grid">
                 <button
                   v-for="cell in monthGrid"
                   :key="cell.iso"
+                  type="button"
                   class="bf-day"
                   :class="{
                     'bf-day-out': !cell.inMonth,
@@ -426,6 +407,8 @@ const dayInitials = ['L', 'M', 'M', 'J', 'V', 'S', 'D']
                     'bf-day-selected': cell.iso === selectedDate,
                   }"
                   :disabled="!cell.inMonth || cell.isPast || !cell.hasSlots"
+                  :aria-label="cell.inMonth ? fmtDateLong(cell.iso + 'T00:00:00') + (cell.hasSlots ? ' (creneaux disponibles)' : '') : undefined"
+                  :aria-pressed="cell.iso === selectedDate"
                   @click="pickDate(cell)"
                 >
                   {{ cell.day }}
@@ -435,15 +418,18 @@ const dayInitials = ['L', 'M', 'M', 'J', 'V', 'S', 'D']
 
             <!-- Slots du jour selectionne -->
             <div class="bf-times">
-              <div class="bf-times-header">
+              <div class="bf-times-header" aria-live="polite">
                 <span v-if="selectedDate">{{ fmtDateLong(selectedDate + 'T00:00:00') }}</span>
                 <span v-else class="bf-times-empty">Selectionne une date</span>
               </div>
-              <div class="bf-times-list">
+              <div class="bf-times-list" role="list">
                 <button
                   v-for="s in slotsForSelectedDate"
                   :key="s.start"
+                  type="button"
                   class="bf-time-btn"
+                  role="listitem"
+                  :aria-label="`Reserver ${s.time}`"
                   @click="emit('select-slot', s)"
                 >
                   {{ s.time }}
@@ -460,7 +446,7 @@ const dayInitials = ['L', 'M', 'M', 'J', 'V', 'S', 'D']
         <div v-else-if="step === 'details' && selectedSlot" class="bf-form-wrap">
           <h2 class="bf-pick-title">Tes coordonnees</h2>
 
-          <form class="bf-form" @submit.prevent="onSubmit">
+          <form class="bf-form" novalidate @submit.prevent="onSubmit">
             <div class="bf-field">
               <label for="bf-name">Nom complet *</label>
               <input
@@ -472,6 +458,7 @@ const dayInitials = ['L', 'M', 'M', 'J', 'V', 'S', 'D']
                 placeholder="Prenom Nom"
                 maxlength="200"
                 required
+                aria-required="true"
               />
             </div>
             <div class="bf-field">
@@ -485,6 +472,7 @@ const dayInitials = ['L', 'M', 'M', 'J', 'V', 'S', 'D']
                 :class="{ 'bf-input-readonly': attendeeIdentified }"
                 placeholder="prenom.nom@exemple.fr"
                 required
+                aria-required="true"
               />
             </div>
 
@@ -498,6 +486,7 @@ const dayInitials = ['L', 'M', 'M', 'J', 'V', 'S', 'D']
                   placeholder="Prenom Nom"
                   maxlength="200"
                   required
+                  aria-required="true"
                 />
               </div>
               <div class="bf-field">
@@ -508,19 +497,25 @@ const dayInitials = ['L', 'M', 'M', 'J', 'V', 'S', 'D']
                   type="email"
                   placeholder="prenom.nom@entreprise.fr"
                   required
+                  aria-required="true"
                 />
               </div>
             </template>
 
             <div v-if="captchaEnabled" class="bf-captcha">
               <div ref="captchaRef" />
-              <p v-if="captchaError" class="bf-error-text">{{ captchaError }}</p>
+              <p v-if="captchaError" class="bf-error-text" role="alert" aria-live="polite">{{ captchaError }}</p>
             </div>
 
-            <p v-if="error" class="bf-error-text">{{ error }}</p>
+            <p v-if="error" class="bf-error-text" role="alert" aria-live="polite">{{ error }}</p>
 
-            <button class="bf-btn bf-btn-primary bf-submit" type="submit" :disabled="submitting || !canSubmit">
-              <Check :size="16" />
+            <button
+              class="bf-btn bf-btn-primary bf-submit"
+              type="submit"
+              :disabled="submitting || !canSubmit"
+              :aria-busy="submitting || undefined"
+            >
+              <Check :size="16" aria-hidden="true" />
               {{ submitting ? 'Confirmation...' : 'Confirmer le rendez-vous' }}
             </button>
           </form>

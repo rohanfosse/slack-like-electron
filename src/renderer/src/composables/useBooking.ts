@@ -2,9 +2,10 @@
  * useBooking — composable pour la gestion des types d'evenements,
  * disponibilites, reservations et OAuth Microsoft.
  */
-import { ref, computed, onUnmounted } from 'vue'
+import { ref, computed } from 'vue'
 import { useToast } from '@/composables/useToast'
 import { formatBookingDate, formatBookingTime } from '@/utils/bookingDate'
+import { SERVER_URL } from '@/composables/useBookingApi'
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -23,8 +24,6 @@ export interface EventType {
   use_jitsi: number
   created_at: string
 }
-
-const SERVER_URL = (import.meta.env?.VITE_SERVER_URL as string | undefined) || 'http://localhost:3001'
 
 export interface AvailabilityRule {
   id: number
