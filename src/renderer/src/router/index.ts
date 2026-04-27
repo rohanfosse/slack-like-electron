@@ -30,6 +30,7 @@ const router = createRouter({
     { path: '/live',       component: () => import('@/views/LiveView.vue'),   name: 'live',   meta: { requiredModule: 'live' }  },
     { path: '/lumen',      component: () => import('@/views/LumenView.vue'), name: 'lumen',  meta: { requiredModule: 'lumen' } },
     { path: '/agenda',     component: () => import('@/views/AgendaView.vue'), name: 'agenda' },
+    { path: '/booking',    component: () => import('@/views/BookingView.vue'), name: 'booking', meta: { requiredRole: 'teacher' } },
     { path: '/jeux',           component: () => import('@/views/GamesView.vue'),          name: 'jeux',           meta: { requiredModule: 'games' } },
     { path: '/typerace',       component: () => import('@/views/TypeRaceView.vue'),       name: 'typerace',       meta: { requiredModule: 'games' } },
     { path: '/snake',          component: () => import('@/views/SnakeView.vue'),          name: 'snake',          meta: { requiredModule: 'games' } },

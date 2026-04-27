@@ -7,7 +7,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import {
-  PlusCircle, CalendarDays, Settings,
+  PlusCircle, Settings,
   LayoutDashboard, Users, BarChart2, TrendingUp, Zap,
   Notebook, Activity, Pencil,
 } from 'lucide-vue-next'
@@ -21,7 +21,6 @@ const bento = useTeacherBento()
 const tabAccueilRef = ref<InstanceType<typeof TabAccueil> | null>(null)
 const isEditingBento = computed(() => tabAccueilRef.value?.editMode ?? false)
 import TeacherLiveView    from '@/components/live/TeacherLiveView.vue'
-import TabBooking         from './TabBooking.vue'
 import TabSuiviEtudiants  from './TabSuiviEtudiants.vue'
 import TabEngagement      from './TabEngagement.vue'
 
@@ -104,7 +103,7 @@ const props = defineProps<{
   totalThisWeek: number
 
   // Tabs
-  dashTab: 'accueil' | 'promotions' | 'frise' | 'analytique' | 'reglages' | 'live' | 'suivi' | 'engagement' | 'booking'
+  dashTab: 'accueil' | 'promotions' | 'frise' | 'analytique' | 'reglages' | 'live' | 'suivi' | 'engagement'
 
   // Analytics
   analyticsStats: { total: number; graded: number; notGraded: number }
@@ -133,7 +132,7 @@ const props = defineProps<{
 // ── Emits ────────────────────────────────────────────────────────────────────
 const emit = defineEmits<{
   'update:activePromoId': [id: number]
-  'update:dashTab': [tab: 'accueil' | 'promotions' | 'frise' | 'analytique' | 'reglages' | 'live' | 'suivi' | 'engagement' | 'booking']
+  'update:dashTab': [tab: 'accueil' | 'promotions' | 'frise' | 'analytique' | 'reglages' | 'live' | 'suivi' | 'engagement']
   'update:renamingPromoId': [id: number | null]
   'update:renamingPromoValue': [val: string]
   'update:friseOffset': [val: number]
@@ -168,7 +167,7 @@ const emit = defineEmits<{
   openDevoirCrossPromo: [travailId: number, promoId: number, channelId: number, channelName: string]
 }>()
 
-type DashTabType = 'accueil' | 'promotions' | 'frise' | 'analytique' | 'reglages' | 'live' | 'suivi' | 'engagement' | 'booking'
+type DashTabType = 'accueil' | 'promotions' | 'frise' | 'analytique' | 'reglages' | 'live' | 'suivi' | 'engagement'
 
 function setTab(tab: DashTabType) {
   emit('update:dashTab', tab)
@@ -247,9 +246,6 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onDashKeydown))
           v-if="liveStore.currentSession && liveStore.currentSession.status !== 'ended'"
           class="db-tab-live-dot"
         />
-      </button>
-      <button class="db-tab" :class="{ active: dashTab === 'booking' }" @click="setTab('booking')">
-        <CalendarDays :size="13" /> RDV
       </button>
       <button class="db-tab" :class="{ active: dashTab === 'reglages' }" @click="setTab('reglages')">
         <Settings :size="13" /> Admin
@@ -339,12 +335,6 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onDashKeydown))
     <TeacherLiveView
       v-else-if="dashTab === 'live'"
     />
-
-    <TabBooking
-      v-else-if="dashTab === 'booking'"
-      :all-students="allStudents"
-    />
-
 
     <TabSuiviEtudiants
       v-else-if="dashTab === 'suivi'"

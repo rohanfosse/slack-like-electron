@@ -43,12 +43,24 @@ function goToProject(key: string) {
 }
 
 // ── Tabs ────────────────────────────────────────────────────────────────────
-type DashTab = 'accueil' | 'promotions' | 'frise' | 'analytique' | 'reglages' | 'live' | 'suivi' | 'engagement' | 'projets' | 'notes' | 'planning' | 'quiz' | 'booking'
-const VALID_TABS: DashTab[] = ['accueil', 'promotions', 'frise', 'analytique', 'reglages', 'live', 'suivi', 'engagement', 'projets', 'notes', 'planning', 'booking']
+type DashTab = 'accueil' | 'promotions' | 'frise' | 'analytique' | 'reglages' | 'live' | 'suivi' | 'engagement' | 'projets' | 'notes' | 'planning' | 'quiz'
+const VALID_TABS: DashTab[] = ['accueil', 'promotions', 'frise', 'analytique', 'reglages', 'live', 'suivi', 'engagement', 'projets', 'notes', 'planning']
+
+// Migration legacy v2.252.x : l'onglet "booking" du dashboard est devenu une
+// page top-level (/booking). On redirige les liens sauvegardes/bookmarks
+// (`?tab=booking`) plutot que de casser l'URL.
+if (route.query.tab === 'booking' && appStore.isTeacher) {
+  router.replace('/booking')
+}
+
 const dashTab = ref<DashTab>(
   VALID_TABS.includes(route.query.tab as DashTab) ? (route.query.tab as DashTab) : 'accueil',
 )
 watch(() => route.query.tab, (tab) => {
+  if (tab === 'booking' && appStore.isTeacher) {
+    router.replace('/booking')
+    return
+  }
   dashTab.value = VALID_TABS.includes(tab as DashTab) ? (tab as DashTab) : 'accueil'
 })
 

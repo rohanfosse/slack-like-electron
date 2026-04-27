@@ -3,7 +3,7 @@ import { computed, ref, watch, type Component } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import {
   MessageSquare, BookOpen, FileText, LayoutDashboard, Bell, Flame,
-  Shield, Zap, Paperclip, Lightbulb, Calendar, Gamepad2,
+  Shield, Zap, Paperclip, Lightbulb, Calendar, CalendarCheck, Gamepad2,
   PanelLeftClose, PanelLeftOpen, EyeOff, Eye, ArrowUp, ArrowDown, RotateCcw,
   Bookmark, Smile, Trash2, MoreHorizontal, WifiOff,
 } from 'lucide-vue-next'
@@ -81,7 +81,7 @@ const moreBtnRef        = ref<HTMLButtonElement | null>(null)
 // actives dérivent de cette seule config.
 type NavItemId =
   | 'dashboard' | 'messages' | 'signets' | 'devoirs' | 'lumen'
-  | 'documents' | 'fichiers' | 'agenda'  | 'live'    | 'jeux'
+  | 'documents' | 'fichiers' | 'agenda'  | 'booking' | 'live' | 'jeux'
 
 interface NavItem {
   readonly id: NavItemId
@@ -102,6 +102,7 @@ const NAV_ITEMS: readonly NavItem[] = [
   { id: 'documents', label: 'Documents',  title: 'Documents',                                  icon: FileText,        isVisible: () => appStore.isStaff },
   { id: 'fichiers',  label: 'Fichiers',   title: 'Fichiers partagés par les étudiants',        icon: Paperclip,       isVisible: () => appStore.isTeacher },
   { id: 'agenda',    label: 'Calendrier', title: 'Calendrier',                                 icon: Calendar,        isVisible: () => true },
+  { id: 'booking',   label: 'Rendez-vous', title: 'Rendez-vous (mini-Calendly + campagnes)',   icon: CalendarCheck,   isVisible: () => appStore.isTeacher },
   { id: 'live',      label: 'Live',       title: 'Live (quiz, feedback, code, tableau)',       icon: Zap,             isVisible: () => isEnabled('live') && (appStore.isStaff || !!(liveStore.currentSession && liveStore.currentSession.status !== 'ended')) },
   { id: 'jeux',      label: 'Jeux',       title: 'Jeux (TypeRace, Snake, Space Invaders, ...)', icon: Gamepad2,        isVisible: () => appStore.isTeacher || isEnabled('games'), activeRoutes: ['jeux', 'typerace', 'snake', 'space-invaders'] },
 ]

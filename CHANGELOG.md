@@ -1,5 +1,56 @@
 # Changelog
 
+## v2.253.0 (2026-04-27)
+
+### Promotion de Rendez-vous en onglet top-level
+
+L'onglet "Rendez-vous" du dashboard prof est promu en route top-level
+`/booking` avec sa propre entree dans la navigation rail. Justification :
+la page est devenue une vraie page d'accueil dediee (stats, callout
+prochain RDV, 3 sections, raccourci `Ctrl+N`) et merite un acces 1-clic
+au lieu de Dashboard > tab.
+
+**Nouveaux fichiers :**
+
+- `BookingView.vue` (40 lignes) : vue racine qui charge `allStudents` via
+  `window.api.getAllStudents()` puis monte `<TabBooking>`. Inclut
+  `ErrorBoundary`. Ne tire pas tout `useDashboardTeacher` (allege).
+
+**Routes (`router/index.ts`) :**
+
+- Nouvelle route `/booking`, lazy-load, `meta.requiredRole = 'teacher'`.
+  Le route guard existant rejette les etudiants vers `/dashboard`.
+
+**NavRail (`components/layout/NavRail.vue`) :**
+
+- Nouvelle entree `booking` entre `agenda` et `live`, icone `CalendarCheck`,
+  libelle "Rendez-vous", `isVisible: appStore.isTeacher`. L'ordre par defaut
+  est applique automatiquement aux utilisateurs existants via
+  `useNavRailOrder` (les nouveaux items sont appendus a la fin de l'ordre
+  sauvegarde sans casser la personnalisation).
+
+**Dashboard prof (`DashboardTeacher.vue`) :**
+
+- Retrait du bouton "RDV" de la barre d'onglets secondaires.
+- Retrait du `<TabBooking>` du switch `dashTab`.
+- Retrait de `'booking'` des unions de types `DashTabType` et `update:dashTab`.
+- Retrait de l'import `TabBooking` et de l'icone `CalendarDays` (devenue
+  inutilisee).
+
+**Migration douce (`DashboardView.vue`) :**
+
+- Si l'URL contient `?tab=booking` (ancien lien sauvegarde / bookmark),
+  redirige automatiquement vers `/booking` (uniquement pour les profs).
+- Watch sur `route.query.tab` qui applique la meme redirection a chaque
+  navigation.
+- Retrait de `'booking'` du type `DashTab` et de `VALID_TABS`.
+
+Le composant `TabBooking.vue` lui-meme n'est pas modifie : il est juste
+monte par `BookingView` au lieu de `DashboardTeacher`.
+
+Tests : 1946 passants. Typecheck clean. Lint clean (warnings preexistants).
+check:design clean sur les fichiers modifies.
+
 ## v2.252.0 (2026-04-27)
 
 ### Refonte UX/UI page d'accueil RDV (cote prof)
