@@ -1,7 +1,3 @@
-/**
- * BookingPublicView.vue — Public booking page shell.
- * No sidebar, no auth required. Full-page standalone layout.
- */
 <script setup lang="ts">
 import { useRoute } from 'vue-router'
 import BookingPage from '@/components/booking/BookingPage.vue'
@@ -19,15 +15,17 @@ const token = route.params.token as string
 <style scoped>
 .booking-public-shell {
   min-height: 100vh;
-  background: #f8fafc;
+  background: #f4f6fa;
   display: flex;
   align-items: flex-start;
   justify-content: center;
-  padding: 32px 16px;
+  padding: 48px 16px;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
-
 @media (prefers-color-scheme: dark) {
-  .booking-public-shell { background: #0f172a; color: #e2e8f0; }
+  .booking-public-shell { background: #0b1220; color: #e2e8f0; }
+}
+@media (max-width: 640px) {
+  .booking-public-shell { padding: 0; }
 }
 </style>

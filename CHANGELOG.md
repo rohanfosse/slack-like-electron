@@ -1,5 +1,32 @@
 # Changelog
 
+## v2.250.0 (2026-04-27)
+
+### Booking : refonte UX/UI des pages publiques (style Calendly)
+
+Les 3 pages publiques de reservation (`/book/:token`, `/book/e/:slug`, `/book/c/:token`) partagent maintenant un seul composant `BookingFlow.vue` avec un layout type Calendly :
+
+- **Layout 2 colonnes** desktop (320px / flex). Gauche : recap permanent (host, titre, duree, visio, fuseau, description). Droite : selection ou formulaire. Sur mobile, passage en 1 colonne.
+- **Calendrier mensuel** au lieu d'une grille semaine. Navigation prev/next (sans retour avant le mois courant). Les jours avec creneaux sont colores et cliquables ; les autres sont grises et bloques. Date selectionnee mise en evidence en aplat accent.
+- **Slots verticaux** a droite du calendrier, scroll si liste longue, selection en 1 clic.
+- **Etape details epuree** : recap RDV en colonne gauche avec bouton "Modifier le RDV" qui retourne au calendrier ; formulaire reduit avec champs nom/email pre-remplis et grise quand l'utilisateur est deja identifie (mode token et campagne). Le formulaire s'adapte au tripartite (separateur "Tuteur entreprise" + 2 champs additionnels).
+- **Confirmation centree pleine largeur** : icone success, recap card, boutons "Rejoindre la visio" + "Ajouter au calendrier" (ICS).
+- **Captcha Cloudflare Turnstile** (mode event uniquement) integre proprement dans l'etape details, reset automatique apres erreur backend.
+- **Fuseau horaire** : detecte automatiquement via `Intl.DateTimeFormat()` et affiche dans le recap + la confirmation.
+
+**Refactoring** :
+
+- Nouveau composant `BookingFlow.vue` qui encapsule toute la logique d'affichage (calendrier mensuel, slots, formulaire, captcha, confirmation).
+- Types partages dans `bookingFlow.types.ts` (BookingFlowInfo, BookingFlowResult, BookingFlowSubmitPayload).
+- `BookingPage.vue` et `BookingCampaignView.vue` deviennent de simples wrappers qui plug leur composable (`usePublicBooking`, `useCampaignBooking`) sur le flow.
+- Nouveau helper `fetchSlotsRange(weeks)` dans `usePublicBooking` qui charge 8 semaines en parallele a l'arrivee. Le calendrier mensuel a directement tous les slots du mois courant + suivant sans pagination.
+
+**Impact code** :
+
+- Suppression d'environ 700 lignes de markup/style dupliquees entre les 3 vues.
+- Aucun changement backend ni de schema, uniquement frontend.
+- Comportements existants preserves : token nominatif, lien public ouvert avec captcha, campagne tripartite avec ICS.
+
 ## v2.249.0 (2026-04-27)
 
 ### Booking : Campagnes de RDV (visites tripartites planifiees)

@@ -111,6 +111,36 @@ export function usePublicBooking(identifier: string, mode: PublicBookingMode = '
     loading.value = false
   }
 
+  /**
+   * Charge les creneaux des `weeks` semaines en parallele et les fusionne
+   * (deduplication par start ISO). Utilise pour alimenter le calendrier
+   * mensuel d'un coup au lieu de paginer.
+   */
+  async function fetchSlotsRange(weeks = 8) {
+    loading.value = true
+    try {
+      const fetches = Array.from({ length: weeks }, (_, i) =>
+        apiFetch<{ slots: BookingSlot[]; weekStart: string }>(`${basePath}/slots?weekOffset=${i}`),
+      )
+      const results = await Promise.all(fetches)
+      const seen = new Set<string>()
+      const all: BookingSlot[] = []
+      for (const r of results) {
+        if (!r.ok || !r.data) continue
+        for (const s of r.data.slots) {
+          if (seen.has(s.start)) continue
+          seen.add(s.start)
+          all.push(s)
+        }
+      }
+      all.sort((a, b) => a.start.localeCompare(b.start))
+      slots.value = all
+      if (results[0]?.ok && results[0].data) weekStart.value = results[0].data.weekStart
+    } finally {
+      loading.value = false
+    }
+  }
+
   function selectSlot(slot: BookingSlot) {
     selectedSlot.value = slot
     step.value = 'details'
@@ -157,7 +187,7 @@ export function usePublicBooking(identifier: string, mode: PublicBookingMode = '
     eventInfo, slots, weekStart, selectedSlot, step,
     loading, error, errorCode, bookingResult,
     slotsByDate,
-    fetchEventInfo, fetchSlots, selectSlot, backToCalendar, bookSlot,
+    fetchEventInfo, fetchSlots, fetchSlotsRange, selectSlot, backToCalendar, bookSlot,
     icsUrl,
   }
 }
