@@ -11,11 +11,11 @@
 import { ref, onMounted, onUnmounted, watch } from 'vue'
 import {
   CalendarPlus, Clock, Link, Users, Settings, Trash2, Plus,
-  Check, X, ExternalLink, Copy, Calendar, LayoutList, CalendarDays,
+  Check, X, ExternalLink, Copy, Calendar, LayoutList, CalendarDays, Globe,
 } from 'lucide-vue-next'
 import BookingCalendarView from './BookingCalendarView.vue'
 import QrCode from '@/components/ui/QrCode.vue'
-import { useBooking } from '@/composables/useBooking'
+import { useBooking, type EventType } from '@/composables/useBooking'
 import { useMicrosoftConnection } from '@/composables/useMicrosoftConnection'
 import { useModalsStore } from '@/stores/modals'
 
@@ -29,7 +29,7 @@ const {
   savingAvailability,
   sortedBookings, rulesByDay,
   fetchAll,
-  createEventType, toggleActive, deleteEventType, generateLink, generateBulkLinks,
+  createEventType, toggleActive, togglePublic, getPublicUrl, deleteEventType, generateLink, generateBulkLinks,
   addSlot, removeSlot, saveAvailability,
   initSocketListeners, disposeSocketListeners,
   formatDate, formatTime, statusLabel, statusClass,
@@ -83,6 +83,18 @@ const linkEventTypeId = ref<number | null>(null)
 const generatedUrl = ref('')
 const copySuccess = ref(false)
 let copyTimeout: ReturnType<typeof setTimeout> | null = null
+
+const publicCopiedId = ref<number | null>(null)
+let publicCopyTimeout: ReturnType<typeof setTimeout> | null = null
+
+async function copyPublicUrl(et: EventType) {
+  try {
+    await navigator.clipboard.writeText(getPublicUrl(et))
+    publicCopiedId.value = et.id
+    if (publicCopyTimeout) clearTimeout(publicCopyTimeout)
+    publicCopyTimeout = setTimeout(() => { publicCopiedId.value = null }, 2000)
+  } catch { /* ignore */ }
+}
 
 const dayNames: Record<number, string> = { 1: 'Lundi', 2: 'Mardi', 3: 'Mercredi', 4: 'Jeudi', 5: 'Vendredi', 6: 'Samedi', 0: 'Dimanche' }
 const dayNumbers = [1, 2, 3, 4, 5, 6, 0]
@@ -180,6 +192,7 @@ onMounted(() => {
 onUnmounted(() => {
   disposeSocketListeners()
   if (copyTimeout) clearTimeout(copyTimeout)
+  if (publicCopyTimeout) clearTimeout(publicCopyTimeout)
 })
 </script>
 
@@ -245,6 +258,37 @@ onUnmounted(() => {
 
             <!-- Expanded: generate link -->
             <div v-if="expandedTypeId === et.id" class="type-expand">
+              <!-- Lien public ouvert (style Calendly classique) -->
+              <div class="public-link">
+                <div class="public-link-head">
+                  <Globe :size="13" />
+                  <span class="field-label">Lien public ouvert</span>
+                  <button
+                    class="toggle-active toggle-public"
+                    :class="{ active: et.is_public }"
+                    :title="et.is_public ? 'Lien public actif — cliquer pour desactiver' : 'Activer le lien public'"
+                    :aria-label="et.is_public ? 'Desactiver le lien public' : 'Activer le lien public'"
+                    @click.stop="togglePublic(et)"
+                  >
+                    <Check v-if="et.is_public" :size="10" />
+                    <X v-else :size="10" />
+                  </button>
+                </div>
+                <p class="public-help">
+                  N'importe qui ouvrant ce lien peut reserver un creneau (saisit son nom + email lui-meme).
+                  Aucun compte Cursus requis.
+                </p>
+                <div v-if="et.is_public" class="link-result">
+                  <input class="input-field url-field" :value="getPublicUrl(et)" readonly @click="($event.target as HTMLInputElement).select()" />
+                  <button class="btn-sm btn-primary" @click="copyPublicUrl(et)">
+                    <Copy v-if="publicCopiedId !== et.id" :size="12" />
+                    <Check v-else :size="12" />
+                    {{ publicCopiedId === et.id ? 'Copie' : 'Copier' }}
+                  </button>
+                  <QrCode :value="getPublicUrl(et)" :size="80" />
+                </div>
+              </div>
+
               <div class="link-gen">
                 <label class="field-label">Generer un lien pour un etudiant</label>
                 <div class="link-row">
@@ -514,6 +558,15 @@ onUnmounted(() => {
 .select-sm { flex: 1; min-width: 0; }
 .link-result { display: flex; gap: 6px; align-items: center; margin-top: 4px; }
 .url-field { flex: 1; min-width: 0; font-size: 11px; }
+.public-link {
+  display: flex; flex-direction: column; gap: 6px;
+  padding: 8px 10px; margin: -8px -10px 8px;
+  background: color-mix(in srgb, var(--accent) 6%, var(--bg-elevated));
+  border-bottom: 1px solid var(--border);
+}
+.public-link-head { display: flex; align-items: center; gap: 6px; }
+.public-help { font-size: 11px; color: var(--text-muted); margin: 0; line-height: 1.4; }
+.toggle-public { margin-left: auto; }
 .bulk-gen { margin-top: 8px; display: flex; flex-direction: column; gap: 6px; border-top: 1px dashed var(--border); padding-top: 8px; }
 .bulk-results { display: flex; flex-direction: column; gap: 3px; max-height: 150px; overflow-y: auto; }
 .bulk-header { display: flex; align-items: center; justify-content: space-between; }

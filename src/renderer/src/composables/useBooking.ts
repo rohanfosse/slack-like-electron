@@ -19,8 +19,11 @@ export interface EventType {
   color: string
   fallback_visio_url?: string
   is_active: number
+  is_public: number
   created_at: string
 }
+
+const SERVER_URL = (import.meta.env?.VITE_SERVER_URL as string | undefined) || 'http://localhost:3001'
 
 export interface AvailabilityRule {
   id: number
@@ -124,6 +127,42 @@ export function useBooking() {
     } catch {
       showToast('Erreur lors de la mise a jour', 'error')
     }
+  }
+
+  /** Active/desactive le mode "lien public ouvert" (Calendly classique). */
+  async function togglePublic(et: EventType) {
+    try {
+      const next = et.is_public ? 0 : 1
+      const res = await window.api.updateBookingEventType(et.id, { is_public: next })
+      if (res.ok) {
+        // Le backend peut allonger le slug a l'activation (anti-enumeration) ;
+        // on relit l'event-type plutot que de patcher localement.
+        const refreshed = res.data as EventType | undefined
+        if (refreshed && refreshed.id) {
+          const slugChanged = refreshed.slug !== et.slug
+          eventTypes.value = eventTypes.value.map(e => e.id === et.id ? refreshed : e)
+          if (next && slugChanged) {
+            showToast(`Lien public active. Slug allonge en "${refreshed.slug}" pour la securite.`, 'success')
+          } else {
+            showToast(next ? 'Lien public active' : 'Lien public desactive', 'success')
+          }
+        } else {
+          eventTypes.value = eventTypes.value.map(e =>
+            e.id === et.id ? { ...e, is_public: next } : e,
+          )
+          showToast(next ? 'Lien public active' : 'Lien public desactive', 'success')
+        }
+      } else {
+        showToast(res.error || 'Erreur', 'error')
+      }
+    } catch {
+      showToast('Erreur lors de la mise a jour', 'error')
+    }
+  }
+
+  /** URL partageable du lien public ouvert (utilise meme si is_public = 0 pour preview). */
+  function getPublicUrl(et: EventType): string {
+    return `${SERVER_URL}/#/book/e/${et.slug}`
   }
 
   async function deleteEventType(id: number) {
@@ -263,7 +302,7 @@ export function useBooking() {
     sortedBookings, rulesByDay,
     // Actions
     fetchAll,
-    createEventType, toggleActive, deleteEventType, generateLink, generateBulkLinks,
+    createEventType, toggleActive, togglePublic, getPublicUrl, deleteEventType, generateLink, generateBulkLinks,
     addSlot, removeSlot, saveAvailability,
     initSocketListeners, disposeSocketListeners,
     // Helpers

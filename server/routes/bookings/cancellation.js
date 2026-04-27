@@ -61,8 +61,18 @@ router.post('/public/cancel/:cancelToken', publicBookingLimiter, async (req, res
 
     await tryDeleteOutlookEvent(booking.teacher_id, booking.outlook_event_id)
 
-    const tokenRow = queries.getOrCreateToken(booking.event_type_id, booking.student_id)
-    const rebookUrl = `${SERVER_URL}/#/book/${tokenRow.token}`
+    // Reservation issue d'un lien public ouvert (student_id = 0) -> rebook
+    // via le slug public. Sinon (RDV nominatif), on regenere le token etudiant.
+    const isPublicBooking = !booking.student_id || booking.student_id === 0
+    let rebookUrl
+    if (isPublicBooking && booking.is_public && booking.event_slug) {
+      rebookUrl = `${SERVER_URL}/#/book/e/${booking.event_slug}`
+    } else if (booking.student_id) {
+      const tokenRow = queries.getOrCreateToken(booking.event_type_id, booking.student_id)
+      rebookUrl = `${SERVER_URL}/#/book/${tokenRow.token}`
+    } else {
+      rebookUrl = null
+    }
     try {
       await email.sendBookingCancellation({
         to: booking.tutor_email,
@@ -95,8 +105,16 @@ router.post('/public/reschedule/:cancelToken', publicBookingLimiter, async (req,
     queries.rescheduleBooking(booking.id)
     await tryDeleteOutlookEvent(booking.teacher_id, booking.outlook_event_id)
 
-    const tokenRow = queries.getOrCreateToken(booking.event_type_id, booking.student_id)
-    const rebookUrl = `${SERVER_URL}/#/book/${tokenRow.token}`
+    const isPublicBooking = !booking.student_id || booking.student_id === 0
+    let rebookUrl
+    if (isPublicBooking && booking.is_public && booking.event_slug) {
+      rebookUrl = `${SERVER_URL}/#/book/e/${booking.event_slug}`
+    } else if (booking.student_id) {
+      const tokenRow = queries.getOrCreateToken(booking.event_type_id, booking.student_id)
+      rebookUrl = `${SERVER_URL}/#/book/${tokenRow.token}`
+    } else {
+      rebookUrl = null
+    }
 
     try {
       await email.sendBookingReschedule({

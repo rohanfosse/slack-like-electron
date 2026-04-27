@@ -21,15 +21,15 @@ function getEventTypeById(id) {
   return getDb().prepare('SELECT * FROM booking_event_types WHERE id = ?').get(id) || null;
 }
 
-function createEventType({ teacherId, title, slug, description, durationMinutes, color, fallbackVisioUrl, bufferMinutes, timezone }) {
+function createEventType({ teacherId, title, slug, description, durationMinutes, color, fallbackVisioUrl, bufferMinutes, timezone, isPublic }) {
   const res = getDb().prepare(
-    'INSERT INTO booking_event_types (teacher_id, title, slug, description, duration_minutes, color, fallback_visio_url, buffer_minutes, timezone) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
-  ).run(teacherId, title, slug, description || null, durationMinutes || 30, color || '#3b82f6', fallbackVisioUrl || null, bufferMinutes || 0, timezone || 'Europe/Paris');
+    'INSERT INTO booking_event_types (teacher_id, title, slug, description, duration_minutes, color, fallback_visio_url, buffer_minutes, timezone, is_public) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+  ).run(teacherId, title, slug, description || null, durationMinutes || 30, color || '#3b82f6', fallbackVisioUrl || null, bufferMinutes || 0, timezone || 'Europe/Paris', isPublic ? 1 : 0);
   return getDb().prepare('SELECT * FROM booking_event_types WHERE id = ?').get(res.lastInsertRowid);
 }
 
 function updateEventType(id, fields) {
-  const allowed = ['title', 'description', 'duration_minutes', 'color', 'fallback_visio_url', 'is_active', 'buffer_minutes', 'timezone'];
+  const allowed = ['title', 'slug', 'description', 'duration_minutes', 'color', 'fallback_visio_url', 'is_active', 'buffer_minutes', 'timezone', 'is_public'];
   const sets = [];
   const vals = [];
   for (const key of allowed) {
@@ -129,6 +129,34 @@ function getTokenData(token) {
   return row || null;
 }
 
+/**
+ * Charge un event-type "public" via son slug (lien Calendly ouvert).
+ * Renvoie le row sans filtrer is_public/is_active : a l'appelant de
+ * decider si le statut "desactive" doit etre distingue du "introuvable"
+ * (utile pour afficher un message specifique a l'etudiant).
+ * Champs alignes sur getTokenData() pour reutiliser generateSlots / createBookingAtomic.
+ */
+function getPublicEventTypeBySlug(slug) {
+  return getDb().prepare(`
+    SELECT bet.id           AS event_type_id,
+           bet.teacher_id,
+           bet.title        AS event_title,
+           bet.slug,
+           bet.description,
+           bet.duration_minutes,
+           bet.color,
+           bet.fallback_visio_url,
+           bet.buffer_minutes,
+           bet.timezone,
+           bet.is_active    AS event_type_active,
+           bet.is_public,
+           u.name           AS teacher_name
+    FROM booking_event_types bet
+    JOIN users u ON u.id = bet.teacher_id
+    WHERE bet.slug = ?
+  `).get(slug) || null;
+}
+
 // ── Bookings ────────────────────────────────────────────────────────────
 
 /**
@@ -168,11 +196,11 @@ function updateBookingTeamsInfo(bookingId, { teamsJoinUrl, outlookEventId }) {
 
 function getBookingByCancelToken(cancelToken) {
   return getDb().prepare(`
-    SELECT b.*, bet.title AS event_title, bet.duration_minutes,
+    SELECT b.*, bet.title AS event_title, bet.duration_minutes, bet.slug AS event_slug, bet.is_public,
            s.name AS student_name, u.name AS teacher_name
     FROM bookings b
     JOIN booking_event_types bet ON bet.id = b.event_type_id
-    JOIN students s ON s.id = b.student_id
+    LEFT JOIN students s ON s.id = b.student_id
     JOIN users u ON u.id = b.teacher_id
     WHERE b.cancel_token = ?
   `).get(cancelToken) || null;
@@ -301,7 +329,7 @@ function getBookingById(id) {
            s.name AS student_name, s.email AS student_email, u.name AS teacher_name
     FROM bookings b
     JOIN booking_event_types bet ON bet.id = b.event_type_id
-    JOIN students s ON s.id = b.student_id
+    LEFT JOIN students s ON s.id = b.student_id
     JOIN users u ON u.id = b.teacher_id
     WHERE b.id = ?
   `).get(id) || null;
@@ -312,7 +340,7 @@ module.exports = {
   createEventType, updateEventType, deleteEventType,
   getAvailabilityRules, setAvailabilityRules,
   getAvailabilityOverrides, setAvailabilityOverrides,
-  getOrCreateToken, getTokenData,
+  getOrCreateToken, getTokenData, getPublicEventTypeBySlug,
   createBookingAtomic, updateBookingTeamsInfo,
   getBookingByCancelToken, getBookingById, getBookingForToken, cancelBooking, rescheduleBooking,
   getBookingsForTeacher, getBookingsForSlot,

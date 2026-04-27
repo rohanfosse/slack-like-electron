@@ -9,12 +9,15 @@ const SERVER_URL = (import.meta.env?.VITE_SERVER_URL as string | undefined) || '
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
+export type PublicBookingMode = 'token' | 'event'
+
 export interface BookingEventInfo {
   eventTitle: string
   description?: string
   durationMinutes: number
   teacherName: string
-  studentName: string
+  /** Pre-rempli uniquement en mode token nominatif. Absent en mode 'event' (lien public ouvert). */
+  studentName?: string
   color: string
   timezone?: string
 }
@@ -35,7 +38,15 @@ export interface BookingResult {
 
 // ── Composable ───────────────────────────────────────────────────────────────
 
-export function usePublicBooking(token: string) {
+/**
+ * Composable pour la page publique de reservation.
+ * - mode 'token' (defaut) : lien nominatif /book/:token
+ * - mode 'event'          : lien public ouvert /book/e/:slug
+ *
+ * Les deux modes partagent le meme flow UI ; seules les URLs API et le nom
+ * des champs envoyes au POST /book different.
+ */
+export function usePublicBooking(identifier: string, mode: PublicBookingMode = 'token') {
   const eventInfo = ref<BookingEventInfo | null>(null)
   const slots = ref<BookingSlot[]>([])
   const weekStart = ref('')
@@ -43,7 +54,14 @@ export function usePublicBooking(token: string) {
   const step = ref<'calendar' | 'details' | 'confirmation'>('calendar')
   const loading = ref(false)
   const error = ref('')
+  /** Code d'erreur du backend (ex: 'closed', 'not_found', 'invalid_link') pour
+   *  permettre a l'UI d'afficher un message specifique. */
+  const errorCode = ref('')
   const bookingResult = ref<BookingResult | null>(null)
+
+  const basePath = mode === 'event'
+    ? `/api/bookings/public/event/${encodeURIComponent(identifier)}`
+    : `/api/bookings/public/${encodeURIComponent(identifier)}`
 
   // Group slots by date
   const slotsByDate = computed(() => {
@@ -54,7 +72,7 @@ export function usePublicBooking(token: string) {
     return map
   })
 
-  async function apiFetch<T>(path: string, opts?: RequestInit): Promise<{ ok: boolean; data?: T; error?: string }> {
+  async function apiFetch<T>(path: string, opts?: RequestInit): Promise<{ ok: boolean; data?: T; error?: string; code?: string }> {
     try {
       const res = await fetchWithTimeout(`${SERVER_URL}${path}`, {
         headers: { 'Content-Type': 'application/json' },
@@ -70,11 +88,13 @@ export function usePublicBooking(token: string) {
   async function fetchEventInfo() {
     loading.value = true
     error.value = ''
-    const res = await apiFetch<BookingEventInfo>(`/api/bookings/public/${token}`)
+    errorCode.value = ''
+    const res = await apiFetch<BookingEventInfo>(basePath)
     if (res.ok && res.data) {
       eventInfo.value = res.data
     } else {
       error.value = res.error || 'Lien de reservation invalide.'
+      errorCode.value = res.code || ''
     }
     loading.value = false
   }
@@ -82,7 +102,7 @@ export function usePublicBooking(token: string) {
   async function fetchSlots(weekOffset = 0) {
     loading.value = true
     const res = await apiFetch<{ slots: BookingSlot[]; weekStart: string }>(
-      `/api/bookings/public/${token}/slots?weekOffset=${weekOffset}`,
+      `${basePath}/slots?weekOffset=${weekOffset}`,
     )
     if (res.ok && res.data) {
       slots.value = res.data.slots
@@ -101,17 +121,19 @@ export function usePublicBooking(token: string) {
     step.value = 'calendar'
   }
 
-  async function bookSlot(tutorName: string, tutorEmail: string) {
+  async function bookSlot(attendeeName: string, attendeeEmail: string, captchaToken?: string) {
     if (!selectedSlot.value) return false
     loading.value = true
     error.value = ''
-    const res = await apiFetch<BookingResult>(`/api/bookings/public/${token}/book`, {
+    errorCode.value = ''
+    // Le backend public/event utilise attendeeName/attendeeEmail + captchaToken ;
+    // les liens nominatifs gardent les noms historiques tutorName/tutorEmail.
+    const body = mode === 'event'
+      ? { attendeeName, attendeeEmail, startDatetime: selectedSlot.value.start, captchaToken }
+      : { tutorName: attendeeName, tutorEmail: attendeeEmail, startDatetime: selectedSlot.value.start }
+    const res = await apiFetch<BookingResult>(`${basePath}/book`, {
       method: 'POST',
-      body: JSON.stringify({
-        tutorName,
-        tutorEmail,
-        startDatetime: selectedSlot.value.start,
-      }),
+      body: JSON.stringify(body),
     })
     if (res.ok && res.data) {
       bookingResult.value = res.data
@@ -120,6 +142,7 @@ export function usePublicBooking(token: string) {
       return true
     }
     error.value = res.error || 'Erreur lors de la reservation.'
+    errorCode.value = res.code || ''
     loading.value = false
     return false
   }
@@ -127,12 +150,12 @@ export function usePublicBooking(token: string) {
   // ICS download URL
   function icsUrl(): string | null {
     if (!bookingResult.value) return null
-    return `${SERVER_URL}/api/bookings/public/${token}/booking/${bookingResult.value.bookingId}/ics`
+    return `${SERVER_URL}${basePath}/booking/${bookingResult.value.bookingId}/ics`
   }
 
   return {
     eventInfo, slots, weekStart, selectedSlot, step,
-    loading, error, bookingResult,
+    loading, error, errorCode, bookingResult,
     slotsByDate,
     fetchEventInfo, fetchSlots, selectSlot, backToCalendar, bookSlot,
     icsUrl,

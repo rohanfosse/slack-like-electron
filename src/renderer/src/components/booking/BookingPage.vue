@@ -5,26 +5,114 @@
  * Step 3: Confirmation (Teams link, .ics download, cancel link)
  */
 <script setup lang="ts">
-import { onMounted, onBeforeUnmount, ref, computed } from 'vue'
+import { onMounted, onBeforeUnmount, ref, computed, watch, nextTick } from 'vue'
 import { Calendar, Clock, User, Mail, ChevronLeft, ChevronRight, Check, Video, Download, ArrowLeft, Copy, CalendarPlus } from 'lucide-vue-next'
-import { usePublicBooking, type BookingSlot } from '@/composables/usePublicBooking'
+import { usePublicBooking, type BookingSlot, type PublicBookingMode } from '@/composables/usePublicBooking'
 import { useContextMenu } from '@/composables/useContextMenu'
 import ContextMenu, { type ContextMenuItem } from '@/components/ui/ContextMenu.vue'
 
-const props = defineProps<{ token: string }>()
+// ── Cloudflare Turnstile (anti-spam) ─────────────────────────────────────────
+// Si VITE_TURNSTILE_SITE_KEY est vide, on n'affiche pas de captcha (mode dev,
+// ou le backend n'a pas configure TURNSTILE_SECRET_KEY non plus).
+const TURNSTILE_SITE_KEY = (import.meta.env?.VITE_TURNSTILE_SITE_KEY as string | undefined) || ''
+
+interface TurnstileApi {
+  render: (el: HTMLElement, opts: Record<string, unknown>) => string
+  reset: (id?: string) => void
+  remove: (id?: string) => void
+}
+declare global {
+  interface Window { turnstile?: TurnstileApi }
+}
+
+function loadTurnstileScript(): Promise<void> {
+  if (typeof window === 'undefined') return Promise.resolve()
+  if (window.turnstile) return Promise.resolve()
+  if (document.querySelector('script[data-cf-turnstile]')) {
+    return new Promise((resolve) => {
+      const tick = () => (window.turnstile ? resolve() : setTimeout(tick, 50))
+      tick()
+    })
+  }
+  return new Promise((resolve, reject) => {
+    const s = document.createElement('script')
+    s.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit'
+    s.async = true
+    s.defer = true
+    s.dataset.cfTurnstile = '1'
+    s.onload = () => resolve()
+    s.onerror = () => reject(new Error('turnstile_load_failed'))
+    document.head.appendChild(s)
+  })
+}
+
+const props = withDefaults(defineProps<{ token: string; mode?: PublicBookingMode }>(), {
+  mode: 'token',
+})
 
 const {
   eventInfo, slots, weekStart, selectedSlot, step,
-  loading, error, bookingResult,
+  loading, error, errorCode, bookingResult,
   slotsByDate,
   fetchEventInfo, fetchSlots, selectSlot, backToCalendar, bookSlot,
   icsUrl,
-} = usePublicBooking(props.token)
+} = usePublicBooking(props.token, props.mode)
+
+// Titre humain pour l'ecran d'erreur, fonction du code backend.
+const errorTitle = computed(() => {
+  switch (errorCode.value) {
+    case 'closed':       return 'Reservations fermees'
+    case 'inactive':     return 'Type de rendez-vous indisponible'
+    case 'not_found':    return 'Lien introuvable'
+    case 'invalid_link': return 'Lien invalide'
+    default:             return 'Lien invalide'
+  }
+})
 
 const weekOffset = ref(0)
 const tutorName = ref('')
 const tutorEmail = ref('')
 const submitting = ref(false)
+
+// Captcha (uniquement en mode 'event' = lien public ouvert).
+const captchaEnabled = computed(() => props.mode === 'event' && !!TURNSTILE_SITE_KEY)
+const captchaRef = ref<HTMLDivElement | null>(null)
+const captchaToken = ref('')
+const captchaError = ref('')
+let captchaWidgetId: string | undefined
+
+async function mountCaptcha() {
+  if (!captchaEnabled.value || !captchaRef.value) return
+  try {
+    await loadTurnstileScript()
+  } catch {
+    captchaError.value = 'Impossible de charger la verification anti-spam.'
+    return
+  }
+  if (!window.turnstile || !captchaRef.value) return
+  // Nettoie un eventuel widget precedent (ex: passage details -> calendrier -> details)
+  if (captchaWidgetId) {
+    try { window.turnstile.remove(captchaWidgetId) } catch { /* ignore */ }
+    captchaWidgetId = undefined
+  }
+  captchaWidgetId = window.turnstile.render(captchaRef.value, {
+    sitekey: TURNSTILE_SITE_KEY,
+    callback: (token: string) => { captchaToken.value = token; captchaError.value = '' },
+    'error-callback': () => { captchaToken.value = ''; captchaError.value = 'Verification echouee, recommence.' },
+    'expired-callback': () => { captchaToken.value = '' },
+    theme: 'auto',
+    appearance: 'always',
+  })
+}
+
+watch(() => step.value, async (s) => {
+  if (s === 'details' && captchaEnabled.value) {
+    captchaToken.value = ''
+    captchaError.value = ''
+    await nextTick()
+    mountCaptcha()
+  }
+})
 
 // Week days from weekStart
 const weekDays = computed(() => {
@@ -64,9 +152,18 @@ async function nextWeek() {
 
 async function onSubmit() {
   if (!tutorName.value.trim() || !tutorEmail.value.trim()) return
+  if (captchaEnabled.value && !captchaToken.value) {
+    captchaError.value = 'Coche la verification anti-spam ci-dessus.'
+    return
+  }
   submitting.value = true
-  await bookSlot(tutorName.value.trim(), tutorEmail.value.trim())
+  const ok = await bookSlot(tutorName.value.trim(), tutorEmail.value.trim(), captchaToken.value || undefined)
   submitting.value = false
+  if (!ok && captchaWidgetId && window.turnstile) {
+    // Token consomme cote backend -> reset le widget pour re-verifier.
+    try { window.turnstile.reset(captchaWidgetId) } catch { /* ignore */ }
+    captchaToken.value = ''
+  }
 }
 
 function formatTime(iso: string): string {
@@ -95,6 +192,9 @@ function toast(msg: string) {
 }
 onBeforeUnmount(() => {
   if (toastTimer) clearTimeout(toastTimer)
+  if (captchaWidgetId && window.turnstile) {
+    try { window.turnstile.remove(captchaWidgetId) } catch { /* ignore */ }
+  }
 })
 
 const { ctx, open: openCtx, close: closeCtx } = useContextMenu<BookingSlot>()
@@ -128,8 +228,11 @@ const ctxItems = computed<ContextMenuItem[]>(() => {
   <div class="bp" :style="eventInfo ? { '--accent': eventInfo.color } : {}">
     <!-- Error state -->
     <div v-if="error && !eventInfo" class="bp-error">
-      <h2>Lien invalide</h2>
+      <h2>{{ errorTitle }}</h2>
       <p>{{ error }}</p>
+      <p v-if="errorCode === 'closed'" class="bp-error-hint">
+        Si tu attendais une reponse de cet enseignant, contacte-le directement.
+      </p>
     </div>
 
     <!-- Loading -->
@@ -208,15 +311,39 @@ const ctxItems = computed<ContextMenuItem[]>(() => {
 
         <form class="bp-form" @submit.prevent="onSubmit">
           <div class="bp-field">
-            <label class="bp-label"><User :size="12" /> Nom</label>
-            <input v-model="tutorName" class="bp-input" placeholder="Prenom Nom" required maxlength="200" />
+            <label class="bp-label" for="bp-name"><User :size="12" /> Nom</label>
+            <input
+              id="bp-name"
+              v-model="tutorName"
+              class="bp-input"
+              :placeholder="mode === 'event' ? 'Prenom Nom' : 'Prenom Nom'"
+              autocomplete="name"
+              required
+              maxlength="200"
+            />
           </div>
           <div class="bp-field">
-            <label class="bp-label"><Mail :size="12" /> Email</label>
-            <input v-model="tutorEmail" class="bp-input" type="email" placeholder="email@entreprise.com" required />
+            <label class="bp-label" for="bp-email"><Mail :size="12" /> Email</label>
+            <input
+              id="bp-email"
+              v-model="tutorEmail"
+              class="bp-input"
+              type="email"
+              :placeholder="mode === 'event' ? 'prenom.nom@exemple.fr' : 'email@entreprise.com'"
+              autocomplete="email"
+              required
+            />
+          </div>
+          <div v-if="captchaEnabled" class="bp-captcha">
+            <div ref="captchaRef" />
+            <p v-if="captchaError" class="bp-form-error">{{ captchaError }}</p>
           </div>
           <p v-if="error" class="bp-form-error">{{ error }}</p>
-          <button class="bp-submit" type="submit" :disabled="submitting || !tutorName.trim() || !tutorEmail.trim()">
+          <button
+            class="bp-submit"
+            type="submit"
+            :disabled="submitting || !tutorName.trim() || !tutorEmail.trim() || (captchaEnabled && !captchaToken)"
+          >
             <Check :size="16" />
             {{ submitting ? 'Reservation...' : 'Confirmer le rendez-vous' }}
           </button>
@@ -297,6 +424,7 @@ const ctxItems = computed<ContextMenuItem[]>(() => {
 /* Error/Loading */
 .bp-error, .bp-loading { padding: 48px 24px; text-align: center; color: #64748b; }
 .bp-error h2 { color: #ef4444; font-size: 18px; margin: 0 0 8px; }
+.bp-error-hint { font-size: 12px; color: #94a3b8; margin-top: 12px; }
 
 /* Week nav */
 .bp-week-nav { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
@@ -364,6 +492,7 @@ const ctxItems = computed<ContextMenuItem[]>(() => {
   .bp-input { background: #334155; border-color: #475569; color: #e2e8f0; }
 }
 .bp-form-error { font-size: 12px; color: #ef4444; margin: 0; }
+.bp-captcha { display: flex; flex-direction: column; gap: 6px; align-items: center; min-height: 65px; }
 .bp-submit {
   display: flex; align-items: center; justify-content: center; gap: 8px;
   padding: 12px; border-radius: 10px; border: none;

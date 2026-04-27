@@ -418,7 +418,7 @@ declare global {
       onLiveConfusionUpdate(cb: (data: { sessionId: number; count: number }) => void): () => void
       onLiveSelfPacedUpdate(cb: (data: { sessionId: number; selfPaced: boolean }) => void): () => void
       // Booking (mini-Calendly)
-      getBookingEventTypes(): Promise<IpcResponse<{ id: number; title: string; slug: string; description?: string; duration_minutes: number; buffer_minutes: number; timezone: string; color: string; fallback_visio_url?: string; is_active: number; created_at: string }[]>>
+      getBookingEventTypes(): Promise<IpcResponse<{ id: number; title: string; slug: string; description?: string; duration_minutes: number; buffer_minutes: number; timezone: string; color: string; fallback_visio_url?: string; is_active: number; is_public: number; created_at: string }[]>>
       createBookingEventType(payload: unknown): Promise<IpcResponse<unknown>>
       updateBookingEventType(id: number, payload: unknown): Promise<IpcResponse<unknown>>
       deleteBookingEventType(id: number): Promise<IpcResponse<null>>
@@ -426,6 +426,7 @@ declare global {
       setBookingAvailability(rules: unknown): Promise<IpcResponse<unknown>>
       createBookingToken(eventTypeId: number, studentId: number): Promise<IpcResponse<{ token: string; bookingUrl: string }>>
       createBulkBookingTokens(eventTypeId: number, promoId: number): Promise<IpcResponse<{ studentId: number; studentName: string; bookingUrl: string }[]>>
+      getBookingPublicLink(eventTypeId: number): Promise<IpcResponse<{ publicUrl: string; isPublic: boolean; isActive: boolean; slug: string }>>
       getMyBookings(from?: string, to?: string): Promise<IpcResponse<unknown[]>>
       startBookingOAuth(): Promise<IpcResponse<{ url: string }>>
       getBookingOAuthStatus(): Promise<IpcResponse<{ connected: boolean; expiresAt?: string }>>

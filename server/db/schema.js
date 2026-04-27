@@ -1,6 +1,6 @@
 const { getDb } = require('./connection');
 
-const CURRENT_VERSION = 82;
+const CURRENT_VERSION = 83;
 
 // ─── Schema initial ───────────────────────────────────────────────────────────
 // Crée toutes les tables avec leur schéma complet (colonnes UTC, toutes colonnes incluses).
@@ -1906,6 +1906,14 @@ function runMigrations(db) {
         );
         CREATE INDEX IF NOT EXISTS idx_link_previews_expires ON link_previews(expires_at);
       `);
+    },
+
+    // v83 : Booking — lien public ouvert (style Calendly classique).
+    // Quand is_public = 1, l'event-type est accessible via /book/e/:slug
+    // sans token nominatif. Les reservations publiques utilisent
+    // student_id = 0 comme sentinelle (pas de FK explicite sur students).
+    (db) => {
+      tryAlter(db, "ALTER TABLE booking_event_types ADD COLUMN is_public INTEGER NOT NULL DEFAULT 0");
     },
   ];
 

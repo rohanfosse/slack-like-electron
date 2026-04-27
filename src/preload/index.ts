@@ -447,6 +447,7 @@ contextBridge.exposeInMainWorld('api', {
   setBookingAvailability:    (rules: unknown)            => put('/api/bookings/availability', { rules }),
   createBookingToken:        (eventTypeId: number, studentId: number) => post('/api/bookings/tokens', { eventTypeId, studentId }),
   createBulkBookingTokens:   (eventTypeId: number, promoId: number) => post('/api/bookings/tokens/bulk', { eventTypeId, promoId }),
+  getBookingPublicLink:      (eventTypeId: number)        => get(`/api/bookings/event-types/${eventTypeId}/public-link`),
   getMyBookings:             (from?: string, to?: string) => {
     const qs = new URLSearchParams()
     if (from) qs.set('from', from)

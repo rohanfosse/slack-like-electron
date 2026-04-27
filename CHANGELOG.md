@@ -1,5 +1,90 @@
 # Changelog
 
+## v2.247.0 (2026-04-27)
+
+### Booking : Cloudflare Turnstile sur le lien public
+
+Cloture le BLOQUANT identifie par l'audit securite v2.245 ("Cursus utilisable comme relais email/spam"). On ajoute un captcha invisible Cloudflare Turnstile sur la route `POST /api/bookings/public/event/:slug/book`.
+
+Pourquoi Turnstile et pas hCaptcha / reCAPTCHA :
+
+- Gratuit sans plafond, pas de tracker tiers, RGPD-friendly.
+- Invisible la plupart du temps (cookie navigateur, telemetrie passive). Une vraie personne ne voit jamais de challenge.
+- Pas de dependance npm cote backend ni frontend (script charge a la demande, API HTTP simple).
+
+**Backend** :
+
+- Helper `verifyTurnstile(token, ip)` dans `publicBooking.js` : appelle `https://challenges.cloudflare.com/turnstile/v0/siteverify` avec timeout 5s.
+- "Fail closed" : si l'API Turnstile est injoignable, on refuse la reservation (sinon un attaquant pourrait bypass en sabotant la connexion sortante).
+- Activation conditionnelle : si `TURNSTILE_SECRET_KEY` n'est pas dans l'env, le check est skippe (mode dev / tests).
+- Schema zod `publicBookSchema` etend avec `captchaToken: z.string().optional()`. Reponse 400 + `code: 'captcha_failed'` en cas d'echec.
+
+**Frontend** :
+
+- `BookingPage.vue` charge `https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit` a la demande quand on entre dans l'etape "details", uniquement en mode `event` (lien public ouvert) et uniquement si `VITE_TURNSTILE_SITE_KEY` est definie au build.
+- Bouton "Confirmer le rendez-vous" disabled tant que le widget n'a pas emis son token.
+- Le widget est reset apres un echec backend pour forcer une nouvelle verification.
+- Cleanup automatique a `onBeforeUnmount` (pas de leak DOM).
+
+**Configuration** :
+
+Documentee dans `server/.env.example`. Obtenir une paire site-key / secret-key gratuitement sur `dash.cloudflare.com` -> Turnstile. La site-key est exposee dans le bundle (publique), la secret-key reste cote serveur.
+
+**Effet sur l'attaque "relay email"** :
+
+L'attaquant doit desormais resoudre un challenge Turnstile par reservation. Cloudflare bloque les UA scrapers, les datacenter IPs et les sessions sans empreinte navigateur coherente. Le cout passe d'un POST gratuit a une charge non triviale (orchestration headless + rotation residentielle), suffisant pour decourager le scenario decrit dans l'audit.
+
+## v2.246.0 (2026-04-27)
+
+### Booking : durcissement du lien public (post-audit)
+
+Audit securite + UX du mode "lien public ouvert" introduit en v2.245. 3 categories de fixes.
+
+**Anti-spoofing (subject Outlook + body)** :
+
+- Nouveau helper `sanitizePlainText()` dans `server/utils/escHtml.js` : strippe CR/LF/TAB (injection d'en-tetes RFC5322), caracteres de controle ASCII, zero-width (U+200B..U+200F), marques bidi (U+202A..U+202E, U+2066..U+2069) et BOM (U+FEFF).
+- `attendeeName` (lien public) et `tutorName` (lien token nominatif) passes par `sanitizePlainText` des l'entree, refus avec 400 si le nom devient vide apres sanitize.
+- Subject Outlook utilise desormais `sanitizePlainText` au lieu de `escHtml` (le subject n'est pas du HTML : `escHtml` introduisait `&amp;` litteraux dans les noms et n'eliminait pas les CR/LF).
+
+**Anti-enumeration de slug** :
+
+- Activation de `is_public` cote backend : si le slug courant est inferieur a 10 caracteres, il est automatiquement allonge avec un suffixe hex de 5 caracteres (ex: `jean` -> `jean-a3f2c`). Empeche l'enumeration par dictionnaire de prenoms / noms courts.
+- Le toast cote prof annonce explicitement le nouveau slug (`Lien public active. Slug allonge en "jean-a3f2c" pour la securite.`).
+- `slug` ajoute a la liste blanche du `updateEventType` model.
+
+**UX page etudiant** :
+
+- Placeholder email passe de `email@entreprise.com` a `prenom.nom@exemple.fr` en mode public ouvert (la page n'est plus exclusivement pour les tuteurs entreprise).
+- Inputs nom + email avec `autocomplete="name"` / `autocomplete="email"` et `id`/`for` corrects pour autofill mobile + a11y.
+- Backend distingue 4 codes d'erreur (`invalid_link`, `not_found`, `closed`, `inactive`) au lieu d'un message generique. La page etudiant affiche un titre et un sous-texte adaptes (ex: "Reservations fermees" + "Si tu attendais une reponse de cet enseignant, contacte-le directement").
+
+**Reste BLOQUANT non resolu** : pas de CAPTCHA. Cursus reste theoriquement utilisable comme relais email (envoi de mails de confirmation a des tiers via slug devine + email arbitraire). Mitigation operationnelle pour l'instant : limites de rate (20 req/min/IP, 30 req/min/slug) + slug allonge. CAPTCHA / hCaptcha a ajouter en v2.247 si signal d'abus detecte.
+
+## v2.245.0 (2026-04-27)
+
+### Booking : lien public ouvert (Calendly classique)
+
+Avant : chaque RDV necessitait un token nominatif genere pour un etudiant precis (lien personnel a chaque destinataire).
+Maintenant : un type d'evenement peut etre marque `is_public` pour exposer une page publique unique a partager a tout le monde, sans inscription Cursus.
+
+**Backend** :
+
+- Migration v83 : `booking_event_types.is_public INTEGER NOT NULL DEFAULT 0`.
+- Nouveau modele `getPublicEventTypeBySlug(slug)` (refuse si `is_active = 0` ou `is_public = 0`).
+- Routes publiques `GET /api/bookings/public/event/:slug`, `GET /event/:slug/slots`, `POST /event/:slug/book` et `GET /event/:slug/booking/:id/ics`.
+- Reservation publique = `student_id = 0` (sentinelle, pas de FK), seuls `tutor_name` / `tutor_email` portent les coordonnees du visiteur.
+- Rate limiter dedie par slug (`30 req/min/slug`) en plus du limiter IP (`20 req/min/IP`).
+- Integration Microsoft inchangee : creation Teams + Outlook + email de confirmation se declenche quand le prof a connecte son compte.
+- `getBookingByCancelToken` en LEFT JOIN sur `students` pour supporter les RDV publics ; `cancellation` redirige le rebookUrl vers `/book/e/:slug` au lieu de regenerer un token nominatif.
+- Route admin `GET /api/bookings/event-types/:id/public-link` pour previewer l'URL avant activation.
+
+**Frontend** :
+
+- Composable `usePublicBooking(identifier, mode)` : `mode = 'token'` (lien nominatif, defaut) ou `'event'` (lien public ouvert).
+- Vue `BookingPublicEventView.vue` montee sur la route hash `/book/e/:slug`.
+- `TabBooking.vue` : nouvelle section "Lien public ouvert" dans le bloc deplie de chaque type d'evenement, avec toggle on/off, URL, bouton "Copier" et QR code.
+- Helpers `togglePublic(et)` et `getPublicUrl(et)` exposes par `useBooking`.
+
 ## v2.202.0 (2026-04-20)
 
 ### Drag-drop : composable modernise + composant unifie

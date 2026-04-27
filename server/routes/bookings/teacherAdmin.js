@@ -5,12 +5,43 @@
  */
 const router = require('express').Router()
 const { z }  = require('zod')
+const crypto = require('crypto')
 const queries = require('../../db/index')
 const { validate } = require('../../middleware/validate')
 const wrap    = require('../../utils/wrap')
 const { requireRole } = require('../../middleware/authorize')
 const { ForbiddenError, ValidationError } = require('../../utils/errors')
 const { SERVER_URL } = require('./_shared')
+
+// Mode public ouvert : impose un slug suffisamment long pour empecher
+// l'enumeration par dictionnaire (ex: "/book/e/jean"). Sous ce seuil, on
+// allonge le slug avec un suffixe aleatoire avant d'activer is_public.
+const PUBLIC_SLUG_MIN_LEN = 10
+
+/** Genere un slug derive en y collant un suffixe hex de 5 chars. */
+function lengthenSlugForPublic(baseSlug) {
+  const suffix = crypto.randomBytes(3).toString('hex').slice(0, 5)
+  return `${baseSlug}-${suffix}`
+}
+
+/**
+ * Si le PATCH active is_public et que le slug courant est trop court,
+ * remplace-le par une variante allongee (et garantit l'unicite).
+ * Retourne le slug final (peut etre inchange).
+ */
+function ensurePublicSlug(currentSlug, fields) {
+  const wantsPublic = fields.is_public === 1 || fields.is_public === true
+  if (!wantsPublic) return currentSlug
+  if (currentSlug && currentSlug.length >= PUBLIC_SLUG_MIN_LEN) return currentSlug
+  for (let i = 0; i < 5; i++) {
+    const candidate = lengthenSlugForPublic(currentSlug || 'rdv')
+    if (!queries.getEventTypeBySlug(candidate)) {
+      fields.slug = candidate
+      return candidate
+    }
+  }
+  throw new ValidationError('Impossible de generer un slug public unique')
+}
 
 // ── Schemas ────────────────────────────────────────────────────────────
 
@@ -23,7 +54,11 @@ const createEventTypeSchema = z.object({
   fallbackVisioUrl: z.string().url().optional().nullable(),
   bufferMinutes: z.number().int().min(0).max(60).optional(),
   timezone: z.string().max(50).optional(),
+  isPublic: z.boolean().optional(),
 })
+// .partial() laisse passer les champs additionnels (zod n'est pas strict par
+// defaut). Le modele filtre ensuite via une liste blanche (is_active, is_public...)
+// donc le client peut envoyer directement les noms snake_case.
 const updateEventTypeSchema = createEventTypeSchema.partial()
 
 const availabilitySchema = z.object({
@@ -55,6 +90,9 @@ router.post('/event-types', requireRole('teacher'), validate(createEventTypeSche
 router.patch('/event-types/:id', requireRole('teacher'), validate(updateEventTypeSchema), wrap((req) => {
   const et = queries.getEventTypeById(Number(req.params.id))
   if (!et || et.teacher_id !== req.user.id) throw new ForbiddenError()
+  // Si le prof active is_public, garantit un slug long (anti-enumeration).
+  // Mute req.body en place pour forcer le nouveau slug dans l'UPDATE.
+  ensurePublicSlug(et.slug, req.body)
   return queries.updateEventType(Number(req.params.id), req.body)
 }))
 
@@ -63,6 +101,19 @@ router.delete('/event-types/:id', requireRole('teacher'), wrap((req) => {
   if (!et || et.teacher_id !== req.user.id) throw new ForbiddenError()
   queries.deleteEventType(Number(req.params.id))
   return null
+}))
+
+// Renvoie l'URL publique pour un event-type (ne necessite pas que is_public
+// soit deja active — pratique pour previewer l'URL avant activation).
+router.get('/event-types/:id/public-link', requireRole('teacher'), wrap((req) => {
+  const et = queries.getEventTypeById(Number(req.params.id))
+  if (!et || et.teacher_id !== req.user.id) throw new ForbiddenError()
+  return {
+    publicUrl: `${SERVER_URL}/#/book/e/${et.slug}`,
+    isPublic: !!et.is_public,
+    isActive: !!et.is_active,
+    slug: et.slug,
+  }
 }))
 
 // ── Availability Rules ─────────────────────────────────────────────────
