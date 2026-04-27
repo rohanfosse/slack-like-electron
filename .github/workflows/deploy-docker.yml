@@ -39,6 +39,7 @@ jobs:
           push: true
           build-args: |
             VITE_SERVER_URL=${{ secrets.VITE_SERVER_URL }}
+            VITE_TURNSTILE_SITE_KEY=${{ secrets.VITE_TURNSTILE_SITE_KEY }}
           tags: |
             ghcr.io/rohanfosse/cursus:latest
             ghcr.io/rohanfosse/cursus:${{ github.sha }}

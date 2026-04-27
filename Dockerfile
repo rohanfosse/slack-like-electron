@@ -14,6 +14,12 @@ COPY vite.web.config.ts tsconfig.json tsconfig.node.json ./
 ARG VITE_SERVER_URL
 ENV VITE_SERVER_URL=${VITE_SERVER_URL}
 
+# Cloudflare Turnstile (anti-spam booking public). Optionnel : si vide, le
+# captcha n'est pas affiche cote front (et le backend n'impose pas la
+# verification non plus, cf. server/.env.example).
+ARG VITE_TURNSTILE_SITE_KEY=""
+ENV VITE_TURNSTILE_SITE_KEY=${VITE_TURNSTILE_SITE_KEY}
+
 RUN npx vite build --config vite.web.config.ts --mode production
 
 # ── Stage 2 : Compilation des modules natifs ─────────────────────────────────

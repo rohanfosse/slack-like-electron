@@ -4,6 +4,7 @@ services:
       context: .
       args:
         VITE_SERVER_URL: ${VITE_SERVER_URL:-https://app.cursus.school}
+        VITE_TURNSTILE_SITE_KEY: ${VITE_TURNSTILE_SITE_KEY:-}
     container_name: cursus-server
     restart: unless-stopped
     logging:
@@ -25,6 +26,8 @@ services:
       - DB_PATH=/data/db/cursus.db
       - UPLOAD_DIR=/data/uploads
       - DEPLOY_SECRET=${DEPLOY_SECRET}
+      # Cloudflare Turnstile : si absent, le captcha public est skippe.
+      - TURNSTILE_SECRET_KEY=${TURNSTILE_SECRET_KEY:-}
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://localhost:3001/health"]
       interval: 30s
