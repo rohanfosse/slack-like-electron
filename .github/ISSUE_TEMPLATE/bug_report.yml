@@ -1,0 +1,126 @@
+name: Signaler un bug
+description: Quelque chose ne fonctionne pas comme prévu ? Aide-nous à le corriger.
+title: "[Bug] "
+labels: ["bug"]
+assignees:
+  - rohanfosse
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Merci de prendre le temps de remplir ce rapport. Plus tu donnes
+        de contexte, plus vite on peut reproduire et corriger.
+
+        Avant de continuer, vérifie qu'aucune
+        [issue existante](https://github.com/rohanfosse/cursus/issues?q=is%3Aissue)
+        ne décrit déjà ton problème.
+
+        **Faille de sécurité ?** N'ouvre pas d'issue publique — voir
+        [SECURITY.md](https://github.com/rohanfosse/cursus/blob/main/SECURITY.md).
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Description du bug
+      description: Que s'est-il passé ? Que devait-il se passer ?
+      placeholder: Quand je clique sur X, l'application affiche Y au lieu de Z.
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Étapes pour reproduire
+      description: Liste numérotée des actions qui déclenchent le problème.
+      placeholder: |
+        1. Aller sur la page '...'
+        2. Cliquer sur '...'
+        3. Observer l'erreur '...'
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Comportement attendu
+      placeholder: Le bouton aurait dû ouvrir le modal de création.
+    validations:
+      required: true
+
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: Captures d'écran (optionnel)
+      description: Glisse-dépose tes images ici, ou colle un GIF.
+    validations:
+      required: false
+
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Plateforme
+      options:
+        - Windows (desktop)
+        - macOS (desktop)
+        - Linux (desktop)
+        - Web (app.cursus.school)
+        - Mobile (PWA)
+    validations:
+      required: true
+
+  - type: dropdown
+    id: browser
+    attributes:
+      label: Navigateur (si web)
+      description: Uniquement si tu utilises l'app web ou la PWA.
+      options:
+        - Non applicable (desktop)
+        - Chrome / Edge / Brave
+        - Firefox
+        - Safari
+        - Autre
+    validations:
+      required: false
+
+  - type: dropdown
+    id: role
+    attributes:
+      label: Rôle
+      options:
+        - Étudiant
+        - Enseignant
+        - Intervenant
+        - Admin
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Version Cursus
+      description: Visible dans **Paramètres > À propos** ou dans la barre de titre.
+      placeholder: ex. 2.256.1
+    validations:
+      required: true
+
+  - type: textarea
+    id: console
+    attributes:
+      label: Logs console (optionnel)
+      description: |
+        Ouvre les DevTools avec `Ctrl+Shift+I` (desktop) ou `F12` (web) et
+        copie-colle les erreurs de l'onglet Console.
+      render: shell
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: Confirmation
+      options:
+        - label: J'ai vérifié qu'aucune issue similaire n'est ouverte.
+          required: true
+        - label: J'ai testé sur la dernière version disponible si possible.
+          required: false

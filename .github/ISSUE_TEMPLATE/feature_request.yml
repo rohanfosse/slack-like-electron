@@ -1,0 +1,111 @@
+name: Suggestion d'amélioration
+description: Propose une nouvelle fonctionnalité ou une amélioration de l'existant.
+title: "[Feature] "
+labels: ["enhancement"]
+assignees:
+  - rohanfosse
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Merci pour ta suggestion. Avant de continuer :
+
+        - Vérifie qu'aucune [issue similaire](https://github.com/rohanfosse/cursus/issues?q=is%3Aissue+label%3Aenhancement)
+          n'a déjà été ouverte.
+        - Pour les questions ou discussions ouvertes, préfère les
+          [Discussions](https://github.com/rohanfosse/cursus/discussions) plutôt qu'une issue.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problème à résoudre
+      description: Quelle frustration ou quel manque cette fonctionnalité résoudrait-elle ?
+      placeholder: |
+        Quand je dois faire X, je dois passer par Y et Z, c'est lent.
+        Sans cette fonctionnalité, je perds environ N minutes par semaine.
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Solution proposée
+      description: À quoi ressemble la fonctionnalité idéale ?
+      placeholder: |
+        Ajouter un bouton X dans la page Y qui permet de Z.
+        L'interface pourrait ressembler à... (joindre un mockup si possible).
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives envisagées
+      description: As-tu pensé à d'autres approches ? Pourquoi celle-ci est meilleure ?
+      placeholder: |
+        J'ai pensé à faire un workaround avec X, mais c'est moins ergonomique parce que...
+    validations:
+      required: false
+
+  - type: dropdown
+    id: scope
+    attributes:
+      label: Périmètre
+      description: La fonctionnalité concerne quel(s) module(s) ?
+      multiple: true
+      options:
+        - Chat / Messagerie
+        - Devoirs / Évaluation
+        - Documents / Ressources
+        - Dashboard
+        - Lumen (cours)
+        - Live (Spark / Pulse / Code / Board)
+        - Rendez-vous / Booking
+        - Kanban
+        - Frise chronologique
+        - Signature PDF
+        - DMs
+        - Agenda
+        - Mini-jeux
+        - Mobile / PWA
+        - Admin / Settings
+        - Authentification / Sécurité
+        - Autre
+    validations:
+      required: true
+
+  - type: dropdown
+    id: role
+    attributes:
+      label: Rôle concerné
+      multiple: true
+      options:
+        - Étudiant
+        - Enseignant
+        - Intervenant
+        - Admin
+    validations:
+      required: true
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Importance pour toi
+      options:
+        - Bloquant (je ne peux pas faire mon travail sans)
+        - Fort (gros gain de temps)
+        - Moyen (ce serait sympa)
+        - Faible (idée pour plus tard)
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: Confirmation
+      options:
+        - label: J'ai cherché qu'aucune suggestion similaire n'est déjà ouverte.
+          required: true
+        - label: Je comprends que les suggestions sont évaluées en fonction de l'effort, de l'impact et de la cohérence avec la vision du projet.
+          required: true

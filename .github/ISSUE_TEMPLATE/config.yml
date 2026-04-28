@@ -1,0 +1,18 @@
+blank_issues_enabled: false
+
+contact_links:
+  - name: Discussions GitHub
+    url: https://github.com/rohanfosse/cursus/discussions
+    about: Questions, idées en cours de réflexion, retours d'expérience généraux. Préfère ce canal aux issues pour tout ce qui n'est pas un bug ou une feature concrète.
+
+  - name: Faille de sécurité
+    url: https://github.com/rohanfosse/cursus/security/advisories/new
+    about: Vulnérabilité de sécurité — utilise les Security Advisories en privé, pas une issue publique. Cf. SECURITY.md.
+
+  - name: Documentation
+    url: https://github.com/rohanfosse/cursus/blob/main/README.md
+    about: Lis le README, le guide CONTRIBUTING.md et la doc dans docs/ avant d'ouvrir une issue.
+
+  - name: Application en ligne
+    url: https://app.cursus.school
+    about: Tester Cursus directement dans le navigateur (PWA).
