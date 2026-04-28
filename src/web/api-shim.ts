@@ -259,12 +259,31 @@ async function importStudentsBrowser(promoId: number): Promise<unknown> {
 //
 // On loggue chaque methode unknown UNE FOIS pour faciliter le debug
 // (eviter le bruit en console si la methode est appellee dans une boucle).
+// Methodes Electron-only qui n'auront jamais de version web (badge OS, IPC
+// renderer-process, runtime errors uncaught, file watchers...). On garde
+// silencieux pour ne pas polluer la console — c'est un comportement attendu,
+// pas un bug a investiguer.
+const SILENT_FALLBACKS = new Set<string>([
+  'onRuntimeError',
+  'setBadge',
+  'clearBadge',
+  'onPollUpdate',
+  'onStatusChange',
+  'offlineWrite',
+])
+
 const fallbackLogged = new Set<string>()
 function makeWebFallback(name: string): (...args: unknown[]) => unknown {
   return (...args: unknown[]) => {
     if (!fallbackLogged.has(name)) {
       fallbackLogged.add(name)
-      console.warn(`[api-shim] window.api.${name}() not implemented in web build — using no-op`)
+      // Methodes attendues no-op (Electron-only) : silencieux. Les autres
+      // sont logguees en `debug` (pas `warn`) — visibles via DevTools si
+      // l'utilisateur active le niveau verbose, mais sans polluer la
+      // console par defaut a chaque load.
+      if (!SILENT_FALLBACKS.has(name)) {
+        console.debug(`[api-shim] window.api.${name}() not implemented in web build — using no-op`)
+      }
     }
     if (/^(on|off)[A-Z]/.test(name)) return () => {}
     if (/^(emit|set|clear|register|unregister)/.test(name)) return undefined
@@ -850,10 +869,3 @@ const apiImpl = {
 }
 
 // Wrap dans un Proxy : route les proprietes inconnues vers makeWebFallback.
-;(window as unknown as { api: unknown }).api = new Proxy(apiImpl, {
-  get(target, prop) {
-    if (prop in target) return (target as Record<string | symbol, unknown>)[prop]
-    if (typeof prop !== 'string') return undefined
-    return makeWebFallback(prop)
-  },
-})

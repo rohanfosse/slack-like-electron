@@ -6,12 +6,24 @@
     <meta name="theme-color" content="#4A90D9" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <!-- 'wasm-unsafe-eval' + jsdelivr + blob: requis pour Pyodide (runner .ipynb dans Lumen). -->
+    <!-- CSP : taille minimale necessaire pour faire tourner Pyodide (runner
+         .ipynb dans Lumen). Decomposition :
+          * 'wasm-unsafe-eval' : compile() le binaire WebAssembly de Pyodide
+          * 'unsafe-eval'      : Pyodide cree des fonctions JS dynamiquement
+            (`new Function(...)`) pour boot Python. Sans ca, le kernel ne
+            demarre pas. Pas evitable sans isoler Pyodide dans un iframe
+            sandbox dedie (TODO si surface d'attaque inacceptable).
+          * blob:              : workers Pyodide
+          * cdn.jsdelivr.net   : Pyodide est servi depuis ce CDN, pas bundle
+          * sha256-…           : hashes des `<script>` inline injectes par
+            Pyodide au bootstrap. Stables tant qu'on ne bump pas la version
+            (cf. PYODIDE_VERSION dans usePyodide.ts) — a regenerer si la
+            console reaffiche des violations apres update. -->
     <meta
       http-equiv="Content-Security-Policy"
       content="
         default-src 'self';
-        script-src  'self' 'wasm-unsafe-eval' blob: https://cdn.jsdelivr.net;
+        script-src  'self' 'wasm-unsafe-eval' 'unsafe-eval' blob: https://cdn.jsdelivr.net 'sha256-ieoeWczDHkReVBsRBqaal5AFMlBtNjMzgwKvLqi/tSU=' 'sha256-JxyrKzp5Kh5pc2Lw/HjAs0nLS7UzPNYGDMEHKAhbG04=' 'sha256-TmLb6a1AwewHOfJqzGNbSl9+hSWUiawC5uGKQvy1d38=';
         style-src   'self';
         worker-src  'self' blob:;
         img-src     'self' data: blob: https: http:;
