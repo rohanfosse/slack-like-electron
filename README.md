@@ -19,7 +19,7 @@ Un seul endroit, plus de charge mentale.
 
 <br />
 
-[**Application**](https://app.cursus.school) &nbsp;&nbsp;&middot;&nbsp;&nbsp; [**Site web**](https://cursus.school) &nbsp;&nbsp;&middot;&nbsp;&nbsp; [**Telecharger**](https://github.com/rohanfosse/cursus/releases) &nbsp;&nbsp;&middot;&nbsp;&nbsp; [**Discussions**](https://github.com/rohanfosse/cursus/discussions)
+[**Application**](https://app.cursus.school) &nbsp;&nbsp;&middot;&nbsp;&nbsp; [**Site web**](https://cursus.school) &nbsp;&nbsp;&middot;&nbsp;&nbsp; [**Télécharger**](https://github.com/rohanfosse/cursus/releases) &nbsp;&nbsp;&middot;&nbsp;&nbsp; [**Discussions**](https://github.com/rohanfosse/cursus/discussions)
 
 <br />
 
@@ -36,10 +36,10 @@ Un seul endroit, plus de charge mentale.
 
 <br />
 
-> Les etudiants et enseignants jonglent entre 5 a 8 outils chaque jour : Moodle,
+> Les étudiants et enseignants jonglent entre 5 à 8 outils chaque jour : Moodle,
 > Teams, WhatsApp, Drive, mails. Les annonces se perdent, les deadlines aussi,
 > la frustration monte. **Cursus supprime cette charge mentale.** On ouvre
-> l'app le matin et on n'a jamais a se demander "c'est ou ?".
+> l'app le matin et on n'a jamais à se demander « c'est où ? ».
 
 <br />
 
@@ -57,18 +57,18 @@ entre 5 onglets ouverts.
 </td>
 <td width="33%" valign="top">
 
-### Sur-mesure educatif
+### Sur-mesure éducatif
 
-Types de devoirs specifiques, notation par rubriques, suivi de promo,
-campagnes de visites tripartites. Pas un outil generique adapte.
+Types de devoirs spécifiques, notation par rubriques, suivi de promo,
+campagnes de visites tripartites. Pas un outil générique adapté.
 
 </td>
 <td width="33%" valign="top">
 
 ### Moins de logistique
 
-Grilles d'evaluation, deadlines auto, notifications instantanees, sync
-Outlook. Plus de temps pour la pedagogie.
+Grilles d'évaluation, deadlines auto, notifications instantanées, sync
+Outlook. Plus de temps pour la pédagogie.
 
 </td>
 </tr>
@@ -76,7 +76,7 @@ Outlook. Plus de temps pour la pedagogie.
 
 <br />
 
-## Fonctionnalites
+## Fonctionnalités
 
 <table>
 <tr>
@@ -87,13 +87,13 @@ Outlook. Plus de temps pour la pedagogie.
 <tr>
 <td valign="top">
 
-**Chat temps reel**
+**Chat temps réel**
 
 </td>
 <td>
 
-Canaux par promotion (archivables), annonces lecture seule, DMs etudiants,
-reactions, mentions <code>@nom</code> / <code>@tous</code>, slash commands
+Canaux par promotion (archivables), annonces lecture seule, DMs étudiants,
+réactions, mentions <code>@nom</code> / <code>@tous</code>, slash commands
 <code>/devoir</code> <code>/doc</code> <code>/annonce</code>, recherche
 plein texte, indicateur de frappe, notifications desktop, **offline queue
 avec retry**.
@@ -104,13 +104,13 @@ avec retry**.
 <tr>
 <td valign="top">
 
-**Devoirs et evaluation**
+**Devoirs et évaluation**
 
 </td>
 <td>
 
-5 types (livrable, soutenance, CCTL, etude de cas, memoire). Brouillon,
-verrouillage post-deadline, **grilles multicriteres**, notation A-D,
+5 types (livrable, soutenance, CCTL, étude de cas, mémoire). Brouillon,
+verrouillage post-deadline, **grilles multicritères**, notation A-D,
 feedback individuel, export CSV.
 
 </td>
@@ -124,8 +124,8 @@ feedback individuel, export CSV.
 </td>
 <td>
 
-Upload avec validation (taille max 50 Mo, extensions bloquees), liens,
-categorisation, viewers integres (PDF, Word, Excel), drag-and-drop,
+Upload avec validation (taille max 50 Mo, extensions bloquées), liens,
+catégorisation, viewers intégrés (PDF, Word, Excel), drag-and-drop,
 recherche, liaison aux devoirs.
 
 </td>
@@ -139,8 +139,8 @@ recherche, liaison aux devoirs.
 </td>
 <td>
 
-Widgets reorganisables par drag-and-drop, deadlines proches, dernieres
-notes, progression, calendrier. Vues dediees enseignant / etudiant.
+Widgets réorganisables par drag-and-drop, deadlines proches, dernières
+notes, progression, calendrier. Vues dédiées enseignant / étudiant.
 
 </td>
 </tr>
@@ -153,10 +153,10 @@ notes, progression, calendrier. Vues dediees enseignant / etudiant.
 </td>
 <td>
 
-Cours markdown adosses a GitHub (1 promo = 1 organisation, 1 cours = 1 repo).
-Detection auto des chapitres, scaffold "Nouveau cours" en 1 clic,
-**recherche FTS5**, KaTeX + Mermaid + admonitions, edition inline, notes
-privees, tracking de lecture, **PDF integre** (pdf.js), **runner notebooks
+Cours markdown adossés à GitHub (1 promo = 1 organisation, 1 cours = 1 repo).
+Détection auto des chapitres, scaffold « Nouveau cours » en 1 clic,
+**recherche FTS5**, KaTeX + Mermaid + admonitions, édition inline, notes
+privées, tracking de lecture, **PDF intégré** (pdf.js), **runner notebooks
 .ipynb** (Pyodide).
 
 </td>
@@ -170,12 +170,12 @@ privees, tracking de lecture, **PDF integre** (pdf.js), **runner notebooks
 </td>
 <td>
 
-Module unifie avec 4 categories :<br />
+Module unifié avec 4 catégories :<br />
 &middot; **Spark** &mdash; quiz QCM, vrai/faux, association, estimation,
-reponse courte, scoring + podium<br />
-&middot; **Pulse** &mdash; feedback anonyme : nuage de mots, echelle,
-humeur, sondage, matrice, priorite<br />
-&middot; **Code** &mdash; editeur live avec coloration syntaxique<br />
+réponse courte, scoring + podium<br />
+&middot; **Pulse** &mdash; feedback anonyme : nuage de mots, échelle,
+humeur, sondage, matrice, priorité<br />
+&middot; **Code** &mdash; éditeur live avec coloration syntaxique<br />
 &middot; **Board** &mdash; brainstorming collaboratif, post-its, votes,
 drag &amp; drop, export Markdown
 
@@ -190,10 +190,10 @@ drag &amp; drop, export Markdown
 </td>
 <td>
 
-Page dediee <code>/booking</code>. Types d'evenements, grille de
-disponibilites hebdomadaire, lien de reservation par etudiant, sync
+Page dédiée <code>/booking</code>. Types d'événements, grille de
+disponibilités hebdomadaire, lien de réservation par étudiant, sync
 **Microsoft Outlook + Teams** ou **Jitsi Meet** (alternative libre),
-emails de confirmation, rate limiting sur les routes publiques.
+e-mails de confirmation, rate limiting sur les routes publiques.
 
 </td>
 </tr>
@@ -206,10 +206,10 @@ emails de confirmation, rate limiting sur les routes publiques.
 </td>
 <td>
 
-Planification automatique de visites prof + etudiant + tuteur entreprise
-sur une periode donnee. Generation des creneaux a partir de regles
-hebdomadaires, **invitations en 1 clic**, lien personnel par etudiant,
-suivi en temps reel, relances automatiques.
+Planification automatique de visites prof + étudiant + tuteur entreprise
+sur une période donnée. Génération des créneaux à partir de règles
+hebdomadaires, **invitations en 1 clic**, lien personnel par étudiant,
+suivi en temps réel, relances automatiques.
 
 </td>
 </tr>
@@ -222,8 +222,8 @@ suivi en temps reel, relances automatiques.
 </td>
 <td>
 
-Suivi par groupe avec drag-and-drop (a faire, en cours, termine).
-Synchronisation temps reel.
+Suivi par groupe avec drag-and-drop (à faire, en cours, terminé).
+Synchronisation temps réel.
 
 </td>
 </tr>
@@ -236,7 +236,7 @@ Synchronisation temps reel.
 </td>
 <td>
 
-Timeline interactive des devoirs, zoom semaine / mois / trimestre / annee.
+Timeline interactive des devoirs, zoom semaine / mois / trimestre / année.
 
 </td>
 </tr>
@@ -249,7 +249,7 @@ Timeline interactive des devoirs, zoom semaine / mois / trimestre / annee.
 </td>
 <td>
 
-Circuit de signature en DM avec tampon, reference unique, sauvegarde locale.
+Circuit de signature en DM avec tampon, référence unique, sauvegarde locale.
 
 </td>
 </tr>
@@ -257,12 +257,12 @@ Circuit de signature en DM avec tampon, reference unique, sauvegarde locale.
 <tr>
 <td valign="top">
 
-**DMs**<br /><sub>chiffres bout-en-bout au repos</sub>
+**DMs**<br /><sub>chiffrés bout-en-bout au repos</sub>
 
 </td>
 <td>
 
-Conversations privees chiffrees **AES-256-GCM**, indicateur en ligne,
+Conversations privées chiffrées **AES-256-GCM**, indicateur en ligne,
 envoi de fichiers, brouillons par conversation.
 
 </td>
@@ -304,7 +304,7 @@ par module dans l'admin.
 </td>
 <td>
 
-Navigation tactile, barre inferieure, optimise pour petits ecrans, service
+Navigation tactile, barre inférieure, optimisé pour petits écrans, service
 worker pour le mode hors-ligne.
 
 </td>
@@ -313,9 +313,9 @@ worker pour le mode hors-ligne.
 
 <br />
 
-## Demarrage rapide
+## Démarrage rapide
 
-> **Prerequis** : [Node.js](https://nodejs.org/) 20+ (CI sur 22) et npm.
+> **Prérequis** : [Node.js](https://nodejs.org/) 20+ (CI sur 22) et npm.
 
 ```bash
 git clone https://github.com/rohanfosse/cursus.git
@@ -324,8 +324,8 @@ npm install
 npm run dev
 ```
 
-La base SQLite est creee automatiquement au premier lancement. Pour charger
-des donnees de demonstration, ouvrir l'admin et cliquer sur **Reinitialiser
+La base SQLite est créée automatiquement au premier lancement. Pour charger
+des données de démonstration, ouvrir l'admin et cliquer sur **Réinitialiser
 et peupler**.
 
 <details>
@@ -344,7 +344,7 @@ et peupler**.
 | `npm test`                | Tests Vitest (frontend + backend)            |
 | `npm run test:e2e`        | Tests E2E Playwright                         |
 | `npm run test:coverage`   | Tests + couverture (objectif 80%+)           |
-| `npm run typecheck`       | Verification TypeScript stricte (vue-tsc)    |
+| `npm run typecheck`       | Vérification TypeScript stricte (vue-tsc)    |
 
 </details>
 
@@ -373,7 +373,7 @@ flowchart LR
 
     subgraph External[Services externes]
         MS[Microsoft Graph<br/>Outlook + Teams]
-        SMTP[SMTP<br/>emails RDV]
+        SMTP[SMTP<br/>e-mails RDV]
         GH[GitHub API<br/>Lumen courses]
     end
 
@@ -402,7 +402,7 @@ flowchart LR
 | **Build**    | electron-vite 3, Vite 6, electron-builder                                                                        |
 | **Mobile**   | PWA, service worker, Web App Manifest                                                                            |
 | **CI/CD**    | GitHub Actions (Vitest, Playwright, deploy Docker, release Win/macOS, Lighthouse, CodeQL, Dependabot)            |
-| **Qualite**  | Vitest, Supertest, Playwright, vue-tsc strict                                                                    |
+| **Qualité**  | Vitest, Supertest, Playwright, vue-tsc strict                                                                    |
 
 <details>
 <summary><b>Structure du repo</b></summary>
@@ -410,20 +410,20 @@ flowchart LR
 ```
 cursus/
   src/
-    main/              Processus principal Electron (IPC, DB, fenetre)
+    main/              Processus principal Electron (IPC, DB, fenêtre)
     preload/           Bridge IPC type-safe (contextBridge)
     renderer/          Frontend Vue 3 + TypeScript + Pinia
     web/               Shim PWA (remplace IPC par fetch + socket.io)
     landing/           Page vitrine cursus.school
   server/
-    db/                SQLite : connexion, schema, migrations, models
-    routes/            36 fichiers, ~20 domaines metier
-    services/          Email (nodemailer), Microsoft Graph (MSAL), unfurl
-    middleware/        Auth JWT, validation Zod, rate limit, role + promo
+    db/                SQLite : connexion, schéma, migrations, models
+    routes/            36 fichiers, ~20 domaines métier
+    services/          E-mail (nodemailer), Microsoft Graph (MSAL), unfurl
+    middleware/        Auth JWT, validation Zod, rate limit, rôle + promo
     public/            Console d'administration
   tests/
     frontend/          Tests unitaires utils + stores
-    backend/           Tests models + routes + middleware + securite
+    backend/           Tests models + routes + middleware + sécurité
     e2e/               Playwright (auth, isolation cross-promo)
 ```
 
@@ -431,24 +431,24 @@ cursus/
 
 <br />
 
-## Securite
+## Sécurité
 
-| Couche                  | Mecanisme                                                                                                |
+| Couche                  | Mécanisme                                                                                                |
 |-------------------------|----------------------------------------------------------------------------------------------------------|
 | **Isolation promo**     | Middleware `requirePromo` + rooms Socket.IO par promotion                                                |
-| **Controle par role**   | 4 roles hierarchiques (admin > enseignant > intervenant > etudiant), permissions centralisees            |
+| **Contrôle par rôle**   | 4 rôles hiérarchiques (admin > enseignant > intervenant > étudiant), permissions centralisées            |
 | **DMs confidentiels**   | `requireDmParticipant` + chiffrement AES-256-GCM au repos                                                |
-| **Auth + chiffrement**  | JWT 7j, bcrypt 10 rounds, validation Zod, CSRF (OAuth state HMAC), CSP stricte, tokens MS chiffres       |
-| **IPC securise**        | `contextIsolation`, `sandbox`, `nodeIntegration: false`, verifications role + promo dans les handlers   |
-| **RGPD**                | Export des donnees personnelles (Art. 20), suppression de compte                                         |
+| **Auth + chiffrement**  | JWT 7j, bcrypt 10 rounds, validation Zod, CSRF (OAuth state HMAC), CSP stricte, tokens MS chiffrés       |
+| **IPC sécurisé**        | `contextIsolation`, `sandbox`, `nodeIntegration: false`, vérifications rôle + promo dans les handlers   |
+| **RGPD**                | Export des données personnelles (Art. 20), suppression de compte                                         |
 
-Pour signaler une vulnerabilite : [SECURITY.md](SECURITY.md).
+Pour signaler une vulnérabilité : [SECURITY.md](SECURITY.md).
 
 <br />
 
-## Deploiement
+## Déploiement
 
-### Docker (recommande)
+### Docker (recommandé)
 
 ```bash
 docker compose build
@@ -466,18 +466,18 @@ NODE_ENV=production PORT=3001 JWT_SECRET=<secret-32-chars> node server/index.js
 <details>
 <summary><b>Variables d'environnement</b></summary>
 
-| Variable               | Description                                | Defaut                  |
+| Variable               | Description                                | Défaut                  |
 |------------------------|--------------------------------------------|-------------------------|
 | `PORT`                 | Port HTTP                                  | `3001`                  |
-| `JWT_SECRET`           | Cle JWT (min 32 chars en prod)             | `changeme-dev-secret`   |
+| `JWT_SECRET`           | Clé JWT (min 32 chars en prod)             | `changeme-dev-secret`   |
 | `CORS_ORIGIN`          | Origine CORS                               | `*`                     |
 | `DB_PATH`              | Chemin SQLite                              | Auto                    |
-| `UPLOAD_DIR`           | Repertoire uploads                         | `uploads/`              |
+| `UPLOAD_DIR`           | Répertoire uploads                         | `uploads/`              |
 | `VITE_SERVER_URL`      | URL serveur pour le frontend               | `http://localhost:3001` |
 | `AZURE_TENANT_ID`      | Azure AD tenant ID (booking)               | -                       |
 | `AZURE_CLIENT_ID`      | Azure AD client ID (booking)               | -                       |
 | `AZURE_CLIENT_SECRET`  | Azure AD client secret (booking)           | -                       |
-| `SMTP_HOST`            | Serveur SMTP (emails RDV)                  | -                       |
+| `SMTP_HOST`            | Serveur SMTP (e-mails RDV)                 | -                       |
 | `SMTP_USER`            | Utilisateur SMTP                           | -                       |
 | `SMTP_PASS`            | Mot de passe SMTP                          | -                       |
 
@@ -491,15 +491,15 @@ NODE_ENV=production PORT=3001 JWT_SECRET=<secret-32-chars> node server/index.js
 | Page vitrine   | [cursus.school](https://cursus.school)                               |
 | Administration | [admin.cursus.school](https://admin.cursus.school)                   |
 
-Docker + Nginx + Let's Encrypt sur VPS. Deploy automatique via GitHub Actions
-sur chaque push `main`.
+Docker + Nginx + Let's Encrypt sur VPS. Déploiement automatique via GitHub
+Actions sur chaque push `main`.
 
 <br />
 
 ## Contribuer
 
 Les contributions sont les bienvenues. Voir [CONTRIBUTING.md](CONTRIBUTING.md)
-pour le workflow detaille.
+pour le workflow détaillé.
 
 ```bash
 git checkout -b feat/ma-feature   # branche descriptive
@@ -509,15 +509,15 @@ npx vue-tsc --noEmit              # types
 git push origin feat/ma-feature   # ouvrir une PR vers main
 ```
 
-**Conventions** : commits prefixes (`feat:`, `fix:`, `docs:`, `chore:`,
+**Conventions** : commits préfixés (`feat:`, `fix:`, `docs:`, `chore:`,
 `refactor:`, `test:`), TypeScript strict, Composition API, variables CSS
-(pas de couleurs hardcodees), pas d'emojis dans l'UI ni les commits.
+(pas de couleurs hardcodées), pas d'emojis dans l'UI ni les commits.
 
 <br />
 
 ## Licence
 
-Distribue sous licence [MIT](LICENSE) &middot; &copy; 2025-2026
+Distribué sous licence [MIT](LICENSE) &middot; &copy; 2025-2026
 [Rohan Fosse](https://github.com/rohanfosse).
 
 <br />
@@ -525,9 +525,9 @@ Distribue sous licence [MIT](LICENSE) &middot; &copy; 2025-2026
 <div align="center">
 
 <sub>
-Concu et developpe avec soin par <a href="https://github.com/rohanfosse">@rohanfosse</a>.
+Conçu et développé avec soin par <a href="https://github.com/rohanfosse">@rohanfosse</a>.
 <br />
-Si Cursus te plait, mets une <a href="https://github.com/rohanfosse/cursus/stargazers">etoile</a> sur GitHub &mdash; ca aide enormement.
+Si Cursus te plaît, mets une <a href="https://github.com/rohanfosse/cursus/stargazers">étoile</a> sur GitHub &mdash; ça aide énormément.
 </sub>
 
 </div>
