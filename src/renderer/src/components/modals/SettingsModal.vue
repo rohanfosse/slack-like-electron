@@ -574,6 +574,11 @@
 }
 .stg-author-info { display: flex; flex-direction: column; gap: 3px; }
 .stg-author-name { font-size: 14px; font-weight: 700; color: var(--text-primary); }
+.stg-author-copyright {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
 .stg-author-link {
   display: inline-flex;
   align-items: center;

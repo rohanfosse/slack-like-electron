@@ -1,6 +1,6 @@
 MIT License
 
-Copyright (c) 2025-2026 Rohan Fossé
+Copyright (c) 2025-2026 Rohan Fosse <contact@rohanfosse.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,3 +19,13 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+---
+
+This software is provided as-is under the MIT License. It includes
+third-party open-source dependencies, each retaining its own license.
+A full list is available in the project repository (`package.json`,
+`node_modules/<dep>/LICENSE`).
+
+For security vulnerability reports, please refer to SECURITY.md rather
+than opening a public issue.

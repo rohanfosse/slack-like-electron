@@ -1,7 +1,7 @@
 /** SettingsAbout — section A propos du modal Settings. */
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
-import { Info, Globe, Monitor, Heart, Github, ExternalLink, Download, RefreshCw, CheckCircle, AlertCircle, RotateCw, FlaskConical } from 'lucide-vue-next'
+import { Info, Globe, Monitor, Heart, Github, ExternalLink, Download, RefreshCw, CheckCircle, AlertCircle, RotateCw, FlaskConical, Shield, BookOpen, Scale } from 'lucide-vue-next'
 import logoUrl from '@/assets/logo.png'
 import { version } from '../../../../../../package.json'
 
@@ -248,6 +248,22 @@ const systemLanguage = navigator.language
           <span class="stg-info-label">Site web</span>
           <span class="stg-info-value">cursus.school <ExternalLink :size="10" /></span>
         </a>
+        <a href="https://github.com/rohanfosse/cursus" target="_blank" rel="noopener" class="stg-info-cell stg-info-link">
+          <span class="stg-info-label">Code source</span>
+          <span class="stg-info-value"><Github :size="10" /> rohanfosse/cursus <ExternalLink :size="10" /></span>
+        </a>
+        <a href="https://github.com/rohanfosse/cursus/blob/main/SECURITY.md" target="_blank" rel="noopener" class="stg-info-cell stg-info-link">
+          <span class="stg-info-label">Politique de securite</span>
+          <span class="stg-info-value"><Shield :size="10" /> SECURITY.md <ExternalLink :size="10" /></span>
+        </a>
+        <a href="https://github.com/rohanfosse/cursus/blob/main/CONTRIBUTING.md" target="_blank" rel="noopener" class="stg-info-cell stg-info-link">
+          <span class="stg-info-label">Contribuer</span>
+          <span class="stg-info-value"><BookOpen :size="10" /> CONTRIBUTING.md <ExternalLink :size="10" /></span>
+        </a>
+        <a href="https://github.com/rohanfosse/cursus/blob/main/LICENSE" target="_blank" rel="noopener" class="stg-info-cell stg-info-link">
+          <span class="stg-info-label">Licence</span>
+          <span class="stg-info-value"><Scale :size="10" /> MIT <ExternalLink :size="10" /></span>
+        </a>
       </div>
     </div>
 
@@ -295,8 +311,9 @@ const systemLanguage = navigator.language
         <div class="stg-author-avatar">RF</div>
         <div class="stg-author-info">
           <span class="stg-author-name">Rohan Fosse</span>
-          <a href="https://github.com/rohanfosse/cursus" target="_blank" rel="noopener" class="stg-author-link">
-            <Github :size="12" /> Voir sur GitHub <ExternalLink :size="10" />
+          <span class="stg-author-copyright">&copy; 2025-2026 &middot; Distribue sous licence MIT</span>
+          <a href="https://github.com/rohanfosse" target="_blank" rel="noopener" class="stg-author-link">
+            <Github :size="12" /> @rohanfosse <ExternalLink :size="10" />
           </a>
         </div>
       </div>
