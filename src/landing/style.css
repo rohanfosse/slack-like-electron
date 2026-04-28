@@ -467,6 +467,178 @@ img { max-width: 100%; display: block; }
   gap: 10px;
 }
 
+/* Bento : pills d'activite (header) — donne le sentiment de "vivant" sans bruit */
+.bento-live-pill, .bento-stat-pill, .bento-live-badge {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  font-family: var(--font-mono);
+  flex-shrink: 0;
+}
+.bento-live-pill {
+  background: color-mix(in srgb, var(--color-devoirs) 14%, transparent);
+  color: var(--color-devoirs);
+}
+.bento-live-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  animation: bentoPulse 2s ease-in-out infinite;
+}
+@keyframes bentoPulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.55; transform: scale(0.85); }
+}
+.bento-stat-pill {
+  background: color-mix(in srgb, var(--card-accent, var(--primary)) 12%, transparent);
+  color: var(--card-accent, var(--primary));
+}
+.bento-live-badge {
+  background: color-mix(in srgb, var(--color-live) 14%, transparent);
+  color: var(--color-live);
+  font-size: 9px;
+}
+.bento-live-badge-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  box-shadow: 0 0 0 0 currentColor;
+  animation: bentoLivePing 1.6s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+@keyframes bentoLivePing {
+  0%   { box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-live) 70%, transparent); }
+  70%  { box-shadow: 0 0 0 7px transparent; }
+  100% { box-shadow: 0 0 0 0 transparent; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .bento-live-dot, .bento-live-badge-dot, .bento-typing-dots span,
+  .bento-rex-sync-dot { animation: none !important; }
+}
+
+/* Bento : barre de progression discrete (devoirs / lumen) */
+.bento-progress-track {
+  margin-top: 8px;
+  height: 3px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--card-accent, var(--primary)) 10%, transparent);
+  overflow: hidden;
+}
+.bento-progress-fill {
+  height: 100%;
+  width: var(--w, 0%);
+  background: linear-gradient(90deg,
+    var(--card-accent, var(--primary)),
+    color-mix(in srgb, var(--card-accent, var(--primary)) 60%, white));
+  border-radius: inherit;
+  transform-origin: left;
+  animation: bentoFillIn 1.2s var(--ease-smooth) both;
+}
+.bento-progress-fill--lumen {
+  background: linear-gradient(90deg, #FCD34D, #F59E0B);
+}
+@keyframes bentoFillIn {
+  from { transform: scaleX(0); }
+  to   { transform: scaleX(1); }
+}
+
+/* Bento : message "typing…" pour la card Chat */
+.bento-msg--typing { opacity: 0.65; }
+.bento-typing-dots {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  width: 22px;
+  height: 22px;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.bento-typing-dots span {
+  width: 4px; height: 4px;
+  border-radius: 50%;
+  background: var(--text-3);
+  animation: bentoBounceDot 1.2s ease-in-out infinite;
+}
+.bento-typing-dots span:nth-child(2) { animation-delay: 0.15s; }
+.bento-typing-dots span:nth-child(3) { animation-delay: 0.3s; }
+@keyframes bentoBounceDot {
+  0%, 60%, 100% { transform: translateY(0); opacity: 0.5; }
+  30%           { transform: translateY(-3px); opacity: 1; }
+}
+
+/* Bento : meta line sous Live (count + timer) */
+.bento-live-meta {
+  margin-top: 6px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10px;
+  font-family: var(--font-mono);
+  color: var(--text-3);
+  font-weight: 600;
+}
+.bento-live-meta-sep { opacity: 0.5; }
+
+/* Bento : creneaux RDV (slots cliquables visuellement) */
+.bento-rex-slots {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 4px;
+}
+.bento-rex-slot {
+  font-size: 11px;
+  font-family: var(--font-mono);
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--color-rex) 8%, transparent);
+  color: var(--color-rex);
+  border: 1px solid color-mix(in srgb, var(--color-rex) 18%, transparent);
+}
+.bento-rex-slot--booked {
+  background: var(--color-rex);
+  color: white;
+  border-color: var(--color-rex);
+  position: relative;
+}
+.bento-rex-slot--booked::after {
+  content: '✓';
+  margin-left: 4px;
+  font-weight: 700;
+}
+.bento-rex-sync {
+  margin-top: 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10px;
+  color: var(--text-3);
+  font-weight: 600;
+}
+.bento-rex-sync-dot {
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  background: var(--color-devoirs);
+  animation: bentoPulse 2.4s ease-in-out infinite;
+}
+
+/* Bento : LaTeX inline dans Lumen */
+.bento-lumen-tex {
+  font-family: 'Times New Roman', serif;
+  font-style: italic;
+  font-size: 11px;
+  background: color-mix(in srgb, var(--color-lumen) 8%, transparent);
+  padding: 1px 5px;
+  border-radius: 4px;
+  color: var(--color-lumen);
+}
+
 .bento-icon-circle {
   position: relative;
   width: 38px; height: 38px;
@@ -1039,6 +1211,124 @@ img { max-width: 100%; display: block; }
 }
 
 
+/* Docs : compteur dans la titlebar */
+.docs-count {
+  margin-left: auto;
+  font-size: 10px;
+  font-weight: 700;
+  font-family: var(--font-mono);
+  color: var(--text-3);
+  background: color-mix(in srgb, var(--text-3) 10%, transparent);
+  padding: 2px 8px;
+  border-radius: 999px;
+  letter-spacing: 0.2px;
+}
+
+/* Docs : caret animé apres le terme tapé (effet curseur clignotant) */
+.docs-search-caret {
+  display: inline-block;
+  width: 1.5px;
+  height: 13px;
+  background: var(--color-docs);
+  margin-left: 1px;
+  vertical-align: middle;
+  animation: docsCaretBlink 1s steps(2) infinite;
+}
+@keyframes docsCaretBlink {
+  0%, 50%   { opacity: 1; }
+  51%, 100% { opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .docs-search-caret { animation: none; }
+}
+
+/* Docs : barre de catégories (filtres) */
+.docs-categories {
+  display: flex;
+  gap: 4px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+.docs-cat {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 9px;
+  border-radius: 999px;
+  color: var(--text-3);
+  background: color-mix(in srgb, var(--text-3) 6%, transparent);
+  cursor: pointer;
+  transition: background var(--duration-fast), color var(--duration-fast);
+}
+.docs-cat:hover { color: var(--text-2); }
+.docs-cat--active {
+  background: var(--color-docs);
+  color: white;
+}
+.docs-cat--active .docs-cat-count { color: rgba(255,255,255,0.8); }
+.docs-cat-count {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  opacity: 0.7;
+}
+
+/* Docs : item disparait avec une transition douce quand filtre */
+.doc-item {
+  transition: background var(--duration-fast),
+              opacity 240ms var(--ease-smooth),
+              transform 240ms var(--ease-smooth),
+              max-height 240ms var(--ease-smooth);
+  opacity: 1;
+  max-height: 80px;
+  overflow: hidden;
+}
+.doc-item--hidden {
+  opacity: 0;
+  transform: scale(0.92);
+  max-height: 0;
+  padding-top: 0;
+  padding-bottom: 0;
+  margin: 0;
+  pointer-events: none;
+}
+
+.doc-item {
+  flex-direction: row;
+}
+.doc-name {
+  font-weight: 600;
+  font-size: 12.5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.doc-meta {
+  display: block;
+  font-size: 10.5px !important;
+  font-weight: 500 !important;
+  color: var(--text-3) !important;
+  font-family: var(--font-mono);
+  letter-spacing: 0.2px;
+  margin-top: 1px;
+}
+.doc-item > div + span,
+.doc-item > div + .doc-name {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+/* Docs : empty state quand aucun match */
+.docs-empty {
+  text-align: center;
+  padding: 24px 12px;
+  font-size: 12px;
+  font-style: italic;
+  color: var(--text-3);
+}
+
 .doc-item span {
   font-size: 13px;
   color: var(--text);
@@ -1124,8 +1414,8 @@ img { max-width: 100%; display: block; }
 
 /* ── Docs search text ──────────────────────────────────────────────── */
 .docs-search-text { font-size: 13px; color: var(--text); min-width: 40px; }
-.docs-search-text::after { content: '|'; animation: cursorBlink 1s infinite; color: var(--primary); }
-@keyframes cursorBlink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+/* Le caret est maintenant un span explicite (.docs-search-caret) — voir plus haut. */
+.docs-search-text { font-weight: 600; color: var(--text); }
 
 /* ── Download Section ──────────────────────────────────────────────── */
 .download-section {
@@ -1705,6 +1995,43 @@ img { max-width: 100%; display: block; }
 .demo-lumen-main .lm-edge { color: var(--color-lumen); font-weight: 700; }
 .demo-lumen-main .lm-edge--down { display: block; width: 100%; text-align: center; }
 
+/* Barre de progression de lecture (entre contenu et footer) */
+.demo-lumen-progress {
+  height: 3px;
+  background: color-mix(in srgb, var(--color-lumen) 8%, transparent);
+  position: relative;
+  overflow: hidden;
+}
+.demo-lumen-progress-fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: var(--p, 0%);
+  background: linear-gradient(90deg, #FCD34D, #F59E0B, #D97706);
+  transition: width 600ms var(--ease-spring);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--color-lumen) 50%, transparent);
+}
+.demo-lumen-progress-fill::after {
+  content: '';
+  position: absolute;
+  top: 0; right: 0; bottom: 0;
+  width: 24px;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.6));
+  animation: lumenProgressShimmer 2.4s ease-in-out infinite;
+}
+@keyframes lumenProgressShimmer {
+  0%, 100% { opacity: 0; transform: translateX(8px); }
+  50%      { opacity: 1; transform: translateX(0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .demo-lumen-progress-fill::after { animation: none; }
+  .demo-lumen-progress-fill { transition: none; }
+}
+.demo-lumen-progress-label {
+  font-weight: 700;
+  color: var(--color-lumen);
+  letter-spacing: 0.2px;
+}
+
 /* ── Footer metadata (readers / linked / sync) ── */
 .demo-lumen-footer {
   display: flex;
@@ -1920,6 +2247,315 @@ img { max-width: 100%; display: block; }
   font-weight: 700;
   animation: none;
 }
+.live-timer--saved {
+  color: var(--color-devoirs);
+  font-weight: 700;
+}
+
+/* ── Live : badge "REC" dans la titlebar ──────────────────────────── */
+.live-rec {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 9px;
+  font-weight: 800;
+  font-family: var(--font-mono);
+  letter-spacing: 0.5px;
+  color: var(--color-live);
+  background: color-mix(in srgb, var(--color-live) 12%, transparent);
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+.live-rec-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  box-shadow: 0 0 0 0 currentColor;
+  animation: liveRecPing 1.4s ease-out infinite;
+}
+@keyframes liveRecPing {
+  0%   { box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-live) 70%, transparent); }
+  70%  { box-shadow: 0 0 0 6px transparent; }
+  100% { box-shadow: 0 0 0 0 transparent; }
+}
+
+/* ── Live : selecteur de mode (tabs + auto-rotation) ──────────────── */
+.live-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 8px 12px 0;
+  border-bottom: 1px solid var(--border);
+  background: color-mix(in srgb, var(--color-live) 3%, transparent);
+}
+.live-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 11px;
+  border: none;
+  background: transparent;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-3);
+  cursor: pointer;
+  border-radius: 8px 8px 0 0;
+  border-bottom: 2px solid transparent;
+  transition: color var(--duration-fast), border-color var(--duration-fast), background var(--duration-fast);
+}
+.live-tab:hover { color: var(--text-2); background: rgba(255,255,255,0.4); }
+.live-tab:focus-visible { outline: 2px solid var(--color-live); outline-offset: 2px; }
+.live-tab--active {
+  color: var(--color-live);
+  border-bottom-color: var(--color-live);
+  background: rgba(255,255,255,0.6);
+}
+[data-theme="dark"] .live-tab--active { background: rgba(255,255,255,0.04); }
+.live-rotate-hint {
+  margin-left: auto;
+  align-self: center;
+  font-size: 9px;
+  font-family: var(--font-mono);
+  font-weight: 600;
+  letter-spacing: 0.4px;
+  color: var(--text-3);
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--text-3) 8%, transparent);
+  text-transform: uppercase;
+}
+
+/* Panneau actif : un seul visible a la fois (transition douce) */
+.live-pane {
+  display: none;
+}
+.live-pane--active {
+  display: flex;
+  animation: livePaneIn 400ms var(--ease-smooth) both;
+}
+@keyframes livePaneIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .live-pane--active { animation: none; }
+  .live-rec-dot { animation: none; }
+}
+
+/* ── Pulse : sondage anonyme + nuage de mots ──────────────────────── */
+.live-pulse-q {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+.live-pulse-cloud {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px 10px;
+  padding: 12px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--color-rex) 5%, transparent);
+  min-height: 80px;
+}
+.live-pulse-word {
+  font-weight: 700;
+  letter-spacing: -0.2px;
+  opacity: 0;
+  transform: scale(0.7);
+  animation: pulseWordIn 500ms var(--ease-spring) forwards;
+  animation-delay: var(--delay, 0ms);
+}
+@keyframes pulseWordIn {
+  to { opacity: var(--final-opacity, 0.85); transform: scale(1); }
+}
+.live-pulse-scale {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  padding: 8px 4px 0;
+}
+.live-pulse-scale-label {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-3);
+  letter-spacing: 0.2px;
+  white-space: nowrap;
+}
+.live-pulse-bars {
+  flex: 1;
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  height: 36px;
+}
+.live-pulse-bar {
+  flex: 1;
+  height: var(--h, 20%);
+  background: linear-gradient(180deg, var(--color-rex), color-mix(in srgb, var(--color-rex) 50%, transparent));
+  border-radius: 3px 3px 0 0;
+  transform-origin: bottom;
+  animation: pulseBarRise 700ms var(--ease-spring) both;
+}
+.live-pulse-bar--peak {
+  background: linear-gradient(180deg, var(--color-live), var(--color-rex));
+  box-shadow: 0 0 12px color-mix(in srgb, var(--color-live) 40%, transparent);
+}
+@keyframes pulseBarRise {
+  from { transform: scaleY(0); opacity: 0; }
+  to   { transform: scaleY(1); opacity: 1; }
+}
+
+/* ── Code : editeur partage avec curseurs ──────────────────────────── */
+.live-code-tabs {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 4px 6px;
+  border-bottom: 1px solid var(--border);
+}
+.live-code-tab {
+  font-size: 11px;
+  font-family: var(--font-mono);
+  font-weight: 600;
+  padding: 4px 9px;
+  border-radius: 6px 6px 0 0;
+  color: var(--text-3);
+}
+.live-code-tab--active {
+  background: color-mix(in srgb, var(--color-live) 6%, transparent);
+  color: var(--text);
+  border-bottom: 2px solid var(--color-live);
+  margin-bottom: -1px;
+}
+.live-code-cursors {
+  margin-left: auto;
+  display: flex;
+  gap: -4px;
+}
+.live-code-cur {
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  background: var(--c, var(--primary));
+  color: white;
+  font-size: 9px;
+  font-weight: 800;
+  font-family: var(--font);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: -6px;
+  border: 2px solid var(--bg-card);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+.live-code-pre {
+  margin: 8px 0 0;
+  padding: 10px 8px;
+  background: color-mix(in srgb, var(--text) 4%, transparent);
+  border-radius: 8px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.7;
+  color: var(--text);
+  overflow-x: auto;
+  display: flex;
+  flex-direction: column;
+}
+[data-theme="dark"] .live-code-pre {
+  background: rgba(0,0,0,0.3);
+}
+.live-code-line {
+  display: flex;
+  white-space: pre;
+  border-radius: 4px;
+  padding: 0 4px;
+}
+.live-code-line--hi {
+  background: color-mix(in srgb, var(--color-live) 8%, transparent);
+  position: relative;
+}
+.live-code-num {
+  display: inline-block;
+  width: 22px;
+  text-align: right;
+  margin-right: 12px;
+  color: var(--text-3);
+  user-select: none;
+  flex-shrink: 0;
+}
+.live-code-caret {
+  display: inline-block;
+  width: 2px;
+  height: 14px;
+  background: var(--color-devoirs);
+  margin-left: 1px;
+  vertical-align: middle;
+  animation: liveCaretBlink 1s steps(2) infinite;
+}
+@keyframes liveCaretBlink {
+  0%, 50%   { opacity: 1; }
+  51%, 100% { opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .live-code-caret { animation: none; }
+}
+
+/* ── Board : post-its avec votes ──────────────────────────────────── */
+.live-board-q {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+}
+.live-board {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  padding: 4px;
+}
+.live-stickie {
+  position: relative;
+  background: var(--c, #FCD34D);
+  color: rgba(0,0,0,0.78);
+  padding: 10px 8px 8px;
+  border-radius: 4px;
+  transform: rotate(var(--r, 0deg));
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.3;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.05);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-height: 64px;
+  transition: transform var(--duration-fast) var(--ease-spring);
+}
+.live-stickie:hover {
+  transform: rotate(0) scale(1.05) translateY(-2px);
+  z-index: 2;
+}
+.live-stickie--top {
+  outline: 2px solid var(--color-live);
+  outline-offset: 2px;
+}
+.live-stickie-text {
+  font-size: 11px;
+  font-weight: 600;
+}
+.live-stickie-votes {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 10px;
+  font-weight: 800;
+  color: var(--color-live);
+  margin-top: auto;
+  align-self: flex-start;
+  background: rgba(255,255,255,0.6);
+  padding: 2px 6px;
+  border-radius: 999px;
+}
 
 /* ── REX Demo ────────────────────────────────────────────────────── */
 
@@ -2126,12 +2762,95 @@ img { max-width: 100%; display: block; }
 .rdv-slot {
   font-size: 11px;
   font-family: var(--font-mono);
-  font-weight: 500;
-  padding: 2px 8px;
+  font-weight: 600;
+  padding: 3px 9px;
   border-radius: 6px;
-  background: color-mix(in srgb, var(--color-rex) 12%, transparent);
+  background: color-mix(in srgb, var(--color-rex) 10%, transparent);
   color: var(--color-rex);
-  border: 1px solid color-mix(in srgb, var(--color-rex) 25%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-rex) 22%, transparent);
+  cursor: pointer;
+  font-family: var(--font-mono);
+  transition: background var(--duration-fast),
+              color var(--duration-fast),
+              transform var(--duration-fast) var(--ease-spring),
+              border-color var(--duration-fast);
+}
+.rdv-slot:hover:not(.rdv-slot--booked) {
+  background: var(--color-rex);
+  color: white;
+  border-color: var(--color-rex);
+  transform: translateY(-1px) scale(1.04);
+  box-shadow: 0 4px 10px color-mix(in srgb, var(--color-rex) 30%, transparent);
+}
+.rdv-slot:focus-visible {
+  outline: 2px solid var(--color-rex);
+  outline-offset: 2px;
+}
+.rdv-slot--booked {
+  background: var(--color-devoirs);
+  color: white;
+  border-color: var(--color-devoirs);
+  cursor: default;
+  position: relative;
+  padding-right: 22px;
+}
+.rdv-slot--booked::after {
+  content: '✓';
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-weight: 800;
+}
+
+/* Toast de confirmation : apparait sous la grille apres reservation */
+.rdv-toast {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 12px;
+  padding: 10px 12px;
+  background: color-mix(in srgb, var(--color-devoirs) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-devoirs) 28%, transparent);
+  border-radius: 10px;
+  animation: rdvToastIn 350ms var(--ease-spring) both;
+}
+.rdv-toast--leaving {
+  animation: rdvToastOut 280ms var(--ease-smooth) both;
+}
+@keyframes rdvToastIn {
+  from { opacity: 0; transform: translateY(8px) scale(0.96); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes rdvToastOut {
+  from { opacity: 1; transform: translateY(0); }
+  to   { opacity: 0; transform: translateY(-4px); }
+}
+.rdv-toast-icon {
+  width: 26px; height: 26px;
+  border-radius: 50%;
+  background: var(--color-devoirs);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.rdv-toast-body {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+.rdv-toast-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text);
+}
+.rdv-toast-sub {
+  font-size: 10.5px;
+  color: var(--text-2);
+  font-weight: 500;
 }
 
 .rdv-booking {

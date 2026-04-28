@@ -160,27 +160,122 @@ document.addEventListener('DOMContentLoaded', () => {
     })
   }
 
-  // ── Docs search typing animation ─────────────────────────────────────
+  // ── Docs search : recherche reelle qui filtre la grille ──────────────
+  // Rotation automatique de termes types (algo / reseau / .pdf / projet / "")
+  // pour donner l'illusion d'une vraie session, avec filtrage applique en
+  // temps reel sur les data-doc-tags de chaque .doc-item.
+  function getDocItems() {
+    return Array.from(document.querySelectorAll('#docs-grid .doc-item'))
+  }
+
+  function applyDocFilter(query, category) {
+    const items = getDocItems()
+    const q = (query || '').trim().toLowerCase()
+    const cat = category || 'all'
+    let visible = 0
+    items.forEach(item => {
+      const tags = (item.dataset.docTags || '').toLowerCase()
+      const itemCat = item.dataset.docCat || ''
+      const matchQuery = !q || tags.includes(q) || (item.querySelector('.doc-name')?.textContent || '').toLowerCase().includes(q)
+      const matchCat = cat === 'all' || itemCat === cat
+      const show = matchQuery && matchCat
+      item.classList.toggle('doc-item--hidden', !show)
+      if (show) visible++
+    })
+    const empty = document.getElementById('docs-empty')
+    const count = document.getElementById('docs-count')
+    if (empty) empty.hidden = visible !== 0
+    if (count) count.textContent = visible + ' fichier' + (visible > 1 ? 's' : '')
+  }
+
   function animateDocsSearch() {
     const section = document.getElementById('demo-docs')?.closest('.feature-section')
     if (!section?.classList.contains('visible')) return
-    const searchText = section.querySelector('.docs-search-text')
+    const searchText = document.getElementById('docs-search-text')
     if (!searchText || searchText.dataset.animated) return
     searchText.dataset.animated = '1'
 
-    const text = 'algo...'
+    // Termes successifs : tape, attend, efface, tape le suivant. Filtrage live.
+    const sequence = [
+      { type: 'algo',   pause: 2200 },
+      { type: 'reseau', pause: 2200 },
+      { type: '.pdf',   pause: 2000 },
+      { type: 'tp',     pause: 2000 },
+      { type: '',       pause: 2400 },
+    ]
 
     if (prefersReducedMotion) {
-      searchText.textContent = text
+      searchText.textContent = sequence[0].type
+      applyDocFilter(sequence[0].type, getCurrentDocsCategory())
       return
     }
 
-    let i = 0
-    const interval = setInterval(() => {
-      searchText.textContent = text.slice(0, ++i)
-      if (i >= text.length) clearInterval(interval)
-    }, 100)
+    let seqIdx = 0
+    let charIdx = 0
+    let mode = 'typing' // 'typing' | 'pausing' | 'erasing'
+    let lastTick = 0
+    let pauseUntil = 0
+
+    function tick(now) {
+      const target = sequence[seqIdx].type
+      if (mode === 'typing') {
+        if (now - lastTick > 80) {
+          lastTick = now
+          charIdx++
+          searchText.textContent = target.slice(0, charIdx)
+          applyDocFilter(target.slice(0, charIdx), getCurrentDocsCategory())
+          if (charIdx >= target.length) {
+            mode = 'pausing'
+            pauseUntil = now + sequence[seqIdx].pause
+          }
+        }
+      } else if (mode === 'pausing') {
+        if (now >= pauseUntil) {
+          mode = target.length > 0 ? 'erasing' : 'typing'
+          if (mode === 'typing') {
+            seqIdx = (seqIdx + 1) % sequence.length
+            charIdx = 0
+          }
+        }
+      } else if (mode === 'erasing') {
+        if (now - lastTick > 40) {
+          lastTick = now
+          charIdx--
+          searchText.textContent = target.slice(0, Math.max(0, charIdx))
+          applyDocFilter(target.slice(0, Math.max(0, charIdx)), getCurrentDocsCategory())
+          if (charIdx <= 0) {
+            mode = 'typing'
+            seqIdx = (seqIdx + 1) % sequence.length
+            charIdx = 0
+          }
+        }
+      }
+      // Pause si l'utilisateur a hover la fenetre (volonte de lire)
+      const hovered = document.querySelector('#demo-docs .demo-window:hover, #demo-docs .demo-window:focus-within')
+      if (hovered) { lastTick = now; pauseUntil = Math.max(pauseUntil, now + 100) }
+      requestAnimationFrame(tick)
+    }
+    requestAnimationFrame(tick)
   }
+
+  function getCurrentDocsCategory() {
+    const active = document.querySelector('.docs-cat.docs-cat--active')
+    return active?.dataset.docsCat || 'all'
+  }
+
+  // Tabs categories : clic = override la recherche typee
+  document.querySelectorAll('.docs-cat').forEach(cat => {
+    cat.setAttribute('tabindex', '0')
+    cat.setAttribute('role', 'button')
+    cat.addEventListener('click', () => {
+      document.querySelectorAll('.docs-cat').forEach(c => c.classList.toggle('docs-cat--active', c === cat))
+      const query = document.getElementById('docs-search-text')?.textContent || ''
+      applyDocFilter(query, cat.dataset.docsCat)
+    })
+    cat.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); cat.click() }
+    })
+  })
 
   // ── MutationObserver: trigger animations when .visible is added ───────
   document.querySelectorAll('.feature-section').forEach(section => {
@@ -429,6 +524,114 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // ══════════════════════════════════════════════════════════════════════
+  //  LIVE - rotation 4 modes : Spark (quiz) / Pulse / Code / Board
+  //
+  //  Auto-rotation toutes les 12s, mise en pause au hover, click manuel
+  //  override le minuteur. Synchronise le titre de la fenetre + le tab actif.
+  // ══════════════════════════════════════════════════════════════════════
+  const LIVE_MODES = ['spark', 'pulse', 'code', 'board']
+  const LIVE_TITLES = {
+    spark: 'Spark — Quiz',
+    pulse: 'Pulse — Sondage',
+    code:  'Code — Co-edition',
+    board: 'Board — Brainstorm',
+  }
+
+  const liveTabs   = document.querySelectorAll('.live-tab')
+  const livePanes  = document.querySelectorAll('.live-pane')
+  const liveTitle  = document.getElementById('live-mode-title')
+
+  // Pulse : nuage de mots avec apparition sequentielle
+  const PULSE_WORDS = [
+    { w: 'motivé',     s: 22 }, { w: 'curieux',    s: 18 },
+    { w: 'serein',     s: 16 }, { w: 'fatigué',    s: 11 },
+    { w: 'inquiet',    s: 9  }, { w: 'enthousiaste', s: 14 },
+    { w: 'concentré',  s: 13 }, { w: 'perdu',      s: 6  },
+    { w: 'satisfait',  s: 12 }, { w: 'overbooké',  s: 7  },
+  ]
+
+  function renderPulseCloud() {
+    const cloud = document.getElementById('live-pulse-cloud')
+    if (!cloud || cloud.dataset.rendered) return
+    cloud.dataset.rendered = '1'
+    PULSE_WORDS.forEach((entry, i) => {
+      const span = document.createElement('span')
+      span.className = 'live-pulse-word'
+      // Taille proportionnelle au score, mais bornee pour rester lisible
+      const fontSize = 11 + Math.min(entry.s, 25) * 0.6
+      span.style.fontSize = fontSize + 'px'
+      span.style.setProperty('--delay', (i * 80) + 'ms')
+      // Couleur : on cycle entre 3 teintes du palette pour casser la mono
+      const tints = ['var(--color-rex)', 'var(--color-chat)', 'var(--color-devoirs)']
+      span.style.color = tints[i % tints.length]
+      span.style.opacity = String(0.55 + Math.min(entry.s, 25) / 60)
+      span.textContent = entry.w
+      cloud.appendChild(span)
+    })
+  }
+
+  if (liveTabs.length) {
+    let liveAutoT = null
+    let liveIdx = 0
+    let livePaused = false
+
+    function setLiveMode(mode) {
+      liveIdx = LIVE_MODES.indexOf(mode)
+      liveTabs.forEach(t => {
+        const active = t.dataset.liveMode === mode
+        t.classList.toggle('live-tab--active', active)
+        t.setAttribute('aria-selected', String(active))
+      })
+      livePanes.forEach(p => {
+        const active = p.dataset.livePane === mode
+        p.classList.toggle('live-pane--active', active)
+        p.setAttribute('aria-hidden', String(!active))
+      })
+      if (liveTitle) liveTitle.textContent = LIVE_TITLES[mode] || 'Live'
+      if (mode === 'pulse') renderPulseCloud()
+    }
+
+    function scheduleNext() {
+      if (liveAutoT) clearTimeout(liveAutoT)
+      if (prefersReducedMotion || livePaused) return
+      liveAutoT = setTimeout(() => {
+        liveIdx = (liveIdx + 1) % LIVE_MODES.length
+        setLiveMode(LIVE_MODES[liveIdx])
+        scheduleNext()
+      }, 12000)
+    }
+
+    liveTabs.forEach(t => {
+      t.addEventListener('click', () => {
+        setLiveMode(t.dataset.liveMode)
+        scheduleNext()
+      })
+      t.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); t.click() }
+      })
+    })
+
+    // Pause de l'auto-rotation au hover de la fenetre Live (l'utilisateur lit).
+    const liveWin = document.querySelector('#demo-live .demo-window')
+    if (liveWin) {
+      liveWin.addEventListener('mouseenter', () => { livePaused = true; if (liveAutoT) clearTimeout(liveAutoT) })
+      liveWin.addEventListener('mouseleave', () => { livePaused = false; scheduleNext() })
+    }
+
+    // Demarre la rotation seulement quand le panneau devient visible (eviter
+    // que les 3 modes s'enchainent en arriere-plan avant que l'user ne scroll).
+    const liveSection = document.getElementById('feat-spark')
+    if (liveSection) {
+      const liveObs = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) { scheduleNext(); liveObs.disconnect() }
+        })
+      }, { threshold: 0.4 })
+      liveObs.observe(liveSection)
+    }
+  }
+
+  // ══════════════════════════════════════════════════════════════════════
   //  RDV (mini-Calendly) — 3 onglets : Types / Disponibilités / Mes RDV
   // ══════════════════════════════════════════════════════════════════════
   const rdvData = {
@@ -472,10 +675,11 @@ document.addEventListener('DOMContentLoaded', () => {
           <div class="rdv-day" style="--d:${i * 80}ms">
             <span class="rdv-day-label">${row.day}</span>
             <div class="rdv-day-slots">
-              ${row.slots.map(s => `<span class="rdv-slot">${s}</span>`).join('')}
+              ${row.slots.map(s => `<button type="button" class="rdv-slot" data-rdv-day="${row.day}" data-rdv-time="${s}">${s}</button>`).join('')}
             </div>
           </div>
         `).join('') + '</div>'
+        h += '<div class="rdv-toast" id="rdv-toast" hidden></div>'
       } else if (tab === 'bookings') {
         h = '<div class="rdv-bookings">' + rdvData.bookings.map((b, i) => `
           <div class="rdv-booking" style="--d:${i * 100}ms">
@@ -505,6 +709,46 @@ document.addEventListener('DOMContentLoaded', () => {
       t.addEventListener('click', () => switchTab(t.dataset.rexTab))
       t.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); t.click() } })
     })
+
+    // Booking d'un creneau : clic sur un .rdv-slot -> creneau marque "reserve"
+    // + toast inline qui simule la confirmation avec sync Teams. Geste delegue
+    // (les .rdv-slot sont rendus dynamiquement par switchTab/renderRdv).
+    rexDemo.addEventListener('click', (e) => {
+      const slot = e.target.closest('.rdv-slot')
+      if (!slot || slot.classList.contains('rdv-slot--booked')) return
+      slot.classList.add('rdv-slot--booked')
+      const day = slot.dataset.rdvDay
+      const time = slot.dataset.rdvTime
+
+      // Compteur dans le footer : decremente le nombre de creneaux dispo
+      const countEl = rexDemo.querySelector('.rex-count-num')
+      if (countEl) {
+        const n = parseInt(countEl.textContent, 10)
+        if (!isNaN(n) && n > 0) countEl.textContent = String(n - 1)
+      }
+
+      // Toast inline : confirme + auto-dismiss apres 3.5s
+      const toast = rexDemo.querySelector('#rdv-toast')
+      if (toast) {
+        toast.hidden = false
+        toast.innerHTML = `
+          <span class="rdv-toast-icon" aria-hidden="true">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          </span>
+          <div class="rdv-toast-body">
+            <span class="rdv-toast-title">RDV réservé · ${day} ${time}</span>
+            <span class="rdv-toast-sub">Lien Teams envoyé par email</span>
+          </div>
+        `
+        toast.classList.remove('rdv-toast--leaving')
+        clearTimeout(rexDemo._rdvToastT)
+        rexDemo._rdvToastT = setTimeout(() => {
+          toast.classList.add('rdv-toast--leaving')
+          setTimeout(() => { toast.hidden = true; toast.classList.remove('rdv-toast--leaving') }, 300)
+        }, 3500)
+      }
+    })
+
     switchTab('types')
   }
 
@@ -515,6 +759,7 @@ document.addEventListener('DOMContentLoaded', () => {
     'tri-rapide': {
       readers: 14,
       links: 2,
+      progress: 42,
       content: `
         <h1 class="lm-h1">Tri rapide</h1>
         <p class="lm-p">Le <b>quicksort</b> est un algorithme de tri par partition, tres efficace en moyenne.</p>
@@ -532,6 +777,7 @@ document.addEventListener('DOMContentLoaded', () => {
     'graphes': {
       readers: 9,
       links: 1,
+      progress: 18,
       content: `
         <h1 class="lm-h1">Parcours de graphes</h1>
         <p class="lm-p">Le parcours en largeur (<b>BFS</b>) explore un graphe niveau par niveau depuis un sommet source.</p>
@@ -561,6 +807,7 @@ document.addEventListener('DOMContentLoaded', () => {
     'dynamique': {
       readers: 6,
       links: 3,
+      progress: 73,
       content: `
         <h1 class="lm-h1">Programmation dynamique</h1>
         <p class="lm-p">La suite de Fibonacci illustre la memoization pour eviter les recalculs.</p>
@@ -582,6 +829,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const lumenMain = document.getElementById('lumen-main')
   const lumenReaders = document.getElementById('lumen-readers')
   const lumenLinks = document.getElementById('lumen-links')
+  const lumenProgressFill = document.getElementById('lumen-progress-fill')
+  const lumenProgressLabel = document.getElementById('lumen-progress-label')
 
   function renderLumenChapter(key) {
     const chap = lumenChapters[key]
@@ -589,6 +838,13 @@ document.addEventListener('DOMContentLoaded', () => {
     lumenMain.innerHTML = chap.content
     if (lumenReaders) lumenReaders.lastChild.textContent = ` lu par ${chap.readers} étudiants`
     if (lumenLinks)   lumenLinks.lastChild.textContent   = ` ${chap.links} devoir${chap.links > 1 ? 's' : ''} lié${chap.links > 1 ? 's' : ''}`
+
+    // Barre de progression : anime du chapitre precedent vers la nouvelle valeur.
+    // On utilise --p (pourcentage) pour piloter la largeur via CSS, ce qui
+    // permet la transition CSS native (smoother que JS).
+    if (lumenProgressFill) lumenProgressFill.style.setProperty('--p', chap.progress + '%')
+    if (lumenProgressLabel) lumenProgressLabel.textContent = chap.progress + '% lu'
+
     // Animation: fade-in du contenu
     if (!prefersReducedMotion) {
       lumenMain.style.animation = 'none'

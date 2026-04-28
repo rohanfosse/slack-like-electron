@@ -1,5 +1,44 @@
 # Changelog
 
+## v2.259.0 (2026-04-28)
+
+### Landing : bento enrichi + Live multi-modes + docs filtrables + RDV bookable
+
+Plus de fonctionnalites visibles, plus joli, plus reel. Cinq blocs d'amelioration
+des demos de la landing pour montrer ce que fait vraiment Cursus :
+
+**Bento (hero)** : indicateurs de vie sur chaque carte. Chat affiche `3 en ligne`
++ message "Jean ecrit…" anime. Devoirs montre `2/3` + barre de progression 67%.
+Ressources passe a 6 docs avec compteur `42`. Live a un badge `LIVE` pulsant +
+"28 reponses · 0:12". RDV affiche `13 rdv` cette semaine + un creneau marque
+reserve + ligne `Outlook + Teams`. Lumen a un compteur de chapitres + barre de
+progression de lecture + LaTeX inline `O(n·log n)`.
+
+**Live demo : 4 modes en rotation auto** (12s, pausable au hover). Spark (quiz
+existant), Pulse (sondage anonyme avec nuage de mots cycle + barres
+d'humeur, 22 reponses), Code (editeur partage avec 3 curseurs MR/EL/JD,
+ligne mise en surbrillance, caret clignotant), Board (5 post-its de retro
+sprint avec votes, top vote outline rouge). Tabs cliquables pour forcer le
+mode, badge `LIVE REC` rouge dans la titlebar.
+
+**Docs demo : recherche reelle qui filtre**. La recherche tape successivement
+`algo`, `reseau`, `.pdf`, `tp`, ` ` et filtre vraiment les 9 fichiers via
+data-tags. Categories cliquables (Tous / Cours / TP / Externe) avec compteurs.
+Empty state si aucun match. Items disparaissent avec une transition douce,
+pas de jump.
+
+**RDV demo : reservation de creneau**. Clic sur un creneau libre dans
+l'onglet Disponibilites -> creneau marque vert avec coche, compteur du footer
+decremente, toast inline confirme `RDV reserve · Lun 09:00 / Lien Teams envoye
+par email` puis se dissipe.
+
+**Lumen : barre de progression de lecture**. Sous le contenu, une barre fine
+qui se remplit selon le chapitre (Tri rapide 42% / Graphes 18% / Dyn 73%),
+avec shimmer anime + label `42% lu` dans le footer.
+
+Tous les nouveaux elements respectent prefers-reduced-motion et sont
+keyboard-accessibles.
+
 ## v2.258.2 (2026-04-28)
 
 ### Fix : mode demo se faisait deconnecter immediatement (vraie cause E2E)

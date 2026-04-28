@@ -77,7 +77,7 @@
     .fade-up { opacity: 0; transform: translateY(24px) scale(0.98); transition: opacity .65s cubic-bezier(.22,1,.36,1), transform .65s cubic-bezier(.22,1,.36,1); }
     .fade-up.visible { opacity: 1; transform: translateY(0) scale(1); }
   </style>
-  <link rel="stylesheet" href="style.css?v=257" />
+  <link rel="stylesheet" href="style.css?v=259" />
 </head>
 <body>
 
@@ -138,10 +138,12 @@
           <div class="bento-header">
             <div class="bento-icon-circle" style="--ic: var(--color-chat)"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/></svg></div>
             <div class="bento-titles"><span class="bento-title">Chat</span><span class="bento-subtitle">Temps réel</span></div>
+            <span class="bento-live-pill" aria-label="3 personnes en ligne"><span class="bento-live-dot"></span>3</span>
           </div>
           <div class="bento-demo" id="bento-chat">
             <div class="bento-msg"><span class="bento-avatar bento-avatar--prof">MR</span><span class="bento-msg-text">Le livrable est à rendre vendredi 17h.</span></div>
             <div class="bento-msg"><span class="bento-avatar bento-avatar--student">EL</span><span class="bento-msg-text">Merci ! On peut travailler en équipe ?</span></div>
+            <div class="bento-msg bento-msg--typing"><span class="bento-typing-dots"><span></span><span></span><span></span></span><span class="bento-msg-text">Jean écrit…</span></div>
           </div>
         </a>
 
@@ -150,11 +152,13 @@
           <div class="bento-header">
             <div class="bento-icon-circle" style="--ic: var(--color-devoirs)"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="m9 14 2 2 4-4"/></svg></div>
             <div class="bento-titles"><span class="bento-title">Devoirs</span><span class="bento-subtitle">Notation A-D</span></div>
+            <span class="bento-stat-pill" aria-label="2 sur 3 rendus">2/3</span>
           </div>
           <div class="bento-demo">
             <div class="bento-devoir"><span class="bento-devoir-name">Projet Web</span><span class="bento-badge-done">A</span></div>
             <div class="bento-devoir"><span class="bento-devoir-name">TP Algo</span><span class="bento-badge-pending">2j</span></div>
             <div class="bento-devoir"><span class="bento-devoir-name">Rapport</span><span class="bento-badge-draft">--</span></div>
+            <div class="bento-progress-track" aria-hidden="true"><div class="bento-progress-fill" style="--w: 67%"></div></div>
           </div>
         </a>
 
@@ -163,12 +167,15 @@
           <div class="bento-header">
             <div class="bento-icon-circle" style="--ic: var(--color-docs)"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 14 1.5-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.54 6a2 2 0 0 1-1.95 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H18a2 2 0 0 1 2 2v2"/></svg></div>
             <div class="bento-titles"><span class="bento-title">Ressources</span><span class="bento-subtitle">Tous formats</span></div>
+            <span class="bento-stat-pill" aria-label="42 fichiers">42</span>
           </div>
           <div class="bento-demo bento-docs-grid">
             <span class="bento-doc" style="--dc:#dc2626">Cours.pdf</span>
             <span class="bento-doc" style="--dc:#2563eb">Sujet.docx</span>
             <span class="bento-doc" style="--dc:#059669">Notes.xlsx</span>
             <span class="bento-doc" style="--dc:#7c3aed">Lien GitHub</span>
+            <span class="bento-doc" style="--dc:#0891b2">Schema.png</span>
+            <span class="bento-doc" style="--dc:#be185d">main.tex</span>
           </div>
         </a>
 
@@ -177,6 +184,7 @@
           <div class="bento-header">
             <div class="bento-icon-circle" style="--ic: var(--color-live)"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 64 64" fill="none"><defs><linearGradient id="bs-g" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#F59E0B"/><stop offset="50%" stop-color="#F97316"/><stop offset="100%" stop-color="#EF4444"/></linearGradient></defs><circle cx="32" cy="32" r="28" fill="url(#bs-g)" opacity=".08"/><path d="M36 4L14 34 28 34 24 60 50 26 34 26Z" fill="url(#bs-g)" opacity=".15" stroke="url(#bs-g)" stroke-width="2.5" stroke-linejoin="round"/><path d="M34.5 10L18 34 29 34 26 54 46 28 34 28Z" fill="none" stroke="url(#bs-g)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/><circle cx="12" cy="18" r="1.8" fill="#FCD34D" opacity=".7"/><circle cx="52" cy="14" r="1.4" fill="#F97316" opacity=".6"/></svg></div>
             <div class="bento-titles"><span class="bento-title">Live</span><span class="bento-subtitle">Quiz · Feedback · Code</span></div>
+            <span class="bento-live-badge" aria-label="Session en direct"><span class="bento-live-badge-dot"></span>LIVE</span>
           </div>
           <div class="bento-demo bento-live-demo">
             <div class="bento-live-q">Quelle complexité ?</div>
@@ -185,6 +193,7 @@
               <span class="bento-live-opt bento-live-opt--correct">O(n log n)</span>
               <span class="bento-live-opt">O(n²)</span>
             </div>
+            <div class="bento-live-meta"><span>28 réponses</span><span class="bento-live-meta-sep">·</span><span>0:12</span></div>
           </div>
         </a>
 
@@ -193,14 +202,16 @@
           <div class="bento-header">
             <div class="bento-icon-circle" style="--ic: var(--color-rex)"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/><path d="m9 16 2 2 4-4"/></svg></div>
             <div class="bento-titles"><span class="bento-title">Rendez-vous</span><span class="bento-subtitle">Mini-Calendly</span></div>
+            <span class="bento-stat-pill" aria-label="13 cette semaine">13</span>
           </div>
           <div class="bento-demo bento-rex-demo">
             <div class="bento-rex-q">Suivi individuel</div>
-            <div class="bento-rex-cloud">
-              <span style="font-size:13px;opacity:.9">Lun 10:00</span>
-              <span style="font-size:13px;opacity:.7">Mar 14:00</span>
-              <span style="font-size:13px;opacity:.8">Jeu 09:00</span>
+            <div class="bento-rex-slots">
+              <span class="bento-rex-slot">Lun 10:00</span>
+              <span class="bento-rex-slot bento-rex-slot--booked">Mar 14:00</span>
+              <span class="bento-rex-slot">Jeu 09:00</span>
             </div>
+            <div class="bento-rex-sync"><span class="bento-rex-sync-dot"></span>Outlook + Teams</div>
           </div>
         </a>
 
@@ -209,11 +220,13 @@
           <div class="bento-header">
             <div class="bento-icon-circle" style="--ic: var(--color-lumen)"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 64 64" fill="none"><defs><linearGradient id="bl-g" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#FCD34D"/><stop offset="50%" stop-color="#F59E0B"/><stop offset="100%" stop-color="#D97706"/></linearGradient></defs><circle cx="32" cy="32" r="28" fill="url(#bl-g)" opacity=".08"/><path d="M32 8C24 8 18 14 18 22c0 6 3 10 7 14v6c0 2 2 4 4 4h6c2 0 4-2 4-4v-6c4-4 7-8 7-14 0-8-6-14-14-14Z" fill="url(#bl-g)" opacity=".18" stroke="url(#bl-g)" stroke-width="2.5" stroke-linejoin="round"/><path d="M28 56h8M30 50h4" stroke="url(#bl-g)" stroke-width="2.5" stroke-linecap="round"/></svg></div>
             <div class="bento-titles"><span class="bento-title">Lumen</span><span class="bento-subtitle">Cours markdown</span></div>
+            <span class="bento-stat-pill" aria-label="3 chapitres">3 ch.</span>
           </div>
           <div class="bento-demo bento-lumen-demo">
-            <div class="bento-lumen-line bento-lumen-h1"># Introduction</div>
-            <div class="bento-lumen-line bento-lumen-text">Le **markdown** rend l'écriture simple et claire.</div>
-            <div class="bento-lumen-line bento-lumen-code">`code()`</div>
+            <div class="bento-lumen-line bento-lumen-h1"># Tri rapide</div>
+            <div class="bento-lumen-line bento-lumen-text">Complexité : <span class="bento-lumen-tex">O(n·log n)</span></div>
+            <div class="bento-lumen-line bento-lumen-code">function quicksort(arr)</div>
+            <div class="bento-progress-track" aria-hidden="true"><div class="bento-progress-fill bento-progress-fill--lumen" style="--w: 42%"></div></div>
           </div>
         </a>
       </div>
@@ -360,15 +373,31 @@
         </div>
         <div class="mini-demo mini-demo-right" id="demo-docs">
           <div class="demo-window">
-            <div class="demo-titlebar"><span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span><span class="demo-title">Ressources</span></div>
+            <div class="demo-titlebar"><span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span><span class="demo-title">Ressources</span><span class="docs-count" id="docs-count">9 fichiers</span></div>
             <div class="demo-docs-body">
-              <div class="docs-search"><svg aria-hidden="true" style="width:14px;height:14px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg><span class="docs-search-text"></span></div>
-              <div class="docs-grid">
-                <div class="doc-item" style="--delay: 0ms; --doc-color: #dc2626"><div class="doc-icon">PDF</div><span>Cours Réseaux.pdf</span></div>
-                <div class="doc-item" style="--delay: 120ms; --doc-color: #2563eb"><div class="doc-icon">DOC</div><span>Sujet TP.docx</span></div>
-                <div class="doc-item" style="--delay: 240ms; --doc-color: #059669"><div class="doc-icon">XLS</div><span>Notes S1.xlsx</span></div>
-                <div class="doc-item" style="--delay: 360ms; --doc-color: #7c3aed"><div class="doc-icon">URL</div><span>GitHub projet</span></div>
+              <div class="docs-search">
+                <svg aria-hidden="true" style="width:14px;height:14px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                <span class="docs-search-text" id="docs-search-text"></span>
+                <span class="docs-search-caret" aria-hidden="true"></span>
               </div>
+              <div class="docs-categories" aria-label="Catégories">
+                <span class="docs-cat docs-cat--active" data-docs-cat="all">Tous <span class="docs-cat-count">9</span></span>
+                <span class="docs-cat" data-docs-cat="cours">Cours <span class="docs-cat-count">3</span></span>
+                <span class="docs-cat" data-docs-cat="tp">TP <span class="docs-cat-count">3</span></span>
+                <span class="docs-cat" data-docs-cat="ext">Externe <span class="docs-cat-count">3</span></span>
+              </div>
+              <div class="docs-grid" id="docs-grid">
+                <div class="doc-item" data-doc-cat="cours" data-doc-tags="reseaux cours pdf" style="--delay: 0ms; --doc-color: #dc2626"><div class="doc-icon">PDF</div><span class="doc-name">Cours Réseaux.pdf</span><span class="doc-meta">12 p. · 2.4 Mo</span></div>
+                <div class="doc-item" data-doc-cat="tp" data-doc-tags="algo tp sujet docx" style="--delay: 80ms; --doc-color: #2563eb"><div class="doc-icon">DOC</div><span class="doc-name">Sujet TP Algo.docx</span><span class="doc-meta">3 p. · 180 Ko</span></div>
+                <div class="doc-item" data-doc-cat="cours" data-doc-tags="notes algo xlsx" style="--delay: 160ms; --doc-color: #059669"><div class="doc-icon">XLS</div><span class="doc-name">Notes Algo S1.xlsx</span><span class="doc-meta">45 lignes</span></div>
+                <div class="doc-item" data-doc-cat="ext" data-doc-tags="github projet web url" style="--delay: 240ms; --doc-color: #7c3aed"><div class="doc-icon">URL</div><span class="doc-name">GitHub projet web</span><span class="doc-meta">github.com/cesi/web</span></div>
+                <div class="doc-item" data-doc-cat="cours" data-doc-tags="algo cours pdf complexite" style="--delay: 320ms; --doc-color: #dc2626"><div class="doc-icon">PDF</div><span class="doc-name">Algo - Complexité.pdf</span><span class="doc-meta">8 p. · 1.1 Mo</span></div>
+                <div class="doc-item" data-doc-cat="tp" data-doc-tags="reseaux tp routage py" style="--delay: 400ms; --doc-color: #f59e0b"><div class="doc-icon">PY</div><span class="doc-name">tp_routage.py</span><span class="doc-meta">128 lignes</span></div>
+                <div class="doc-item" data-doc-cat="tp" data-doc-tags="algo tp tri" style="--delay: 480ms; --doc-color: #2563eb"><div class="doc-icon">DOC</div><span class="doc-name">TP Tri rapide.docx</span><span class="doc-meta">2 p. · 95 Ko</span></div>
+                <div class="doc-item" data-doc-cat="ext" data-doc-tags="moodle reseaux url" style="--delay: 560ms; --doc-color: #7c3aed"><div class="doc-icon">URL</div><span class="doc-name">Moodle Réseaux</span><span class="doc-meta">moodle.cesi.fr</span></div>
+                <div class="doc-item" data-doc-cat="ext" data-doc-tags="figma maquette projet" style="--delay: 640ms; --doc-color: #ec4899"><div class="doc-icon">FIG</div><span class="doc-name">Maquettes projet</span><span class="doc-meta">figma.com/cesi</span></div>
+              </div>
+              <div class="docs-empty" id="docs-empty" hidden>Aucun fichier ne correspond à ce filtre.</div>
             </div>
           </div>
         </div>
@@ -391,8 +420,31 @@
         </div>
         <div class="mini-demo mini-demo-right" id="demo-live">
           <div class="demo-window">
-            <div class="demo-titlebar"><span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span><span class="demo-title">Spark Session</span></div>
-            <div class="demo-live-body" id="live-quiz-demo">
+            <div class="demo-titlebar"><span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span><span class="demo-title" id="live-mode-title">Spark — Quiz</span><span class="live-rec"><span class="live-rec-dot"></span>LIVE</span></div>
+
+            <!-- Selecteur de mode (auto-rotation + clic manuel) -->
+            <div class="live-tabs" role="tablist" aria-label="Mode Live">
+              <button class="live-tab live-tab--active" data-live-mode="spark" role="tab" aria-selected="true">
+                <svg aria-hidden="true" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+                Spark
+              </button>
+              <button class="live-tab" data-live-mode="pulse" role="tab" aria-selected="false">
+                <svg aria-hidden="true" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                Pulse
+              </button>
+              <button class="live-tab" data-live-mode="code" role="tab" aria-selected="false">
+                <svg aria-hidden="true" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+                Code
+              </button>
+              <button class="live-tab" data-live-mode="board" role="tab" aria-selected="false">
+                <svg aria-hidden="true" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18M3 9h18"/></svg>
+                Board
+              </button>
+              <span class="live-rotate-hint" aria-hidden="true">auto</span>
+            </div>
+
+            <!-- Mode Spark : quiz interactif (existant) -->
+            <div class="demo-live-body live-pane live-pane--active" id="live-quiz-demo" data-live-pane="spark">
               <div class="live-question">
                 <span class="live-q-badge" id="live-q-badge">Question 1/3</span>
                 <span class="live-q-text" id="live-q-text"></span>
@@ -402,6 +454,63 @@
               <div class="live-footer">
                 <span class="live-participants" id="live-q-count"></span>
                 <span class="live-timer" id="live-q-timer"></span>
+              </div>
+            </div>
+
+            <!-- Mode Pulse : sondage anonyme + nuage de mots -->
+            <div class="demo-live-body live-pane" data-live-pane="pulse" aria-hidden="true">
+              <div class="live-pulse-q">Comment vous sentez-vous sur le projet&nbsp;?</div>
+              <div class="live-pulse-cloud" id="live-pulse-cloud"></div>
+              <div class="live-pulse-scale">
+                <span class="live-pulse-scale-label">À l'aise</span>
+                <div class="live-pulse-bars" aria-hidden="true">
+                  <span class="live-pulse-bar" style="--h: 18%"></span>
+                  <span class="live-pulse-bar" style="--h: 32%"></span>
+                  <span class="live-pulse-bar" style="--h: 64%"></span>
+                  <span class="live-pulse-bar live-pulse-bar--peak" style="--h: 88%"></span>
+                  <span class="live-pulse-bar" style="--h: 70%"></span>
+                  <span class="live-pulse-bar" style="--h: 38%"></span>
+                  <span class="live-pulse-bar" style="--h: 14%"></span>
+                </div>
+                <span class="live-pulse-scale-label">Stressé</span>
+              </div>
+              <div class="live-footer">
+                <span class="live-participants">22 réponses anonymes</span>
+                <span class="live-timer">Live</span>
+              </div>
+            </div>
+
+            <!-- Mode Code : editeur partage avec curseurs collaboratifs -->
+            <div class="demo-live-body live-pane" data-live-pane="code" aria-hidden="true">
+              <div class="live-code-tabs">
+                <span class="live-code-tab live-code-tab--active">main.py</span>
+                <span class="live-code-tab">utils.py</span>
+                <span class="live-code-cursors">
+                  <span class="live-code-cur" style="--c:#6366F1" title="Prof. Martin">MR</span>
+                  <span class="live-code-cur" style="--c:#059669" title="Emma L.">EL</span>
+                  <span class="live-code-cur" style="--c:#D97706" title="Jean D.">JD</span>
+                </span>
+              </div>
+              <pre class="live-code-pre"><span class="live-code-line"><span class="live-code-num">1</span><span class="lm-c-kw">def</span> <span class="lm-c-fn">fib</span>(n):</span><span class="live-code-line"><span class="live-code-num">2</span>    <span class="lm-c-kw">if</span> n &lt; <span class="lm-c-num">2</span>:</span><span class="live-code-line"><span class="live-code-num">3</span>        <span class="lm-c-kw">return</span> n</span><span class="live-code-line live-code-line--hi"><span class="live-code-num">4</span>    <span class="lm-c-kw">return</span> <span class="lm-c-fn">fib</span>(n-<span class="lm-c-num">1</span>) + <span class="lm-c-fn">fib</span>(n-<span class="lm-c-num">2</span>)<span class="live-code-caret" aria-hidden="true"></span></span><span class="live-code-line"><span class="live-code-num">5</span></span><span class="live-code-line"><span class="live-code-num">6</span><span class="lm-c-cmt"># Co-écrit avec Emma L.</span></span></pre>
+              <div class="live-footer">
+                <span class="live-participants">3 co-éditeurs</span>
+                <span class="live-timer live-timer--saved">Sauvegardé</span>
+              </div>
+            </div>
+
+            <!-- Mode Board : post-its collaboratifs avec votes -->
+            <div class="demo-live-body live-pane" data-live-pane="board" aria-hidden="true">
+              <div class="live-board-q">Brainstorming&nbsp;: que retenir du sprint&nbsp;?</div>
+              <div class="live-board">
+                <div class="live-stickie" style="--c:#FCD34D;--r:-1.4deg"><span class="live-stickie-text">Pair programming top</span><span class="live-stickie-votes"><svg aria-hidden="true" width="9" height="9" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>5</span></div>
+                <div class="live-stickie" style="--c:#A7F3D0;--r:1.2deg"><span class="live-stickie-text">CI trop lente</span><span class="live-stickie-votes"><svg aria-hidden="true" width="9" height="9" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>3</span></div>
+                <div class="live-stickie live-stickie--top" style="--c:#FECACA;--r:-0.6deg"><span class="live-stickie-text">Daily 15 min max</span><span class="live-stickie-votes"><svg aria-hidden="true" width="9" height="9" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>8</span></div>
+                <div class="live-stickie" style="--c:#BFDBFE;--r:0.9deg"><span class="live-stickie-text">Refacto bento OK</span><span class="live-stickie-votes"><svg aria-hidden="true" width="9" height="9" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>2</span></div>
+                <div class="live-stickie" style="--c:#DDD6FE;--r:-1.7deg"><span class="live-stickie-text">Doc API à finir</span><span class="live-stickie-votes"><svg aria-hidden="true" width="9" height="9" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>4</span></div>
+              </div>
+              <div class="live-footer">
+                <span class="live-participants">14 contributeurs</span>
+                <span class="live-timer">Top voté: Daily 15min</span>
               </div>
             </div>
           </div>
@@ -485,6 +594,10 @@
               </aside>
               <div class="demo-lumen-main" id="lumen-main" role="tabpanel"></div>
             </div>
+            <!-- Barre de progression de lecture (anime sur la longueur du chapitre) -->
+            <div class="demo-lumen-progress" aria-hidden="true">
+              <div class="demo-lumen-progress-fill" id="lumen-progress-fill" style="--p: 42%"></div>
+            </div>
             <div class="demo-lumen-footer">
               <span class="demo-lumen-read" id="lumen-readers">
                 <svg aria-hidden="true" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
@@ -495,6 +608,8 @@
                 <svg aria-hidden="true" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><rect width="8" height="4" x="8" y="2" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg>
                 2 devoirs liés
               </span>
+              <span class="demo-lumen-sep">·</span>
+              <span class="demo-lumen-progress-label" id="lumen-progress-label">42% lu</span>
               <span class="demo-lumen-sep">·</span>
               <span class="demo-lumen-sync">Synced GitHub</span>
             </div>
@@ -662,7 +777,7 @@
     </div>
   </footer>
 
-  <script src="app.js?v=257"></script>
+  <script src="app.js?v=259"></script>
   <!-- Analytics: insert GA4 gtag.js snippet here when ready -->
 </body>
 </html>
