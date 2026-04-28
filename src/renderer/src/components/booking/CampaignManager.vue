@@ -11,7 +11,7 @@ import { ref, computed, onMounted } from 'vue'
 import {
   Calendar, Plus, Send, Trash2, X, Check, Clock, Users, BellRing,
   ChevronDown, ChevronRight, AlertCircle, Copy, MailCheck, Sparkles,
-  CalendarRange, CalendarOff, Briefcase, Video, Eye,
+  CalendarOff, Briefcase, Video, Eye,
 } from 'lucide-vue-next'
 import { useCampaigns, type Campaign, type HebdoRule } from '@/composables/useCampaigns'
 import { useToast } from '@/composables/useToast'
@@ -19,7 +19,6 @@ import { useConfirm } from '@/composables/useConfirm'
 import UiCard from '@/components/ui/UiCard.vue'
 import UiPill from '@/components/ui/UiPill.vue'
 import UiButton from '@/components/ui/UiButton.vue'
-import EmptyState from '@/components/ui/EmptyState.vue'
 import Modal from '@/components/ui/Modal.vue'
 import BookingPreviewModal from '@/components/booking/BookingPreviewModal.vue'
 import type { BookingFlowInfo } from '@/components/booking/bookingFlow.types'
@@ -330,18 +329,14 @@ onMounted(() => {
       <div v-for="n in 2" :key="n" class="cm-skeleton" />
     </div>
 
-    <EmptyState
-      v-else-if="!campaigns.length"
-      :icon="CalendarRange"
-      tone="accent"
-      title="Aucune campagne pour le moment"
-      subtitle="Crees-en une pour planifier des visites tripartites avec ta promotion. Cursus genere les creneaux et envoie les invitations en un clic."
-    >
-      <UiButton variant="primary" size="md" @click="showCreate = true">
-        <template #leading><Plus :size="14" /></template>
-        Creer ma premiere campagne
-      </UiButton>
-    </EmptyState>
+    <!-- Placeholder compact (v2.256) — l'ancien EmptyState pleine largeur a
+         ete vire car la page Booking est devenue une route top-level avec
+         sidebar dediee : les utilisateurs comprennent deja le contexte, un
+         gros bloc d'onboarding faisait doublon avec le header + sidebar. -->
+    <p v-else-if="!campaigns.length" class="cm-placeholder">
+      Aucune campagne. Utilise <strong>Nouvelle campagne</strong> ci-dessus pour planifier
+      des visites tripartites.
+    </p>
 
     <ul v-else class="cm-list" role="list">
       <li v-for="c in campaigns" :key="c.id">
@@ -805,6 +800,18 @@ onMounted(() => {
 @media (prefers-reduced-motion: reduce) {
   .cm-skeleton { animation: none; }
 }
+
+/* ── Placeholder compact (remplace l'ancien EmptyState pleine largeur) ── */
+.cm-placeholder {
+  margin: var(--space-sm) 0 0;
+  padding: var(--space-sm) var(--space-md);
+  font-size: 12.5px;
+  color: var(--text-muted);
+  background: var(--bg-elevated);
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-sm);
+}
+.cm-placeholder strong { color: var(--text-secondary); font-weight: 600; }
 
 /* ── Liste / cartes ──────────────────────────────────────────────────── */
 .cm-list {

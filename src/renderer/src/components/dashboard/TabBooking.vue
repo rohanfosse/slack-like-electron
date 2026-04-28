@@ -143,16 +143,23 @@ function onKeydown(e: KeyboardEvent) {
   }
 }
 
+// La SidebarBooking emet un CustomEvent quand l'utilisateur clique son bouton
+// "Nouveau type de RDV" (sidebar > Actions rapides). On le re-route vers la
+// meme logique que le CTA du header pour eviter de dupliquer le formulaire.
+function onSidebarCreateType() { triggerCreate() }
+
 onMounted(() => {
   booking.fetchAll()
   booking.initSocketListeners()
   refreshMsStatus()
   document.addEventListener('keydown', onKeydown)
+  window.addEventListener('cursus:booking-create-type', onSidebarCreateType)
 })
 
 onUnmounted(() => {
   booking.disposeSocketListeners()
   document.removeEventListener('keydown', onKeydown)
+  window.removeEventListener('cursus:booking-create-type', onSidebarCreateType)
 })
 </script>
 

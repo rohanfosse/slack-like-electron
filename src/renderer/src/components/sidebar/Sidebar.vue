@@ -16,6 +16,7 @@
   import SidebarAgenda      from './SidebarAgenda.vue'
   import SidebarFichiers    from './SidebarFichiers.vue'
   import SidebarLive        from './SidebarLive.vue'
+  import SidebarBooking     from './SidebarBooking.vue'
   import SidebarDmList      from './SidebarDmList.vue'
   import SidebarArchivedChannels from './SidebarArchivedChannels.vue'
   import SidebarGames       from './SidebarGames.vue'
@@ -281,6 +282,11 @@
           @select-date="(d: string) => router.push({ name: 'agenda', query: { date: d } })"
           @new-reminder="router.push({ name: 'agenda', query: { action: 'new-reminder' } })"
         />
+      </template>
+
+      <!-- Rendez-vous (prof) : stats compactes + prochains RDV + raccourci -->
+      <template v-else-if="route.name === 'booking'">
+        <SidebarBooking />
       </template>
 
       <!-- Jeux (hub + vues des jeux) : sidebar dediee, pas de canaux. -->
