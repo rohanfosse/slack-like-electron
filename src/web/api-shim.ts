@@ -869,3 +869,10 @@ const apiImpl = {
 }
 
 // Wrap dans un Proxy : route les proprietes inconnues vers makeWebFallback.
+;(window as unknown as { api: unknown }).api = new Proxy(apiImpl, {
+  get(target, prop) {
+    if (prop in target) return (target as Record<string | symbol, unknown>)[prop]
+    if (typeof prop !== 'string') return undefined
+    return makeWebFallback(prop)
+  },
+})
