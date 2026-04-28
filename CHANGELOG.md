@@ -1,5 +1,60 @@
 # Changelog
 
+## v2.263.0 (2026-04-28)
+
+### Landing : algorithmes pour rendre les demos plus credibles
+
+7 algos JS pour passer de "demo scriptee" a "demo qui simule un vrai
+systeme". Tout est dans `src/landing/app.js` avec une section
+ALGORITHMES en tete (helpers reutilisables).
+
+**Helpers** : `mulberry32` (PRNG seede), `easeOutCubic` /
+`easeInOutCubic`, `levenshtein` + `fuzzyScore`, `seededRandomWalk` +
+`buildSparklinePath`, `pickBiased`, `buildMarkov` + `markovWalk`.
+
+**Live Quiz : poll progressif**. Avant : barres statiques affichant la
+distribution finale immediatement. Apres : 0% au start, puis votes qui
+arrivent par paquets de 1-2 toutes les 400ms via `pickBiased(q.stats)`.
+Le compteur "X reponses" monte en temps reel, la majorite emerge
+progressivement, le reveal final snap aux vraies valeurs. Effet
+"Wooclap en classe".
+
+**Bento counters animes**. Les pills `3 en ligne`, `42 fichiers`,
+`13 RDV`, `28 reponses` ne sont plus statiques : drift aleatoire
+toutes les 5-12s avec interpolation easing cubic sur 600ms. La
+"28 reponses" du bandeau Live tick toujours up (effet Live qui se
+remplit). Jitter sur les intervals pour eviter les synchros.
+
+**Bento sparkline (Devoirs)**. Random walk seedee par jour-de-l'annee
+-> mini-courbe SVG "activite 14j" avec gradient + stroke anime
+(stroke-dashoffset). Stable dans la session, change quotidiennement.
+
+**RDV : creneaux generes par heuristique**. Plus de slots hardcodes.
+`generateRdvWeek()` utilise un PRNG seede sur le jour-de-l'annee :
+- Pas avant 9h ni apres 17h
+- Mer apres-midi exclu (cours)
+- Densite par jour (Lun/Jeu plus libres, Mer creux)
+- Densite plus forte le matin que l'apres-midi
+
+Chaque visite affiche une grille differente mais plausible.
+
+**Docs : recherche fuzzy (Levenshtein)**. Avant : `tags.includes(q)`
+exact. Apres : si pas de match exact, on teste contre chaque mot des
+tags + nom via `fuzzyScore < 0.35` (Levenshtein normalisee). Tape
+"algri" -> trouve "algo", "reso" -> "reseaux".
+
+**Pulse word cloud : layout force-directed**. Avant : wrap CSS lineaire.
+Apres : algo de placement avec repulsion entre boites + attraction vers
+le centre + 80 iterations. Les mots ne se chevauchent plus, les plus
+gros restent au centre. Rendu type wordcloud.js mais en 60 lignes.
+
+**Chat : Markov bigrammes**. Corpus de 15 messages reels, 35% de
+chance qu'un clic sur un canal ajoute un message Markov-genere a la
+fin (auteur pioche dans l'historique, timestamp en temps reel). La
+conversation ne montre jamais 2 fois exactement le meme historique.
+
+Bump 2.262.0 -> 2.263.0.
+
 ## v2.262.0 (2026-04-28)
 
 ### Demo : bots intelligents + widgets presets + fix slice crash

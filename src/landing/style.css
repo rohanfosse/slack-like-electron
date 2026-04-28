@@ -628,6 +628,44 @@ img { max-width: 100%; display: block; }
   animation: bentoPulse 2.4s ease-in-out infinite;
 }
 
+/* Bento : sparkline mini-courbe sur card Devoirs (random walk seedee) */
+.bento-sparkline {
+  margin-top: 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.bento-sparkline svg {
+  flex: 1;
+  height: 18px;
+  display: block;
+  animation: bentoSparkIn 800ms var(--ease-smooth) both;
+}
+@keyframes bentoSparkIn {
+  from { stroke-dashoffset: 200; opacity: 0; }
+  to   { stroke-dashoffset: 0;   opacity: 1; }
+}
+.bento-sparkline svg path {
+  stroke-dasharray: 200;
+  animation: bentoSparkDraw 1.4s var(--ease-smooth) both;
+}
+@keyframes bentoSparkDraw {
+  from { stroke-dashoffset: 200; }
+  to   { stroke-dashoffset: 0; }
+}
+.bento-sparkline-label {
+  font-size: 9px;
+  font-family: var(--font-mono);
+  font-weight: 600;
+  color: var(--text-3);
+  letter-spacing: 0.2px;
+  white-space: nowrap;
+}
+@media (prefers-reduced-motion: reduce) {
+  .bento-sparkline svg,
+  .bento-sparkline svg path { animation: none; stroke-dashoffset: 0 !important; }
+}
+
 /* Bento : LaTeX inline dans Lumen */
 .bento-lumen-tex {
   font-family: 'Times New Roman', serif;

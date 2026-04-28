@@ -1,7 +1,153 @@
 /* ══════════════════════════════════════════════════════════════════════════
    Cursus Landing - app.js
-   Scroll-triggered mini-demos, dark mode, version fetch
+   Scroll-triggered mini-demos, dark mode, version fetch.
+
+   v2.263 : algorithmes pour rendre les demos plus credibles
+   - Live poll progressif : votes biases + easing vers la distribution finale
+   - Bento counters : drift aleatoire avec animation easing cubic
+   - RDV slots : generateur heuristique (jour-de-semaine, densite)
+   - Docs fuzzy search : Levenshtein normalise pour tolerer 1-2 typos
+   - Sparkline random walk : seed deterministe par jour (changement quotidien)
+   - Pulse word cloud : layout force-directed leger
+   - Markov bigrams : generation de phrases pour le chat
    ══════════════════════════════════════════════════════════════════════════ */
+
+// ══════════════════════════════════════════════════════════════════════════
+//  ALGORITHMES — utilitaires reutilisables pour les demos
+// ══════════════════════════════════════════════════════════════════════════
+
+// PRNG seede (Mulberry32) — produit des sequences pseudo-aleatoires
+// reproductibles pour une seed donnee. Utilise pour les sparklines et
+// les RDV slots qui doivent rester stables au sein d'une session.
+function mulberry32(seed) {
+  let s = seed >>> 0
+  return () => {
+    s |= 0
+    s = (s + 0x6D2B79F5) | 0
+    let t = Math.imul(s ^ (s >>> 15), 1 | s)
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296
+  }
+}
+
+/** Easing cubic out — pour les animations de compteurs. */
+function easeOutCubic(t) { return 1 - Math.pow(1 - t, 3) }
+
+/** Easing in-out cubic — pour les transitions de barres. */
+function easeInOutCubic(t) {
+  return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2
+}
+
+/**
+ * Distance de Levenshtein normalisee (resultat dans [0, 1]).
+ * Utilisee pour la recherche fuzzy des docs : un score < 0.35 = match.
+ */
+function levenshtein(a, b) {
+  if (a === b) return 0
+  if (!a.length) return b.length
+  if (!b.length) return a.length
+  const m = []
+  for (let i = 0; i <= b.length; i++) m[i] = [i]
+  for (let j = 0; j <= a.length; j++) m[0][j] = j
+  for (let i = 1; i <= b.length; i++) {
+    for (let j = 1; j <= a.length; j++) {
+      m[i][j] = b.charAt(i - 1) === a.charAt(j - 1)
+        ? m[i - 1][j - 1]
+        : Math.min(m[i - 1][j - 1] + 1, m[i][j - 1] + 1, m[i - 1][j] + 1)
+    }
+  }
+  return m[b.length][a.length]
+}
+function fuzzyScore(query, target) {
+  const q = (query || '').toLowerCase().trim()
+  const t = (target || '').toLowerCase()
+  if (!q) return 0
+  if (t.includes(q)) return 0 // exact substring = score min
+  return levenshtein(q, t) / Math.max(q.length, t.length)
+}
+
+/**
+ * Random walk seedee : retourne N points entre 10-90 qui ressemblent a
+ * une serie temporelle plausible (variations bornees, tendance preservee).
+ * Seed = jour-de-l'annee -> chaque jour = nouvelle serie, mais stable
+ * au sein de la session.
+ */
+function seededRandomWalk(seed, n, min = 10, max = 90) {
+  const rng = mulberry32(seed)
+  let v = (min + max) / 2
+  const out = []
+  for (let i = 0; i < n; i++) {
+    const delta = (rng() - 0.5) * 22
+    v = Math.max(min, Math.min(max, v + delta))
+    out.push(Math.round(v))
+  }
+  return out
+}
+
+/** Construit un path SVG pour un sparkline a partir d'un tableau de valeurs. */
+function buildSparklinePath(values, width = 100, height = 24) {
+  if (!values.length) return ''
+  const min = Math.min(...values)
+  const max = Math.max(...values)
+  const range = max - min || 1
+  const stepX = width / Math.max(1, values.length - 1)
+  return values.map((v, i) => {
+    const x = i * stepX
+    const y = height - ((v - min) / range) * height
+    return (i === 0 ? 'M' : 'L') + x.toFixed(1) + ' ' + y.toFixed(1)
+  }).join(' ')
+}
+
+/**
+ * Vote biaise : pour chaque option, retourne 1/0 selon la probabilite
+ * de cette option. La somme des proba doit faire 1. Utilise pour le
+ * live poll : un vote, on tire l'option en fonction de la distribution
+ * finale "biased toward correct".
+ */
+function pickBiased(weights) {
+  const total = weights.reduce((s, w) => s + w, 0)
+  let r = Math.random() * total
+  for (let i = 0; i < weights.length; i++) {
+    r -= weights[i]
+    if (r <= 0) return i
+  }
+  return weights.length - 1
+}
+
+/**
+ * Construit une chaine de Markov d'ordre 2 (bigrammes) sur un corpus.
+ * `walk` retourne une phrase de longueur ~ targetLen mots. Plus le corpus
+ * est grand, plus les phrases sonnent "naturelles".
+ */
+function buildMarkov(corpus) {
+  const chain = new Map()
+  for (const sentence of corpus) {
+    const words = sentence.split(/\s+/)
+    for (let i = 0; i < words.length - 1; i++) {
+      const key = words[i].toLowerCase()
+      if (!chain.has(key)) chain.set(key, [])
+      chain.get(key).push(words[i + 1])
+    }
+  }
+  return chain
+}
+function markovWalk(chain, seed, targetLen = 8) {
+  const start = seed || [...chain.keys()][Math.floor(Math.random() * chain.size)]
+  const out = [start]
+  let cur = start.toLowerCase()
+  for (let i = 0; i < targetLen; i++) {
+    const choices = chain.get(cur)
+    if (!choices || !choices.length) break
+    const next = choices[Math.floor(Math.random() * choices.length)]
+    out.push(next)
+    cur = next.toLowerCase().replace(/[.,!?]$/, '')
+  }
+  // Cleanup ponctuation : on coupe au prochain "." dans le tail
+  const text = out.join(' ').replace(/\s+([.,!?])/g, '$1')
+  return text.charAt(0).toUpperCase() + text.slice(1)
+}
+
+
 
 // ── Reduced motion preference ─────────────────────────────────────────────
 const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
@@ -21,6 +167,85 @@ function toggleTheme() {
 
 // ── DOMContentLoaded ──────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
+
+  // ── Bento counters : drift aleatoire avec animation easing ──────────
+  // Chaque pill du bento (3 en ligne / 28 reponses / 13 RDV / 42 fichiers)
+  // varie legerement au cours du temps pour donner l'effet "ca vit".
+  // Toutes les variations restent dans une bande raisonnable (+/-2 pour
+  // les counts, +/-3 pour 42, etc.) pour ne pas paraitre erratique.
+  if (!prefersReducedMotion) {
+    const COUNTERS = [
+      { selector: '.bento-card[data-color="chat"] .bento-live-pill',     base: 3,  range: 1, suffix: '',    interval: 8000 },
+      { selector: '.bento-card[data-color="docs"] .bento-stat-pill',     base: 42, range: 3, suffix: '',    interval: 12000 },
+      { selector: '.bento-card[data-color="rex"] .bento-stat-pill',      base: 13, range: 1, suffix: '',    interval: 11000 },
+      // Live "28 reponses" tick toujours up, jusqu'a +5 puis reset
+      { selector: '.bento-card[data-color="live"] .bento-live-meta span:first-child', base: 28, range: 5, suffix: ' réponses', interval: 4500, monotonic: true },
+    ]
+    function animateCounter(el, fromVal, toVal, suffix, durationMs = 600) {
+      const start = performance.now()
+      function tick(now) {
+        const t = Math.min(1, (now - start) / durationMs)
+        const v = Math.round(fromVal + (toVal - fromVal) * easeOutCubic(t))
+        // Conserve l'eventuel <span class="bento-live-dot"> ou prefixe
+        const existingChildren = Array.from(el.childNodes).filter(n => n.nodeType === 1)
+        const textNodes = Array.from(el.childNodes).filter(n => n.nodeType === 3)
+        if (textNodes.length) {
+          textNodes[textNodes.length - 1].nodeValue = v + suffix
+        } else {
+          // Pas de text node : on ajoute juste apres les child elements
+          el.appendChild(document.createTextNode(v + suffix))
+        }
+        if (t < 1) requestAnimationFrame(tick)
+      }
+      requestAnimationFrame(tick)
+    }
+    for (const cfg of COUNTERS) {
+      const el = document.querySelector(cfg.selector)
+      if (!el) continue
+      let current = cfg.base
+      const initialText = el.textContent.trim()
+      // Detect le suffixe initial pour le preserver (ex: "28 réponses")
+      const initialMatch = initialText.match(/^(\d+)(.*)$/)
+      const detectedSuffix = initialMatch ? initialMatch[2] : (cfg.suffix || '')
+      setInterval(() => {
+        let next
+        if (cfg.monotonic) {
+          next = current + Math.floor(Math.random() * cfg.range) + 1
+          if (next > cfg.base + cfg.range * 4) next = cfg.base // soft reset
+        } else {
+          // Drift autour de la base : -range..+range mais on revient au centre
+          const delta = Math.round((Math.random() - 0.5) * cfg.range * 2)
+          next = Math.max(1, cfg.base + delta)
+        }
+        animateCounter(el, current, next, detectedSuffix)
+        current = next
+      }, cfg.interval + Math.random() * 2000) // jitter pour pas synchroniser
+    }
+  }
+
+  // ── Bento sparkline (devoirs) : random walk seedee par jour ─────────
+  // Mini-courbe SVG sur la card Devoirs montrant "activite 7j" — donne
+  // l'illusion d'un mini-dashboard. La seed est jour-de-l'annee :
+  // change quotidiennement mais stable dans la session.
+  function injectSparkline() {
+    const card = document.querySelector('.bento-card[data-color="devoirs"] .bento-demo')
+    if (!card) return
+    if (card.querySelector('.bento-sparkline')) return
+    const dayOfYear = Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 0)) / 86400000)
+    const values = seededRandomWalk(dayOfYear, 14, 20, 80)
+    const path = buildSparklinePath(values, 100, 18)
+    const svg = document.createElement('div')
+    svg.className = 'bento-sparkline'
+    svg.innerHTML = `
+      <svg viewBox="0 0 100 18" preserveAspectRatio="none" aria-hidden="true">
+        <path d="${path}" fill="none" stroke="var(--card-accent, var(--color-devoirs))" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+        <path d="${path} L 100 18 L 0 18 Z" fill="var(--card-accent, var(--color-devoirs))" opacity="0.10" />
+      </svg>
+      <span class="bento-sparkline-label">activité 14j</span>
+    `
+    card.appendChild(svg)
+  }
+  injectSparkline()
 
   // ── Smooth scroll bento -> feature section ──────────────────────────
   // Override de la nav vers les ancres pour ajouter un offset (nav fixe)
@@ -207,6 +432,10 @@ document.addEventListener('DOMContentLoaded', () => {
     return Array.from(document.querySelectorAll('#docs-grid .doc-item'))
   }
 
+  // Filtre fuzzy : tolere 1-2 typos via Levenshtein normalise.
+  // Match exact substring -> score 0 (priorite max), sinon
+  // Levenshtein < 0.35 = match flou. Permet "algri" -> "algo",
+  // "reso" -> "reseaux", etc.
   function applyDocFilter(query, category) {
     const items = getDocItems()
     const q = (query || '').trim().toLowerCase()
@@ -214,8 +443,19 @@ document.addEventListener('DOMContentLoaded', () => {
     let visible = 0
     items.forEach(item => {
       const tags = (item.dataset.docTags || '').toLowerCase()
+      const name = (item.querySelector('.doc-name')?.textContent || '').toLowerCase()
       const itemCat = item.dataset.docCat || ''
-      const matchQuery = !q || tags.includes(q) || (item.querySelector('.doc-name')?.textContent || '').toLowerCase().includes(q)
+      let matchQuery = true
+      if (q) {
+        // 1) Exact substring sur tags ou nom
+        if (tags.includes(q) || name.includes(q)) {
+          matchQuery = true
+        } else {
+          // 2) Fuzzy : on teste contre chaque mot des tags + nom
+          const words = (tags + ' ' + name).split(/[\s.\-_/]+/).filter(Boolean)
+          matchQuery = words.some(w => fuzzyScore(q, w) < 0.35)
+        }
+      }
       const matchCat = cat === 'all' || itemCat === cat
       const show = matchQuery && matchCat
       item.classList.toggle('doc-item--hidden', !show)
@@ -404,6 +644,43 @@ document.addEventListener('DOMContentLoaded', () => {
     })
   }
 
+  // ── Markov chain : genere une "suite de message" plausible ──────────
+  // Construit a partir des messages hardcodes du chat. Au clic sur un
+  // canal, 30% de chance d'ajouter une 4e ligne generee qui prolonge la
+  // conversation. Ca casse l'effet "scripte rejoue identique a chaque clic".
+  const MARKOV_CORPUS = [
+    'Le livrable est a rendre vendredi 17h pensez a deposer vos depots',
+    'Merci pour le partage je regarde ce soir',
+    'Quelqu un a un lien pour le replay du cours hier',
+    'On peut travailler en equipe de 2 ou 3 max',
+    'Je m occupe de la CI CD avec GitHub Actions',
+    'Tests CI passent je deploy la preview maintenant',
+    'On part sur argon2 plutot que bcrypt c est OWASP recommended',
+    'Le bug du loader infini sur Safari a ete fixe',
+    'PR pretes pour review ca presse pas vraiment',
+    'Reunion d equipe demain 10h validez le creneau',
+    'Le Kanban est a jour j ai bouge les cartes',
+    'Petit rappel le formulaire d evaluation est ouvert jusqu a vendredi',
+    'Quelqu un a compris la rotation double je bloque sur le cas',
+    'Regarde le balanceFactor si superieur a 1 et fils gauche negatif',
+    'L invariant AVL garantit une profondeur en O log n',
+  ]
+  const markovChain = buildMarkov(MARKOV_CORPUS)
+  function generateMarkovMessage() {
+    // Tirage 6-12 mots, conserve si la phrase a au moins 4 mots et finit
+    // sur un mot non-conjonction (heuristique simple pour eviter les
+    // phrases tronquees bizarres).
+    for (let attempt = 0; attempt < 5; attempt++) {
+      const text = markovWalk(markovChain, null, 6 + Math.floor(Math.random() * 6))
+      const words = text.split(/\s+/)
+      const last = words[words.length - 1].toLowerCase().replace(/[.,!?]$/, '')
+      if (words.length >= 4 && !['et', 'ou', 'a', 'la', 'le', 'les', 'de', 'du'].includes(last)) {
+        return text + (text.match(/[.!?]$/) ? '' : '.')
+      }
+    }
+    return null
+  }
+
   document.querySelectorAll('.demo-sidebar-mini .sidebar-ch').forEach(ch => {
     ch.style.cursor = 'pointer'
     ch.addEventListener('click', () => {
@@ -412,12 +689,30 @@ document.addEventListener('DOMContentLoaded', () => {
       ch.classList.add('active')
 
       const name = ch.textContent.replace(/#/g, '').replace(/\d+$/g, '').trim()
-      const msgs = chatChannels[name]
-      if (!msgs) return
+      const baseMsgs = chatChannels[name]
+      if (!baseMsgs) return
 
       const win = ch.closest('.demo-window')
       const title = win.querySelector('.demo-title')
       if (title) title.textContent = '# ' + name
+
+      // 35% de chance d'ajouter un message Markov-genere a la fin (effet
+      // "conversation qui continue") — different a chaque clic, donc on
+      // ne montre jamais 2 fois exactement le meme historique.
+      let msgs = baseMsgs
+      if (Math.random() < 0.35) {
+        const generated = generateMarkovMessage()
+        if (generated) {
+          // Pioche un author dans la liste existante pour la coherence
+          const author = baseMsgs[Math.floor(Math.random() * baseMsgs.length)]
+          const t = new Date()
+          const time = String(t.getHours()).padStart(2, '0') + ':' + String(t.getMinutes()).padStart(2, '0')
+          msgs = [...baseMsgs, {
+            av: author.av, bg: author.bg, name: author.name, nc: author.nc,
+            t: time, txt: generated,
+          }]
+        }
+      }
 
       const container = win.querySelector('.demo-messages')
       const hasTyping = name === 'général' || name === 'projet-web'
@@ -495,6 +790,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const countEl = document.getElementById('live-q-count')
     const timerEl = document.getElementById('live-q-timer')
     let qIdx = 0, revealed = false, revealT = null, nextT = null, timerIv = null
+    let pollIv = null
+    let liveVotes = [0, 0, 0, 0]
+    let liveCount = 0
 
     function startTimer(seconds) {
       if (timerIv) clearInterval(timerIv)
@@ -520,9 +818,76 @@ document.addEventListener('DOMContentLoaded', () => {
       }, 1000)
     }
 
+    /**
+     * Live poll progressive : au lieu d'afficher des stats finales statiques,
+     * on simule l'arrivee progressive des votes pendant la fenetre de 30s.
+     *
+     * Algo : la distribution finale `q.stats` (ex: [12, 68, 15, 5]) est
+     * convertie en weights pour `pickBiased`. A chaque tick (~400ms), on
+     * tire 1-2 votes au pif selon ces weights et on met a jour les barres
+     * + le compteur de reponses. Resultat : le visiteur voit "30 reponses"
+     * monter en temps reel, avec la bonne reponse qui se detache au fur
+     * et a mesure (effet "majority forms over time").
+     */
+    function startLivePoll(q) {
+      if (pollIv) clearInterval(pollIv)
+      liveVotes = [0, 0, 0, 0]
+      liveCount = 0
+      // Cible : ~q.count votes au total a la fin du timer (30s)
+      const targetTotal = q.count
+      const tickMs = 400
+      const totalTicks = Math.floor(30_000 / tickMs)
+      const votesPerTick = targetTotal / totalTicks
+      let ticks = 0
+
+      // Initialise les barres a 0%
+      statsEl.querySelectorAll('.live-stat-fill').forEach(el => el.style.setProperty('--w', '0%'))
+      statsEl.querySelectorAll('.live-stat-pct').forEach(el => el.textContent = '0%')
+
+      const pollFn = () => {
+        ticks++
+        // Tire un nombre aleatoire de votes ce tick (autour de votesPerTick)
+        const n = Math.max(1, Math.round(votesPerTick * (0.6 + Math.random() * 0.8)))
+        for (let i = 0; i < n && liveCount < targetTotal; i++) {
+          const idx = pickBiased(q.stats)
+          liveVotes[idx]++
+          liveCount++
+        }
+        // Met a jour les pourcentages affiches (sur le total courant, pas final)
+        if (liveCount > 0) {
+          for (let i = 0; i < q.opts.length; i++) {
+            const pct = Math.round((liveVotes[i] / liveCount) * 100)
+            const bar  = statsEl.querySelector(`.live-stat-bar:nth-child(${i + 1}) .live-stat-fill`)
+            const lab  = statsEl.querySelector(`.live-stat-bar:nth-child(${i + 1}) .live-stat-pct`)
+            if (bar) bar.style.setProperty('--w', pct + '%')
+            if (lab) lab.textContent = pct + '%'
+          }
+        }
+        countEl.textContent = `${liveCount} réponse${liveCount > 1 ? 's' : ''}`
+
+        if (ticks >= totalTicks || liveCount >= targetTotal) {
+          clearInterval(pollIv); pollIv = null
+        }
+      }
+      // Premier tick immediat puis rythme regulier
+      pollFn()
+      pollIv = setInterval(pollFn, tickMs)
+    }
+
     function revealAnswers(q) {
       revealed = true
       if (timerIv) { clearInterval(timerIv); timerIv = null }
+      if (pollIv) { clearInterval(pollIv); pollIv = null }
+      // Au reveal, on snap les barres aux pourcentages "officiels" finaux
+      // (q.stats) — meme si le poll progressif n'a pas atteint la cible
+      // exacte, le reveal montre la verite.
+      statsEl.querySelectorAll('.live-stat-bar').forEach((bar, i) => {
+        const fill = bar.querySelector('.live-stat-fill')
+        const pct  = bar.querySelector('.live-stat-pct')
+        if (fill) fill.style.setProperty('--w', q.stats[i] + '%')
+        if (pct)  pct.textContent  = q.stats[i] + '%'
+      })
+      countEl.textContent = `${q.count} réponses`
       optsEl.querySelectorAll('.live-opt').forEach((o, i) => {
         o.style.transitionDelay = `${i * 80}ms`
         o.classList.add(parseInt(o.dataset.idx) === q.correct ? 'revealed-correct' : 'revealed-wrong')
@@ -535,17 +900,29 @@ document.addEventListener('DOMContentLoaded', () => {
       const q = quizQuestions[idx]
       revealed = false
       clearTimeout(revealT); clearTimeout(nextT)
+      if (pollIv) { clearInterval(pollIv); pollIv = null }
       badgeEl.textContent = `Question ${idx + 1}/${quizQuestions.length}`
       textEl.textContent = q.q
-      countEl.textContent = `${q.count} réponses`
+      countEl.textContent = `0 réponse`
       startTimer(30)
       optsEl.innerHTML = q.opts.map((o, i) =>
         `<div class="live-opt" data-idx="${i}" data-correct="${i === q.correct ? 1 : 0}" tabindex="0" role="button"><span class="live-opt-letter">${'ABCD'[i]}</span><span class="live-opt-text">${o}</span><span class="live-check">&#10003;</span></div>`
       ).join('')
+      // Barres a 0% — le poll progressif les fera monter
       statsEl.innerHTML = q.opts.map((_, i) =>
-        `<div class="live-stat-bar"><div class="live-stat-fill${i === q.correct ? ' live-stat-fill--correct' : ''}" style="--w:${q.stats[i]}%"></div><span class="live-stat-label">${'ABCD'[i]}</span><span class="live-stat-pct">${q.stats[i]}%</span></div>`
+        `<div class="live-stat-bar"><div class="live-stat-fill${i === q.correct ? ' live-stat-fill--correct' : ''}" style="--w:0%"></div><span class="live-stat-label">${'ABCD'[i]}</span><span class="live-stat-pct">0%</span></div>`
       ).join('')
       statsEl.classList.remove('revealed')
+      // Demarre le poll progressif (skip si reduced motion : on snap direct)
+      if (prefersReducedMotion) {
+        statsEl.querySelectorAll('.live-stat-bar').forEach((bar, i) => {
+          bar.querySelector('.live-stat-fill').style.setProperty('--w', q.stats[i] + '%')
+          bar.querySelector('.live-stat-pct').textContent = q.stats[i] + '%'
+        })
+        countEl.textContent = `${q.count} réponses`
+      } else {
+        startLivePoll(q)
+      }
       optsEl.querySelectorAll('.live-opt').forEach(opt => {
         opt.addEventListener('click', () => onQuizClick(opt, q))
         opt.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); opt.click() } })
@@ -589,19 +966,79 @@ document.addEventListener('DOMContentLoaded', () => {
     { w: 'satisfait',  s: 12 }, { w: 'overbooké',  s: 7  },
   ]
 
+  /**
+   * Layout force-directed simple pour le nuage de mots Pulse :
+   *   - Force d'attraction vers le centre (faible)
+   *   - Force de repulsion entre paires de mots si overlap (boites)
+   *   - 80 iterations -> stable
+   *
+   * Resultat : les mots se distribuent sans se chevaucher, les plus gros
+   * (haut score) restent au centre. Plus pro qu'un wrap CSS.
+   */
+  function layoutWordCloud(words, containerW, containerH) {
+    // Position initiale aleatoire dans la zone, taille proportionnelle au score
+    const pos = words.map(w => ({
+      ...w,
+      x: containerW / 2 + (Math.random() - 0.5) * 40,
+      y: containerH / 2 + (Math.random() - 0.5) * 30,
+      fontSize: 11 + Math.min(w.s, 25) * 0.6,
+      width:  (w.w.length * 7 + 12) * (1 + Math.min(w.s, 25) / 60),
+      height: (11 + Math.min(w.s, 25) * 0.6) + 8,
+    }))
+    const ITERS = 80
+    const REPEL = 0.6
+    const ATTRACT = 0.012
+    for (let it = 0; it < ITERS; it++) {
+      // Repulsion entre paires si overlap des boites
+      for (let i = 0; i < pos.length; i++) {
+        for (let j = i + 1; j < pos.length; j++) {
+          const a = pos[i], b = pos[j]
+          const dx = b.x - a.x
+          const dy = b.y - a.y
+          const overlapX = (a.width + b.width) / 2 - Math.abs(dx)
+          const overlapY = (a.height + b.height) / 2 - Math.abs(dy)
+          if (overlapX > 0 && overlapY > 0) {
+            const fx = (dx >= 0 ? 1 : -1) * overlapX * REPEL
+            const fy = (dy >= 0 ? 1 : -1) * overlapY * REPEL
+            a.x -= fx / 2; a.y -= fy / 2
+            b.x += fx / 2; b.y += fy / 2
+          }
+        }
+      }
+      // Attraction vers le centre (faible)
+      for (const p of pos) {
+        p.x += (containerW / 2 - p.x) * ATTRACT
+        p.y += (containerH / 2 - p.y) * ATTRACT
+      }
+    }
+    // Clamp pour rester dans le container
+    for (const p of pos) {
+      p.x = Math.max(p.width / 2, Math.min(containerW - p.width / 2, p.x))
+      p.y = Math.max(p.height / 2, Math.min(containerH - p.height / 2, p.y))
+    }
+    return pos
+  }
+
   function renderPulseCloud() {
     const cloud = document.getElementById('live-pulse-cloud')
     if (!cloud || cloud.dataset.rendered) return
     cloud.dataset.rendered = '1'
-    PULSE_WORDS.forEach((entry, i) => {
+    // Mesure le container une fois rendu
+    const W = cloud.clientWidth || 320
+    const H = 80
+    const positioned = layoutWordCloud(PULSE_WORDS, W, H)
+    const tints = ['var(--color-rex)', 'var(--color-chat)', 'var(--color-devoirs)']
+    cloud.style.position = 'relative'
+    cloud.style.height = H + 'px'
+    cloud.innerHTML = ''
+    positioned.forEach((entry, i) => {
       const span = document.createElement('span')
       span.className = 'live-pulse-word'
-      // Taille proportionnelle au score, mais bornee pour rester lisible
-      const fontSize = 11 + Math.min(entry.s, 25) * 0.6
-      span.style.fontSize = fontSize + 'px'
+      span.style.position = 'absolute'
+      span.style.left = (entry.x - entry.width / 2) + 'px'
+      span.style.top  = (entry.y - entry.height / 2) + 'px'
+      span.style.fontSize = entry.fontSize + 'px'
       span.style.setProperty('--delay', (i * 80) + 'ms')
-      // Couleur : on cycle entre 3 teintes du palette pour casser la mono
-      const tints = ['var(--color-rex)', 'var(--color-chat)', 'var(--color-devoirs)']
       span.style.color = tints[i % tints.length]
       span.style.opacity = String(0.55 + Math.min(entry.s, 25) / 60)
       span.textContent = entry.w
@@ -673,18 +1110,38 @@ document.addEventListener('DOMContentLoaded', () => {
   // ══════════════════════════════════════════════════════════════════════
   //  RDV (mini-Calendly) — 3 onglets : Types / Disponibilités / Mes RDV
   // ══════════════════════════════════════════════════════════════════════
+  // Generateur heuristique de creneaux : produit une grille semaine
+  // plausible (pas avant 9h/apres 18h, pas mercredi PM, densite plus
+  // forte le matin, samedi/dimanche skipped). Seede sur le jour-de-
+  // l'annee pour rester stable dans la session mais changer quotidiennement.
+  function generateRdvWeek() {
+    const dayOfYear = Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 0)) / 86400000)
+    const rng = mulberry32(dayOfYear)
+    const DAYS = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven']
+    const HOURS = ['09:00', '09:30', '10:00', '10:30', '11:00', '13:30', '14:00', '14:30', '15:00', '15:30', '16:00', '16:30']
+    return DAYS.map(day => {
+      // Densite par jour : plus libre lundi/jeudi (debut+milieu de semaine)
+      const baseDensity = day === 'Lun' ? 0.65 : day === 'Jeu' ? 0.75 : day === 'Mer' ? 0.30 : 0.5
+      const slots = []
+      for (const hour of HOURS) {
+        // Mer apres-midi exclu (cours)
+        if (day === 'Mer' && parseInt(hour, 10) >= 13) continue
+        // Le matin a plus de slots libres
+        const isMorning = parseInt(hour, 10) < 12
+        const density = baseDensity * (isMorning ? 1.2 : 0.8)
+        if (rng() < density) slots.push(hour)
+      }
+      return { day, slots }
+    }).filter(d => d.slots.length > 0)
+  }
+
   const rdvData = {
     types: [
       { name: 'Suivi individuel',    duration: 30, color: '#0EA5E9', desc: 'Point hebdomadaire projet' },
       { name: 'Soutenance',          duration: 60, color: '#8B5CF6', desc: 'Jury + 2 intervenants' },
       { name: 'Rattrapage CCTL',     duration: 45, color: '#F59E0B', desc: 'Session de recuperation' },
     ],
-    disponibilites: [
-      { day: 'Lun', slots: ['09:00', '10:00', '14:00', '15:30'] },
-      { day: 'Mar', slots: ['10:00', '14:00'] },
-      { day: 'Jeu', slots: ['09:00', '11:00', '14:00', '15:00', '16:00'] },
-      { day: 'Ven', slots: ['10:30', '14:00'] },
-    ],
+    disponibilites: generateRdvWeek(),
     bookings: [
       { who: 'Emma L.',  when: 'Jeu. 9h00',   type: 'Suivi individuel', teams: true },
       { who: 'Jean D.',  when: 'Jeu. 14h00',  type: 'Suivi individuel', teams: true },
