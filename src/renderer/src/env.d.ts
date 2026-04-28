@@ -30,6 +30,10 @@ declare global {
       // dans le no-op fallback du shim — pas de fonctionnalite demo en
       // Electron, l'utilisateur est deja sur l'app installee.
       demoEnd?(): Promise<IpcResponse<null>>
+      demoPresence?(): Promise<IpcResponse<{
+        online: Array<{ id: number; name: string; role: string; status: null }>
+        typing: { channelId: number; userName: string } | null
+      }>>
 
       // Structure
       getPromotions(): Promise<IpcResponse<Promotion[]>>

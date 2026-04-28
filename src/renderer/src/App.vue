@@ -16,6 +16,7 @@
   import { useLumenFocus }  from '@/composables/useLumenFocus'
   import { useSocketReconnectToast } from '@/composables/useSocketReconnectToast'
   import { useNotificationBanner } from '@/composables/useNotificationBanner'
+  import { useDemoPresence } from '@/composables/useDemoPresence'
   import { resolveStartRoute } from '@/router'
   import { reportError }    from '@/utils/errorReporter'
   import { MessageSquare, FileText, Camera, Lock, Trash2, Download, UserX, Download as DownloadIcon, RefreshCw, Shield, Scale, Clock, Mail, Globe, Eye, Pencil, ChevronDown, Server, Zap } from 'lucide-vue-next'
@@ -97,6 +98,11 @@
 
   // Bandeau demande de notifications (extrait dans useNotificationBanner).
   const { visible: showNotifBanner, accept: acceptNotifs, dismiss: dismissNotifs } = useNotificationBanner()
+
+  // Mode demo : presence Socket.IO simulee via polling (cf. v2.258 jalon V3).
+  // Le composable s'auto-active quand currentUser.demo === true et s'arrete
+  // au logout / sortie de la demo.
+  useDemoPresence()
 
   // Toast discret pour la connexion socket (extrait dans useSocketReconnectToast).
   useSocketReconnectToast()

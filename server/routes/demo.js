@@ -206,6 +206,54 @@ router.get('/assignments', (req, res) => {
   res.json({ ok: true, data: rows })
 })
 
+// GET /api/demo/presence
+// Retourne une liste fake d'utilisateurs "en ligne" + 0-1 typing en cours.
+// La selection varie au cours du temps (rotation toutes les ~30s) pour
+// donner l'illusion d'une promo vivante (cf. jalon V3 du brief demo).
+router.get('/presence', (req, res) => {
+  const db = getDemoDb()
+  const tenantId = req.tenantId
+  const all = db.prepare(
+    `SELECT id, name, avatar_initials FROM demo_students WHERE tenant_id = ?
+     UNION ALL
+     SELECT -id AS id, name, NULL AS avatar_initials FROM demo_teachers WHERE tenant_id = ?`
+  ).all(tenantId, tenantId)
+  if (!all.length) return res.json({ ok: true, data: { online: [], typing: null } })
+
+  // Selection deterministe par fenetre de 30s : tous les visiteurs voient
+  // la meme rotation a un instant donne, mais ca change toutes les 30s.
+  // 3-4 users online sur ~7 disponibles.
+  const seed = Math.floor(Date.now() / 30_000)
+  const shuffled = [...all].sort((a, b) => {
+    const ha = (a.id * 9301 + seed * 49297) % 233280
+    const hb = (b.id * 9301 + seed * 49297) % 233280
+    return ha - hb
+  })
+  const onlineCount = 3 + (seed % 2) // 3 ou 4
+  const online = shuffled.slice(0, onlineCount).map(u => ({
+    id: u.id,
+    name: u.name,
+    role: u.id < 0 ? 'teacher' : 'student',
+    status: null,
+  }))
+
+  // Typing : 30% de chance qu'un user (parmi online, pas le current user)
+  // soit en train de taper dans un canal aleatoire.
+  let typing = null
+  if (Math.random() < 0.3) {
+    const candidate = online.find(u => u.id !== req.demoUser.id)
+    const channels = db.prepare(
+      `SELECT id FROM demo_channels WHERE tenant_id = ?`
+    ).all(tenantId)
+    if (candidate && channels.length) {
+      const ch = channels[Math.floor(Math.random() * channels.length)]
+      typing = { channelId: ch.id, userName: candidate.name }
+    }
+  }
+
+  res.json({ ok: true, data: { online, typing } })
+})
+
 // GET /api/demo/status (compteurs internes, pas auth-protege puisque post-demoMode)
 router.get('/status', (req, res) => {
   const db = getDemoDb()

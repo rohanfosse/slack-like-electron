@@ -13,13 +13,58 @@
 // Avatars colores stables (pas d'aleatoire pour des seeds reproductibles).
 const AVATAR_COLORS = ['#6366F1', '#059669', '#F59E0B', '#EF4444', '#0EA5E9', '#D97706', '#8B5CF6']
 
-const STUDENTS = [
+// Pool de 33 prenoms+noms varies. La promo Licence en utilise 20, le
+// Master 13 — listes disjointes via slice. Volontairement neutres (pas de
+// reference CESI ou ecole specifique).
+const STUDENT_POOL = [
+  // Licence (20 premiers)
   { name: 'Emma Lefevre',    email: 'emma.lefevre@demo.cursus',    initials: 'EL' },
   { name: 'Lucas Bernard',   email: 'lucas.bernard@demo.cursus',   initials: 'LB' },
   { name: 'Sara Bouhassoun', email: 'sara.bouhassoun@demo.cursus', initials: 'SB' },
   { name: 'Jean Durand',     email: 'jean.durand@demo.cursus',     initials: 'JD' },
   { name: 'Alice Martin',    email: 'alice.martin@demo.cursus',    initials: 'AM' },
   { name: 'Mehdi Chaouki',   email: 'mehdi.chaouki@demo.cursus',   initials: 'MC' },
+  { name: 'Hugo Petit',      email: 'hugo.petit@demo.cursus',      initials: 'HP' },
+  { name: 'Lea Rousseau',    email: 'lea.rousseau@demo.cursus',    initials: 'LR' },
+  { name: 'Ibrahim Diallo',  email: 'ibrahim.diallo@demo.cursus',  initials: 'ID' },
+  { name: 'Camille Robert',  email: 'camille.robert@demo.cursus',  initials: 'CR' },
+  { name: 'Theo Garcia',     email: 'theo.garcia@demo.cursus',     initials: 'TG' },
+  { name: 'Ines Moreau',     email: 'ines.moreau@demo.cursus',     initials: 'IM' },
+  { name: 'Nathan Dubois',   email: 'nathan.dubois@demo.cursus',   initials: 'ND' },
+  { name: 'Yasmine Benali',  email: 'yasmine.benali@demo.cursus',  initials: 'YB' },
+  { name: 'Paul Leroy',      email: 'paul.leroy@demo.cursus',      initials: 'PL' },
+  { name: 'Manon Fournier',  email: 'manon.fournier@demo.cursus',  initials: 'MF' },
+  { name: 'Antoine Roux',    email: 'antoine.roux@demo.cursus',    initials: 'AR' },
+  { name: 'Clara Vincent',   email: 'clara.vincent@demo.cursus',   initials: 'CV' },
+  { name: 'Maxime Girard',   email: 'maxime.girard@demo.cursus',   initials: 'MG' },
+  { name: 'Sofia Lopez',     email: 'sofia.lopez@demo.cursus',     initials: 'SL' },
+
+  // Master (13 suivants)
+  { name: 'Romain Carpentier', email: 'romain.carpentier@demo.cursus', initials: 'RC' },
+  { name: 'Chloe Marchand',    email: 'chloe.marchand@demo.cursus',    initials: 'CM' },
+  { name: 'Adrien Lambert',    email: 'adrien.lambert@demo.cursus',    initials: 'AL' },
+  { name: 'Naomi Bertrand',    email: 'naomi.bertrand@demo.cursus',    initials: 'NB' },
+  { name: 'Karim El Amrani',   email: 'karim.elamrani@demo.cursus',    initials: 'KE' },
+  { name: 'Juliette Faure',    email: 'juliette.faure@demo.cursus',    initials: 'JF' },
+  { name: 'Quentin Morel',     email: 'quentin.morel@demo.cursus',     initials: 'QM' },
+  { name: 'Anna Schneider',    email: 'anna.schneider@demo.cursus',    initials: 'AS' },
+  { name: 'Bastien Henry',     email: 'bastien.henry@demo.cursus',     initials: 'BH' },
+  { name: 'Marion Vidal',      email: 'marion.vidal@demo.cursus',      initials: 'MV' },
+  { name: 'Tristan Olivier',   email: 'tristan.olivier@demo.cursus',   initials: 'TO' },
+  { name: 'Salma Berrada',     email: 'salma.berrada@demo.cursus',     initials: 'SB' },
+  { name: 'Leo Perez',         email: 'leo.perez@demo.cursus',         initials: 'LP' },
+]
+
+const LICENCE_STUDENTS = STUDENT_POOL.slice(0, 20)
+const MASTER_STUDENTS  = STUDENT_POOL.slice(20, 33)
+
+// Promotions : 2 cursus generiques L3 / M1 informatique. La principale
+// (Licence) recoit le seed complet (canaux, messages, devoirs) ; la
+// secondaire (Master) sert juste a montrer l'UX multi-promo cote prof
+// (le PromoRail dans la sidebar) sans exploser le volume du seed.
+const PROMOS = [
+  { name: 'Licence Informatique L3',   color: '#6366F1', students: LICENCE_STUDENTS, withSeed: true  },
+  { name: 'Master Informatique M1',    color: '#0EA5E9', students: MASTER_STUDENTS,  withSeed: false },
 ]
 
 const CHANNELS = [
@@ -95,50 +140,67 @@ function seedTenant(db, tenantId, role) {
   const now = new Date().toISOString()
 
   const txn = db.transaction(() => {
-    // ── Promotion
-    const promoRes = db.prepare(
+    const insertPromo = db.prepare(
       `INSERT INTO demo_promotions (tenant_id, name, color) VALUES (?, ?, ?)`
-    ).run(tenantId, 'CPIA2 25-26 (Demo)', '#6366F1')
-    const promoId = promoRes.lastInsertRowid
-
-    // ── Channels
+    )
     const insertChannel = db.prepare(
       `INSERT INTO demo_channels (tenant_id, promo_id, name, type, description, category)
        VALUES (?, ?, ?, ?, ?, ?)`
     )
-    const channelIds = CHANNELS.map(c =>
-      insertChannel.run(tenantId, promoId, c.name, 'chat', c.description, c.category).lastInsertRowid
-    )
-
-    // ── Students
     const insertStudent = db.prepare(
       `INSERT INTO demo_students (tenant_id, promo_id, name, email, avatar_initials)
        VALUES (?, ?, ?, ?, ?)`
     )
-    const studentRecords = STUDENTS.map((s, i) => {
-      const id = insertStudent.run(tenantId, promoId, s.name, s.email, s.initials).lastInsertRowid
-      return { id, name: s.name, type: 'student', initials: s.initials, color: AVATAR_COLORS[i % AVATAR_COLORS.length] }
-    })
 
-    // ── Teacher
+    // ── 2 promos (Licence L3 + Master M1) avec leurs etudiants respectifs.
+    // Seule la promo "principale" (Licence, withSeed=true) recoit les
+    // canaux + messages + devoirs : ca reste lisible et evite de noyer la
+    // demo dans des donnees redondantes.
+    const promosCreated = []
+    let mainPromoId = null
+    let mainStudentRecords = []
+    let mainChannelIds = []
+
+    for (const promo of PROMOS) {
+      const promoId = insertPromo.run(tenantId, promo.name, promo.color).lastInsertRowid
+      promosCreated.push({ id: promoId, name: promo.name, withSeed: promo.withSeed })
+
+      // Etudiants de cette promo
+      const records = promo.students.map((s, i) => {
+        const id = insertStudent.run(tenantId, promoId, s.name, s.email, s.initials).lastInsertRowid
+        return { id, name: s.name, type: 'student', initials: s.initials, color: AVATAR_COLORS[i % AVATAR_COLORS.length] }
+      })
+
+      // La promo principale reçoit aussi les channels (et plus tard messages + devoirs)
+      if (promo.withSeed) {
+        mainPromoId = promoId
+        mainStudentRecords = records
+        mainChannelIds = CHANNELS.map(c =>
+          insertChannel.run(tenantId, promoId, c.name, 'chat', c.description, c.category).lastInsertRowid,
+        )
+      }
+    }
+
+    // ── Teacher : un seul prof responsable des 2 promos. Renomme "Prof. Lemaire"
+    // (neutre, pas de reference a une ecole specifique).
     const teacherRes = db.prepare(
       `INSERT INTO demo_teachers (tenant_id, name, email, role) VALUES (?, ?, ?, ?)`
-    ).run(tenantId, 'Prof. Martin Renaud', 'martin.renaud@demo.cursus', 'teacher')
+    ).run(tenantId, 'Prof. Lemaire', 'lemaire@demo.cursus', 'teacher')
     const teacherRecord = {
-      id: -teacherRes.lastInsertRowid, // negatif comme en prod (cf. students.js:134)
-      name: 'Prof. Martin Renaud',
+      id: -teacherRes.lastInsertRowid,
+      name: 'Prof. Lemaire',
       type: 'teacher',
-      initials: 'MR',
+      initials: 'PL',
       color: '#6366F1',
     }
 
-    // ── Messages
+    // ── Messages (uniquement dans la promo principale)
     const insertMessage = db.prepare(
       `INSERT INTO demo_messages
          (tenant_id, channel_id, author_id, author_name, author_type, author_initials, content, created_at)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
     )
-    for (const msg of makeMessages(channelIds, studentRecords, teacherRecord)) {
+    for (const msg of makeMessages(mainChannelIds, mainStudentRecords, teacherRecord)) {
       insertMessage.run(
         tenantId, msg.channel_id,
         msg.author.id, msg.author.name, msg.author.type, msg.author.initials,
@@ -146,34 +208,41 @@ function seedTenant(db, tenantId, role) {
       )
     }
 
-    // ── Assignments
+    // ── Assignments (uniquement dans la promo principale)
     const insertAssign = db.prepare(
       `INSERT INTO demo_assignments (tenant_id, channel_id, title, description, type, deadline)
        VALUES (?, ?, ?, ?, ?, ?)`
     )
-    for (const a of makeAssignments(channelIds)) {
+    for (const a of makeAssignments(mainChannelIds)) {
       insertAssign.run(tenantId, a.channel_id, a.title, a.description, a.type, a.deadline)
     }
 
-    return { promoId, channelIds, studentRecords, teacherRecord }
+    return {
+      promoId: mainPromoId,
+      channelIds: mainChannelIds,
+      studentRecords: mainStudentRecords,
+      teacherRecord,
+      promos: promosCreated,
+    }
   })
 
   const { promoId, studentRecords, teacherRecord } = txn()
 
   // Construire le `currentUser` selon le role choisi : si etudiant, on pioche
-  // le premier (Emma) ; si prof, on prend Martin. Cette identite est ensuite
-  // signee dans le JWT demo et envoyee au front.
+  // le premier de la Licence (Emma) ; si prof, on prend Lemaire (responsable
+  // des deux promos). Cette identite est signee dans le JWT demo et envoyee
+  // au front.
   let currentUser
   if (role === 'teacher') {
     currentUser = {
       id:               teacherRecord.id,
       name:             teacherRecord.name,
-      email:            'martin.renaud@demo.cursus',
+      email:            'lemaire@demo.cursus',
       avatar_initials:  teacherRecord.initials,
       photo_data:       null,
       type:             'teacher',
       promo_id:         promoId,
-      promo_name:       'CPIA2 25-26 (Demo)',
+      promo_name:       'Licence Informatique L3',
       must_change_password: 0,
       onboarding_done:  1,
       demo:             true,
@@ -188,7 +257,7 @@ function seedTenant(db, tenantId, role) {
       photo_data:       null,
       type:             'student',
       promo_id:         promoId,
-      promo_name:       'CPIA2 25-26 (Demo)',
+      promo_name:       'Licence Informatique L3',
       must_change_password: 0,
       onboarding_done:  1,
       demo:             true,

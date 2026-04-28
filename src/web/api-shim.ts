@@ -322,6 +322,7 @@ const apiImpl = {
 
   // ── Mode demo (sandbox) ─────────────────────────────────────────────────
   demoEnd: () => post('/api/demo/end', {}),
+  demoPresence: () => get('/api/demo/presence'),
 
   async refreshToken() {
     const res = await post('/api/auth/refresh', {}) as { ok: boolean; data?: { token?: string } }
