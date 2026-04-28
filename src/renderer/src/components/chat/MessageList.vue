@@ -213,8 +213,15 @@ const dateGroups = computed<DateGroup[]>(() => {
           </div>
         </div>
 
-        <!-- Messages groupés par date -->
-        <template v-for="group in dateGroups" :key="group.date">
+        <!-- Messages groupés par date.
+             Chaque groupe a son propre wrapper .date-group : ainsi la pill
+             sticky est contenue par son groupe et est "poussée" hors viewport
+             quand le groupe sort, au lieu de s'empiler sur la suivante. -->
+        <section
+          v-for="group in dateGroups"
+          :key="group.date"
+          class="date-group"
+        >
           <div class="date-separator"><span>{{ group.date }}</span></div>
 
           <!-- Transition desactivee quand on charge de l'historique (infinite scroll
@@ -244,7 +251,7 @@ const dateGroups = computed<DateGroup[]>(() => {
               />
             </template>
           </TransitionGroup>
-        </template>
+        </section>
       </template>
 
       <!-- État vide -->
@@ -349,6 +356,13 @@ const dateGroups = computed<DateGroup[]>(() => {
   0%, 80%, 100% { transform: scale(.6); opacity: .4; }
   40%           { transform: scale(1);  opacity: 1; }
 }
+
+/* ── Wrapper d'un jour ──
+   Sert de bloc de scoping pour le sticky de .date-separator : tant que ce
+   wrapper est dans la viewport, la pill reste collée en haut ; dès qu'on
+   sort du jour, le wrapper sort et la pill avec lui (au lieu de s'empiler
+   sur celle du jour suivant comme avant le fix). */
+.date-group { position: relative; }
 
 /* ── Separateur de date (v2.241) ──
    Pill compacte centrée, sticky, SANS halo ring : la version précédente
