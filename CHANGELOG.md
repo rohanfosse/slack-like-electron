@@ -1,5 +1,52 @@
 # Changelog
 
+## v2.264.0 (2026-04-28)
+
+### Demo : grammaire CFG complete pour generation de messages coherents
+
+Avant : Markov bigrammes sur 15 messages -> phrases courtes mais parfois
+bancales. Apres : grammaire context-free avec 6 intentions, ~30 templates,
+~150 lemmes -> milliers de phrases combinatoires plausibles, partagee
+entre les bots serveur et le chat de la landing.
+
+**Nouvelle grammaire** (`server/services/demoGrammar.js`) :
+
+6 intentions phrastiques :
+- ANNOUNCE  : annonce/rappel ("Le livrable est a rendre vendredi 17h")
+- QUESTION  : question technique ("Quelqu un a deja vu CORS avec credentials ?")
+- STATUS    : update progression ("J ai pushe la PR auth")
+- HELP      : demande bloquante ("Je bloque sur la rotation double AVL")
+- ACK       : ack court ("ok", "+1", "merci")
+- REPLY     : reponse @mention ("@Sara carrement, je teste")
+
+Vocabulaire centre projet web E4 + algorithmique + workflow dev :
+- ARTIFACT : "le projet web E4", "la PR auth", "le rapport de stage"...
+- ARTIFACT_TECH : "la branche main", "le hook useAuth", "le middleware JWT"...
+- TOPIC : "la rotation double AVL", "argon2 vs bcrypt", "JWT refresh token"...
+- VERB_ACTION : "implementer", "deployer", "refactor"...
+- ERROR : "le build plante en npm install", "CORS rejette les credentials"...
+- DAY/TIME/ROOM/TOOL/STATUS/FILLER...
+
+Generator avec PRNG injectable (Math.random par defaut, custom pour
+tests). Substitution recursive limitee a 10 niveaux (anti-cycle).
+Cleanup automatique : majuscule en debut, ponctuation finale.
+
+**Wire** :
+- `server/services/demoBots.js` : 40% des posts spontanes utilisent la
+  CFG (intention selon le canal — STATUS pour dev-web, QUESTION pour
+  algo, ANNOUNCE pour general). Les 60% restants gardent les pools
+  persona pour la coherence de caractere.
+- `src/landing/grammar.js` : version browser (IIFE) chargee avant app.js,
+  expose `window.CursusGrammar`. Le chat de la landing genere une 4e
+  ligne via grammar a chaque switch de canal — combinatoire elargie.
+
+**Anti-drift** : test `tests/backend/demo/grammar.test.js` evalue le
+fichier landing dans un contexte fake-window et compare cle a cle les
+VOCAB et TEMPLATES avec la version serveur. Si quelqu un edit l un sans
+l autre, le test echoue.
+
+8 nouveaux tests (62 demo total, +8). Bump 2.263.0 -> 2.264.0.
+
 ## v2.263.0 (2026-04-28)
 
 ### Landing : algorithmes pour rendre les demos plus credibles

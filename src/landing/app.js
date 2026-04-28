@@ -644,41 +644,24 @@ document.addEventListener('DOMContentLoaded', () => {
     })
   }
 
-  // ── Markov chain : genere une "suite de message" plausible ──────────
-  // Construit a partir des messages hardcodes du chat. Au clic sur un
-  // canal, 30% de chance d'ajouter une 4e ligne generee qui prolonge la
-  // conversation. Ca casse l'effet "scripte rejoue identique a chaque clic".
-  const MARKOV_CORPUS = [
-    'Le livrable est a rendre vendredi 17h pensez a deposer vos depots',
-    'Merci pour le partage je regarde ce soir',
-    'Quelqu un a un lien pour le replay du cours hier',
-    'On peut travailler en equipe de 2 ou 3 max',
-    'Je m occupe de la CI CD avec GitHub Actions',
-    'Tests CI passent je deploy la preview maintenant',
-    'On part sur argon2 plutot que bcrypt c est OWASP recommended',
-    'Le bug du loader infini sur Safari a ete fixe',
-    'PR pretes pour review ca presse pas vraiment',
-    'Reunion d equipe demain 10h validez le creneau',
-    'Le Kanban est a jour j ai bouge les cartes',
-    'Petit rappel le formulaire d evaluation est ouvert jusqu a vendredi',
-    'Quelqu un a compris la rotation double je bloque sur le cas',
-    'Regarde le balanceFactor si superieur a 1 et fils gauche negatif',
-    'L invariant AVL garantit une profondeur en O log n',
-  ]
-  const markovChain = buildMarkov(MARKOV_CORPUS)
+  // ── Grammaire CFG : generation de messages projet/info coherents ─────
+  // Utilise window.CursusGrammar (charge via grammar.js avant app.js).
+  // 6 intentions phrastiques (ANNOUNCE/QUESTION/STATUS/HELP/ACK/REPLY)
+  // avec ~30 templates et un vocabulaire de ~150 lemmes (artefacts,
+  // topics techniques, verbes, erreurs, jours, outils).
+  //
+  // Plus credible que Markov : pas de phrases bancales puisque la
+  // structure est fixe. Plus diversifie qu'un pool : combinatoire
+  // explose avec les substitutions.
+  function generateGrammarMessage(intent) {
+    if (!window.CursusGrammar) return null
+    return window.CursusGrammar.generateMessage(intent ? { intent: intent } : {})
+  }
+  // Alias retro-compat : si un appel ailleurs cherchait Markov, il
+  // tombe sur la grammaire (meilleure qualite). Le buildMarkov/markovWalk
+  // restent dispo dans les helpers pour qui voudrait l'utiliser.
   function generateMarkovMessage() {
-    // Tirage 6-12 mots, conserve si la phrase a au moins 4 mots et finit
-    // sur un mot non-conjonction (heuristique simple pour eviter les
-    // phrases tronquees bizarres).
-    for (let attempt = 0; attempt < 5; attempt++) {
-      const text = markovWalk(markovChain, null, 6 + Math.floor(Math.random() * 6))
-      const words = text.split(/\s+/)
-      const last = words[words.length - 1].toLowerCase().replace(/[.,!?]$/, '')
-      if (words.length >= 4 && !['et', 'ou', 'a', 'la', 'le', 'les', 'de', 'du'].includes(last)) {
-        return text + (text.match(/[.!?]$/) ? '' : '.')
-      }
-    }
-    return null
+    return generateGrammarMessage()
   }
 
   document.querySelectorAll('.demo-sidebar-mini .sidebar-ch').forEach(ch => {

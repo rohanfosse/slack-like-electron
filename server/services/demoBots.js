@@ -19,8 +19,15 @@
  * les tests piloter manuellement via runOnce()).
  */
 const { getDemoDb } = require('../db/demo-connection')
+const grammar = require('./demoGrammar')
 
 const TICK_INTERVAL_MS = 60_000
+
+// 40% des messages spontanes utilisent la grammaire CFG (combinatoire
+// elargie : ~150 lemmes x 30 templates = milliers de phrases possibles).
+// Les 60% restants pikent dans le pool persona pour garder la coherence
+// de caractere (Lucas pragmatique, Sara curieuse, etc.).
+const GRAMMAR_RATIO = 0.40
 
 // Probabilites de chaque action par tick (independantes). Calibrees pour
 // ressentir comme une promo active sans spammer.
@@ -323,6 +330,12 @@ function insertBotMessage(db, tenantId, channelId, authorName, content) {
 
 // ────────────────────────────────────────────────────────────────────
 //  Action 1 : POST spontane (sans visiteur recent)
+//
+//  Mix entre 2 sources de contenu :
+//   - Grammaire CFG (40%) : combinatoire elargie, ~150 lemmes x 30 templates
+//     = milliers de phrases possibles. Intentions selon le canal.
+//   - Pool persona (60%) : phrases hardcoded par bot (Lucas pragmatique,
+//     Sara curieuse, etc.) — preserve la coherence de caractere.
 // ────────────────────────────────────────────────────────────────────
 function postSpontaneous(db, session) {
   const channels = getChannels(db, session.tenant_id)
@@ -336,8 +349,22 @@ function postSpontaneous(db, session) {
   const tod = timeOfDay()
   if (tod === 'night' && Math.random() < 0.7) return null
 
-  const prefer = tod === 'morning' ? 'short' : (tod === 'evening' ? 'mixed' : 'mixed')
-  const content = pickPersonaMessage(persona, prefer)
+  let content
+  if (Math.random() < GRAMMAR_RATIO) {
+    // CFG : pioche une intention selon le canal pour rester contextuel
+    const intentByChannel = {
+      general:              ['ANNOUNCE', 'QUESTION', 'ACK'],
+      'developpement-web':  ['STATUS', 'QUESTION', 'HELP'],
+      algorithmique:        ['QUESTION', 'STATUS', 'HELP'],
+      projets:              ['STATUS', 'ANNOUNCE'],
+    }
+    const candidates = intentByChannel[channel.name] || ['STATUS', 'QUESTION']
+    const intent = candidates[Math.floor(Math.random() * candidates.length)]
+    content = grammar.generateMessage({ intent })
+  } else {
+    const prefer = tod === 'morning' ? 'short' : 'mixed'
+    content = pickPersonaMessage(persona, prefer)
+  }
   if (!content) return null
 
   const inserted = insertBotMessage(db, session.tenant_id, channel.id, authorName, content)
