@@ -18,20 +18,35 @@ test.describe('Mode demo', () => {
 
   test('demarrage demo etudiant -> dashboard avec bandeau demo', async ({ page }) => {
     await page.goto('/#/demo')
-    await page.click('button:has-text("Etudiant")')
+    // Attente du bouton avant le clic (bundle peut etre lent en CI a charger
+    // tous les chunks lazy-loadees)
+    await page.waitForSelector('button:has-text("Etudiant")', { timeout: 20_000 })
+    // Click + attente explicite de la reponse POST /api/demo/start. Sans ca,
+    // le test pouvait flake en CI quand le bundle prenait plus de temps que
+    // prevu a hydrater le composant et a binder le handler @click.
+    const [startRes] = await Promise.all([
+      page.waitForResponse((r) => r.url().includes('/api/demo/start') && r.request().method() === 'POST', { timeout: 20_000 }),
+      page.click('button:has-text("Etudiant")'),
+    ])
+    expect(startRes.ok()).toBe(true)
     // Apres start, on est redirige vers /dashboard
-    await expect(page).toHaveURL(/dashboard/, { timeout: 15_000 })
+    await expect(page).toHaveURL(/dashboard/, { timeout: 20_000 })
     // Le bandeau demo doit etre visible
-    await expect(page.locator('text=/Mode demonstration/i')).toBeVisible({ timeout: 10_000 })
-    // Le CTA "Creer un compte" est present
-    await expect(page.locator('button:has-text("Creer un compte")')).toBeVisible()
+    await expect(page.locator('text=/Mode demonstration/i')).toBeVisible({ timeout: 15_000 })
+    // Le CTA "Creer un compte" est present (les 2 variantes : creer compte ou revenir a mon app)
+    await expect(page.locator('button:has-text("Creer un compte"), button:has-text("Revenir")')).toBeVisible()
   })
 
   test('demarrage demo enseignant -> session prof', async ({ page }) => {
     await page.goto('/#/demo')
-    await page.click('button:has-text("Enseignant")')
-    await expect(page).toHaveURL(/dashboard/, { timeout: 15_000 })
-    await expect(page.locator('text=/Mode demonstration/i')).toBeVisible({ timeout: 10_000 })
+    await page.waitForSelector('button:has-text("Enseignant")', { timeout: 20_000 })
+    const [startRes] = await Promise.all([
+      page.waitForResponse((r) => r.url().includes('/api/demo/start') && r.request().method() === 'POST', { timeout: 20_000 }),
+      page.click('button:has-text("Enseignant")'),
+    ])
+    expect(startRes.ok()).toBe(true)
+    await expect(page).toHaveURL(/dashboard/, { timeout: 20_000 })
+    await expect(page.locator('text=/Mode demonstration/i')).toBeVisible({ timeout: 15_000 })
   })
 
   test('endpoints non couverts retournent un fallback (pas de 404)', async ({ page, request }) => {
