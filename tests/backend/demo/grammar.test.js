@@ -42,10 +42,13 @@ describe('demoGrammar: generateMessage', () => {
   it('produit des phrases majuscules en debut', () => {
     for (let i = 0; i < 20; i++) {
       const msg = grammar.generateMessage()
-      // Le 1er char alpha doit etre en uppercase (ou @mention -> "@" est OK)
-      const firstAlpha = msg.match(/[a-zA-Z]/)
+      // Le 1er char lettre doit etre en uppercase. On utilise \p{L} (Unicode
+      // letter) plutot que [a-zA-Z] : sinon une phrase commencant par "À ..."
+      // matche la 2e lettre minuscule et fait flake (cf. cleanup() qui ne
+      // capitalise QUE charAt(0), incluant les accents).
+      const firstAlpha = msg.match(/\p{L}/u)
       if (firstAlpha) {
-        expect(firstAlpha[0]).toBe(firstAlpha[0].toUpperCase())
+        expect(firstAlpha[0]).toBe(firstAlpha[0].toLocaleUpperCase('fr-FR'))
       }
     }
   })

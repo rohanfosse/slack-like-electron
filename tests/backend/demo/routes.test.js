@@ -118,9 +118,12 @@ describe('Routes authentifiees (post-demoMode)', () => {
       .get(`/api/demo/messages/channel/${channelId}/page`)
       .set('Authorization', `Bearer ${token}`)
     expect(res.status).toBe(200)
-    expect(res.body.data.messages.length).toBeGreaterThan(0)
+    // v2.268 : data est un Message[] direct (matche le shape prod via wrap()
+    // dans server/routes/messages.js, et le shim front qui fait page.slice()).
+    expect(Array.isArray(res.body.data)).toBe(true)
+    expect(res.body.data.length).toBeGreaterThan(0)
     // Au moins un message a des reactions JSON valides
-    const withReactions = res.body.data.messages.filter(m => m.reactions)
+    const withReactions = res.body.data.filter(m => m.reactions)
     expect(withReactions.length).toBeGreaterThan(0)
     expect(() => JSON.parse(withReactions[0].reactions)).not.toThrow()
   })
@@ -159,7 +162,7 @@ describe('Routes authentifiees (post-demoMode)', () => {
     const list = await request(app)
       .get(`/api/demo/messages/channel/${channelId}/page`)
       .set('Authorization', `Bearer ${token}`)
-    expect(list.body.data.messages.some(m => m.id === post.body.data.id)).toBe(true)
+    expect(list.body.data.some(m => m.id === post.body.data.id)).toBe(true)
   })
 
   it('POST /messages refuse content vide ou trop long', async () => {
@@ -199,15 +202,39 @@ describe('Routes authentifiees (post-demoMode)', () => {
     expect(res.status).toBe(200)
     expect(res.body.data.counts.channels).toBe(4)
     expect(res.body.data.counts.messages).toBeGreaterThan(0)
-    expect(res.body.data.counts.assignments).toBe(3)
+    // v2.268 : seed enrichi (passes + futurs) -> 8 devoirs.
+    expect(res.body.data.counts.assignments).toBe(8)
   })
 
-  it('GET /assignments retourne 3 devoirs', async () => {
+  it('GET /assignments retourne le seed complet (passes + futurs)', async () => {
     const res = await request(app)
       .get('/api/demo/assignments')
       .set('Authorization', `Bearer ${token}`)
     expect(res.status).toBe(200)
-    expect(res.body.data).toHaveLength(3)
+    expect(res.body.data).toHaveLength(8)
+  })
+
+  it('GET /students/:id/assignments retourne le shape Devoir avec notes pour les passes', async () => {
+    const res = await request(app)
+      .get(`/api/demo/students/${currentUser.id}/assignments`)
+      .set('Authorization', `Bearer ${token}`)
+    expect(res.status).toBe(200)
+    expect(Array.isArray(res.body.data)).toBe(true)
+    expect(res.body.data.length).toBe(8)
+    const past = res.body.data.filter(d => d.note != null)
+    const upcoming = res.body.data.filter(d => d.note == null)
+    expect(past.length).toBeGreaterThan(0)
+    expect(upcoming.length).toBeGreaterThan(0)
+    // Devoirs passes : depot_id non-null + submitted_at present
+    for (const d of past) {
+      expect(d.depot_id).not.toBeNull()
+      expect(d.submitted_at).not.toBeNull()
+      expect(d.note).toMatch(/^[A-D]$/)
+    }
+    // Devoirs futurs : pas de depot
+    for (const d of upcoming) {
+      expect(d.depot_id).toBeNull()
+    }
   })
 })
 

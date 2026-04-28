@@ -158,25 +158,41 @@ describe('demo-seed: seedTenant', () => {
       seedTenant(db, tenantId, 'student')
     })
 
-    it('cree exactement 3 assignments (Projet Web, TP AVL, Quiz)', () => {
+    it('cree 8 assignments couvrant passes + futurs et types varies', () => {
+      // v2.268 : seed enrichi avec 4 devoirs passes (notes synthetisees au
+      // read-time par /students/:id/assignments) + 4 a venir, mix livrable
+      // / cctl / soutenance pour peupler les widgets dashboard etudiant.
       const assignments = db.prepare(
         'SELECT title, deadline, type FROM demo_assignments WHERE tenant_id = ? ORDER BY id'
       ).all(tenantId)
-      expect(assignments).toHaveLength(3)
+      expect(assignments).toHaveLength(8)
       const titles = assignments.map(a => a.title)
       expect(titles).toContain('Projet Web E4')
       expect(titles.some(t => t.includes('AVL'))).toBe(true)
+      // Au moins une soutenance (necessaire pour l'onglet Soutenances du
+      // dashboard) et un cctl (onglet CCTLs).
+      const types = assignments.map(a => a.type)
+      expect(types).toContain('soutenance')
+      expect(types).toContain('cctl')
+      expect(types).toContain('livrable')
     })
 
-    it('toutes les deadlines sont au format YYYY-MM-DD valide et futures', () => {
+    it('toutes les deadlines sont au format YYYY-MM-DD et incluent passes + futurs', () => {
       const assignments = db.prepare(
         'SELECT deadline FROM demo_assignments WHERE tenant_id = ?'
       ).all(tenantId)
       const today = new Date().toISOString().slice(0, 10)
+      const past = []
+      const upcoming = []
       for (const a of assignments) {
         expect(a.deadline).toMatch(/^\d{4}-\d{2}-\d{2}$/)
-        expect(a.deadline >= today).toBe(true)
+        if (a.deadline < today) past.push(a.deadline)
+        else upcoming.push(a.deadline)
       }
+      // Le seed garantit au moins quelques devoirs de chaque cote, sinon
+      // les widgets "Mes notes" ou "Echeances" se retrouvent vides.
+      expect(past.length).toBeGreaterThan(0)
+      expect(upcoming.length).toBeGreaterThan(0)
     })
   })
 
