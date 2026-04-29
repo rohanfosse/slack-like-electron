@@ -175,7 +175,12 @@ function makeMessages(channelIds, students, teacher) {
     { channel_id: chGeneral, author: jean,     content: 'Bon plan. Je teste tout de suite.', created_at: min(12) },
     // Le tout dernier message : quelques minutes a peine, sans reaction (pas
     // encore eu le temps), pour donner cette sensation "ca vient de tomber".
-    { channel_id: chGeneral, author: emma,     content: 'On se retrouve en bibli a 17h pour le sprint final ? Je ramene cafe + viennoiseries.', created_at: min(3) },
+    // Note : 8 minutes (et pas 3) pour ne PAS tomber dans la fenetre de 5
+    // minutes que le bot d'edition (botEditOwn) considere comme candidat.
+    // Si on laisse ce message dans la fenetre + qu'il a un `?` final, il
+    // matche `/ ?\?$/` et le test bots.test.js > "applique un EDIT_PATTERN"
+    // se met a flake (ce message gagne la course contre le message-test).
+    { channel_id: chGeneral, author: emma,     content: 'On se retrouve en bibli a 17h pour le sprint final ? Je ramene cafe + viennoiseries.', created_at: min(8) },
   ]
 }
 
