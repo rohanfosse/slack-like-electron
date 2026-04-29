@@ -804,6 +804,39 @@ document.addEventListener('DOMContentLoaded', () => {
     return generateGrammarMessage()
   }
 
+  // ── Conversations directes (DM) : 3 fils realistes ──────────────────
+  const chatDMs = {
+    'Prof. Martin': {
+      presence: 'online', lastSeen: 'Connecté · répond en moyenne en 5 min',
+      bg: '#6366F1', av: 'MR',
+      msgs: [
+        { av: 'MR', bg: '#6366F1', name: 'Prof. Martin', nc: '#6366F1', t: '09:12', txt: 'Salut Emma, où tu en es sur le module d\'auth ?' },
+        { av: 'EL', bg: '#059669', name: 'Toi', nc: '#059669', t: '09:14', txt: 'Le JWT est en place, je termine le refresh token ce soir.' },
+        { av: 'MR', bg: '#6366F1', name: 'Prof. Martin', nc: '#6366F1', t: '09:15', txt: 'Top. Push sur <code>feat/auth-module</code> quand tu peux, je review demain matin.', rx: 'up:1' },
+        { av: 'EL', bg: '#059669', name: 'Toi', nc: '#059669', t: '09:16', txt: 'Ça marche, merci !' },
+      ],
+    },
+    'Emma L.': {
+      presence: 'online', lastSeen: 'Connectée · sur la promo CPIA2',
+      bg: '#059669', av: 'EL',
+      msgs: [
+        { av: 'EL', bg: '#059669', name: 'Emma L.', nc: '#059669', t: '14:02', txt: 'Tu as commencé le TP Algo ?' },
+        { av: 'JD', bg: '#D97706', name: 'Toi', nc: '#D97706', t: '14:05', txt: 'Oui, je bloque sur la rotation double. Tu veux qu\'on regarde ensemble ?' },
+        { av: 'EL', bg: '#059669', name: 'Emma L.', nc: '#059669', t: '14:06', txt: 'Carrément. On se voit à 16h en bibli ?' },
+        { av: 'JD', bg: '#D97706', name: 'Toi', nc: '#D97706', t: '14:07', txt: 'Deal.', rx: 'up:1' },
+      ],
+    },
+    'Jean D.': {
+      presence: 'away', lastSeen: 'Absent · vu il y a 12 min',
+      bg: '#D97706', av: 'JD',
+      msgs: [
+        { av: 'JD', bg: '#D97706', name: 'Jean D.', nc: '#D97706', t: '11:40', txt: 'Tu sais où trouver le sujet du projet ?' },
+        { av: 'SB', bg: '#8B5CF6', name: 'Toi', nc: '#8B5CF6', t: '11:42', txt: 'Dans <code>#annonces</code>, c\'est l\'épinglé avec le PDF.' },
+        { av: 'JD', bg: '#D97706', name: 'Jean D.', nc: '#D97706', t: '11:43', txt: 'Trouvé, merci.' },
+      ],
+    },
+  }
+
   // ── Render initial du canal "général" + handlers de switch ──────────
   function renderChannel(name) {
     const baseMsgs = chatChannels[name]
@@ -812,17 +845,22 @@ document.addEventListener('DOMContentLoaded', () => {
     const win = document.querySelector('#demo-chat .demo-window')
     if (!win) return
 
-    // Met a jour le header (description + nom inline) et la cible input.
-    const headerChan = win.querySelector('#chat-header-channel')
-    const headerDesc = win.querySelector('#chat-header-desc')
-    const meta = CHAT_CHANNELS_META[name] || { desc: '', members: 0 }
-    if (headerChan) headerChan.textContent = name
-    if (headerDesc) headerDesc.textContent = `${meta.desc} · ${meta.members} membres`
-    const inputChan = win.querySelector('#chat-input-channel')
-    if (inputChan) inputChan.textContent = name
+    // Header en mode "channel" : hash + nom + nb membres + stack avatars.
+    const header = win.querySelector('.chat-header')
+    if (header) {
+      header.dataset.mode = 'channel'
+      const meta = CHAT_CHANNELS_META[name] || { desc: '', members: 0 }
+      const headerChan = win.querySelector('#chat-header-channel')
+      const headerDesc = win.querySelector('#chat-header-desc')
+      if (headerChan) headerChan.textContent = name
+      if (headerDesc) headerDesc.textContent = `${meta.desc} · ${meta.members} membres`
+    }
+    // Placeholder input mis a jour avec le canal courant.
+    const placeholder = document.getElementById('chat-input-placeholder')
+    if (placeholder) placeholder.innerHTML = `Écrire dans <b>#${name}</b>…`
 
     // 35% de chance d'ajouter un message genere a la fin (effet
-    // "conversation qui continue") — different a chaque switch.
+    // "conversation qui continue") different a chaque switch.
     let msgs = baseMsgs
     if (Math.random() < 0.35) {
       const generated = generateMarkovMessage()
@@ -838,16 +876,45 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     const container = win.querySelector('#demo-messages-container')
-    // Typing par canal : un nom different selon le canal pour le realisme
     const TYPING_BY_CHAN = { 'général': 'Jean', 'projet-web': 'Sara', 'algo-tp': 'Emma' }
     const typingName = TYPING_BY_CHAN[name]
     renderMessages(container, msgs, !!typingName, typingName)
+    triggerMessagesAnim(container)
+  }
 
-    // Re-trigger entry animations
+  function renderDM(name) {
+    const dm = chatDMs[name]
+    if (!dm) return
+    const win = document.querySelector('#demo-chat .demo-window')
+    if (!win) return
+
+    // Header en mode "dm" : avatar + nom + status, hide le members stack.
+    const header = win.querySelector('.chat-header')
+    if (header) {
+      header.dataset.mode = 'dm'
+      const headerChan = win.querySelector('#chat-header-channel')
+      const headerDesc = win.querySelector('#chat-header-desc')
+      const headerName = win.querySelector('.chat-header-name')
+      if (headerName) {
+        // Remplace le hash + name par avatar + name.
+        headerName.innerHTML = `<span class="chat-header-avatar" data-presence="${dm.presence}" style="background:${dm.bg}">${dm.av}</span><span id="chat-header-channel">${name}</span>`
+      }
+      if (headerDesc) headerDesc.textContent = dm.lastSeen
+    }
+    // Placeholder input mis a jour pour le DM.
+    const placeholder = document.getElementById('chat-input-placeholder')
+    if (placeholder) placeholder.innerHTML = `Écrire à <b>${name}</b>…`
+
+    const container = win.querySelector('#demo-messages-container')
+    renderMessages(container, dm.msgs, false)
+    triggerMessagesAnim(container)
+  }
+
+  function triggerMessagesAnim(container) {
     container.querySelectorAll('.demo-msg, .demo-typing').forEach(el => {
       el.style.opacity = '0'
       el.style.animation = 'none'
-      void el.offsetHeight // force reflow
+      void el.offsetHeight
       el.style.animation = `msgAppear 350ms var(--ease-smooth) forwards`
       el.style.animationDelay = el.style.getPropertyValue('--delay') || getComputedStyle(el).getPropertyValue('--delay')
     })
@@ -856,66 +923,41 @@ document.addEventListener('DOMContentLoaded', () => {
   // Render initial : remplit le canal "général" sans clic.
   renderChannel('général')
 
+  // Switch de canal
   document.querySelectorAll('#demo-chat .sidebar-ch').forEach(ch => {
     ch.style.cursor = 'pointer'
     ch.addEventListener('click', () => {
-      const sidebar = ch.closest('.demo-sidebar-mini')
-      sidebar.querySelectorAll('.sidebar-ch').forEach(c => c.classList.remove('active'))
+      document.querySelectorAll('#demo-chat .sidebar-ch').forEach(c => c.classList.remove('active'))
+      document.querySelectorAll('#demo-chat .sidebar-dm').forEach(d => d.classList.remove('sidebar-dm--active'))
       ch.classList.add('active')
       const name = ch.dataset.channel || ch.querySelector('.ch-name')?.textContent.trim() || ''
       renderChannel(name)
     })
   })
 
-  // ── Input bar interactif : palette de commandes + bouton send ──────────
-  // Click sur l'input field -> ouvre la palette /devoir /doc /lumen /quiz /rdv
-  // Click sur une commande -> remplace le placeholder par la commande tapee
-  // Click ailleurs -> ferme la palette
-  // Click sur send -> animation slide-up + reset
+  // Switch vers une conversation directe (DM)
+  document.querySelectorAll('#demo-chat .sidebar-dm').forEach(dm => {
+    dm.style.cursor = 'pointer'
+    dm.addEventListener('click', () => {
+      document.querySelectorAll('#demo-chat .sidebar-ch').forEach(c => c.classList.remove('active'))
+      document.querySelectorAll('#demo-chat .sidebar-dm').forEach(d => d.classList.remove('sidebar-dm--active'))
+      dm.classList.add('sidebar-dm--active')
+      const name = dm.querySelector('.sidebar-dm-name')?.textContent.trim() || ''
+      renderDM(name)
+    })
+    dm.setAttribute('tabindex', '0')
+    dm.setAttribute('role', 'button')
+    dm.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); dm.click() }
+    })
+  })
+
+  // ── Input bar : send avec animation check ─────────────────────────────
   const chatInputField = document.getElementById('chat-input-field')
-  const chatInputCmds  = document.getElementById('chat-input-cmds')
   const chatInputSend  = document.getElementById('chat-input-send')
-
-  function closeChatCmds() {
-    if (!chatInputCmds || chatInputCmds.hidden) return
-    chatInputCmds.hidden = true
-    chatInputField?.classList.remove('demo-input-field--active')
-  }
-
-  if (chatInputField && chatInputCmds) {
-    chatInputField.addEventListener('click', (e) => {
-      e.stopPropagation()
-      const open = !chatInputCmds.hidden
-      if (open) { closeChatCmds(); return }
-      chatInputCmds.hidden = false
-      chatInputField.classList.add('demo-input-field--active')
-    })
-    chatInputField.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' || e.key === ' ' || e.key === '/') { e.preventDefault(); chatInputField.click() }
-      if (e.key === 'Escape') closeChatCmds()
-    })
-
-    chatInputCmds.querySelectorAll('.demo-input-cmd').forEach(cmd => {
-      cmd.addEventListener('click', (e) => {
-        e.stopPropagation()
-        const slug = cmd.dataset.cmd || ''
-        const placeholder = chatInputField.querySelector('.demo-input-placeholder')
-        if (placeholder) {
-          placeholder.innerHTML = `<span class="demo-input-cmd-typed">${slug}</span> <span class="demo-input-cursor" aria-hidden="true"></span>`
-        }
-        closeChatCmds()
-      })
-    })
-
-    document.addEventListener('click', (e) => {
-      if (!chatInputField.contains(e.target) && !chatInputCmds.contains(e.target)) closeChatCmds()
-    })
-    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeChatCmds() })
-  }
 
   if (chatInputSend) {
     chatInputSend.addEventListener('click', () => {
-      // Anime un check sur le bouton puis revient. Plus realiste qu'un toast.
       chatInputSend.classList.add('demo-input-send--sent')
       const placeholder = chatInputField?.querySelector('.demo-input-placeholder')
       const original = placeholder?.innerHTML
@@ -926,6 +968,188 @@ document.addEventListener('DOMContentLoaded', () => {
       }, 1400)
     })
   }
+
+  // ══════════════════════════════════════════════════════════════════════
+  //  PETITES ANIMATIONS au clic sur les boutons + et emoji de la zone
+  //  d'ecriture. SVG particles qui partent du bouton, fade-out leger.
+  // ══════════════════════════════════════════════════════════════════════
+  const EMOJI_PARTICLES = [
+    '<svg viewBox="0 0 24 24" fill="#EF4444"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>',
+    '<svg viewBox="0 0 24 24" fill="#F59E0B"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>',
+    '<svg viewBox="0 0 24 24" fill="#FBBF24"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/><circle cx="12" cy="12" r="4"/></svg>',
+    '<svg viewBox="0 0 24 24" fill="none" stroke="#06B6D4" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>',
+  ]
+
+  const PLUS_PARTICLES = [
+    '<svg viewBox="0 0 24 24" fill="none" stroke="#6366F1" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>',
+    '<svg viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>',
+    '<svg viewBox="0 0 24 24" fill="none" stroke="#F59E0B" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>',
+    '<svg viewBox="0 0 24 24" fill="none" stroke="#EC4899" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>',
+  ]
+
+  function spawnParticleBurst(button, particles, opts = {}) {
+    if (prefersReducedMotion) return
+    const burst = document.createElement('span')
+    burst.className = 'btn-burst'
+    if (opts.radial) burst.classList.add('btn-burst--radial')
+    particles.forEach((svg, i) => {
+      const p = document.createElement('span')
+      p.className = 'btn-burst-p'
+      // Direction : float-up avec petit angle latéral (default) ou radial (4 dirs)
+      if (opts.radial) {
+        const angle = (i / particles.length) * 2 * Math.PI - Math.PI / 2
+        p.style.setProperty('--tx', `${Math.cos(angle) * 26}px`)
+        p.style.setProperty('--ty', `${Math.sin(angle) * 26}px`)
+        p.style.setProperty('--rot', `${Math.cos(angle) * 16}deg`)
+      } else {
+        p.style.setProperty('--tx', `${(i - (particles.length - 1) / 2) * 12}px`)
+        p.style.setProperty('--ty', `-32px`)
+        p.style.setProperty('--rot', `${(i - 1.5) * 12}deg`)
+      }
+      p.style.setProperty('--d', `${i * 50}ms`)
+      p.innerHTML = svg
+      burst.appendChild(p)
+    })
+    button.appendChild(burst)
+    setTimeout(() => burst.remove(), 1100)
+  }
+
+  const chatInputPlus = document.getElementById('chat-input-plus')
+  const chatInputEmoji = document.getElementById('chat-input-emoji')
+
+  if (chatInputPlus) {
+    chatInputPlus.addEventListener('click', () => {
+      chatInputPlus.classList.add('btn-wiggle')
+      spawnParticleBurst(chatInputPlus, PLUS_PARTICLES, { radial: true })
+      setTimeout(() => chatInputPlus.classList.remove('btn-wiggle'), 500)
+    })
+  }
+  if (chatInputEmoji) {
+    chatInputEmoji.addEventListener('click', () => {
+      chatInputEmoji.classList.add('btn-bounce')
+      spawnParticleBurst(chatInputEmoji, EMOJI_PARTICLES)
+      setTimeout(() => chatInputEmoji.classList.remove('btn-bounce'), 500)
+    })
+  }
+
+  // ══════════════════════════════════════════════════════════════════════
+  //  EASTER EGGS - 4 mini-surprises subtiles, sans casser l'experience
+  //
+  //  1) Konami code (↑↑↓↓←→←→BA) -> pluie de confettis colores
+  //  2) Triple-click sur le logo Cursus -> spin 360deg + "ping" sonore
+  //  3) Click 7x rapides sur la pill de version -> clin d'oeil Montpellier
+  //  4) Click sur "3400+ tests" -> compteur s'envole vers l'infini
+  //
+  //  Toutes les eggs respectent prefers-reduced-motion (skip animations).
+  // ══════════════════════════════════════════════════════════════════════
+
+  // ── 1) Konami : 30 confettis qui tombent du haut de l'ecran ──────────
+  const KONAMI = ['arrowup','arrowup','arrowdown','arrowdown','arrowleft','arrowright','arrowleft','arrowright','b','a']
+  let konamiIdx = 0
+  document.addEventListener('keydown', (e) => {
+    const key = e.key.toLowerCase()
+    if (key === KONAMI[konamiIdx]) {
+      konamiIdx++
+      if (konamiIdx === KONAMI.length) {
+        konamiIdx = 0
+        triggerKonamiConfetti()
+      }
+    } else {
+      konamiIdx = key === KONAMI[0] ? 1 : 0
+    }
+  })
+
+  function triggerKonamiConfetti() {
+    if (prefersReducedMotion) return
+    const colors = ['#6366F1', '#059669', '#F59E0B', '#EF4444', '#06B6D4', '#EC4899', '#8B5CF6']
+    for (let i = 0; i < 40; i++) {
+      const p = document.createElement('span')
+      p.className = 'konami-confetti'
+      p.style.left = `${Math.random() * 100}%`
+      p.style.background = colors[i % colors.length]
+      p.style.setProperty('--d', `${Math.random() * 700}ms`)
+      p.style.setProperty('--rot', `${(Math.random() - 0.5) * 720}deg`)
+      p.style.setProperty('--tx', `${(Math.random() - 0.5) * 160}px`)
+      document.body.appendChild(p)
+      setTimeout(() => p.remove(), 3500)
+    }
+    // Mini-toast discret en bas centre
+    const toast = document.createElement('div')
+    toast.className = 'konami-toast'
+    toast.textContent = 'Mode dev unlocked !'
+    document.body.appendChild(toast)
+    setTimeout(() => toast.remove(), 2400)
+  }
+
+  // ── 2) Triple-click sur le logo : spin 360° ────────────────────────
+  const navLogo = document.querySelector('.nav-logo')
+  let logoClicks = []
+  navLogo?.addEventListener('click', (e) => {
+    const now = Date.now()
+    logoClicks = logoClicks.filter(t => now - t < 800).concat(now)
+    if (logoClicks.length >= 3) {
+      e.preventDefault()
+      logoClicks = []
+      if (prefersReducedMotion) return
+      navLogo.classList.add('logo-spin')
+      setTimeout(() => navLogo.classList.remove('logo-spin'), 700)
+    }
+  })
+
+  // ── 3) Click 7× rapides sur la pill version : "Made in Montpellier" ──
+  const versionPill = document.getElementById('pill-version')
+  if (versionPill) versionPill.style.cursor = 'pointer'
+  let pillClicks = 0
+  let pillResetT = null
+  versionPill?.addEventListener('click', () => {
+    pillClicks++
+    clearTimeout(pillResetT)
+    pillResetT = setTimeout(() => { pillClicks = 0 }, 1500)
+    if (pillClicks >= 7) {
+      pillClicks = 0
+      const original = versionPill.innerHTML
+      versionPill.innerHTML = '<svg width="11" height="11" viewBox="0 0 24 24" fill="#EF4444" style="vertical-align:-1px;margin-right:4px"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>Montpellier'
+      versionPill.classList.add('pill-easter')
+      setTimeout(() => {
+        versionPill.innerHTML = original
+        versionPill.classList.remove('pill-easter')
+      }, 2800)
+    }
+  })
+
+  // ── 4) Click sur "3400+ tests" : compteur s'envole ───────────────────
+  const testCountEl = document.getElementById('test-count')
+  if (testCountEl) testCountEl.style.cursor = 'pointer'
+  testCountEl?.addEventListener('click', (e) => {
+    e.stopPropagation()
+    if (testCountEl.dataset.easterRunning) return
+    testCountEl.dataset.easterRunning = '1'
+    const original = testCountEl.textContent
+    testCountEl.classList.add('test-easter')
+    if (prefersReducedMotion) {
+      testCountEl.textContent = '∞'
+      setTimeout(() => {
+        testCountEl.textContent = original
+        testCountEl.classList.remove('test-easter')
+        delete testCountEl.dataset.easterRunning
+      }, 1500)
+      return
+    }
+    // Compte progressivement vers infini
+    let n = 3400
+    const iv = setInterval(() => {
+      n = Math.round(n * 1.18)
+      testCountEl.textContent = n > 1e9 ? '∞' : `${n}+`
+      if (n > 1e9) {
+        clearInterval(iv)
+        setTimeout(() => {
+          testCountEl.textContent = original
+          testCountEl.classList.remove('test-easter')
+          delete testCountEl.dataset.easterRunning
+        }, 900)
+      }
+    }, 60)
+  })
 
   // ── Clickable reactions (toggle compteur, format SVG + count) ─────────
   document.addEventListener('click', (e) => {

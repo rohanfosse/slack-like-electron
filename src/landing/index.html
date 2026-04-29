@@ -77,7 +77,7 @@
     .fade-up { opacity: 0; transform: translateY(24px) scale(0.98); transition: opacity .65s cubic-bezier(.22,1,.36,1), transform .65s cubic-bezier(.22,1,.36,1); }
     .fade-up.visible { opacity: 1; transform: translateY(0) scale(1); }
   </style>
-  <link rel="stylesheet" href="style.css?v=271" />
+  <link rel="stylesheet" href="style.css?v=272" />
 </head>
 <body>
 
@@ -321,27 +321,18 @@
               </div>
             </div>
             <div class="demo-input-bar">
-              <button type="button" class="demo-input-icon demo-input-icon--btn" aria-label="Joindre un fichier">
+              <button type="button" class="demo-input-icon demo-input-icon--btn" id="chat-input-plus" aria-label="Joindre un fichier">
                 <svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
               </button>
               <span class="demo-input-field" id="chat-input-field" tabindex="0" role="textbox" aria-label="Écrire un message">
-                <span class="demo-input-placeholder">Écrire dans <b>#<span id="chat-input-channel">général</span></b>… <span class="demo-input-hint">tape <kbd>/</kbd> pour les commandes</span></span>
+                <span class="demo-input-placeholder" id="chat-input-placeholder">Écrire dans <b>#<span id="chat-input-channel">général</span></b>…</span>
               </span>
-              <button type="button" class="demo-input-icon demo-input-icon--btn" aria-label="Emoji">
+              <button type="button" class="demo-input-icon demo-input-icon--btn" id="chat-input-emoji" aria-label="Emoji">
                 <svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
               </button>
               <button type="button" class="demo-input-send" id="chat-input-send" aria-label="Envoyer">
                 <svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
               </button>
-              <!-- Command palette popover, montré quand l'input est cliqué -->
-              <div class="demo-input-cmds" id="chat-input-cmds" hidden>
-                <div class="demo-input-cmds-title">Commandes</div>
-                <button type="button" class="demo-input-cmd" data-cmd="/devoir"><span class="demo-input-cmd-key">/devoir</span><span class="demo-input-cmd-desc">Annoncer un devoir lié</span></button>
-                <button type="button" class="demo-input-cmd" data-cmd="/doc"><span class="demo-input-cmd-key">/doc</span><span class="demo-input-cmd-desc">Partager une ressource</span></button>
-                <button type="button" class="demo-input-cmd" data-cmd="/lumen"><span class="demo-input-cmd-key">/lumen</span><span class="demo-input-cmd-desc">Lien vers un chapitre</span></button>
-                <button type="button" class="demo-input-cmd" data-cmd="/quiz"><span class="demo-input-cmd-key">/quiz</span><span class="demo-input-cmd-desc">Lancer un quiz Spark</span></button>
-                <button type="button" class="demo-input-cmd" data-cmd="/rdv"><span class="demo-input-cmd-key">/rdv</span><span class="demo-input-cmd-desc">Proposer un créneau</span></button>
-              </div>
             </div>
           </div>
         </div>
@@ -953,8 +944,8 @@
     </div>
   </footer>
 
-  <script src="grammar.js?v=271"></script>
-  <script src="app.js?v=271"></script>
+  <script src="grammar.js?v=272"></script>
+  <script src="app.js?v=272"></script>
   <!-- Analytics: insert GA4 gtag.js snippet here when ready -->
 </body>
 </html>
