@@ -42,6 +42,7 @@ const PROB = {
   replyToBot:      0.30, // bot repond a un autre bot (cree des "conversations")
   post:            0.45, // post spontane (pas en reponse)
   reactToRecent:   0.40, // reaction sur message recent (pas du visiteur)
+  cascadeReact:    0.45, // +1 reaction sur un message deja reagi (effet "+1")
   editOwn:         0.08, // edit d'un message recent du bot
   burst:           0.15, // x2 actions de plus ce tick (rafale)
 }
@@ -252,6 +253,45 @@ const EDIT_PATTERNS = [
 let tickIv = null
 
 // ────────────────────────────────────────────────────────────────────
+//  Etat typing en memoire (cf. /api/demo/typing-feed)
+//
+//  Avant d'inserer un message bot, on enregistre un flag "X est en train
+//  d'ecrire dans #channel" qui expire ~3s plus tard. Le front poll cet
+//  etat a 1.5s d'intervalle (useDemoTyping) et affiche l'indicateur via
+//  messagesStore.setTyping. Apporte un signal de "vivant" tres fort pour
+//  un cout minimal — pas de socket.io en demo, juste un Map en memoire.
+//
+//  Shape : { tenantId: { channelId: { authorName, until } } }
+// ────────────────────────────────────────────────────────────────────
+const typingState = new Map()
+
+function setTyping(tenantId, channelId, authorName, durationMs = 3000) {
+  if (!tenantId || !channelId || !authorName) return
+  let byChannel = typingState.get(tenantId)
+  if (!byChannel) { byChannel = new Map(); typingState.set(tenantId, byChannel) }
+  byChannel.set(channelId, { authorName, until: Date.now() + durationMs })
+}
+
+function clearTyping(tenantId, channelId) {
+  const byChannel = typingState.get(tenantId)
+  if (!byChannel) return
+  byChannel.delete(channelId)
+  if (byChannel.size === 0) typingState.delete(tenantId)
+}
+
+function getActiveTyping(tenantId) {
+  const byChannel = typingState.get(tenantId)
+  if (!byChannel) return []
+  const now = Date.now()
+  const out = []
+  for (const [channelId, entry] of byChannel) {
+    if (entry.until > now) out.push({ channelId, authorName: entry.authorName, until: entry.until })
+    else byChannel.delete(channelId)
+  }
+  return out
+}
+
+// ────────────────────────────────────────────────────────────────────
 //  Helpers communs
 // ────────────────────────────────────────────────────────────────────
 
@@ -335,8 +375,13 @@ function pickPersonaForChannel(channelName) {
  * Insert un message d'un bot. Resout l'auteur dans demo_students du tenant.
  * Skip silencieusement si le message est identique au dernier du canal
  * (avoid spam) ou si l'auteur n'existe pas (seed corrompu, peu probable).
+ *
+ * Si `withTyping`, expose un flag "X ecrit dans #channel" pendant ~2.8s
+ * AVANT l'insertion (cf. typingState). Le visiteur voit donc l'indicateur
+ * "X est en train d'ecrire" ~2s puis le message arrive. Beaucoup plus
+ * "vivant" qu'une apparition seche.
  */
-function insertBotMessage(db, tenantId, channelId, authorName, content) {
+function insertBotMessage(db, tenantId, channelId, authorName, content, opts = {}) {
   const author = getStudentByName(db, tenantId, authorName)
   if (!author) return null
 
@@ -345,6 +390,31 @@ function insertBotMessage(db, tenantId, channelId, authorName, content) {
      ORDER BY id DESC LIMIT 1`
   ).get(tenantId, channelId)
   if (lastMsg && lastMsg.content === content) return null
+
+  // Typing pre-insert : pose le flag immediatement, programme l'INSERT 2.5s
+  // plus tard. Retourne immediatement avec un id `pending` (le caller s'en
+  // sert juste pour comptage de stats).
+  // En NODE_ENV=test, on skip le delai pour garder les tests synchrones et
+  // deterministes (pas de manipulation de timers fakes a faire).
+  if (opts.withTyping && channelId && process.env.NODE_ENV !== 'test') {
+    setTyping(tenantId, channelId, authorName, 3000)
+    setTimeout(() => {
+      try {
+        clearTyping(tenantId, channelId)
+        const r = db.prepare(
+          `SELECT content FROM demo_messages WHERE tenant_id = ? AND channel_id = ?
+           ORDER BY id DESC LIMIT 1`
+        ).get(tenantId, channelId)
+        if (r && r.content === content) return
+        db.prepare(
+          `INSERT INTO demo_messages
+             (tenant_id, channel_id, author_id, author_name, author_type, author_initials, content)
+           VALUES (?, ?, ?, ?, 'student', ?, ?)`
+        ).run(tenantId, channelId, author.id, author.name, author.avatar_initials, content)
+      } catch { /* tenant purge entre temps : ignore */ }
+    }, 2500)
+    return { id: 0, channelId, content, authorName, pending: true }
+  }
 
   const result = db.prepare(
     `INSERT INTO demo_messages
@@ -394,7 +464,7 @@ function postSpontaneous(db, session) {
   }
   if (!content) return null
 
-  const inserted = insertBotMessage(db, session.tenant_id, channel.id, authorName, content)
+  const inserted = insertBotMessage(db, session.tenant_id, channel.id, authorName, content, { withTyping: true })
   return inserted ? { type: 'post', ...inserted } : null
 }
 
@@ -441,7 +511,7 @@ function replyToVisitor(db, session, visitorName) {
   if (!channelInfo) return null
   const { name: authorName } = pickPersonaForChannel(channelInfo.name)
 
-  const inserted = insertBotMessage(db, session.tenant_id, lastVisitorMsg.channel_id, authorName, reply)
+  const inserted = insertBotMessage(db, session.tenant_id, lastVisitorMsg.channel_id, authorName, reply, { withTyping: true })
   return inserted ? { type: 'reply', visitorMsgId: lastVisitorMsg.id, ...inserted } : null
 }
 
@@ -555,7 +625,90 @@ function botEditOwn(db, session) {
 }
 
 // ────────────────────────────────────────────────────────────────────
-//  Action 6 : REPLY a un autre bot (creation de "conversations")
+//  Action 6 : CASCADE de reactions
+//
+//  Quand un message a deja >=1 reaction recente (signe d'engagement),
+//  on ajoute 1-2 reactions de plus de bots differents — meme emoji
+//  (effet "+1") ou un emoji different. Reproduit le pattern Slack
+//  "tout le monde reagit en chaine quand quelqu'un commence".
+// ────────────────────────────────────────────────────────────────────
+function cascadeReactions(db, session, visitorName) {
+  // Cible : message des 5 dernieres minutes ayant deja AU MOINS une reaction
+  // (sinon ca cree une 1ere reaction au lieu de cascader). Pas le visiteur
+  // pour ne pas masquer reactToVisitor qui a la priorite.
+  const targets = db.prepare(
+    `SELECT id, content, reactions FROM demo_messages
+     WHERE tenant_id = ?
+       AND author_name != ?
+       AND reactions IS NOT NULL AND reactions != '' AND reactions != '{}'
+       AND datetime(created_at) >= datetime('now', '-5 minutes')
+     ORDER BY id DESC LIMIT 10`
+  ).all(session.tenant_id, visitorName)
+  if (!targets.length) return null
+
+  const target = pickRandom(targets)
+  const existing = parseReactions(target.reactions)
+  const existingEmojis = Object.keys(existing)
+  if (!existingEmojis.length) return null
+
+  // 70% : meme emoji (effet "+1"), 30% : emoji different (echo varie)
+  const emoji = Math.random() < 0.7
+    ? pickRandom(existingEmojis)
+    : pickRandom(REACT_EMOJIS.filter(e => !existingEmojis.includes(e))) || pickRandom(REACT_EMOJIS)
+
+  // Pioche un reactor pas deja present sur cet emoji
+  const entry = existing[emoji] || { count: 0, users: [] }
+  const reactor = db.prepare(
+    `SELECT id, name FROM demo_students WHERE tenant_id = ? ORDER BY RANDOM() LIMIT 1`
+  ).get(session.tenant_id)
+  if (!reactor || entry.users.includes(reactor.name)) return null
+
+  entry.count = (entry.count || 0) + 1
+  entry.users = [...(entry.users || []), reactor.name]
+  existing[emoji] = entry
+
+  db.prepare(
+    `UPDATE demo_messages SET reactions = ? WHERE id = ? AND tenant_id = ?`
+  ).run(JSON.stringify(existing), target.id, session.tenant_id)
+
+  return { type: 'cascade', messageId: target.id, emoji, reactorId: reactor.id }
+}
+
+// ────────────────────────────────────────────────────────────────────
+//  DM de bienvenue : un bot envoie un DM perso au visiteur dans les
+//  premieres secondes. Cree un moment "tu es attendu(e)" qui colore
+//  toute la session demo. Appele depuis /api/demo/start avec un
+//  setTimeout(15s).
+// ────────────────────────────────────────────────────────────────────
+const WELCOME_DM_LINES = [
+  'Hey ! Tu viens d\'arriver ? Si tu galeres avec quelque chose, hesite pas a demander.',
+  'Salut ! T\'es nouveau/nouvelle ici ? On bosse sur le projet web cette semaine, dis-moi si tu veux qu\'on coordonne.',
+  'Yo ! J\'ai vu que tu venais d\'ouvrir Cursus, bienvenue. Si t\'as des questions sur les TPs en cours, je suis dispo.',
+  'Coucou ! Pret(e) pour le TP4 sur les AVL ? J\'ai commence hier, je peux te filer un coup de main si besoin.',
+  'Hello ! Tu rejoins la session ? On a un Live AVL cette semaine, code AVL-2026 si jamais.',
+]
+function sendWelcomeDm(db, tenantId, visitorId) {
+  // Pioche un bot "serviable" (Alice ou Mehdi) — colle au type d'accueil
+  const candidates = ['Alice Martin', 'Mehdi Chaouki', 'Lucas Bernard']
+  for (const name of candidates) {
+    const author = getStudentByName(db, tenantId, name)
+    if (!author || author.id === visitorId) continue
+    const content = pickRandom(WELCOME_DM_LINES)
+    try {
+      db.prepare(
+        `INSERT INTO demo_messages
+           (tenant_id, channel_id, dm_student_id, author_id, author_name, author_type,
+            author_initials, content)
+         VALUES (?, NULL, ?, ?, ?, 'student', ?, ?)`
+      ).run(tenantId, visitorId, author.id, author.name, author.avatar_initials, content)
+      return { authorName: author.name, content }
+    } catch { /* tenant purge : ignore */ }
+  }
+  return null
+}
+
+// ────────────────────────────────────────────────────────────────────
+//  Action 7 : REPLY a un autre bot (creation de "conversations")
 //
 //  Quand un bot a poste sans question dans les ~3 dernieres minutes et
 //  qu'il n'a pas encore ete repondu, on tente une replique courte d'un
@@ -592,7 +745,7 @@ function replyToBot(db, session, visitorName) {
   if (!authorName) return null
 
   const reply = pickRandom(BOT_REPLIES)
-  const inserted = insertBotMessage(db, session.tenant_id, t.channel_id, authorName, reply)
+  const inserted = insertBotMessage(db, session.tenant_id, t.channel_id, authorName, reply, { withTyping: true })
   return inserted ? { type: 'reply-bot', targetMsgId: t.id, ...inserted } : null
 }
 
@@ -609,7 +762,7 @@ function replyToBot(db, session, visitorName) {
 //  Renvoie des compteurs par type pour observabilite.
 // ────────────────────────────────────────────────────────────────────
 function runOnceForSession(db, session) {
-  const stats = { posted: 0, replied: 0, reactedVisitor: 0, reacted: 0, edited: 0, repliedBot: 0 }
+  const stats = { posted: 0, replied: 0, reactedVisitor: 0, reacted: 0, edited: 0, repliedBot: 0, cascaded: 0 }
 
   // Identifie le visiteur (le user_name dans demo_sessions est le pseudo
   // du currentUser : "Emma Lefevre" pour student, "Prof. Lemaire" pour teacher)
@@ -649,6 +802,12 @@ function runOnceForSession(db, session) {
     if (replyToBot(db, session, visitorName)) stats.repliedBot++
   }
 
+  // 4b. Cascade de reactions : un message deja reagi attire +1 d'un autre bot.
+  // Effet "+1 collectif" tres caracteristique d'une promo engagee.
+  if (Math.random() < PROB.cascadeReact) {
+    if (cascadeReactions(db, session, visitorName)) stats.cascaded++
+  }
+
   // 5. Edit d'un message recent du bot (toujours, faible probabilite)
   if (Math.random() < PROB.editOwn) {
     if (botEditOwn(db, session)) stats.edited++
@@ -671,10 +830,11 @@ function runOnce() {
       `SELECT id, tenant_id, user_name FROM demo_sessions
        WHERE expires_at > datetime('now')`
     ).all()
-    const total = { sessions: sessions.length, posted: 0, replied: 0, reactedVisitor: 0, reacted: 0, edited: 0, repliedBot: 0 }
+    const total = { sessions: sessions.length, posted: 0, replied: 0, reactedVisitor: 0, reacted: 0, edited: 0, repliedBot: 0, cascaded: 0 }
     for (const s of sessions) {
       const got = runOnceForSession(db, s)
       total.repliedBot      += got.repliedBot
+      total.cascaded        += got.cascaded
       total.posted          += got.posted
       total.replied         += got.replied
       total.reactedVisitor  += got.reactedVisitor
@@ -707,8 +867,14 @@ module.exports = {
   reactToVisitor,
   reactToRecent,
   replyToBot,
+  cascadeReactions,
+  sendWelcomeDm,
   botEditOwn,
   pickEmojiForContent,
+  // Typing indicator (cf. /api/demo/typing-feed)
+  getActiveTyping,
+  setTyping,
+  clearTyping,
   PERSONAS,
   REACT_EMOJIS,
   VISITOR_REPLIES,

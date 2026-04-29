@@ -17,21 +17,28 @@ import { useAppStore } from '@/stores/app'
 
 interface FeedEvent {
   id: number
-  channelId: number
-  channelName: string
+  channelId: number | null
+  channelName: string | null
   author: string
   initials: string | null
   preview: string
   isMention: boolean
+  isDm: boolean
   createdAt: string
 }
 
-const FIRST_POLL_DELAY_MS = 25_000   // 25s : laisser le visiteur respirer avant le 1er toast
-const POLL_INTERVAL_MS    = 45_000   // 45s : un peu desynchronise du tick bots (60s) pour rattraper
+const FIRST_POLL_DELAY_MS = 18_000   // 18s : laisser le visiteur scanner le dashboard
+const POLL_INTERVAL_MS    = 30_000   // 30s : aligne sur le tick bots (assez vif)
 const MAX_TOASTS_PER_TICK = 3        // ne jamais en cracher plus de 3 d'un coup
 
 function buildToast(ev: FeedEvent): { title: string; body: string } {
-  const channel = `#${ev.channelName}`
+  if (ev.isDm) {
+    return {
+      title: ev.author,
+      body: `t'a envoye un message direct : "${ev.preview}"`,
+    }
+  }
+  const channel = ev.channelName ? `#${ev.channelName}` : ''
   if (ev.isMention) {
     return {
       title: ev.author,

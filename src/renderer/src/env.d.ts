@@ -37,15 +37,23 @@ declare global {
       demoNotifFeed?(sinceId: number): Promise<IpcResponse<{
         events: Array<{
           id: number
-          channelId: number
-          channelName: string
+          channelId: number | null
+          channelName: string | null
           author: string
           initials: string | null
           preview: string
           isMention: boolean
+          isDm: boolean
           createdAt: string
         }>
         lastId: number
+      }>>
+      demoTypingFeed?(): Promise<IpcResponse<{
+        entries: Array<{
+          channelId: number
+          channelName: string
+          authorName: string
+        }>
       }>>
 
       // Structure

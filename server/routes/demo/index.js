@@ -83,9 +83,17 @@ router.post('/start', startLimiter, (req, res) => {
   // qu'il voie de l'activite des l'ouverture du dashboard, sans attendre
   // 30s. Skippe en NODE_ENV=test (pas de worker, controle deterministe).
   if (process.env.NODE_ENV !== 'test') {
+    const bots = require('../../services/demoBots')
     setTimeout(() => {
-      try { require('../../services/demoBots').runOnce() } catch { /* non-blocking */ }
+      try { bots.runOnce() } catch { /* non-blocking */ }
     }, 8_000)
+    // DM de bienvenue : un bot "ami" envoie un DM perso ~15s apres start.
+    // Cree un moment "tu es attendu(e)" qui colore toute la session.
+    if (role === 'student') {
+      setTimeout(() => {
+        try { bots.sendWelcomeDm(db, tenantId, currentUser.id) } catch { /* non-blocking */ }
+      }, 15_000)
+    }
   }
 
   res.json({

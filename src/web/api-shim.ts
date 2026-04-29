@@ -353,6 +353,7 @@ const apiImpl = {
   demoEnd: () => post('/api/demo/end', {}),
   demoPresence: () => get('/api/demo/presence'),
   demoNotifFeed: (sinceId: number) => get(`/api/demo/notifications/feed?since=${sinceId}`),
+  demoTypingFeed: () => get('/api/demo/typing-feed'),
 
   async refreshToken() {
     // Mode demo : /api/auth/refresh n'est pas reroute vers /api/demo/* (cf.

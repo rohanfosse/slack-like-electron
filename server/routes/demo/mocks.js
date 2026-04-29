@@ -185,27 +185,36 @@ router.get('/messages/dm/:studentId/page', (req, res) => {
   try {
     const u = req.demoUser
     if (u) {
-      // Tous les messages avec dm_student_id correspondant a sid dont
-      // l'auteur est le visiteur courant (ou le partenaire s'il avait
-      // pu repondre — non implemente pour l'instant). On les renumote
-      // pour qu'ils n'entrent pas en conflit avec les ids factices.
+      // Combine :
+      //  - messages sortants : visiteur -> peer (dm_student_id=sid, author=u)
+      //  - messages entrants : peer    -> visiteur (dm_student_id=u.id, author=sid)
+      // C'est ainsi que les DMs des bots (cf. sendWelcomeDm + bots futurs)
+      // remontent dans la conversation que le visiteur ouvre.
       real = getDemoDb().prepare(
-        `SELECT id, dm_student_id AS dm_partner_id, author_id, author_name,
-                author_initials, content, is_pinned, created_at
+        `SELECT id, dm_student_id, author_id, author_name, author_initials,
+                content, is_pinned, created_at
          FROM demo_messages
-         WHERE tenant_id = ? AND dm_student_id = ? AND author_id = ?
+         WHERE tenant_id = ?
+           AND channel_id IS NULL
+           AND (
+                (dm_student_id = ? AND author_id = ?)
+             OR (dm_student_id = ? AND author_id = ?)
+           )
          ORDER BY datetime(created_at) ASC`
-      ).all(req.tenantId, sid, u.id).map(r => ({
-        id: 50000 + r.id,
-        channel_id: null,
-        dm_partner_id: sid,
-        author_id: r.author_id,
-        author_name: 'Toi',
-        is_self: 1,
-        content: r.content,
-        is_pinned: r.is_pinned ? 1 : 0,
-        created_at: r.created_at,
-      }))
+      ).all(req.tenantId, sid, u.id, u.id, sid).map(r => {
+        const isSelf = r.author_id === u.id
+        return {
+          id: 50000 + r.id,
+          channel_id: null,
+          dm_partner_id: sid,
+          author_id: r.author_id,
+          author_name: isSelf ? 'Toi' : r.author_name,
+          is_self: isSelf ? 1 : 0,
+          content: r.content,
+          is_pinned: r.is_pinned ? 1 : 0,
+          created_at: r.created_at,
+        }
+      })
     }
   } catch { /* on retombe sur le fake seul */ }
   // Tri chronologique : factice puis real.

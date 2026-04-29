@@ -348,26 +348,32 @@ router.get('/teachers', (req, res) => {
 // ────────────────────────────────────────────────────────────────────
 router.get('/notifications/feed', (req, res) => {
   const visitorName = req.demoUser?.name || ''
+  const visitorId = req.demoUser?.id || 0
   const sinceId = Number(req.query.since) || 0
 
+  // Messages canal (autres que ceux du visiteur) + DMs entrants (bot -> visiteur).
   const rows = getDemoDb().prepare(
-    `SELECT m.id, m.channel_id, m.author_name, m.author_initials, m.content, m.created_at,
-            c.name AS channel_name
+    `SELECT m.id, m.channel_id, m.dm_student_id, m.author_name, m.author_initials,
+            m.content, m.created_at, c.name AS channel_name
      FROM demo_messages m
-     JOIN demo_channels c ON c.id = m.channel_id AND c.tenant_id = m.tenant_id
+     LEFT JOIN demo_channels c ON c.id = m.channel_id AND c.tenant_id = m.tenant_id
      WHERE m.tenant_id = ?
        AND m.id > ?
        AND m.author_name != ?
-       AND m.channel_id IS NOT NULL
+       AND (
+            m.channel_id IS NOT NULL
+         OR (m.dm_student_id = ? AND m.author_id != ?)
+       )
        AND datetime(m.created_at) >= datetime('now', '-15 minutes')
      ORDER BY m.id ASC
      LIMIT 5`
-  ).all(req.tenantId, sinceId, visitorName)
+  ).all(req.tenantId, sinceId, visitorName, visitorId, visitorId)
 
   const firstName = visitorName.split(/\s+/)[0] || ''
   const events = rows.map(r => {
     const preview = String(r.content || '').replace(/```[\s\S]*?```/g, '[code]').replace(/\s+/g, ' ').trim().slice(0, 120)
-    const isMention = !!firstName && new RegExp(`@${firstName}\\b`, 'i').test(r.content || '')
+    const isDm = !r.channel_id && !!r.dm_student_id
+    const isMention = !!firstName && !isDm && new RegExp(`@${firstName}\\b`, 'i').test(r.content || '')
     return {
       id: r.id,
       channelId: r.channel_id,
@@ -376,11 +382,40 @@ router.get('/notifications/feed', (req, res) => {
       initials: r.author_initials,
       preview,
       isMention,
+      isDm,
       createdAt: r.created_at,
     }
   })
 
   res.json({ ok: true, data: { events, lastId: events.length ? events[events.length - 1].id : sinceId } })
+})
+
+// Etat "X est en train d'ecrire dans #channel" — alimente par demoBots qui
+// pose un flag 2-3s avant chaque insertion. Le front poll cet endpoint a
+// 1.5s d'intervalle (useDemoTyping) et appelle messagesStore.setTyping(name)
+// pour les entrees du canal actif.
+router.get('/typing-feed', (req, res) => {
+  const { getActiveTyping } = require('../../services/demoBots')
+  const entries = getActiveTyping(req.tenantId)
+  // Resolve channel name pour que le front puisse filtrer sur le channel
+  // actif sans ROUND-TRIP supplementaire.
+  if (!entries.length) return res.json({ ok: true, data: { entries: [] } })
+  const channelIds = [...new Set(entries.map(e => e.channelId))]
+  const placeholders = channelIds.map(() => '?').join(',')
+  const channels = getDemoDb().prepare(
+    `SELECT id, name FROM demo_channels WHERE tenant_id = ? AND id IN (${placeholders})`
+  ).all(req.tenantId, ...channelIds)
+  const nameById = new Map(channels.map(c => [c.id, c.name]))
+  res.json({
+    ok: true,
+    data: {
+      entries: entries.map(e => ({
+        channelId: e.channelId,
+        channelName: nameById.get(e.channelId) || '',
+        authorName: e.authorName,
+      })),
+    },
+  })
 })
 
 module.exports = router
