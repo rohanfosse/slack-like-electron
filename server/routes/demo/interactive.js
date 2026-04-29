@@ -51,14 +51,39 @@ function clearState(tenantId) { _state.delete(tenantId) }
 //  Bookmarks
 // ────────────────────────────────────────────────────────────────────
 
-// Baseline statique (pre-seedee, partagee entre tenants pour que la liste
-// affiche du contenu des l'arrivee). Le visiteur peut en ajouter, en
-// retirer ; ses modifs sont stockees per-tenant et fusionnees au read.
+// Baseline statique : 4 bookmarks pre-existants pour que la liste ne soit
+// pas vide a l'arrivee. message_id est arbitraire (pas dans demo_messages)
+// — c'est OK pour l'affichage seul, mais le visiteur ne peut pas
+// supprimer/ajouter via l'interface car les messages sources n'existent
+// pas. Sa propre activite (ajouts/suppressions) est dans s.bookmarks.
+//
+// Shape align sur prod (cf. server/db/models/bookmarks.js BOOKMARK_SELECT) :
+// bookmark_id distinct de id (message id), bookmarked_at, etc.
 const DEMO_BOOKMARKS_BASELINE = [
-  { id: 9001, message_id: 142, channel_id: 1, channel_name: 'general',    author_name: 'Prof. Lemaire',  content: 'Reunion de mi-semestre mardi 14h en B204. Ordre du jour pousse dans Documents.',                created_at: new Date(Date.now() -  1 * 86400_000).toISOString(), bookmarked_at: new Date(Date.now() -  1 * 86400_000).toISOString() },
-  { id: 9002, message_id: 165, channel_id: 2, channel_name: 'algo',       author_name: 'Mehdi Chaouki',  content: 'Mon schema rotations AVL : github.com/mehdi-c/avl-cheatsheet',                                  created_at: new Date(Date.now() -  4 * 86400_000).toISOString(), bookmarked_at: new Date(Date.now() -  4 * 86400_000).toISOString() },
-  { id: 9003, message_id: 178, channel_id: 3, channel_name: 'projet-web', author_name: 'Emma Lefevre',   content: "J'ai push l'archi initiale sur feat/auth-module. Quelqu'un peut review ?",                       created_at: new Date(Date.now() -  3 * 86400_000).toISOString(), bookmarked_at: new Date(Date.now() -  3 * 86400_000).toISOString() },
-  { id: 9004, message_id: 195, channel_id: 2, channel_name: 'algo',       author_name: 'Jean Dupont',    content: 'Visualiseur AVL interactif : https://www.cs.usfca.edu/~galles/visualization/AVLtree.html',          created_at: new Date(Date.now() -  1 * 86400_000).toISOString(), bookmarked_at: new Date(Date.now() -  1 * 86400_000).toISOString() },
+  { bookmark_id: 9001, bookmark_note: null, bookmarked_at: new Date(Date.now() - 1 * 86400_000).toISOString(),
+    id: 14201, channel_id: 1, dm_student_id: null, author_id: -1, author_name: 'Prof. Lemaire',
+    author_type: 'teacher', author_initials: 'PL', author_photo: null,
+    content: 'Reunion de mi-semestre mardi 14h en B204. Ordre du jour pousse dans Documents.',
+    created_at: new Date(Date.now() - 1 * 86400_000).toISOString(), edited: 0, is_pinned: 0,
+    reply_to_author: null, reply_to_preview: null, channel_name: 'general', dm_peer_name: null },
+  { bookmark_id: 9002, bookmark_note: null, bookmarked_at: new Date(Date.now() - 4 * 86400_000).toISOString(),
+    id: 16502, channel_id: 2, dm_student_id: null, author_id: 6, author_name: 'Mehdi Chaouki',
+    author_type: 'student', author_initials: 'MC', author_photo: null,
+    content: 'Mon schema rotations AVL : github.com/mehdi-c/avl-cheatsheet',
+    created_at: new Date(Date.now() - 4 * 86400_000).toISOString(), edited: 0, is_pinned: 0,
+    reply_to_author: null, reply_to_preview: null, channel_name: 'algorithmique', dm_peer_name: null },
+  { bookmark_id: 9003, bookmark_note: 'a relire', bookmarked_at: new Date(Date.now() - 3 * 86400_000).toISOString(),
+    id: 17803, channel_id: 3, dm_student_id: null, author_id: 1, author_name: 'Emma Lefevre',
+    author_type: 'student', author_initials: 'EL', author_photo: null,
+    content: "J'ai push l'archi initiale sur feat/auth-module. Quelqu'un peut review ?",
+    created_at: new Date(Date.now() - 3 * 86400_000).toISOString(), edited: 0, is_pinned: 0,
+    reply_to_author: null, reply_to_preview: null, channel_name: 'developpement-web', dm_peer_name: null },
+  { bookmark_id: 9004, bookmark_note: null, bookmarked_at: new Date(Date.now() - 1 * 86400_000).toISOString(),
+    id: 19504, channel_id: 2, dm_student_id: null, author_id: 4, author_name: 'Jean Durand',
+    author_type: 'student', author_initials: 'JD', author_photo: null,
+    content: 'Visualiseur AVL interactif : https://www.cs.usfca.edu/~galles/visualization/AVLtree.html',
+    created_at: new Date(Date.now() - 1 * 86400_000).toISOString(), edited: 0, is_pinned: 0,
+    reply_to_author: null, reply_to_preview: null, channel_name: 'algorithmique', dm_peer_name: null },
 ]
 
 function listMergedBookmarks(tenantId) {
@@ -67,8 +92,8 @@ function listMergedBookmarks(tenantId) {
   const out = []
   // Baseline (filtree des suppressions visiteur)
   for (const b of DEMO_BOOKMARKS_BASELINE) {
-    if (s.bookmarkRemovals.has(b.message_id)) continue
-    seen.add(b.message_id)
+    if (s.bookmarkRemovals.has(b.id)) continue
+    seen.add(b.id)
     out.push(b)
   }
   // Bookmarks ajoutes par le visiteur — derives des messages reels en DB
@@ -79,25 +104,37 @@ function listMergedBookmarks(tenantId) {
     if (ids.length) {
       const placeholders = ids.map(() => '?').join(',')
       const rows = getDemoDb().prepare(
-        `SELECT m.id AS message_id, m.channel_id, c.name AS channel_name,
-                m.author_name, m.content, m.created_at
+        `SELECT m.id, m.channel_id, m.dm_student_id, m.author_id, m.author_name,
+                m.author_type, m.author_initials, m.author_photo, m.content,
+                m.created_at, m.edited, m.is_pinned,
+                c.name AS channel_name
          FROM demo_messages m
          LEFT JOIN demo_channels c ON c.id = m.channel_id AND c.tenant_id = m.tenant_id
          WHERE m.tenant_id = ? AND m.id IN (${placeholders})`
       ).all(tenantId, ...ids)
       for (const r of rows) {
-        if (seen.has(r.message_id)) continue
-        const extra = s.bookmarks.get(r.message_id)
+        if (seen.has(r.id)) continue
+        const extra = s.bookmarks.get(r.id)
         out.push({
-          id: 90000 + r.message_id,
-          message_id: r.message_id,
-          channel_id: r.channel_id,
-          channel_name: r.channel_name || 'general',
-          author_name: r.author_name,
-          content: r.content,
-          note: extra?.note ?? null,
-          created_at: r.created_at,
+          bookmark_id: 90000 + r.id,
+          bookmark_note: extra?.note ?? null,
           bookmarked_at: extra?.addedAt ?? new Date().toISOString(),
+          id: r.id,
+          channel_id: r.channel_id,
+          dm_student_id: r.dm_student_id,
+          author_id: r.author_id,
+          author_name: r.author_name,
+          author_type: r.author_type,
+          author_initials: r.author_initials,
+          author_photo: r.author_photo,
+          content: r.content,
+          created_at: r.created_at,
+          edited: r.edited ? 1 : 0,
+          is_pinned: r.is_pinned ? 1 : 0,
+          reply_to_author: null,
+          reply_to_preview: null,
+          channel_name: r.channel_name || null,
+          dm_peer_name: null,
         })
       }
     }
@@ -112,7 +149,8 @@ router.get('/bookmarks', (req, res) => {
 })
 
 router.get('/bookmarks/ids', (req, res) => {
-  res.json({ ok: true, data: listMergedBookmarks(req.tenantId).map(b => b.message_id) })
+  // ids = message ids (cf. prod listBookmarkIds qui SELECT b.message_id AS id)
+  res.json({ ok: true, data: listMergedBookmarks(req.tenantId).map(b => b.id) })
 })
 
 router.post('/bookmarks', (req, res) => {
@@ -135,7 +173,8 @@ router.delete('/bookmarks/:messageId', (req, res) => {
   const s = getState(req.tenantId)
   s.bookmarks.delete(messageId)
   // Si le message etait dans la baseline, le marquer comme supprime
-  if (DEMO_BOOKMARKS_BASELINE.some(b => b.message_id === messageId)) {
+  // (champ baseline.id = message id depuis le refacto shape-prod)
+  if (DEMO_BOOKMARKS_BASELINE.some(b => b.id === messageId)) {
     s.bookmarkRemovals.add(messageId)
   }
   res.json({ ok: true, data: null })
