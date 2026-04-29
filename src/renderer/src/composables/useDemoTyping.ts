@@ -16,6 +16,7 @@
 import { onUnmounted, watch } from 'vue'
 import { useAppStore } from '@/stores/app'
 import { useMessagesStore } from '@/stores/messages'
+import { storeToRefs } from 'pinia'
 
 const POLL_INTERVAL_MS = 1_800
 
@@ -32,7 +33,7 @@ export function useDemoTyping(): void {
     try { res = await fn() } catch { return }
     if (!res?.ok || !res.data) return
 
-    const entries = res.data.entries || []
+    const entries = (res.data.entries || []) as Array<{ channelId: number; authorName: string }>
     const activeChannelId = appStore.activeChannelId
     if (!activeChannelId) return
 
@@ -65,6 +66,15 @@ export function useDemoTyping(): void {
     (isDemo) => { if (isDemo) start(); else stop() },
     { immediate: true },
   )
+
+  // Quand le visiteur change de canal/DM, clear les indicateurs typing
+  // de l'ancien canal pour eviter d'afficher "X ecrit dans #algo" alors
+  // qu'on est passe a #web. clearAllTyping efface la liste cote front,
+  // les flags server expirent tout seuls cote backend (3s de TTL).
+  const { activeChannelId, activeDmStudentId } = storeToRefs(appStore)
+  watch([activeChannelId, activeDmStudentId], () => {
+    messagesStore.clearAllTyping()
+  })
 
   onUnmounted(stop)
 }
