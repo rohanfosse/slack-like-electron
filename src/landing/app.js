@@ -1227,6 +1227,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const rng = mulberry32(dayOfYear)
     const DAYS = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven']
     const HOURS = ['09:00', '09:30', '10:00', '10:30', '11:00', '13:30', '14:00', '14:30', '15:00', '15:30', '16:00', '16:30']
+    // Tirage du type : 70% suivi, 18% soutenance, 12% rattrapage.
+    // Renvoie l'index dans rdvData.types (set apres ce const).
+    function pickType() {
+      const r = rng()
+      if (r < 0.70) return 0
+      if (r < 0.88) return 1
+      return 2
+    }
     return DAYS.map(day => {
       // Densite par jour : plus libre lundi/jeudi (debut+milieu de semaine)
       const baseDensity = day === 'Lun' ? 0.65 : day === 'Jeu' ? 0.75 : day === 'Mer' ? 0.30 : 0.5
@@ -1237,7 +1245,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Le matin a plus de slots libres
         const isMorning = parseInt(hour, 10) < 12
         const density = baseDensity * (isMorning ? 1.2 : 0.8)
-        if (rng() < density) slots.push(hour)
+        if (rng() < density) slots.push({ time: hour, typeIdx: pickType() })
       }
       return { day, slots }
     }).filter(d => d.slots.length > 0)
@@ -1245,15 +1253,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const rdvData = {
     types: [
-      { name: 'Suivi individuel',    duration: 30, color: '#0EA5E9', desc: 'Point hebdomadaire projet' },
-      { name: 'Soutenance',          duration: 60, color: '#8B5CF6', desc: 'Jury + 2 intervenants' },
-      { name: 'Rattrapage CCTL',     duration: 45, color: '#F59E0B', desc: 'Session de recuperation' },
+      { name: 'Suivi individuel',    duration: 30, color: '#0EA5E9', desc: 'Point hebdomadaire projet',     suggestedTopic: 'Avancement projet — questions ouvertes' },
+      { name: 'Soutenance',          duration: 60, color: '#8B5CF6', desc: 'Jury + 2 intervenants',         suggestedTopic: 'Soutenance — présentation 20 min + Q/R' },
+      { name: 'Rattrapage CCTL',     duration: 45, color: '#F59E0B', desc: 'Session de récupération',       suggestedTopic: 'Rattrapage — reprise des points bloquants' },
     ],
     disponibilites: generateRdvWeek(),
     bookings: [
-      { who: 'Emma L.',  initials: 'EL', avatarColor: '#059669', when: 'Jeu. 9h00',   type: 'Suivi individuel', typeColor: '#0EA5E9', teams: true,  topic: 'Avancement Projet Web E4 — review architecture' },
-      { who: 'Jean D.',  initials: 'JD', avatarColor: '#D97706', when: 'Jeu. 14h00',  type: 'Suivi individuel', typeColor: '#0EA5E9', teams: true,  topic: 'Question sur les rotations AVL (TP Algo)' },
-      { who: 'Sara B.',  initials: 'SB', avatarColor: '#8B5CF6', when: 'Ven. 10h30',  type: 'Soutenance',       typeColor: '#8B5CF6', teams: false, topic: 'Soutenance mémoire — salle B204' },
+      { who: 'Emma L.',    initials: 'EL', avatarColor: '#059669', when: 'Jeu. 9h00',   type: 'Suivi individuel', typeColor: '#0EA5E9', duration: 30, teams: true,  topic: 'Avancement Projet Web E4 — review architecture' },
+      { who: 'Jean D.',    initials: 'JD', avatarColor: '#D97706', when: 'Jeu. 14h00',  type: 'Suivi individuel', typeColor: '#0EA5E9', duration: 30, teams: true,  topic: 'Question sur les rotations AVL (TP Algo)' },
+      { who: 'Sara B.',    initials: 'SB', avatarColor: '#8B5CF6', when: 'Ven. 10h30',  type: 'Soutenance',       typeColor: '#8B5CF6', duration: 60, teams: false, topic: 'Soutenance mémoire de stage — salle B204' },
+      { who: 'Thomas M.',  initials: 'TM', avatarColor: '#EC4899', when: 'Ven. 14h00',  type: 'Rattrapage CCTL',  typeColor: '#F59E0B', duration: 45, teams: true,  topic: 'Rattrapage CCTL Algo — chapitre arbres équilibrés' },
+      { who: 'Lina F.',    initials: 'LF', avatarColor: '#06B6D4', when: 'Lun. 11h00',  type: 'Suivi individuel', typeColor: '#0EA5E9', duration: 30, teams: true,  topic: 'Choix sujet de stage — feedback CV' },
     ],
   }
 
@@ -1275,14 +1285,18 @@ document.addEventListener('DOMContentLoaded', () => {
           </div>
         `).join('') + '</div>'
       } else if (tab === 'disponibilites') {
-        h = '<div class="rdv-week">' + rdvData.disponibilites.map((row, i) => `
+        h = '<div class="rdv-week">' + rdvData.disponibilites.map((row, i) => {
+          const slotsHtml = row.slots.map(s => {
+            const t = rdvData.types[s.typeIdx] || rdvData.types[0]
+            return `<button type="button" class="rdv-slot" data-rdv-day="${row.day}" data-rdv-time="${s.time}" data-rdv-type-idx="${s.typeIdx}" style="--tc:${t.color}"><span class="rdv-slot-dot" aria-hidden="true"></span><span class="rdv-slot-time">${s.time}</span><span class="rdv-slot-tip" role="tooltip">${t.duration} min · ${t.name}</span></button>`
+          }).join('')
+          return `
           <div class="rdv-day" style="--d:${i * 80}ms">
             <span class="rdv-day-label">${row.day}</span>
-            <div class="rdv-day-slots">
-              ${row.slots.map(s => `<button type="button" class="rdv-slot" data-rdv-day="${row.day}" data-rdv-time="${s}">${s}</button>`).join('')}
-            </div>
-          </div>
-        `).join('') + '</div>'
+            <div class="rdv-day-slots">${slotsHtml}</div>
+          </div>`
+        }).join('') + '</div>'
+        h += '<div class="rdv-popover" id="rdv-popover" hidden></div>'
         h += '<div class="rdv-toast" id="rdv-toast" hidden></div>'
       } else if (tab === 'bookings') {
         h = '<div class="rdv-bookings">' + rdvData.bookings.map((b, i) => `
@@ -1316,43 +1330,107 @@ document.addEventListener('DOMContentLoaded', () => {
       t.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); t.click() } })
     })
 
-    // Booking d'un creneau : clic sur un .rdv-slot -> creneau marque "reserve"
-    // + toast inline qui simule la confirmation avec sync Teams. Geste delegue
-    // (les .rdv-slot sont rendus dynamiquement par switchTab/renderRdv).
+    // Booking d'un creneau : clic sur un .rdv-slot ouvre un popover
+    // de confirmation (type, duree, sujet pre-rempli) au-dessus du slot.
+    // Click "Reserver" -> marque le slot booked + toast (sync Teams + ICS).
+    // Click ailleurs ou Escape -> ferme le popover sans reserver.
+    function closeRdvPopover() {
+      const pop = rexDemo.querySelector('#rdv-popover')
+      if (!pop || pop.hidden) return
+      pop.classList.add('rdv-popover--leaving')
+      const slotEl = rexDemo.querySelector('.rdv-slot--pending')
+      if (slotEl) slotEl.classList.remove('rdv-slot--pending')
+      setTimeout(() => { pop.hidden = true; pop.classList.remove('rdv-popover--leaving'); pop.innerHTML = '' }, 180)
+    }
+
+    function showRdvToast(day, time, type) {
+      const toast = rexDemo.querySelector('#rdv-toast')
+      if (!toast) return
+      toast.hidden = false
+      toast.innerHTML = `
+        <span class="rdv-toast-icon" aria-hidden="true">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+        </span>
+        <div class="rdv-toast-body">
+          <span class="rdv-toast-title">RDV réservé · ${day} ${time}</span>
+          <span class="rdv-toast-sub">${type.name} · lien Teams + .ics envoyés</span>
+        </div>
+      `
+      toast.classList.remove('rdv-toast--leaving')
+      clearTimeout(rexDemo._rdvToastT)
+      rexDemo._rdvToastT = setTimeout(() => {
+        toast.classList.add('rdv-toast--leaving')
+        setTimeout(() => { toast.hidden = true; toast.classList.remove('rdv-toast--leaving') }, 300)
+      }, 3500)
+    }
+
     rexDemo.addEventListener('click', (e) => {
+      // Cliquer ailleurs (hors slot et hors popover) ferme le popover
       const slot = e.target.closest('.rdv-slot')
-      if (!slot || slot.classList.contains('rdv-slot--booked')) return
-      slot.classList.add('rdv-slot--booked')
+      const inPopover = e.target.closest('#rdv-popover')
+      if (!slot && !inPopover) { closeRdvPopover(); return }
+      if (!slot) return
+      if (slot.classList.contains('rdv-slot--booked')) return
+
       const day = slot.dataset.rdvDay
       const time = slot.dataset.rdvTime
+      const typeIdx = parseInt(slot.dataset.rdvTypeIdx, 10) || 0
+      const type = rdvData.types[typeIdx] || rdvData.types[0]
+      const pop = rexDemo.querySelector('#rdv-popover')
+      if (!pop) return
 
-      // Compteur dans le footer : decremente le nombre de creneaux dispo
-      const countEl = rexDemo.querySelector('.rex-count-num')
-      if (countEl) {
-        const n = parseInt(countEl.textContent, 10)
-        if (!isNaN(n) && n > 0) countEl.textContent = String(n - 1)
-      }
+      // Reclic sur le meme slot deja en pending : ferme
+      if (slot.classList.contains('rdv-slot--pending')) { closeRdvPopover(); return }
+      rexDemo.querySelectorAll('.rdv-slot--pending').forEach(s => s.classList.remove('rdv-slot--pending'))
+      slot.classList.add('rdv-slot--pending')
 
-      // Toast inline : confirme + auto-dismiss apres 3.5s
-      const toast = rexDemo.querySelector('#rdv-toast')
-      if (toast) {
-        toast.hidden = false
-        toast.innerHTML = `
-          <span class="rdv-toast-icon" aria-hidden="true">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-          </span>
-          <div class="rdv-toast-body">
-            <span class="rdv-toast-title">RDV réservé · ${day} ${time}</span>
-            <span class="rdv-toast-sub">Lien Teams envoyé par email</span>
+      // Position : popover absolu, on l'ancre sur le panneau
+      pop.hidden = false
+      pop.style.setProperty('--tc', type.color)
+      pop.innerHTML = `
+        <div class="rdv-popover-head">
+          <span class="rdv-popover-dot" aria-hidden="true"></span>
+          <div class="rdv-popover-titles">
+            <span class="rdv-popover-when">${day}. · ${time}</span>
+            <span class="rdv-popover-type">${type.name} · ${type.duration} min</span>
           </div>
-        `
-        toast.classList.remove('rdv-toast--leaving')
-        clearTimeout(rexDemo._rdvToastT)
-        rexDemo._rdvToastT = setTimeout(() => {
-          toast.classList.add('rdv-toast--leaving')
-          setTimeout(() => { toast.hidden = true; toast.classList.remove('rdv-toast--leaving') }, 300)
-        }, 3500)
-      }
+          <button type="button" class="rdv-popover-close" aria-label="Fermer">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+          </button>
+        </div>
+        <label class="rdv-popover-field">
+          <span class="rdv-popover-label">Sujet</span>
+          <input type="text" class="rdv-popover-input" value="${type.suggestedTopic.replace(/"/g, '&quot;')}" maxlength="80" />
+        </label>
+        <div class="rdv-popover-meta">
+          <span class="rdv-popover-tag"><svg aria-hidden="true" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m22 8-6 4 6 4V8Z"/><rect width="14" height="12" x="2" y="6" rx="2" ry="2"/></svg>Teams auto</span>
+          <span class="rdv-popover-tag"><svg aria-hidden="true" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="4" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/></svg>.ics calendrier</span>
+          <span class="rdv-popover-tag"><svg aria-hidden="true" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Rappel J-1</span>
+        </div>
+        <button type="button" class="rdv-popover-cta">Réserver le créneau</button>
+      `
+      // Focus l'input pour signifier qu'il est editable
+      setTimeout(() => pop.querySelector('.rdv-popover-input')?.select(), 0)
+
+      pop.querySelector('.rdv-popover-close')?.addEventListener('click', (ev) => { ev.stopPropagation(); closeRdvPopover() })
+      pop.querySelector('.rdv-popover-cta')?.addEventListener('click', (ev) => {
+        ev.stopPropagation()
+        slot.classList.remove('rdv-slot--pending')
+        slot.classList.add('rdv-slot--booked')
+        // Decremente le compteur de creneaux dispo
+        const countEl = rexDemo.querySelector('.rex-count-num')
+        if (countEl) {
+          const n = parseInt(countEl.textContent, 10)
+          if (!isNaN(n) && n > 0) countEl.textContent = String(n - 1)
+        }
+        closeRdvPopover()
+        showRdvToast(day, time, type)
+      })
+    })
+
+    // Escape ferme le popover
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') closeRdvPopover()
     })
 
     // ── Clic sur un booking : carte de detail (avatar + topic + lien meeting)

@@ -3528,6 +3528,34 @@ img { max-width: 100%; display: block; }
   user-select: none;
   flex-shrink: 0;
 }
+
+/* Coloration syntaxique du code en mode Live (token classes lm-c-*) */
+.live-code-pre .lm-c-kw  { color: #C084FC; font-weight: 600; }
+.live-code-pre .lm-c-fn  { color: #2563EB; }
+.live-code-pre .lm-c-num { color: #D97706; }
+.live-code-pre .lm-c-str { color: #059669; }
+.live-code-pre .lm-c-cmt { color: var(--text-3); font-style: italic; }
+[data-theme="dark"] .live-code-pre .lm-c-kw  { color: #C4B5FD; }
+[data-theme="dark"] .live-code-pre .lm-c-fn  { color: #60A5FA; }
+[data-theme="dark"] .live-code-pre .lm-c-num { color: #FBBF24; }
+[data-theme="dark"] .live-code-pre .lm-c-str { color: #34D399; }
+
+/* Cartouche flottant avec le nom de l'editeur sur la ligne en cours d'edition */
+.live-code-line--hi::after {
+  content: attr(data-editor);
+  position: absolute;
+  right: 6px;
+  top: -7px;
+  font-family: var(--font);
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  padding: 1px 7px;
+  border-radius: 4px;
+  background: var(--color-devoirs);
+  color: #fff;
+  box-shadow: 0 2px 6px color-mix(in srgb, var(--color-devoirs) 35%, transparent);
+}
 .live-code-caret {
   display: inline-block;
   width: 2px;
@@ -3801,34 +3829,92 @@ img { max-width: 100%; display: block; }
   letter-spacing: .04em;
   flex-shrink: 0;
 }
-.rdv-day-slots { display: flex; flex-wrap: wrap; gap: 4px; }
+.rdv-day-slots { display: flex; flex-wrap: wrap; gap: 5px; }
 .rdv-slot {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
   font-size: 11px;
   font-family: var(--font-mono);
   font-weight: 600;
-  padding: 3px 9px;
+  padding: 3px 9px 3px 8px;
   border-radius: 6px;
-  background: color-mix(in srgb, var(--color-rex) 10%, transparent);
-  color: var(--color-rex);
-  border: 1px solid color-mix(in srgb, var(--color-rex) 22%, transparent);
+  background: color-mix(in srgb, var(--tc, var(--color-rex)) 10%, transparent);
+  color: var(--tc, var(--color-rex));
+  border: 1px solid color-mix(in srgb, var(--tc, var(--color-rex)) 22%, transparent);
   cursor: pointer;
-  font-family: var(--font-mono);
   transition: background var(--duration-fast),
               color var(--duration-fast),
               transform var(--duration-fast) var(--ease-spring),
-              border-color var(--duration-fast);
+              border-color var(--duration-fast),
+              box-shadow var(--duration-fast);
 }
+.rdv-slot-dot {
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  background: var(--tc, var(--color-rex));
+  flex-shrink: 0;
+  transition: background var(--duration-fast);
+}
+.rdv-slot-time { letter-spacing: 0.2px; }
 .rdv-slot:hover:not(.rdv-slot--booked) {
-  background: var(--color-rex);
+  background: var(--tc, var(--color-rex));
   color: white;
-  border-color: var(--color-rex);
+  border-color: var(--tc, var(--color-rex));
   transform: translateY(-1px) scale(1.04);
-  box-shadow: 0 4px 10px color-mix(in srgb, var(--color-rex) 30%, transparent);
+  box-shadow: 0 5px 12px color-mix(in srgb, var(--tc, var(--color-rex)) 35%, transparent);
 }
+.rdv-slot:hover .rdv-slot-dot { background: rgba(255, 255, 255, 0.95); }
+.rdv-slot:active:not(.rdv-slot--booked) { transform: translateY(0) scale(0.96); }
 .rdv-slot:focus-visible {
-  outline: 2px solid var(--color-rex);
+  outline: 2px solid var(--tc, var(--color-rex));
   outline-offset: 2px;
 }
+.rdv-slot--pending {
+  background: var(--tc, var(--color-rex)) !important;
+  color: #fff !important;
+  border-color: var(--tc, var(--color-rex));
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--tc, var(--color-rex)) 30%, transparent), 0 6px 14px color-mix(in srgb, var(--tc, var(--color-rex)) 40%, transparent);
+  transform: translateY(-1px) scale(1.04);
+}
+.rdv-slot--pending .rdv-slot-dot { background: #fff; }
+
+/* Tooltip flottant : duree + type, apparait au hover ou focus */
+.rdv-slot-tip {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%) translateY(2px);
+  white-space: nowrap;
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: var(--text);
+  color: var(--bg-card);
+  font-family: var(--font);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.1px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity var(--duration-fast), transform var(--duration-fast);
+  z-index: 5;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
+}
+.rdv-slot-tip::after {
+  content: '';
+  position: absolute;
+  top: 100%; left: 50%; transform: translateX(-50%);
+  border: 4px solid transparent;
+  border-top-color: var(--text);
+}
+.rdv-slot:hover .rdv-slot-tip,
+.rdv-slot:focus-visible .rdv-slot-tip {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+.rdv-slot--booked .rdv-slot-tip,
+.rdv-slot--pending .rdv-slot-tip { display: none; }
 .rdv-slot--booked {
   background: var(--color-devoirs);
   color: white;
@@ -3837,14 +3923,146 @@ img { max-width: 100%; display: block; }
   position: relative;
   padding-right: 22px;
 }
-.rdv-slot--booked::after {
-  content: '✓';
-  position: absolute;
-  right: 6px;
-  top: 50%;
-  transform: translateY(-50%);
-  font-weight: 800;
+/* Booked : la pastille devient un check SVG (pas d'emoji, cf. rule projet) */
+.rdv-slot--booked .rdv-slot-dot {
+  width: 10px; height: 10px;
+  border-radius: 0;
+  background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'><polyline points='20 6 9 17 4 12'/></svg>") no-repeat center / contain;
 }
+.rdv-slot--booked { padding-right: 9px; }
+
+/* ── Popover de confirmation : ouvre sous le slot clique, demande sujet ── */
+.rdv-popover {
+  margin-top: 12px;
+  padding: 12px;
+  border-radius: 12px;
+  background: var(--bg-card);
+  border: 1px solid color-mix(in srgb, var(--tc, var(--color-rex)) 28%, transparent);
+  border-left: 3px solid var(--tc, var(--color-rex));
+  box-shadow: 0 8px 24px color-mix(in srgb, var(--tc, var(--color-rex)) 18%, transparent),
+              0 2px 6px rgba(0, 0, 0, 0.04);
+  animation: rdvPopoverIn 220ms var(--ease-smooth) both;
+}
+.rdv-popover--leaving { animation: rdvPopoverOut 180ms var(--ease-smooth) both; }
+@keyframes rdvPopoverIn {
+  from { opacity: 0; transform: translateY(-6px) scale(0.97); }
+  to   { opacity: 1; transform: none; }
+}
+@keyframes rdvPopoverOut {
+  from { opacity: 1; }
+  to   { opacity: 0; transform: translateY(-4px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .rdv-popover, .rdv-popover--leaving { animation: none; }
+}
+
+.rdv-popover-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border-glass);
+  margin-bottom: 10px;
+}
+.rdv-popover-dot {
+  width: 12px; height: 12px;
+  border-radius: 50%;
+  background: var(--tc, var(--color-rex));
+  flex-shrink: 0;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--tc, var(--color-rex)) 20%, transparent);
+}
+.rdv-popover-titles { display: flex; flex-direction: column; flex: 1; min-width: 0; }
+.rdv-popover-when {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--text);
+  letter-spacing: 0.1px;
+}
+.rdv-popover-type {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  color: var(--text-2);
+  letter-spacing: 0.2px;
+  margin-top: 1px;
+}
+.rdv-popover-close {
+  width: 22px; height: 22px;
+  border: 1px solid transparent;
+  background: transparent;
+  border-radius: 6px;
+  color: var(--text-3);
+  display: inline-flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  transition: background var(--duration-fast), color var(--duration-fast);
+  flex-shrink: 0;
+}
+.rdv-popover-close:hover { color: var(--text); background: color-mix(in srgb, var(--text) 8%, transparent); }
+
+.rdv-popover-field { display: flex; flex-direction: column; gap: 4px; margin-bottom: 10px; }
+.rdv-popover-label {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+.rdv-popover-input {
+  font-family: var(--font);
+  font-size: 12px;
+  font-weight: 500;
+  padding: 7px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--text);
+  outline: none;
+  transition: border-color var(--duration-fast), box-shadow var(--duration-fast);
+}
+.rdv-popover-input:focus {
+  border-color: var(--tc, var(--color-rex));
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--tc, var(--color-rex)) 18%, transparent);
+}
+
+.rdv-popover-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+.rdv-popover-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--text-3) 10%, transparent);
+  color: var(--text-2);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.1px;
+}
+.rdv-popover-tag svg { color: var(--tc, var(--color-rex)); }
+
+.rdv-popover-cta {
+  width: 100%;
+  padding: 9px 14px;
+  border: none;
+  border-radius: 9px;
+  background: linear-gradient(135deg, var(--tc, var(--color-rex)), color-mix(in srgb, var(--tc, var(--color-rex)) 70%, #000 30%));
+  color: #fff;
+  font-family: var(--font);
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  cursor: pointer;
+  transition: transform var(--duration-fast), box-shadow var(--duration-fast);
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--tc, var(--color-rex)) 32%, transparent);
+}
+.rdv-popover-cta:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px color-mix(in srgb, var(--tc, var(--color-rex)) 45%, transparent);
+}
+.rdv-popover-cta:active { transform: translateY(0); }
 
 /* Toast de confirmation : apparait sous la grille apres reservation */
 .rdv-toast {

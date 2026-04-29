@@ -77,7 +77,7 @@
     .fade-up { opacity: 0; transform: translateY(24px) scale(0.98); transition: opacity .65s cubic-bezier(.22,1,.36,1), transform .65s cubic-bezier(.22,1,.36,1); }
     .fade-up.visible { opacity: 1; transform: translateY(0) scale(1); }
   </style>
-  <link rel="stylesheet" href="style.css?v=266" />
+  <link rel="stylesheet" href="style.css?v=267" />
 </head>
 <body>
 
@@ -201,7 +201,7 @@
         <a href="#feat-rdv" class="bento-card" data-color="rex" aria-label="Decouvrir les rendez-vous">
           <div class="bento-header">
             <div class="bento-icon-circle" style="--ic: var(--color-rex)"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/><path d="m9 16 2 2 4-4"/></svg></div>
-            <div class="bento-titles"><span class="bento-title">Rendez-vous</span><span class="bento-subtitle">Mini-Calendly</span></div>
+            <div class="bento-titles"><span class="bento-title">Rendez-vous</span><span class="bento-subtitle">Booking 1-clic · Outlook</span></div>
             <span class="bento-stat-pill" aria-label="13 cette semaine">13</span>
           </div>
           <div class="bento-demo bento-rex-demo">
@@ -483,18 +483,18 @@
             <!-- Mode Code : editeur partage avec curseurs collaboratifs -->
             <div class="demo-live-body live-pane" data-live-pane="code" aria-hidden="true">
               <div class="live-code-tabs">
-                <span class="live-code-tab live-code-tab--active">main.py</span>
-                <span class="live-code-tab">utils.py</span>
+                <span class="live-code-tab live-code-tab--active">binary_search.py</span>
+                <span class="live-code-tab">tests.py</span>
                 <span class="live-code-cursors">
                   <span class="live-code-cur" style="--c:#6366F1" title="Prof. Martin">MR</span>
                   <span class="live-code-cur" style="--c:#059669" title="Emma L.">EL</span>
                   <span class="live-code-cur" style="--c:#D97706" title="Jean D.">JD</span>
                 </span>
               </div>
-              <pre class="live-code-pre"><span class="live-code-line"><span class="live-code-num">1</span><span class="lm-c-kw">def</span> <span class="lm-c-fn">fib</span>(n):</span><span class="live-code-line"><span class="live-code-num">2</span>    <span class="lm-c-kw">if</span> n &lt; <span class="lm-c-num">2</span>:</span><span class="live-code-line"><span class="live-code-num">3</span>        <span class="lm-c-kw">return</span> n</span><span class="live-code-line live-code-line--hi"><span class="live-code-num">4</span>    <span class="lm-c-kw">return</span> <span class="lm-c-fn">fib</span>(n-<span class="lm-c-num">1</span>) + <span class="lm-c-fn">fib</span>(n-<span class="lm-c-num">2</span>)<span class="live-code-caret" aria-hidden="true"></span></span><span class="live-code-line"><span class="live-code-num">5</span></span><span class="live-code-line"><span class="live-code-num">6</span><span class="lm-c-cmt"># Co-écrit avec Emma L.</span></span></pre>
+              <pre class="live-code-pre"><span class="live-code-line"><span class="live-code-num">1</span><span class="lm-c-kw">def</span> <span class="lm-c-fn">binary_search</span>(arr, target):</span><span class="live-code-line"><span class="live-code-num">2</span>    <span class="lm-c-str">"""Recherche dichotomique · O(log n)"""</span></span><span class="live-code-line"><span class="live-code-num">3</span>    lo, hi = <span class="lm-c-num">0</span>, <span class="lm-c-fn">len</span>(arr) - <span class="lm-c-num">1</span></span><span class="live-code-line"><span class="live-code-num">4</span>    <span class="lm-c-kw">while</span> lo &lt;= hi:</span><span class="live-code-line"><span class="live-code-num">5</span>        mid = (lo + hi) // <span class="lm-c-num">2</span></span><span class="live-code-line live-code-line--hi" data-editor="EL"><span class="live-code-num">6</span>        <span class="lm-c-kw">if</span> arr[mid] == target:</span><span class="live-code-line"><span class="live-code-num">7</span>            <span class="lm-c-kw">return</span> mid<span class="live-code-caret" aria-hidden="true"></span></span><span class="live-code-line"><span class="live-code-num">8</span>        lo, hi = (mid + <span class="lm-c-num">1</span>, hi) <span class="lm-c-kw">if</span> arr[mid] &lt; target <span class="lm-c-kw">else</span> (lo, mid - <span class="lm-c-num">1</span>)</span><span class="live-code-line"><span class="live-code-num">9</span>    <span class="lm-c-kw">return</span> -<span class="lm-c-num">1</span>  <span class="lm-c-cmt"># non trouvé</span></span></pre>
               <div class="live-footer">
                 <span class="live-participants">3 co-éditeurs</span>
-                <span class="live-timer live-timer--saved">Sauvegardé</span>
+                <span class="live-timer live-timer--saved">Sauvegardé il y a 2s</span>
               </div>
             </div>
 
@@ -523,13 +523,13 @@
       <div class="container feature-row reverse">
         <div class="feature-text">
           <div class="feature-icon" style="--fc: var(--color-rex)"><svg aria-hidden="true" width="32" height="32" viewBox="0 0 64 64" fill="none"><defs><linearGradient id="fp-g" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#0EA5E9"/><stop offset="50%" stop-color="#06B6D4"/><stop offset="100%" stop-color="#34D399"/></linearGradient></defs><path d="M32 56C32 56 6 40 6 22 6 13.2 13.2 6 22 6 26.8 6 30.8 8.4 32 12 33.2 8.4 37.2 6 42 6 50.8 6 58 13.2 58 22 58 40 32 56 32 56Z" fill="url(#fp-g)" opacity=".15" stroke="url(#fp-g)" stroke-width="2.5" stroke-linejoin="round"/><polyline points="4,34 16,34 20,34 24,26 28,42 32,18 36,38 40,28 44,34 48,34 60,34" fill="none" stroke="url(#fp-g)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
-          <h2>Rendez-vous : mini-Calendly integre</h2>
-          <p class="feature-desc">Les enseignants creent des types de creneaux, partagent un lien et les tuteurs reservent. Sync Microsoft Outlook et Teams automatique.</p>
+          <h2>Suivi 1-on-1 : booking en 1 clic</h2>
+          <p class="feature-desc">Les enseignants partagent un lien, les étudiants réservent leur créneau en 30 secondes. Sync Outlook + visio Teams ou Jitsi automatique, zéro back-and-forth.</p>
           <ul class="feature-list">
-            <li>Types de RDV configurables (duree, couleur, description)</li>
-            <li>Grille de disponibilites hebdomadaire</li>
-            <li>Sync calendrier Outlook et reunion Teams automatique</li>
-            <li>Emails de confirmation et annulation</li>
+            <li>Types de RDV configurables (durée, couleur, sujet par défaut)</li>
+            <li>Grille de disponibilités hebdomadaire avec densité réelle</li>
+            <li>Sync calendrier Outlook + lien visio créé à la réservation</li>
+            <li>Emails de confirmation, rappels J-1 et lien d'annulation</li>
           </ul>
         </div>
         <div class="mini-demo mini-demo-left" id="demo-rex">
@@ -780,8 +780,8 @@
     </div>
   </footer>
 
-  <script src="grammar.js?v=266"></script>
-  <script src="app.js?v=266"></script>
+  <script src="grammar.js?v=267"></script>
+  <script src="app.js?v=267"></script>
   <!-- Analytics: insert GA4 gtag.js snippet here when ready -->
 </body>
 </html>
