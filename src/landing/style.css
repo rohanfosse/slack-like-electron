@@ -4780,19 +4780,37 @@ img { max-width: 100%; display: block; }
   overflow-x: auto;
   display: flex;
   flex-direction: column;
+  /* Espace les mots davantage : "def binary_search" se lit mieux. */
+  word-spacing: 0.18em;
 }
 [data-theme="dark"] .live-code-pre {
   background: rgba(0,0,0,0.3);
 }
 .live-code-line {
   display: flex;
+  align-items: center;
   white-space: pre;
   border-radius: 4px;
   padding: 0 4px;
-}
-.live-code-line--hi {
-  background: color-mix(in srgb, var(--color-live) 8%, transparent);
   position: relative;
+}
+/* Toute ligne avec un editeur recoit un fond tres subtil de sa couleur,
+   de sorte qu'on voit en un coup d'oeil les 2-3 lignes "actives". */
+.live-code-line[style*="--c"] {
+  background: color-mix(in srgb, var(--c) 4%, transparent);
+}
+/* Ligne "primary" : fond plus marque + pulse periodique pour suggerer
+   "quelqu'un est en train de taper sur cette ligne en ce moment". */
+.live-code-line--hi {
+  background: color-mix(in srgb, var(--c, var(--color-live)) 11%, transparent);
+  animation: liveLineTypePulse 4.5s ease-in-out infinite;
+}
+@keyframes liveLineTypePulse {
+  0%, 88%, 100% { background: color-mix(in srgb, var(--c, var(--color-live)) 11%, transparent); }
+  92%, 96%      { background: color-mix(in srgb, var(--c, var(--color-live)) 22%, transparent); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .live-code-line--hi { animation: none; }
 }
 .live-code-num {
   display: inline-block;
@@ -4824,37 +4842,53 @@ img { max-width: 100%; display: block; }
 [data-theme="dark"] .live-code-pre .lm-c-bul  { color: #FBBF24; }
 [data-theme="dark"] .live-code-pre .lm-c-mc   { color: #6EE7B7; background: rgba(5, 150, 105, 0.18); }
 
-/* Cartouche flottant avec le nom de l'editeur sur la ligne en cours d'edition */
-.live-code-line--hi::after {
-  content: attr(data-editor);
-  position: absolute;
-  right: 6px;
-  top: -7px;
-  font-family: var(--font);
-  font-size: 9.5px;
-  font-weight: 700;
-  letter-spacing: 0.2px;
-  padding: 1px 7px;
-  border-radius: 4px;
-  background: var(--color-devoirs);
-  color: #fff;
-  box-shadow: 0 2px 6px color-mix(in srgb, var(--color-devoirs) 35%, transparent);
-}
+/* Caret colore par editeur : un par .live-code-pill voisin. Blink decale
+   via --d (delay en ms) pour que les 2-3 carets ne soient pas synchros. */
 .live-code-caret {
   display: inline-block;
   width: 2px;
   height: 14px;
-  background: var(--color-devoirs);
-  margin-left: 1px;
+  margin-left: 4px;
   vertical-align: middle;
-  animation: liveCaretBlink 1s steps(2) infinite;
+  background: var(--c, var(--color-devoirs));
+  box-shadow: 0 0 6px color-mix(in srgb, var(--c, var(--color-devoirs)) 60%, transparent);
+  animation: liveCaretBlink 1.05s steps(2) infinite;
+  animation-delay: var(--d, 0ms);
+  word-spacing: 0; /* le pre a un word-spacing global, on le neutralise ici */
 }
 @keyframes liveCaretBlink {
   0%, 50%   { opacity: 1; }
   51%, 100% { opacity: 0; }
 }
+
+/* Pill avec les initiales de l'editeur, juste apres son caret. Genere une
+   sensation "il y a 2 personnes en train de coder en ce moment". */
+.live-code-pill {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 6px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: var(--c, var(--color-devoirs));
+  color: #fff;
+  font-family: var(--font);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.3px;
+  vertical-align: middle;
+  box-shadow: 0 1px 3px color-mix(in srgb, var(--c, var(--color-devoirs)) 35%, transparent);
+  word-spacing: 0;
+  animation: livePillBob 2.4s ease-in-out infinite;
+  animation-delay: var(--d, 0ms);
+}
+/* Petit bobbing sur les pills pour donner un sentiment "vivant" */
+@keyframes livePillBob {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-1.5px); }
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .live-code-caret { animation: none; }
+  .live-code-caret, .live-code-pill { animation: none; }
 }
 
 /* ── Board : post-its avec votes ──────────────────────────────────── */

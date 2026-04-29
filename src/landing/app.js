@@ -1611,8 +1611,14 @@ document.addEventListener('DOMContentLoaded', () => {
   const LIVE_CODE_FILES = {
     'binary_search.py': {
       lang: 'Python',
-      hi: 5,           // ligne en surbrillance (0-indexed)
-      hiEditor: 'EL',  // initiales de l'editeur sur la ligne
+      // editors[] : positions des co-editeurs en train de bosser sur le fichier.
+      // Chaque caret blink avec un --d different (delay en ms) pour donner
+      // l'impression de plusieurs personnes qui tapent en parallele sans avoir
+      // l'air synchronises. Le 1er editeur est le "primary" (highlight + pill).
+      editors: [
+        { line: 5, name: 'EL', color: '#059669', delay: 0 },
+        { line: 9, name: 'MR', color: '#6366F1', delay: 320 },
+      ],
       lines: [
         [['kw', 'def'], ['', ' '], ['fn', 'binary_search'], ['', '(arr, target):']],
         [['', '    lo, hi = '], ['num', '0'], ['', ', '], ['fn', 'len'], ['', '(arr) - '], ['num', '1']],
@@ -1629,6 +1635,10 @@ document.addEventListener('DOMContentLoaded', () => {
     },
     'tests.py': {
       lang: 'Python',
+      editors: [
+        { line: 4, name: 'JD', color: '#D97706', delay: 0 },
+        { line: 7, name: 'EL', color: '#059669', delay: 280 },
+      ],
       lines: [
         [['kw', 'from'], ['', ' binary_search '], ['kw', 'import'], ['', ' binary_search']],
         [],
@@ -1644,6 +1654,10 @@ document.addEventListener('DOMContentLoaded', () => {
     },
     'data.json': {
       lang: 'JSON',
+      editors: [
+        { line: 3, name: 'MR', color: '#6366F1', delay: 0 },
+        { line: 5, name: 'JD', color: '#D97706', delay: 200 },
+      ],
       lines: [
         [['punc', '{']],
         [['', '  '], ['fn', '"algo"'], ['punc', ':'], ['', ' '], ['str', '"binary_search"'], ['punc', ',']],
@@ -1656,6 +1670,9 @@ document.addEventListener('DOMContentLoaded', () => {
     },
     'README.md': {
       lang: 'Markdown',
+      editors: [
+        { line: 6, name: 'EL', color: '#059669', delay: 0 },
+      ],
       lines: [
         [['h1', '# Recherche dichotomique']],
         [],
@@ -1678,13 +1695,28 @@ document.addEventListener('DOMContentLoaded', () => {
     const file = LIVE_CODE_FILES[fileName]
     if (!pre || !file) return
     const tokenSpan = (t) => t[0] === '' ? t[1] : `<span class="lm-c-${t[0]}">${t[1]}</span>`
+
+    // Map line index -> editors[] (plusieurs personnes peuvent etre sur la meme ligne).
+    // Le PREMIER editeur de la liste devient "primary" (bg highlight + pill nominale).
+    const editorsByLine = {}
+    const editors = file.editors || []
+    for (const ed of editors) {
+      if (!editorsByLine[ed.line]) editorsByLine[ed.line] = []
+      editorsByLine[ed.line].push(ed)
+    }
+    const primaryLine = editors[0]?.line
+
     const lines = file.lines.map((toks, i) => {
-      const isHi = i === file.hi
-      const hiAttr = isHi ? ` data-editor="${file.hiEditor || 'EL'}"` : ''
-      const hiCls = isHi ? ' live-code-line--hi' : ''
-      const caret = isHi ? '<span class="live-code-caret" aria-hidden="true"></span>' : ''
+      const eds = editorsByLine[i] || []
+      const isPrimary = i === primaryLine
+      const hiCls = isPrimary ? ' live-code-line--hi' : ''
+      const lineStyle = eds.length ? ` style="--c:${eds[0].color}"` : ''
+      // Carets : un par editeur sur cette ligne, chacun blink avec son delay
+      const carets = eds.map(ed =>
+        `<span class="live-code-caret" style="--c:${ed.color};--d:${ed.delay}ms" aria-hidden="true"></span><span class="live-code-pill" style="--c:${ed.color}">${ed.name}</span>`
+      ).join('')
       const content = toks.length ? toks.map(tokenSpan).join('') : '​'
-      return `<span class="live-code-line${hiCls}"${hiAttr}><span class="live-code-num">${i + 1}</span>${content}${caret}</span>`
+      return `<span class="live-code-line${hiCls}"${lineStyle}><span class="live-code-num">${i + 1}</span>${content}${carets}</span>`
     }).join('')
     pre.innerHTML = lines
   }
