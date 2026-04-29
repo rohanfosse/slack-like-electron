@@ -198,13 +198,15 @@ function expand(template, vocab, rng = Math.random, depth = 0) {
 }
 
 /**
- * Capitalise et nettoie une phrase : majuscule sur la 1re lettre,
- * point final si absent (pour les questions on garde "?").
+ * Capitalise et nettoie une phrase : majuscule sur la 1re lettre Unicode
+ * (saute les caracteres non-lettres en debut, ex: "404 sur le push" devient
+ * "404 Sur le push"), point final si absent (pour les questions on garde "?").
  */
 function cleanup(text) {
   if (!text) return ''
   let t = text.trim().replace(/\s+/g, ' ')
-  t = t.charAt(0).toUpperCase() + t.slice(1)
+  // Capitalise la 1re lettre rencontree (saute chiffres, ponctuation, @, etc.)
+  t = t.replace(/^([^\p{L}]*)(\p{L})/u, (_m, before, letter) => before + letter.toLocaleUpperCase('fr-FR'))
   if (!/[.!?]$/.test(t)) t += '.'
   return t
 }

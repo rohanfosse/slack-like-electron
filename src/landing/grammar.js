@@ -154,7 +154,9 @@
   function cleanup(text) {
     if (!text) return ''
     let t = text.trim().replace(/\s+/g, ' ')
-    t = t.charAt(0).toUpperCase() + t.slice(1)
+    // Capitalise la 1re lettre rencontree (saute chiffres, ponctuation, @, etc.)
+    // Sinon "404 sur le push" reste avec un "s" minuscule.
+    t = t.replace(/^([^\p{L}]*)(\p{L})/u, function (_m, before, letter) { return before + letter.toLocaleUpperCase('fr-FR') })
     if (!/[.!?]$/.test(t)) t += '.'
     return t
   }
