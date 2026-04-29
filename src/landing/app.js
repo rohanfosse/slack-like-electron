@@ -868,8 +868,11 @@ document.addEventListener('DOMContentLoaded', () => {
       document.querySelectorAll('.devoir-detail').forEach(d => d.remove())
       document.querySelectorAll('.devoir-item--open').forEach(i => i.classList.remove('devoir-item--open'))
 
-      const name = item.querySelector('.devoir-name')?.textContent || ''
-      const d = devoirDetails[name]
+      // Match par prefixe : le HTML peut afficher "TP Algo · arbre AVL" alors
+      // que la cle data est "TP Algo". On cherche d'abord exact, puis par
+      // prefixe pour rester robuste a un sous-titre additionnel.
+      const name = item.querySelector('.devoir-name')?.textContent.trim() || ''
+      const d = devoirDetails[name] || devoirDetails[Object.keys(devoirDetails).find(k => name.startsWith(k)) || '']
       if (!d) return
 
       const el = document.createElement('div')
@@ -879,6 +882,46 @@ document.addEventListener('DOMContentLoaded', () => {
       item.after(el)
     })
   })
+
+  // ── Tabs filter sur la liste de devoirs ──────────────────────────────
+  // Filtre par statut (all / done / pending / draft) avec animation de
+  // sortie/entree (max-height + opacity). Met a jour aussi le compteur
+  // de la tab active et l'empty state.
+  const devoirsList = document.getElementById('devoirs-list')
+  if (devoirsList) {
+    function applyDevoirFilter(filter) {
+      const items = devoirsList.querySelectorAll('.devoir-item')
+      let visible = 0
+      items.forEach(item => {
+        const status = item.dataset.devoirStatus || ''
+        const show = filter === 'all' || status === filter
+        item.classList.toggle('devoir-item--hidden', !show)
+        if (show) visible++
+        // Ferme tout detail ouvert sur un item filtre out
+        if (!show) {
+          const detail = item.nextElementSibling
+          if (detail?.classList.contains('devoir-detail')) detail.remove()
+          item.classList.remove('devoir-item--open')
+        }
+      })
+      const empty = document.getElementById('devoirs-empty')
+      if (empty) empty.hidden = visible !== 0
+    }
+
+    document.querySelectorAll('.devoirs-tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.devoirs-tab').forEach(t => {
+          const isActive = t === tab
+          t.classList.toggle('devoirs-tab--active', isActive)
+          t.setAttribute('aria-selected', String(isActive))
+        })
+        applyDevoirFilter(tab.dataset.devoirsFilter || 'all')
+      })
+      tab.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); tab.click() }
+      })
+    })
+  }
 
   // ══════════════════════════════════════════════════════════════════════
   //  LIVE QUIZ - multi-questions interactif

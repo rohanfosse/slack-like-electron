@@ -311,7 +311,14 @@
     // Restaurer la session depuis localStorage
     const restored = appStore.restoreSession()
     if (restored) {
-      router.replace(resolveStartRoute())
+      // Si l'URL pointe deja sur une route publique (ex: /demo, /book/...),
+      // respecter ce choix explicite plutot que de la remplacer par le
+      // startView prefere. Sinon un visiteur logge qui clique "Tester en demo"
+      // depuis la landing serait silencieusement renvoye vers son dashboard.
+      const current = router.currentRoute.value
+      if (!current.meta?.public) {
+        router.replace(resolveStartRoute())
+      }
       loadModules()
       bookmarksStore.initIds()
       statusesStore.init(appStore.currentUser?.id ?? null)

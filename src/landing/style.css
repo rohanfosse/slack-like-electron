@@ -1170,43 +1170,206 @@ img { max-width: 100%; display: block; }
   display: flex;
   flex-direction: column;
   padding: 12px;
-  gap: 8px;
+  gap: 10px;
 }
 
+/* ── Header de stats : 3 mini-cards + CTA "Nouveau" ── */
+.devoirs-summary {
+  display: flex;
+  align-items: stretch;
+  gap: 6px;
+}
+.devoirs-stat {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 7px 10px;
+  border-radius: 9px;
+  background: color-mix(in srgb, var(--color-devoirs) 5%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-devoirs) 14%, transparent);
+}
+.devoirs-stat-num {
+  font-family: var(--font-mono);
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--color-devoirs);
+  letter-spacing: 0.2px;
+  line-height: 1.1;
+}
+.devoirs-stat-num--grade { color: #059669; }
+.devoirs-stat-num--deadline { color: #D97706; }
+.devoirs-stat-total {
+  font-size: 11px;
+  color: var(--text-3);
+  font-weight: 600;
+  margin-left: 1px;
+}
+.devoirs-stat-label {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-3);
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+}
+.devoirs-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 12px;
+  border-radius: 9px;
+  border: none;
+  background: linear-gradient(135deg, var(--color-devoirs), color-mix(in srgb, var(--color-devoirs) 70%, #000 30%));
+  color: #fff;
+  font-family: var(--font);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  cursor: pointer;
+  transition: transform var(--duration-fast), box-shadow var(--duration-fast);
+  box-shadow: 0 3px 10px color-mix(in srgb, var(--color-devoirs) 30%, transparent);
+}
+.devoirs-cta:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 5px 14px color-mix(in srgb, var(--color-devoirs) 42%, transparent);
+}
+
+/* ── Tabs filter ── */
+.devoirs-tabs {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+.devoirs-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 999px;
+  color: var(--text-3);
+  background: color-mix(in srgb, var(--text-3) 6%, transparent);
+  cursor: pointer;
+  transition: background var(--duration-fast), color var(--duration-fast);
+}
+.devoirs-tab:hover { color: var(--text-2); }
+.devoirs-tab--active {
+  background: var(--color-devoirs);
+  color: #fff;
+  box-shadow: 0 2px 6px color-mix(in srgb, var(--color-devoirs) 30%, transparent);
+}
+.devoirs-tab--active .devoirs-tab-count { color: rgba(255, 255, 255, 0.85); }
+.devoirs-tab-count {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  opacity: 0.7;
+}
+
+/* ── Liste : container avec gap ── */
+.devoirs-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* ── Item enrichi : border accent par status, avatars equipe, progress always-on ── */
 .devoir-item {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 10px;
+  padding: 9px 10px;
   border-radius: 10px;
-  transition: background var(--duration-fast);
+  border: 1px solid transparent;
+  background: color-mix(in srgb, var(--status-c, var(--color-devoirs)) 4%, transparent);
+  transition: background var(--duration-fast),
+              border-color var(--duration-fast),
+              box-shadow var(--duration-fast),
+              transform var(--duration-fast),
+              opacity 240ms var(--ease-smooth),
+              max-height 240ms var(--ease-smooth);
+  max-height: 110px;
+  overflow: hidden;
 }
 
-.devoir-item:hover { background: rgba(99, 102, 241, 0.04); }
+.devoir-item:hover {
+  background: color-mix(in srgb, var(--status-c, var(--color-devoirs)) 9%, transparent);
+  border-color: color-mix(in srgb, var(--status-c, var(--color-devoirs)) 22%, transparent);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--status-c, var(--color-devoirs)) 16%, transparent);
+}
+
+.devoir-item--hidden {
+  opacity: 0;
+  max-height: 0;
+  padding-top: 0;
+  padding-bottom: 0;
+  margin: 0;
+  border-width: 0;
+  pointer-events: none;
+}
 
 .devoir-icon {
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  background: var(--status-c, var(--color-devoirs)) !important;
+  box-shadow: 0 2px 6px color-mix(in srgb, var(--status-c, var(--color-devoirs)) 35%, transparent);
 }
 
-.devoir-info { flex: 1; min-width: 0; }
+.devoir-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.devoir-info .devoir-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10.5px;
+  color: var(--text-3);
+  font-family: var(--font);
+}
+.devoir-info .devoir-meta svg { color: var(--status-c, var(--text-3)); }
+
+/* Avatars empiles pour les devoirs en equipe */
+.devoir-meta-team { display: inline-flex; }
+.devoir-meta-avatar {
+  width: 16px; height: 16px;
+  border-radius: 50%;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 7.5px;
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: 0.2px;
+  border: 1.5px solid var(--bg-card);
+  margin-left: -4px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
+}
+.devoir-meta-avatar:first-child { margin-left: 0; }
 
 .devoir-badge {
-  font-size: 11px;
-  font-weight: 600;
-  padding: 2px 8px;
-  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  font-weight: 700;
+  padding: 4px 9px;
+  border-radius: 999px;
   flex-shrink: 0;
+  letter-spacing: 0.2px;
 }
 
-.devoir-badge.done { background: rgba(5, 150, 105, 0.12); color: #059669; }
-.devoir-badge.pending { background: rgba(245, 158, 11, 0.12); color: #D97706; }
-.devoir-badge.draft { background: rgba(148, 163, 184, 0.12); color: var(--text-3); }
+.devoir-badge.done { background: rgba(5, 150, 105, 0.16); color: #047857; }
+.devoir-badge.pending { background: rgba(245, 158, 11, 0.16); color: #B45309; }
+.devoir-badge.draft { background: rgba(148, 163, 184, 0.18); color: var(--text-2); }
+.devoir-badge-pulse {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: #F59E0B;
+  animation: badgePulse 2s infinite;
+}
 
 [data-theme="dark"] .devoir-badge.done { color: #34D399; }
 [data-theme="dark"] .devoir-badge.pending { color: #FBBF24; }
@@ -1214,16 +1377,25 @@ img { max-width: 100%; display: block; }
 .devoir-progress {
   height: 4px;
   border-radius: 2px;
-  background: var(--border);
+  background: color-mix(in srgb, var(--text-3) 14%, transparent);
   margin-top: 6px;
   overflow: hidden;
 }
-
 .devoir-progress-bar {
   height: 100%;
   border-radius: 2px;
-  background: var(--accent);
   width: 0;
+}
+.devoir-progress-bar--done    { background: linear-gradient(90deg, #10B981, #059669); }
+.devoir-progress-bar--pending { background: linear-gradient(90deg, #FCD34D, #F59E0B); }
+.devoir-progress-bar--draft   { background: linear-gradient(90deg, color-mix(in srgb, var(--text-3) 50%, transparent), var(--text-3)); }
+
+.devoirs-empty {
+  text-align: center;
+  padding: 18px 12px;
+  font-size: 11.5px;
+  font-style: italic;
+  color: var(--text-3);
 }
 
 /* ── Docs Demo ─────────────────────────────────────────────────────── */
@@ -1511,8 +1683,8 @@ img { max-width: 100%; display: block; }
 .sidebar-ch .badge { font-size: 10px; background: var(--primary); color: var(--on-primary); border-radius: 8px; padding: 1px 5px; margin-left: auto; }
 
 /* ── Devoir info sub-elements ──────────────────────────────────────── */
-.devoir-name { font-weight: 600; font-size: 14px; color: var(--text); display: block; }
-.devoir-meta { font-size: 12px; color: var(--text-3); display: block; }
+.devoir-name { font-weight: 700; font-size: 13px; color: var(--text); display: block; letter-spacing: 0.1px; }
+.devoir-meta { font-size: 11px; color: var(--text-3); display: block; }
 
 /* ── Docs search text ──────────────────────────────────────────────── */
 .docs-search-text { font-size: 13px; color: var(--text); min-width: 40px; }
