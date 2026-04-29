@@ -47,6 +47,22 @@ router.get('/promotions/:promoId/students', (req, res) => {
   res.json({ ok: true, data: rows })
 })
 
+// GET /api/demo/students
+//
+// Liste tous les students du tenant — utilise par les composables
+// d'autocomplete (@mentions), la sidebar contacts et la palette de
+// commandes. Sans ce mock, getAllStudents() renvoie [] (wildcard) et
+// les @mentions dans le composer ne suggerent personne.
+router.get('/students', (req, res) => {
+  const rows = getDemoDb().prepare(
+    `SELECT id, promo_id, name, email, avatar_initials, photo_data
+     FROM demo_students
+     WHERE tenant_id = ?
+     ORDER BY name`
+  ).all(req.tenantId)
+  res.json({ ok: true, data: rows })
+})
+
 // ────────────────────────────────────────────────────────────────────
 //  Messages (lecture par canal + envoi + epingles)
 // ────────────────────────────────────────────────────────────────────
