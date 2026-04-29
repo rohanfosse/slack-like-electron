@@ -126,6 +126,20 @@ router.post('/end', (req, res) => {
     }
   })
   txn()
+  // Purge etats en memoire associes au tenant (sinon fuite au fil des sessions
+  // sequentielles : un visiteur qui demarre 50 sessions accumulerait 50 fois
+  // les bookmarks/notes/reads/typing/Hawkes). Tout est non-bloquant — si une
+  // dependance manque ou throw, on retourne 200 quand meme.
+  try { require('./interactive')._clearState?.(tenantId) } catch { /* */ }
+  try {
+    const algo = require('../../services/demoBotsAlgo')
+    algo.resetLiveSim({ tenantId })
+    algo.resetSubmissionSim(tenantId)
+    algo.resetHawkes(tenantId)
+  } catch { /* */ }
+  try {
+    require('../../services/demoBots').clearTyping(tenantId, null)
+  } catch { /* */ }
   res.json({ ok: true, data: null })
 })
 

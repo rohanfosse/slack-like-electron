@@ -129,6 +129,12 @@ function recordEvent(tenantId, now = Date.now()) {
   }
 }
 
+/** Purge l'historique Hawkes pour un tenant (appele a /demo/end). */
+function resetHawkes(tenantId) {
+  if (tenantId) _hawkes.delete(tenantId)
+  else _hawkes.clear()
+}
+
 /**
  * Multiplicateur a appliquer aux PROB.* pour ce tick. Borne entre 0.5
  * (creux profond) et 3.0 (rafale intense) pour eviter que les bots ne
@@ -322,10 +328,23 @@ function simulateLiveResults(key, target) {
   }
 }
 
-/** Reset (utile pour les tests). */
+/**
+ * Reset. 3 modes :
+ *  - resetLiveSim()                 : purge globale (tests)
+ *  - resetLiveSim('a|b')            : purge la cle exacte
+ *  - resetLiveSim({ tenantId })     : purge toutes les sims du tenant
+ *    (appele depuis /demo/end pour eviter les fuites en memoire entre
+ *    sessions sequentielles).
+ */
 function resetLiveSim(key) {
-  if (key) _liveSim.delete(key)
-  else _liveSim.clear()
+  if (!key) return _liveSim.clear()
+  if (typeof key === 'string') return _liveSim.delete(key)
+  if (typeof key === 'object' && key.tenantId) {
+    const prefix = `${key.tenantId}|`
+    for (const k of _liveSim.keys()) {
+      if (k.startsWith(prefix)) _liveSim.delete(k)
+    }
+  }
 }
 
 // ────────────────────────────────────────────────────────────────────
@@ -453,7 +472,7 @@ module.exports = {
   SOCIAL_GRAPH, BASE_AFFINITY,
   getAffinity, pickAffineBot,
   // Hawkes
-  getIntensity, recordEvent, intensityMultiplier,
+  getIntensity, recordEvent, intensityMultiplier, resetHawkes,
   LAMBDA_BASE, LAMBDA_ALPHA, LAMBDA_BETA,
   // Topic
   TOPIC_KEYWORDS, tokenize, tagsForText, topicVector, scoreTemplate, pickByTopic,

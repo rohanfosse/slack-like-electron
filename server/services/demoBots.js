@@ -276,6 +276,8 @@ function setTyping(tenantId, channelId, authorName, durationMs = 3000) {
 function clearTyping(tenantId, channelId) {
   const byChannel = typingState.get(tenantId)
   if (!byChannel) return
+  // channelId null = purge complete du tenant (appele depuis /demo/end)
+  if (channelId == null) { typingState.delete(tenantId); return }
   byChannel.delete(channelId)
   if (byChannel.size === 0) typingState.delete(tenantId)
 }
