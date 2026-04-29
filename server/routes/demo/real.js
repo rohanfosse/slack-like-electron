@@ -333,4 +333,54 @@ router.get('/teachers', (req, res) => {
   }]})
 })
 
+// ────────────────────────────────────────────────────────────────────
+//  Notification feed (toasts cote front sur activite reelle des bots)
+//
+//  Le composable useDemoNotifications poll cet endpoint toutes les 30s
+//  pour afficher des toasts qui correspondent aux vrais messages que
+//  les bots viennent d'inserer en DB (cf. services/demoBots.js). Sans
+//  ca le visiteur verrait des notifications scriptees deconnectees du
+//  contenu reel des canaux.
+//
+//  Param `since` : id du dernier message deja vu (-1 = tout neuf).
+//  Reponse : liste d'evenements ordres par id ASC, max 5 par tick pour
+//  ne pas spammer le visiteur si plusieurs bots ont parle.
+// ────────────────────────────────────────────────────────────────────
+router.get('/notifications/feed', (req, res) => {
+  const visitorName = req.demoUser?.name || ''
+  const sinceId = Number(req.query.since) || 0
+
+  const rows = getDemoDb().prepare(
+    `SELECT m.id, m.channel_id, m.author_name, m.author_initials, m.content, m.created_at,
+            c.name AS channel_name
+     FROM demo_messages m
+     JOIN demo_channels c ON c.id = m.channel_id AND c.tenant_id = m.tenant_id
+     WHERE m.tenant_id = ?
+       AND m.id > ?
+       AND m.author_name != ?
+       AND m.channel_id IS NOT NULL
+       AND datetime(m.created_at) >= datetime('now', '-15 minutes')
+     ORDER BY m.id ASC
+     LIMIT 5`
+  ).all(req.tenantId, sinceId, visitorName)
+
+  const firstName = visitorName.split(/\s+/)[0] || ''
+  const events = rows.map(r => {
+    const preview = String(r.content || '').replace(/```[\s\S]*?```/g, '[code]').replace(/\s+/g, ' ').trim().slice(0, 120)
+    const isMention = !!firstName && new RegExp(`@${firstName}\\b`, 'i').test(r.content || '')
+    return {
+      id: r.id,
+      channelId: r.channel_id,
+      channelName: r.channel_name,
+      author: r.author_name,
+      initials: r.author_initials,
+      preview,
+      isMention,
+      createdAt: r.created_at,
+    }
+  })
+
+  res.json({ ok: true, data: { events, lastId: events.length ? events[events.length - 1].id : sinceId } })
+})
+
 module.exports = router

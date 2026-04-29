@@ -34,6 +34,19 @@ declare global {
         online: Array<{ id: number; name: string; role: string; status: null }>
         typing: { channelId: number; userName: string } | null
       }>>
+      demoNotifFeed?(sinceId: number): Promise<IpcResponse<{
+        events: Array<{
+          id: number
+          channelId: number
+          channelName: string
+          author: string
+          initials: string | null
+          preview: string
+          isMention: boolean
+          createdAt: string
+        }>
+        lastId: number
+      }>>
 
       // Structure
       getPromotions(): Promise<IpcResponse<Promotion[]>>

@@ -254,6 +254,27 @@ function pickRandom(arr) {
   return arr[Math.floor(Math.random() * arr.length)]
 }
 
+// Parse les reactions au format enrichi { emoji: { count, users[] } } et tolere
+// l'ancien format { emoji: [user_ids] } en le convertissant. Le frontend
+// (stores/messages.ts initReactions) attend le format enrichi, sinon il
+// affiche le tableau d'ids brut dans la pill au lieu du compteur.
+function parseReactions(json) {
+  if (!json) return {}
+  let raw
+  try { raw = JSON.parse(json) } catch { return {} }
+  const out = {}
+  for (const [emoji, v] of Object.entries(raw || {})) {
+    if (Array.isArray(v)) {
+      out[emoji] = { count: v.length, users: [] }
+    } else if (v && typeof v === 'object' && 'count' in v) {
+      out[emoji] = { count: Number(v.count) || 0, users: Array.isArray(v.users) ? v.users : [] }
+    } else if (typeof v === 'number') {
+      out[emoji] = { count: v, users: [] }
+    }
+  }
+  return out
+}
+
 function getStudentByName(db, tenantId, name) {
   return db.prepare(
     `SELECT id, name, avatar_initials FROM demo_students
@@ -433,17 +454,16 @@ function reactToVisitor(db, session, visitorName) {
 
   const emoji = pickEmojiForContent(lastVisitorMsg.content)
   const reactor = db.prepare(
-    `SELECT id FROM demo_students WHERE tenant_id = ? ORDER BY RANDOM() LIMIT 1`
+    `SELECT id, name FROM demo_students WHERE tenant_id = ? ORDER BY RANDOM() LIMIT 1`
   ).get(session.tenant_id)
   if (!reactor) return null
 
-  let reactions = {}
-  if (lastVisitorMsg.reactions) {
-    try { reactions = JSON.parse(lastVisitorMsg.reactions) } catch { /* corrupt : reset */ }
-  }
-  const ids = Array.isArray(reactions[emoji]) ? reactions[emoji] : []
-  if (ids.includes(reactor.id)) return null
-  reactions[emoji] = [...ids, reactor.id]
+  const reactions = parseReactions(lastVisitorMsg.reactions)
+  const entry = reactions[emoji] || { count: 0, users: [] }
+  if (entry.users.includes(reactor.name)) return null
+  entry.count = (entry.count || 0) + 1
+  entry.users = [...(entry.users || []), reactor.name]
+  reactions[emoji] = entry
 
   db.prepare(
     `UPDATE demo_messages SET reactions = ? WHERE id = ? AND tenant_id = ?`
@@ -471,17 +491,16 @@ function reactToRecent(db, session, visitorName) {
   // Reaction contextuelle plutot qu'aleatoire
   const emoji = pickEmojiForContent(target.content)
   const reactor = db.prepare(
-    `SELECT id FROM demo_students WHERE tenant_id = ? ORDER BY RANDOM() LIMIT 1`
+    `SELECT id, name FROM demo_students WHERE tenant_id = ? ORDER BY RANDOM() LIMIT 1`
   ).get(session.tenant_id)
   if (!reactor) return null
 
-  let reactions = {}
-  if (target.reactions) {
-    try { reactions = JSON.parse(target.reactions) } catch { /* corrupt : reset */ }
-  }
-  const ids = Array.isArray(reactions[emoji]) ? reactions[emoji] : []
-  if (ids.includes(reactor.id)) return null
-  reactions[emoji] = [...ids, reactor.id]
+  const reactions = parseReactions(target.reactions)
+  const entry = reactions[emoji] || { count: 0, users: [] }
+  if (entry.users.includes(reactor.name)) return null
+  entry.count = (entry.count || 0) + 1
+  entry.users = [...(entry.users || []), reactor.name]
+  reactions[emoji] = entry
 
   db.prepare(
     `UPDATE demo_messages SET reactions = ? WHERE id = ? AND tenant_id = ?`

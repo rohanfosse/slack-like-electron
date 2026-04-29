@@ -352,6 +352,7 @@ const apiImpl = {
   // ── Mode demo (sandbox) ─────────────────────────────────────────────────
   demoEnd: () => post('/api/demo/end', {}),
   demoPresence: () => get('/api/demo/presence'),
+  demoNotifFeed: (sinceId: number) => get(`/api/demo/notifications/feed?since=${sinceId}`),
 
   async refreshToken() {
     // Mode demo : /api/auth/refresh n'est pas reroute vers /api/demo/* (cf.

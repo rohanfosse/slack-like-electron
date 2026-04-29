@@ -194,7 +194,9 @@ describe('demoBots: reactToVisitor', () => {
 
     const after = db.prepare('SELECT reactions FROM demo_messages WHERE id = ?').get(ins.lastInsertRowid)
     const parsed = JSON.parse(after.reactions)
-    expect(parsed[result.emoji]).toContain(result.reactorId)
+    // Format enrichi { count, users[] } attendu par stores/messages.ts
+    expect(parsed[result.emoji].count).toBeGreaterThanOrEqual(1)
+    expect(parsed[result.emoji].users.length).toBeGreaterThanOrEqual(1)
   })
 })
 
