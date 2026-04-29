@@ -32,10 +32,54 @@ const router = require('express').Router()
 const { getDemoDb } = require('../../db/demo-connection')
 
 // ── Booking ──────────────────────────────────────────────────────────
-router.get('/booking/event-types',   (_req, res) => res.json({ ok: true, data: [] }))
-router.get('/booking/availabilities', (_req, res) => res.json({ ok: true, data: [] }))
-router.get('/booking/bookings',      (_req, res) => res.json({ ok: true, data: [] }))
-router.get('/booking/campaigns',     (_req, res) => res.json({ ok: true, data: [] }))
+// Cote prof, l'onglet Rendez-vous etait totalement vide en demo (3 listes
+// renvoyaient []). On peuple avec des donnees realistes pour montrer la
+// feature : 3 types de RDV (suivi, soutenance, rattrapage), une grille de
+// disponibilites generee pour la semaine courante, 4 bookings deja places.
+const BOOKING_EVENT_TYPES = [
+  { id: 1, slug: 'suivi-individuel',  name: 'Suivi individuel',  duration_minutes: 30, color: '#0EA5E9', description: 'Point hebdomadaire projet · 30 min en visio',           is_active: 1, location: 'Teams',     created_at: new Date(Date.now() - 30 * 86400_000).toISOString() },
+  { id: 2, slug: 'soutenance',        name: 'Soutenance',        duration_minutes: 60, color: '#8B5CF6', description: 'Présentation 20 min + jury (3 personnes)',              is_active: 1, location: 'Salle B204', created_at: new Date(Date.now() - 25 * 86400_000).toISOString() },
+  { id: 3, slug: 'rattrapage-cctl',   name: 'Rattrapage CCTL',   duration_minutes: 45, color: '#F59E0B', description: 'Session de rattrapage pour étudiant absent',           is_active: 1, location: 'Teams',     created_at: new Date(Date.now() - 20 * 86400_000).toISOString() },
+]
+function genBookingAvailabilities() {
+  // Genere ~12 creneaux pour les 5 prochains jours ouvres (matin + apres-midi)
+  // avec un mix des 3 types. Stable au sein d'une session demo.
+  const slots = []
+  const days = [1, 2, 3, 4, 5]  // demain a +5 jours
+  const hours = [['09:00', 30], ['10:00', 30], ['11:00', 60], ['14:00', 30], ['15:30', 45]]
+  let id = 100
+  for (const dOff of days) {
+    const date = new Date(Date.now() + dOff * 86400_000)
+    date.setHours(0, 0, 0, 0)
+    for (const [hhmm, dur] of hours) {
+      const [h, m] = hhmm.split(':').map(Number)
+      const start = new Date(date); start.setHours(h, m, 0, 0)
+      const end   = new Date(start); end.setMinutes(end.getMinutes() + dur)
+      const eventTypeId = dur === 60 ? 2 : (dur === 45 ? 3 : 1)
+      slots.push({
+        id: id++,
+        event_type_id: eventTypeId,
+        start_datetime: start.toISOString(),
+        end_datetime:   end.toISOString(),
+        is_booked: 0,
+      })
+    }
+  }
+  return slots
+}
+const BOOKING_BOOKINGS = [
+  { id: 5001, event_type_id: 1, event_type_name: 'Suivi individuel',  event_type_color: '#0EA5E9', student_id: 1, student_name: 'Emma Lefevre',   student_email: 'emma.lefevre@demo.cursus',   start_datetime: new Date(Date.now() + 1 * 86400_000 + 9  * 3600_000).toISOString(), end_datetime: new Date(Date.now() + 1 * 86400_000 + 9  * 3600_000 + 30 * 60_000).toISOString(), topic: 'Avancement Projet Web E4 — review architecture',     teams_url: 'https://teams.microsoft.com/l/meetup-join/demo-emma',  ics_url: null, status: 'confirmed', created_at: new Date(Date.now() - 3 * 86400_000).toISOString() },
+  { id: 5002, event_type_id: 1, event_type_name: 'Suivi individuel',  event_type_color: '#0EA5E9', student_id: 2, student_name: 'Jean Dupont',    student_email: 'jean.dupont@demo.cursus',    start_datetime: new Date(Date.now() + 1 * 86400_000 + 14 * 3600_000).toISOString(), end_datetime: new Date(Date.now() + 1 * 86400_000 + 14 * 3600_000 + 30 * 60_000).toISOString(), topic: 'Question sur les rotations AVL (TP Algo)',           teams_url: 'https://teams.microsoft.com/l/meetup-join/demo-jean',  ics_url: null, status: 'confirmed', created_at: new Date(Date.now() - 2 * 86400_000).toISOString() },
+  { id: 5003, event_type_id: 2, event_type_name: 'Soutenance',        event_type_color: '#8B5CF6', student_id: 3, student_name: 'Sara Bouhassoun', student_email: 'sara.bouhassoun@demo.cursus', start_datetime: new Date(Date.now() + 4 * 86400_000 + 10 * 3600_000 + 30 * 60_000).toISOString(), end_datetime: new Date(Date.now() + 4 * 86400_000 + 11 * 3600_000 + 30 * 60_000).toISOString(), topic: 'Soutenance mémoire de stage',                        teams_url: null, ics_url: null, status: 'confirmed', created_at: new Date(Date.now() - 1 * 86400_000).toISOString() },
+  { id: 5004, event_type_id: 3, event_type_name: 'Rattrapage CCTL',   event_type_color: '#F59E0B', student_id: 4, student_name: 'Thomas Martin',   student_email: 'thomas.martin@demo.cursus',   start_datetime: new Date(Date.now() + 5 * 86400_000 + 14 * 3600_000).toISOString(), end_datetime: new Date(Date.now() + 5 * 86400_000 + 14 * 3600_000 + 45 * 60_000).toISOString(), topic: 'Rattrapage CCTL Algo — chapitre arbres équilibrés', teams_url: 'https://teams.microsoft.com/l/meetup-join/demo-thomas', ics_url: null, status: 'confirmed', created_at: new Date().toISOString() },
+]
+const BOOKING_CAMPAIGNS = [
+  { id: 91, title: 'Soutenances Projet Web E4 - Janvier', token: 'demo-camp-1', event_type_id: 2, event_type_name: 'Soutenance', target: 'promo', target_id: 1, opens_at: new Date(Date.now() - 2 * 86400_000).toISOString(), closes_at: new Date(Date.now() + 7 * 86400_000).toISOString(), bookings_count: 3, slots_count: 12, status: 'open', created_at: new Date(Date.now() - 5 * 86400_000).toISOString() },
+]
+router.get('/booking/event-types',    (_req, res) => res.json({ ok: true, data: BOOKING_EVENT_TYPES }))
+router.get('/booking/availabilities', (_req, res) => res.json({ ok: true, data: genBookingAvailabilities() }))
+router.get('/booking/bookings',       (_req, res) => res.json({ ok: true, data: BOOKING_BOOKINGS }))
+router.get('/booking/campaigns',      (_req, res) => res.json({ ok: true, data: BOOKING_CAMPAIGNS }))
 
 // ── Documents ────────────────────────────────────────────────────────
 // Le visiteur qui ouvre le panneau Documents d'un canal doit voir un mini
@@ -60,7 +104,13 @@ router.get('/documents/channel/:id', (req, res) => {
 router.get('/documents/promo/:promoId', (req, res) => {
   res.json({ ok: true, data: DEMO_DOCUMENTS(null, Number(req.params.promoId)) })
 })
-router.get('/documents/project', (_req, res) => res.json({ ok: true, data: [] }))
+// /documents/project est appele par DocumentsView (page complete des
+// documents d'une promo). Sans donnees, le visiteur voit "aucun document"
+// et pense que la feature est cassee. On re-utilise DEMO_DOCUMENTS.
+router.get('/documents/project', (req, res) => {
+  const promoId = req.query.promoId ? Number(req.query.promoId) : null
+  res.json({ ok: true, data: DEMO_DOCUMENTS(null, promoId) })
+})
 router.get('/documents/search', (req, res) => {
   const q = String(req.query.q || '').toLowerCase().trim()
   if (!q) return res.json({ ok: true, data: [] })
@@ -261,7 +311,26 @@ router.get('/lumen/repos/:id/content', (req, res) => {
   }
   res.json({ ok: true, data: entry })
 })
-router.get('/lumen/github/me',                (_req, res) => res.json({ ok: true, data: { connected: false } }))
+// Lumen GitHub : on simule un compte deja connecte pour eviter de bloquer
+// le visiteur de la demo sur l'ecran "Connecter ton GitHub" (qui ne peut
+// rien donner en demo car il n'y a pas de vraie OAuth GitHub configuree).
+// Le login affiche est generique pour garder la demo neutre.
+router.get('/lumen/github/me', (_req, res) => res.json({
+  ok: true,
+  data: {
+    connected: true,
+    login: 'cursus-demo',
+    name: 'Compte démo',
+    avatarUrl: 'https://avatars.githubusercontent.com/u/0?v=4',
+  },
+}))
+// POST connect : si le visiteur clique malgre tout sur "Connecter", on
+// retourne le meme shape pour que le store passe en mode connecte.
+router.post('/lumen/github/connect', (_req, res) => res.json({
+  ok: true,
+  data: { login: 'cursus-demo', name: 'Compte démo', avatarUrl: 'https://avatars.githubusercontent.com/u/0?v=4' },
+}))
+router.post('/lumen/github/disconnect', (_req, res) => res.json({ ok: true, data: null }))
 // Note: ces endpoints retournent un OBJET (pas un array). Le wildcard
 // renverrait `[]` qui ferait crasher `data.notes.slice()` cote front.
 // On les materialise explicitement avec le shape attendu (notes: array,

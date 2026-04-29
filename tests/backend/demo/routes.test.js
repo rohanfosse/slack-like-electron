@@ -264,12 +264,17 @@ describe('Wildcard fallback (mocks.js)', () => {
     expect(res.body._demoFallback).toBe(true)
   })
 
-  it('GET /booking/event-types retourne []', async () => {
+  it('GET /booking/event-types retourne 3 types fictifs (suivi/soutenance/rattrapage)', async () => {
     const res = await request(app)
       .get('/api/demo/booking/event-types')
       .set('Authorization', `Bearer ${token}`)
     expect(res.status).toBe(200)
-    expect(res.body.data).toEqual([])
+    expect(Array.isArray(res.body.data)).toBe(true)
+    expect(res.body.data).toHaveLength(3)
+    const slugs = res.body.data.map((t) => t.slug)
+    expect(slugs).toContain('suivi-individuel')
+    expect(slugs).toContain('soutenance')
+    expect(slugs).toContain('rattrapage-cctl')
   })
 
   it('GET /documents/channel/:id retourne >= 5 documents fictifs', async () => {
