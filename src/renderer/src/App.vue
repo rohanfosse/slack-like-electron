@@ -314,9 +314,16 @@
       // Si l'URL pointe deja sur une route publique (ex: /demo, /book/...),
       // respecter ce choix explicite plutot que de la remplacer par le
       // startView prefere. Sinon un visiteur logge qui clique "Tester en demo"
-      // depuis la landing serait silencieusement renvoye vers son dashboard.
-      const current = router.currentRoute.value
-      if (!current.meta?.public) {
+      // depuis la landing est silencieusement renvoye vers son dashboard.
+      //
+      // On lit window.location.hash directement plutot que router.currentRoute :
+      // au moment ou onMounted fire, le router peut ne pas avoir fini de
+      // resoudre les guards async (beforeEach charge les modules), donc
+      // currentRoute.value.meta est `undefined` et le test `meta?.public`
+      // devient falsy par accident -> l'utilisateur etait redirige a tort.
+      const hashPath = (window.location.hash || '').replace(/^#/, '').split('?')[0].split('#')[0]
+      const isPublicRoute = hashPath === '/demo' || hashPath.startsWith('/book/')
+      if (!isPublicRoute) {
         router.replace(resolveStartRoute())
       }
       loadModules()
