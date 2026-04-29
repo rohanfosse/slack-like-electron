@@ -192,6 +192,37 @@ describe('Message actions (pin, reactions, edit, delete)', () => {
 })
 
 // ────────────────────────────────────────────────────────────────────
+//  /students : liste des students du tenant (autocomplete @mentions)
+// ────────────────────────────────────────────────────────────────────
+describe('GET /students', () => {
+  const app = buildApp()
+
+  it('retourne tous les students du tenant courant (>= 30)', async () => {
+    const { token } = await startSession(app)
+    const res = await request(app).get('/api/demo/students').set(auth(token))
+    expect(res.status).toBe(200)
+    expect(Array.isArray(res.body.data)).toBe(true)
+    expect(res.body.data.length).toBeGreaterThanOrEqual(30)
+    expect(res.body.data[0]).toHaveProperty('id')
+    expect(res.body.data[0]).toHaveProperty('name')
+    expect(res.body.data[0]).toHaveProperty('avatar_initials')
+    expect(res.body.data[0]).toHaveProperty('promo_id')
+  })
+
+  it('isolation par tenant : 2 sessions independantes voient des students differents', async () => {
+    const { token: t1 } = await startSession(app)
+    const { token: t2 } = await startSession(app)
+    const r1 = await request(app).get('/api/demo/students').set(auth(t1))
+    const r2 = await request(app).get('/api/demo/students').set(auth(t2))
+    const ids1 = new Set(r1.body.data.map(s => s.id))
+    const ids2 = new Set(r2.body.data.map(s => s.id))
+    // Au moins quelques ids doivent differer (auto-increment SQLite global)
+    const overlap = [...ids1].filter(id => ids2.has(id))
+    expect(overlap.length).toBeLessThan(ids1.size)
+  })
+})
+
+// ────────────────────────────────────────────────────────────────────
 //  Depots : soumission de devoir
 // ────────────────────────────────────────────────────────────────────
 describe('POST /depots', () => {
