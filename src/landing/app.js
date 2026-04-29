@@ -1166,40 +1166,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   })
 
-  // ── 4) Click sur "3400+ tests" : compteur s'envole ───────────────────
-  const testCountEl = document.getElementById('test-count')
-  if (testCountEl) testCountEl.style.cursor = 'pointer'
-  testCountEl?.addEventListener('click', (e) => {
-    e.stopPropagation()
-    if (testCountEl.dataset.easterRunning) return
-    testCountEl.dataset.easterRunning = '1'
-    const original = testCountEl.textContent
-    testCountEl.classList.add('test-easter')
-    if (prefersReducedMotion) {
-      testCountEl.textContent = '∞'
-      setTimeout(() => {
-        testCountEl.textContent = original
-        testCountEl.classList.remove('test-easter')
-        delete testCountEl.dataset.easterRunning
-      }, 1500)
-      return
-    }
-    // Compte progressivement vers infini
-    let n = 3400
-    const iv = setInterval(() => {
-      n = Math.round(n * 1.18)
-      testCountEl.textContent = n > 1e9 ? '∞' : `${n}+`
-      if (n > 1e9) {
-        clearInterval(iv)
-        setTimeout(() => {
-          testCountEl.textContent = original
-          testCountEl.classList.remove('test-easter')
-          delete testCountEl.dataset.easterRunning
-        }, 900)
-      }
-    }, 60)
-  })
-
   // ── Clickable reactions (toggle compteur, format SVG + count) ─────────
   document.addEventListener('click', (e) => {
     const rx = e.target.closest('.reaction')

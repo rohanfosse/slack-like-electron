@@ -178,7 +178,9 @@ img { max-width: 100%; display: block; }
 [data-theme="dark"] .theme-btn .icon-moon { display: block; }
 
 .nav-cta {
-  padding: 8px 18px;
+  /* WCAG 2.5.5 : touch target >= 36px (compromise web vs 44px mobile).
+     Avant : 8+8+13 = ~30px. Maintenant : 11+11+13 = ~36px. */
+  padding: 11px 20px;
   border-radius: 10px;
   background: var(--primary);
   color: var(--on-primary);
@@ -186,6 +188,9 @@ img { max-width: 100%; display: block; }
   font-weight: 600;
   transition: transform var(--duration-fast), box-shadow var(--duration-fast);
   white-space: nowrap;
+  min-height: 36px;
+  display: inline-flex;
+  align-items: center;
 }
 
 .nav-cta:hover {
@@ -317,7 +322,18 @@ img { max-width: 100%; display: block; }
   line-height: 1.15;
   letter-spacing: -0.03em;
   color: var(--text);
-  max-width: 560px;
+  max-width: 620px;
+}
+
+/* Sous-titre du hero : positionne la cible (profs/etudiants post-bac)
+   pour qu'un visiteur reconnaisse immediatement "c'est pour moi". */
+.hero-subhead {
+  font-size: clamp(0.95rem, 2vw, 1.05rem);
+  color: var(--text-2);
+  line-height: 1.5;
+  max-width: 540px;
+  font-weight: 500;
+  letter-spacing: -0.005em;
 }
 
 .hero-actions { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; margin-top: 8px; margin-bottom: 8px; }
@@ -2104,12 +2120,13 @@ img { max-width: 100%; display: block; }
   gap: 4px;
   font-size: 11px;
   font-weight: 600;
-  padding: 3px 9px;
+  padding: 7px 12px;
   border-radius: 999px;
   color: var(--text-3);
   background: color-mix(in srgb, var(--text-3) 6%, transparent);
   cursor: pointer;
   transition: background var(--duration-fast), color var(--duration-fast);
+  min-height: 28px;
 }
 .docs-cat:hover { color: var(--text-2); }
 .docs-cat--active {
@@ -4651,7 +4668,7 @@ img { max-width: 100%; display: block; }
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  padding: 6px 11px;
+  padding: 9px 14px;
   border: none;
   background: transparent;
   font-family: inherit;
@@ -4662,6 +4679,7 @@ img { max-width: 100%; display: block; }
   border-radius: 8px 8px 0 0;
   border-bottom: 2px solid transparent;
   transition: color var(--duration-fast), border-color var(--duration-fast), background var(--duration-fast);
+  min-height: 32px;
 }
 .live-tab:hover { color: var(--text-2); background: rgba(255,255,255,0.4); }
 .live-tab:focus-visible { outline: 2px solid var(--color-live); outline-offset: 2px; }
