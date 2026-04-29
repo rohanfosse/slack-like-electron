@@ -175,7 +175,44 @@ router.get('/messages/dm/:studentId/page', (req, res) => {
     if (row?.name) name = row.name
   } catch { /* fallback */ }
   if (sid < 0) name = 'Prof. Lemaire'
-  res.json({ ok: true, data: genDmConversation(sid, name) })
+
+  // Union de la conversation factice (historique) + des messages REELS
+  // postes par le visiteur en demo (POST /api/demo/messages avec
+  // dmStudentId). Sans ca le visiteur envoie un DM mais ne le voit pas
+  // a l'ecran : silencieux + frustrant.
+  const fake = genDmConversation(sid, name)
+  let real = []
+  try {
+    const u = req.demoUser
+    if (u) {
+      // Tous les messages avec dm_student_id correspondant a sid dont
+      // l'auteur est le visiteur courant (ou le partenaire s'il avait
+      // pu repondre — non implemente pour l'instant). On les renumote
+      // pour qu'ils n'entrent pas en conflit avec les ids factices.
+      real = getDemoDb().prepare(
+        `SELECT id, dm_student_id AS dm_partner_id, author_id, author_name,
+                author_initials, content, is_pinned, created_at
+         FROM demo_messages
+         WHERE tenant_id = ? AND dm_student_id = ? AND author_id = ?
+         ORDER BY datetime(created_at) ASC`
+      ).all(req.tenantId, sid, u.id).map(r => ({
+        id: 50000 + r.id,
+        channel_id: null,
+        dm_partner_id: sid,
+        author_id: r.author_id,
+        author_name: 'Toi',
+        is_self: 1,
+        content: r.content,
+        is_pinned: r.is_pinned ? 1 : 0,
+        created_at: r.created_at,
+      }))
+    }
+  } catch { /* on retombe sur le fake seul */ }
+  // Tri chronologique : factice puis real.
+  const all = [...fake, ...real].sort((a, b) =>
+    new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+  )
+  res.json({ ok: true, data: all })
 })
 // Recents DM contacts pour le widget "Conversations directes" du dashboard
 router.get('/messages/recent-dm-contacts', (_req, res) => res.json({
@@ -234,6 +271,60 @@ router.post('/messages/search-all', (req, res) => {
 // immediatement le bouton "Rejoindre la session" sur le dashboard. La
 // session est purement decorative (rejoindre redirige vers /live qui
 // affichera le LiveBoard vide), mais elle materialise la feature.
+// Activites pretes-a-pousser dans la session active : 4 brouillons couvrant
+// les 4 types Live (Spark quiz, Pulse poll, Code, Board). Le prof voit un
+// panneau "ready" pretes a etre lancees, l'etudiant qui rejoint voit la
+// premiere activite "active" (Quiz Spark) avec ses options.
+const ACTIVE_LIVE_ACTIVITIES = [
+  {
+    id: 1001, type: 'quiz', status: 'active', position: 0,
+    title: 'Quel est l\'invariant d\'un arbre AVL ?',
+    payload: {
+      options: [
+        '|balanceFactor| <= 1 sur chaque noeud',
+        'profondeur gauche = profondeur droite',
+        'tous les fils sont equilibres',
+        'la hauteur est exactement log(n)',
+      ],
+      correct: 0,
+      duration_seconds: 30,
+    },
+    response_count: 7,
+    created_at: new Date(Date.now() - 4 * 60_000).toISOString(),
+  },
+  {
+    id: 1002, type: 'pulse', status: 'ready', position: 1,
+    title: 'Comment ressens-tu la veille de soutenance ?',
+    payload: {
+      max_words_per_user: 3,
+      placeholder: 'Un mot...',
+    },
+    response_count: 0,
+    created_at: new Date(Date.now() - 2 * 60_000).toISOString(),
+  },
+  {
+    id: 1003, type: 'code', status: 'ready', position: 2,
+    title: 'Implementation collaborative : binary_search',
+    payload: {
+      language: 'python',
+      starter: 'def binary_search(arr, target):\n    # complete ici\n    pass',
+      duration_seconds: 600,
+    },
+    response_count: 0,
+    created_at: new Date(Date.now() - 90_000).toISOString(),
+  },
+  {
+    id: 1004, type: 'board', status: 'ready', position: 3,
+    title: 'Brainstorm : que retenir du sprint ?',
+    payload: {
+      max_stickies_per_user: 5,
+      duration_seconds: 300,
+    },
+    response_count: 0,
+    created_at: new Date(Date.now() - 60_000).toISOString(),
+  },
+]
+
 router.get('/live/sessions/promo/:id/active', (req, res) => {
   const teacher = getDemoDb().prepare(
     `SELECT id, name FROM demo_teachers WHERE tenant_id = ?`
@@ -245,14 +336,14 @@ router.get('/live/sessions/promo/:id/active', (req, res) => {
       promo_id: Number(req.params.id),
       teacher_id: teacher ? -teacher.id : -1,
       teacher_name: teacher?.name || 'Prof. Lemaire',
-      title: 'Quiz Algo - Arbres AVL',
+      title: 'Live Algo · Arbres AVL & soutenance',
       status: 'active',
       join_code: 'AVL-2026',
       is_async: 0,
       open_until: null,
       created_at: new Date(Date.now() - 5 * 60_000).toISOString(),
       ended_at: null,
-      activities: [],
+      activities: ACTIVE_LIVE_ACTIVITIES,
     },
   })
 })
@@ -312,7 +403,23 @@ const LIVE_SESSION_DETAILS = {
   },
 }
 router.get('/live/sessions/:id', (req, res) => {
-  const detail = LIVE_SESSION_DETAILS[req.params.id]
+  const id = req.params.id
+  // Session active : on retourne le meme shape que /promo/:id/active mais
+  // accessible directement par id (utilise par certains widgets).
+  if (id === 'demo-live-1') {
+    return res.json({
+      ok: true,
+      data: {
+        id, title: 'Live Algo · Arbres AVL & soutenance',
+        status: 'active', join_code: 'AVL-2026', is_async: 0,
+        teacher_name: 'Prof. Lemaire',
+        created_at: new Date(Date.now() - 5 * 60_000).toISOString(),
+        ended_at: null,
+        activities: ACTIVE_LIVE_ACTIVITIES,
+      },
+    })
+  }
+  const detail = LIVE_SESSION_DETAILS[id]
   if (!detail) return res.status(404).json({ ok: false, error: 'Session introuvable' })
   res.json({ ok: true, data: detail })
 })
@@ -320,6 +427,41 @@ router.get('/live/sessions/:id/leaderboard', (req, res) => {
   const detail = LIVE_SESSION_DETAILS[req.params.id]
   res.json({ ok: true, data: detail?.leaderboard ?? [] })
 })
+
+// Resultats temps-reel d'une activite donnee (utilise par le panneau prof
+// "Resultats" en cours de session). Pour la quiz active on simule la
+// distribution finale q.stats partiellement remplie.
+router.get('/live/activities/:id/results', (req, res) => {
+  const aid = Number(req.params.id)
+  // Active quiz id 1001 : retourne stats partielles (vote en cours)
+  if (aid === 1001) {
+    return res.json({
+      ok: true,
+      data: {
+        type: 'quiz',
+        total_responses: 7,
+        distribution: [5, 1, 1, 0],  // majorite sur la bonne reponse (idx 0)
+        correct: 0,
+        last_response_at: new Date(Date.now() - 10_000).toISOString(),
+      },
+    })
+  }
+  // Activites ready : pas encore de reponses
+  res.json({ ok: true, data: { type: 'unknown', total_responses: 0, distribution: [], last_response_at: null } })
+})
+
+// Stats agregees de la promo cote Live (widget "Stats Live" dashboard prof)
+router.get('/live/sessions/promo/:id/stats', (_req, res) => res.json({
+  ok: true,
+  data: {
+    sessions_total: 4,
+    sessions_this_month: 2,
+    avg_participation: 16,        // moy 16 etudiants par session
+    avg_correct_rate: 0.74,       // 74% de bonnes reponses moyenne
+    activities_total: 24,
+    most_active_student: { id: 1, name: 'Emma Lefevre', sessions: 4, avg_score: 0.92 },
+  },
+}))
 
 // ── Lumen ────────────────────────────────────────────────────────────
 //

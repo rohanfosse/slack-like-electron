@@ -293,7 +293,7 @@ describe('Wildcard fallback (mocks.js)', () => {
       .set('Authorization', `Bearer ${token}`)
     expect(res.status).toBe(200)
     expect(res.body.data).toMatchObject({
-      title: 'Quiz Algo - Arbres AVL',
+      title: 'Live Algo · Arbres AVL & soutenance',
       status: 'active',
     })
   })

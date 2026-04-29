@@ -73,10 +73,20 @@ router.get('/messages/channel/:channelId/page', (req, res) => {
 })
 
 // POST /api/demo/messages
+//
+// Accepte channelId OU dmStudentId (XOR), pour matcher le schema prod
+// (zod refine `channelId || dmStudentId` dans server/routes/messages.js).
+// Avant : on rejetait les DMs avec 400 "channelId requis", ce qui faisait
+// echouer silencieusement l'envoi cote demo prof/etudiant (bug v2.96).
 router.post('/messages', (req, res) => {
-  const { channelId, content } = req.body || {}
-  if (!channelId || typeof content !== 'string' || !content.trim()) {
-    return res.status(400).json({ ok: false, error: 'channelId et content requis.' })
+  const { channelId, dmStudentId, content } = req.body || {}
+  const cid = channelId ? Number(channelId) : null
+  const did = dmStudentId ? Number(dmStudentId) : null
+  if (!cid && !did) {
+    return res.status(400).json({ ok: false, error: 'channelId ou dmStudentId requis.' })
+  }
+  if (typeof content !== 'string' || !content.trim()) {
+    return res.status(400).json({ ok: false, error: 'content requis.' })
   }
   if (content.length > 10_000) {
     return res.status(400).json({ ok: false, error: 'Message trop long (max 10000 caracteres).' })
@@ -98,9 +108,9 @@ router.post('/messages', (req, res) => {
 
   const result = db.prepare(
     `INSERT INTO demo_messages
-       (tenant_id, channel_id, author_id, author_name, author_type, author_initials, content)
-     VALUES (?, ?, ?, ?, ?, ?, ?)`
-  ).run(req.tenantId, Number(channelId), u.id, u.name, u.type, initials, content.trim())
+       (tenant_id, channel_id, dm_student_id, author_id, author_name, author_type, author_initials, content)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+  ).run(req.tenantId, cid, did, u.id, u.name, u.type, initials, content.trim())
 
   const msg = db.prepare(
     `SELECT id, channel_id, dm_student_id, author_id, author_name, author_type,
