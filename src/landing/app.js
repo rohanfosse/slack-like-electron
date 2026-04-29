@@ -1346,29 +1346,335 @@ document.addEventListener('DOMContentLoaded', () => {
 
   if (lumenMain) renderLumenChapter('tri-rapide')
 
-  // ── Docs demo: clickable files with preview ─────────────────────────────
+  // ══════════════════════════════════════════════════════════════════════
+  //  DOCS PREVIEW - apercu visuel riche par type de fichier
+  //
+  //  Chaque type (PDF / DOC / XLS / URL / PY / FIG) a un mock dedie qui
+  //  ressemble au vrai viewer : pages avec lignes greekees pour PDF/DOC,
+  //  grille pour XLS, code colore pour PY, fenetre navigateur pour URL,
+  //  wireframe pour FIG. Le document est identifie par son nom de fichier
+  //  via DOC_PREVIEWS, fallback heuristique sur le type d'icone sinon.
+  // ══════════════════════════════════════════════════════════════════════
+  const DOC_PREVIEWS = {
+    'Cours Réseaux.pdf': {
+      kind: 'pdf', title: 'Réseaux & protocoles', subtitle: 'Chapitre 3 — TCP/IP',
+      page: 8, pages: 12,
+      blocks: [
+        { type: 'p', lines: [92, 78, 84, 66] },
+        { type: 'figure', label: 'Fig. 3.1 — Modèle OSI 7 couches', figure: 'osi' },
+        { type: 'p', lines: [88, 72, 90] },
+      ],
+    },
+    'Algo - Complexité.pdf': {
+      kind: 'pdf', title: 'Algorithmique', subtitle: 'Notation Big-O',
+      page: 3, pages: 8,
+      blocks: [
+        { type: 'p', lines: [90, 80, 70] },
+        { type: 'figure', label: 'Fig. 1 — Croissance asymptotique', figure: 'big-o' },
+        { type: 'p', lines: [85, 75, 60] },
+      ],
+    },
+    'Sujet TP Algo.docx': {
+      kind: 'doc', title: 'TP Algo — Tri par fusion',
+      author: 'Prof. Martin', date: '12 mars 2026',
+      blocks: [
+        { type: 'p', lines: [96, 88, 76] },
+        { type: 'h2', text: 'Objectifs pédagogiques' },
+        { type: 'ul', items: [82, 74, 68] },
+        { type: 'h2', text: 'Livrable attendu' },
+        { type: 'p', lines: [92, 84, 70] },
+      ],
+    },
+    'TP Tri rapide.docx': {
+      kind: 'doc', title: 'TP Tri rapide — Quicksort',
+      author: 'Prof. Martin', date: '20 mars 2026',
+      blocks: [
+        { type: 'p', lines: [94, 86, 78] },
+        { type: 'h2', text: 'Consignes' },
+        { type: 'ul', items: [78, 70, 64] },
+      ],
+    },
+    'Notes Algo S1.xlsx': {
+      kind: 'xls', sheet: 'Notes-S1',
+      headers: ['#', 'Étudiant', 'TP1', 'TP2', 'Note'],
+      rows: [
+        ['1', 'Emma L.',   '18', '17', { v: '17.5', g: 'a' }],
+        ['2', 'Jean D.',   '14', '15', { v: '14.5', g: 'b' }],
+        ['3', 'Sara B.',   '12', '11', { v: '11.5', g: 'c' }],
+        ['4', 'Thomas M.', '16', '17', { v: '16.5', g: 'a' }],
+        ['5', 'Lina F.',   '13', '14', { v: '13.5', g: 'b' }],
+      ],
+      summary: 'Moyenne 14.7 · 5 étudiants',
+    },
+    'GitHub projet web': {
+      kind: 'github',
+      repo: 'cesi/projet-web',
+      desc: 'Projet Web E4 — application full-stack avec auth JWT et API REST',
+      lang: 'TypeScript', langColor: '#3178C6',
+      stars: 24, forks: 6, branch: 'main',
+      files: [
+        { icon: 'folder', name: 'src' },
+        { icon: 'folder', name: 'tests' },
+        { icon: 'file',   name: 'README.md' },
+        { icon: 'file',   name: 'package.json' },
+      ],
+    },
+    'Moodle Réseaux': {
+      kind: 'web',
+      url: 'moodle.cesi.fr/course/view.php?id=42',
+      site: 'Moodle CESI',
+      title: 'Réseaux & protocoles · L2',
+      blocks: [
+        { type: 'h2', text: 'Section 3 — Protocoles TCP/IP' },
+        { type: 'p', lines: [92, 78, 84] },
+        { type: 'link', label: 'Cours Réseaux.pdf', kind: 'pdf' },
+        { type: 'link', label: 'TP routage Dijkstra', kind: 'py' },
+      ],
+    },
+    'tp_routage.py': {
+      kind: 'code', lang: 'python', file: 'tp_routage.py',
+      lines: [
+        [['cmt', '# Algo Dijkstra — plus courts chemins']],
+        [['kw', 'from'], ['', ' heapq '], ['kw', 'import'], ['', ' heappush, heappop']],
+        [],
+        [['kw', 'def'], ['', ' '], ['fn', 'dijkstra'], ['', '(graph, source):']],
+        [['', '    dist = {n: '], ['fn', 'float'], ['', "('inf') "], ['kw', 'for'], ['', ' n '], ['kw', 'in'], ['', ' graph}']],
+        [['', '    dist[source] = '], ['num', '0']],
+        [['', '    pq = [('], ['num', '0'], ['', ', source)]']],
+        [['kw', '    while'], ['', ' pq:']],
+        [['', '        d, u = '], ['fn', 'heappop'], ['', '(pq)']],
+        [['kw', '        if'], ['', ' d > dist[u]: '], ['kw', 'continue']],
+      ],
+    },
+    'Maquettes projet': {
+      kind: 'figma',
+      file: 'Cursus — App',
+      page: 'Mobile',
+      frames: ['Login', 'Dashboard', 'Chat'],
+    },
+  }
+
+  // ── Renderers ────────────────────────────────────────────────────────
+  // Chaque renderer retourne une string HTML pour l'interieur de
+  // .preview-body. Style propre via CSS (preview-pdf-*, preview-xls-*, ...).
+
+  const ICON_PDF  = '<svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>'
+  const ICON_PY   = '<svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>'
+  const ICON_LOCK = '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="10" x="5" y="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>'
+  const ICON_FOLDER = '<svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor" opacity=".7"><path d="M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"/></svg>'
+  const ICON_FILE = '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity=".55"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>'
+  const ICON_STAR = '<svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" opacity=".75"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>'
+  const ICON_FORK = '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity=".75"><circle cx="6" cy="6" r="2.5"/><circle cx="6" cy="18" r="2.5"/><circle cx="18" cy="6" r="2.5"/><path d="M6 8.5v7"/><path d="M18 8.5v1.5a4 4 0 0 1-4 4H8"/></svg>'
+
+  function blockHTML(b) {
+    if (b.type === 'p')   return `<div class="preview-doc-p">${b.lines.map(w => `<span class="preview-doc-line" style="--w:${w}%"></span>`).join('')}</div>`
+    if (b.type === 'h2')  return `<div class="preview-doc-h2">${b.text}</div>`
+    if (b.type === 'ul')  return `<ul class="preview-doc-ul">${b.items.map(w => `<li><span class="preview-doc-bullet"></span><span class="preview-doc-line" style="--w:${w}%"></span></li>`).join('')}</ul>`
+    if (b.type === 'figure') {
+      const fig = b.figure === 'osi' ? `
+        <div class="preview-fig-osi">
+          ${['Application','Présentation','Session','Transport','Réseau','Liaison','Physique']
+            .map((l, i) => `<div class="preview-fig-osi-row" style="--d:${i * 60}ms"><span class="preview-fig-osi-num">${7 - i}</span><span class="preview-fig-osi-label">${l}</span></div>`).join('')}
+        </div>`
+        : `<svg class="preview-fig-bigo" viewBox="0 0 200 80" preserveAspectRatio="none">
+          <line x1="0" y1="78" x2="200" y2="78" stroke="currentColor" stroke-width="0.5" opacity=".3"/>
+          <line x1="2" y1="0" x2="2" y2="80" stroke="currentColor" stroke-width="0.5" opacity=".3"/>
+          <path d="M2 78 L200 78" fill="none" stroke="#10B981" stroke-width="1.5" opacity=".7"/>
+          <path d="M2 78 L100 70 L200 60" fill="none" stroke="#0EA5E9" stroke-width="1.5"/>
+          <path d="M2 78 L100 50 L200 22" fill="none" stroke="#F59E0B" stroke-width="1.5"/>
+          <path d="M2 78 Q60 70 100 30 T200 2" fill="none" stroke="#EF4444" stroke-width="1.5"/>
+          <text x="186" y="76" font-size="6" fill="#10B981">O(1)</text>
+          <text x="178" y="58" font-size="6" fill="#0EA5E9">O(log n)</text>
+          <text x="170" y="20" font-size="6" fill="#F59E0B">O(n)</text>
+          <text x="170" y="6"  font-size="6" fill="#EF4444">O(n²)</text>
+        </svg>`
+      return `<figure class="preview-doc-figure">${fig}<figcaption>${b.label}</figcaption></figure>`
+    }
+    if (b.type === 'link') {
+      const ic = b.kind === 'pdf' ? ICON_PDF : ICON_PY
+      return `<a class="preview-web-link"><span class="preview-web-link-icon" style="--c:${b.kind === 'pdf' ? '#dc2626' : '#f59e0b'}">${ic}</span>${b.label}</a>`
+    }
+    return ''
+  }
+
+  function renderPdf(d) {
+    return `
+      <div class="preview-pdf-page">
+        <div class="preview-pdf-h1">${d.title}</div>
+        <div class="preview-pdf-h2">${d.subtitle}</div>
+        ${d.blocks.map(blockHTML).join('')}
+      </div>
+      <div class="preview-pdf-toolbar">
+        <button class="preview-pdf-btn" type="button" aria-label="Précédent">‹</button>
+        <span class="preview-pdf-pageinfo">${d.page} / ${d.pages}</span>
+        <button class="preview-pdf-btn" type="button" aria-label="Suivant">›</button>
+      </div>
+    `
+  }
+
+  function renderDoc(d) {
+    return `
+      <div class="preview-doc-page">
+        <div class="preview-doc-meta">${d.author} · ${d.date}</div>
+        <div class="preview-doc-h1">${d.title}</div>
+        ${d.blocks.map(blockHTML).join('')}
+      </div>
+    `
+  }
+
+  function renderXls(d) {
+    const cell = (c) => typeof c === 'object'
+      ? `<span class="preview-xls-grade preview-xls-grade--${c.g}">${c.v}</span>`
+      : c
+    return `
+      <div class="preview-xls">
+        <div class="preview-xls-tabs"><span class="preview-xls-tab preview-xls-tab--active">${d.sheet}</span><span class="preview-xls-tab">Détail</span><span class="preview-xls-tab">Récap</span></div>
+        <table class="preview-xls-table">
+          <thead><tr>${d.headers.map(h => `<th>${h}</th>`).join('')}</tr></thead>
+          <tbody>${d.rows.map((row, i) => `<tr style="--d:${i * 50}ms">${row.map(c => `<td>${cell(c)}</td>`).join('')}</tr>`).join('')}</tbody>
+        </table>
+        <div class="preview-xls-summary">${d.summary}</div>
+      </div>
+    `
+  }
+
+  function renderCode(d) {
+    const tokenSpan = (t) => t[0] === '' ? t[1] : `<span class="lm-c-${t[0]}">${t[1]}</span>`
+    const lines = d.lines.map((toks, i) =>
+      `<div class="preview-code-line"><span class="preview-code-num">${i + 1}</span><span class="preview-code-content">${toks.map(tokenSpan).join('')}</span></div>`
+    ).join('')
+    return `
+      <div class="preview-code">
+        <div class="preview-code-tabs"><span class="preview-code-tab preview-code-tab--active">${ICON_PY} ${d.file}</span></div>
+        <div class="preview-code-pre">${lines}</div>
+      </div>
+    `
+  }
+
+  function renderGithub(d) {
+    return `
+      <div class="preview-web">
+        <div class="preview-web-bar"><span class="preview-web-lock">${ICON_LOCK}</span><span class="preview-web-url">github.com/${d.repo}</span></div>
+        <div class="preview-github">
+          <div class="preview-github-head">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61-.546-1.385-1.335-1.755-1.335-1.755-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg>
+            <span class="preview-github-repo">${d.repo}</span>
+            <span class="preview-github-vis">Public</span>
+          </div>
+          <p class="preview-github-desc">${d.desc}</p>
+          <div class="preview-github-meta">
+            <span class="preview-github-lang"><span class="preview-github-lang-dot" style="--c:${d.langColor}"></span>${d.lang}</span>
+            <span class="preview-github-pill">${ICON_STAR}${d.stars}</span>
+            <span class="preview-github-pill">${ICON_FORK}${d.forks}</span>
+          </div>
+          <div class="preview-github-files">
+            ${d.files.map(f => `<div class="preview-github-file">${f.icon === 'folder' ? ICON_FOLDER : ICON_FILE}<span>${f.name}</span></div>`).join('')}
+          </div>
+        </div>
+      </div>
+    `
+  }
+
+  function renderWeb(d) {
+    return `
+      <div class="preview-web">
+        <div class="preview-web-bar"><span class="preview-web-lock">${ICON_LOCK}</span><span class="preview-web-url">${d.url}</span></div>
+        <div class="preview-web-page">
+          <div class="preview-web-site">${d.site}</div>
+          <div class="preview-web-h1">${d.title}</div>
+          ${d.blocks.map(blockHTML).join('')}
+        </div>
+      </div>
+    `
+  }
+
+  function renderFigma(d) {
+    return `
+      <div class="preview-figma">
+        <div class="preview-figma-toolbar"><span class="preview-figma-tool"></span><span class="preview-figma-tool"></span><span class="preview-figma-tool"></span><span class="preview-figma-file">${d.file} / ${d.page}</span><span class="preview-figma-zoom">100%</span></div>
+        <div class="preview-figma-canvas">
+          ${d.frames.map((name, i) => `
+            <div class="preview-figma-frame" style="--d:${i * 100}ms">
+              <span class="preview-figma-frame-label">${name}</span>
+              <div class="preview-figma-screen">
+                <div class="preview-figma-bar"></div>
+                <div class="preview-figma-block preview-figma-block--lg"></div>
+                <div class="preview-figma-block"></div>
+                <div class="preview-figma-block preview-figma-block--sm"></div>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `
+  }
+
+  function renderDocPreview(d) {
+    if (d.kind === 'pdf')    return renderPdf(d)
+    if (d.kind === 'doc')    return renderDoc(d)
+    if (d.kind === 'xls')    return renderXls(d)
+    if (d.kind === 'code')   return renderCode(d)
+    if (d.kind === 'github') return renderGithub(d)
+    if (d.kind === 'web')    return renderWeb(d)
+    if (d.kind === 'figma')  return renderFigma(d)
+    return '<div class="preview-doc-p"><span class="preview-doc-line" style="--w:80%"></span></div>'
+  }
+
+  // ── Click handler : ouvre la preview, masque la grille et restaure au close
   document.querySelectorAll('.doc-item').forEach(item => {
     item.style.cursor = 'pointer'
     item.addEventListener('click', () => {
       const body = item.closest('.demo-docs-body')
+      const grid = body.querySelector('.docs-grid')
+      const empty = body.querySelector('.docs-empty')
       const old = body.querySelector('.doc-preview')
       if (old) old.remove()
 
-      const name = item.querySelector('span')?.textContent || 'Document'
-      const icon = item.querySelector('.doc-icon')?.textContent || ''
-      const color = getComputedStyle(item).getPropertyValue('--doc-color').trim() || '#6366F1'
-      const previews = {
-        PDF: 'Aperçu PDF · 12 pages',
-        DOC: 'Document Word · 3 pages',
-        XLS: 'Tableur · 45 lignes',
-        URL: 'Lien externe',
+      // Toggle : reclic sur le meme item ferme la preview
+      if (item.classList.contains('doc-item--selected')) {
+        item.classList.remove('doc-item--selected')
+        if (grid)  grid.style.display = ''
+        if (empty) empty.style.display = ''
+        return
       }
+      body.querySelectorAll('.doc-item--selected').forEach(s => s.classList.remove('doc-item--selected'))
+      item.classList.add('doc-item--selected')
+
+      const name  = item.querySelector('.doc-name')?.textContent.trim() || ''
+      const meta  = item.querySelector('.doc-meta')?.textContent.trim() || ''
+      const type  = item.querySelector('.doc-icon')?.textContent.trim() || ''
+      const color = getComputedStyle(item).getPropertyValue('--doc-color').trim() || '#6366F1'
+
+      const data = DOC_PREVIEWS[name] || { kind: type.toLowerCase() }
+      const inner = renderDocPreview(data)
 
       const el = document.createElement('div')
-      el.className = 'doc-preview'
-      el.innerHTML = `<div class="preview-header" style="border-left:3px solid ${color}"><span class="preview-name">${name}</span><span class="preview-close" aria-label="Fermer">&times;</span></div><div class="preview-body"><div class="preview-placeholder">${previews[icon] || 'Fichier'}</div></div>`
+      el.className = `doc-preview doc-preview--${data.kind}`
+      el.style.setProperty('--c', color)
+      el.innerHTML = `
+        <div class="preview-header">
+          <span class="preview-type-badge" style="background:${color}">${type || 'FILE'}</span>
+          <div class="preview-titles">
+            <span class="preview-name">${name}</span>
+            ${meta ? `<span class="preview-meta">${meta}</span>` : ''}
+          </div>
+          <button class="preview-close" type="button" aria-label="Fermer l'aperçu">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+          </button>
+        </div>
+        <div class="preview-body">${inner}</div>
+      `
+      if (grid)  grid.style.display = 'none'
+      if (empty) empty.style.display = 'none'
       body.appendChild(el)
-      el.querySelector('.preview-close').addEventListener('click', e => { e.stopPropagation(); el.remove() })
+
+      function close() {
+        el.remove()
+        item.classList.remove('doc-item--selected')
+        if (grid)  grid.style.display = ''
+        if (empty) empty.style.display = ''
+      }
+      el.querySelector('.preview-close').addEventListener('click', e => { e.stopPropagation(); close() })
     })
   })
 })
