@@ -589,6 +589,10 @@ document.addEventListener('DOMContentLoaded', () => {
     light: '<svg aria-hidden="true" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></svg>',
   }
 
+  // Presence : map des initiales vers un statut online/away/offline
+  // affiche en pastille sur l'avatar (animation CSS).
+  const CHAT_PRESENCE = { MR: 'online', EL: 'online', JD: 'away', SB: 'online' }
+
   const chatChannels = {
     'général': [
       { av: 'MR', bg: '#6366F1', name: 'Prof. Martin', nc: '#6366F1', t: '10:42', txt: 'Le livrable du <b>Projet Web E4</b> est à rendre vendredi 17h.' },
@@ -625,7 +629,8 @@ document.addEventListener('DOMContentLoaded', () => {
       const div = document.createElement('div')
       div.className = 'demo-msg'
       div.style.setProperty('--delay', (i * 200) + 'ms')
-      div.innerHTML = `<div class="msg-avatar" style="background:${m.bg}">${m.av}</div><div class="msg-body"><span class="msg-author"${m.nc ? ` style="color:${m.nc}"` : ''}>${m.name}</span><span class="msg-time">${m.t}</span><div class="msg-text">${m.txt}</div>${reactions ? `<div class="msg-reactions">${reactions}</div>` : ''}</div>`
+      const presence = CHAT_PRESENCE[m.av] || 'online'
+      div.innerHTML = `<div class="msg-avatar" data-presence="${presence}" style="background:${m.bg}">${m.av}</div><div class="msg-body"><span class="msg-author"${m.nc ? ` style="color:${m.nc}"` : ''}>${m.name}</span><span class="msg-time">${m.t}</span><div class="msg-text">${m.txt}</div>${reactions ? `<div class="msg-reactions">${reactions}</div>` : ''}</div>`
       container.appendChild(div)
     })
     if (hasTyping) {
@@ -731,26 +736,146 @@ document.addEventListener('DOMContentLoaded', () => {
     countEl.textContent = String(count)
   })
 
-  // ── Devoirs demo: expandable items ──────────────────────────────────────
+  // ══════════════════════════════════════════════════════════════════════
+  //  DEVOIRS DEMO - detail riche par statut (rendu / pending / brouillon)
+  //
+  //  Chaque statut a un mock dedie qui ressemble au vrai dashboard :
+  //  - Rendu : grille de notation (rubrique 4 criteres + barres + commentaire)
+  //  - Pending : countdown deadline + outline du sujet + boutons d'action
+  //  - Brouillon : structure du memoire (chapitres avec progression)
+  // ══════════════════════════════════════════════════════════════════════
   const devoirDetails = {
-    'Projet Web E4': { type: 'Livrable', date: '15 mars 2026', note: 'A', desc: 'Application web responsive avec authentification et CRUD.' },
-    'TP Algo':       { type: 'TP individuel', date: '30 mars 2026', note: 'En attente', desc: 'Implémentation d\'un arbre AVL avec rotations.' },
-    'Rapport stage': { type: 'Mémoire', date: '15 juin 2026', note: 'En attente', desc: 'Rapport de stage de fin d\'études (40-60 pages).' },
+    'Projet Web E4': {
+      status: 'done',
+      type: 'Livrable · Équipe B',
+      team: ['EL', 'JD', 'SB'],
+      date: 'Rendu le 14 mars · noté le 18 mars',
+      grade: 'A', score: '17 / 20',
+      rubric: [
+        { label: 'Architecture',  score: 16 },
+        { label: 'Qualité du code', score: 18 },
+        { label: 'UX / accessibilité', score: 17 },
+        { label: 'Documentation', score: 15 },
+      ],
+      comment: '"Architecture solide, séparation claire des couches. Penser à factoriser les middlewares d\'auth." — Prof. Martin',
+    },
+    'TP Algo': {
+      status: 'pending',
+      type: 'TP individuel · Algorithmique',
+      date: 'Échéance vendredi 17h',
+      countdown: { days: 2, hours: 4 },
+      outline: [
+        { n: 1, label: 'Implémentation arbre AVL',     done: true  },
+        { n: 2, label: 'Rotations gauche / droite',    done: true  },
+        { n: 3, label: 'Cas double (LR / RL)',         done: false },
+        { n: 4, label: 'Tests unitaires',              done: false },
+      ],
+      progress: 60,
+    },
+    'Rapport stage': {
+      status: 'draft',
+      type: 'Mémoire · 40 à 60 pages',
+      date: 'Soutenance 15 juin · Tuteur: Prof. Martin',
+      structure: [
+        { label: 'Introduction',                progress: 25 },
+        { label: "Cadre de l'entreprise",        progress: 80 },
+        { label: 'Mission réalisée',             progress: 35 },
+        { label: 'Bilan technique',              progress: 0  },
+        { label: 'Conclusion & perspectives',    progress: 0  },
+      ],
+      total: 12,
+    },
+  }
+
+  function renderDevoirDetail(d) {
+    if (d.status === 'done') {
+      const team = d.team.map(t => `<span class="dev-avatar dev-avatar--${t.toLowerCase()}">${t}</span>`).join('')
+      const rows = d.rubric.map(r => `
+        <div class="dev-rubric-row">
+          <span class="dev-rubric-label">${r.label}</span>
+          <div class="dev-rubric-bar"><div class="dev-rubric-fill" style="--w:${r.score * 5}%"></div></div>
+          <span class="dev-rubric-score">${r.score}<span class="dev-rubric-max">/20</span></span>
+        </div>`).join('')
+      return `
+        <div class="dev-detail-head">
+          <div class="dev-detail-meta">
+            <span class="dev-detail-type">${d.type}</span>
+            <span class="dev-detail-date">${d.date}</span>
+          </div>
+          <div class="dev-detail-team" aria-label="Équipe">${team}</div>
+          <div class="dev-grade dev-grade--a">
+            <span class="dev-grade-letter">${d.grade}</span>
+            <span class="dev-grade-score">${d.score}</span>
+          </div>
+        </div>
+        <div class="dev-rubric">${rows}</div>
+        <div class="dev-comment">${d.comment}</div>
+      `
+    }
+    if (d.status === 'pending') {
+      const items = d.outline.map(o => `
+        <div class="dev-outline-row ${o.done ? 'dev-outline-row--done' : ''}">
+          <span class="dev-outline-check" aria-hidden="true">${o.done ? '<svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>' : o.n}</span>
+          <span class="dev-outline-label">${o.label}</span>
+        </div>`).join('')
+      return `
+        <div class="dev-detail-head">
+          <div class="dev-detail-meta">
+            <span class="dev-detail-type">${d.type}</span>
+            <span class="dev-detail-date">${d.date}</span>
+          </div>
+          <div class="dev-countdown">
+            <span class="dev-countdown-num">${d.countdown.days}<span class="dev-countdown-unit">j</span></span>
+            <span class="dev-countdown-sep">·</span>
+            <span class="dev-countdown-num">${d.countdown.hours}<span class="dev-countdown-unit">h</span></span>
+          </div>
+        </div>
+        <div class="dev-progress-row">
+          <span class="dev-progress-label">Avancement</span>
+          <div class="dev-progress-track"><div class="dev-progress-fill" style="--w:${d.progress}%"></div></div>
+          <span class="dev-progress-pct">${d.progress}%</span>
+        </div>
+        <div class="dev-outline">${items}</div>
+      `
+    }
+    if (d.status === 'draft') {
+      const rows = d.structure.map(s => `
+        <div class="dev-struct-row">
+          <span class="dev-struct-dot" data-state="${s.progress >= 75 ? 'high' : s.progress > 0 ? 'mid' : 'low'}"></span>
+          <span class="dev-struct-label">${s.label}</span>
+          <span class="dev-struct-bar"><span class="dev-struct-fill" style="--w:${s.progress}%"></span></span>
+          <span class="dev-struct-pct">${s.progress}%</span>
+        </div>`).join('')
+      return `
+        <div class="dev-detail-head">
+          <div class="dev-detail-meta">
+            <span class="dev-detail-type">${d.type}</span>
+            <span class="dev-detail-date">${d.date}</span>
+          </div>
+          <span class="dev-pages-pill"><span class="dev-pages-num">${d.total}</span> pages écrites</span>
+        </div>
+        <div class="dev-struct">${rows}</div>
+      `
+    }
+    return ''
   }
 
   document.querySelectorAll('.devoir-item').forEach(item => {
     item.style.cursor = 'pointer'
     item.addEventListener('click', () => {
       const next = item.nextElementSibling
-      if (next?.classList.contains('devoir-detail')) { next.remove(); return }
+      if (next?.classList.contains('devoir-detail')) { next.remove(); item.classList.remove('devoir-item--open'); return }
       document.querySelectorAll('.devoir-detail').forEach(d => d.remove())
+      document.querySelectorAll('.devoir-item--open').forEach(i => i.classList.remove('devoir-item--open'))
 
       const name = item.querySelector('.devoir-name')?.textContent || ''
-      const d = devoirDetails[name] || { type: 'Devoir', date: '-', note: '-', desc: '' }
+      const d = devoirDetails[name]
+      if (!d) return
 
       const el = document.createElement('div')
-      el.className = 'devoir-detail'
-      el.innerHTML = `<div class="detail-row"><span class="detail-label">Type</span><span>${d.type}</span></div><div class="detail-row"><span class="detail-label">Échéance</span><span>${d.date}</span></div><div class="detail-row"><span class="detail-label">Note</span><span>${d.note}</span></div><div class="detail-desc">${d.desc}</div>`
+      el.className = `devoir-detail devoir-detail--${d.status}`
+      el.innerHTML = renderDevoirDetail(d)
+      item.classList.add('devoir-item--open')
       item.after(el)
     })
   })
@@ -1126,9 +1251,9 @@ document.addEventListener('DOMContentLoaded', () => {
     ],
     disponibilites: generateRdvWeek(),
     bookings: [
-      { who: 'Emma L.',  when: 'Jeu. 9h00',   type: 'Suivi individuel', teams: true },
-      { who: 'Jean D.',  when: 'Jeu. 14h00',  type: 'Suivi individuel', teams: true },
-      { who: 'Sara B.',  when: 'Ven. 10h30',  type: 'Soutenance',       teams: false },
+      { who: 'Emma L.',  initials: 'EL', avatarColor: '#059669', when: 'Jeu. 9h00',   type: 'Suivi individuel', typeColor: '#0EA5E9', teams: true,  topic: 'Avancement Projet Web E4 — review architecture' },
+      { who: 'Jean D.',  initials: 'JD', avatarColor: '#D97706', when: 'Jeu. 14h00',  type: 'Suivi individuel', typeColor: '#0EA5E9', teams: true,  topic: 'Question sur les rotations AVL (TP Algo)' },
+      { who: 'Sara B.',  initials: 'SB', avatarColor: '#8B5CF6', when: 'Ven. 10h30',  type: 'Soutenance',       typeColor: '#8B5CF6', teams: false, topic: 'Soutenance mémoire — salle B204' },
     ],
   }
 
@@ -1161,15 +1286,17 @@ document.addEventListener('DOMContentLoaded', () => {
         h += '<div class="rdv-toast" id="rdv-toast" hidden></div>'
       } else if (tab === 'bookings') {
         h = '<div class="rdv-bookings">' + rdvData.bookings.map((b, i) => `
-          <div class="rdv-booking" style="--d:${i * 100}ms">
-            <div class="rdv-booking-when">${b.when}</div>
+          <div class="rdv-booking" style="--d:${i * 100}ms;--tc:${b.typeColor}" data-rdv-booking-idx="${i}" tabindex="0" role="button" aria-label="Voir le RDV avec ${b.who}">
+            <span class="rdv-booking-avatar" style="background:${b.avatarColor}">${b.initials}</span>
             <div class="rdv-booking-info">
               <span class="rdv-booking-who">${b.who}</span>
-              <span class="rdv-booking-type">${b.type}</span>
+              <span class="rdv-booking-type"><span class="rdv-booking-type-dot"></span>${b.type}</span>
             </div>
-            ${b.teams ? '<span class="rdv-booking-teams" title="Reunion Teams auto">Teams</span>' : ''}
+            <div class="rdv-booking-when">${b.when}</div>
+            ${b.teams ? `<span class="rdv-booking-teams" title="Reunion Teams auto"><svg aria-hidden="true" width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m22 8-6 4 6 4V8Z"/><rect width="14" height="12" x="2" y="6" rx="2" ry="2"/></svg>Teams</span>` : '<span class="rdv-booking-place">Salle B204</span>'}
           </div>
         `).join('') + '</div>'
+        h += '<div class="rdv-booking-detail" id="rdv-booking-detail" hidden></div>'
       }
       panel.innerHTML = h
     }
@@ -1228,6 +1355,61 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     })
 
+    // ── Clic sur un booking : carte de detail (avatar + topic + lien meeting)
+    rexDemo.addEventListener('click', (e) => {
+      const booking = e.target.closest('.rdv-booking')
+      if (!booking) return
+      const idx = parseInt(booking.dataset.rdvBookingIdx, 10)
+      const b = rdvData.bookings[idx]
+      if (!b) return
+      const detail = rexDemo.querySelector('#rdv-booking-detail')
+      if (!detail) return
+
+      // Toggle : reclic ferme
+      if (detail.dataset.openIdx === String(idx) && !detail.hidden) {
+        detail.hidden = true
+        detail.dataset.openIdx = ''
+        rexDemo.querySelectorAll('.rdv-booking--active').forEach(el => el.classList.remove('rdv-booking--active'))
+        return
+      }
+      rexDemo.querySelectorAll('.rdv-booking--active').forEach(el => el.classList.remove('rdv-booking--active'))
+      booking.classList.add('rdv-booking--active')
+      detail.dataset.openIdx = String(idx)
+      detail.hidden = false
+      detail.innerHTML = `
+        <div class="rdv-card" style="--tc:${b.typeColor}">
+          <div class="rdv-card-head">
+            <span class="rdv-card-avatar" style="background:${b.avatarColor}">${b.initials}</span>
+            <div class="rdv-card-titles">
+              <span class="rdv-card-who">${b.who}</span>
+              <span class="rdv-card-when">${b.when} · ${b.type}</span>
+            </div>
+            <button type="button" class="rdv-card-close" aria-label="Fermer">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+            </button>
+          </div>
+          <div class="rdv-card-topic">${b.topic}</div>
+          <div class="rdv-card-row">
+            ${b.teams
+              ? `<a class="rdv-card-link rdv-card-link--teams"><svg aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m22 8-6 4 6 4V8Z"/><rect width="14" height="12" x="2" y="6" rx="2" ry="2"/></svg>Rejoindre Teams</a>`
+              : `<span class="rdv-card-link rdv-card-link--place"><svg aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 7-8 13-8 13s-8-6-8-13a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>Salle B204</span>`}
+            <span class="rdv-card-ics" title="Ajouter au calendrier">.ics</span>
+          </div>
+        </div>
+      `
+      detail.querySelector('.rdv-card-close')?.addEventListener('click', (ev) => {
+        ev.stopPropagation()
+        detail.hidden = true
+        detail.dataset.openIdx = ''
+        booking.classList.remove('rdv-booking--active')
+      })
+    })
+
+    rexDemo.addEventListener('keydown', (e) => {
+      const booking = e.target.closest?.('.rdv-booking')
+      if (booking && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); booking.click() }
+    })
+
     switchTab('types')
   }
 
@@ -1237,8 +1419,11 @@ document.addEventListener('DOMContentLoaded', () => {
   const lumenChapters = {
     'tri-rapide': {
       readers: 14,
-      links: 2,
       progress: 42,
+      devoirs: [
+        { name: 'TP Tri rapide', due: 'rendu vendredi' },
+        { name: 'Quiz Spark · complexité', due: 'live demain' },
+      ],
       content: `
         <h1 class="lm-h1">Tri rapide</h1>
         <p class="lm-p">Le <b>quicksort</b> est un algorithme de tri par partition, tres efficace en moyenne.</p>
@@ -1255,8 +1440,10 @@ document.addEventListener('DOMContentLoaded', () => {
     },
     'graphes': {
       readers: 9,
-      links: 1,
       progress: 18,
+      devoirs: [
+        { name: 'TP routage Dijkstra', due: 'rendu sem. 15' },
+      ],
       content: `
         <h1 class="lm-h1">Parcours de graphes</h1>
         <p class="lm-p">Le parcours en largeur (<b>BFS</b>) explore un graphe niveau par niveau depuis un sommet source.</p>
@@ -1285,8 +1472,12 @@ document.addEventListener('DOMContentLoaded', () => {
     },
     'dynamique': {
       readers: 6,
-      links: 3,
       progress: 73,
+      devoirs: [
+        { name: 'TP Memo Fibonacci',     due: 'rendu sem. 16' },
+        { name: 'Mini-projet sac à dos', due: 'binôme' },
+        { name: 'Quiz Spark · DP',       due: 'révisions' },
+      ],
       content: `
         <h1 class="lm-h1">Programmation dynamique</h1>
         <p class="lm-p">La suite de Fibonacci illustre la memoization pour eviter les recalculs.</p>
@@ -1316,7 +1507,11 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!chap || !lumenMain) return
     lumenMain.innerHTML = chap.content
     if (lumenReaders) lumenReaders.lastChild.textContent = ` lu par ${chap.readers} étudiants`
-    if (lumenLinks)   lumenLinks.lastChild.textContent   = ` ${chap.links} devoir${chap.links > 1 ? 's' : ''} lié${chap.links > 1 ? 's' : ''}`
+    if (lumenLinks) {
+      lumenLinks.innerHTML = chap.devoirs.map(d =>
+        `<button type="button" class="demo-lumen-chip" tabindex="0" title="${d.due}"><svg aria-hidden="true" width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect width="8" height="4" x="8" y="2" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="m9 14 2 2 4-4"/></svg>${d.name}</button>`
+      ).join('')
+    }
 
     // Barre de progression : anime du chapitre precedent vers la nouvelle valeur.
     // On utilise --p (pourcentage) pour piloter la largeur via CSS, ce qui
