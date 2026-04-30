@@ -115,22 +115,32 @@ interface NavItem {
   readonly activeRoutes?: readonly string[]
 }
 
-// En demo prof, on masque 4 onglets accessoires (Signets/Calendrier/
-// Fichiers/Jeux) pour rendre les 5 features-vedettes evidentes :
-// Messages, Devoirs, Cours, Rendez-vous, Live. Cf. audit UX :
-// 10 items -> 6 = comprehension instantanee de l'app en 30 s.
-// Un vrai teacher (non-demo) garde l'integralite des onglets.
-const isDemoTeacher = () => appStore.currentUser?.demo === true && appStore.isTeacher
+// Audit UX : on masque les onglets accessoires en demo pour que les
+// features-vedettes ressortent en 30 s. Sans filtre :
+//   teacher = 10 items, student = 8 items -> trop pour un 1er coup d'oeil.
+// Apres filtre demo :
+//   teacher = 6 (Accueil + Messages, Devoirs, Cours, Documents, Rdv, Live)
+//   student = 6 (Accueil + Messages, Devoirs, Cours, Live, Jeux)
+// Un vrai utilisateur (non-demo) garde l'integralite des onglets.
+//
+// Onglets caches pour TOUT visiteur demo : Signets (utilite obscure pour
+// un nouvel utilisateur), Calendrier (redondant avec Devoirs/Rdv en demo).
+// Onglets caches uniquement pour teacher demo : Fichiers (doublon avec
+// Documents + Devoirs > Rendus), Jeux (anecdotique en contexte tuteur).
+// Le student demo garde Jeux : c'est un wow factor (TypeRace) qui
+// demontre l'aspect ludique du produit.
+const isDemo = () => appStore.currentUser?.demo === true
+const isDemoTeacher = () => isDemo() && appStore.isTeacher
 
 const NAV_ITEMS: readonly NavItem[] = [
   { id: 'dashboard', label: 'Accueil',    title: 'Tableau de bord',                            icon: LayoutDashboard, isVisible: () => true },
   { id: 'messages',  label: 'Messages',   title: 'Messages',                                   icon: MessageSquare,   isVisible: () => true },
-  { id: 'signets',   label: 'Signets',    title: 'Signets (messages sauvegardés)',             icon: Bookmark,        isVisible: () => !isDemoTeacher() },
+  { id: 'signets',   label: 'Signets',    title: 'Signets (messages sauvegardés)',             icon: Bookmark,        isVisible: () => !isDemo() },
   { id: 'devoirs',   label: 'Devoirs',    title: 'Devoirs',                                    icon: BookOpen,        isVisible: () => true },
   { id: 'lumen',     label: 'Cours',      title: 'Cours',                                      icon: Lightbulb,       isVisible: () => isEnabled('lumen') },
   { id: 'documents', label: 'Documents',  title: 'Documents',                                  icon: FileText,        isVisible: () => appStore.isStaff },
   { id: 'fichiers',  label: 'Fichiers',   title: 'Fichiers partagés par les étudiants',        icon: Paperclip,       isVisible: () => appStore.isTeacher && !isDemoTeacher() },
-  { id: 'agenda',    label: 'Calendrier', title: 'Calendrier',                                 icon: Calendar,        isVisible: () => !isDemoTeacher() },
+  { id: 'agenda',    label: 'Calendrier', title: 'Calendrier',                                 icon: Calendar,        isVisible: () => !isDemo() },
   { id: 'booking',   label: 'Rendez-vous', title: 'Rendez-vous (mini-Calendly + campagnes)',   icon: CalendarCheck,   isVisible: () => appStore.isTeacher },
   // Live : toujours visible pour les etudiants tant que le module est actif —
   // ils peuvent rejoindre une session en cours OU revoir/refaire d'anciennes
