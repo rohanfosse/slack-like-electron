@@ -90,7 +90,7 @@ function handleLinked(): void {
       v-if="!loading && !hasRepos && isTeacher"
       type="button"
       class="lumen-inline-link"
-      title="Lier un cours Lumen à ce projet"
+      title="Lier un cours à ce projet"
       @click="linkModalOpen = true"
     >
       <Plus :size="11" />
@@ -103,11 +103,11 @@ function handleLinked(): void {
         type="button"
         class="lumen-inline-pill"
         :class="{ 'lumen-inline-pill--open': dropdownOpen }"
-        :title="`${linkedRepos.length} cours Lumen lié${linkedRepos.length > 1 ? 's' : ''}`"
+        :title="`${linkedRepos.length} cours lié${linkedRepos.length > 1 ? 's' : ''}`"
         @click="dropdownOpen = !dropdownOpen"
       >
         <BookOpen :size="11" />
-        <span>{{ linkedRepos.length }} cours Lumen</span>
+        <span>{{ linkedRepos.length }} cours</span>
         <ChevronDown :size="11" class="lumen-inline-chev" />
       </button>
 

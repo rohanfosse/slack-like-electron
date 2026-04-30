@@ -62,7 +62,7 @@ function openTokenPage() {
         <BookOpen :size="20" />
         <p>
           Tes cours sont heberges sur <strong>GitHub</strong>.
-          Pour y acceder depuis Lumen, connecte ton compte une seule fois.
+          Pour y acceder, connecte ton compte une seule fois.
         </p>
       </div>
 

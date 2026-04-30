@@ -55,8 +55,8 @@ const ACTIONS_CATALOG: ReadonlyArray<{
   },
   {
     id: 'lumen',
-    label: 'Lire un cours dans Lumen',
-    hint: 'Tes repos GitHub rendus comme un manuel : markdown, code, KaTeX.',
+    label: 'Ouvrir un cours',
+    hint: 'Les cours sont rendus depuis github comme un manuel : markdown, code, KaTeX.',
     routeMatcher: (p) => p.startsWith('/lumen'),
     targetRoute: '/lumen',
   },

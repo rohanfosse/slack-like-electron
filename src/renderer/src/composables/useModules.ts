@@ -16,7 +16,7 @@ const MODULE_LABELS: Record<ModuleName, string> = {
   frise: 'Frise chronologique',
   live: 'Live',
   signatures: 'Signature PDF',
-  lumen: 'Lumen',
+  lumen: 'Cours',
   games: 'Jeux',
 }
 

@@ -293,7 +293,7 @@ async function handleSync() {
 }
 
 async function handleDisconnect() {
-  if (!(await confirm('Deconnecter ton compte GitHub de Lumen ?', 'danger', 'Deconnecter'))) return
+  if (!(await confirm('Deconnecter ton compte GitHub des cours ?', 'danger', 'Deconnecter'))) return
   await lumenStore.disconnectGithub()
   lumenStore.reset()
   showToast('Compte GitHub deconnecte', 'info')
@@ -515,7 +515,7 @@ function handleNavigateLumenLink(payload: { repoName: string; path: string }) {
             <LayoutGrid :size="14" />
           </button>
           <BookOpen :size="18" />
-          <span class="lumen-brand-name" :title="promoOrg ? `Organisation : ${promoOrg}` : undefined">Lumen</span>
+          <span class="lumen-brand-name" :title="promoOrg ? `Organisation : ${promoOrg}` : undefined">Cours</span>
         </div>
       </template>
       <template #actions>

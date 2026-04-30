@@ -134,7 +134,7 @@ const globalPct = computed(() => {
     <header class="lw-header">
       <BookOpen :size="28" class="lw-header-icon" />
       <div>
-        <h2 class="lw-title">Lumen</h2>
+        <h2 class="lw-title">Cours</h2>
         <p class="lw-subtitle">
           {{ totalStats.courses }} cours · {{ totalStats.totalChapters }} chapitres
           <template v-if="totalStats.totalRead > 0">

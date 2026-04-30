@@ -34,7 +34,7 @@ function openLumen() {
 </script>
 
 <template>
-  <UiWidgetCard :icon="BookOpen" label="Cours Lumen">
+  <UiWidgetCard :icon="BookOpen" label="Cours">
     <template #header-extra>
       <UiWidgetHeaderLink @click="openLumen" />
     </template>

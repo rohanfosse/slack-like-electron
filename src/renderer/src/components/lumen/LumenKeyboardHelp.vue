@@ -89,7 +89,7 @@ const SHORTCUTS: Record<string, Shortcut[]> = {
             </section>
           </div>
           <footer class="khelp-foot">
-            <span>Astuce : appuie sur <kbd>?</kbd> depuis n'importe ou dans Lumen</span>
+            <span>Astuce : appuie sur <kbd>?</kbd> depuis n'importe ou sur la page Cours</span>
           </footer>
         </div>
       </div>

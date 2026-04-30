@@ -172,7 +172,7 @@ onMounted(() => {
           <div class="demo-role-body">
             <span class="demo-role-title">Etudiant</span>
             <span class="demo-role-desc">
-              Vois les devoirs, discute dans les canaux, ouvre Lumen pour lire un cours.
+              Vois les devoirs, discute dans les canaux, ouvre un cours pour lire un chapitre.
             </span>
           </div>
           <ArrowRight :size="18" class="demo-role-arrow" />

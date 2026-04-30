@@ -128,7 +128,7 @@ function openInLumen(item: DisplayChapter): void {
           <button
             type="button"
             class="dcls-item-main"
-            :title="`Ouvrir ${item.title} dans Lumen`"
+            :title="`Ouvrir ${item.title} dans les cours`"
             @click="openInLumen(item)"
           >
             <span class="dcls-item-title">{{ item.title }}</span>
