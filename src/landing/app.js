@@ -844,6 +844,30 @@ document.addEventListener('DOMContentLoaded', () => {
   // Tracking de la conversation active (channel ou DM) pour que le send
   // handler sache où poster + d'où venir la fausse reponse bot.
   let activeConv = { type: 'channel', name: 'général' }
+  // Timer du "X ecrit..." statique du seed : on le clear quand l'utilisateur
+  // envoie ou switch de conv pour eviter qu'un message bot apparaisse en
+  // doublon de la reponse contextuelle.
+  let pendingTypingTimer = null
+  // Ambient cycle : toutes les 20-40s, une personne aleatoire du canal
+  // ecrit un message genere via grammar CFG. Suspendu quand chat hors
+  // viewport ou quand visiteur vient d'envoyer. Cf. startAmbientCycle().
+  let ambientTimer = null
+  let ambientPausedUntil = 0
+  let ambientChatVisible = false
+  // Vocab specialise par canal pour biaiser la grammar. Pas exhaustif :
+  // juste de quoi faire que les messages dans #algo-tp parlent surtout
+  // d'algo, et ceux dans #projet-web surtout de web.
+  const CHANNEL_VOCAB_BIAS = {
+    'algo-tp': {
+      TOPIC: ['la rotation double AVL', 'le balanceFactor', 'la complexite du tri fusion', 'l invariant AVL', 'la recursivite terminale', 'le memoization'],
+      ARTIFACT: ['le TP4 AVL', 'le quiz Spark', 'le sujet du TP', 'le rapport de stage'],
+    },
+    'projet-web': {
+      TOPIC: ['CORS avec credentials', 'JWT refresh token', 'les hooks React', 'la composition Vue', 'la migration Prisma'],
+      ARTIFACT: ['le projet web E4', 'la PR auth', 'la maquette Figma', 'le repo GitHub'],
+    },
+    'général': {},
+  }
 
   // ── Render initial du canal "général" + handlers de switch ──────────
   function renderChannel(name) {
@@ -889,6 +913,27 @@ document.addEventListener('DOMContentLoaded', () => {
     const typingName = TYPING_BY_CHAN[name]
     renderMessages(container, msgs, !!typingName, typingName)
     triggerMessagesAnim(container)
+
+    // Resolution de l'indicateur "X ecrit..." : avant, il restait
+    // indefiniment ce qui suggerait un message qui n'arrivait jamais.
+    // Apres 4-6s, on remplace par un vrai message genere via la grammar
+    // CFG. Si le visiteur change de canal entre temps, le timer est
+    // annule (cf. _typingTimer module-scope).
+    if (pendingTypingTimer) { clearTimeout(pendingTypingTimer); pendingTypingTimer = null }
+    if (typingName) {
+      pendingTypingTimer = setTimeout(() => {
+        pendingTypingTimer = null
+        const stillTyping = container.querySelector('.demo-typing:not(.demo-typing--reply)')
+        if (!stillTyping) return
+        stillTyping.remove()
+        // Trouve la personne par firstName, fallback sur premiere de la liste
+        const person = (typeof KNOWN_PEOPLE !== 'undefined'
+          ? KNOWN_PEOPLE.find(p => p.firstName === typingName)
+          : null) || { name: typingName, av: typingName.slice(0, 2).toUpperCase(), bg: '#94A3B8', firstName: typingName }
+        const text = (typeof generateMarkovMessage === 'function' && generateMarkovMessage()) || 'Bien reçu.'
+        if (typeof appendBotReply === 'function') appendBotReply(person, text)
+      }, 4000 + Math.random() * 2000)
+    }
   }
 
   function renderDM(name) {
@@ -918,6 +963,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const container = win.querySelector('#demo-messages-container')
     renderMessages(container, dm.msgs, false)
     triggerMessagesAnim(container)
+    // Pas de typing statique en DM, mais on clear le timer du dernier
+    // canal au cas ou (sinon un message bot apparait dans le DM).
+    if (pendingTypingTimer) { clearTimeout(pendingTypingTimer); pendingTypingTimer = null }
   }
 
   function triggerMessagesAnim(container) {
@@ -1192,6 +1240,14 @@ document.addEventListener('DOMContentLoaded', () => {
       setTimeout(() => chatInputSend?.classList.remove('demo-input-send--sent'), 800)
       return
     }
+    // Retire le typing statique du seed s'il est encore visible : la
+    // conversation a avance, ne pas laisser "Jean ecrit..." traîner.
+    const persistentTyping = document.querySelector('#demo-messages-container .demo-typing:not(.demo-typing--reply)')
+    if (persistentTyping) persistentTyping.remove()
+    if (pendingTypingTimer) { clearTimeout(pendingTypingTimer); pendingTypingTimer = null }
+    // Suspend l'ambient pendant ~12s pour eviter qu'un bot ambient parle
+    // en meme temps que la reponse contextuelle au message visiteur.
+    ambientPausedUntil = Date.now() + 12_000
     appendVisitorMessage(text)
     chatInputReal.value = ''
     closeMentionDropdown()
@@ -1327,6 +1383,75 @@ document.addEventListener('DOMContentLoaded', () => {
     })
   }
   if (chatInputSend) chatInputSend.addEventListener('click', sendVisitorMessage)
+
+  // ══════════════════════════════════════════════════════════════════════
+  //  Ambient cycle : faire vivre le canal avec des messages spontanes
+  //
+  //  Toutes les 18-32s (random), une personne du canal ecrit pour de vrai :
+  //  on affiche "X ecrit..." 1.5-2.2s, puis un message genere via grammar
+  //  CFG biaisee par canal. Coherent avec ce que la grande demo de l'app
+  //  fait avec les bots cote serveur.
+  //
+  //  Suspendu :
+  //    - quand le chat n'est pas dans le viewport (perf + pertinence)
+  //    - 12s apres un envoi visiteur (eviter doublon avec sa reponse)
+  //    - en mode DM ou #annonces (pas pertinent)
+  //  Respecte prefers-reduced-motion (skip total).
+  // ══════════════════════════════════════════════════════════════════════
+  function scheduleAmbientTick() {
+    if (ambientTimer) clearTimeout(ambientTimer)
+    if (prefersReducedMotion) return
+    const delay = 18_000 + Math.random() * 14_000
+    ambientTimer = setTimeout(runAmbientTick, delay)
+  }
+
+  function runAmbientTick() {
+    ambientTimer = null
+    // Conditions de skip
+    if (!ambientChatVisible) return scheduleAmbientTick()
+    if (Date.now() < ambientPausedUntil) return scheduleAmbientTick()
+    if (activeConv.type !== 'channel') return scheduleAmbientTick()
+    const channelPeople = ACTIVE_BY_CHANNEL[activeConv.name]
+    if (!channelPeople || !channelPeople.length) return scheduleAmbientTick()
+    if (document.hidden) return scheduleAmbientTick()
+
+    // Pick un nom au hasard, pas la meme personne 2 fois de suite
+    const lastAuthor = document.querySelector('#demo-messages-container .demo-msg:last-of-type .msg-author')?.textContent.trim()
+    const candidates = channelPeople.filter(n => n !== lastAuthor)
+    const name = pickRandom(candidates.length ? candidates : channelPeople)
+    const person = KNOWN_PEOPLE.find(p => p.name === name)
+    if (!person) return scheduleAmbientTick()
+
+    // Typing indicator + message apres 1.5-2.2s
+    const typing = appendBotTyping(person.name)
+    setTimeout(() => {
+      if (typing) typing.remove()
+      // Message via grammar CFG, biaisee par canal
+      const G = window.CursusGrammar
+      const bias = CHANNEL_VOCAB_BIAS[activeConv.name] || {}
+      // Mix d'intentions plausible : 30% STATUS, 25% QUESTION, 20% HELP,
+      // 15% ANNOUNCE, 10% ACK
+      const r = Math.random()
+      const intent = r < 0.30 ? 'STATUS' : r < 0.55 ? 'QUESTION' : r < 0.75 ? 'HELP' : r < 0.90 ? 'ANNOUNCE' : 'ACK'
+      const text = G ? G.generateMessage({ intent, extraVocab: bias }) : 'OK pour moi.'
+      appendBotReply(person, text)
+      scheduleAmbientTick()
+    }, 1500 + Math.random() * 700)
+  }
+
+  // IntersectionObserver : ne lance le cycle ambient que quand le
+  // visiteur a scrolle jusqu'a la section chat (sinon on genere des
+  // messages dans le DOM pour rien et ca tourne en background).
+  const featChat = document.getElementById('feat-chat')
+  if (featChat && 'IntersectionObserver' in window) {
+    const ioChat = new IntersectionObserver((entries) => {
+      const visible = entries.some(e => e.isIntersecting)
+      ambientChatVisible = visible
+      if (visible && !ambientTimer) scheduleAmbientTick()
+      else if (!visible && ambientTimer) { clearTimeout(ambientTimer); ambientTimer = null }
+    }, { threshold: 0.25 })
+    ioChat.observe(featChat)
+  }
 
   // ══════════════════════════════════════════════════════════════════════
   //  PETITES ANIMATIONS au clic sur les boutons + et emoji de la zone
