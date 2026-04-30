@@ -115,15 +115,22 @@ interface NavItem {
   readonly activeRoutes?: readonly string[]
 }
 
+// En demo prof, on masque 4 onglets accessoires (Signets/Calendrier/
+// Fichiers/Jeux) pour rendre les 5 features-vedettes evidentes :
+// Messages, Devoirs, Cours, Rendez-vous, Live. Cf. audit UX :
+// 10 items -> 6 = comprehension instantanee de l'app en 30 s.
+// Un vrai teacher (non-demo) garde l'integralite des onglets.
+const isDemoTeacher = () => appStore.currentUser?.demo === true && appStore.isTeacher
+
 const NAV_ITEMS: readonly NavItem[] = [
   { id: 'dashboard', label: 'Accueil',    title: 'Tableau de bord',                            icon: LayoutDashboard, isVisible: () => true },
   { id: 'messages',  label: 'Messages',   title: 'Messages',                                   icon: MessageSquare,   isVisible: () => true },
-  { id: 'signets',   label: 'Signets',    title: 'Signets (messages sauvegardés)',             icon: Bookmark,        isVisible: () => true },
+  { id: 'signets',   label: 'Signets',    title: 'Signets (messages sauvegardés)',             icon: Bookmark,        isVisible: () => !isDemoTeacher() },
   { id: 'devoirs',   label: 'Devoirs',    title: 'Devoirs',                                    icon: BookOpen,        isVisible: () => true },
   { id: 'lumen',     label: 'Cours',      title: 'Cours',                                      icon: Lightbulb,       isVisible: () => isEnabled('lumen') },
   { id: 'documents', label: 'Documents',  title: 'Documents',                                  icon: FileText,        isVisible: () => appStore.isStaff },
-  { id: 'fichiers',  label: 'Fichiers',   title: 'Fichiers partagés par les étudiants',        icon: Paperclip,       isVisible: () => appStore.isTeacher },
-  { id: 'agenda',    label: 'Calendrier', title: 'Calendrier',                                 icon: Calendar,        isVisible: () => true },
+  { id: 'fichiers',  label: 'Fichiers',   title: 'Fichiers partagés par les étudiants',        icon: Paperclip,       isVisible: () => appStore.isTeacher && !isDemoTeacher() },
+  { id: 'agenda',    label: 'Calendrier', title: 'Calendrier',                                 icon: Calendar,        isVisible: () => !isDemoTeacher() },
   { id: 'booking',   label: 'Rendez-vous', title: 'Rendez-vous (mini-Calendly + campagnes)',   icon: CalendarCheck,   isVisible: () => appStore.isTeacher },
   // Live : toujours visible pour les etudiants tant que le module est actif —
   // ils peuvent rejoindre une session en cours OU revoir/refaire d'anciennes
@@ -131,7 +138,7 @@ const NAV_ITEMS: readonly NavItem[] = [
   // passees"). Avant on cachait l'onglet hors session active, ce qui rendait
   // la fonctionnalite review invisible aux etudiants.
   { id: 'live',      label: 'Live',       title: 'Live (quiz, feedback, code, tableau)',       icon: Zap,             isVisible: () => isEnabled('live') },
-  { id: 'jeux',      label: 'Jeux',       title: 'Jeux (TypeRace, Snake, Space Invaders, ...)', icon: Gamepad2,        isVisible: () => appStore.isTeacher || isEnabled('games'), activeRoutes: ['jeux', 'typerace', 'snake', 'space-invaders'] },
+  { id: 'jeux',      label: 'Jeux',       title: 'Jeux (TypeRace, Snake, Space Invaders, ...)', icon: Gamepad2,        isVisible: () => (appStore.isTeacher || isEnabled('games')) && !isDemoTeacher(), activeRoutes: ['jeux', 'typerace', 'snake', 'space-invaders'] },
 ]
 
 // Lookup non-réactif : NAV_ITEMS ne change jamais, inutile de passer par un computed.
