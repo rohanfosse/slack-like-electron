@@ -70,7 +70,7 @@ const ACTIONS_CATALOG: ReadonlyArray<{
   {
     id: 'live_or_booking',
     label: 'Rejoindre un Live ou un RDV',
-    hint: 'Quiz Spark en direct ou prise de rendez-vous tuteur.',
+    hint: 'Quiz en direct ou prise de rendez-vous tuteur.',
     routeMatcher: (p) => p.startsWith('/live') || p.startsWith('/booking') || p.startsWith('/agenda'),
     targetRoute: '/live',
   },

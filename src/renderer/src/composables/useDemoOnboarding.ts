@@ -31,7 +31,7 @@ const TOUR_STEPS: TourStep[] = [
   {
     target: 'live',
     title: 'Live en cours',
-    body: 'Une session Spark sur les arbres AVL est en cours. Rejoins-la pour repondre au quiz en temps reel.',
+    body: 'Un quiz sur les arbres AVL est en cours. Rejoins-le pour repondre en temps reel.',
     placement: 'right',
   },
   {

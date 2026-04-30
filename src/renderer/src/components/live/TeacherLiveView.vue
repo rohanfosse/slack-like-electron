@@ -944,7 +944,7 @@
             <input v-model="sparkAutoChain" type="checkbox" />
             <span class="spm-toggle-track"><span class="spm-toggle-dot" /></span>
             <div class="spm-toggle-meta">
-              <span class="spm-toggle-label">Mode Spark (enchainement auto)</span>
+              <span class="spm-toggle-label">Mode quiz enchaine (Kahoot-like)</span>
               <span class="spm-toggle-desc">Questions enchainees + leaderboard entre chaque + podium final</span>
             </div>
           </label>
@@ -968,7 +968,7 @@
           @click="launchNext"
         >
           <Play :size="22" />
-          <span class="bss-label">{{ sparkAutoChain ? 'Demarrer le Spark' : `Lancer : ${nextPendingActivity.title}` }}</span>
+          <span class="bss-label">{{ sparkAutoChain ? 'Demarrer le quiz enchaine' : `Lancer : ${nextPendingActivity.title}` }}</span>
           <span class="bss-sub">{{ liveStore.sessionActivities.length }} question{{ liveStore.sessionActivities.length > 1 ? 's' : '' }}</span>
         </button>
       </div>
@@ -1115,7 +1115,7 @@
         <div v-if="liveStore.sessionActivities.length === 0 && !showActivityForm" class="no-activities">
           <Zap :size="24" class="no-activities-icon" />
           <span class="no-activities-title">Aucune activite</span>
-          <span class="no-activities-desc">Spark (quiz), Pulse (feedback), Code (live coding) ou Board (brainstorming)</span>
+          <span class="no-activities-desc">Quiz, sondage rapide, code partage ou tableau de brainstorm</span>
           <span class="no-activities-tip">Astuce : Espace/Entree pour naviguer rapidement entre les activites</span>
         </div>
 

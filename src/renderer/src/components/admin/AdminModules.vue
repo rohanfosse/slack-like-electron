@@ -16,7 +16,7 @@ interface ModuleMeta {
 const MODULE_META: Record<ModuleName, ModuleMeta> = {
   kanban:     { id: 'kanban',     icon: Kanban,    description: 'Tableau kanban par projet et par groupe.' },
   frise:      { id: 'frise',      icon: Calendar,  description: 'Frise chronologique de projet (phases, jalons).' },
-  live:       { id: 'live',       icon: Zap,       description: 'Sessions Live (quiz Spark, feedback Pulse, code, tableau).' },
+  live:       { id: 'live',       icon: Zap,       description: 'Sessions Live (quiz, sondage, code partage, tableau).' },
   signatures: { id: 'signatures', icon: PenTool,   description: 'Signature electronique de documents PDF.' },
   lumen:      { id: 'lumen',      icon: BookOpen,  description: 'Liseuse de cours adossee a des repositories GitHub.' },
   games:      { id: 'games',      icon: Gamepad2,  description: 'Jeux (TypeRace, Snake, Space Invaders). Opt-in etudiants, toujours visible pour les profs.' },

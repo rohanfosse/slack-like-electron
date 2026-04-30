@@ -235,7 +235,7 @@
     dashboard: 'Accueil',
     messages: 'Messages',
     devoirs: 'Devoirs',
-    documents: 'Ressources',
+    documents: 'Documents',
     live: 'Live',
   }
 

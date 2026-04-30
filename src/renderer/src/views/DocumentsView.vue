@@ -136,7 +136,7 @@
 </script>
 
 <template>
-  <ErrorBoundary label="Ressources">
+  <ErrorBoundary label="Documents">
   <div
     id="documents-area" class="docs-layout"
     @dragenter="onDragEnter" @dragleave="onDragLeave"
@@ -153,7 +153,7 @@
       </template>
       <template #title>
         <div class="docs-header-title-block">
-          <h1 class="docs-header-title">Ressources</h1>
+          <h1 class="docs-header-title">Documents</h1>
           <span v-if="appStore.activeProject" class="docs-header-channel">{{ parseCategoryIcon(appStore.activeProject).label }}</span>
           <span v-else class="docs-header-channel">Tous les projets</span>
         </div>
