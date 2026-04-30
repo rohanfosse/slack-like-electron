@@ -1,5 +1,51 @@
 # Changelog
 
+## v2.271.0 (2026-04-30)
+
+### Fix demo : envoi messages + visibilite bots + notifs riches
+
+**Fix : impossible d'envoyer un message en demo** (`useMsgSend.ts`).
+
+`isOfflineOrDisconnected` retournait `true` en demo parce que socket.io
+n'est volontairement pas connecte (cf. api-shim.ts ligne 376). Le bouton
+d'envoi etait donc desactive et un toast "Hors-ligne - message non envoye"
+s'affichait. Fix : en demo, on ignore `socketConnected` puisque l'envoi
+passe par REST `/api/demo/messages`.
+
+**Fix : "X est en train d'ecrire" sans message qui suit**
+(`useDemoMessagesPoll.ts`).
+
+Le serveur demoBots pose un flag typing 2.5s avant d'inserer le message
+bot. Le frontend voyait l'indicateur typing (poll 1.5s) mais les messages
+inseres en arriere-plan ne remontaient jamais dans la vue chat (pas de
+socket.io en demo, pas de poll messages). Fix : nouveau composable
+`useDemoMessagesPoll` qui poll le canal/DM actif toutes les 10s et
+upsert les nouveaux messages (id > max courant). Pas de set
+loading=true, pas de remplacement de l'array : just append, zero flicker.
+
+**Refonte notifications demo** (`DemoNotificationStack.vue` +
+`useDemoNotifications.ts` v4).
+
+Avant : un toast text plat "Sara - #algo : ton message" pour CHAQUE
+message bot du tick, avec spam si plusieurs bots parlaient en meme temps,
+et aucune action possible.
+
+Apres :
+
+- **Filtrage relevance** : on ne notifie QUE pour les DMs entrants et
+  les @mentions du visiteur. Les messages canaux ordinaires ne genere
+  plus de toast (ils restent visibles dans le chat via le poll).
+- **Design moderne** : pile de cartes 360px en haut a droite, max 3
+  visibles, avatar colore avec initiales, badge type (DM violet /
+  mention orange / canal gris), preview message clamp 2 lignes,
+  progress bar bas qui rapetisse en 8s, pause au hover, slide-in droite.
+- **Boutons d'action** : "Voir le message" (primaire, ouvre le canal/DM
+  correspondant via router) + "Ignorer" (ghost) + croix de fermeture.
+- **Origine claire** : icone + texte "Message direct" / "Mention dans
+  #channel" / "#channel" — le visiteur sait IMMEDIATEMENT d'ou ca vient.
+
+Bump 2.270.0 -> 2.271.0.
+
 ## v2.270.0 (2026-04-30)
 
 ### Landing page : 4 nouvelles sections + cleanup naming/accents

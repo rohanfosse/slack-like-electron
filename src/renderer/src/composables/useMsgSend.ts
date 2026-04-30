@@ -24,7 +24,13 @@ export function useMsgSend(
   const sending = ref(false)
   const everyoneWarning = ref(false)
 
-  const isOfflineOrDisconnected = computed(() => !appStore.isOnline || !appStore.socketConnected)
+  // En mode demo, socket.io est volontairement non connecte (cf. api-shim.ts) :
+  // l'envoi reste possible via l'API REST, donc on ignore socketConnected.
+  const isOfflineOrDisconnected = computed(() => {
+    if (!appStore.isOnline) return true
+    if (appStore.currentUser?.demo) return false
+    return !appStore.socketConnected
+  })
   const charCount     = computed(() => content.value.length)
   const showCharCount = computed(() => charCount.value > messagesStore.MAX_MESSAGE_LENGTH * 0.8)
   const charCountOver = computed(() => charCount.value > messagesStore.MAX_MESSAGE_LENGTH)

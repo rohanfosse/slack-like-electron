@@ -1,16 +1,21 @@
 /**
  * useDemoNotifications - notifications adossees a l'activite reelle des bots
  *
+ * V4 : filtre cote client aux events qui concernent reellement le visiteur
+ * (DMs entrants + @mentions). Avant on crachait une notif pour chaque
+ * message canal, ce qui etait du bruit (cf. retour utilisateur "trop de
+ * notifs pour des trucs qui ne me concernent pas").
+ *
  * V3 : on remplace le catalogue de scenarios scriptes par un poll de
  * `/api/demo/notifications/feed?since=<lastId>`. L'endpoint renvoie les
  * messages reellement inseres en DB par le worker `demoBots.js` depuis
- * le dernier tick. Chaque event devient un toast. Resultat : le visiteur
- * voit des notifs qui correspondent a ce qui se passe vraiment dans les
- * canaux (s'il ouvre #algorithmique apres une notif "Sara a poste...",
- * il trouve effectivement le message).
+ * le dernier tick. Resultat : le visiteur voit des notifs qui correspondent
+ * a ce qui se passe vraiment dans les canaux (s'il ouvre le canal cite
+ * apres une notif "Sara a poste...", il trouve effectivement le message).
  *
- * Cadence du poll calee sur le tick des bots (60s server-side) avec un
- * delai initial pour laisser le temps de scanner le dashboard.
+ * Le payload emis est rich (kind / author / channelId / channelName /
+ * preview / initials) — consomme par DemoNotificationStack.vue qui rend
+ * une carte avec avatar, badge type, boutons "Voir / Ignorer".
  */
 import { onUnmounted, watch } from 'vue'
 import { useAppStore } from '@/stores/app'
@@ -27,27 +32,33 @@ interface FeedEvent {
   createdAt: string
 }
 
+interface RichNotifPayload {
+  kind:        'dm' | 'mention' | 'channel'
+  author:      string
+  initials:    string | null
+  channelId:   number | null
+  channelName: string | null
+  preview:     string
+}
+
 const FIRST_POLL_DELAY_MS = 18_000   // 18s : laisser le visiteur scanner le dashboard
 const POLL_INTERVAL_MS    = 30_000   // 30s : aligne sur le tick bots (assez vif)
-const MAX_TOASTS_PER_TICK = 3        // ne jamais en cracher plus de 3 d'un coup
+const MAX_TOASTS_PER_TICK = 2        // ne jamais en cracher plus de 2 d'un coup (filtre relevance)
 
-function buildToast(ev: FeedEvent): { title: string; body: string } {
-  if (ev.isDm) {
-    return {
-      title: ev.author,
-      body: `t'a envoye un message direct : "${ev.preview}"`,
-    }
-  }
-  const channel = ev.channelName ? `#${ev.channelName}` : ''
-  if (ev.isMention) {
-    return {
-      title: ev.author,
-      body: `t'a mentionne(e) dans ${channel} : "${ev.preview}"`,
-    }
-  }
+function classifyEvent(ev: FeedEvent): 'dm' | 'mention' | 'channel' {
+  if (ev.isDm) return 'dm'
+  if (ev.isMention) return 'mention'
+  return 'channel'
+}
+
+function buildPayload(ev: FeedEvent): RichNotifPayload {
   return {
-    title: ev.author,
-    body: `${channel} : ${ev.preview}`,
+    kind:        classifyEvent(ev),
+    author:      ev.author,
+    initials:    ev.initials,
+    channelId:   ev.channelId,
+    channelName: ev.channelName,
+    preview:     ev.preview,
   }
 }
 
@@ -58,10 +69,10 @@ export function useDemoNotifications(): void {
   // -1 = inconnu, 0 = "tout neuf depuis maintenant" (premier poll initialise)
   let lastSeenId = -1
 
-  function fireNotif(title: string, body: string): void {
+  function fireRichNotif(payload: RichNotifPayload): void {
     if (!appStore.currentUser?.demo) return
     try {
-      window.dispatchEvent(new CustomEvent('cursus:notif-toast', { detail: { title, body } }))
+      window.dispatchEvent(new CustomEvent('cursus:demo-notification', { detail: payload }))
     } catch { /* CustomEvent indisponible */ }
   }
 
@@ -75,30 +86,38 @@ export function useDemoNotifications(): void {
     } catch { return }
     if (!res?.ok || !res.data) return
 
-    const events = (res.data.events || []) as FeedEvent[]
+    const allEvents = (res.data.events || []) as FeedEvent[]
 
     // 1er poll : on prend juste le lastId comme baseline, pas de toasts
     // (sinon le visiteur recoit toute l'activite des 15 dernieres minutes
     // d'un coup en arrivant sur le dashboard).
     if (lastSeenId < 0) {
-      lastSeenId = res.data.lastId || (events.length ? events[events.length - 1].id : 0)
+      lastSeenId = res.data.lastId || (allEvents.length ? allEvents[allEvents.length - 1].id : 0)
       return
     }
 
-    if (!events.length) return
+    if (!allEvents.length) return
+    // Avancer toujours le curseur sur le dernier id vu, meme si on filtre :
+    // sinon les events filtres reviennent indefiniment au prochain poll.
+    lastSeenId = allEvents[allEvents.length - 1].id
 
-    // Decale chaque toast de quelques secondes pour eviter le mur de toasts
+    // Filtre relevance : on ne notifie que pour les DMs et les mentions.
+    // Les messages canaux ordinaires sont laisses au feed du chat — pas
+    // de toast (sinon spam ininteressant pour l'etudiant). Cote prof,
+    // meme regle : on s'attache aux interactions directes.
+    const relevant = allEvents.filter(ev => ev.isDm || ev.isMention)
+    if (!relevant.length) return
+
+    // Decale chaque notif de quelques secondes pour eviter le mur de toasts
     // si plusieurs bots ont parle dans le meme tick.
-    const toShow = events.slice(0, MAX_TOASTS_PER_TICK)
+    const toShow = relevant.slice(0, MAX_TOASTS_PER_TICK)
     toShow.forEach((ev, i) => {
       const t = setTimeout(() => {
         stepTimers.delete(t)
-        const { title, body } = buildToast(ev)
-        fireNotif(title, body)
+        fireRichNotif(buildPayload(ev))
       }, i * 4_500)
       stepTimers.add(t)
     })
-    lastSeenId = events[events.length - 1].id
   }
 
   function scheduleNext(): void {

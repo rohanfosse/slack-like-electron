@@ -19,6 +19,7 @@
   import { useDemoPresence } from '@/composables/useDemoPresence'
   import { useDemoNotifications } from '@/composables/useDemoNotifications'
   import { useDemoTyping } from '@/composables/useDemoTyping'
+  import { useDemoMessagesPoll } from '@/composables/useDemoMessagesPoll'
   import { resolveStartRoute } from '@/router'
   import { reportError }    from '@/utils/errorReporter'
   import { MessageSquare, FileText, Camera, Lock, Trash2, Download, UserX, Download as DownloadIcon, RefreshCw, Shield, Scale, Clock, Mail, Globe, Eye, Pencil, ChevronDown, Server, Zap } from 'lucide-vue-next'
@@ -29,6 +30,7 @@
   import TitleBar   from '@/components/layout/TitleBar.vue'
   import DemoBanner from '@/components/layout/DemoBanner.vue'
   import DemoOnboardingTour from '@/components/demo/DemoOnboardingTour.vue'
+  import DemoNotificationStack from '@/components/demo/DemoNotificationStack.vue'
   import SidebarWrapper from '@/components/sidebar/SidebarWrapper.vue'
   import LoginOverlay        from '@/components/auth/LoginOverlay.vue'
   // Modales frequentes gardees synchrones : ConfirmModal (hot via useConfirm),
@@ -111,6 +113,10 @@
   // feature au visiteur. Auto-start sur currentUser.demo === true.
   useDemoNotifications()
   useDemoTyping()
+  // Mode demo : poll messages toutes les 10s pour faire apparaitre les
+  // inserts faits par les bots en arriere-plan (sinon "X est en train
+  // d'ecrire" sans message qui suit, parce que pas de socket.io en demo).
+  useDemoMessagesPoll()
 
   // Toast discret pour la connexion socket (extrait dans useSocketReconnectToast).
   useSocketReconnectToast()
@@ -410,6 +416,9 @@
 
     <!-- Mini-tour d'onboarding (demo uniquement, auto-start a 1.5s) -->
     <DemoOnboardingTour v-if="appStore.currentUser?.demo" />
+
+    <!-- Pile de notifications riches (demo uniquement, ecoute cursus:demo-notification) -->
+    <DemoNotificationStack v-if="appStore.currentUser?.demo" />
 
     <!-- Barre de titre custom (fenêtre sans chrome natif) -->
     <TitleBar />
