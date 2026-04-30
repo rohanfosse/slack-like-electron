@@ -110,8 +110,35 @@ function rewriteDemoPath(path: string): string {
   return path.replace(/^\/api\//, '/api/demo/')
 }
 
+/**
+ * Latence artificielle pour les writes en demo. Sans ca, les actions
+ * (envoyer un message, ajouter une reaction, signet, soumission) sont
+ * instantanees et le visiteur lit ca comme "mock". Avec un delai de
+ * 120-280 ms on retombe dans la fourchette d'une vraie latence reseau
+ * et la fluidite percue augmente paradoxalement.
+ *
+ * Skippe en NODE_ENV=test (les tests browser n'utilisent pas le shim
+ * mais on garde le guard par precaution) et pour /demo/start/end ou
+ * la rapidite est preferable.
+ */
+const LATENCY_PATHS = /\/api\/(demo\/)?(messages|bookmarks|live\/activities\/[^/]+\/respond|lumen\/repos\/[^/]+\/(read|note)|depots)/
+const LATENCY_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE'])
+async function maybeSimulateLatency(path: string, method: string | undefined): Promise<void> {
+  if (!jwtToken?.startsWith('demo-')) return
+  if (!method || !LATENCY_METHODS.has(method.toUpperCase())) return
+  if (!LATENCY_PATHS.test(path)) return
+  // Skip si on est dans un environnement de test (vitest expose import.meta.vitest)
+  try {
+    if (typeof process !== 'undefined' && process?.env?.NODE_ENV === 'test') return
+  } catch { /* process undefined in browser */ }
+  // 120-280 ms : fourchette plausible pour un round-trip Wi-Fi
+  const delay = 120 + Math.random() * 160
+  await new Promise(r => setTimeout(r, delay))
+}
+
 async function apiFetch(path: string, options: RequestInit = {}, retries = MAX_RETRIES): Promise<unknown> {
   const finalPath = rewriteDemoPath(path)
+  await maybeSimulateLatency(path, options.method)
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     ...(jwtToken ? { Authorization: `Bearer ${jwtToken}` } : {}),
