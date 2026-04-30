@@ -841,6 +841,10 @@ document.addEventListener('DOMContentLoaded', () => {
     },
   }
 
+  // Tracking de la conversation active (channel ou DM) pour que le send
+  // handler sache où poster + d'où venir la fausse reponse bot.
+  let activeConv = { type: 'channel', name: 'général' }
+
   // ── Render initial du canal "général" + handlers de switch ──────────
   function renderChannel(name) {
     const baseMsgs = chatChannels[name]
@@ -859,9 +863,10 @@ document.addEventListener('DOMContentLoaded', () => {
       if (headerChan) headerChan.textContent = name
       if (headerDesc) headerDesc.textContent = `${meta.desc} · ${meta.members} membres`
     }
-    // Placeholder input mis a jour avec le canal courant.
-    const placeholder = document.getElementById('chat-input-placeholder')
-    if (placeholder) placeholder.innerHTML = `Écrire dans <b>#${name}</b>…`
+    // Placeholder input mis a jour avec le canal courant + tracking conv active
+    const realInput = document.getElementById('chat-input-real')
+    if (realInput) realInput.placeholder = `Écrire dans #${name}…`
+    activeConv = { type: 'channel', name }
 
     // 35% de chance d'ajouter un message genere a la fin (effet
     // "conversation qui continue") different a chaque switch.
@@ -905,9 +910,10 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       if (headerDesc) headerDesc.textContent = dm.lastSeen
     }
-    // Placeholder input mis a jour pour le DM.
-    const placeholder = document.getElementById('chat-input-placeholder')
-    if (placeholder) placeholder.innerHTML = `Écrire à <b>${name}</b>…`
+    // Placeholder input mis a jour pour le DM + tracking conv active
+    const realInput = document.getElementById('chat-input-real')
+    if (realInput) realInput.placeholder = `Écrire à ${name}…`
+    activeConv = { type: 'dm', name }
 
     const container = win.querySelector('#demo-messages-container')
     renderMessages(container, dm.msgs, false)
@@ -969,20 +975,155 @@ document.addEventListener('DOMContentLoaded', () => {
     })
   })
 
-  // ── Input bar : send avec animation check ─────────────────────────────
-  const chatInputField = document.getElementById('chat-input-field')
-  const chatInputSend  = document.getElementById('chat-input-send')
+  // ── Input bar : envoi reel d'un message visiteur + reponse bot ─────────
+  //
+  //  Quand le visiteur ecrit dans le champ et presse Entree (ou clique
+  //  envoyer), on insere une bulle "Toi" dans la conv active + on declenche
+  //  une reponse contextuelle 1.5-2.5s plus tard avec un indicateur
+  //  "Sara ecrit..." entre les deux. Pour les canaux en mode "annonces"
+  //  (read-only) on n'envoie pas de reponse.
+  const chatInputSend = document.getElementById('chat-input-send')
+  const chatInputReal = document.getElementById('chat-input-real')
 
-  if (chatInputSend) {
-    chatInputSend.addEventListener('click', () => {
-      chatInputSend.classList.add('demo-input-send--sent')
-      const placeholder = chatInputField?.querySelector('.demo-input-placeholder')
-      const original = placeholder?.innerHTML
-      if (placeholder) placeholder.innerHTML = '<span class="demo-input-sent">Message envoyé</span>'
+  // Pool de reponses contextuelles par canal. Pioche aleatoire. Si vide
+  // (ex: #annonces), aucun bot ne repond — coherent avec le canal prof-only.
+  const DEMO_REPLIES_BY_CHANNEL = {
+    'général':    [
+      { name: 'Emma L.', av: 'EL', bg: '#059669', txt: 'Bien noté ✏️' },
+      { name: 'Sara B.', av: 'SB', bg: '#8B5CF6', txt: 'On en parle demain en TD ?' },
+      { name: 'Jean D.', av: 'JD', bg: '#D97706', txt: 'OK pour moi.' },
+      { name: 'Emma L.', av: 'EL', bg: '#059669', txt: 'Top, merci pour l\'info.' },
+    ],
+    'projet-web': [
+      { name: 'Emma L.', av: 'EL', bg: '#059669', txt: 'Je m\'occupe du back si tu prends le front.' },
+      { name: 'Sara B.', av: 'SB', bg: '#8B5CF6', txt: 'On peut faire un point demain matin ?' },
+      { name: 'Jean D.', av: 'JD', bg: '#D97706', txt: 'Push sur la branche dev quand c\'est prêt.' },
+    ],
+    'algo-tp':    [
+      { name: 'Jean D.', av: 'JD', bg: '#D97706', txt: 'Tu as testé avec un arbre déséquilibré ?' },
+      { name: 'Sara B.', av: 'SB', bg: '#8B5CF6', txt: 'Le balanceFactor c\'est la clé.' },
+      { name: 'Emma L.', av: 'EL', bg: '#059669', txt: 'Regarde le chapitre 3 des cours, il y a un exemple.' },
+    ],
+    'annonces':   [], // canal prof-only : pas de reponse
+  }
+
+  function nowHHMM() {
+    const t = new Date()
+    return String(t.getHours()).padStart(2, '0') + ':' + String(t.getMinutes()).padStart(2, '0')
+  }
+
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]))
+  }
+
+  function appendVisitorMessage(text) {
+    const container = document.getElementById('demo-messages-container')
+    if (!container) return
+    const div = document.createElement('div')
+    div.className = 'demo-msg demo-msg--mine'
+    div.innerHTML = `
+      <div class="msg-avatar" data-presence="online" style="background:#6366F1">Toi</div>
+      <div class="msg-body">
+        <div class="msg-head">
+          <span class="msg-author" style="color:#6366F1">Toi</span>
+          <span class="msg-time">${nowHHMM()}</span>
+        </div>
+        <div class="msg-text">${escapeHtml(text)}</div>
+      </div>`
+    container.appendChild(div)
+    // Animation d'apparition (reuse du keyframe msgAppear deja dans le CSS)
+    div.style.animation = 'msgAppear 320ms var(--ease-smooth) forwards'
+    container.scrollTop = container.scrollHeight
+  }
+
+  function appendBotTyping(name) {
+    const container = document.getElementById('demo-messages-container')
+    if (!container) return null
+    const t = document.createElement('div')
+    t.className = 'demo-typing demo-typing--reply'
+    const firstName = (name || '').split(/\s+/)[0] || 'Quelqu\'un'
+    t.innerHTML = `<span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span> ${firstName} écrit...`
+    container.appendChild(t)
+    container.scrollTop = container.scrollHeight
+    return t
+  }
+
+  function appendBotReply(reply) {
+    const container = document.getElementById('demo-messages-container')
+    if (!container) return
+    const div = document.createElement('div')
+    div.className = 'demo-msg'
+    div.innerHTML = `
+      <div class="msg-avatar" data-presence="online" style="background:${reply.bg}">${reply.av}</div>
+      <div class="msg-body">
+        <div class="msg-head">
+          <span class="msg-author" style="color:${reply.bg}">${reply.name}</span>
+          <span class="msg-time">${nowHHMM()}</span>
+        </div>
+        <div class="msg-text">${escapeHtml(reply.txt)}</div>
+      </div>`
+    container.appendChild(div)
+    div.style.animation = 'msgAppear 320ms var(--ease-smooth) forwards'
+    container.scrollTop = container.scrollHeight
+  }
+
+  function pickReply() {
+    if (activeConv.type === 'dm') {
+      // En DM, c'est l'interlocuteur qui repond avec une phrase generique
+      const dm = chatDMs[activeConv.name]
+      if (!dm) return null
+      const replies = [
+        'Bien reçu, merci.',
+        'OK pour moi, on en reparle.',
+        'Je regarde ça et je te dis.',
+        'Top, merci !',
+      ]
+      return {
+        name: activeConv.name,
+        av:   dm.av,
+        bg:   dm.bg,
+        txt:  replies[Math.floor(Math.random() * replies.length)],
+      }
+    }
+    const pool = DEMO_REPLIES_BY_CHANNEL[activeConv.name]
+    if (!pool || !pool.length) return null
+    return pool[Math.floor(Math.random() * pool.length)]
+  }
+
+  function sendVisitorMessage() {
+    if (!chatInputReal) return
+    const text = chatInputReal.value.trim()
+    if (!text) {
+      // Champ vide : on fait juste l'animation send + flash, sans poster.
+      chatInputSend?.classList.add('demo-input-send--sent')
+      setTimeout(() => chatInputSend?.classList.remove('demo-input-send--sent'), 800)
+      return
+    }
+    appendVisitorMessage(text)
+    chatInputReal.value = ''
+    chatInputSend?.classList.add('demo-input-send--sent')
+    setTimeout(() => chatInputSend?.classList.remove('demo-input-send--sent'), 800)
+
+    // Reponse bot apres 1.2s : indicateur typing, puis 1.5-2.2s plus tard,
+    // le message. Skip si le canal est annonces (prof-only).
+    const reply = pickReply()
+    if (!reply) return
+    setTimeout(() => {
+      const typing = appendBotTyping(reply.name)
       setTimeout(() => {
-        chatInputSend.classList.remove('demo-input-send--sent')
-        if (placeholder && original) placeholder.innerHTML = original
-      }, 1400)
+        if (typing) typing.remove()
+        appendBotReply(reply)
+      }, 1500 + Math.random() * 700)
+    }, 1200)
+  }
+
+  if (chatInputSend) chatInputSend.addEventListener('click', sendVisitorMessage)
+  if (chatInputReal) {
+    chatInputReal.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault()
+        sendVisitorMessage()
+      }
     })
   }
 

@@ -411,6 +411,22 @@ img { max-width: 100%; display: block; }
   flex-direction: column;
   gap: 14px;
   position: relative;
+  /* Cascade d'entree au chargement : chaque card 80ms apres la precedente.
+     Effet "data qui se peuple", plus engageant qu'un fade-up massif. */
+  animation: bentoCardIn 520ms cubic-bezier(.22, 1, .36, 1) both;
+}
+.bento-card:nth-child(1) { animation-delay:   0ms; }
+.bento-card:nth-child(2) { animation-delay:  80ms; }
+.bento-card:nth-child(3) { animation-delay: 160ms; }
+.bento-card:nth-child(4) { animation-delay: 240ms; }
+.bento-card:nth-child(5) { animation-delay: 320ms; }
+.bento-card:nth-child(6) { animation-delay: 400ms; }
+@keyframes bentoCardIn {
+  from { opacity: 0; transform: translateY(10px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0)    scale(1); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .bento-card { animation: none !important; }
 }
 
 /* Focus visible for keyboard a11y */
@@ -4091,6 +4107,50 @@ img { max-width: 100%; display: block; }
   min-width: 0;
 }
 .demo-input-placeholder b { color: var(--primary); font-weight: 700; }
+
+/* Vrai input editable : look identique au placeholder mais editable
+   (visiteur peut envoyer un message qui apparait dans la conversation). */
+.demo-input-real {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  outline: none;
+  background: transparent;
+  padding: 0;
+  font: inherit;
+  font-size: 12.5px;
+  color: var(--text);
+  font-family: var(--font);
+}
+.demo-input-real::placeholder {
+  color: var(--text-3);
+  font-size: 12px;
+  opacity: 1;
+}
+.demo-input-field:focus-within {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 15%, transparent);
+}
+
+/* Bulle "envoyee par le visiteur" : juste un leger fond accent + accent
+   sur l'avatar pour la distinguer. Volontairement subtil (pas de
+   right-align ou couleur eclatante - on reste dans le visuel global). */
+.demo-msg--mine .msg-text {
+  background: color-mix(in srgb, var(--primary) 6%, transparent);
+  border-radius: 10px;
+  padding: 6px 10px;
+  margin-left: -2px;
+}
+[data-theme="dark"] .demo-msg--mine .msg-text {
+  background: color-mix(in srgb, var(--primary) 12%, transparent);
+}
+
+/* Indicateur typing pour la reponse bot (plus discret que le typing
+   permanent du seed). */
+.demo-typing--reply {
+  margin-top: 4px;
+  opacity: .85;
+}
 .demo-input-hint {
   display: inline-flex;
   align-items: baseline;
