@@ -99,7 +99,7 @@
     .fade-up { opacity: 0; transform: translateY(24px) scale(0.98); transition: opacity .65s cubic-bezier(.22,1,.36,1), transform .65s cubic-bezier(.22,1,.36,1); }
     .fade-up.visible { opacity: 1; transform: translateY(0) scale(1); }
   </style>
-  <link rel="stylesheet" href="style.css?v=279" />
+  <link rel="stylesheet" href="style.css?v=280" />
 </head>
 <body>
 
@@ -283,53 +283,6 @@
         <span class="proof-item">Hébergé en France · DM chiffrés AES-256-GCM</span>
         <span class="proof-sep">&middot;</span>
         <span class="proof-item">Auto-hébergeable · AGPL v3</span>
-      </div>
-    </div>
-  </section>
-
-  <!-- SECURITE & SOUVERAINETE -->
-  <section class="security-strip fade-up" aria-label="Sécurité et souveraineté">
-    <div class="container">
-      <div class="security-grid">
-        <div class="security-card">
-          <div class="security-ic" style="--sc:#10B981">
-            <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-          </div>
-          <div class="security-text">
-            <span class="security-title">Chiffrement AES-256-GCM</span>
-            <span class="security-desc">DM, mots de passe et sessions chiffrés au repos. Authentification JWT signée.</span>
-          </div>
-        </div>
-
-        <div class="security-card">
-          <div class="security-ic" style="--sc:#0EA5E9">
-            <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="8" x="2" y="2" rx="2" ry="2"/><rect width="20" height="8" x="2" y="14" rx="2" ry="2"/><line x1="6" x2="6.01" y1="6" y2="6"/><line x1="6" x2="6.01" y1="18" y2="18"/></svg>
-          </div>
-          <div class="security-text">
-            <span class="security-title">Hébergé en France</span>
-            <span class="security-desc">Infrastructure Hostinger France. Aucun transfert de données hors UE. Conforme RGPD.</span>
-          </div>
-        </div>
-
-        <div class="security-card">
-          <div class="security-ic" style="--sc:#8B5CF6">
-            <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61-.546-1.385-1.335-1.755-1.335-1.755-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg>
-          </div>
-          <div class="security-text">
-            <span class="security-title">Code 100% auditable</span>
-            <span class="security-desc">Open source AGPL v3. Toutes les sources sur GitHub, audit possible par n'importe qui.</span>
-          </div>
-        </div>
-
-        <div class="security-card">
-          <div class="security-ic" style="--sc:#F59E0B">
-            <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" x2="12" y1="22.08" y2="12"/></svg>
-          </div>
-          <div class="security-text">
-            <span class="security-title">Auto-hébergeable</span>
-            <span class="security-desc">docker-compose prêt à l'emploi. Tu maîtrises tes données, tes utilisateurs, ton domaine.</span>
-          </div>
-        </div>
       </div>
     </div>
   </section>
@@ -1079,6 +1032,30 @@
     </div>
   </section>
 
+  <!-- TRUST BAR : version compacte des arguments securite/souverainete, juste avant FAQ -->
+  <aside class="trust-bar fade-up" aria-label="Garanties de sécurité">
+    <div class="container">
+      <ul class="trust-bar-list">
+        <li class="trust-pill">
+          <svg class="trust-pill-ic" aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          <span class="trust-pill-label">DM chiffrés AES-256-GCM</span>
+        </li>
+        <li class="trust-pill">
+          <svg class="trust-pill-ic" aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="8" x="2" y="2" rx="2" ry="2"/><rect width="20" height="8" x="2" y="14" rx="2" ry="2"/><line x1="6" x2="6.01" y1="6" y2="6"/><line x1="6" x2="6.01" y1="18" y2="18"/></svg>
+          <span class="trust-pill-label">Hébergé en France (Hostinger)</span>
+        </li>
+        <li class="trust-pill">
+          <svg class="trust-pill-ic" aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61-.546-1.385-1.335-1.755-1.335-1.755-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg>
+          <span class="trust-pill-label">Open source AGPL v3</span>
+        </li>
+        <li class="trust-pill">
+          <svg class="trust-pill-ic" aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" x2="12" y1="22.08" y2="12"/></svg>
+          <span class="trust-pill-label">Auto-hébergeable</span>
+        </li>
+      </ul>
+    </div>
+  </aside>
+
   <!-- FAQ : anticipe les questions les plus frequentes pour reduire la friction -->
   <section class="faq-section fade-up" id="faq" aria-label="Questions fréquentes">
     <div class="container container-narrow">
@@ -1296,8 +1273,8 @@
     </div>
   </footer>
 
-  <script src="grammar.js?v=279"></script>
-  <script src="app.js?v=279"></script>
+  <script src="grammar.js?v=280"></script>
+  <script src="app.js?v=280"></script>
   <!-- Analytics: insert GA4 gtag.js snippet here when ready -->
 </body>
 </html>

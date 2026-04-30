@@ -6066,54 +6066,59 @@ img { max-width: 100%; display: block; }
 .btn-tertiary:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
 
 /* ══════════════════════════════════════════════════════════════════
-   Bande "Securite & souverainete" : 4 cartes compactes juste apres
-   le hero, avant les features. Argument debloquant pour les directions.
+   Trust bar : version compacte des arguments securite/souverainete,
+   placee discretement entre Comparatif et FAQ. Une rangee de 4 pills
+   inline, faible poids visuel, juste pour "rassurer en passant".
    ══════════════════════════════════════════════════════════════════ */
-.security-strip {
-  padding: 40px 0 20px;
+.trust-bar {
+  padding: 0 0 40px;
   position: relative;
 }
-.security-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 14px;
-  max-width: 1080px;
-  margin: 0 auto;
-}
-.security-card {
+.trust-bar .container {
   display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  padding: 16px 18px;
+  justify-content: center;
+}
+.trust-bar-list {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px 10px;
+  padding: 0;
+  margin: 0;
+  max-width: 920px;
+}
+.trust-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 13px;
+  border: 1px solid rgba(0, 0, 0, .08);
   background: var(--bg-glass);
-  border: 1px solid rgba(0, 0, 0, .06);
-  border-radius: 16px;
-  transition: transform .25s, border-color .25s, background .25s;
+  border-radius: 999px;
+  font-size: 12.5px;
+  color: var(--text-2);
+  line-height: 1.3;
+  transition: border-color .2s, color .2s, background .2s;
 }
-[data-theme="dark"] .security-card { border-color: rgba(255, 255, 255, .08); }
-.security-card:hover {
-  transform: translateY(-2px);
-  border-color: rgba(99, 102, 241, .25);
-  background: #fff;
+[data-theme="dark"] .trust-pill { border-color: rgba(255, 255, 255, .08); }
+.trust-pill:hover {
+  border-color: color-mix(in srgb, var(--primary) 35%, transparent);
+  color: var(--text);
 }
-[data-theme="dark"] .security-card:hover { background: rgba(99, 102, 241, .08); }
-.security-ic {
+.trust-pill-ic {
   flex-shrink: 0;
-  width: 36px; height: 36px;
-  display: flex; align-items: center; justify-content: center;
-  border-radius: 10px;
-  background: color-mix(in srgb, var(--sc) 12%, transparent);
-  color: var(--sc);
+  color: var(--primary);
 }
-.security-text { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
-.security-title { font-size: 13.5px; font-weight: 700; color: var(--text); letter-spacing: -.2px; }
-.security-desc { font-size: 12px; color: var(--text-2); line-height: 1.45; }
-@media (max-width: 900px) {
-  .security-grid { grid-template-columns: repeat(2, 1fr); }
+.trust-pill-label {
+  font-weight: 500;
+  letter-spacing: -.1px;
 }
-@media (max-width: 520px) {
-  .security-grid { grid-template-columns: 1fr; gap: 10px; }
-  .security-strip { padding: 24px 20px 8px; }
+
+@media (max-width: 640px) {
+  .trust-bar { padding: 0 0 28px; }
+  .trust-bar-list { gap: 6px 8px; }
+  .trust-pill { font-size: 11.5px; padding: 6px 11px; }
 }
 
 /* ══════════════════════════════════════════════════════════════════
