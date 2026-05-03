@@ -337,13 +337,28 @@ function getChannels(db, tenantId) {
   ).all(tenantId)
 }
 
-/** Renvoie l'heure du serveur en 'morning' | 'day' | 'evening' | 'night'. */
-function timeOfDay() {
+/** Renvoie l'heure du serveur en 'morning' | 'day' | 'evening' | 'night'.
+ *  Injectable pour les tests via `__setTimeOfDayForTests` : sinon le test
+ *  postSpontaneous flake quand CI tourne entre 23h et 6h (night gate l.450
+ *  fait un return null avant l'insertion). */
+let _timeOfDayProvider = () => {
   const h = new Date().getHours()
   if (h >= 6  && h < 11) return 'morning'
   if (h >= 11 && h < 18) return 'day'
   if (h >= 18 && h < 23) return 'evening'
   return 'night'
+}
+function timeOfDay() { return _timeOfDayProvider() }
+function __setTimeOfDayForTests(fn) {
+  _timeOfDayProvider = typeof fn === 'function'
+    ? fn
+    : () => {
+        const h = new Date().getHours()
+        if (h >= 6  && h < 11) return 'morning'
+        if (h >= 11 && h < 18) return 'day'
+        if (h >= 18 && h < 23) return 'evening'
+        return 'night'
+      }
 }
 
 /**
@@ -964,4 +979,7 @@ module.exports = {
   REACT_EMOJIS,
   VISITOR_REPLIES,
   EDIT_PATTERNS,
+  // Helper test-only : permet de figer timeOfDay() pour rendre les tests
+  // deterministes (sinon ils flake quand CI tourne entre 23h et 6h).
+  __setTimeOfDayForTests,
 }

@@ -20,6 +20,7 @@ const {
   pickEmojiForContent,
   PERSONAS,
   REACT_EMOJIS,
+  __setTimeOfDayForTests,
 } = require('../../../server/services/demoBots')
 const crypto = require('crypto')
 
@@ -73,8 +74,14 @@ describe('demoBots: postSpontaneous', () => {
     tenantId = crypto.randomUUID()
     seedTenant(db, tenantId, 'student')
     session = createSession(db, tenantId)
+    // Force timeOfDay='day' : sans ca, postSpontaneous return null si on
+    // est en 'night' (gate Math.random()<0.7 toujours vraie avec mockRandom(0.1)).
+    __setTimeOfDayForTests(() => 'day')
   })
-  afterEach(() => restoreRandom())
+  afterEach(() => {
+    restoreRandom()
+    __setTimeOfDayForTests(null) // restore le provider par defaut
+  })
 
   it('insere un message d\'un bot et l\'attribue a une persona connue', () => {
     mockRandom(0.1) // pioche le 1er element de chaque pickRandom
