@@ -8,6 +8,17 @@
  *  - Répartition uniforme sur le cercle chromatique (8 positions ~45° d'écart en HSL)
  *  - Saturation/lightness calibrées pour être WCAG-readable light + dark
  *  - Alignées avec les tokens sémantiques existants quand c'est pertinent
+ *
+ * Note v2.272 (alignement landing) : malgré le passage de l'accent app à indigo
+ * #6366F1, la palette promo reste figée. Raisons :
+ *  1. La fonction d'auto-assignation est `hash(promoName) % palette.length` ;
+ *     ajouter/retirer une entrée déplace TOUTES les couleurs auto-assignées des
+ *     promos existantes en prod → migration silencieuse non souhaitable.
+ *  2. La palette promo identifie une *promotion* (entité métier persistante),
+ *     pas l'identité visuelle de l'app. Indigo est l'accent système, pas une
+ *     couleur de promo distincte.
+ *  3. `#4A90D9` (slug sky) existe en DB sur des promos en cours — le retirer
+ *     ferait fail `isPaletteColor` et déclencherait un fallback hash silencieux.
  */
 
 export interface PromoColor {

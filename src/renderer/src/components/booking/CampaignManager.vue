@@ -57,14 +57,14 @@ const dayIsoToFr = [1, 2, 3, 4, 5, 6, 0] // index FR -> dayOfWeek (0=dim)
 const todayStr = new Date().toISOString().slice(0, 10)
 const inThreeWeeks = new Date(Date.now() + 21 * 24 * 3600 * 1000).toISOString().slice(0, 10)
 
-// Palette restreinte calee sur les tokens semantiques (cf. base.css).
+// Palette restreinte alignee sur la landing (cf. base.css couleurs sectorielles).
 const COLOR_PALETTE = [
-  { value: '#4A90D9', label: 'Bleu' },
-  { value: '#9B87F5', label: 'Violet' },
-  { value: '#2ECC71', label: 'Vert' },
-  { value: '#E8891A', label: 'Orange' },
-  { value: '#E5A842', label: 'Or' },
-  { value: '#E74C3C', label: 'Rouge' },
+  { value: '#6366F1', label: 'Indigo' },
+  { value: '#8B5CF6', label: 'Violet' },
+  { value: '#059669', label: 'Emeraude' },
+  { value: '#F59E0B', label: 'Ambre' },
+  { value: '#0EA5E9', label: 'Ciel' },
+  { value: '#EF4444', label: 'Rouge' },
 ]
 
 interface FormState {

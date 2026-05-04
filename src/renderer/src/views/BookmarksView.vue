@@ -75,7 +75,7 @@ function goToMessage(b: BookmarkItem) {
 
 <template>
   <div class="bookmarks-view">
-    <UiPageHeader title="Signets" :subtitle="`${store.count} message${store.count > 1 ? 's' : ''} sauvegardé${store.count > 1 ? 's' : ''}`" wrap>
+    <UiPageHeader title="Signets" :subtitle="`${store.count} message${store.count > 1 ? 's' : ''} sauvegardé${store.count > 1 ? 's' : ''}`" section="chat" wrap>
       <template #leading>
         <button
           v-if="toggleSidebar"

@@ -18,13 +18,15 @@ button { font-family: var(--font); }
   font-weight: 600;
   cursor: pointer;
   white-space: nowrap;
-  transition: filter var(--t-fast), box-shadow var(--t-fast);
+  transition: filter var(--t-fast), box-shadow var(--t-fast), transform var(--t-fast);
 }
 .btn-primary:hover:not(:disabled) {
-  filter: brightness(1.1);
-  box-shadow: 0 2px 8px rgba(var(--accent-rgb),.2);
+  filter: brightness(1.08);
+  /* v2.273 : micro-lift -1px + halo indigo (alignement .nav-cta landing). */
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(var(--accent-rgb),.25);
 }
-.btn-primary:active:not(:disabled) { filter: brightness(.92); box-shadow: none; }
+.btn-primary:active:not(:disabled) { filter: brightness(.92); transform: translateY(0); box-shadow: none; }
 .btn-primary:disabled               { opacity: .4; cursor: not-allowed; filter: saturate(.6); }
 .btn-primary:focus-visible          { outline: 2px solid var(--accent-light); outline-offset: 2px; }
 
@@ -109,23 +111,25 @@ button { font-family: var(--font); }
 .btn-close-modal:hover { background: var(--bg-hover); color: var(--text-primary); }
 .btn-close-modal:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 
-/* Bouton envoyer */
+/* Bouton envoyer — rond 36px (alignement .demo-input-send landing). */
 #btn-send {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   background: var(--accent);
   border: none;
-  border-radius: var(--radius);
+  border-radius: 50%;
   color: #fff;
   cursor: pointer;
-  padding: 7px 10px;
+  width: 36px;
+  height: 36px;
+  padding: 0;
   flex-shrink: 0;
-  transition: background var(--t-base);
+  transition: background var(--t-base), transform var(--t-fast);
 }
-#btn-send:hover    { background: var(--accent-hover); }
-#btn-send:active   { background: var(--accent-dark); }
-#btn-send:disabled { opacity: .4; cursor: not-allowed; }
+#btn-send:hover    { background: var(--accent-hover); transform: scale(1.05); }
+#btn-send:active   { background: var(--accent-dark); transform: scale(.97); }
+#btn-send:disabled { opacity: .4; cursor: not-allowed; transform: none; }
 
 /* ════════════════════════════════════════════
    AVATARS
@@ -1593,7 +1597,8 @@ button { font-family: var(--font); }
 .modal-box {
   background: var(--bg-modal);
   border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
+  /* v2.273 : --radius-xl (24px) pour matcher .demo-window landing (20-24px). */
+  border-radius: var(--radius-xl);
   width: 100%;
   max-height: 88vh;
   display: flex;

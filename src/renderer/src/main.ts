@@ -5,10 +5,11 @@ import App from './App.vue'
 import { wireDemoMissionRouter } from './composables/useDemoMission'
 
 // ── Fonts ───────────────────────────────────────────────────────────────────
-// Inter : corps de texte. Plus Jakarta Sans : labels widgets + hero numbers
-// (alignement avec la landing page, cf. design-system §typo).
-import '@fontsource-variable/inter'
-import '@fontsource-variable/plus-jakarta-sans'
+// Plus Jakarta Sans (primaire, alignement landing) + Inter (--font-reading).
+// On charge un CSS custom qui ne declare que les subsets latin / latin-ext
+// au lieu de l'index.css fontsource (qui inclut cyrillic, greek, vietnamese).
+// Cf. design-system/cursus/MASTER.md §2 et assets/css/fonts.css.
+import '@css/fonts.css'
 
 // ── CSS de base ─────────────────────────────────────────────────────────────
 import '@css/base.css'

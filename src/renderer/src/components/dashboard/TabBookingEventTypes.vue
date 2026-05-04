@@ -55,9 +55,9 @@ const publicCopiedId = ref<number | null>(null)
 let publicCopyTimeout: ReturnType<typeof setTimeout> | null = null
 
 // Palette d'identification fixe (pas des tokens theme — couleurs distinctives
-// pour reconnaitre visuellement chaque type de RDV, alignee sur CampaignManager).
+// pour reconnaitre visuellement chaque type de RDV, alignee landing).
 const COLOR_PRESETS = [
-  '#4A90D9', '#9B87F5', '#2ECC71', '#E8891A', '#E5A842', '#E74C3C',
+  '#6366F1', '#8B5CF6', '#059669', '#F59E0B', '#0EA5E9', '#EF4444',
   '#06B6D4', '#EC4899', '#14B8A6', '#F97316', '#64748B', '#78716C',
 ] as const
 

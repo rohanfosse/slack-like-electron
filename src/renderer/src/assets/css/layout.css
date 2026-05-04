@@ -351,23 +351,18 @@ nav[aria-label="Messages directs"] {
   transition: background var(--t-fast), color var(--t-fast);
 }
 
-.sidebar-item::before {
-  content: ''; position: absolute; left: 0; top: 20%; bottom: 20%;
-  width: 2px; background: var(--accent); border-radius: 1px;
-  transform: scaleY(0); transition: transform var(--t-base) ease;
-}
-.sidebar-item:hover::before { transform: scaleY(1); }
-.sidebar-item.active::before { transform: scaleY(1); }
-
+/* v2.272 : suppression de la barre ::before (alignement landing —
+   .demo-sidebar-mini .sidebar-ch.active utilise un fond plein, pas de barre).
+   Active state : fond indigo .12 + texte primary + weight 600 (style landing). */
 .sidebar-item:hover {
   background: var(--bg-hover);
   color: var(--text-primary);
 }
 
 .sidebar-item.active {
-  background: rgba(var(--accent-rgb),.18);
+  background: rgba(var(--accent-rgb),.12);
   color: var(--text-primary);
-  font-weight: 700;
+  font-weight: 600;
   border-radius: var(--radius-sm);
 }
 
@@ -791,7 +786,8 @@ nav[aria-label="Messages directs"] {
   display: flex;
   flex-direction: column;
   background: var(--bg-hover);
-  border: 1.5px solid var(--border-input);
+  /* v2.273 : 1px (alignement .demo-input-field landing). */
+  border: 1px solid var(--border-input);
   border-radius: var(--radius-lg);
   overflow: hidden;
   transition: border-color var(--t-base), box-shadow var(--t-base), background var(--t-base);
@@ -800,7 +796,8 @@ nav[aria-label="Messages directs"] {
 .message-input-wrapper:focus-within {
   border-color: rgba(var(--accent-rgb),.55);
   background: var(--bg-hover);
-  box-shadow: 0 0 0 3px rgba(var(--accent-rgb),.09), 0 2px 12px rgba(0,0,0,.2);
+  /* v2.273 : glow .15 (alignement .demo-input-field:focus-within landing). */
+  box-shadow: 0 0 0 3px rgba(var(--accent-rgb),.15), 0 2px 12px rgba(0,0,0,.2);
 }
 
 .message-input {

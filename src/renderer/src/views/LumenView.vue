@@ -502,7 +502,7 @@ function handleNavigateLumenLink(payload: { repoName: string; path: string }) {
 
 <template>
   <div class="lumen-view">
-    <UiPageHeader class="lumen-topbar">
+    <UiPageHeader section="lumen" class="lumen-topbar">
       <template #title>
         <div class="lumen-brand">
           <button

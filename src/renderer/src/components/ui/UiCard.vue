@@ -101,14 +101,16 @@
 .ui-card--interactive:hover {
   border-color: rgba(var(--accent-rgb), .35);
   background: rgba(var(--accent-rgb), .04);
-  transform: translateY(-2px);
-  /* Lift soft + halo accent — signature landing page */
+  /* v2.273 : alignement landing .bento-card:hover (translateY(-6px) scale(1.02)) —
+     compromis density app : -4px / 1.01. */
+  transform: translateY(-4px) scale(1.01);
   box-shadow:
-    0 4px 16px rgba(var(--accent-rgb), .12),
+    0 8px 24px rgba(var(--accent-rgb), .15),
+    0 2px 6px rgba(var(--accent-rgb), .10),
     0 1px 3px rgba(0, 0, 0, .15);
 }
 .ui-card--interactive:active {
-  transform: translateY(0);
+  transform: translateY(-1px) scale(1);
 }
 .ui-card--interactive:focus-visible {
   outline: none;

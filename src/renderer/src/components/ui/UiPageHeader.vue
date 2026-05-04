@@ -9,14 +9,21 @@
   //   - sticky (defaut true) : box-shadow elevation-2, z-index 10
   //   - wrap (defaut false)  : flex-wrap pour les pages avec filtres (Agenda, Documents)
 
+  // Section : controle l'accent (border-bottom, optional badge tint).
+  // Mappe sur les tokens --color-{chat,devoirs,docs,lumen,live,rex,dashboard}
+  // herites de la landing (cf. base.css). Defaut 'none' = couleur accent generique.
+  type Section = 'chat' | 'devoirs' | 'docs' | 'lumen' | 'live' | 'rex' | 'dashboard' | 'none'
+
   withDefaults(defineProps<{
     title?: string
     subtitle?: string
     sticky?: boolean
     wrap?: boolean
+    section?: Section
   }>(), {
     sticky: true,
     wrap: false,
+    section: 'none',
   })
 </script>
 
@@ -24,6 +31,7 @@
   <header
     class="ui-page-header"
     :class="{ 'ui-page-header--sticky': sticky, 'ui-page-header--wrap': wrap }"
+    :data-section="section !== 'none' ? section : undefined"
   >
     <div v-if="$slots.leading" class="ui-page-header__leading">
       <slot name="leading" />
@@ -53,7 +61,25 @@
   padding: 0 var(--space-xl);
   background: var(--bg-main);
   border-bottom: 1px solid var(--border);
+  position: relative;
 }
+
+/* Accent par feature (alignement landing) — barre 2px en bas teintee.
+   Cf. base.css §Couleurs sectorielles. */
+.ui-page-header[data-section]::after {
+  content: '';
+  position: absolute;
+  left: 0; right: 0; bottom: -1px;
+  height: 2px;
+  pointer-events: none;
+}
+.ui-page-header[data-section="chat"]::after      { background: var(--color-chat); }
+.ui-page-header[data-section="devoirs"]::after   { background: var(--color-devoirs); }
+.ui-page-header[data-section="docs"]::after      { background: var(--color-docs); }
+.ui-page-header[data-section="lumen"]::after     { background: var(--color-lumen); }
+.ui-page-header[data-section="live"]::after      { background: var(--color-live); }
+.ui-page-header[data-section="rex"]::after       { background: var(--color-rex); }
+.ui-page-header[data-section="dashboard"]::after { background: var(--color-dashboard); }
 .ui-page-header--sticky {
   box-shadow: var(--elevation-2);
   z-index: 10;
@@ -80,8 +106,10 @@
 }
 
 .ui-page-header__title {
-  font-size: 16px;
+  font-family: var(--font-display);
+  font-size: 17px;
   font-weight: 700;
+  letter-spacing: -0.01em;
   color: var(--text-primary);
   margin: 0;
   line-height: 1.2;

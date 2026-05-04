@@ -144,7 +144,7 @@
   >
 
     <!-- ── Header ─────────────────────────────────────────────────────── -->
-    <UiPageHeader wrap class="docs-header">
+    <UiPageHeader wrap section="docs" class="docs-header">
       <template #leading>
         <button v-if="props.toggleSidebar" class="mobile-hamburger" aria-label="Ouvrir le menu" @click="props.toggleSidebar">
           <Menu :size="22" />

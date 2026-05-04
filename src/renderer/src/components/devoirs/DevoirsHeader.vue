@@ -18,7 +18,7 @@ const modals   = useModalsStore()
 </script>
 
 <template>
-  <UiPageHeader>
+  <UiPageHeader section="devoirs">
     <template #leading>
       <button v-if="toggleSidebar" class="mobile-hamburger" aria-label="Ouvrir le menu" @click="toggleSidebar">
         <Menu :size="22" />

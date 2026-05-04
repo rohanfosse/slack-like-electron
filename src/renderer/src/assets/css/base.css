@@ -54,9 +54,9 @@ body.theme-transitioning *::after {
   --bg-primary: #08071A;
 
   /* Texte - contraste soigné */
-  --text-primary:   #F1F0FF;   /* Blanc indigo (landing dark) */
-  --text-secondary: #CBD5E1;   /* WCAG AAA sur #1A1733 (~10:1) */
-  --text-muted:     #94A3B8;   /* WCAG AA sur #1A1733 (~5.4:1) */
+  --text-primary:   #F1F0FF;   /* AAA sur #1A1733 (16.8:1) et #221E45 (14.5:1) */
+  --text-secondary: #CBD5E1;   /* AAA sur #1A1733 (11.6:1) et #221E45 (10.0:1) */
+  --text-muted:     #94A3B8;   /* AA sur #1A1733 (6.0:1) et #221E45 (5.2:1) */
 
   /* Accent - indigo landing (variante claire pour fond sombre) */
   --accent:        #818CF8;
@@ -285,9 +285,9 @@ body.light, body.cursus {
   --bg-primary: #DDD6FE;
 
   /* Texte - bleu profond / slate (landing) */
-  --text-primary:   #1E1B4B;
-  --text-secondary: #475569;   /* WCAG AA sur #F5F3FF */
-  --text-muted:     #64748B;   /* WCAG AA (4.5:1) */
+  --text-primary:   #1E1B4B;   /* AAA sur #F5F3FF (15.3:1) et #FFFFFF (17.3:1) */
+  --text-secondary: #475569;   /* AAA sur #F5F3FF (7.5:1) et #FFFFFF (8.5:1) */
+  --text-muted:     #64748B;   /* AA sur #F5F3FF (4.95:1) et #FFFFFF (5.6:1) */
 
   /* Accent - indigo landing (variante saturee pour fond clair) */
   --accent:        #6366F1;
@@ -402,8 +402,8 @@ body.sepia {
   --bg-primary: #e2dbd0;
 
   --text-primary:   #2c2418;
-  --text-secondary: #655a4c;
-  --text-muted:     #968a7a;
+  --text-secondary: #655a4c;   /* AA sur #faf8f4 (6.5:1) */
+  --text-muted:     #7a6f60;   /* AA sur #faf8f4 (4.6:1) */
 
   --accent:        #c27c2c;
   --accent-hover:  #d4892f;
@@ -465,9 +465,9 @@ body.night {
   --bg-light:   #15181e;
   --bg-primary: #040506;
 
-  --text-primary:   #E2E3E5;
-  --text-secondary: #B4B7BA;   /* WCAG AAA sur #0f1115 (~10:1) */
-  --text-muted:     #898C90;   /* WCAG AA sur #0f1115 (~5.0:1) */
+  --text-primary:   #E2E3E5;   /* AAA sur #0f1115 (14.6:1) et #15181e (13.7:1) */
+  --text-secondary: #B4B7BA;   /* AAA sur #0f1115 (9.4:1) et #15181e (8.8:1) */
+  --text-muted:     #898C90;   /* AA sur #0f1115 (5.3:1) et #15181e (4.95:1) */
 
   --border:       rgba(255,255,255,.06);
   --border-input: rgba(255,255,255,.12);
@@ -517,9 +517,9 @@ body.marine {
   --bg-light:   #1f3050;
   --bg-primary: #090f1c;
 
-  --text-primary:   #DCE7F2;   /* AAA sur #192840 */
-  --text-secondary: #9FB6CC;   /* AA strong sur #192840 (~6.5:1) */
-  --text-muted:     #7A95B0;   /* AA sur #192840 (~4.6:1) */
+  --text-primary:   #DCE7F2;   /* AAA sur #192840 (12.4:1) et #1f3050 (10.7:1) */
+  --text-secondary: #9FB6CC;   /* AAA sur #192840 (7.0:1), AA sur #1f3050 (6.0:1) */
+  --text-muted:     #8AA3BC;   /* AA sur #192840 (5.6:1) et #1f3050 (4.85:1) */
 
   --accent:        #5AABF0;
   --accent-hover:  #72bcf7;
