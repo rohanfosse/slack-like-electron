@@ -35,6 +35,10 @@ function applyTheme(theme: ThemeId) {
   document.body.classList.remove('light', 'sepia', 'night', 'marine', 'cursus')
   if (resolved !== 'dark') document.body.classList.add(resolved)
   setTimeout(() => document.body.classList.remove('theme-transitioning'), 350)
+  // Mirror cote main : configure BrowserWindow.backgroundColor au prochain
+  // boot (evite les "taches sombres" pendant le splash en theme clair).
+  // window.api.setTheme est expose par le preload (electron uniquement).
+  window.api?.setTheme?.(resolved).catch(() => { /* no-op en mode web */ })
 }
 
 // Listen for system theme changes (for 'auto' mode)

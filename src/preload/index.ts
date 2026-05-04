@@ -864,6 +864,9 @@ contextBridge.exposeInMainWorld('api', {
   /** Ouvre le dossier des logs (utile pour le support pilote). */
   openLogsFolder: () => ipcRenderer.invoke('logs:open-folder'),
 
+  /** Persiste la pref theme cote main (configure backgroundColor au prochain boot). */
+  setTheme: (theme: string) => ipcRenderer.invoke('theme:set', theme),
+
   // ── Temps reel (Socket.io) ───────────────────────────────────────────────────
   onNewMessage:        (cb: (data: MsgNewPayload) => void) => sockEv.msgNew.add(cb),
   onPollUpdate:        (cb: (data: PollUpdatePayload) => void) => sockEv.pollUpdate.add(cb),

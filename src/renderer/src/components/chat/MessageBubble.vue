@@ -600,7 +600,9 @@ const renderedContentWithoutPoll = computed(() => {
   border-radius: var(--radius);
   overflow: hidden;
   border: 1px solid var(--border);
-  background: var(--bg-elevated);
+  /* var(--code-bg) en light = #F8F9FB (off-white propre, distinct de la bubble
+     blanche). En dark on retombe sur --bg-elevated qui contraste deja. */
+  background: var(--code-bg, var(--bg-elevated));
   box-shadow: var(--elevation-1);
 }
 

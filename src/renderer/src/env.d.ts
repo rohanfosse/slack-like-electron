@@ -628,6 +628,9 @@ declare global {
       onRuntimeError(cb: (data: { message: string }) => void): () => void
       openLogsFolder(): Promise<IpcResponse<null>>
 
+      // Theme (mirror cote main pour configurer BrowserWindow.backgroundColor au boot)
+      setTheme(theme: string): Promise<IpcResponse<null>>
+
       // Auto-update
       onSignatureUpdate(cb: (data: { id: number; status: string; signed_file_url?: string; signer_name?: string; rejection_reason?: string }) => void): () => void
       onDocumentNew(cb: (data: { name: string; category?: string }) => void): () => void

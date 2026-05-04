@@ -1,6 +1,43 @@
 import { app, BrowserWindow, dialog, ipcMain, nativeImage, session, shell, Tray, Menu } from 'electron'
 import { join } from 'path'
+import { existsSync, readFileSync, writeFileSync } from 'fs'
 import { initUpdater, stopUpdater, getPendingUpdate, quitAndInstall } from './updater'
+
+// ── Pref theme persistee pour configurer la BrowserWindow au boot ───────────
+// Le renderer stocke aussi cette pref dans localStorage (cf. usePrefs.ts), mais
+// le main n'y a pas acces avant le rendu. On miroir donc la valeur dans un
+// petit fichier JSON dans userData. v2.273.2 : evite les "taches noires" dues
+// au backgroundColor #111214 hardcode quand l'utilisateur est en theme clair.
+type StoredTheme = 'auto' | 'dark' | 'light' | 'sepia' | 'night' | 'marine' | 'cursus'
+interface ThemeColors { background: string; titlebar: string; symbol: string }
+
+const THEME_COLORS: Record<StoredTheme, ThemeColors> = {
+  auto:   { background: '#FFFFFF', titlebar: '#FFFFFF', symbol: '#475569' },
+  light:  { background: '#FFFFFF', titlebar: '#FFFFFF', symbol: '#475569' },
+  cursus: { background: '#FFFFFF', titlebar: '#FFFFFF', symbol: '#475569' },
+  sepia:  { background: '#faf8f4', titlebar: '#faf8f4', symbol: '#655a4c' },
+  dark:   { background: '#1A1733', titlebar: '#0F0D1A', symbol: '#94A3B8' },
+  night:  { background: '#0f1115', titlebar: '#08090c', symbol: '#898C90' },
+  marine: { background: '#192840', titlebar: '#0e1829', symbol: '#9FB6CC' },
+}
+
+function getStoredTheme(): StoredTheme {
+  try {
+    const file = join(app.getPath('userData'), 'theme-pref.json')
+    if (!existsSync(file)) return 'light' // defaut v2.273+ : theme clair
+    const raw = readFileSync(file, 'utf-8')
+    const parsed = JSON.parse(raw) as { theme?: string }
+    const t = parsed?.theme as StoredTheme | undefined
+    return t && t in THEME_COLORS ? t : 'light'
+  } catch { return 'light' }
+}
+
+function persistTheme(theme: StoredTheme): void {
+  try {
+    const file = join(app.getPath('userData'), 'theme-pref.json')
+    writeFileSync(file, JSON.stringify({ theme }), 'utf-8')
+  } catch { /* silencieux : si le disque est plein on continuera avec defaut */ }
+}
 
 // Modules CommonJS - import default : Rollup + @rollup/plugin-commonjs convertit
 // module.exports en export default, ce qui permet le bundling correct.
@@ -75,6 +112,10 @@ if (!gotTheLock) {
 }
 
 function createWindow(splash: BrowserWindow | null): void {
+  // v2.273.2 : on lit la pref theme ecrite par le renderer pour que la
+  // BrowserWindow ait le bon background des le boot (evite les taches sombres
+  // visibles entre la fin du splash et le rendu Vue en theme clair).
+  const colors = THEME_COLORS[getStoredTheme()]
   const win = new BrowserWindow({
     width: 1280,
     height: 800,
@@ -83,11 +124,11 @@ function createWindow(splash: BrowserWindow | null): void {
     title: 'Cursus',
     show: false, // affiché uniquement quand le renderer est prêt
     icon: join(__dirname, '../../resources/icon.png'),
-    backgroundColor: '#111214',
+    backgroundColor: colors.background,
     titleBarStyle: 'hidden',
     titleBarOverlay: {
-      color: '#111214',
-      symbolColor: '#8B8D91',
+      color: colors.titlebar,
+      symbolColor: colors.symbol,
       height: 36,
     },
     webPreferences: {
@@ -185,6 +226,27 @@ function createWindow(splash: BrowserWindow | null): void {
   ipcMain.on('badge:clear', () => {
     if (!win.isDestroyed()) {
       win.setOverlayIcon(null, '')
+    }
+  })
+
+  // Persiste la pref theme cote main (mirror de localStorage du renderer)
+  // pour que la prochaine ouverture ait le bon backgroundColor des le boot.
+  ipcMain.handle('theme:set', (_e, theme: string) => {
+    try {
+      if (theme && theme in THEME_COLORS) persistTheme(theme as StoredTheme)
+      // Met a jour aussi le titlebar overlay de la fenetre courante (Win 11 WCO).
+      const colors = THEME_COLORS[(theme as StoredTheme) ?? 'light']
+      if (win.setTitleBarOverlay) {
+        win.setTitleBarOverlay({
+          color: colors.titlebar,
+          symbolColor: colors.symbol,
+          height: 36,
+        })
+      }
+      return { ok: true, data: null }
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e)
+      return { ok: false, error: msg }
     }
   })
 
