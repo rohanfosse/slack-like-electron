@@ -1,9 +1,0 @@
-<svg viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
-  <!-- Bento mark : 4 carres = les 4 features hero de la landing
-       (chat / devoirs / docs / live). Reference visuelle directe au
-       bento-grid de la landing. Multi-couleur sectorielle. -->
-  <rect x="40" y="40"  width="80" height="80" rx="18" fill="#6366F1" />
-  <rect x="136" y="40" width="80" height="80" rx="18" fill="#10B981" />
-  <rect x="40" y="136" width="80" height="80" rx="18" fill="#F59E0B" />
-  <rect x="136" y="136" width="80" height="80" rx="18" fill="#EF4444" />
-</svg>
