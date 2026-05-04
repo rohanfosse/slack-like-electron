@@ -1,0 +1,29 @@
+<svg viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
+  <!-- Variante stroke-based : 2 courbes "swoosh" en strokes paissis qui
+       s'amincissent vers les pointes (effet variable-width via taper).
+       Plus epuree, lisible des 16px, signature plus moderne.
+       Couleurs : bleu profond + emerald (palette landing). -->
+  <defs>
+    <linearGradient id="strokeBlue" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%"   stop-color="#1E40AF" />
+      <stop offset="100%" stop-color="#60A5FA" />
+    </linearGradient>
+    <linearGradient id="strokeGreen" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%"   stop-color="#047857" />
+      <stop offset="100%" stop-color="#34D399" />
+    </linearGradient>
+  </defs>
+
+  <!-- Aile bleue : courbe Bezier longue, plus base epaisse, pointe affinee.
+       On simule une stroke variable via 2 paths superposes (gros + fin). -->
+  <path d="M 32 188 Q 88 132, 168 124 L 200 108 L 196 144 L 168 124 Q 96 138, 56 200 Z"
+        fill="url(#strokeBlue)" />
+
+  <!-- Aile verte : courbe miroir plus haute, base epaisse vers gauche-bas. -->
+  <path d="M 76 220 Q 140 152, 220 132 L 240 100 L 244 144 L 220 132 Q 152 152, 100 232 Z"
+        fill="url(#strokeGreen)" />
+
+  <!-- Petite "tete" implicite : un point indigo a l'extremite haut-droite,
+       optionnel mais ajoute un focal point qui evoque "oiseau qui vise". -->
+  <circle cx="222" cy="112" r="6" fill="#1E40AF" opacity="0.85" />
+</svg>

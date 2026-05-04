@@ -1,0 +1,10 @@
+<svg viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
+  <!-- Oiseau monochrome indigo : meme silhouette que l'oiseau actuel,
+       mais en une seule couleur (alignement palette landing).
+       Compromis entre identite historique et sobriete moderne. -->
+  <path d="M 32 168 C 60 96, 124 64, 180 92 L 200 76 L 196 124 L 168 100 C 124 84, 84 112, 60 184 Z"
+        fill="#6366F1" />
+  <path d="M 76 200 C 96 120, 168 84, 224 100 L 232 76 L 240 132 L 212 120 C 164 116, 124 152, 108 220 Z"
+        fill="#6366F1"
+        opacity="0.55" />
+</svg>

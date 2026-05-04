@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8" />
+<title>Cursus — Propositions logo</title>
+<style>
+  :root {
+    --bg: #FFFFFF;
+    --bg-alt: #1A1733;
+    --text: #1E1B4B;
+    --text-2: #475569;
+    --border: rgba(15,23,42,.1);
+    --indigo: #6366F1;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    margin: 0;
+    padding: 48px 32px;
+  }
+  h1 {
+    font-size: 28px;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    margin: 0 0 8px;
+  }
+  .subtitle {
+    color: var(--text-2);
+    font-size: 14px;
+    margin-bottom: 40px;
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 24px;
+    max-width: 1200px;
+  }
+  .card {
+    background: #FFFFFF;
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 24px;
+    box-shadow: 0 1px 3px rgba(15,23,42,.04), 0 4px 12px rgba(15,23,42,.04);
+  }
+  .card h3 {
+    margin: 0 0 4px;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text);
+  }
+  .card p {
+    margin: 0 0 20px;
+    font-size: 12px;
+    color: var(--text-2);
+    line-height: 1.5;
+  }
+  .row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 16px;
+    border-radius: 12px;
+    background: #FAFBFC;
+    border: 1px solid var(--border);
+  }
+  .row.dark {
+    background: var(--bg-alt);
+    border-color: rgba(255,255,255,.08);
+    margin-top: 8px;
+  }
+  .sizes {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .size-512 { width: 96px; height: 96px; }
+  .size-48  { width: 48px; height: 48px; }
+  .size-32  { width: 32px; height: 32px; }
+  .size-16  { width: 16px; height: 16px; }
+  .label {
+    font-size: 10px;
+    color: var(--text-2);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-left: auto;
+  }
+  .label.dark { color: rgba(255,255,255,.5); }
+  .taskbar {
+    margin-top: 24px;
+    background: linear-gradient(180deg, #2A2A2A 0%, #1A1A1A 100%);
+    border-radius: 8px;
+    padding: 8px 12px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .taskbar img {
+    width: 24px;
+    height: 24px;
+  }
+  .taskbar span {
+    color: rgba(255,255,255,.6);
+    font-size: 11px;
+  }
+</style>
+</head>
+<body>
+  <h1>Cursus — Propositions logo (v2.273+)</h1>
+  <p class="subtitle">Aperçu sur fond clair / sombre / barre de tâche Windows. Ouvrir ce fichier dans un navigateur.</p>
+
+  <div class="grid">
+
+    <!-- 01 -->
+    <div class="card">
+      <h3>01 — Mono swoosh indigo</h3>
+      <p>Trajectoire ascendante + point d'arrivée. Le plus aligné sur la nouvelle direction sobre.</p>
+      <div class="row">
+        <div class="sizes">
+          <img src="01-mono-swoosh.svg" class="size-48" />
+          <img src="01-mono-swoosh.svg" class="size-32" />
+          <img src="01-mono-swoosh.svg" class="size-16" />
+        </div>
+        <span class="label">light</span>
+      </div>
+      <div class="row dark">
+        <div class="sizes">
+          <img src="01-mono-swoosh.svg" class="size-48" />
+          <img src="01-mono-swoosh.svg" class="size-32" />
+          <img src="01-mono-swoosh.svg" class="size-16" />
+        </div>
+        <span class="label dark">dark</span>
+      </div>
+      <div class="taskbar">
+        <img src="01-mono-swoosh.svg" />
+        <span>barre de tâche Win 11</span>
+      </div>
+    </div>
+
+    <!-- 02 -->
+    <div class="card">
+      <h3>02 — Oiseau actuel sans fond</h3>
+      <p>Reprend l'identité historique (bleu + vert), mais sans la plate blanche qui fait "carré" en barre de tâche.</p>
+      <div class="row">
+        <div class="sizes">
+          <img src="02-bird-transparent.svg" class="size-48" />
+          <img src="02-bird-transparent.svg" class="size-32" />
+          <img src="02-bird-transparent.svg" class="size-16" />
+        </div>
+        <span class="label">light</span>
+      </div>
+      <div class="row dark">
+        <div class="sizes">
+          <img src="02-bird-transparent.svg" class="size-48" />
+          <img src="02-bird-transparent.svg" class="size-32" />
+          <img src="02-bird-transparent.svg" class="size-16" />
+        </div>
+        <span class="label dark">dark</span>
+      </div>
+      <div class="taskbar">
+        <img src="02-bird-transparent.svg" />
+        <span>barre de tâche Win 11</span>
+      </div>
+    </div>
+
+    <!-- 03 -->
+    <div class="card">
+      <h3>03 — Oiseau monochrome indigo</h3>
+      <p>Compromis : silhouette historique mais en une seule couleur (alignement palette). Garde l'âme, gagne en sobriété.</p>
+      <div class="row">
+        <div class="sizes">
+          <img src="03-bird-mono-indigo.svg" class="size-48" />
+          <img src="03-bird-mono-indigo.svg" class="size-32" />
+          <img src="03-bird-mono-indigo.svg" class="size-16" />
+        </div>
+        <span class="label">light</span>
+      </div>
+      <div class="row dark">
+        <div class="sizes">
+          <img src="03-bird-mono-indigo.svg" class="size-48" />
+          <img src="03-bird-mono-indigo.svg" class="size-32" />
+          <img src="03-bird-mono-indigo.svg" class="size-16" />
+        </div>
+        <span class="label dark">dark</span>
+      </div>
+      <div class="taskbar">
+        <img src="03-bird-mono-indigo.svg" />
+        <span>barre de tâche Win 11</span>
+      </div>
+    </div>
+
+    <!-- 04 -->
+    <div class="card">
+      <h3>04 — Arc + point d'arrivée</h3>
+      <p>Trajectoire indigo + cible emerald. Plus narratif : "départ → objectif". Bicolore aligné landing.</p>
+      <div class="row">
+        <div class="sizes">
+          <img src="04-arc-with-marker.svg" class="size-48" />
+          <img src="04-arc-with-marker.svg" class="size-32" />
+          <img src="04-arc-with-marker.svg" class="size-16" />
+        </div>
+        <span class="label">light</span>
+      </div>
+      <div class="row dark">
+        <div class="sizes">
+          <img src="04-arc-with-marker.svg" class="size-48" />
+          <img src="04-arc-with-marker.svg" class="size-32" />
+          <img src="04-arc-with-marker.svg" class="size-16" />
+        </div>
+        <span class="label dark">dark</span>
+      </div>
+      <div class="taskbar">
+        <img src="04-arc-with-marker.svg" />
+        <span>barre de tâche Win 11</span>
+      </div>
+    </div>
+
+    <!-- 05 -->
+    <div class="card">
+      <h3>05 — "C" stylisé</h3>
+      <p>Monogramme C ouvert + point. Style Linear / Vercel / Stripe. Le plus "produit moderne" mais perd l'oiseau.</p>
+      <div class="row">
+        <div class="sizes">
+          <img src="05-c-glyph.svg" class="size-48" />
+          <img src="05-c-glyph.svg" class="size-32" />
+          <img src="05-c-glyph.svg" class="size-16" />
+        </div>
+        <span class="label">light</span>
+      </div>
+      <div class="row dark">
+        <div class="sizes">
+          <img src="05-c-glyph.svg" class="size-48" />
+          <img src="05-c-glyph.svg" class="size-32" />
+          <img src="05-c-glyph.svg" class="size-16" />
+        </div>
+        <span class="label dark">dark</span>
+      </div>
+      <div class="taskbar">
+        <img src="05-c-glyph.svg" />
+        <span>barre de tâche Win 11</span>
+      </div>
+    </div>
+
+    <!-- 06 -->
+    <div class="card">
+      <h3>06 — Bento mark (4 features)</h3>
+      <p>Référence directe au bento-grid de la landing : 4 carrés = 4 features. Multi-couleur sectorielle. Distinctif mais bruyant à 16px.</p>
+      <div class="row">
+        <div class="sizes">
+          <img src="06-bento-mark.svg" class="size-48" />
+          <img src="06-bento-mark.svg" class="size-32" />
+          <img src="06-bento-mark.svg" class="size-16" />
+        </div>
+        <span class="label">light</span>
+      </div>
+      <div class="row dark">
+        <div class="sizes">
+          <img src="06-bento-mark.svg" class="size-48" />
+          <img src="06-bento-mark.svg" class="size-32" />
+          <img src="06-bento-mark.svg" class="size-16" />
+        </div>
+        <span class="label dark">dark</span>
+      </div>
+      <div class="taskbar">
+        <img src="06-bento-mark.svg" />
+        <span>barre de tâche Win 11</span>
+      </div>
+    </div>
+
+  </div>
+</body>
+</html>

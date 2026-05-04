@@ -1,0 +1,11 @@
+<svg viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
+  <!-- Mark "C" stylise : un C ouvert vers le haut-droite avec un point
+       de fin = "Cursus" + idee de progression. Tres compact, lisible
+       a 16x16. Style monogramme moderne (Linear, Vercel). -->
+  <path d="M 200 84 A 84 84 0 1 0 200 172"
+        stroke="#6366F1"
+        stroke-width="34"
+        fill="none"
+        stroke-linecap="round" />
+  <circle cx="200" cy="172" r="22" fill="#6366F1" />
+</svg>

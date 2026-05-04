@@ -1,0 +1,10 @@
+<svg viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
+  <!-- Oiseau actuel sans le fond blanc — 2 courbes (bleue + verte).
+       Reprend la forme du PNG existant mais sur transparent, donc elle
+       respire dans la barre de tache au lieu d'imposer une plate. -->
+  <path d="M 32 168 C 60 96, 124 64, 180 92 L 200 76 L 196 124 L 168 100 C 124 84, 84 112, 60 184 Z"
+        fill="#3B82F6" />
+  <path d="M 76 200 C 96 120, 168 84, 224 100 L 232 76 L 240 132 L 212 120 C 164 116, 124 152, 108 220 Z"
+        fill="#10B981"
+        opacity="0.92" />
+</svg>

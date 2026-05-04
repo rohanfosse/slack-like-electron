@@ -194,19 +194,23 @@
   border: 2px solid var(--bg-rail);
 }
 
-/* ── Sidebar ────────────────────────────────────────────────────────────── */
+/* ── Sidebar ──────────────────────────────────────────────────────────────
+   v2.273.4 : suppression du `linear-gradient(180deg, rgba(28,38,72,.28))`
+   (teinte bleu marine pensee pour le theme sombre, jaurissait en mauve sur
+   fond clair — meme bug que .main-wrapper deja corrige). Ombre exterieure
+   neutralisee (rgba(15,23,42) au lieu de noir pur) pour matcher l'echelle
+   d'elevation theme-aware. */
 .sidebar-wrapper {
   width: var(--sidebar-width);
   min-width: 180px;
   max-width: 320px;
   flex-shrink: 0;
   background: var(--bg-sidebar);
-  background-image: linear-gradient(180deg, rgba(28,38,72,.28) 0%, transparent 45%);
   border-right: 1px solid var(--border);
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  box-shadow: 2px 0 12px rgba(0,0,0,.15);
+  box-shadow: 1px 0 4px rgba(15,23,42,.04);
   transition: width 0.2s ease, min-width 0.2s ease;
 }
 .sidebar-wrapper--collapsed {
@@ -298,24 +302,31 @@
   overflow-x: hidden;
   padding-top: 4px;
   scrollbar-width: thin;
-  scrollbar-color: rgba(255,255,255,.1) transparent;
+  /* v2.273.4 : scrollbar via tokens semantiques (les anciens `rgba(255,255,255)`
+     etaient invisibles en theme clair). On herite des regles globales
+     `body.light/cursus *` definies dans base.css. */
+  scrollbar-color: transparent transparent;
 }
 #sidebar-section-messages::-webkit-scrollbar { width: 4px; }
 #sidebar-section-messages::-webkit-scrollbar-track { background: transparent; }
-#sidebar-section-messages::-webkit-scrollbar-thumb { background: rgba(255,255,255,.12); border-radius: var(--radius-xs); }
-#sidebar-section-messages::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,.2); }
+#sidebar-section-messages::-webkit-scrollbar-thumb { background: transparent; border-radius: var(--radius-xs); transition: background var(--t-fast); }
+#sidebar-section-messages:hover::-webkit-scrollbar-thumb { background: rgba(99,102,241,.18); }
+#sidebar-section-messages::-webkit-scrollbar-thumb:hover { background: rgba(99,102,241,.32); }
 
-/* En-tête de section : Canaux / Messages directs */
+/* En-tête de section : Canaux / Messages directs.
+   v2.273.4 : aligne sur .sidebar-section-label de la landing
+   (font-weight 800, letter-spacing .06em). */
 .sidebar-section-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 10px 14px 3px;
+  font-family: var(--font-display);
   font-size: 11px;
-  font-weight: 700;
+  font-weight: 800;
   color: var(--text-muted);
   text-transform: uppercase;
-  letter-spacing: .5px;
+  letter-spacing: .06em;
   flex-shrink: 0;
 }
 
@@ -428,8 +439,9 @@ nav[aria-label="Messages directs"] {
 .nav-promo-section { flex-shrink: 0; }
 .nav-promo-label {
   display: block; padding: 8px 12px 4px;
-  font-size: 10px; font-weight: 700; color: var(--text-muted);
-  text-transform: uppercase; letter-spacing: .5px;
+  font-family: var(--font-display);
+  font-size: 10px; font-weight: 800; color: var(--text-muted);
+  text-transform: uppercase; letter-spacing: .06em;
 }
 .nav-promo-dot {
   width: 7px; height: 7px; border-radius: var(--radius-full); flex-shrink: 0;
@@ -1125,7 +1137,7 @@ body.light .nav-btn-icon:hover    { background: rgba(0,0,0,.06); }
 body.light .nav-btn               { color: rgba(0,0,0,.55); }
 body.light .nav-btn.active        { background: var(--accent-subtle); color: var(--accent); box-shadow: none; }
 body.light .nav-btn.active .nav-label { color: var(--accent); }
-body.light .sidebar-wrapper       { border-right-color: rgba(0,0,0,.09); box-shadow: 2px 0 12px rgba(0,0,0,.06); }
+body.light .sidebar-wrapper       { border-right-color: rgba(15,23,42,.08); box-shadow: 1px 0 4px rgba(15,23,42,.04); }
 body.light .channel-header        { box-shadow: 0 2px 8px rgba(0,0,0,.07); }
 body.light .message-input-wrapper { background: rgba(0,0,0,.035); border-color: rgba(0,0,0,.12); }
 body.light .message-input-wrapper:focus-within { background: rgba(0,0,0,.05); box-shadow: 0 0 0 3px rgba(var(--accent-rgb),.14); }
