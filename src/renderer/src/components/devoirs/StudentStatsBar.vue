@@ -84,7 +84,7 @@ function scrollTo(target: Target) {
 .stat-chip strong { font-weight: 700; }
 
 .stat-chip-neutral { background: rgba(255, 255, 255, 0.06); border-color: rgba(255, 255, 255, 0.08); color: var(--text-secondary); }
-.stat-chip-blue    { background: rgba(74, 144, 217, 0.12);  border-color: rgba(74, 144, 217, 0.2);   color: var(--accent-light); }
+.stat-chip-blue    { background: rgba(var(--accent-rgb),0.12);  border-color: rgba(var(--accent-rgb),0.2);   color: var(--accent-light); }
 .stat-chip-red     { background: rgba(231, 76, 60, 0.12);   border-color: rgba(231, 76, 60, 0.2);    color: var(--color-danger); }
 .stat-chip-green   { background: rgba(39, 174, 96, 0.12);   border-color: rgba(39, 174, 96, 0.2);    color: var(--color-success); }
 

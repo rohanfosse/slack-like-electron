@@ -278,7 +278,7 @@ function gradeColor(note: string | null | undefined): string {
 }
 
 /* View toggle */
-.stl-view-toggle { display: flex; gap: 0; border-radius: 6px; overflow: hidden; border: 1px solid var(--border); }
+.stl-view-toggle { display: flex; gap: 0; border-radius: var(--radius-sm); overflow: hidden; border: 1px solid var(--border); }
 .stl-view-btn {
   display: flex; align-items: center; justify-content: center;
   width: 30px; height: 26px; background: transparent; border: none;
@@ -292,13 +292,13 @@ function gradeColor(note: string | null | undefined): string {
 .stl-frise-nav { display: flex; align-items: center; gap: 6px; justify-content: center; }
 .stl-frise-btn {
   display: flex; align-items: center; justify-content: center;
-  width: 28px; height: 28px; border-radius: 6px;
+  width: 28px; height: 28px; border-radius: var(--radius-sm);
   background: var(--bg-elevated); border: 1px solid var(--border);
   color: var(--text-secondary); cursor: pointer; transition: all .15s;
 }
 .stl-frise-btn:hover { background: var(--bg-active); }
 .stl-frise-today {
-  font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 6px;
+  font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: var(--radius-sm);
   background: rgba(var(--accent-rgb),.12); color: var(--accent);
   border: 1px solid rgba(var(--accent-rgb),.25); cursor: pointer; font-family: var(--font);
 }
@@ -316,7 +316,7 @@ function gradeColor(note: string | null | undefined): string {
   font-size: 11px;
   font-weight: 600;
   padding: 4px 10px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   border: 1px solid var(--border);
   background: transparent;
   color: var(--text-muted);
@@ -334,7 +334,7 @@ function gradeColor(note: string | null | undefined): string {
   flex: 1;
   min-width: 140px;
   padding: 4px 8px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   border: 1px solid var(--border);
   background: var(--bg-elevated);
 }
@@ -364,7 +364,7 @@ function gradeColor(note: string | null | undefined): string {
   gap: 4px;
   font-size: 11px;
   padding: 2px 8px;
-  border-radius: 10px;
+  border-radius: var(--radius);
   font-weight: 500;
   cursor: pointer;
   user-select: none;
@@ -459,7 +459,7 @@ function gradeColor(note: string | null | undefined): string {
   font-size: 10px;
   font-weight: 700;
   padding: 2px 7px;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   flex-shrink: 0;
 }
 .type-livrable     { background: rgba(var(--accent-rgb),.2);   color: var(--accent); }
@@ -486,7 +486,7 @@ function gradeColor(note: string | null | undefined): string {
   font-size: 10px;
   font-weight: 700;
   padding: 2px 6px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   flex-shrink: 0;
   margin-left: auto;
 }
@@ -506,7 +506,7 @@ function gradeColor(note: string | null | undefined): string {
   font-size: 10.5px;
   font-weight: 600;
   padding: 2px 7px;
-  border-radius: 10px;
+  border-radius: var(--radius);
   background: rgba(var(--color-cctl-rgb),.1);
   color: var(--color-cctl);
 }
@@ -519,7 +519,7 @@ function gradeColor(note: string | null | undefined): string {
   font-size: 11px;
   font-weight: 700;
   padding: 2px 8px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
 }
 .grade-a { background: rgba(var(--color-success-rgb),.15);  color: var(--color-success); }
 .grade-b { background: rgba(var(--accent-rgb),.15); color: var(--accent); }

@@ -226,7 +226,7 @@ function gradeColor(note: string | null | undefined): string {
           </div>
           <div v-if="loading" class="spf-aside-loading">
             <div v-for="i in 3" :key="i" class="skel-list-row">
-              <div class="skel" style="width:20px;height:20px;border-radius:4px;flex-shrink:0" />
+              <div class="skel" style="width:20px;height:20px;border-radius: var(--radius-xs);flex-shrink:0" />
               <div class="skel skel-line skel-w70" />
             </div>
           </div>
@@ -399,7 +399,7 @@ function gradeColor(note: string | null | undefined): string {
   font-family: var(--font);
   cursor: pointer;
   padding: 2px 6px 2px 2px;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   transition: color var(--t-fast), background var(--t-fast);
 }
 .spf-back-btn:hover { color: var(--text-primary); background: var(--bg-hover); }
@@ -413,7 +413,7 @@ function gradeColor(note: string | null | undefined): string {
 .spf-icon-wrap {
   width: 42px;
   height: 42px;
-  border-radius: 10px;
+  border-radius: var(--radius);
   background: rgba(var(--color-cctl-rgb),.12);
   display: flex;
   align-items: center;
@@ -455,7 +455,7 @@ function gradeColor(note: string | null | undefined): string {
   font-size: 11px;
   font-weight: 600;
   padding: 2px 8px;
-  border-radius: 12px;
+  border-radius: var(--radius);
   background: rgba(var(--color-cctl-rgb),.12);
   color: var(--color-cctl);
 }
@@ -507,7 +507,7 @@ function gradeColor(note: string | null | undefined): string {
   align-items: center;
   gap: 8px;
   padding: 8px 12px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   background: rgba(var(--color-warning-rgb),.1);
   border: 1px solid rgba(var(--color-warning-rgb),.25);
   color: var(--color-warning);
@@ -562,7 +562,7 @@ function gradeColor(note: string | null | undefined): string {
   font-weight: 600;
   background: var(--bg-hover);
   padding: 1px 5px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   color: var(--text-muted);
 }
 
@@ -571,7 +571,7 @@ function gradeColor(note: string | null | undefined): string {
 /* Carte devoir */
 .spf-devoir-card {
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   padding: 12px 14px;
   background: var(--bg-elevated);
   display: flex;
@@ -594,7 +594,7 @@ function gradeColor(note: string | null | undefined): string {
   font-size: 10px;
   font-weight: 700;
   padding: 2px 6px;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   flex-shrink: 0;
 }
 .type-livrable     { background: rgba(var(--accent-rgb),.2);   color: var(--accent); }
@@ -618,7 +618,7 @@ function gradeColor(note: string | null | undefined): string {
   font-size: 10px;
   font-weight: 600;
   padding: 2px 6px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   flex-shrink: 0;
 }
 .deadline-ok       { background: rgba(var(--color-success-rgb),.1);  color: var(--color-success); }
@@ -651,7 +651,7 @@ function gradeColor(note: string | null | undefined): string {
   font-size: 13px;
   font-weight: 700;
   padding: 3px 10px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   flex-shrink: 0;
 }
 .grade-a { background: rgba(var(--color-success-rgb),.15);   color: var(--color-success); }
@@ -684,7 +684,7 @@ function gradeColor(note: string | null | undefined): string {
   color: var(--color-cctl);
   background: rgba(var(--color-cctl-rgb),.08);
   padding: 4px 10px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   width: fit-content;
 }
 
@@ -695,7 +695,7 @@ function gradeColor(note: string | null | undefined): string {
   font-size: 11px;
   padding: 4px 10px;
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   background: transparent;
   color: var(--text-muted);
   cursor: not-allowed;
@@ -711,7 +711,7 @@ function gradeColor(note: string | null | undefined): string {
   gap: 10px;
   padding: 12px;
   background: var(--bg-elevated);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   border: 1px solid var(--border-input);
 }
 .spf-deposit-toggle { display: flex; gap: 4px; }
@@ -733,7 +733,7 @@ function gradeColor(note: string | null | undefined): string {
 
 .spf-file-zone {
   border: 2px dashed var(--border-input);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   padding: 20px;
   display: flex;
   flex-direction: column;
@@ -756,7 +756,7 @@ function gradeColor(note: string | null | undefined): string {
   padding: 8px 12px;
   background: rgba(var(--color-success-rgb),.06);
   border: 1px solid rgba(var(--color-success-rgb),.2);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
 }
 .spf-file-ok   { color: var(--color-success); flex-shrink: 0; }
 .spf-file-name { flex: 1; font-size: 12px; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -798,7 +798,7 @@ function gradeColor(note: string | null | undefined): string {
   font-size: 10px;
   background: var(--bg-hover);
   padding: 1px 5px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   color: var(--text-muted);
 }
 .spf-aside-loading { display: flex; flex-direction: column; gap: 6px; }
@@ -824,7 +824,7 @@ function gradeColor(note: string | null | undefined): string {
   color: var(--text-secondary);
   font-size: 10.5px;
   font-family: inherit;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   cursor: pointer;
   margin-left: auto;
   transition: background var(--t-fast), color var(--t-fast);
@@ -874,7 +874,7 @@ function gradeColor(note: string | null | undefined): string {
   align-items: center;
   gap: 8px;
   padding: 5px 8px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   transition: background var(--t-fast);
 }
 .spf-member-item:hover { background: var(--bg-hover); }
@@ -897,7 +897,7 @@ function gradeColor(note: string | null | undefined): string {
   font-size: 9px;
   font-weight: 700;
   padding: 1px 5px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   background: rgba(var(--color-cctl-rgb),.15);
   color: var(--color-cctl);
   flex-shrink: 0;
@@ -911,7 +911,7 @@ function gradeColor(note: string | null | undefined): string {
   gap: 3px;
   padding: 7px 9px;
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   background: var(--bg-elevated);
 }
 .spf-result-top {

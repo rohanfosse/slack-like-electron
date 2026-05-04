@@ -23,19 +23,20 @@
 export const MARP_CURSUS_THEME = `/* @theme cursus */
 
 section {
-  --cursus-accent: #4A90D9;
-  --cursus-bg: #1e1f21;
-  --cursus-bg-elevated: #2c2d2f;
-  --cursus-text: #E8E9EA;
-  --cursus-muted: #8B8D91;
-  --cursus-border: rgba(255, 255, 255, 0.1);
-  --cursus-success: #2ECC71;
-  --cursus-warning: #E8891A;
-  --cursus-danger: #E74C3C;
+  --cursus-accent: #818CF8;
+  --cursus-accent-rgb: 129,140,248;
+  --cursus-bg: #1A1733;
+  --cursus-bg-elevated: #221E45;
+  --cursus-text: #F1F0FF;
+  --cursus-muted: #94A3B8;
+  --cursus-border: rgba(129, 140, 248, 0.15);
+  --cursus-success: #34D399;
+  --cursus-warning: #FBBF24;
+  --cursus-danger: #F87171;
 
   background: var(--cursus-bg);
   color: var(--cursus-text);
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-family: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   font-size: 30px;
   padding: 60px 80px;
   line-height: 1.5;
@@ -88,7 +89,7 @@ section li::marker {
 section a {
   color: var(--cursus-accent);
   text-decoration: none;
-  border-bottom: 1px solid rgba(74, 144, 217, 0.4);
+  border-bottom: 1px solid rgba(var(--cursus-accent-rgb),0.4);
 }
 section a:hover {
   border-bottom-color: var(--cursus-accent);
@@ -104,7 +105,7 @@ section code {
 }
 
 section pre {
-  background: #15161a;
+  background: #0F0D1A;
   border: 1px solid var(--cursus-border);
   border-left: 3px solid var(--cursus-accent);
   padding: 1em 1.2em;
@@ -122,7 +123,7 @@ section pre code {
 
 section blockquote {
   border-left: 3px solid var(--cursus-accent);
-  background: rgba(74, 144, 217, 0.08);
+  background: rgba(var(--cursus-accent-rgb),0.08);
   margin: 0.6em 0;
   padding: 0.6em 1em;
   color: var(--cursus-text);
@@ -153,7 +154,7 @@ section th {
   border-bottom: 2px solid var(--cursus-accent);
 }
 section tr:hover {
-  background: rgba(74, 144, 217, 0.05);
+  background: rgba(var(--cursus-accent-rgb),0.05);
 }
 
 section img {
@@ -180,7 +181,7 @@ section hr {
 section::after {
   color: var(--cursus-muted);
   font-size: 0.5em;
-  font-family: 'Inter', sans-serif;
+  font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
 }
 
 /* Layout "lead" : grande slide titre centree */
@@ -202,28 +203,28 @@ section.lead h2 {
   margin: 0;
 }
 
-/* Layout "invert" : fond clair (utile pour les slides de transition) */
+/* Layout "invert" : fond clair lavande (utile pour les slides de transition) */
 section.invert {
-  background: #f6f7f9;
-  color: #1a1c1f;
+  background: #F5F3FF;
+  color: #1E1B4B;
 }
 section.invert h1,
 section.invert h2,
 section.invert h3 {
-  color: #1a1c1f;
+  color: #1E1B4B;
 }
 section.invert h2 {
-  color: var(--cursus-accent);
+  color: #6366F1;
 }
 section.invert code {
-  background: #e6e9ee;
-  color: var(--cursus-accent);
+  background: #EDE9FE;
+  color: #6366F1;
 }
 section.invert pre {
-  background: #1a1c1f;
+  background: #1A1733;
 }
 section.invert pre code {
-  color: #f6f7f9;
+  color: #F1F0FF;
 }
 
 /* Footer / header personnalises (header: ... / footer: ... dans la frontmatter) */

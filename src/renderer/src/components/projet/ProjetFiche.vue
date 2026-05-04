@@ -364,7 +364,7 @@ function formatDateRange(start?: string, end?: string): string {
   font-family: var(--font);
   cursor: pointer;
   padding: 3px 6px 3px 2px;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   transition: color var(--t-fast), background var(--t-fast);
 }
 .pf-back-btn:hover { color: var(--text-primary); background: var(--bg-hover); }
@@ -386,7 +386,7 @@ function formatDateRange(start?: string, end?: string): string {
 .pf-icon-wrap {
   width: 44px;
   height: 44px;
-  border-radius: 10px;
+  border-radius: var(--radius);
   background: rgba(var(--accent-rgb),.12);
   display: flex;
   align-items: center;
@@ -475,7 +475,7 @@ function formatDateRange(start?: string, end?: string): string {
   font-size: 10px;
   font-weight: 600;
   padding: 1px 6px;
-  border-radius: 10px;
+  border-radius: var(--radius);
 }
 
 .pf-empty {
@@ -496,7 +496,7 @@ function formatDateRange(start?: string, end?: string): string {
   text-align: left;
   background: var(--bg-elevated);
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   padding: 12px 14px;
   cursor: pointer;
   transition: background var(--t-fast), border-color var(--t-fast);
@@ -519,7 +519,7 @@ function formatDateRange(start?: string, end?: string): string {
   font-size: 10.5px;
   font-weight: 600;
   padding: 2px 7px;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   flex-shrink: 0;
 }
 /* inherits .type-* colors from global/parent scope */
@@ -640,7 +640,7 @@ function formatDateRange(start?: string, end?: string): string {
   align-items: center;
   gap: 8px;
   padding: 7px 8px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
   transition: background var(--t-fast);
 }
@@ -676,7 +676,7 @@ function formatDateRange(start?: string, end?: string): string {
   align-items: center;
   gap: 8px;
   padding: 7px 8px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
   transition: background var(--t-fast);
 }

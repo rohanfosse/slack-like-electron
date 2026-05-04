@@ -158,7 +158,7 @@ watch(() => props.modelValue, (next) => {
 .nb-code-cell {
   margin: 10px 0;
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   background: var(--bg-input);
   overflow: hidden;
   transition: border-color var(--motion-fast) var(--ease-out);
@@ -225,7 +225,7 @@ watch(() => props.modelValue, (next) => {
   white-space: pre-wrap;
   word-break: break-word;
   background: transparent;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   color: var(--text-primary);
 }
 .nb-out--stderr {
@@ -243,7 +243,7 @@ watch(() => props.modelValue, (next) => {
 .nb-out--image {
   max-width: 100%;
   height: auto;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   background: #fff;
   padding: 6px;
 }

@@ -206,7 +206,7 @@
 .gd-title:hover { border-color: var(--border-input); }
 .gd-title-input {
   flex: 1; font-size: 16px; font-weight: 700; padding: 4px 8px;
-  background: var(--bg-input); border: 1px solid var(--accent); border-radius: 6px;
+  background: var(--bg-input); border: 1px solid var(--accent); border-radius: var(--radius-sm);
   color: var(--text-primary); font-family: var(--font);
 }
 
@@ -225,7 +225,7 @@
 .gd-meta-details {
   margin-top: 6px;
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   background: var(--bg-elevated);
 }
 .gd-meta-details-summary {
@@ -285,21 +285,21 @@
   font-size: 10px; font-weight: 800; text-transform: uppercase;
   letter-spacing: .4px; padding: 3px 9px; border-radius: 20px;
 }
-.type-livrable      { background: rgba(74,144,217,.2);  color: var(--accent); }
+.type-livrable      { background: rgba(var(--accent-rgb),.2);  color: var(--accent); }
 .type-soutenance    { background: rgba(232,137,26,.2);  color: var(--color-warning); }
 .type-cctl          { background: rgba(142,68,173,.2);  color: #a569bd; }
 .type-etude_de_cas  { background: rgba(39,174,96,.2);   color: var(--color-success); }
 .type-memoire       { background: rgba(231,76,60,.2);   color: var(--color-danger); }
 .type-autre         { background: rgba(127,140,141,.2); color: var(--color-autre); }
 .tag-badge {
-  font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 12px;
+  font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: var(--radius);
   background: var(--bg-hover); color: var(--text-secondary);
 }
 .gd-field-editable { cursor: pointer; border-bottom: 1px dashed var(--border-input); }
 .gd-field-editable:hover { border-color: var(--accent); }
 .gd-inline-input {
   font-size: 12px; padding: 3px 6px; background: var(--bg-input);
-  border: 1px solid var(--accent); border-radius: 4px; color: var(--text-primary);
+  border: 1px solid var(--accent); border-radius: var(--radius-xs); color: var(--text-primary);
   font-family: var(--font);
 }
 .gd-link-btn {

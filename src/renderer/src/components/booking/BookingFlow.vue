@@ -540,7 +540,7 @@ const dayInitials = DAY_INITIALS_FR
   --bf-radius: 12px;
   --bf-radius-lg: 16px;
   --bf-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 8px 24px rgba(15, 23, 42, 0.06);
-  --bf-font: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', Roboto, sans-serif;
+  --bf-font: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', Roboto, sans-serif;
 
   width: 100%;
   max-width: 920px;

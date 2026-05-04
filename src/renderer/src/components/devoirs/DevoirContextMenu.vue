@@ -60,7 +60,7 @@ const menuStyle = computed(() => {
   min-width: 170px;
   background: var(--bg-primary);
   border: 1px solid var(--border-color);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   box-shadow: 0 8px 24px rgba(0,0,0,.35);
   padding: 4px 0;
   animation: ctxFade var(--motion-fast) var(--ease-out);

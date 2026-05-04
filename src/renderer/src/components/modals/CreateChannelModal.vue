@@ -402,7 +402,7 @@
 .cc-select-all-btn {
   font-size: 11px; font-weight: 600; color: var(--accent);
   background: none; border: none; cursor: pointer;
-  padding: 2px 6px; border-radius: 4px;
+  padding: 2px 6px; border-radius: var(--radius-xs);
   transition: background .15s; font-family: var(--font);
 }
 .cc-select-all-btn:hover { background: rgba(var(--accent-rgb),.08); }
@@ -440,7 +440,7 @@
 .cc-member-avatar {
   width: 26px;
   height: 26px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   background: var(--bg-active);
   color: var(--text-secondary);
   font-size: 10px;

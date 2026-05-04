@@ -638,7 +638,7 @@ const ctxItems = computed<ContextMenuItem[]>(() => {
   padding: 6px 0;
   background: var(--bg-primary);
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   max-height: 45vh;
   overflow-y: auto;
   flex-shrink: 0;
@@ -722,7 +722,7 @@ const ctxItems = computed<ContextMenuItem[]>(() => {
   color: var(--text-muted);
   background: var(--bg-primary);
   border: 1px dashed var(--border);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   flex-shrink: 0;
 }
 
@@ -845,7 +845,7 @@ const ctxItems = computed<ContextMenuItem[]>(() => {
   padding: 4px 8px;
   background: rgba(217, 138, 0, 0.1);
   border: 1px solid rgba(217, 138, 0, 0.3);
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   font-size: 10.5px;
   line-height: 1.35;
   color: var(--warning);
@@ -902,7 +902,7 @@ const ctxItems = computed<ContextMenuItem[]>(() => {
   border: none;
   cursor: pointer;
   text-align: left;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   transition: background 0.1s;
 }
 .lumen-section-row:hover { background: var(--bg-hover); }
@@ -1121,7 +1121,7 @@ const ctxItems = computed<ContextMenuItem[]>(() => {
   padding: 1px 6px;
   background: rgba(var(--accent-rgb), .14);
   color: var(--accent);
-  border-radius: 10px;
+  border-radius: var(--radius);
   font-size: 10px;
   font-variant-numeric: tabular-nums;
   text-transform: none;

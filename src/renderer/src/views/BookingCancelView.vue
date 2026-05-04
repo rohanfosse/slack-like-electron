@@ -127,7 +127,7 @@ async function confirmCancel() {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 .cancel-card {
-  background: #fff; border-radius: 16px; padding: 40px;
+  background: #fff; border-radius: var(--radius-lg); padding: 40px;
   text-align: center; box-shadow: 0 4px 24px rgba(0,0,0,.08); max-width: 420px; width: 100%;
 }
 .cancel-icon { width: 56px; height: 56px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; color: #fff; }
@@ -139,7 +139,7 @@ p { color: #475569; line-height: 1.6; margin: 0 0 8px; }
 .cancel-sub { font-size: 13px; color: #94a3b8; }
 .cancel-loading { padding: 20px; color: #64748b; font-size: 14px; }
 .actions { margin-top: 20px; display: flex; justify-content: center; gap: 8px; }
-.btn { display: inline-block; padding: 10px 20px; border-radius: 8px; font-weight: 600; font-size: 14px; text-decoration: none; border: none; cursor: pointer; }
+.btn { display: inline-block; padding: 10px 20px; border-radius: var(--radius-sm); font-weight: 600; font-size: 14px; text-decoration: none; border: none; cursor: pointer; }
 .btn--danger { background: #ef4444; color: #fff; }
 .btn--danger:hover { background: #dc2626; }
 .btn--primary { background: #3b82f6; color: #fff; margin-top: 12px; }

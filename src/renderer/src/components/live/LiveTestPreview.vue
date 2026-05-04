@@ -217,7 +217,7 @@ const mockEmoji = ref<string | null>(null)
   padding: 16px;
   background: var(--bg-elevated);
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: var(--radius);
   min-width: 280px;
   max-width: 380px;
 }
@@ -242,7 +242,7 @@ const mockEmoji = ref<string | null>(null)
   background: var(--bg-input);
   color: var(--text-primary);
   border: 1px solid var(--border-input);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   padding: 3px 6px;
   max-width: 180px;
   outline: none;
@@ -333,7 +333,7 @@ const mockEmoji = ref<string | null>(null)
   padding: 9px 10px;
   background: #1e1e27;
   border: 1.5px solid #2a2a35;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   color: #e6e7ea;
   font-size: 12px;
   text-align: left;
@@ -349,7 +349,7 @@ const mockEmoji = ref<string | null>(null)
 .ltp-option-letter {
   width: 22px; height: 22px;
   display: flex; align-items: center; justify-content: center;
-  background: #2a2a35; border-radius: 6px;
+  background: #2a2a35; border-radius: var(--radius-sm);
   font-size: 11px; font-weight: 700;
   flex-shrink: 0;
 }
@@ -364,7 +364,7 @@ const mockEmoji = ref<string | null>(null)
   padding: 14px;
   background: #1e1e27;
   border: 2px solid #2a2a35;
-  border-radius: 10px;
+  border-radius: var(--radius);
   color: #e6e7ea;
   font-size: 14px; font-weight: 700;
   cursor: pointer;
@@ -380,7 +380,7 @@ const mockEmoji = ref<string | null>(null)
   padding: 10px 12px;
   background: #1e1e27;
   border: 1.5px solid #2a2a35;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   color: #e6e7ea;
   font-size: 12px;
   font-family: inherit;
@@ -394,7 +394,7 @@ const mockEmoji = ref<string | null>(null)
 .ltp-pair-row {
   display: flex; align-items: center; gap: 6px;
   padding: 6px;
-  background: #1e1e27; border-radius: 6px;
+  background: #1e1e27; border-radius: var(--radius-sm);
   font-size: 11px;
 }
 .ltp-pair-left { flex: 1; color: #fff; font-weight: 600; }
@@ -436,7 +436,7 @@ const mockEmoji = ref<string | null>(null)
 .ltp-priority { display: flex; flex-direction: column; gap: 5px; }
 .ltp-priority-item {
   display: flex; align-items: center; gap: 8px;
-  padding: 7px 9px; background: #1e1e27; border-radius: 6px;
+  padding: 7px 9px; background: #1e1e27; border-radius: var(--radius-sm);
   font-size: 12px;
 }
 .ltp-priority-rank {
@@ -454,14 +454,14 @@ const mockEmoji = ref<string | null>(null)
 .ltp-matrix { display: flex; flex-direction: column; gap: 6px; }
 .ltp-matrix-row {
   display: flex; justify-content: space-between; align-items: center; gap: 6px;
-  padding: 7px 9px; background: #1e1e27; border-radius: 6px;
+  padding: 7px 9px; background: #1e1e27; border-radius: var(--radius-sm);
   font-size: 11px;
 }
 .ltp-matrix-label { color: #e6e7ea; font-weight: 600; }
 .ltp-matrix-stars { display: flex; gap: 2px; color: #3a3a45; }
 
 /* Code */
-.ltp-code-preview :deep(.lcv-wrap) { min-height: 200px; border-radius: 8px; }
+.ltp-code-preview :deep(.lcv-wrap) { min-height: 200px; border-radius: var(--radius-sm); }
 
 /* Board */
 .ltp-board { display: flex; gap: 4px; overflow-x: auto; padding-bottom: 4px; }
@@ -469,7 +469,7 @@ const mockEmoji = ref<string | null>(null)
   min-width: 95px;
   display: flex; flex-direction: column; gap: 4px;
   padding: 6px; background: #1e1e27;
-  border-radius: 6px; flex-shrink: 0;
+  border-radius: var(--radius-sm); flex-shrink: 0;
 }
 .ltp-board-col-title {
   font-size: 10px; font-weight: 700;
@@ -478,12 +478,12 @@ const mockEmoji = ref<string | null>(null)
 }
 .ltp-board-postit {
   padding: 6px; background: #fef3c7; color: #78350f;
-  border-radius: 4px; font-size: 10px;
+  border-radius: var(--radius-xs); font-size: 10px;
 }
 .ltp-board-add {
   padding: 4px; font-size: 10px;
   background: transparent; border: 1px dashed #3a3a45;
-  border-radius: 4px; color: #6a6a75;
+  border-radius: var(--radius-xs); color: #6a6a75;
   cursor: pointer; font-family: inherit;
 }
 
@@ -492,7 +492,7 @@ const mockEmoji = ref<string | null>(null)
   margin-top: auto;
   padding: 10px;
   background: var(--cat-color);
-  color: #fff; border: none; border-radius: 8px;
+  color: #fff; border: none; border-radius: var(--radius-sm);
   font-size: 13px; font-weight: 700;
   cursor: not-allowed; opacity: .55;
   font-family: inherit;

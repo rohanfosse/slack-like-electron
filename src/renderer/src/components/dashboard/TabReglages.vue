@@ -158,7 +158,7 @@ const emit = defineEmits<{
 .tr-card {
   display: flex; flex-direction: column;
   background: var(--bg-elevated, rgba(255,255,255,.03));
-  border: 1px solid var(--border); border-radius: 12px;
+  border: 1px solid var(--border); border-radius: var(--radius);
   border-left: 3px solid var(--card-accent, var(--border));
   padding: 18px; gap: 12px;
   transition: border-color var(--t-fast), box-shadow var(--t-fast);
@@ -170,7 +170,7 @@ const emit = defineEmits<{
 
 /* ── Icon ── */
 .tr-card-icon-wrap {
-  width: 36px; height: 36px; border-radius: 10px;
+  width: 36px; height: 36px; border-radius: var(--radius);
   display: flex; align-items: center; justify-content: center;
   background: var(--icon-bg, rgba(255,255,255,.05));
   flex-shrink: 0;
@@ -203,7 +203,7 @@ const emit = defineEmits<{
 /* ── Button ── */
 .tr-btn {
   display: inline-flex; align-items: center; gap: 5px;
-  font-size: 11px; font-weight: 600; padding: 5px 12px; border-radius: 6px;
+  font-size: 11px; font-weight: 600; padding: 5px 12px; border-radius: var(--radius-sm);
   background: var(--bg-hover); color: var(--text-secondary);
   border: 1px solid var(--border-input); cursor: pointer; font-family: var(--font);
   transition: all var(--t-fast); white-space: nowrap;

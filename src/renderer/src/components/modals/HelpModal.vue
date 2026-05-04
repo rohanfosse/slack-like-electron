@@ -217,7 +217,7 @@ function close() { emit('update:modelValue', false) }
   width: 100%;
   background: var(--bg-main);
   border: 1.5px solid var(--border-input);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   color: var(--text-primary);
   font-family: var(--font); font-size: 13px;
   padding: 8px 12px 8px 32px;
@@ -243,7 +243,7 @@ function close() { emit('update:modelValue', false) }
   display: grid; grid-template-columns: auto 1fr; gap: 12px;
   align-items: center;
   padding: 6px 4px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
 }
 .help-row:hover { background: var(--bg-hover); }
 

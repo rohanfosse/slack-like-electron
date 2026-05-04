@@ -1599,7 +1599,8 @@ button { font-family: var(--font); }
   display: flex;
   flex-direction: column;
   overflow-y: auto;
-  box-shadow: var(--shadow-lg);
+  /* Ombre multi-niveaux teintee indigo (alignement demo landing). */
+  box-shadow: var(--elevation-3);
 }
 
 .modal-title {

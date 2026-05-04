@@ -890,7 +890,7 @@
   gap: 8px;
   padding: 4px 8px 4px 18px !important;
   min-height: 28px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   transition: background .1s;
 }
 .dm-avatar-wrap {
@@ -904,7 +904,7 @@
   width: 20px;
   height: 20px;
   min-width: 20px;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1008,7 +1008,7 @@
   align-items: center;
   gap: 8px;
   padding: 6px 8px !important;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   transition: background .1s;
 }
 .dm-search-result .msg-avatar {

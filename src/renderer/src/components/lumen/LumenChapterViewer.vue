@@ -891,7 +891,7 @@ watch(() => [props.content, props.chapter?.path], () => {
   padding: 3px 8px;
   background: var(--bg-secondary);
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: var(--radius);
   color: var(--text-muted);
 }
 .lumen-viewer-chip.read {
@@ -1055,7 +1055,7 @@ button.lumen-viewer-chip:focus-visible {
   font-family: inherit;
   background: var(--bg-primary);
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   color: var(--text-primary);
   outline: none;
 }
@@ -1067,7 +1067,7 @@ button.lumen-viewer-chip:focus-visible {
   align-items: center;
   gap: 5px;
   padding: 6px 14px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   border: 1px solid var(--border);
   font-size: 12px;
   font-weight: 600;
@@ -1097,7 +1097,7 @@ button.lumen-viewer-chip:focus-visible {
   height: 32px;
   background: transparent;
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   color: var(--text-muted);
   cursor: pointer;
   transition: all 0.12s ease;
@@ -1222,7 +1222,7 @@ button.lumen-viewer-chip:focus-visible {
   text-align: center;
   background: var(--bg-secondary);
   border: 1px dashed var(--border);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   color: var(--text-muted);
   font-size: 12px;
   margin: 16px 0;
@@ -1248,7 +1248,7 @@ button.lumen-viewer-chip:focus-visible {
 .ipynb-cell { margin-bottom: 16px; }
 .ipynb-cell--code {
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   overflow: hidden;
 }
 .ipynb-code-wrap {
@@ -1293,12 +1293,12 @@ button.lumen-viewer-chip:focus-visible {
   color: var(--danger);
   background: rgba(var(--color-danger-rgb), 0.08);
   padding: 8px;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
 }
 .ipynb-img {
   max-width: 100%;
   height: auto;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
 }
 .ipynb-svg { max-width: 100%; overflow: auto; }
 .ipynb-html-output { overflow-x: auto; font-size: 13px; }
@@ -1510,7 +1510,7 @@ button.lumen-viewer-chip:focus-visible {
   padding: 10px 14px;
   background: rgba(217, 138, 0, 0.12);
   border: 1px solid rgba(217, 138, 0, 0.35);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   font-size: 13px;
   color: var(--warning);
   flex-shrink: 0;
@@ -1525,7 +1525,7 @@ button.lumen-viewer-chip:focus-visible {
   gap: 8px;
   padding: 16px;
   margin: 24px 48px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   background: color-mix(in srgb, var(--success) 8%, transparent);
   border: 1px solid color-mix(in srgb, var(--success) 25%, transparent);
   color: var(--success);
@@ -1543,7 +1543,7 @@ button.lumen-viewer-chip:focus-visible {
   padding: 3px 8px;
   background: transparent;
   border: 1px solid currentColor;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   color: inherit;
   font-family: inherit;
   font-size: 10.5px;
@@ -1599,7 +1599,7 @@ button.lumen-viewer-chip:focus-visible {
   background: rgba(var(--accent-rgb), .14);
   color: var(--accent);
   padding: 1px 7px;
-  border-radius: 10px;
+  border-radius: var(--radius);
   font-size: 10px;
   font-variant-numeric: tabular-nums;
   text-transform: none;
@@ -1665,7 +1665,7 @@ button.lumen-viewer-chip:focus-visible {
   color: var(--text-muted);
   background: var(--bg-main);
   padding: 1px 6px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   flex-shrink: 0;
 }
 .llt-item-deadline {
@@ -1745,7 +1745,7 @@ button.lumen-viewer-chip:focus-visible {
 }
 .lumen-find-icon { color: var(--text-muted); flex-shrink: 0; }
 .lumen-find-input {
-  flex: 1; border: 1px solid var(--border-input); border-radius: 6px;
+  flex: 1; border: 1px solid var(--border-input); border-radius: var(--radius-sm);
   background: var(--bg-input); color: var(--text-primary);
   font-family: var(--font); font-size: 13px; padding: 5px 10px;
   outline: none; min-width: 120px;
@@ -1758,14 +1758,14 @@ button.lumen-viewer-chip:focus-visible {
 .lumen-find-count--zero { color: var(--color-danger); }
 .lumen-find-nav {
   display: flex; align-items: center; justify-content: center;
-  width: 26px; height: 26px; border-radius: 6px;
+  width: 26px; height: 26px; border-radius: var(--radius-sm);
   border: 1px solid var(--border); background: transparent;
   color: var(--text-secondary); cursor: pointer; transition: all .12s;
 }
 .lumen-find-nav:hover { background: var(--bg-hover); color: var(--accent); }
 .lumen-find-close {
   display: flex; align-items: center; justify-content: center;
-  width: 26px; height: 26px; border-radius: 6px;
+  width: 26px; height: 26px; border-radius: var(--radius-sm);
   border: none; background: transparent;
   color: var(--text-muted); cursor: pointer;
 }
@@ -1899,7 +1899,7 @@ button.lumen-viewer-chip:focus-visible {
   background: rgba(var(--accent-rgb), .1);
   color: var(--accent);
   padding: 1px 6px;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   font-family: 'JetBrains Mono', 'Fira Code', Menlo, Consolas, monospace;
   font-size: 0.88em;
   font-weight: 500;

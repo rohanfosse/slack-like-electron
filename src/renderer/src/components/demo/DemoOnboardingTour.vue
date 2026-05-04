@@ -183,7 +183,7 @@ onUnmounted(() => {
 }
 .onb-ring {
   position: absolute;
-  border-radius: 12px;
+  border-radius: var(--radius);
   box-shadow:
     0 0 0 3px var(--accent-color, #6366F1),
     0 0 0 9999px rgba(15, 23, 42, 0.55);
@@ -197,7 +197,7 @@ onUnmounted(() => {
   padding: 18px 18px 14px;
   background: var(--bg-elevated, #1f2937);
   color: var(--text-primary, #f8fafc);
-  border-radius: 14px;
+  border-radius: var(--radius-lg);
   border: 1px solid var(--border-color, #334155);
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
   pointer-events: auto;
@@ -246,7 +246,7 @@ onUnmounted(() => {
   align-items: center;
   gap: 4px;
   padding: 7px 12px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   font-size: 12px;
   font-weight: 600;
   cursor: pointer;

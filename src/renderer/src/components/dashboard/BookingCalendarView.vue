@@ -152,18 +152,18 @@ const todayIso = new Date().toISOString().slice(0, 10)
 .bcv-nav { display: flex; align-items: center; gap: 6px; }
 .bcv-nav-btn {
   display: flex; align-items: center; justify-content: center;
-  width: 24px; height: 24px; border-radius: 4px; border: none;
+  width: 24px; height: 24px; border-radius: var(--radius-xs); border: none;
   background: var(--bg-main); color: var(--text-muted); cursor: pointer;
   transition: all 0.12s;
 }
 .bcv-nav-btn:hover { background: var(--bg-hover); color: var(--text-primary); }
 .bcv-week-label { font-size: 12px; font-weight: 600; color: var(--text-primary); min-width: 120px; text-align: center; }
 .bcv-today-btn {
-  font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 4px;
+  font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: var(--radius-xs);
   background: var(--accent); color: #fff; border: none; cursor: pointer; margin-left: auto;
 }
 
-.bcv-grid { display: flex; gap: 0; overflow: hidden; border-radius: 6px; border: 1px solid var(--border); min-height: 300px; overflow-x: auto; }
+.bcv-grid { display: flex; gap: 0; overflow: hidden; border-radius: var(--radius-sm); border: 1px solid var(--border); min-height: 300px; overflow-x: auto; }
 
 .bcv-hours {
   display: flex; flex-direction: column; width: 36px; flex-shrink: 0;
@@ -200,7 +200,7 @@ const todayIso = new Date().toISOString().slice(0, 10)
 }
 
 .bcv-block {
-  position: absolute; left: 2px; right: 2px; border-radius: 4px;
+  position: absolute; left: 2px; right: 2px; border-radius: var(--radius-xs);
   padding: 2px 4px; overflow: hidden; z-index: 1;
   color: #fff; font-size: 9px; line-height: 1.3;
   cursor: default; transition: opacity 0.12s;

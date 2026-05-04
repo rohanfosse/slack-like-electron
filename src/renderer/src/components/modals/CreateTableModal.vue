@@ -783,7 +783,7 @@ function submitAndSend() {
   color: var(--color-success);
   background: rgba(var(--color-success-rgb), .12);
   border: 1px solid rgba(var(--color-success-rgb), .3);
-  border-radius: 12px;
+  border-radius: var(--radius);
   animation: ctm-flash-in .25s var(--ease-out);
 }
 @keyframes ctm-flash-in {
@@ -839,7 +839,7 @@ function submitAndSend() {
   border: none;
   background: transparent;
   color: var(--text-muted);
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   cursor: pointer;
   transition: background var(--t-fast), color var(--t-fast);
 }
@@ -1171,7 +1171,7 @@ function submitAndSend() {
 }
 .ctm-csv-stat {
   padding: 3px 9px;
-  border-radius: 12px;
+  border-radius: var(--radius);
   background: var(--bg-hover);
   border: 1px solid var(--border);
   color: var(--text-secondary);

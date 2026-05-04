@@ -177,7 +177,7 @@ defineExpose({ getContent: () => content.value, getLanguage: () => language.valu
 <style scoped>
 .lce-wrap {
   display: flex; flex-direction: column; height: 100%;
-  border: 1px solid var(--border); border-radius: 10px;
+  border: 1px solid var(--border); border-radius: var(--radius);
   overflow: hidden; background: var(--bg-sidebar);
 }
 .lce-wrap.lce-fullscreen {
@@ -196,13 +196,13 @@ defineExpose({ getContent: () => content.value, getLanguage: () => language.valu
 .lce-lang {
   font-size: 12px; font-family: var(--font);
   background: var(--bg-input); color: var(--text-primary);
-  border: 1px solid var(--border-input); border-radius: 6px;
+  border: 1px solid var(--border-input); border-radius: var(--radius-sm);
   padding: 4px 8px; cursor: pointer; outline: none;
 }
 .lce-broadcast {
   display: inline-flex; align-items: center; gap: 5px;
   font-size: 11px; font-weight: 600; color: var(--color-success);
-  padding: 2px 8px; border-radius: 10px;
+  padding: 2px 8px; border-radius: var(--radius);
   background: rgba(39,174,96,.1); margin-left: auto;
 }
 .lce-dot {
@@ -215,7 +215,7 @@ defineExpose({ getContent: () => content.value, getLanguage: () => language.valu
 }
 .lce-copy {
   display: flex; align-items: center; justify-content: center;
-  width: 28px; height: 28px; border-radius: 6px;
+  width: 28px; height: 28px; border-radius: var(--radius-sm);
   border: 1px solid var(--border); background: transparent;
   color: var(--text-muted); cursor: pointer; transition: all .15s;
 }

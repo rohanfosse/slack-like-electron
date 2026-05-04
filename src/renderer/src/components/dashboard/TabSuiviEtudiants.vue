@@ -401,7 +401,7 @@ function selectStudent(s: typeof studentList.value[number]) {
   min-height: 520px;
   max-height: calc(100vh - 280px);
   border: 1px solid var(--border);
-  border-radius: 14px;
+  border-radius: var(--radius-lg);
   overflow: hidden;
   background: var(--bg-elevated);
 }
@@ -472,7 +472,7 @@ function selectStudent(s: typeof studentList.value[number]) {
 .ts-note-badge {
   font-size: 10px; font-weight: 700;
   background: rgba(var(--accent-rgb),.15); color: var(--accent);
-  border-radius: 10px; padding: 1px 7px; flex-shrink: 0;
+  border-radius: var(--radius); padding: 1px 7px; flex-shrink: 0;
 }
 .ts-card-chevron { color: var(--accent); flex-shrink: 0; }
 
@@ -537,13 +537,13 @@ function selectStudent(s: typeof studentList.value[number]) {
 .ts-cat-count {
   font-size: 10px; font-weight: 700;
   background: rgba(var(--accent-rgb),.15); color: var(--accent);
-  border-radius: 10px; padding: 1px 6px;
+  border-radius: var(--radius); padding: 1px 6px;
 }
 
 /* ── Formulaire ── */
 .ts-form {
   margin: 14px 20px 0;
-  padding: 14px; border-radius: 10px;
+  padding: 14px; border-radius: var(--radius);
   background: var(--bg-primary); border: 1px solid var(--border);
   display: flex; flex-direction: column; gap: 10px;
   flex-shrink: 0;
@@ -616,7 +616,7 @@ function selectStudent(s: typeof studentList.value[number]) {
 }
 .ts-note-tag {
   display: inline-flex; align-items: center; gap: 4px;
-  font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 10px;
+  font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: var(--radius);
 }
 .ts-note-date {
   display: flex; align-items: center; gap: 3px;

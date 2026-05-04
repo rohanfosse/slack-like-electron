@@ -405,7 +405,7 @@ const charCount = computed(() => code.value.length)
   font-size: 11.5px;
   font-weight: 600;
   padding: 5px 11px;
-  border-radius: 14px;
+  border-radius: var(--radius-lg);
   background: var(--bg-main);
   color: var(--text-secondary);
   border: 1px solid var(--border);
@@ -464,7 +464,7 @@ const charCount = computed(() => code.value.length)
   text-transform: none;
   letter-spacing: 0;
   padding: 1px 7px;
-  border-radius: 10px;
+  border-radius: var(--radius);
   background: rgba(var(--accent-rgb), .15);
   color: var(--accent);
   font-family: ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;

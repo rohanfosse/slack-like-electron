@@ -233,7 +233,7 @@ const wordCount = computed(() => props.activity.max_words ?? 3)
 .lpi-section { display: flex; flex-direction: column; gap: 10px; }
 .lpi-input, .lpi-textarea {
   padding: 10px 12px; font-size: 14px; font-family: var(--font);
-  border: 1px solid var(--border-input); border-radius: 8px;
+  border: 1px solid var(--border-input); border-radius: var(--radius-sm);
   background: var(--bg-input); color: var(--text-primary); outline: none;
 }
 .lpi-input:focus, .lpi-textarea:focus { border-color: var(--accent); }
@@ -242,7 +242,7 @@ const wordCount = computed(() => props.activity.max_words ?? 3)
 .lpi-btn {
   display: inline-flex; align-items: center; justify-content: center; gap: 6px;
   padding: 10px 16px; font-size: 14px; font-weight: 600;
-  border: none; border-radius: 8px; background: var(--accent); color: #fff;
+  border: none; border-radius: var(--radius-sm); background: var(--accent); color: #fff;
   cursor: pointer; font-family: var(--font); transition: all .15s;
 }
 .lpi-btn:hover:not(:disabled) { filter: brightness(1.1); }
@@ -275,28 +275,28 @@ const wordCount = computed(() => props.activity.max_words ?? 3)
 /* Options */
 .lpi-opts { display: flex; flex-direction: column; gap: 8px; }
 .lpi-opt {
-  padding: 12px 16px; border: 2px solid var(--border-input); border-radius: 8px;
+  padding: 12px 16px; border: 2px solid var(--border-input); border-radius: var(--radius-sm);
   background: var(--bg-sidebar); color: var(--text-primary); cursor: pointer;
   font-family: var(--font); font-size: 14px; text-align: left; transition: all .15s;
 }
 .lpi-opt:hover { border-color: var(--accent); }
-.lpi-opt.selected { background: rgba(74,144,217,.1); border-color: var(--accent); }
+.lpi-opt.selected { background: rgba(var(--accent-rgb),.1); border-color: var(--accent); }
 
 /* Humeur */
 .lpi-humeur { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
 .lpi-humeur-btn {
   width: 64px; height: 64px; font-size: 36px;
-  border: 2px solid var(--border); border-radius: 12px;
+  border: 2px solid var(--border); border-radius: var(--radius);
   background: var(--bg-sidebar); cursor: pointer; transition: all .15s;
 }
 .lpi-humeur-btn:hover { transform: scale(1.1); }
-.lpi-humeur-btn.selected { border-color: var(--accent); background: rgba(74,144,217,.1); }
+.lpi-humeur-btn.selected { border-color: var(--accent); background: rgba(var(--accent-rgb),.1); }
 
 /* Priorite */
 .lpi-priorite { display: flex; flex-direction: column; gap: 6px; }
 .lpi-priorite-item {
   display: flex; align-items: center; gap: 10px;
-  padding: 10px 14px; border: 1px solid var(--border); border-radius: 8px;
+  padding: 10px 14px; border: 1px solid var(--border); border-radius: var(--radius-sm);
   background: var(--bg-sidebar);
 }
 .lpi-priorite-rank {
@@ -307,7 +307,7 @@ const wordCount = computed(() => props.activity.max_words ?? 3)
 .lpi-priorite-label { flex: 1; color: var(--text-primary); font-size: 14px; }
 .lpi-priorite-btns { display: flex; gap: 4px; }
 .lpi-priorite-move {
-  width: 28px; height: 28px; border-radius: 6px; border: 1px solid var(--border);
+  width: 28px; height: 28px; border-radius: var(--radius-sm); border: 1px solid var(--border);
   background: transparent; color: var(--text-secondary); cursor: pointer;
 }
 .lpi-priorite-move:hover { background: var(--bg-hover); }
@@ -316,7 +316,7 @@ const wordCount = computed(() => props.activity.max_words ?? 3)
 .lpi-matrice { display: flex; flex-direction: column; gap: 10px; }
 .lpi-matrice-row {
   display: flex; align-items: center; gap: 10px;
-  padding: 8px 12px; border: 1px solid var(--border); border-radius: 8px;
+  padding: 8px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm);
   background: var(--bg-sidebar);
 }
 .lpi-matrice-label { flex: 1; font-size: 13px; color: var(--text-primary); font-weight: 600; }

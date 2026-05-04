@@ -94,7 +94,7 @@ function openChapter(h: HintChapter) {
   padding: 10px 12px;
   background: color-mix(in srgb, var(--accent) 6%, var(--bg-secondary));
   border: 1px solid color-mix(in srgb, var(--accent) 30%, var(--border));
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
 }
 .lh-head {
   display: flex;

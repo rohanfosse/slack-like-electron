@@ -829,7 +829,7 @@ watch(() => route.query, (q) => {
   padding: 5px 10px;
   min-width: 180px; max-width: 260px;
   background: var(--bg-elevated); border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   transition: border-color 0.14s, box-shadow 0.14s, background 0.14s;
 }
 .ag-search:focus-within {
@@ -860,10 +860,10 @@ watch(() => route.query, (q) => {
 
 .ag-view-switch {
   display: flex; background: var(--bg-elevated); border: 1px solid var(--border);
-  border-radius: 8px; padding: 2px; gap: 2px;
+  border-radius: var(--radius-sm); padding: 2px; gap: 2px;
 }
 .ag-view-btn {
-  padding: 5px 14px; border-radius: 6px; border: none; background: transparent;
+  padding: 5px 14px; border-radius: var(--radius-sm); border: none; background: transparent;
   color: var(--text-muted); font-size: 12px; font-weight: 600; font-family: inherit;
   cursor: pointer;
   transition: background-color 0.15s, color 0.15s, box-shadow 0.15s;
@@ -879,12 +879,12 @@ watch(() => route.query, (q) => {
   display: flex; flex-direction: column; gap: 2px;
   background: var(--bg-modal, var(--bg-elevated));
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: var(--radius);
   box-shadow: 0 10px 28px rgba(0,0,0,0.35);
 }
 .ag-more-item {
   display: flex; align-items: center; gap: 8px;
-  padding: 8px 10px; border: none; border-radius: 6px;
+  padding: 8px 10px; border: none; border-radius: var(--radius-sm);
   background: transparent; color: var(--text-primary);
   font-family: var(--font); font-size: 13px; font-weight: 500;
   cursor: pointer; text-align: left;
@@ -929,7 +929,7 @@ watch(() => route.query, (q) => {
 }
 .agenda-detail-close {
   background: none; border: none; color: var(--text-muted); cursor: pointer;
-  padding: 6px; border-radius: 6px;
+  padding: 6px; border-radius: var(--radius-sm);
   transition: background-color 0.12s, color 0.12s;
 }
 .agenda-detail-close:hover { background: var(--bg-hover); color: var(--text-primary); }
@@ -959,7 +959,7 @@ watch(() => route.query, (q) => {
 .agenda-detail-status-card {
   display: flex; flex-direction: column; gap: 8px;
   padding: 10px 12px;
-  border-radius: 10px;
+  border-radius: var(--radius);
   font-size: 13px; font-weight: 600;
 }
 .agenda-detail-status-head {
@@ -998,7 +998,7 @@ watch(() => route.query, (q) => {
 .ag-form-row { display: flex; gap: 8px; }
 .ag-label { display: flex; flex-direction: column; gap: 4px; font-size: 11px; font-weight: 600; color: var(--text-muted); }
 .ag-input {
-  padding: 8px 10px; border-radius: 6px; border: 1px solid var(--border);
+  padding: 8px 10px; border-radius: var(--radius-sm); border: 1px solid var(--border);
   background: var(--bg-elevated); color: var(--text-primary); font-size: 13px;
   font-family: var(--font); outline: none; transition: border-color 0.15s;
 }
@@ -1013,7 +1013,7 @@ watch(() => route.query, (q) => {
 /* Buttons */
 .ag-btn {
   display: inline-flex; align-items: center; gap: 5px; padding: 7px 14px;
-  border-radius: 6px; border: 1px solid var(--border); font-size: 12px;
+  border-radius: var(--radius-sm); border: 1px solid var(--border); font-size: 12px;
   font-weight: 600; font-family: inherit; cursor: pointer;
   transition: background-color 0.12s, color 0.12s, border-color 0.12s, opacity 0.12s;
 }
@@ -1104,7 +1104,7 @@ watch(() => route.query, (q) => {
   height: 22px;
   background: linear-gradient(90deg, var(--bg-hover) 25%, var(--bg-elevated) 50%, var(--bg-hover) 75%);
   background-size: 200% 100%;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   animation: ag-skel-shimmer 1.6s linear infinite;
   align-self: start;
 }
@@ -1188,7 +1188,7 @@ watch(() => route.query, (q) => {
 .ag-filter-check:focus-within {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
 }
 /* ══════════════ Reduced motion (a11y) ══════════════
  * Respecte prefers-reduced-motion : désactive toute animation décorative.

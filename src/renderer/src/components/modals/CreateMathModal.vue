@@ -414,7 +414,7 @@ function submitAndSend() {
   color: var(--text-secondary);
   background: var(--bg-main);
   border: 1px solid var(--border);
-  border-radius: 14px;
+  border-radius: var(--radius-lg);
   cursor: pointer;
   transition: background var(--t-fast), color var(--t-fast), border-color var(--t-fast);
 }
@@ -451,7 +451,7 @@ function submitAndSend() {
   background: rgba(var(--color-danger-rgb), .12);
   color: var(--color-danger);
   padding: 2px 6px;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   font-family: ui-monospace, Menlo, Consolas, monospace;
   font-size: 12px;
 }

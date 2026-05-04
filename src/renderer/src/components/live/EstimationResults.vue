@@ -123,7 +123,7 @@
   padding: 14px 20px;
   background: var(--bg-elevated);
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: var(--radius);
   min-width: 140px;
 }
 .est-metric-icon.target { color: #f59e0b; }
@@ -170,7 +170,7 @@
 .est-hist-bar {
   width: 70%;
   border-radius: 4px 4px 0 0;
-  background: rgba(74,144,217,.6);
+  background: rgba(var(--accent-rgb),.6);
   transition: height .6s cubic-bezier(.25,.8,.25,1);
   min-height: 2px;
 }

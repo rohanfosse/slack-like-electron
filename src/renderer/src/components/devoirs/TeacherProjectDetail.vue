@@ -506,7 +506,7 @@ function iconForType(type: string) {
   color: var(--text-muted);
   background: var(--bg-main);
   padding: 2px 8px;
-  border-radius: 10px;
+  border-radius: var(--radius);
   border: 1px solid var(--border);
   font-variant-numeric: tabular-nums;
 }

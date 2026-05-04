@@ -457,7 +457,7 @@ const globalPct = computed(() => {
 .skel-card {
   background: var(--bg-sidebar);
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: var(--radius);
   padding: 16px;
   display: flex;
   flex-direction: column;
@@ -474,7 +474,7 @@ const globalPct = computed(() => {
 .sdv-search {
   flex: 1; display: flex; align-items: center; gap: 6px;
   background: var(--bg-sidebar); border: 1px solid var(--border);
-  border-radius: 8px; padding: 6px 10px;
+  border-radius: var(--radius-sm); padding: 6px 10px;
   transition: border-color var(--t-fast);
 }
 .sdv-search:focus-within { border-color: var(--accent); }
@@ -490,7 +490,7 @@ const globalPct = computed(() => {
   color: var(--text-muted); flex-shrink: 0;
 }
 .sdv-sort-select {
-  border: 1px solid var(--border); border-radius: 6px;
+  border: 1px solid var(--border); border-radius: var(--radius-sm);
   background: var(--bg-sidebar); color: var(--text-secondary);
   font-size: 11px; font-family: var(--font);
   padding: 4px 8px; cursor: pointer; outline: none;
@@ -553,7 +553,7 @@ const globalPct = computed(() => {
 /* ── Kanban de groupe ── */
 .sdv-kb-section { display: flex; flex-direction: column; gap: 10px; padding: 16px 20px; border-top: 1px solid var(--border); }
 .sdv-kb-header { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 700; color: #3b82f6; }
-.sdv-kb-item { border-radius: 8px; border: 1px solid var(--border); overflow: hidden; }
+.sdv-kb-item { border-radius: var(--radius-sm); border: 1px solid var(--border); overflow: hidden; }
 .sdv-kb-item-toggle {
   display: flex; align-items: center; gap: 10px; width: 100%;
   padding: 10px 14px; background: var(--bg-elevated);

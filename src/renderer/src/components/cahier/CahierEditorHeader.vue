@@ -92,7 +92,7 @@ function commit() {
 
 .cahier-back-btn {
   display: flex; align-items: center; justify-content: center;
-  width: 32px; height: 32px; border-radius: 8px;
+  width: 32px; height: 32px; border-radius: var(--radius-sm);
   border: 1px solid var(--border); background: transparent;
   color: var(--text-secondary); cursor: pointer;
   transition: all .15s;

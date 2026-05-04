@@ -342,7 +342,7 @@ async function bulkChangePromo() {
   gap: 8px;
   background: var(--bg-input);
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: var(--radius);
   padding: 6px 12px;
   color: var(--text-muted);
 }
@@ -362,7 +362,7 @@ async function bulkChangePromo() {
   background: var(--bg-input);
   border: 1px solid var(--border);
   color: var(--text-primary);
-  border-radius: 10px;
+  border-radius: var(--radius);
   padding: 6px 12px;
   font-size: 13px;
   outline: none;
@@ -374,7 +374,7 @@ async function bulkChangePromo() {
   background: var(--bg-input);
   border: 1px solid var(--border);
   color: var(--text-muted);
-  border-radius: 10px;
+  border-radius: var(--radius);
   padding: 7px 10px;
   cursor: pointer;
 }
@@ -391,7 +391,7 @@ async function bulkChangePromo() {
   padding: 10px 14px;
   border: 1px solid rgba(var(--accent-rgb), 0.3);
   background: rgba(var(--accent-rgb), 0.08);
-  border-radius: 12px;
+  border-radius: var(--radius);
 }
 .adm-bulk-count {
   display: inline-flex;
@@ -421,7 +421,7 @@ async function bulkChangePromo() {
   background: var(--bg-main);
   border: 1px solid var(--border);
   color: var(--text-primary);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
   transition: border-color var(--t-fast) var(--ease-out);
 }
@@ -441,7 +441,7 @@ async function bulkChangePromo() {
 
 .adm-table-wrap {
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: var(--radius);
   overflow: hidden;
   background: var(--bg-elevated);
 }
@@ -483,7 +483,7 @@ async function bulkChangePromo() {
   color: var(--text-muted);
   cursor: pointer;
   padding: 4px;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   display: inline-flex;
 }
 .adm-check:hover { color: var(--accent); }
@@ -520,7 +520,7 @@ async function bulkChangePromo() {
   display: inline-block;
   font-size: 11px;
   padding: 2px 8px;
-  border-radius: 14px;
+  border-radius: var(--radius-lg);
   border: 1px solid var(--border);
   color: var(--text-primary);
 }
@@ -539,7 +539,7 @@ async function bulkChangePromo() {
   background: transparent;
   border: 1px solid var(--border);
   color: var(--text-primary);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   padding: 4px 10px;
   font-size: 12px;
   cursor: pointer;

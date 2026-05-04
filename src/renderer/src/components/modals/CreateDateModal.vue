@@ -386,7 +386,7 @@ function onKeydown(e: KeyboardEvent) {
 .cdt-sub-relative {
   display: inline-block;
   padding: 1px 8px;
-  border-radius: 10px;
+  border-radius: var(--radius);
   font-weight: 700;
   font-size: 10.5px;
   letter-spacing: .2px;
@@ -462,7 +462,7 @@ function onKeydown(e: KeyboardEvent) {
   font-family: var(--font);
   font-size: 12px;
   font-weight: 600;
-  border-radius: 14px;
+  border-radius: var(--radius-lg);
   background: var(--bg-main);
   color: var(--text-secondary);
   border: 1px solid var(--border);

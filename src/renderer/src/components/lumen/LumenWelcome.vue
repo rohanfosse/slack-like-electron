@@ -291,7 +291,7 @@ const globalPct = computed(() => {
 /* ── First-time hint (v2.88) ───────────────────────────────────────── */
 .lw-firsttime {
   padding: 12px 16px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   border: 1px dashed var(--border);
   font-size: 14px;
   color: var(--text-secondary);
@@ -306,7 +306,7 @@ const globalPct = computed(() => {
   align-items: center;
   gap: 10px;
   padding: 12px 16px;
-  border-radius: 10px;
+  border-radius: var(--radius);
   border: 1px solid var(--accent);
   background: color-mix(in srgb, var(--accent) 6%, transparent);
   cursor: pointer;
@@ -357,7 +357,7 @@ const globalPct = computed(() => {
   flex-direction: column;
   gap: 3px;
   padding: 10px 14px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   border: 1px solid var(--border);
   background: var(--bg-primary);
   cursor: pointer;
@@ -390,7 +390,7 @@ const globalPct = computed(() => {
   flex-direction: column;
   gap: 8px;
   padding: 18px;
-  border-radius: 10px;
+  border-radius: var(--radius);
   border: 1px solid var(--border);
   background: var(--bg-primary);
   cursor: pointer;

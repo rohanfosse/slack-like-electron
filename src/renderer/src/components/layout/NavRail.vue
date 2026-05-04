@@ -737,7 +737,7 @@ function openAvatarContextMenu(ev: MouseEvent) {
   font-variant-numeric: tabular-nums;
   background: var(--color-danger);
   color: #fff;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -785,7 +785,7 @@ function openAvatarContextMenu(ev: MouseEvent) {
   padding: 10px 10px 8px;
   background: var(--bg-elevated);
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: var(--radius);
   box-shadow:
     0 12px 32px rgba(0, 0, 0, .28),
     0 2px 6px rgba(0, 0, 0, .18);
@@ -969,6 +969,24 @@ function openAvatarContextMenu(ev: MouseEvent) {
   filter: drop-shadow(0 0 6px rgba(var(--accent-rgb), .45));
 }
 
+/* ── Couleurs sectorielles (alignement landing) ──────────────────────────
+   Chaque feature porte une teinte propre quand l'onglet est actif ou survole,
+   en cohérence avec la landing (cf. src/landing/style.css §color-chat etc.).
+   Variables --color-* heritées de :root et redefinies par les themes. */
+.nav-btn[data-tour="messages"].active  :deep(svg) { color: var(--color-chat); }
+.nav-btn[data-tour="devoirs"].active   :deep(svg) { color: var(--color-devoirs); }
+.nav-btn[data-tour="lumen"].active     :deep(svg) { color: var(--color-lumen); }
+.nav-btn[data-tour="documents"].active :deep(svg) { color: var(--color-docs); }
+.nav-btn[data-tour="live"].active      :deep(svg) { color: var(--color-live); }
+.nav-btn[data-tour="dashboard"].active :deep(svg) { color: var(--color-dashboard); }
+
+.nav-btn[data-tour="messages"].active  :deep(svg) { filter: drop-shadow(0 0 6px color-mix(in srgb, var(--color-chat) 45%, transparent)); }
+.nav-btn[data-tour="devoirs"].active   :deep(svg) { filter: drop-shadow(0 0 6px color-mix(in srgb, var(--color-devoirs) 45%, transparent)); }
+.nav-btn[data-tour="lumen"].active     :deep(svg) { filter: drop-shadow(0 0 6px color-mix(in srgb, var(--color-lumen) 45%, transparent)); }
+.nav-btn[data-tour="documents"].active :deep(svg) { filter: drop-shadow(0 0 6px color-mix(in srgb, var(--color-docs) 45%, transparent)); }
+.nav-btn[data-tour="live"].active      :deep(svg) { filter: drop-shadow(0 0 6px color-mix(in srgb, var(--color-live) 45%, transparent)); }
+.nav-btn[data-tour="dashboard"].active :deep(svg) { filter: drop-shadow(0 0 6px color-mix(in srgb, var(--color-dashboard) 45%, transparent)); }
+
 /* ── Séparateur de groupes (main nav / utilitaires) ──────────────────── */
 .nav-group-divider {
   width: 28px;
@@ -1041,7 +1059,7 @@ function openAvatarContextMenu(ev: MouseEvent) {
 .nav-avatar-btn:hover::after   { background: var(--bg-active); }
 .nav-avatar-btn:hover {
   box-shadow: 0 0 0 2px color-mix(in srgb, var(--text-primary) 25%, transparent);
-  border-radius: 12px;
+  border-radius: var(--radius);
 }
 .nav-avatar-btn:focus-visible {
   outline: none;

@@ -259,7 +259,7 @@ const ctxItems = computed<ContextMenuItem[]>(() => {
   padding: 8px 10px;
   background: var(--bg-elevated);
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
 }
 .sb-fich-stat {
   display: flex;
@@ -280,7 +280,7 @@ const ctxItems = computed<ContextMenuItem[]>(() => {
   align-items: center;
   gap: 4px;
   padding: 4px 10px;
-  border-radius: 12px;
+  border-radius: var(--radius);
   border: 1px solid var(--border);
   background: transparent;
   color: var(--text-muted);
@@ -310,7 +310,7 @@ const ctxItems = computed<ContextMenuItem[]>(() => {
   padding: 6px 8px;
   background: var(--bg-primary);
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
 }
 .sb-fich-search:focus-within { border-color: var(--accent); }
 .sb-fich-search-icon { color: var(--text-muted); flex-shrink: 0; }
@@ -339,7 +339,7 @@ const ctxItems = computed<ContextMenuItem[]>(() => {
   align-items: center;
   gap: 6px;
   padding: 6px 8px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   border: 1px dashed var(--border);
   background: transparent;
   color: var(--text-muted);
@@ -369,7 +369,7 @@ const ctxItems = computed<ContextMenuItem[]>(() => {
   gap: 8px;
   width: 100%;
   padding: 6px 8px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   border: none;
   border-left: 2px solid transparent;
   background: transparent;
@@ -386,7 +386,7 @@ const ctxItems = computed<ContextMenuItem[]>(() => {
 .sb-fich-avatar {
   width: 28px;
   height: 28px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   display: flex;
   align-items: center;
   justify-content: center;

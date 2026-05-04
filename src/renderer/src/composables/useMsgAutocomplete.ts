@@ -22,7 +22,7 @@ export const SLASH_COMMANDS: SlashCommand[] = [
   { name: 'devoir',   description: 'Référencer un devoir',                icon: 'BookOpen',     category: 'ref',    color: '#9B87F5' },
   { name: 'doc',      description: 'Référencer un document',              icon: 'FileText',     category: 'ref',    color: '#2ECC71' },
   // Formatage
-  { name: 'annonce',   description: 'Message d\'annonce officiel',         icon: 'Megaphone',    category: 'format', color: '#4A90D9' },
+  { name: 'annonce',   description: 'Message d\'annonce officiel',         icon: 'Megaphone',    category: 'format', color: '#6366F1' },
   { name: 'sondage',   description: 'Sondage avec options de vote',        icon: 'BarChart2',    category: 'format', color: '#1ABC9C' },
   { name: 'tableau',   description: 'Tableau en colonnes',                 icon: 'Table',        category: 'format', color: '#E67E22' },
   { name: 'checklist', description: 'Liste de tâches cochables',           icon: 'ListChecks',   category: 'format', color: '#16A085' },

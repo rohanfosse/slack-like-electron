@@ -79,7 +79,7 @@
   align-items: center;
   gap: 12px;
   padding: 2px 0;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   transition: background .2s;
   animation: qcm-row-in .4s ease-out both;
 }
@@ -110,12 +110,12 @@
 .qcm-bar-track {
   height: 36px;
   background: var(--bg-hover);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   overflow: hidden;
 }
 .qcm-bar-fill {
   height: 100%;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   transition: width .6s cubic-bezier(.34,1.56,.64,1);
   min-width: 4px;
 }

@@ -745,7 +745,7 @@
     position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
     background: none; border: none; color: inherit; opacity: 0.7;
     font-size: 18px; line-height: 1; cursor: pointer; padding: 4px 8px;
-    border-radius: 4px;
+    border-radius: var(--radius-xs);
   }
   .offline-banner-close:hover { opacity: 1; background: rgba(255, 255, 255, 0.1); }
   .reconnected-fade-enter-active { transition: opacity var(--t-slow); }
@@ -884,7 +884,7 @@
   }
 
   .privacy-header-icon {
-    width: 40px; height: 40px; border-radius: 10px;
+    width: 40px; height: 40px; border-radius: var(--radius);
     background: color-mix(in srgb, var(--accent) 15%, transparent);
     display: flex; align-items: center; justify-content: center;
     color: var(--accent); flex-shrink: 0;

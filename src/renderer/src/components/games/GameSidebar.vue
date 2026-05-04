@@ -174,7 +174,7 @@ function formatDuration(ms: number): string {
   padding: 14px;
   background: var(--bg-sidebar);
   border: 1px solid var(--border);
-  border-radius: 14px;
+  border-radius: var(--radius-lg);
   min-height: 0;
   overflow: auto;
   --gs-accent: var(--accent);
@@ -208,7 +208,7 @@ function formatDuration(ms: number): string {
   flex-direction: column;
   gap: 2px;
   padding: 8px 10px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   background: var(--bg-elevated);
   border: 1px solid var(--border);
   min-width: 0;
@@ -290,7 +290,7 @@ function formatDuration(ms: number): string {
   align-items: center;
   gap: 8px;
   padding: 5px 8px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   font-size: 12px;
   color: var(--text-secondary);
   transition: background .12s;
@@ -368,7 +368,7 @@ function formatDuration(ms: number): string {
   align-items: center;
   gap: 6px;
   padding: 4px 6px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   font-size: 11.5px;
   color: var(--text-secondary);
 }

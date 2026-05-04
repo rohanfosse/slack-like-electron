@@ -188,7 +188,7 @@ async function linkRepo(repo: LumenRepo) {
 
 .llrm-modal {
   background: var(--bg-secondary);
-  border-radius: 12px;
+  border-radius: var(--radius);
   width: min(560px, calc(100% - 32px));
   max-height: 80vh;
   display: flex;
@@ -225,7 +225,7 @@ async function linkRepo(repo: LumenRepo) {
   cursor: pointer;
   padding: 4px;
   display: flex;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
 }
 .llrm-close:hover { color: var(--text-primary); background: var(--bg-hover); }
 
@@ -246,7 +246,7 @@ async function linkRepo(repo: LumenRepo) {
   margin: 12px 16px 0;
   background: var(--bg-primary);
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   color: var(--text-muted);
 }
 .llrm-search:focus-within {
@@ -289,7 +289,7 @@ async function linkRepo(repo: LumenRepo) {
   padding: 10px 12px;
   background: var(--bg-primary);
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   margin-bottom: 6px;
 }
 .llrm-repo-info {
@@ -323,7 +323,7 @@ async function linkRepo(repo: LumenRepo) {
   background: var(--accent);
   color: white;
   border: none;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
   font-size: 12px;
   font-weight: 600;

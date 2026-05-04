@@ -139,7 +139,7 @@ const winner = computed(() => winnerIndex())
 .poll {
   margin-top: 6px;
   padding: 12px 14px;
-  border-radius: 10px;
+  border-radius: var(--radius);
   background: var(--bg-elevated);
   border: 1px solid var(--border);
   max-width: 520px;
@@ -177,7 +177,7 @@ const winner = computed(() => winnerIndex())
   display: block; width: 100%;
   padding: 0; margin: 0;
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   background: var(--bg-main);
   font-family: var(--font);
   font-size: 13px; color: var(--text-primary);

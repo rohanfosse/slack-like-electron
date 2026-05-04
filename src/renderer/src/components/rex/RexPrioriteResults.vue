@@ -65,12 +65,12 @@
   padding: 8px 12px;
   background: var(--bg-elevated);
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
 }
 .rex-priorite-rank {
   width: 28px;
   height: 28px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -92,13 +92,13 @@
   width: 100px;
   height: 8px;
   background: rgba(255,255,255,.04);
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   overflow: hidden;
   flex-shrink: 0;
 }
 .rex-priorite-bar-fill {
   height: 100%;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   transition: width .6s cubic-bezier(.25,.8,.25,1);
   min-width: 2px;
 }

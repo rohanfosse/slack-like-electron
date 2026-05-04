@@ -403,7 +403,7 @@
 }
 .nd-type-card {
   display: flex; flex-direction: column; align-items: center; gap: 6px;
-  padding: 12px 8px; border-radius: 10px; cursor: pointer;
+  padding: 12px 8px; border-radius: var(--radius); cursor: pointer;
   border: 1.5px solid var(--border); background: transparent;
   color: var(--text-muted); font-family: var(--font);
   transition: all .15s;
@@ -425,12 +425,12 @@
 }
 .nd-hint { font-weight: 400; opacity: .6; }
 .nd-input {
-  padding: 9px 12px; border-radius: 8px; font-size: 13px;
+  padding: 9px 12px; border-radius: var(--radius-sm); font-size: 13px;
   border: 1px solid var(--border-input); background: var(--bg-input);
   color: var(--text-primary); font-family: var(--font);
   transition: border-color .15s;
 }
-.nd-input:focus { border-color: var(--accent); outline: none; box-shadow: 0 0 0 3px rgba(74,144,217,.12); }
+.nd-input:focus { border-color: var(--accent); outline: none; box-shadow: 0 0 0 3px rgba(var(--accent-rgb),.12); }
 .nd-textarea { resize: vertical; min-height: 60px; }
 .nd-row { display: flex; gap: 10px; }
 .nd-flex1 { flex: 1; }
@@ -440,7 +440,7 @@
 }
 .nd-duration-fill {
   position: absolute; inset: 0; border-radius: 3px;
-  background: linear-gradient(90deg, var(--accent), rgba(74,144,217,.3));
+  background: linear-gradient(90deg, var(--accent), rgba(var(--accent-rgb),.3));
 }
 .nd-duration-label {
   position: absolute; top: -16px; right: 0;
@@ -468,7 +468,7 @@
 .nd-advanced-toggle .rotated { transform: rotate(180deg); }
 .nd-advanced {
   display: flex; flex-direction: column; gap: 12px;
-  padding: 14px; border-radius: 10px;
+  padding: 14px; border-radius: var(--radius);
   background: var(--bg-elevated); border: 1px solid var(--border);
 }
 

@@ -265,7 +265,7 @@ function submitInsert() {
   width: 100%;
   background: var(--bg-hover);
   border: 1.5px solid var(--border-input);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   color: var(--text-primary);
   font-family: var(--font); font-size: 13.5px;
   padding: 9px 12px;
@@ -291,7 +291,7 @@ function submitInsert() {
   margin-top: 2px;
   display: inline-flex; align-items: center; gap: 6px;
   background: transparent; border: 1.5px dashed var(--border-input);
-  border-radius: 8px; color: var(--text-secondary);
+  border-radius: var(--radius-sm); color: var(--text-secondary);
   font-size: 12.5px; font-weight: 600;
   padding: 8px 12px; cursor: pointer;
   transition: border-color .15s, color .15s;
@@ -305,7 +305,7 @@ function submitInsert() {
 .cpoll-toggles {
   display: flex; flex-direction: column; gap: 8px;
   padding: 10px 12px; background: var(--bg-hover);
-  border-radius: 8px; border: 1px solid var(--border);
+  border-radius: var(--radius-sm); border: 1px solid var(--border);
 }
 .cpoll-toggle {
   display: flex; align-items: center; gap: 8px;

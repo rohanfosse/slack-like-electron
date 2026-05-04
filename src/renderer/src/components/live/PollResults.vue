@@ -41,7 +41,7 @@
   justify-content: space-between;
   padding: 12px 16px;
   background: var(--bg-elevated);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   border: 1px solid var(--border);
 }
 .poll-text {
@@ -53,7 +53,7 @@
   font-size: 14px;
   font-weight: 800;
   color: var(--accent);
-  background: rgba(74,144,217,.12);
+  background: rgba(var(--accent-rgb),.12);
   padding: 4px 12px;
   border-radius: 20px;
   min-width: 32px;

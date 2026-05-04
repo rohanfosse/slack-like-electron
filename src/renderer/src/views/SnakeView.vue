@@ -309,7 +309,7 @@ const currentRank = computed(() => {
 }
 .s-icon-btn {
   display: flex; align-items: center; justify-content: center;
-  width: 30px; height: 30px; border-radius: 6px;
+  width: 30px; height: 30px; border-radius: var(--radius-sm);
   border: none; background: transparent; color: var(--text-secondary);
   cursor: pointer; transition: background .12s;
 }
@@ -345,7 +345,7 @@ const currentRank = computed(() => {
 
 .s-canvas-wrap {
   position: relative;
-  border-radius: 14px;
+  border-radius: var(--radius-lg);
   overflow: hidden;
   box-shadow: 0 10px 40px rgba(0,0,0,.25);
 }
@@ -406,7 +406,7 @@ const currentRank = computed(() => {
   display: inline-flex; align-items: center; gap: 8px;
   padding: 10px 22px;
   background: var(--accent); color: #fff;
-  border: none; border-radius: 10px;
+  border: none; border-radius: var(--radius);
   font-size: 14px; font-weight: 700; font-family: var(--font);
   cursor: pointer; transition: filter .12s, transform .06s;
   margin-top: 6px;
@@ -432,7 +432,7 @@ const currentRank = computed(() => {
   margin: 0 1px;
   border: 1px solid var(--border);
   border-bottom-width: 2px;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   font-family: var(--font-mono, monospace);
   font-size: 10px;
   color: var(--text-secondary);

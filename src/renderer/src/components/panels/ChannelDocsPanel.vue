@@ -256,7 +256,7 @@
   font-weight: 700;
   color: var(--text-muted);
   background: var(--bg-hover);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   padding: 1px 6px;
 }
 
@@ -274,7 +274,7 @@
   align-items: center;
   gap: 8px;
   padding: 6px 8px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   transition: background .1s;
 }
 .dp-doc-row:hover { background: var(--bg-hover); }
@@ -286,10 +286,10 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   flex-shrink: 0;
 }
-.icon-file { background: rgba(74,144,217,.12); color: var(--accent); }
+.icon-file { background: rgba(var(--accent-rgb),.12); color: var(--accent); }
 .icon-link { background: rgba(39,174,96,.1);   color: var(--color-success); }
 
 .dp-doc-info {

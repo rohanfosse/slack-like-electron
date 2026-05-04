@@ -1096,7 +1096,7 @@ onMounted(() => {
   align-items: center;
   justify-content: center;
   border: 0;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   background: transparent;
   color: var(--text-muted);
   font-family: var(--font);

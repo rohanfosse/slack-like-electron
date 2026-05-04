@@ -148,7 +148,7 @@
                     <span class="tl-type-badge" :class="`type-${t.type}`">{{ t.type }}</span>
                     <span class="tl-item-title">{{ t.title }}</span>
                     <span v-if="t.promo_name" class="tl-promo-pill"
-                      :style="{ background: (t.promo_color ?? '#4A90D9') + '33', color: t.promo_color ?? '#4A90D9' }">
+                      :style="{ background: (t.promo_color ?? '#6366F1') + '33', color: t.promo_color ?? '#6366F1' }">
                       {{ t.promo_name }}
                     </span>
                   </div>
@@ -221,7 +221,7 @@
   font-weight: 700;
   background: var(--bg-elevated);
   padding: 1px 5px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
 }
 
 /* ── Contenu ── */
@@ -372,7 +372,7 @@
   text-transform: uppercase;
   letter-spacing: .4px;
   padding: 2px 6px;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   flex-shrink: 0;
 }
 .type-livrable     { background: rgba(var(--accent-rgb),.2);   color: var(--accent); }
@@ -416,7 +416,7 @@
   font-size: 10px;
   font-weight: 600;
   padding: 2px 6px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
 }
 .tl-deadline-badge.deadline-passed,
 .tl-deadline-badge.deadline-critical { background: rgba(var(--color-danger-rgb),.12); color: #ff7b6b; }
@@ -436,7 +436,7 @@
   font-size: 10px;
   font-weight: 700;
   padding: 2px 6px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   background: var(--bg-active);
   color: var(--text-muted);
   text-transform: uppercase;
@@ -457,7 +457,7 @@
   font-size: 10px;
   font-weight: 600;
   padding: 1px 7px;
-  border-radius: 10px;
+  border-radius: var(--radius);
   background: rgba(var(--accent-rgb),.12);
   color: var(--accent);
 }

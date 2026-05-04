@@ -82,7 +82,7 @@ const countdownLabel = computed(() => {
   flex-direction: column;
   width: 100%;
   padding: 8px 10px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   background: rgba(255, 255, 255, 0.03);
   border: none;
   border-left: 3px solid transparent;
@@ -129,7 +129,7 @@ const countdownLabel = computed(() => {
   color: var(--text-muted);
   padding: 1px 5px;
   background: rgba(255, 255, 255, 0.04);
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
 }
 
 .sb-next-action-deadline {

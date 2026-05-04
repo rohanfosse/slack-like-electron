@@ -4,11 +4,11 @@ import { computed } from 'vue'
 const props = defineProps<{ grades: number[] }>()
 
 const BUCKETS = [
-  { label: '0 – 7',   min: 0,  max: 7,  color: '#E74C3C' },
-  { label: '8 – 9',   min: 8,  max: 9,  color: '#E67E22' },
-  { label: '10 – 11', min: 10, max: 11, color: '#F39C12' },
-  { label: '12 – 13', min: 12, max: 13, color: '#4A90D9' },
-  { label: '14 – 20', min: 14, max: 20, color: '#27AE60' },
+  { label: '0 – 7',   min: 0,  max: 7,  color: '#EF4444' },
+  { label: '8 – 9',   min: 8,  max: 9,  color: '#F97316' },
+  { label: '10 – 11', min: 10, max: 11, color: '#F59E0B' },
+  { label: '12 – 13', min: 12, max: 13, color: '#6366F1' },
+  { label: '14 – 20', min: 14, max: 20, color: '#059669' },
 ]
 
 const counts = computed(() =>
@@ -74,7 +74,7 @@ const avg = computed(() => {
 .grade-bar-wrap {
   position: relative;
   height: 12px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   overflow: hidden;
 }
 
@@ -82,13 +82,13 @@ const avg = computed(() => {
   position: absolute;
   inset: 0;
   opacity: .1;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
 }
 
 .grade-bar-fill {
   position: absolute;
   top: 0; left: 0; bottom: 0;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   transition: width .4s cubic-bezier(.34, 1.56, .64, 1);
   min-width: 4px;
 }

@@ -132,7 +132,7 @@ watch(() => props.activityId, () => {
 <style scoped>
 .lcv-wrap {
   display: flex; flex-direction: column;
-  border: 1px solid var(--border); border-radius: 10px;
+  border: 1px solid var(--border); border-radius: var(--radius);
   overflow: hidden; background: var(--bg-sidebar);
   min-height: 400px;
 }
@@ -152,13 +152,13 @@ watch(() => props.activityId, () => {
 .lcv-icon { color: var(--accent); flex-shrink: 0; }
 .lcv-lang-badge {
   font-size: 11px; font-weight: 700; text-transform: uppercase;
-  letter-spacing: .5px; padding: 2px 8px; border-radius: 10px;
-  background: rgba(74,144,217,.15); color: var(--accent);
+  letter-spacing: .5px; padding: 2px 8px; border-radius: var(--radius);
+  background: rgba(var(--accent-rgb),.15); color: var(--accent);
 }
 .lcv-live {
   display: inline-flex; align-items: center; gap: 5px;
   font-size: 11px; font-weight: 600; color: var(--color-success);
-  padding: 2px 8px; border-radius: 10px;
+  padding: 2px 8px; border-radius: var(--radius);
   background: rgba(39,174,96,.1); margin-left: auto;
 }
 .lcv-dot {
@@ -169,7 +169,7 @@ watch(() => props.activityId, () => {
 .lcv-lines { font-size: 10px; color: var(--text-muted); font-variant-numeric: tabular-nums; }
 .lcv-copy {
   display: flex; align-items: center; justify-content: center;
-  width: 28px; height: 28px; border-radius: 6px;
+  width: 28px; height: 28px; border-radius: var(--radius-sm);
   border: 1px solid var(--border); background: transparent;
   color: var(--text-muted); cursor: pointer; transition: all .15s;
 }

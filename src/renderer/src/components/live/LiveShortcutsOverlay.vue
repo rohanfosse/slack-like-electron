@@ -65,7 +65,7 @@ const SHORTCUTS: { keys: string[]; label: string }[] = [
 .sho-panel {
   background: var(--bg-modal);
   border: 1px solid var(--border);
-  border-radius: 14px;
+  border-radius: var(--radius-lg);
   box-shadow: var(--elevation-3);
   padding: 20px 22px;
   width: 100%;
@@ -93,7 +93,7 @@ const SHORTCUTS: { keys: string[]; label: string }[] = [
 .sho-close {
   width: 28px;
   height: 28px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   border: 1px solid var(--border);
   background: transparent;
   color: var(--text-muted);
@@ -117,7 +117,7 @@ const SHORTCUTS: { keys: string[]; label: string }[] = [
   align-items: center;
   gap: 12px;
   padding: 8px 10px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   background: var(--bg-elevated);
 }
 .sho-keys {

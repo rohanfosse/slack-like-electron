@@ -152,12 +152,12 @@ function dotClassForGroup(group: PositionedGroup) {
 .fc-month-bg.even { background: var(--bg-active); }
 .fc-today {
   position: absolute; top: 0; bottom: -180px; width: 2px;
-  background: rgba(74,144,217,.4); z-index: 3; pointer-events: none;
+  background: rgba(var(--accent-rgb),.4); z-index: 3; pointer-events: none;
 }
 .fc-today-label {
   position: absolute; top: -1px; left: 50%; transform: translateX(-50%);
   font-size: 9px; font-weight: 700; color: var(--accent);
-  background: var(--bg-sidebar); padding: 1px 5px; border-radius: 4px; white-space: nowrap;
+  background: var(--bg-sidebar); padding: 1px 5px; border-radius: var(--radius-xs); white-space: nowrap;
 }
 
 /* Lane */
@@ -179,7 +179,7 @@ function dotClassForGroup(group: PositionedGroup) {
   pointer-events: none; position: absolute; top: calc(100% + 4px);
   opacity: 0; transform: translateY(2px); transition: opacity .2s, transform .2s;
   background: var(--bg-modal); border: 1px solid var(--border);
-  border-radius: 6px; padding: 4px 8px; box-shadow: 0 4px 12px rgba(0,0,0,.15);
+  border-radius: var(--radius-sm); padding: 4px 8px; box-shadow: 0 4px 12px rgba(0,0,0,.15);
   white-space: nowrap; z-index: 15;
 }
 .fc-milestone:hover .fc-ms-labels { opacity: 1; transform: translateY(0); }

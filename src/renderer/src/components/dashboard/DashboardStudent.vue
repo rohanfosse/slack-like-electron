@@ -233,9 +233,9 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onDashKeydown))
   gap: 12px;
   max-height: 48px;
   padding: 10px 16px;
-  background: linear-gradient(135deg, rgba(74,144,217,.08) 0%, rgba(155,135,245,.06) 100%);
-  border: 1px solid rgba(74,144,217,.18);
-  border-radius: 10px;
+  background: linear-gradient(135deg, rgba(var(--accent-rgb),.08) 0%, rgba(155,135,245,.06) 100%);
+  border: 1px solid rgba(var(--accent-rgb),.18);
+  border-radius: var(--radius);
 }
 .db-welcome-text {
   font-size: 13px;
@@ -251,7 +251,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onDashKeydown))
   flex-shrink: 0;
   padding: 4px 14px;
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   background: var(--bg-elevated);
   color: var(--text-secondary);
   font-size: 12px;
@@ -284,7 +284,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onDashKeydown))
 .db-coming-badge {
   font-size: 11px; font-weight: 600;
   padding: 4px 12px; border-radius: 20px;
-  background: rgba(74, 144, 217, .1);
+  background: rgba(var(--accent-rgb),.1);
   color: var(--accent);
 }
 </style>

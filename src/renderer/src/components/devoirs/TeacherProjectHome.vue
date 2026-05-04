@@ -416,7 +416,7 @@ const nothingToDo = computed(() =>
   margin-bottom: 18px;
   background: var(--bg-elevated);
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: var(--radius);
   flex-wrap: wrap;
 }
 .dh-toolbar-left {
@@ -434,7 +434,7 @@ const nothingToDo = computed(() =>
   color: var(--text-muted);
   padding: 3px 8px;
   background: var(--bg-hover);
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
 }
 
 /* ── Chips actionnables (a traiter) ─────────────────────────────────────── */
@@ -443,7 +443,7 @@ const nothingToDo = computed(() =>
   align-items: center;
   gap: 6px;
   padding: 5px 11px;
-  border-radius: 14px;
+  border-radius: var(--radius-lg);
   border: 1px solid var(--border);
   background: var(--bg-main);
   font-family: inherit;
@@ -526,7 +526,7 @@ const nothingToDo = computed(() =>
 .dh-toolbar-stat-pct {
   margin-left: 4px;
   font-size: 10.5px; font-weight: 700;
-  padding: 1px 6px; border-radius: 8px;
+  padding: 1px 6px; border-radius: var(--radius-sm);
   background: rgba(var(--accent-rgb), .12);
   color: var(--accent);
   font-variant-numeric: tabular-nums;
@@ -555,7 +555,7 @@ const nothingToDo = computed(() =>
   padding: 6px 30px 6px 28px;
   background: var(--bg-input);
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   color: var(--text-primary);
   width: 220px;
   transition: border-color var(--t-fast), width var(--t-fast), box-shadow var(--t-fast), background var(--t-fast);
@@ -577,7 +577,7 @@ const nothingToDo = computed(() =>
   font-size: 10px;
   font-weight: 600;
   padding: 2px 6px;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   background: var(--bg-main);
   border: 1px solid var(--border);
   color: var(--text-muted);
@@ -644,7 +644,7 @@ const nothingToDo = computed(() =>
   color: var(--accent);
   background: rgba(var(--accent-rgb), .12);
   padding: 1px 8px;
-  border-radius: 10px;
+  border-radius: var(--radius);
   margin-left: 6px;
   font-variant-numeric: tabular-nums;
 }
@@ -663,7 +663,7 @@ const nothingToDo = computed(() =>
   flex-direction: column;
   gap: 0;
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: var(--radius);
   overflow: hidden;
   background: var(--bg-elevated);
   box-shadow: 0 1px 2px rgba(0, 0, 0, .04);
@@ -726,7 +726,7 @@ const nothingToDo = computed(() =>
   color: var(--text-muted);
   font-weight: 700;
   padding: 2px 7px;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   background: var(--bg-main);
   border: 1px solid var(--border);
   flex-shrink: 0;
@@ -754,7 +754,7 @@ const nothingToDo = computed(() =>
 .dh-timeline-item--draft .dh-timeline-title { color: var(--text-secondary); }
 .dh-timeline-draft-tag {
   font-size: 9.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .4px;
-  padding: 2px 8px; border-radius: 10px;
+  padding: 2px 8px; border-radius: var(--radius);
   background: var(--bg-main); color: var(--text-muted);
   border: 1px dashed var(--border-input);
   flex-shrink: 0;
@@ -801,7 +801,7 @@ const nothingToDo = computed(() =>
   text-align: center;
   padding: 40px 20px;
   border: 1px dashed var(--border-input);
-  border-radius: 12px;
+  border-radius: var(--radius);
   background: var(--bg-elevated);
   display: flex;
   flex-direction: column;
@@ -836,7 +836,7 @@ const nothingToDo = computed(() =>
   font-size: 12px;
   font-weight: 600;
   padding: 6px 14px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   background: var(--bg-main);
   border: 1px solid var(--border);
   color: var(--text-secondary);

@@ -478,7 +478,7 @@
 .rubric-empty-icon {
   width: 40px; height: 40px; border-radius: 50%;
   display: flex; align-items: center; justify-content: center;
-  background: rgba(74,144,217,.1); color: var(--accent);
+  background: rgba(var(--accent-rgb),.1); color: var(--accent);
   font-size: 22px; font-weight: 700; margin-bottom: 8px;
 }
 .rubric-empty-title {
@@ -491,7 +491,7 @@
 /* Validation highlighting */
 .rubric-criterion-invalid {
   border: 1px solid rgba(231,76,60,.35) !important;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   padding: 4px;
   margin: -4px;
 }
@@ -566,7 +566,7 @@
 .rubric-pt-btn {
   width: 28px;
   height: 28px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   border: 1px solid var(--border);
   background: transparent;
   font-size: 12px;

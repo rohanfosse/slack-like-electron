@@ -139,7 +139,7 @@ function isExpired(deadline: string | null | undefined): boolean {
   min-width: 18px;
   height: 18px;
   padding: 0 5px;
-  border-radius: 10px;
+  border-radius: var(--radius);
   font-size: 10px;
   font-weight: 700;
   background: rgba(255, 255, 255, 0.1);

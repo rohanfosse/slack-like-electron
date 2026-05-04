@@ -338,7 +338,7 @@ function openWith() {
 .preview-footer-counter {
   font-size: 11px; font-weight: 600;
   color: var(--text-muted); background: var(--bg-secondary);
-  padding: 2px 8px; border-radius: 10px; white-space: nowrap;
+  padding: 2px 8px; border-radius: var(--radius); white-space: nowrap;
 }
 
 .preview-body {
@@ -390,7 +390,7 @@ function openWith() {
 }
 .preview-zoom-btn {
   display: flex; align-items: center; justify-content: center;
-  width: 28px; height: 28px; border-radius: 6px;
+  width: 28px; height: 28px; border-radius: var(--radius-sm);
   border: 1px solid var(--border); background: transparent;
   color: var(--text-muted); cursor: pointer; font-size: 11px; font-weight: 600;
   transition: all .15s; font-family: var(--font);

@@ -352,7 +352,7 @@ function goBack() { router.push('/dashboard') }
 .tr-spacer { flex: 1; }
 .tr-icon-btn {
   display: flex; align-items: center; justify-content: center;
-  width: 30px; height: 30px; border-radius: 6px;
+  width: 30px; height: 30px; border-radius: var(--radius-sm);
   border: none; background: transparent; color: var(--text-secondary);
   cursor: pointer; transition: background .12s;
 }
@@ -514,7 +514,7 @@ kbd {
   margin: 0 2px;
   border: 1px solid var(--border);
   border-bottom-width: 2px;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   font-family: var(--font-mono, monospace);
   font-size: 10px;
   color: var(--text-secondary);
@@ -582,7 +582,7 @@ kbd {
   padding: 14px 22px;
   background: var(--bg-sidebar);
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: var(--radius);
 }
 .tr-end-metric { display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 70px; }
 .tr-end-metric-label {
@@ -640,7 +640,7 @@ kbd {
   background: var(--accent);
   color: #fff;
   border: none;
-  border-radius: 10px;
+  border-radius: var(--radius);
   font-size: 14px;
   font-weight: 700;
   font-family: var(--font);
@@ -661,7 +661,7 @@ kbd {
   background: transparent;
   color: var(--text-secondary);
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: var(--radius);
   font-size: 13px;
   font-weight: 600;
   font-family: var(--font);
@@ -674,7 +674,7 @@ kbd {
 .tr-leaderboard {
   background: var(--bg-sidebar);
   border: 1px solid var(--border);
-  border-radius: 14px;
+  border-radius: var(--radius-lg);
   padding: 16px 14px;
   display: flex;
   flex-direction: column;
@@ -699,7 +699,7 @@ kbd {
   align-items: center;
   gap: 8px;
   padding: 7px 10px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   font-size: 12.5px;
   color: var(--text-secondary);
   transition: background .12s;

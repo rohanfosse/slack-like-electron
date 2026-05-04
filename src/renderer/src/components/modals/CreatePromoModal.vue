@@ -181,7 +181,7 @@
   width: 100%;
   background: var(--bg-hover);
   border: 1.5px solid var(--border-input);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   color: var(--text-primary);
   font-family: var(--font);
   font-size: 14px;
@@ -192,7 +192,7 @@
 .cp-input:focus-visible { outline: 2px solid var(--accent); outline-offset: -1px; }
 .cp-input:focus {
   border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(74,144,217,.14);
+  box-shadow: 0 0 0 3px rgba(var(--accent-rgb),.14);
 }
 .cp-input::placeholder { color: var(--text-muted); }
 
@@ -203,7 +203,7 @@
   align-items: center;
   justify-content: center;
   padding: 3px 12px;
-  border-radius: 16px;
+  border-radius: var(--radius-lg);
   color: #fff;
   font-size: 12px;
   font-weight: 700;

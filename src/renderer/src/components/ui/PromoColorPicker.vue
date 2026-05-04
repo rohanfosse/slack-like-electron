@@ -56,7 +56,7 @@ function pick(color: string): void {
   gap: 8px;
 }
 .pcp-swatch {
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   border: 2px solid transparent;
   cursor: pointer;
   display: flex; align-items: center; justify-content: center;
@@ -64,7 +64,7 @@ function pick(color: string): void {
   transition: transform 0.15s ease-out, box-shadow 0.15s, border-color 0.15s;
 }
 .pcp-grid--md .pcp-swatch { width: 32px; height: 32px; }
-.pcp-grid--sm .pcp-swatch { width: 24px; height: 24px; border-radius: 6px; }
+.pcp-grid--sm .pcp-swatch { width: 24px; height: 24px; border-radius: var(--radius-sm); }
 
 .pcp-swatch:hover:not(:disabled) { transform: scale(1.12); }
 .pcp-swatch:focus-visible {

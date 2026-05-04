@@ -110,7 +110,7 @@
 }
 .gd-aavs {
   font-size: 13px; color: var(--text-secondary); line-height: 1.5;
-  padding: 6px 10px; background: var(--bg-elevated); border-radius: 6px;
+  padding: 6px 10px; background: var(--bg-elevated); border-radius: var(--radius-sm);
   white-space: pre-wrap;
 }
 .gd-resource-item {
@@ -120,7 +120,7 @@
 .gd-parsed-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
 .gd-parsed-field {
   display: flex; align-items: center; gap: 6px;
-  padding: 6px 10px; border-radius: 6px;
+  padding: 6px 10px; border-radius: var(--radius-sm);
   background: var(--bg-elevated); font-size: 13px;
 }
 .gd-parsed-icon { font-size: 14px; flex-shrink: 0; }
@@ -133,7 +133,7 @@
 
 .gd-description {
   font-size: 13px; color: var(--text-secondary); line-height: 1.5;
-  padding: 8px 12px; background: var(--bg-elevated); border-radius: 6px;
+  padding: 8px 12px; background: var(--bg-elevated); border-radius: var(--radius-sm);
   border-left: 3px solid var(--border-input); cursor: pointer;
   transition: background var(--t-fast);
 }
@@ -145,7 +145,7 @@
 .gd-desc-edit { margin-bottom: 6px; }
 .gd-desc-textarea {
   width: 100%; background: var(--bg-input); border: 1px solid var(--border-input);
-  border-radius: 6px; padding: 8px; color: var(--text-primary); font-size: 13px;
+  border-radius: var(--radius-sm); padding: 8px; color: var(--text-primary); font-size: 13px;
   font-family: var(--font); resize: vertical;
 }
 .gd-desc-edit-actions { display: flex; gap: 6px; justify-content: flex-end; margin-top: 4px; }

@@ -615,7 +615,7 @@ function onKeydown(e: KeyboardEvent) {
   margin: 0 0 4px;
   background: rgba(var(--accent-rgb), .10);
   border: 1px solid rgba(var(--accent-rgb), .25);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   font-size: 12px;
   color: var(--text-secondary);
   cursor: pointer;
@@ -737,7 +737,7 @@ function onKeydown(e: KeyboardEvent) {
 }
 .mi-everyone-actions { display: flex; gap: 6px; flex-shrink: 0; }
 .mi-everyone-btn {
-  padding: 4px 12px; border: none; border-radius: 6px; font-size: 12px;
+  padding: 4px 12px; border: none; border-radius: var(--radius-sm); font-size: 12px;
   font-weight: 600; cursor: pointer; font-family: var(--font);
 }
 .mi-everyone-cancel { background: var(--bg-active); color: var(--text-secondary); }
@@ -750,7 +750,7 @@ function onKeydown(e: KeyboardEvent) {
 .mi-mention-popup {
   background: var(--bg-modal);
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: var(--radius);
   box-shadow: 0 -8px 28px rgba(0, 0, 0, .45);
   overflow: hidden;
   max-height: 300px;
@@ -792,7 +792,7 @@ function onKeydown(e: KeyboardEvent) {
 .mi-mention-avatar {
   width: 26px;
   height: 26px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   flex-shrink: 0;
   display: flex;
   align-items: center;
@@ -845,7 +845,7 @@ function onKeydown(e: KeyboardEvent) {
   text-transform: uppercase;
   letter-spacing: .4px;
   padding: 1px 6px;
-  border-radius: 10px;
+  border-radius: var(--radius);
   flex-shrink: 0;
   white-space: nowrap;
 }
@@ -883,7 +883,7 @@ function onKeydown(e: KeyboardEvent) {
   display: flex; align-items: center; gap: 4px;
   font-size: 10.5px; font-weight: 500; color: var(--text-muted);
   background: none; border: none; cursor: pointer;
-  font-family: inherit; padding: 2px 6px; border-radius: 4px;
+  font-family: inherit; padding: 2px 6px; border-radius: var(--radius-xs);
   transition: color .12s, background .12s;
 }
 .mi-sig-link:hover { color: var(--text-secondary); background: var(--bg-hover); }
@@ -918,7 +918,7 @@ function onKeydown(e: KeyboardEvent) {
   padding: 7px 12px !important;
 }
 .mi-cmd-icon {
-  width: 30px; height: 30px; border-radius: 8px;
+  width: 30px; height: 30px; border-radius: var(--radius-sm);
   display: flex; align-items: center; justify-content: center;
   flex-shrink: 0; transition: transform .15s;
 }
@@ -935,7 +935,7 @@ function onKeydown(e: KeyboardEvent) {
 .mi-cmd-shortcut {
   font-size: 10px; color: var(--text-muted); opacity: .4;
   background: var(--bg-hover); padding: 2px 6px;
-  border-radius: 4px; flex-shrink: 0;
+  border-radius: var(--radius-xs); flex-shrink: 0;
 }
 .mi-mention-selected .mi-cmd-name { color: var(--text-primary); }
 .mi-mention-selected .mi-cmd-desc { color: var(--text-secondary); }

@@ -299,12 +299,12 @@ async function save() {
 .np-hint { font-weight: 400; opacity: .6; }
 .np-hint-block { font-size: 11px; color: var(--text-muted); margin-top: 2px; line-height: 1.4; }
 .np-input {
-  padding: 9px 12px; border-radius: 8px; font-size: 13px;
+  padding: 9px 12px; border-radius: var(--radius-sm); font-size: 13px;
   border: 1px solid var(--border-input); background: var(--bg-input);
   color: var(--text-primary); font-family: var(--font);
   transition: border-color .15s;
 }
-.np-input:focus { border-color: var(--accent); outline: none; box-shadow: 0 0 0 3px rgba(74,144,217,.12); }
+.np-input:focus { border-color: var(--accent); outline: none; box-shadow: 0 0 0 3px rgba(var(--accent-rgb),.12); }
 .np-textarea { resize: vertical; min-height: 50px; }
 .np-row { display: flex; gap: 10px; }
 .np-flex1 { flex: 1; }
@@ -332,22 +332,22 @@ async function save() {
 }
 .np-icon-btn {
   display: flex; align-items: center; justify-content: center;
-  width: 36px; height: 36px; border-radius: 8px;
+  width: 36px; height: 36px; border-radius: var(--radius-sm);
   background: transparent; border: 1.5px solid transparent;
   color: var(--text-muted); cursor: pointer; font-family: var(--font);
   transition: all .12s;
 }
 .np-icon-btn:hover { background: var(--bg-hover); color: var(--text-primary); }
-.np-icon-btn.active { border-color: var(--accent); background: rgba(74,144,217,.1); color: var(--accent); }
+.np-icon-btn.active { border-color: var(--accent); background: rgba(var(--accent-rgb),.1); color: var(--accent); }
 
 /* ── Preview ─────────────────────────────────────────────────────────── */
 .np-preview {
   display: flex; align-items: center; gap: 12px;
-  padding: 14px 16px; border-radius: 10px;
+  padding: 14px 16px; border-radius: var(--radius);
   background: var(--bg-elevated); border: 1px solid var(--border);
 }
 .np-preview-icon {
-  width: 40px; height: 40px; border-radius: 10px;
+  width: 40px; height: 40px; border-radius: var(--radius);
   display: flex; align-items: center; justify-content: center;
   flex-shrink: 0;
 }

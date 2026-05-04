@@ -476,7 +476,7 @@
 
 .ress-item-cat {
   display: flex; align-items: center; justify-content: center;
-  width: 24px; height: 24px; border-radius: 6px; flex-shrink: 0;
+  width: 24px; height: 24px; border-radius: var(--radius-sm); flex-shrink: 0;
 }
 
 .ress-item-name {
@@ -489,7 +489,7 @@
 
 .ress-item-badge {
   font-size: 10px; font-weight: 600;
-  padding: 2px 7px; border-radius: 10px;
+  padding: 2px 7px; border-radius: var(--radius);
   white-space: nowrap; flex-shrink: 0;
 }
 
@@ -603,7 +603,7 @@
 }
 .ress-file-selected-icon { color: #27AE60; flex-shrink: 0; }
 .ress-file-selected-name { flex: 1; font-size: 13px; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.ress-file-clear { background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 2px; display: flex; align-items: center; border-radius: 4px; flex-shrink: 0; }
+.ress-file-clear { background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 2px; display: flex; align-items: center; border-radius: var(--radius-xs); flex-shrink: 0; }
 .ress-file-clear:hover { color: #ff6b6b; }
 
 .ress-form-actions {

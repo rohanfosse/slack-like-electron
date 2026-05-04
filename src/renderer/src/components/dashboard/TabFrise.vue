@@ -132,7 +132,7 @@ const projectLegend = computed(() => {
   display: flex; align-items: center; justify-content: space-between;
   padding: 0 4px; gap: 8px; flex-wrap: wrap;
 }
-.tf-zoom-group { display: flex; gap: 0; border-radius: 8px; overflow: hidden; border: 1px solid var(--border); }
+.tf-zoom-group { display: flex; gap: 0; border-radius: var(--radius-sm); overflow: hidden; border: 1px solid var(--border); }
 .tf-zoom-btn {
   font-size: 12px; font-weight: 600; padding: 6px 14px;
   background: transparent; color: var(--text-muted);
@@ -145,18 +145,18 @@ const projectLegend = computed(() => {
 .tf-nav { display: flex; align-items: center; gap: 4px; }
 .tf-nav-btn {
   display: flex; align-items: center; justify-content: center;
-  width: 30px; height: 30px; border-radius: 8px;
+  width: 30px; height: 30px; border-radius: var(--radius-sm);
   background: var(--bg-elevated); border: 1px solid var(--border);
   color: var(--text-secondary); cursor: pointer; transition: all .15s;
 }
 .tf-nav-btn:hover { background: var(--bg-active); color: var(--text-primary); }
 .tf-nav-center {
-  font-size: 12px; font-weight: 600; padding: 5px 12px; border-radius: 8px;
-  background: rgba(74,144,217,.12); color: var(--accent);
-  border: 1px solid rgba(74,144,217,.25); cursor: pointer; font-family: var(--font);
+  font-size: 12px; font-weight: 600; padding: 5px 12px; border-radius: var(--radius-sm);
+  background: rgba(var(--accent-rgb),.12); color: var(--accent);
+  border: 1px solid rgba(var(--accent-rgb),.25); cursor: pointer; font-family: var(--font);
   transition: all .15s;
 }
-.tf-nav-center:hover { background: rgba(74,144,217,.2); }
+.tf-nav-center:hover { background: rgba(var(--accent-rgb),.2); }
 
 /* ── Empty ────────────────────────────────────────────────────────────────── */
 .tf-empty {
@@ -170,7 +170,7 @@ const projectLegend = computed(() => {
 }
 .tf-legend-item {
   display: flex; align-items: center; gap: 6px;
-  padding: 4px 10px; border-radius: 16px;
+  padding: 4px 10px; border-radius: var(--radius-lg);
   background: var(--bg-elevated); border: 1px solid var(--border);
   cursor: pointer; font-family: var(--font); transition: all .15s;
 }

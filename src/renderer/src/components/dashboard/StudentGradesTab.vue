@@ -264,11 +264,11 @@ function openGradeCtxMenu(ev: MouseEvent, d: GradedDevoir) {
   font-size: 12px; font-weight: 800; width: 20px; text-align: center;
 }
 .sgt-bar-track {
-  flex: 1; height: 8px; border-radius: 4px;
+  flex: 1; height: 8px; border-radius: var(--radius-xs);
   background: var(--bg-hover);
 }
 .sgt-bar-fill {
-  height: 100%; border-radius: 4px;
+  height: 100%; border-radius: var(--radius-xs);
   transition: width .3s cubic-bezier(.4, 0, .2, 1);
 }
 .sgt-bar-count {
@@ -287,7 +287,7 @@ function openGradeCtxMenu(ev: MouseEvent, d: GradedDevoir) {
 .sgt-list { display: flex; flex-direction: column; gap: 8px; }
 .sgt-card {
   background: var(--bg-elevated); border: 1px solid var(--border);
-  border-radius: 10px; padding: 12px 14px;
+  border-radius: var(--radius); padding: 12px 14px;
   transition: background .15s cubic-bezier(.4, 0, .2, 1), border-color .15s cubic-bezier(.4, 0, .2, 1);
 }
 .sgt-card:hover { background: var(--bg-elevated); }
@@ -301,7 +301,7 @@ function openGradeCtxMenu(ev: MouseEvent, d: GradedDevoir) {
 }
 .sgt-card-cat {
   font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: .4px;
-  padding: 2px 7px; border-radius: 4px;
+  padding: 2px 7px; border-radius: var(--radius-xs);
   background: var(--bg-hover); color: var(--text-muted);
   white-space: nowrap; flex-shrink: 0;
 }
@@ -310,7 +310,7 @@ function openGradeCtxMenu(ev: MouseEvent, d: GradedDevoir) {
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 .sgt-card-badge {
-  font-size: 12px; font-weight: 800; padding: 3px 10px; border-radius: 6px;
+  font-size: 12px; font-weight: 800; padding: 3px 10px; border-radius: var(--radius-sm);
   flex-shrink: 0;
 }
 .sgt-badge--a { background: rgba(var(--color-success-rgb),.15); color: var(--color-success); }
@@ -350,7 +350,7 @@ function openGradeCtxMenu(ev: MouseEvent, d: GradedDevoir) {
   padding: 14px;
   background: var(--bg-elevated);
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: var(--radius);
 }
 .sgt-chart-title {
   font-size: 12px; font-weight: 700; color: var(--text-muted);
@@ -400,7 +400,7 @@ function openGradeCtxMenu(ev: MouseEvent, d: GradedDevoir) {
 .sgt-badge {
   display: flex; flex-direction: column;
   align-items: center; gap: 4px;
-  padding: 10px 12px; border-radius: 10px;
+  padding: 10px 12px; border-radius: var(--radius);
   background: var(--bg-elevated);
   border: 1px solid var(--border);
   min-width: 80px; text-align: center;

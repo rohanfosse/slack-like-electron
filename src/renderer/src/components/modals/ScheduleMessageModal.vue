@@ -156,7 +156,7 @@ watch(() => props.modelValue, (open) => {
 .sched-preview {
   background: var(--bg-hover);
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   padding: 8px 10px;
   font-size: 13px;
   color: var(--text-secondary);
@@ -169,7 +169,7 @@ watch(() => props.modelValue, (open) => {
 .sched-preset {
   font-size: 12px;
   padding: 6px 10px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   border: 1px solid var(--border);
   background: var(--bg-hover);
   color: var(--text-secondary);
@@ -186,7 +186,7 @@ watch(() => props.modelValue, (open) => {
   gap: 8px;
   background: var(--bg-input);
   border: 1px solid var(--border-input);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   padding: 6px 10px;
   color: var(--text-muted);
 }
@@ -202,7 +202,7 @@ watch(() => props.modelValue, (open) => {
 .sched-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 4px; }
 .sched-btn {
   padding: 7px 14px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   border: 1px solid var(--border);
   background: transparent;
   color: var(--text-secondary);

@@ -138,7 +138,7 @@
 .gd-grade-dist { display: flex; gap: 5px; flex-wrap: wrap; margin-bottom: 8px; }
 .grade-dist-pill {
   display: inline-flex; align-items: center; gap: 4px;
-  padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 600;
+  padding: 2px 8px; border-radius: var(--radius); font-size: 11px; font-weight: 600;
 }
 .grade-dist-pill.grade-a  { background: rgba(var(--color-success-rgb),.12); color: var(--color-success); }
 .grade-dist-pill.grade-b  { background: rgba(var(--color-success-rgb),.07); color: #27ae60; }
@@ -151,12 +151,12 @@
 .gd-student-list {
   display: flex; flex-direction: column; gap: 2px;
   max-height: 280px; overflow-y: auto;
-  border: 1px solid var(--border); border-radius: 8px;
+  border: 1px solid var(--border); border-radius: var(--radius-sm);
   padding: 4px;
 }
 .gd-student-row {
   display: flex; align-items: center; gap: 8px;
-  padding: 5px 8px; border-radius: 6px;
+  padding: 5px 8px; border-radius: var(--radius-sm);
   transition: background var(--t-fast);
 }
 .gd-student-row:hover { background: var(--bg-hover); }
@@ -174,7 +174,7 @@
 
 .gd-grade {
   font-size: 11px; font-weight: 800; min-width: 28px; text-align: center;
-  padding: 1px 4px; border-radius: 4px;
+  padding: 1px 4px; border-radius: var(--radius-xs);
 }
 .gd-grade.grade-a { color: var(--color-success); background: rgba(var(--color-success-rgb),.08); }
 .gd-grade.grade-b { color: #27ae60; background: rgba(var(--color-success-rgb),.05); }

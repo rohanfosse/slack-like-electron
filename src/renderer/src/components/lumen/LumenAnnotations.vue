@@ -199,7 +199,7 @@ const ctxItems = computed<ContextMenuItem[]>(() => {
   padding: 3px 8px;
   background: var(--bg-secondary);
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: var(--radius);
   color: var(--text-muted);
   font-size: 11px;
   cursor: pointer;
@@ -231,7 +231,7 @@ const ctxItems = computed<ContextMenuItem[]>(() => {
   max-height: 420px;
   background: var(--bg-main);
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   box-shadow: var(--elevation-3, 0 4px 16px rgba(0, 0, 0, 0.25));
   z-index: 50;
   display: flex;
@@ -276,7 +276,7 @@ const ctxItems = computed<ContextMenuItem[]>(() => {
   width: 100%;
   background: var(--bg-primary);
   border: 1px solid var(--border);
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   padding: 6px 8px;
   font-size: 12px;
   color: var(--text-primary);
@@ -297,7 +297,7 @@ const ctxItems = computed<ContextMenuItem[]>(() => {
   align-items: center;
   gap: 4px;
   padding: 5px 10px;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   border: 1px solid var(--border);
   background: var(--bg-primary);
   color: var(--text-primary);

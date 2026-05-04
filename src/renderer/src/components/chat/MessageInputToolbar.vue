@@ -166,7 +166,7 @@
   padding: 0 3px;
   border: none;
   background: transparent;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   cursor: pointer;
   color: var(--text-muted);
   font-family: var(--font);
@@ -202,7 +202,7 @@
   right: 0;
   background: var(--bg-modal);
   border: 1px solid var(--border-input);
-  border-radius: 10px;
+  border-radius: var(--radius);
   box-shadow: 0 8px 24px rgba(0,0,0,.5);
   padding: 8px;
   display: grid;
@@ -218,7 +218,7 @@
   width: 34px;
   height: 34px;
   border: none;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   background: transparent;
   font-size: 18px;
   cursor: pointer;
@@ -246,7 +246,7 @@
   height: 26px;
   border: none;
   background: transparent;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   cursor: pointer;
   color: var(--text-muted);
   transition: background .12s, color .12s;
@@ -273,7 +273,7 @@
   gap: 4px;
   padding: 4px 10px 4px 8px;
   border: none;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   background: var(--accent);
   color: #fff;
   font-family: var(--font);

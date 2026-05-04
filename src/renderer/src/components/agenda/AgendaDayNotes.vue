@@ -110,14 +110,14 @@ const ctxItems = computed<ContextMenuItem[]>(() => {
   display: flex; gap: 4px;
 }
 .day-notes-input {
-  flex: 1; padding: 5px 8px; border-radius: 4px;
+  flex: 1; padding: 5px 8px; border-radius: var(--radius-xs);
   border: 1px solid var(--border); background: var(--bg-elevated);
   color: var(--text-primary); font-size: 12px; font-family: inherit; outline: none;
 }
 .day-notes-input:focus { border-color: var(--accent); }
 .day-notes-add-btn {
   display: flex; align-items: center; justify-content: center;
-  width: 28px; height: 28px; border-radius: 4px;
+  width: 28px; height: 28px; border-radius: var(--radius-xs);
   border: 1px solid var(--border); background: var(--bg-primary);
   color: var(--text-muted); cursor: pointer;
 }

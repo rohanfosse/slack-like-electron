@@ -176,7 +176,7 @@
 .kb-col-count {
   font-size: 11px; font-weight: 700;
   background: rgba(255,255,255,.08);
-  padding: 1px 6px; border-radius: 10px;
+  padding: 1px 6px; border-radius: var(--radius);
   color: var(--text-muted);
 }
 
@@ -197,7 +197,7 @@
   padding: 10px 34px 10px 30px;
   background: var(--bg-elevated);
   border: 1px solid var(--border, rgba(255,255,255,.08));
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   cursor: grab;
   transition: border-color .15s, box-shadow .15s;
 }
@@ -234,7 +234,7 @@
   font-size: 12px; color: var(--text-muted);
   padding: 12px; justify-content: center;
   border: 1px dashed rgba(255,255,255,.08);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
 }
 
 /* ── Add form ── */
@@ -244,7 +244,7 @@
 .kb-add-input {
   width: 100%;
   padding: 8px 10px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   border: 1px solid rgba(255,255,255,.12);
   background: var(--bg-elevated);
   color: var(--text-primary);
@@ -255,14 +255,14 @@
 .kb-add-input:focus { border-color: #3b82f6; }
 .kb-add-actions { display: flex; gap: 6px; }
 .kb-btn-add {
-  flex: 1; padding: 6px 10px; border-radius: 6px; border: none;
+  flex: 1; padding: 6px 10px; border-radius: var(--radius-sm); border: none;
   background: #3b82f6; color: #fff;
   font-size: 12px; font-weight: 600; cursor: pointer;
   font-family: var(--font, inherit); transition: background .15s;
 }
 .kb-btn-add:hover { background: #60a5fa; }
 .kb-btn-cancel {
-  padding: 6px 10px; border-radius: 6px;
+  padding: 6px 10px; border-radius: var(--radius-sm);
   border: 1px solid var(--border, rgba(255,255,255,.08));
   background: transparent; color: var(--text-secondary);
   font-size: 12px; font-weight: 600; cursor: pointer;
@@ -271,7 +271,7 @@
 
 .kb-add-btn {
   display: inline-flex; align-items: center; gap: 5px;
-  padding: 7px 12px; border-radius: 6px;
+  padding: 7px 12px; border-radius: var(--radius-sm);
   border: 1px dashed rgba(255,255,255,.1);
   background: transparent; color: var(--text-muted);
   font-size: 12px; font-weight: 600; cursor: pointer;

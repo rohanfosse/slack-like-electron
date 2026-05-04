@@ -109,7 +109,7 @@ function pick(emoji: string) {
   background: transparent;
   font-size: 16px;
   cursor: pointer;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   transition: background .12s;
 }
 .ep-cat-btn:hover { background: var(--bg-hover); }
@@ -148,7 +148,7 @@ function pick(emoji: string) {
   border: none;
   background: transparent;
   cursor: pointer;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   transition: background .1s, transform .1s;
 }
 .ep-emoji:hover {

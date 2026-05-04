@@ -114,7 +114,7 @@ const QUICK_REASONS = ['Harcelement', 'Spam', 'Contenu inapproprie', 'Hors-sujet
 }
 .report-reason-btn {
   padding: 4px 10px;
-  border-radius: 14px;
+  border-radius: var(--radius-lg);
   font-size: 11px;
   background: var(--bg-hover);
   color: var(--text-secondary);

@@ -135,7 +135,7 @@ function handleClick(action: Action) {
   font-size: var(--text-2xs);
   background: var(--bg-hover);
   padding: 0 var(--space-xs);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
 }
 
 .we-list {

@@ -20,7 +20,7 @@ export async function loadHeatmap() {
     for (let h = 0; h < 24; h++) {
       const count = grid[`${d}-${h}`] || 0
       const intensity = count / maxCount
-      const color = count === 0 ? 'rgba(255,255,255,.03)' : `rgba(74,144,217,${0.15 + intensity * 0.85})`
+      const color = count === 0 ? 'rgba(255,255,255,.03)' : `rgba(99,102,241,${0.15 + intensity * 0.85})`
       html += `<div class="heatmap-cell" style="background:${color}" data-tip="${dayNames[d]} ${h}h: ${count} msg"></div>`
     }
   }

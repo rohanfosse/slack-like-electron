@@ -416,7 +416,7 @@ function submitAndSend() {
   font-variant-numeric: tabular-nums;
   background: var(--bg-elevated);
   padding: 1px 6px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   pointer-events: none;
   opacity: .75;
 }

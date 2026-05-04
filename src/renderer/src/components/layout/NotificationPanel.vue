@@ -231,7 +231,7 @@ function notifCategory(n: typeof appStore.notificationHistory[number]): string {
   position: absolute; left: calc(100% + 10px); bottom: 0;
   width: 320px; max-height: 480px;
   background: var(--bg-modal); border: 1px solid var(--border);
-  border-radius: 12px; box-shadow: 0 12px 40px rgba(0,0,0,.55);
+  border-radius: var(--radius); box-shadow: 0 12px 40px rgba(0,0,0,.55);
   display: flex; flex-direction: column; overflow: hidden; z-index: 200;
 }
 .notif-header {
@@ -241,19 +241,19 @@ function notifCategory(n: typeof appStore.notificationHistory[number]): string {
 .notif-title { font-size: 12px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: .5px; }
 .notif-badge {
   font-size: 10px; font-weight: 700; color: #fff;
-  background: var(--color-danger); border-radius: 10px; padding: 1px 6px;
+  background: var(--color-danger); border-radius: var(--radius); padding: 1px 6px;
 }
 .notif-header-actions { display: flex; align-items: center; gap: 6px; margin-left: auto; }
 .notif-mark-all {
   display: flex; align-items: center; gap: 4px;
   font-size: 11px; color: var(--accent); background: none; border: none;
-  cursor: pointer; padding: 2px 6px; border-radius: 6px; transition: background .1s;
+  cursor: pointer; padding: 2px 6px; border-radius: var(--radius-sm); transition: background .1s;
 }
 .notif-mark-all:hover { background: rgba(var(--accent-rgb),.12); }
 .notif-clear-all {
   display: flex; align-items: center; gap: 4px;
   font-size: 11px; color: var(--text-muted); background: none; border: none;
-  cursor: pointer; padding: 2px 6px; border-radius: 6px; transition: all .1s;
+  cursor: pointer; padding: 2px 6px; border-radius: var(--radius-sm); transition: all .1s;
 }
 .notif-clear-all:hover { background: rgba(239,68,68,.12); color: #ef4444; }
 .notif-close-btn {
@@ -305,7 +305,7 @@ function notifCategory(n: typeof appStore.notificationHistory[number]): string {
 .notif-item.unread:hover { background: rgba(var(--accent-rgb),.1); }
 
 .notif-item-icon {
-  width: 28px; height: 28px; border-radius: 8px;
+  width: 28px; height: 28px; border-radius: var(--radius-sm);
   display: flex; align-items: center; justify-content: center; flex-shrink: 0;
   background: var(--bg-hover);
 }
@@ -321,7 +321,7 @@ function notifCategory(n: typeof appStore.notificationHistory[number]): string {
 .notif-item-right { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; flex-shrink: 0; }
 .notif-item-time { font-size: 10px; color: var(--text-muted); white-space: nowrap; }
 .notif-item-dismiss {
-  width: 16px; height: 16px; border-radius: 4px; border: none;
+  width: 16px; height: 16px; border-radius: var(--radius-xs); border: none;
   background: transparent; color: var(--text-muted); cursor: pointer;
   display: flex; align-items: center; justify-content: center;
   opacity: 0; transition: opacity .1s, background .1s;

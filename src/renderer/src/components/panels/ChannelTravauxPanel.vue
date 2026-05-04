@@ -113,11 +113,11 @@ const TYPE_ICONS: Record<string, object> = {
 .side-panel-title { flex: 1; }
 .side-panel-count {
   font-size: 11px; font-weight: 600; color: var(--text-muted);
-  background: var(--bg-hover); padding: 1px 7px; border-radius: 10px;
+  background: var(--bg-hover); padding: 1px 7px; border-radius: var(--radius);
 }
 .side-panel-close {
   background: none; border: none; color: var(--text-muted);
-  cursor: pointer; padding: 4px; border-radius: 6px;
+  cursor: pointer; padding: 4px; border-radius: var(--radius-sm);
   transition: all .12s;
 }
 .side-panel-close:hover { background: var(--bg-active); color: var(--text-primary); }
@@ -134,7 +134,7 @@ const TYPE_ICONS: Record<string, object> = {
 .sp-list { display: flex; flex-direction: column; gap: 4px; }
 .sp-travail-item {
   display: flex; align-items: center; gap: 10px;
-  padding: 10px 12px; border-radius: 8px; cursor: pointer;
+  padding: 10px 12px; border-radius: var(--radius-sm); cursor: pointer;
   background: transparent; border: none; font-family: var(--font);
   color: var(--text-primary); text-align: left; width: 100%;
   transition: background .12s;
@@ -146,7 +146,7 @@ const TYPE_ICONS: Record<string, object> = {
   display: flex; align-items: center; justify-content: center;
   flex-shrink: 0;
 }
-.sp-type-livrable     { background: rgba(74,144,217,.12); color: var(--accent); }
+.sp-type-livrable     { background: rgba(var(--accent-rgb),.12); color: var(--accent); }
 .sp-type-soutenance   { background: rgba(243,156,18,.12); color: var(--color-warning); }
 .sp-type-cctl         { background: rgba(155,135,245,.12); color: var(--color-cctl); }
 .sp-type-etude_de_cas { background: rgba(46,204,113,.12); color: var(--color-success); }
@@ -165,6 +165,6 @@ const TYPE_ICONS: Record<string, object> = {
 }
 .sp-travail-progress {
   font-size: 11px; font-weight: 600; color: var(--text-muted);
-  background: var(--bg-hover); padding: 2px 6px; border-radius: 6px;
+  background: var(--bg-hover); padding: 2px 6px; border-radius: var(--radius-sm);
 }
 </style>

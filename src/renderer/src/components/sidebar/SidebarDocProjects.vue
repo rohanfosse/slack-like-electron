@@ -111,7 +111,7 @@ function selectCategory(cat: string) {
 .sb-docs-title { font-size: 11px; font-weight: 700; color: var(--text-muted); flex: 1; }
 .sb-docs-count {
   font-size: 9px; font-weight: 700; color: var(--accent);
-  background: rgba(var(--accent-rgb), .14); padding: 1px 5px; border-radius: 8px;
+  background: rgba(var(--accent-rgb), .14); padding: 1px 5px; border-radius: var(--radius-sm);
 }
 
 /* Search */
@@ -132,7 +132,7 @@ function selectCategory(cat: string) {
 /* Items */
 .sb-docs-item {
   display: flex; align-items: center; gap: 6px; width: 100%;
-  padding: 6px 8px; border-radius: 6px; border: none; border-left: 2px solid transparent;
+  padding: 6px 8px; border-radius: var(--radius-sm); border: none; border-left: 2px solid transparent;
   background: transparent; cursor: pointer; text-align: left; font-family: inherit; transition: all 0.1s;
 }
 .sb-docs-item:hover { background: var(--bg-hover); }

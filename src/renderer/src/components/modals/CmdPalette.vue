@@ -408,7 +408,7 @@
   color: var(--text-muted);
   background: var(--bg-hover);
   border: 1px solid var(--border);
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   padding: 2px 6px;
 }
 
@@ -446,7 +446,7 @@
   cursor: pointer;
   transition: background .08s;
 }
-.cmd-result-item.active     { background: rgba(74, 144, 217, .15); }
+.cmd-result-item.active     { background: rgba(var(--accent-rgb),.15); }
 .cmd-result-item:hover:not(.active) { background: var(--bg-hover); }
 
 /* Icône type ── */
@@ -532,7 +532,7 @@
   font-family: var(--font);
   background: var(--bg-active);
   border: 1px solid var(--border);
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   padding: 2px 6px;
   color: var(--text-secondary);
 }

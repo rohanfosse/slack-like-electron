@@ -279,7 +279,7 @@ function goTo(gameId: string) {
   padding: 5px 7px;
   background: var(--bg-elevated);
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   min-width: 0;
 }
 .sbg-stat-label {

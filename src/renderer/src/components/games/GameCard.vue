@@ -157,7 +157,7 @@ function play() { router.push(props.game.route) }
   flex-direction: column;
   background: var(--bg-sidebar);
   border: 1px solid var(--border);
-  border-radius: 16px;
+  border-radius: var(--radius-lg);
   padding: 18px;
   cursor: pointer;
   overflow: hidden;
@@ -194,7 +194,7 @@ function play() { router.push(props.game.route) }
   justify-content: center;
   width: 40px;
   height: 40px;
-  border-radius: 10px;
+  border-radius: var(--radius);
   background: color-mix(in srgb, var(--accent, #3b82f6), transparent 85%);
   color: var(--accent, #3b82f6);
   flex-shrink: 0;
@@ -278,7 +278,7 @@ function play() { router.push(props.game.route) }
   align-items: center;
   gap: 8px;
   padding: 5px 8px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   font-size: 12px;
   color: var(--text-secondary);
 }

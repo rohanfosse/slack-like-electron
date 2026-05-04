@@ -84,10 +84,10 @@ defineExpose({ downloadPng })
 
 <style scoped>
 .qr-wrap { position: relative; display: inline-flex; }
-.qr-canvas { border-radius: 6px; }
+.qr-canvas { border-radius: var(--radius-sm); }
 .qr-download {
   position: absolute; bottom: 4px; right: 4px;
-  width: 22px; height: 22px; border-radius: 4px;
+  width: 22px; height: 22px; border-radius: var(--radius-xs);
   background: rgba(0,0,0,.6); color: #fff; border: none;
   cursor: pointer; display: flex; align-items: center; justify-content: center;
   opacity: 0; transition: opacity .15s;

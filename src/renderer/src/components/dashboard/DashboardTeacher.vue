@@ -379,7 +379,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onDashKeydown))
   background: color-mix(in srgb, var(--bg-secondary, #1e1e2e) 90%, transparent);
   backdrop-filter: blur(14px);
   border: 1px solid color-mix(in srgb, var(--border) 60%, transparent);
-  border-radius: 12px;
+  border-radius: var(--radius);
   width: fit-content; margin: 0 auto;
   box-shadow: 0 2px 12px rgba(0,0,0,.2), 0 0 0 1px rgba(255,255,255,.03);
   z-index: 5;
@@ -390,7 +390,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onDashKeydown))
   display: inline-flex; align-items: center; gap: 5px;
   height: 30px; padding: 0 12px; font-size: 12px; font-weight: 600;
   background: var(--accent); color: #fff;
-  border: none; border-radius: 8px; cursor: pointer;
+  border: none; border-radius: var(--radius-sm); cursor: pointer;
   transition: filter var(--motion-fast) var(--ease-out), transform .1s ease; font-family: var(--font);
   letter-spacing: .01em; white-space: nowrap;
 }
@@ -406,7 +406,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onDashKeydown))
   display: inline-flex; align-items: center; justify-content: center;
   width: 30px; height: 30px; padding: 0;
   background: transparent; color: var(--text-muted);
-  border: none; border-radius: 8px; cursor: pointer;
+  border: none; border-radius: var(--radius-sm); cursor: pointer;
   transition: background var(--motion-fast) var(--ease-out), color var(--motion-fast) var(--ease-out), transform .1s ease;
   flex-shrink: 0;
 }

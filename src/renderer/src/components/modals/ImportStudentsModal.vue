@@ -248,7 +248,7 @@ Marie Martin;marie@viacesi.fr;</pre>
 .is-body { padding: 16px 20px; display: flex; flex-direction: column; gap: 14px; }
 
 /* Mode toggle */
-.is-mode-toggle { display: flex; gap: 0; border-radius: 8px; overflow: hidden; border: 1px solid var(--border); }
+.is-mode-toggle { display: flex; gap: 0; border-radius: var(--radius-sm); overflow: hidden; border: 1px solid var(--border); }
 .is-mode-btn {
   flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px;
   padding: 8px 12px; font-size: 13px; font-weight: 600;
@@ -265,21 +265,21 @@ Marie Martin;marie@viacesi.fr;</pre>
 .is-hint-block { font-size: 11px; color: var(--text-muted); margin-top: 4px; line-height: 1.4; }
 .is-hint-block code { background: var(--bg-hover); border-radius: 3px; padding: 1px 4px; font-size: 11px; }
 .is-input {
-  padding: 9px 12px; border-radius: 8px; font-size: 13px;
+  padding: 9px 12px; border-radius: var(--radius-sm); font-size: 13px;
   border: 1px solid var(--border-input); background: var(--bg-input);
   color: var(--text-primary); font-family: var(--font);
 }
 .is-textarea {
-  padding: 10px 12px; border-radius: 8px; font-size: 13px;
+  padding: 10px 12px; border-radius: var(--radius-sm); font-size: 13px;
   border: 1px solid var(--border-input); background: var(--bg-input);
   color: var(--text-primary); font-family: var(--font);
   resize: vertical; min-height: 140px; line-height: 1.5;
 }
-.is-textarea:focus, .is-input:focus { border-color: var(--accent); outline: none; box-shadow: 0 0 0 3px rgba(74,144,217,.12); }
+.is-textarea:focus, .is-input:focus { border-color: var(--accent); outline: none; box-shadow: 0 0 0 3px rgba(var(--accent-rgb),.12); }
 
 /* Preview */
 .is-preview {
-  border: 1px solid var(--border); border-radius: 8px; overflow: hidden;
+  border: 1px solid var(--border); border-radius: var(--radius-sm); overflow: hidden;
 }
 .is-preview-header {
   display: flex; align-items: center; justify-content: space-between;
@@ -304,19 +304,19 @@ Marie Martin;marie@viacesi.fr;</pre>
 /* Format box (CSV) */
 .is-format-box {
   background: var(--bg-elevated); border: 1px solid var(--border);
-  border-radius: 8px; padding: 12px 14px;
+  border-radius: var(--radius-sm); padding: 12px 14px;
 }
 .is-format-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; color: var(--text-muted); margin-bottom: 8px; }
 .is-format-pre {
   font-family: 'Fira Code', 'Consolas', monospace; font-size: 12px;
   color: var(--text-secondary); background: rgba(0,0,0,.2);
-  border-radius: 4px; padding: 8px 10px; margin-bottom: 8px; overflow-x: auto; white-space: pre;
+  border-radius: var(--radius-xs); padding: 8px 10px; margin-bottom: 8px; overflow-x: auto; white-space: pre;
 }
 
 /* Result */
 .is-result {
   background: rgba(46,204,113,.06); border: 1px solid rgba(46,204,113,.2);
-  border-radius: 8px; padding: 10px 14px;
+  border-radius: var(--radius-sm); padding: 10px 14px;
 }
 .is-result--warn { background: rgba(243,156,18,.06); border-color: rgba(243,156,18,.2); }
 .is-result-row { display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; color: var(--color-success); }

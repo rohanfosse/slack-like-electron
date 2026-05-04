@@ -135,7 +135,7 @@ const ctxItems = computed<ContextMenuItem[]>(() => {
   background: var(--bg-primary);
   border: 1px solid var(--border);
   padding: 0 5px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   font-variant-numeric: tabular-nums;
 }
 

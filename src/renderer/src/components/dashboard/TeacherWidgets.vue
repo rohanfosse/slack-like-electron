@@ -247,7 +247,7 @@ const emit = defineEmits<{
   display: flex; align-items: center; gap: 10px;
   padding: 8px 12px; background: var(--bg-elevated, rgba(255,255,255,.04));
   border: 1px solid var(--border); border-left: 3px solid var(--accent);
-  border-radius: 8px; cursor: pointer; transition: all var(--motion-fast) var(--ease-out);
+  border-radius: var(--radius-sm); cursor: pointer; transition: all var(--motion-fast) var(--ease-out);
   width: 100%; text-align: left; font-family: var(--font);
 }
 .db-unread-item:hover { background: var(--bg-hover); }
@@ -259,7 +259,7 @@ const emit = defineEmits<{
 .db-unread-name { flex: 1; font-size: 13px; font-weight: 600; color: var(--text-primary); }
 .db-unread-badge {
   font-size: 11px; font-weight: 600; color: var(--accent);
-  background: rgba(74,144,217,.12); padding: 2px 8px; border-radius: 10px;
+  background: rgba(var(--accent-rgb),.12); padding: 2px 8px; border-radius: var(--radius);
 }
 .db-unread-arrow { color: var(--text-muted); flex-shrink: 0; opacity: 0; transition: opacity .15s; }
 .db-unread-item:hover .db-unread-arrow { opacity: 1; }
@@ -268,7 +268,7 @@ const emit = defineEmits<{
 .db-saved-item {
   display: flex; align-items: flex-start; gap: 10px;
   padding: 10px 12px; background: var(--bg-elevated, rgba(255,255,255,.04));
-  border: 1px solid var(--border); border-radius: 8px;
+  border: 1px solid var(--border); border-radius: var(--radius-sm);
   cursor: pointer; transition: all var(--motion-fast) var(--ease-out);
 }
 .db-saved-item:hover { background: var(--bg-hover); }
@@ -286,7 +286,7 @@ const emit = defineEmits<{
 .db-saved-meta { font-size: 10.5px; color: var(--text-muted); }
 .db-saved-remove {
   background: none; border: none; color: var(--text-muted);
-  cursor: pointer; padding: 4px; border-radius: 4px;
+  cursor: pointer; padding: 4px; border-radius: var(--radius-xs);
   opacity: 0; transition: all .15s; flex-shrink: 0; margin-top: 2px;
 }
 .db-saved-item:hover .db-saved-remove { opacity: 1; }
@@ -299,7 +299,7 @@ const emit = defineEmits<{
 }
 .db-widget {
   background: var(--bg-elevated, rgba(255,255,255,.04));
-  border: 1px solid var(--border); border-radius: 10px; padding: 14px;
+  border: 1px solid var(--border); border-radius: var(--radius); padding: 14px;
 }
 .db-widget-list { display: flex; flex-direction: column; gap: 3px; }
 .db-widget-item {
@@ -331,7 +331,7 @@ const emit = defineEmits<{
   width: 26px; height: 26px; border-radius: 7px;
   display: flex; align-items: center; justify-content: center; flex-shrink: 0;
 }
-.db-agenda-deadline   { background: rgba(74,144,217,.15); color: var(--accent); }
+.db-agenda-deadline   { background: rgba(var(--accent-rgb),.15); color: var(--accent); }
 .db-agenda-soutenance { background: rgba(139,92,246,.15); color: #8b5cf6; }
 .db-agenda-reminder   { background: rgba(34,197,94,.15); color: #22c55e; }
 .db-agenda-draft      { background: rgba(245,158,11,.15); color: #f59e0b; }

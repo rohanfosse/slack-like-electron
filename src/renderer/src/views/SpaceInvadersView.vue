@@ -405,7 +405,7 @@ const currentRank = computed(() => {
 }
 .si-icon-btn {
   display: flex; align-items: center; justify-content: center;
-  width: 30px; height: 30px; border-radius: 6px;
+  width: 30px; height: 30px; border-radius: var(--radius-sm);
   border: none; background: transparent; color: var(--text-secondary);
   cursor: pointer;
 }
@@ -443,7 +443,7 @@ const currentRank = computed(() => {
 
 .si-canvas-wrap {
   position: relative;
-  border-radius: 12px;
+  border-radius: var(--radius);
   overflow: hidden;
   box-shadow: 0 0 0 1px rgba(34, 211, 238, .2), 0 10px 40px rgba(0,0,0,.4);
 }
@@ -480,7 +480,7 @@ const currentRank = computed(() => {
   display: inline-flex; align-items: center; gap: 8px;
   padding: 10px 22px;
   background: #22d3ee; color: #0a0e1a;
-  border: none; border-radius: 10px;
+  border: none; border-radius: var(--radius);
   font-size: 14px; font-weight: 800; font-family: var(--font);
   cursor: pointer; transition: filter .12s, transform .06s;
   margin-top: 6px;
@@ -503,7 +503,7 @@ const currentRank = computed(() => {
 .si-help kbd {
   display: inline-block; padding: 1px 6px; margin: 0 1px;
   border: 1px solid var(--border); border-bottom-width: 2px;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   font-family: var(--font-mono, monospace);
   font-size: 10px; color: var(--text-secondary);
   background: var(--bg-elevated);

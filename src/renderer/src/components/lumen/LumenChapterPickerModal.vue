@@ -174,7 +174,7 @@ const ctxItems = computed<ContextMenuItem[]>(() => {
 
 .lcpm-modal {
   background: var(--bg-secondary);
-  border-radius: 12px;
+  border-radius: var(--radius);
   width: min(560px, calc(100% - 32px));
   max-height: 80vh;
   display: flex;
@@ -210,7 +210,7 @@ const ctxItems = computed<ContextMenuItem[]>(() => {
   cursor: pointer;
   padding: 4px;
   display: flex;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
 }
 .lcpm-close:hover { color: var(--text-primary); background: var(--bg-hover); }
 
@@ -222,7 +222,7 @@ const ctxItems = computed<ContextMenuItem[]>(() => {
   margin: 12px 16px 0;
   background: var(--bg-primary);
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   color: var(--text-muted);
 }
 .lcpm-search:focus-within {
@@ -267,7 +267,7 @@ const ctxItems = computed<ContextMenuItem[]>(() => {
   padding: 10px 12px;
   background: var(--bg-primary);
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   margin-bottom: 6px;
   cursor: pointer;
   font-family: inherit;
@@ -314,7 +314,7 @@ const ctxItems = computed<ContextMenuItem[]>(() => {
   color: var(--accent);
   padding: 4px 10px;
   background: var(--bg-secondary);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   flex-shrink: 0;
   min-width: 56px;
   text-align: center;

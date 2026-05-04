@@ -237,7 +237,7 @@
 }
 
 .ch-loading { padding: 16px; gap: 10px; }
-.ch-skel-row { height: 40px; border-radius: 8px; }
+.ch-skel-row { height: 40px; border-radius: var(--radius-sm); }
 
 /* ── Badge privacy ── */
 .ch-privacy-badge {
@@ -246,7 +246,7 @@
   gap: 6px;
   margin: 4px 12px 8px;
   padding: 7px 10px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   font-size: 11.5px;
   font-weight: 600;
 }
@@ -300,7 +300,7 @@
   align-items: center;
   gap: 8px;
   padding: 6px 8px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   transition: background .1s;
 }
 .ch-member-row:hover { background: var(--bg-hover); }
@@ -309,7 +309,7 @@
   width: 30px;
   height: 30px;
   min-width: 30px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   background: var(--accent-subtle);
   color: var(--accent-light);
   display: flex;
@@ -348,7 +348,7 @@
 .ch-member-email { font-size: 10.5px; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ch-member-role {
   font-size: 9px; font-weight: 600;
-  padding: 1px 5px; border-radius: 8px;
+  padding: 1px 5px; border-radius: var(--radius-sm);
   background: rgba(var(--accent-rgb),.12); color: var(--accent);
   margin-left: 4px;
 }
@@ -382,7 +382,7 @@
   padding: 6px 8px 6px 28px;
   background: var(--bg-hover);
   border: 1px solid var(--border-input);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   color: var(--text-primary);
   font-family: var(--font);
   font-size: 12px;

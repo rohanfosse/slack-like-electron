@@ -70,7 +70,7 @@ function cycleSize() {
 .ws-shell {
   position: relative;
   min-height: 0;
-  border-radius: 14px;
+  border-radius: var(--radius-lg);
   /* Animation fluide lors du resize (Fix #2) */
   transition:
     grid-column 0.3s cubic-bezier(0.4, 0, 0.2, 1),
@@ -103,7 +103,7 @@ function cycleSize() {
     transform var(--motion-base) var(--ease-out);
 }
 .ws-shell--editing:hover {
-  border-color: rgba(74, 144, 217, 0.3);
+  border-color: rgba(var(--accent-rgb),0.3);
 }
 .ws-shell--editing:active {
   cursor: grabbing;
@@ -121,7 +121,7 @@ function cycleSize() {
   justify-content: center;
   width: 24px;
   height: 24px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   background: rgba(17, 18, 20, 0.75);
   backdrop-filter: blur(8px);
   color: var(--text-muted);
@@ -135,7 +135,7 @@ function cycleSize() {
 .ws-drag-handle:hover {
   opacity: 1 !important;
   color: var(--text-primary);
-  background: rgba(74, 144, 217, 0.15);
+  background: rgba(var(--accent-rgb),0.15);
 }
 .ws-drag-handle:active {
   cursor: grabbing;
@@ -151,8 +151,8 @@ function cycleSize() {
   align-items: center;
   gap: 4px;
   padding: 3px 8px;
-  border-radius: 6px;
-  border: 1px solid rgba(74, 144, 217, 0.3);
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(var(--accent-rgb),0.3);
   background: rgba(17, 18, 20, 0.85);
   backdrop-filter: blur(8px);
   color: var(--accent, #4a90d9);
@@ -168,7 +168,7 @@ function cycleSize() {
   opacity: 1;
 }
 .ws-resize-btn:hover {
-  background: rgba(74, 144, 217, 0.15);
+  background: rgba(var(--accent-rgb),0.15);
 }
 
 /* ── Reduced motion ── */

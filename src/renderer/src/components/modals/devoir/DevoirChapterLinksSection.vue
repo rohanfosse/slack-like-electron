@@ -189,7 +189,7 @@ function openInLumen(item: DisplayChapter): void {
   font-size: 11px;
   font-weight: 600;
   padding: 4px 10px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   background: var(--bg-hover);
   color: var(--text-secondary);
   border: 1px solid var(--border-input);
@@ -232,7 +232,7 @@ function openInLumen(item: DisplayChapter): void {
   gap: 6px;
   background: var(--bg-primary);
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   overflow: hidden;
 }
 .dcls-item-main {

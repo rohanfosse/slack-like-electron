@@ -158,7 +158,7 @@ function onAddSlot(day: number) {
   justify-content: space-between;
   padding: 3px var(--space-xs);
   background: var(--bg-elevated);
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
 }
 .rule-time { font-size: 11px; color: var(--text-secondary); font-variant-numeric: tabular-nums; }
 .no-rules { font-size: 11px; color: var(--text-muted); font-style: italic; }
@@ -210,7 +210,7 @@ function onAddSlot(day: number) {
   border: none;
   background: none;
   cursor: pointer;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   color: var(--text-muted);
   flex-shrink: 0;
   transition: all var(--motion-fast) var(--ease-out);

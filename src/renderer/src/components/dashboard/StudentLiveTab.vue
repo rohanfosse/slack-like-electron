@@ -52,8 +52,8 @@ function formatDate(dt: string | null) {
     <!-- Loading -->
     <div v-if="loading" class="slt-loading">
       <div class="skel skel-line" style="height:80px;border-radius:12px" />
-      <div class="skel skel-line" style="height:40px;border-radius:8px;margin-top:12px" />
-      <div class="skel skel-line" style="height:40px;border-radius:8px;margin-top:8px" />
+      <div class="skel skel-line" style="height:40px;border-radius: var(--radius-sm);margin-top:12px" />
+      <div class="skel skel-line" style="height:40px;border-radius: var(--radius-sm);margin-top:8px" />
     </div>
 
     <template v-else>
@@ -121,7 +121,7 @@ function formatDate(dt: string | null) {
 .slt-active {
   background: linear-gradient(135deg, rgba(245,158,11,.08), rgba(59,130,246,.08));
   border: 1px solid rgba(245,158,11,.25);
-  border-radius: 14px; padding: 24px; text-align: center;
+  border-radius: var(--radius-lg); padding: 24px; text-align: center;
 }
 .slt-active-badge {
   display: inline-flex; align-items: center; gap: 6px;
@@ -139,7 +139,7 @@ function formatDate(dt: string | null) {
 .slt-join-btn {
   display: inline-flex; align-items: center; gap: 8px;
   padding: 12px 24px; font-size: 15px; font-weight: 700;
-  border: none; border-radius: 10px; background: var(--accent); color: #fff;
+  border: none; border-radius: var(--radius); background: var(--accent); color: #fff;
   cursor: pointer; font-family: var(--font); transition: all .15s;
 }
 .slt-join-btn:hover { filter: brightness(1.1); transform: translateY(-1px); }
@@ -147,7 +147,7 @@ function formatDate(dt: string | null) {
 /* No session */
 .slt-no-session {
   text-align: center; padding: 32px 20px;
-  border: 1px solid var(--border); border-radius: 14px;
+  border: 1px solid var(--border); border-radius: var(--radius-lg);
   background: var(--bg-sidebar);
 }
 .slt-no-icon { color: var(--text-muted); opacity: .3; margin-bottom: 12px; }
@@ -156,15 +156,15 @@ function formatDate(dt: string | null) {
 .slt-code-btn {
   display: inline-flex; align-items: center; gap: 6px;
   padding: 8px 16px; font-size: 13px; font-weight: 600;
-  border: 1px solid var(--border); border-radius: 8px;
+  border: 1px solid var(--border); border-radius: var(--radius-sm);
   background: transparent; color: var(--accent);
   cursor: pointer; font-family: var(--font); transition: all .15s;
 }
-.slt-code-btn:hover { background: rgba(74,144,217,.06); border-color: var(--accent); }
+.slt-code-btn:hover { background: rgba(var(--accent-rgb),.06); border-color: var(--accent); }
 
 /* History */
 .slt-history {
-  border: 1px solid var(--border); border-radius: 12px;
+  border: 1px solid var(--border); border-radius: var(--radius);
   background: var(--bg-sidebar); overflow: hidden;
 }
 .slt-history-title {

@@ -56,7 +56,7 @@ useFocusTrap(cfmBoxRef, visible)
 .cfm-box {
   background: var(--bg-modal);
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: var(--radius);
   padding: 24px;
   max-width: 380px;
   width: 90%;
@@ -78,7 +78,7 @@ useFocusTrap(cfmBoxRef, visible)
 }
 .cfm-icon.danger  { background: rgba(231,76,60,.15);  color: var(--color-danger); }
 .cfm-icon.warning { background: rgba(241,196,15,.15); color: #f1c40f; }
-.cfm-icon.info    { background: rgba(74,144,217,.15); color: var(--accent); }
+.cfm-icon.info    { background: rgba(var(--accent-rgb),.15); color: var(--accent); }
 
 .cfm-message {
   font-size: 14px;

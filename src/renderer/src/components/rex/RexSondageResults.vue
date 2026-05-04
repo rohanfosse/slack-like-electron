@@ -80,7 +80,7 @@
   align-items: center;
   gap: 12px;
   padding: 8px 10px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   transition: background .2s;
 }
 .rex-sondage-row:hover {
@@ -110,13 +110,13 @@
   flex: 1;
   height: 24px;
   background: rgba(13, 148, 136, 0.06);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   overflow: hidden;
   position: relative;
 }
 .rex-sondage-bar {
   height: 100%;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   transition: width 0.7s cubic-bezier(.16,1,.3,1);
   position: relative;
   overflow: hidden;

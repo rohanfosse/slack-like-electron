@@ -128,7 +128,7 @@ function cancelEdit() {
 .smm-item {
   padding: 10px 12px;
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   background: var(--bg-surface);
   display: flex;
   flex-direction: column;
@@ -142,7 +142,7 @@ function cancelEdit() {
 .smm-badge {
   margin-left: auto;
   display: inline-flex; align-items: center; gap: 3px;
-  padding: 2px 7px; border-radius: 10px; font-size: 10px; font-weight: 700; text-transform: uppercase;
+  padding: 2px 7px; border-radius: var(--radius); font-size: 10px; font-weight: 700; text-transform: uppercase;
 }
 .smm-badge-pending { background: rgba(46, 204, 113, .15); color: var(--color-success); }
 .smm-badge-failed  { background: rgba(231, 76, 60, .15); color: var(--color-danger); }
@@ -158,13 +158,13 @@ function cancelEdit() {
   color: var(--color-danger);
   background: rgba(231, 76, 60, .08);
   padding: 4px 8px;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
 }
 
 .smm-actions, .smm-edit { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
 .smm-btn {
   display: inline-flex; align-items: center; gap: 4px;
-  padding: 5px 10px; border-radius: 6px;
+  padding: 5px 10px; border-radius: var(--radius-sm);
   border: 1px solid var(--border);
   background: transparent;
   color: var(--text-secondary);
@@ -178,7 +178,7 @@ function cancelEdit() {
 }
 .smm-input {
   padding: 5px 8px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   border: 1px solid var(--border-input);
   background: var(--bg-input);
   color: var(--text-primary);

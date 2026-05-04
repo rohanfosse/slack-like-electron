@@ -130,7 +130,7 @@ function removeLink(idx: number) {
   font-size: var(--text-xs);
   font-weight: 600;
   padding: 4px var(--space-sm);
-  border-radius: 14px;
+  border-radius: var(--radius-lg);
   background: rgba(var(--accent-rgb), .1);
   color: var(--accent);
   cursor: pointer;

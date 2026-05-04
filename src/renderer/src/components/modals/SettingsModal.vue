@@ -187,7 +187,7 @@
   border-bottom: 1px solid var(--border);
   margin-bottom: 10px;
 }
-.stg-nav-logo { width: 24px; height: 24px; border-radius: 6px; }
+.stg-nav-logo { width: 24px; height: 24px; border-radius: var(--radius-sm); }
 .stg-nav-brand { font-size: 14px; font-weight: 800; letter-spacing: -.3px; color: var(--text-primary); }
 
 .stg-nav-items { display: flex; flex-direction: column; gap: 2px; }
@@ -299,7 +299,7 @@
   gap: 6px;
   padding: 7px 14px;
   border: none;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   font-size: 12.5px;
   font-weight: 600;
   font-family: var(--font);
@@ -390,7 +390,7 @@
   flex-direction: column;
   gap: 0;
   border: 1.5px solid var(--border);
-  border-radius: 12px;
+  border-radius: var(--radius);
   background: var(--bg-elevated);
   cursor: pointer;
   font-family: var(--font);
@@ -444,7 +444,7 @@
 }
 .stg-profile-top { display: flex; align-items: center; gap: 16px; }
 .stg-avatar {
-  width: 64px; height: 64px; border-radius: 16px;
+  width: 64px; height: 64px; border-radius: var(--radius-lg);
   display: flex; align-items: center; justify-content: center;
   flex-shrink: 0; overflow: hidden;
   position: relative;
@@ -494,7 +494,7 @@
   border: 1px solid var(--border);
   border-radius: var(--radius);
 }
-.stg-about-logo { width: 52px; height: 52px; border-radius: 14px; margin-bottom: 12px; }
+.stg-about-logo { width: 52px; height: 52px; border-radius: var(--radius-lg); margin-bottom: 12px; }
 .stg-about-hero-text { display: flex; align-items: baseline; gap: 8px; margin-bottom: 6px; }
 .stg-about-name { font-size: 20px; font-weight: 800; letter-spacing: -.4px; }
 .stg-about-version {
@@ -509,7 +509,7 @@
 .stg-update-section {
   display: flex; flex-direction: column; gap: 10px;
   padding: 12px 14px; background: var(--bg-elevated); border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: var(--radius);
 }
 .stg-update-text { font-size: 12.5px; color: var(--text-secondary); margin: 0; line-height: 1.4; }
 .stg-update-checking { color: var(--accent); }
@@ -519,7 +519,7 @@
 .stg-update-error { color: var(--color-danger); }
 .stg-update-actions { display: flex; gap: 8px; }
 .stg-update-btn {
-  padding: 7px 16px; border-radius: 8px; font-size: 12.5px; font-weight: 600;
+  padding: 7px 16px; border-radius: var(--radius-sm); font-size: 12.5px; font-weight: 600;
   font-family: var(--font); cursor: pointer; border: 1px solid var(--border);
   background: var(--bg-hover); color: var(--text-primary); transition: all .15s;
 }
@@ -566,7 +566,7 @@
   border-radius: var(--radius-sm);
 }
 .stg-author-avatar {
-  width: 40px; height: 40px; border-radius: 10px;
+  width: 40px; height: 40px; border-radius: var(--radius);
   background: var(--accent);
   display: flex; align-items: center; justify-content: center;
   font-size: 14px; font-weight: 700; color: #fff;
@@ -666,7 +666,7 @@
 }
 .stg-mobile-tab {
   display: flex; align-items: center; justify-content: center;
-  width: 36px; height: 36px; border-radius: 8px; border: none;
+  width: 36px; height: 36px; border-radius: var(--radius-sm); border: none;
   background: transparent; color: var(--text-muted); cursor: pointer;
   transition: all .12s; flex-shrink: 0;
 }

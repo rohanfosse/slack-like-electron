@@ -64,7 +64,7 @@
   padding: 12px 14px;
   background: var(--bg-elevated);
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   transition: all var(--motion-slow) var(--ease-out);
 }
 .rex-qo-card.pinned {
@@ -93,7 +93,7 @@
   justify-content: center;
   width: 28px;
   height: 28px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   border: none;
   background: transparent;
   color: var(--text-muted);

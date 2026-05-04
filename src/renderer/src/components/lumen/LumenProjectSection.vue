@@ -235,7 +235,7 @@ function handleLinked(): void {
   overflow-y: auto;
   background: var(--bg-secondary);
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   box-shadow: 0 8px 24px rgba(0, 0, 0, .35), 0 2px 8px rgba(0, 0, 0, .25);
   animation: lumen-inline-in .12s ease;
   padding: 4px;
@@ -268,7 +268,7 @@ function handleLinked(): void {
   text-transform: none;
   letter-spacing: 0;
   cursor: pointer;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   font-family: inherit;
 }
 .lumen-inline-add:hover { background: var(--accent-subtle, rgba(var(--accent-rgb), .1)); }
@@ -282,7 +282,7 @@ function handleLinked(): void {
   gap: 2px;
 }
 .lumen-inline-repo {
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   overflow: hidden;
 }
 .lumen-inline-repo-title {

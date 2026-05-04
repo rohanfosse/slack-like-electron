@@ -303,7 +303,7 @@ onBeforeUnmount(() => {
 
 .dtp-trigger {
   display: flex; align-items: center; gap: 8px;
-  padding: 9px 12px; border-radius: 8px;
+  padding: 9px 12px; border-radius: var(--radius-sm);
   border: 1px solid var(--border-input, var(--border));
   background: var(--bg-input, var(--bg-elevated));
   color: var(--text-primary); font-size: 13px; font-family: var(--font);
@@ -313,7 +313,7 @@ onBeforeUnmount(() => {
 .dtp-trigger:hover { border-color: var(--text-muted); }
 .dtp-trigger:focus-visible, .dtp-trigger--open {
   border-color: var(--accent); outline: none;
-  box-shadow: 0 0 0 3px rgba(74,144,217,.12);
+  box-shadow: 0 0 0 3px rgba(var(--accent-rgb),.12);
 }
 .dtp-trigger--empty .dtp-trigger-text { color: var(--text-muted); }
 .dtp-trigger-icon { color: var(--accent); flex-shrink: 0; }
@@ -331,7 +331,7 @@ onBeforeUnmount(() => {
 .dtp-popup {
   width: 280px; padding: 12px;
   background: var(--bg-modal, var(--bg-elevated)); border: 1px solid var(--border);
-  border-radius: 12px; box-shadow: 0 12px 40px rgba(0,0,0,.18);
+  border-radius: var(--radius); box-shadow: 0 12px 40px rgba(0,0,0,.18);
   display: flex; flex-direction: column; gap: 8px;
 }
 
@@ -339,7 +339,7 @@ onBeforeUnmount(() => {
 .dtp-month-label { font-size: 13px; font-weight: 700; color: var(--text-primary); text-transform: capitalize; }
 .dtp-nav-btn {
   display: flex; align-items: center; justify-content: center;
-  width: 28px; height: 28px; border-radius: 6px;
+  width: 28px; height: 28px; border-radius: var(--radius-sm);
   border: none; background: transparent; color: var(--text-muted);
   cursor: pointer; transition: background .12s, color .12s;
 }
@@ -354,7 +354,7 @@ onBeforeUnmount(() => {
 
 .dtp-cell {
   display: flex; align-items: center; justify-content: center;
-  width: 36px; height: 36px; border-radius: 8px;
+  width: 36px; height: 36px; border-radius: var(--radius-sm);
   border: none; background: transparent; color: var(--text-primary);
   font-size: 12px; font-weight: 500; cursor: pointer;
   transition: background .12s, color .12s, transform .1s;
@@ -362,7 +362,7 @@ onBeforeUnmount(() => {
 .dtp-cell:hover:not(:disabled) { background: var(--bg-hover); }
 .dtp-cell:active:not(:disabled) { transform: scale(0.92); }
 .dtp-cell--other { color: var(--text-muted); opacity: .4; }
-.dtp-cell--today { background: rgba(74,144,217,.1); color: var(--accent); font-weight: 700; }
+.dtp-cell--today { background: rgba(var(--accent-rgb),.1); color: var(--accent); font-weight: 700; }
 .dtp-cell--selected { background: var(--accent) !important; color: #fff !important; font-weight: 700; }
 .dtp-cell--disabled { opacity: .25; cursor: not-allowed; }
 
@@ -376,7 +376,7 @@ onBeforeUnmount(() => {
   display: flex; align-items: center; justify-content: center;
   width: 28px; height: 18px; border: none; background: transparent;
   color: var(--text-muted); font-size: 9px; cursor: pointer;
-  border-radius: 4px; transition: background .12s;
+  border-radius: var(--radius-xs); transition: background .12s;
 }
 .dtp-spin-btn:hover { background: var(--bg-hover); color: var(--text-primary); }
 .dtp-time-value {
@@ -388,12 +388,12 @@ onBeforeUnmount(() => {
 
 .dtp-presets { display: flex; gap: 4px; padding-top: 4px; border-top: 1px solid var(--border); }
 .dtp-preset {
-  flex: 1; padding: 6px 4px; border-radius: 6px;
+  flex: 1; padding: 6px 4px; border-radius: var(--radius-sm);
   border: 1px solid var(--border); background: var(--bg-elevated);
   color: var(--text-secondary); font-size: 11px; font-weight: 600;
   cursor: pointer; font-family: var(--font); transition: all .12s; white-space: nowrap;
 }
-.dtp-preset:hover { background: rgba(74,144,217,.08); border-color: var(--accent); color: var(--accent); }
+.dtp-preset:hover { background: rgba(var(--accent-rgb),.08); border-color: var(--accent); color: var(--accent); }
 
 .dtp-pop-enter-active { transition: opacity var(--motion-fast) var(--ease-out), transform var(--motion-fast) var(--ease-out); }
 .dtp-pop-leave-active { transition: opacity .1s ease, transform .1s ease; }

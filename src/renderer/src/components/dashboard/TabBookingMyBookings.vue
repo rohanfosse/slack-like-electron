@@ -123,7 +123,7 @@ const bookingsView = ref<'list' | 'calendar'>('calendar')
   justify-content: center;
   width: 24px;
   height: 24px;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   border: none;
   background: transparent;
   color: var(--text-muted);
@@ -161,7 +161,7 @@ const bookingsView = ref<'list' | 'calendar'>('calendar')
   font-size: 10px;
   font-weight: 600;
   padding: 2px 8px;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   margin-top: 2px;
 }
 .bk-badge.badge-success {

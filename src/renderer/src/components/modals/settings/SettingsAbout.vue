@@ -325,7 +325,7 @@ const systemLanguage = navigator.language
 .stg-update-section {
   display: flex; flex-direction: column; gap: 0;
   padding: 0; background: var(--bg-elevated); border: 1px solid var(--border);
-  border-radius: 10px; overflow: hidden;
+  border-radius: var(--radius); overflow: hidden;
 }
 
 .stg-update-state {
@@ -379,7 +379,7 @@ const systemLanguage = navigator.language
 /* Buttons */
 .stg-update-btn {
   display: inline-flex; align-items: center; gap: 6px;
-  padding: 8px 18px; border-radius: 8px; font-size: 12.5px; font-weight: 600;
+  padding: 8px 18px; border-radius: var(--radius-sm); font-size: 12.5px; font-weight: 600;
   font-family: var(--font); cursor: pointer; border: 1px solid var(--border);
   background: var(--bg-hover); color: var(--text-primary); transition: all .15s;
   width: fit-content;
@@ -399,12 +399,12 @@ const systemLanguage = navigator.language
 
 /* Progress bar */
 .stg-progress-bar {
-  height: 8px; border-radius: 4px;
+  height: 8px; border-radius: var(--radius-xs);
   background: var(--bg-hover); overflow: hidden;
   position: relative;
 }
 .stg-progress-fill {
-  height: 100%; border-radius: 4px;
+  height: 100%; border-radius: var(--radius-xs);
   background: linear-gradient(90deg, var(--accent), color-mix(in srgb, var(--accent) 80%, #fff));
   transition: width var(--motion-slow) var(--ease-out);
   position: relative;
@@ -451,7 +451,7 @@ const systemLanguage = navigator.language
 .stg-release-notes summary:hover { color: var(--accent); }
 .stg-release-notes-body {
   margin: 8px 0 0 0; padding: 10px 12px;
-  background: var(--bg-hover); border-radius: 6px;
+  background: var(--bg-hover); border-radius: var(--radius-sm);
   font-family: var(--font); font-size: 11.5px; line-height: 1.5;
   white-space: pre-wrap; word-break: break-word;
   max-height: 180px; overflow-y: auto;

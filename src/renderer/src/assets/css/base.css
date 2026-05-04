@@ -28,56 +28,69 @@ body.theme-transitioning *::after {
 
 /* ════════════════════════════════════════════
    VARIABLES
+   Defaut : aligne sur la landing page (indigo / Plus Jakarta Sans).
+   Cf. src/landing/style.css §Design Tokens.
 ════════════════════════════════════════════ */
 :root {
-  /* Fonds - thème sombre neutre (moderne, épuré) */
-  --bg-rail:    #161819;   /* Rail de navigation - near-black neutre */
-  --bg-sidebar: #1c1d1f;   /* Sidebar canaux - gris neutre */
-  --bg-main:    #232425;   /* Zone principale - gris pur */
-  --bg-input:   #1a1b1d;   /* Zone de saisie */
-  --bg-hover:   rgba(255,255,255,.05);
+  /* Fonds - sombre teinte indigo (landing dark) */
+  --bg-rail:    #0F0D1A;   /* Rail de navigation */
+  --bg-sidebar: #15122B;   /* Sidebar canaux */
+  --bg-main:    #1A1733;   /* Zone principale */
+  --bg-input:   #0F0D1A;   /* Zone de saisie */
+  --bg-hover:   rgba(129,140,248,.08);
   --bg-active:  rgba(var(--accent-rgb), .16);
-  --bg-modal:   #1e1f21;
-  --bg-elevated: #2c2d2f;  /* Cartes / éléments en relief */
+  --bg-modal:   #1A1733;
+  --bg-elevated: #221E45;  /* Cartes / éléments en relief */
   /* Alias v2.68.1 : --bg-secondary etait utilise dans 15+ composants mais
      n'avait jamais ete defini → toutes ces surfaces etaient transparentes.
      On l'alias vers --bg-elevated (meme visuel "card"). */
   --bg-secondary: var(--bg-elevated);
 
   /* Alias legacy (composants existants) */
-  --bg-darkest: #121314;
-  --bg-dark:    #1c1d1f;
-  --bg-medium:  #232425;
-  --bg-light:   #2a2b2d;
-  --bg-primary: #121314;
+  --bg-darkest: #08071A;
+  --bg-dark:    #15122B;
+  --bg-medium:  #1A1733;
+  --bg-light:   #221E45;
+  --bg-primary: #08071A;
 
   /* Texte - contraste soigné */
-  --text-primary:   #E8E9EA;   /* Blanc neutre, lisible */
-  --text-secondary: #8B8D91;   /* Gris moyen neutre */
-  --text-muted:     #808488;   /* Gris discret — WCAG AA compliant (4.0:1 sur #232425) */
+  --text-primary:   #F1F0FF;   /* Blanc indigo (landing dark) */
+  --text-secondary: #CBD5E1;   /* WCAG AAA sur #1A1733 (~10:1) */
+  --text-muted:     #94A3B8;   /* WCAG AA sur #1A1733 (~5.4:1) */
 
-  /* Accent */
-  --accent:        #4A90D9;
-  --accent-hover:  #5da3f0;
-  --accent-dark:   #2e6dae;
-  --accent-light:  #7EB8FF;
-  --accent-rgb:    74,144,217;
+  /* Accent - indigo landing (variante claire pour fond sombre) */
+  --accent:        #818CF8;
+  --accent-hover:  #A5B4FC;
+  --accent-dark:   #6366F1;
+  --accent-light:  #A5B4FC;
+  --accent-rgb:    129,140,248;
   --accent-subtle: rgba(var(--accent-rgb), .14);
 
-  /* Ombres - légères, modernes */
-  --shadow-sm: 0 1px 2px rgba(0,0,0,.2);
-  --shadow-md: 0 4px 12px rgba(0,0,0,.25);
-  --shadow-lg: 0 8px 30px rgba(0,0,0,.35);
-  --shadow-card: 0 1px 3px rgba(0,0,0,.3), 0 1px 2px rgba(0,0,0,.2);
-  --shadow-card-hover: 0 8px 25px rgba(0,0,0,.4), 0 3px 10px rgba(0,0,0,.3);
+  /* Ombres - teintees indigo (landing dark) */
+  --shadow-sm: 0 2px 8px rgba(0,0,0,.3);
+  --shadow-md: 0 8px 32px rgba(0,0,0,.4);
+  --shadow-lg: 0 16px 48px rgba(0,0,0,.55);
+  --shadow-glow: 0 0 40px rgba(129,140,248,.15);
+  --shadow-card: 0 1px 3px rgba(0,0,0,.5), 0 1px 2px rgba(0,0,0,.4);
+  --shadow-card-hover: 0 8px 25px rgba(0,0,0,.55), 0 3px 10px rgba(0,0,0,.45);
 
-  /* Echelle d'elevation unifiee (v2.52.0) — toute box-shadow doit en venir.
-     Cf. design-system/cursus/MASTER.md §4. */
+  /* Echelle d'elevation unifiee — toute box-shadow doit en venir.
+     v2.272 : ombres multi-niveaux teintees indigo (alignement demo landing).
+     Cf. src/landing/style.css .demo-window. */
   --elevation-0: none;
   --elevation-1: var(--shadow-card);
-  --elevation-2: 0 1px 0 rgba(255,255,255,.04), 0 4px 16px rgba(0,0,0,.25);
-  --elevation-3: 0 12px 40px rgba(0,0,0,.4), 0 0 0 1px rgba(255,255,255,.04) inset;
-  --elevation-4: 0 24px 80px rgba(0,0,0,.55), 0 0 0 1px rgba(255,255,255,.04) inset;
+  --elevation-2:
+    0 1px 0 rgba(129,140,248,.05),
+    0 4px 16px rgba(0,0,0,.25),
+    0 1px 3px rgba(129,140,248,.08);
+  --elevation-3:
+    0 12px 40px rgba(0,0,0,.45),
+    0 4px 12px rgba(129,140,248,.10),
+    0 0 0 1px rgba(129,140,248,.08) inset;
+  --elevation-4:
+    0 24px 80px rgba(0,0,0,.55),
+    0 8px 24px rgba(129,140,248,.12),
+    0 0 0 1px rgba(129,140,248,.10) inset;
 
   /* Motion (v2.52.0). Anciens alias --t-* preserves pour compat. */
   --motion-instant: 0ms;
@@ -95,20 +108,20 @@ body.theme-transitioning *::after {
   --t-base: var(--motion-base);
   --t-slow: var(--motion-slow);
 
-  /* Bordures */
-  --border:       rgba(255,255,255,.1);
-  --border-input: rgba(255,255,255,.16);
+  /* Bordures - teintees indigo (landing dark) */
+  --border:       rgba(129,140,248,.15);
+  --border-input: rgba(129,140,248,.22);
 
-  /* États sémantiques */
-  --color-danger:  #E74C3C;
-  --color-warning: #E8891A;
-  --color-success: #2ECC71;
+  /* États sémantiques - emerald comme accent secondaire (landing) */
+  --color-danger:  #F87171;
+  --color-warning: #FBBF24;
+  --color-success: #34D399;
   /* RGB triplets pour rgba(var(--*-rgb), X) dans les composants */
-  --color-danger-rgb:  231,76,60;
-  --color-warning-rgb: 232,137,26;
-  --color-success-rgb: 46,204,113;
-  --color-info-rgb:    59,130,246;
-  --color-cctl-rgb:    155,135,245;
+  --color-danger-rgb:  248,113,113;
+  --color-warning-rgb: 251,191,36;
+  --color-success-rgb: 52,211,153;
+  --color-info-rgb:    129,140,248;
+  --color-cctl-rgb:    167,139,250;
 
   /* Live : couleurs par categorie (Spark, Pulse, Code, Board) */
   --live-spark:        #F59E0B;  /* Ambre : quiz gamifie */
@@ -132,21 +145,24 @@ body.theme-transitioning *::after {
   --deadline-over-bg:   rgba(231, 76, 60, .16);
   --deadline-over-text: #EB5757;
 
-  /* Typographie */
-  --font:         'Inter Variable', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  --font-base:    'Inter Variable', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  /* Display : labels widgets + hero numbers — alignement landing page */
+  /* Typographie - Plus Jakarta Sans aligne sur la landing.
+     Inter conserve en --font-reading pour les zones de lecture dense
+     (chat long, documents) si besoin ponctuel. */
+  --font:         'Plus Jakarta Sans Variable', 'Plus Jakarta Sans', 'Inter Variable', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-base:    'Plus Jakarta Sans Variable', 'Plus Jakarta Sans', 'Inter Variable', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   --font-display: 'Plus Jakarta Sans Variable', 'Plus Jakarta Sans', 'Inter Variable', 'Inter', sans-serif;
+  --font-reading: 'Inter Variable', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   --font-mono:    'JetBrains Mono', 'SF Mono', 'Cascadia Code', ui-monospace, monospace;
   --font-size-base: 14px;
 
   /* Densité d'affichage (espacement entre messages) */
   --msg-spacing: 6px;
 
-  /* Rayons - coins arrondis modernes */
-  --radius-sm: 6px;
-  --radius:    10px;
-  --radius-lg: 14px;
+  /* Rayons - alignes sur la landing (12 / 16 / 20px).
+     Anciennes valeurs (6 / 10 / 14) trop serrees pour le langage indigo. */
+  --radius-sm: 8px;
+  --radius:    12px;
+  --radius-lg: 16px;
 
   /* Spacing scale */
   --space-xs: 4px;
@@ -195,34 +211,45 @@ body.theme-transitioning *::after {
   --text-xl:  20px;
   --text-2xl: 24px;
 
-  /* Échelle de rayons élargie */
+  /* Échelle de rayons élargie - alignee landing */
   --radius-xs: 4px;
-  /* --radius-sm: 6px (déjà défini) */
-  /* --radius:    10px (déjà défini) */
-  /* --radius-lg: 14px (déjà défini) */
-  --radius-xl:   20px;
+  /* --radius-sm: 8px (déjà défini) */
+  /* --radius:    12px (déjà défini) */
+  /* --radius-lg: 16px (déjà défini) */
+  --radius-xl:   24px;
+  --radius-2xl:  28px;
   --radius-full: 50%;
 
-  /* Types de devoirs */
-  --color-livrable:     #4A90D9;
-  --color-soutenance:   #F39C12;
-  --color-cctl:         #9B87F5;
-  --color-etude-de-cas: #2ECC71;
-  --color-memoire:      #E74C3C;
-  --color-autre:        #95A5A6;
+  /* Types de devoirs - alignes sur la palette landing */
+  --color-livrable:     #818CF8;
+  --color-soutenance:   #FBBF24;
+  --color-cctl:         #A78BFA;
+  --color-etude-de-cas: #34D399;
+  --color-memoire:      #F87171;
+  --color-autre:        #94A3B8;
 
-  /* Notes (A-F) */
-  --color-grade-a: #2ECC71;
-  --color-grade-b: #4A90D9;
-  --color-grade-c: #F39C12;
-  --color-grade-d: #E74C3C;
-  --color-grade-na: #95A5A6;
+  /* Notes (A-F) - alignes sur la palette landing */
+  --color-grade-a: #34D399;
+  --color-grade-b: #818CF8;
+  --color-grade-c: #FBBF24;
+  --color-grade-d: #F87171;
+  --color-grade-na: #94A3B8;
 
   /* Widgets — accents semantiques (extraits des fallbacks hardcodes) */
-  --color-bookmark:   #8B5CF6;
+  --color-bookmark:   #A78BFA;
   --color-grade-warm: var(--color-grade-c);
-  --color-countdown:  #6366F1;
-  --color-group:      #14B8A6;
+  --color-countdown:  #818CF8;
+  --color-group:      #34D399;
+
+  /* Couleurs par feature - alignees sur la landing (variantes claires
+     pour theme sombre). Cf. src/landing/style.css [data-theme="dark"]. */
+  --color-chat:      #818CF8;
+  --color-devoirs:   #34D399;
+  --color-docs:      #FBBF24;
+  --color-live:      #F87171;
+  --color-rex:       #38BDF8;
+  --color-lumen:     #FBBF24;
+  --color-dashboard: #A78BFA;
 
   /* Dimensions de layout */
   --rail-width:    72px;
@@ -233,10 +260,132 @@ body.theme-transitioning *::after {
 }
 
 /* ════════════════════════════════════════════
-   THÈME CRÈME / SÉPIA  (body.light)
+   THÈME CLAIR  (body.light, body.cursus alias legacy)
+   Aligne sur la landing page (indigo / lavande).
+   Cf. src/landing/style.css §Design Tokens (light).
+   body.cursus est un alias preserve pour les preferences utilisateur
+   pre-v2.272 ; la migration cursus->light s'effectue cote useSettingsAppearance.
 ════════════════════════════════════════════ */
-body.light {
-  /* Fonds - tons chauds crème/sépia */
+body.light, body.cursus {
+  /* Fonds - lavande tres claire (landing) */
+  --bg-rail:    #EDE9FE;
+  --bg-sidebar: #F5F3FF;
+  --bg-main:    #F5F3FF;
+  --bg-input:   #FFFFFF;
+  --bg-hover:   rgba(99,102,241,.06);
+  --bg-active:  rgba(99,102,241,.12);
+  --bg-modal:   #FFFFFF;
+  --bg-elevated: #FFFFFF;
+
+  /* Alias legacy */
+  --bg-darkest: #DDD6FE;
+  --bg-dark:    #EDE9FE;
+  --bg-medium:  #F5F3FF;
+  --bg-light:   #FFFFFF;
+  --bg-primary: #DDD6FE;
+
+  /* Texte - bleu profond / slate (landing) */
+  --text-primary:   #1E1B4B;
+  --text-secondary: #475569;   /* WCAG AA sur #F5F3FF */
+  --text-muted:     #64748B;   /* WCAG AA (4.5:1) */
+
+  /* Accent - indigo landing (variante saturee pour fond clair) */
+  --accent:        #6366F1;
+  --accent-hover:  #4F46E5;
+  --accent-dark:   #4338CA;
+  --accent-light:  #818CF8;
+  --accent-rgb:    99,102,241;
+  --accent-subtle: rgba(99,102,241,.10);
+
+  /* Code blocks (light theme) */
+  --code-bg: #F5F3FF;
+  --code-text: #1E1B4B;
+  --code-header-bg: rgba(99,102,241,0.06);
+  --code-header-border: rgba(99,102,241,0.12);
+  --code-lang-color: rgba(30,27,75,0.55);
+
+  /* Bordures */
+  --border:       rgba(99,102,241,.12);
+  --border-input: rgba(99,102,241,.22);
+
+  /* Ombres - teintees indigo */
+  --shadow-sm: 0 2px 8px rgba(99,102,241,.08);
+  --shadow-md: 0 8px 32px rgba(99,102,241,.12);
+  --shadow-lg: 0 16px 48px rgba(99,102,241,.18);
+  --shadow-glow: 0 0 40px rgba(99,102,241,.15);
+  --shadow-card: 0 1px 3px rgba(99,102,241,.08), 0 1px 2px rgba(99,102,241,.06);
+  --shadow-card-hover: 0 8px 25px rgba(99,102,241,.14), 0 3px 10px rgba(99,102,241,.08);
+
+  /* Elevation light - alignee landing (.demo-window) */
+  --elevation-2:
+    0 1px 2px rgba(99,102,241,.04),
+    0 4px 8px rgba(99,102,241,.06),
+    0 0 0 1px rgba(99,102,241,.05);
+  --elevation-3:
+    0 1px 2px rgba(99,102,241,.04),
+    0 4px 8px rgba(99,102,241,.06),
+    0 12px 24px rgba(99,102,241,.08),
+    0 24px 48px rgba(99,102,241,.04);
+  --elevation-4:
+    0 2px 4px rgba(99,102,241,.06),
+    0 12px 32px rgba(99,102,241,.10),
+    0 32px 80px rgba(99,102,241,.08),
+    0 0 0 1px rgba(99,102,241,.08);
+
+  /* Sémantique - emerald + variantes landing */
+  --color-danger:  #DC2626;
+  --color-warning: #D97706;
+  --color-success: #059669;
+  --color-info:    #0EA5E9;
+  --color-danger-rgb:  220,38,38;
+  --color-warning-rgb: 217,119,6;
+  --color-success-rgb: 5,150,105;
+  --color-info-rgb:    14,165,233;
+  --color-cctl-rgb:    139,92,246;
+
+  /* Couleurs par feature - landing light */
+  --color-chat:      #6366F1;
+  --color-devoirs:   #059669;
+  --color-docs:      #F59E0B;
+  --color-live:      #EF4444;
+  --color-rex:       #0EA5E9;
+  --color-lumen:     #D97706;
+  --color-dashboard: #8B5CF6;
+
+  /* Types de devoirs (variantes light) */
+  --color-livrable:     #6366F1;
+  --color-soutenance:   #F59E0B;
+  --color-cctl:         #8B5CF6;
+  --color-etude-de-cas: #059669;
+  --color-memoire:      #EF4444;
+  --color-autre:        #64748B;
+
+  /* Notes (A-F) */
+  --color-grade-a: #059669;
+  --color-grade-b: #6366F1;
+  --color-grade-c: #F59E0B;
+  --color-grade-d: #EF4444;
+  --color-grade-na: #94A3B8;
+
+  /* Bookmark / countdown / group */
+  --color-bookmark:  #8B5CF6;
+  --color-countdown: #6366F1;
+  --color-group:     #14B8A6;
+
+  /* Deadlines */
+  --deadline-ok-bg:     rgba(5, 150, 105, .12);
+  --deadline-ok-text:   #047857;
+  --deadline-soon-bg:   rgba(217, 119, 6, .12);
+  --deadline-soon-text: #B45309;
+  --deadline-over-bg:   rgba(220, 38, 38, .12);
+  --deadline-over-text: #B91C1C;
+}
+
+/* ════════════════════════════════════════════
+   THÈME SÉPIA / CRÈME  (body.sepia)
+   Ancien thème "light" preserve pour ceux qui aiment le ton chaud.
+════════════════════════════════════════════ */
+body.sepia {
   --bg-rail:    #f0ebe3;
   --bg-sidebar: #f5f0e8;
   --bg-main:    #faf8f4;
@@ -246,19 +395,16 @@ body.light {
   --bg-modal:   #faf8f4;
   --bg-elevated: #faf8f4;
 
-  /* Alias legacy */
   --bg-darkest: #e2dbd0;
   --bg-dark:    #f5f0e8;
   --bg-medium:  #faf8f4;
   --bg-light:   #f0ebe3;
   --bg-primary: #e2dbd0;
 
-  /* Texte */
   --text-primary:   #2c2418;
-  --text-secondary: #655a4c;   /* Darkened for WCAG AA (5.2:1 on #faf8f4) */
-  --text-muted:     #968a7a;   /* WCAG AA compliant (4.0:1 sur #faf8f4) */
+  --text-secondary: #655a4c;
+  --text-muted:     #968a7a;
 
-  /* Accent - ambre/doré */
   --accent:        #c27c2c;
   --accent-hover:  #d4892f;
   --accent-dark:   #a06420;
@@ -266,25 +412,21 @@ body.light {
   --accent-rgb:    194,124,44;
   --accent-subtle: rgba(194,124,44,.12);
 
-  /* Code blocks (light theme) */
   --code-bg: #f5f0eb;
   --code-text: #2c2418;
   --code-header-bg: rgba(0, 0, 0, 0.04);
   --code-header-border: rgba(0, 0, 0, 0.06);
   --code-lang-color: rgba(0, 0, 0, 0.45);
 
-  /* Bordures */
   --border:       rgba(100,70,30,.1);
   --border-input: rgba(100,70,30,.16);
 
-  /* Ombres - chaudes */
   --shadow-sm: 0 1px 2px rgba(80,50,10,.06);
   --shadow-md: 0 4px 12px rgba(80,50,10,.1);
   --shadow-lg: 0 8px 30px rgba(80,50,10,.14);
   --shadow-card: 0 1px 3px rgba(80,50,10,.08), 0 1px 2px rgba(80,50,10,.06);
   --shadow-card-hover: 0 8px 25px rgba(80,50,10,.12), 0 3px 10px rgba(80,50,10,.08);
 
-  /* Sémantique */
   --color-danger:  #c0392b;
   --color-warning: #d4850a;
   --color-success: #27ae60;
@@ -294,7 +436,6 @@ body.light {
   --color-info-rgb:    59,130,246;
   --color-cctl-rgb:    155,135,245;
 
-  /* Deadlines */
   --deadline-ok-bg:     rgba(39, 174, 96, .14);
   --deadline-ok-text:   #16a34a;
   --deadline-soon-bg:   rgba(217, 119, 6, .14);
@@ -305,6 +446,8 @@ body.light {
 
 /* ════════════════════════════════════════════
    THÈME NUIT  (body.night)
+   Variation tres sombre neutre. Garde l'accent indigo mais
+   sememeique adoucie pour fond noir profond.
 ════════════════════════════════════════════ */
 body.night {
   --bg-rail:    #08090c;
@@ -312,7 +455,7 @@ body.night {
   --bg-main:    #0f1115;
   --bg-input:   #07080b;
   --bg-hover:   rgba(255,255,255,.05);
-  --bg-active:  rgba(74,144,217,.13);
+  --bg-active:  rgba(var(--accent-rgb),.16);
   --bg-modal:   #0b0d11;
   --bg-elevated: #15181e;
 
@@ -323,21 +466,40 @@ body.night {
   --bg-primary: #040506;
 
   --text-primary:   #E2E3E5;
-  --text-secondary: #898C90;
-  --text-muted:     #6b6e72;   /* WCAG AA compliant (4.0:1 sur #0f1115) */
+  --text-secondary: #B4B7BA;   /* WCAG AAA sur #0f1115 (~10:1) */
+  --text-muted:     #898C90;   /* WCAG AA sur #0f1115 (~5.0:1) */
 
-  --border:       rgba(255,255,255,.055);
-  --border-input: rgba(255,255,255,.10);
+  --border:       rgba(255,255,255,.06);
+  --border-input: rgba(255,255,255,.12);
 
   --shadow-sm: 0 1px 3px rgba(0,0,0,.4);
   --shadow-md: 0 4px 14px rgba(0,0,0,.5);
   --shadow-lg: 0 8px 36px rgba(0,0,0,.65);
   --shadow-card: 0 1px 3px rgba(0,0,0,.5), 0 1px 2px rgba(0,0,0,.4);
   --shadow-card-hover: 0 8px 25px rgba(0,0,0,.6), 0 3px 10px rgba(0,0,0,.5);
+
+  /* Semantique - alignee landing dark (heritage explicite pour clarte) */
+  --color-danger:  #F87171;
+  --color-warning: #FBBF24;
+  --color-success: #34D399;
+  --color-danger-rgb:  248,113,113;
+  --color-warning-rgb: 251,191,36;
+  --color-success-rgb: 52,211,153;
+
+  /* Sectorielles (heritage explicite) */
+  --color-chat:      #818CF8;
+  --color-devoirs:   #34D399;
+  --color-docs:      #FBBF24;
+  --color-live:      #F87171;
+  --color-rex:       #38BDF8;
+  --color-lumen:     #FBBF24;
+  --color-dashboard: #A78BFA;
 }
 
 /* ════════════════════════════════════════════
    THÈME MARINE  (body.marine)
+   Variation bleu marine, accent bleu lumineux.
+   Sectorielles re-teintees vers le bleu marine pour coherence visuelle.
 ════════════════════════════════════════════ */
 body.marine {
   --bg-rail:    #0e1829;
@@ -345,7 +507,7 @@ body.marine {
   --bg-main:    #192840;
   --bg-input:   #0e1829;
   --bg-hover:   rgba(100,170,240,.08);
-  --bg-active:  rgba(74,144,217,.22);
+  --bg-active:  rgba(var(--accent-rgb),.22);
   --bg-modal:   #132036;
   --bg-elevated: #1f3050;
 
@@ -355,9 +517,9 @@ body.marine {
   --bg-light:   #1f3050;
   --bg-primary: #090f1c;
 
-  --text-primary:   #C6D8EE;
-  --text-secondary: #6D94B8;
-  --text-muted:     #5a7d9a;   /* WCAG AA compliant (4.0:1 sur #192840) */
+  --text-primary:   #DCE7F2;   /* AAA sur #192840 */
+  --text-secondary: #9FB6CC;   /* AA strong sur #192840 (~6.5:1) */
+  --text-muted:     #7A95B0;   /* AA sur #192840 (~4.6:1) */
 
   --accent:        #5AABF0;
   --accent-hover:  #72bcf7;
@@ -374,81 +536,26 @@ body.marine {
   --shadow-lg: 0 8px 36px rgba(0,0,0,.55);
   --shadow-card: 0 1px 3px rgba(0,0,0,.35), 0 1px 2px rgba(0,0,0,.25);
   --shadow-card-hover: 0 8px 25px rgba(0,0,0,.45), 0 3px 10px rgba(0,0,0,.35);
+
+  /* Semantique - palette marine adoucie */
+  --color-danger:  #F87171;
+  --color-warning: #FBBF24;
+  --color-success: #34D399;
+  --color-danger-rgb:  248,113,113;
+  --color-warning-rgb: 251,191,36;
+  --color-success-rgb: 52,211,153;
+
+  /* Sectorielles - decalees vers les bleus */
+  --color-chat:      #5AABF0;
+  --color-devoirs:   #34D399;
+  --color-docs:      #FBBF24;
+  --color-live:      #F87171;
+  --color-rex:       #38BDF8;
+  --color-lumen:     #FBBF24;
+  --color-dashboard: #90CAFF;
 }
 
-/* ════════════════════════════════════════════
-   THÈME CURSUS  (body.cursus)
-   Inspiré de la landing page - clair, bleu vif, Inter
-════════════════════════════════════════════ */
-body.cursus {
-  /* Fonds - tons landing page */
-  --bg-rail:    #eef2f7;
-  --bg-sidebar: #f4f6f9;
-  --bg-main:    #f9fafb;
-  --bg-input:   #ffffff;
-  --bg-hover:   rgba(59,130,246,.06);
-  --bg-active:  rgba(59,130,246,.12);
-  --bg-modal:   #ffffff;
-  --bg-elevated: #ffffff;
-
-  /* Alias legacy */
-  --bg-darkest: #dfe4eb;
-  --bg-dark:    #f4f6f9;
-  --bg-medium:  #f9fafb;
-  --bg-light:   #eef2f7;
-  --bg-primary: #dfe4eb;
-
-  /* Texte */
-  --text-primary:   #111827;
-  --text-secondary: #4b5563;
-  --text-muted:     #9ca3af;
-
-  /* Accent - bleu landing */
-  --accent:        #3b82f6;
-  --accent-hover:  #2563eb;
-  --accent-dark:   #1d4ed8;
-  --accent-light:  #60a5fa;
-  --accent-rgb:    59,130,246;
-  --accent-subtle: rgba(59,130,246,.1);
-
-  /* Bordures */
-  --border:       rgba(0,0,0,.08);
-  --border-input: rgba(0,0,0,.15);
-
-  /* Ombres - douces */
-  --shadow-sm: 0 1px 2px rgba(0,0,0,.04);
-  --shadow-md: 0 4px 12px rgba(0,0,0,.06);
-  --shadow-lg: 0 8px 30px rgba(0,0,0,.1);
-  --shadow-card: 0 1px 3px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.04);
-  --shadow-card-hover: 0 8px 25px rgba(0,0,0,.1), 0 3px 10px rgba(0,0,0,.06);
-
-  /* Deadlines */
-  --deadline-ok-bg:     rgba(5, 150, 105, .1);
-  --deadline-ok-text:   #059669;
-  --deadline-soon-bg:   rgba(217, 119, 6, .1);
-  --deadline-soon-text: #d97706;
-  --deadline-over-bg:   rgba(220, 38, 38, .1);
-  --deadline-over-text: #dc2626;
-
-  /* Sémantique */
-  --color-danger:  #dc2626;
-  --color-warning: #d97706;
-  --color-success: #059669;
-  --color-danger-rgb:  220,38,38;
-  --color-warning-rgb: 217,119,6;
-  --color-success-rgb: 5,150,105;
-  --color-info-rgb:    59,130,246;
-  --color-cctl-rgb:    155,135,245;
-
-  /* Typo - Inter comme la landing */
-  --font:      'Inter Variable', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  --font-base: 'Inter Variable', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-
-  /* Rayons - plus arrondis comme la landing (14px) */
-  --radius-sm: 9px;
-  --radius:    14px;
-  --radius-lg: 18px;
-}
+/* (body.cursus est defini en tete avec body.light via selecteur groupe) */
 
 /* ════════════════════════════════════════════
    BASE
@@ -497,14 +604,18 @@ html, body {
 .countdown-soon { background: rgba(243,156,18,.12); color: var(--color-warning); }
 .countdown-ok { background: rgba(46,204,113,.12); color: var(--color-success); }
 
-/* Scrollbars - thèmes clairs */
-body.light ::-webkit-scrollbar-thumb       { background: rgba(120,80,40,.2); }
-body.light ::-webkit-scrollbar-thumb:hover { background: rgba(120,80,40,.35); }
-body.light * { scrollbar-color: rgba(120,80,40,.2) transparent; }
+/* Scrollbars - themes clairs (light + cursus alias) */
+body.light ::-webkit-scrollbar-thumb,
+body.cursus ::-webkit-scrollbar-thumb       { background: rgba(99,102,241,.25); }
+body.light ::-webkit-scrollbar-thumb:hover,
+body.cursus ::-webkit-scrollbar-thumb:hover { background: rgba(99,102,241,.4); }
+body.light *,
+body.cursus * { scrollbar-color: rgba(99,102,241,.25) transparent; }
 
-body.cursus ::-webkit-scrollbar-thumb       { background: rgba(0,0,0,.15); }
-body.cursus ::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,.25); }
-body.cursus * { scrollbar-color: rgba(0,0,0,.15) transparent; }
+/* Scrollbars - theme sepia (ancien light) */
+body.sepia ::-webkit-scrollbar-thumb       { background: rgba(120,80,40,.2); }
+body.sepia ::-webkit-scrollbar-thumb:hover { background: rgba(120,80,40,.35); }
+body.sepia * { scrollbar-color: rgba(120,80,40,.2) transparent; }
 
 /* ════════════════════════════════════════════
    MOBILE RESPONSIVE (< 768px)

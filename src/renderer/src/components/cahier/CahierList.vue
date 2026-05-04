@@ -82,7 +82,7 @@ const ctxItems = computed<ContextMenuItem[]>(() => {
     </div>
 
     <div v-if="cahierStore.loading" class="cahier-loading">
-      <div v-for="i in 2" :key="i" class="skel skel-line" style="height:40px;border-radius:8px;margin-bottom:6px" />
+      <div v-for="i in 2" :key="i" class="skel skel-line" style="height:40px;border-radius: var(--radius-sm);margin-bottom:6px" />
     </div>
 
     <div v-else-if="cahierStore.cahiers.length === 0" class="cahier-empty">
@@ -131,7 +131,7 @@ const ctxItems = computed<ContextMenuItem[]>(() => {
 
 <style scoped>
 .cahier-section {
-  border: 1px solid var(--border); border-radius: 10px;
+  border: 1px solid var(--border); border-radius: var(--radius);
   background: var(--bg-sidebar); overflow: hidden;
 }
 
@@ -143,16 +143,16 @@ const ctxItems = computed<ContextMenuItem[]>(() => {
 .cahier-section-title { font-size: 13px; font-weight: 700; color: var(--text-primary); flex: 1; }
 .cahier-section-count {
   font-size: 10px; font-weight: 700; padding: 1px 6px;
-  border-radius: 8px; background: var(--bg-active); color: var(--text-muted);
+  border-radius: var(--radius-sm); background: var(--bg-active); color: var(--text-muted);
 }
 .cahier-add-btn {
   display: inline-flex; align-items: center; gap: 4px;
   font-size: 11px; font-weight: 600; padding: 4px 10px;
-  border-radius: 6px; border: 1px dashed var(--border-input);
+  border-radius: var(--radius-sm); border: 1px dashed var(--border-input);
   background: transparent; color: var(--accent);
   cursor: pointer; font-family: var(--font); transition: all .15s;
 }
-.cahier-add-btn:hover { background: rgba(74,144,217,.06); border-color: var(--accent); }
+.cahier-add-btn:hover { background: rgba(var(--accent-rgb),.06); border-color: var(--accent); }
 
 .cahier-loading { padding: 10px 14px; }
 
@@ -163,7 +163,7 @@ const ctxItems = computed<ContextMenuItem[]>(() => {
 .cahier-empty-btn {
   display: inline-flex; align-items: center; gap: 4px;
   font-size: 12px; font-weight: 600; padding: 6px 14px;
-  border-radius: 8px; border: none;
+  border-radius: var(--radius-sm); border: none;
   background: var(--accent); color: #fff;
   cursor: pointer; font-family: var(--font);
 }
@@ -194,7 +194,7 @@ const ctxItems = computed<ContextMenuItem[]>(() => {
 
 .cahier-item-delete {
   display: flex; align-items: center; justify-content: center;
-  width: 24px; height: 24px; border-radius: 6px;
+  width: 24px; height: 24px; border-radius: var(--radius-sm);
   border: none; background: transparent; color: var(--text-muted);
   cursor: pointer; opacity: 0; transition: all .15s;
 }

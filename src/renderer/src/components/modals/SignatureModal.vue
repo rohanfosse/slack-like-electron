@@ -298,7 +298,7 @@ async function doReject() {
 }
 .sig-modal {
   background: var(--bg-base); border: 1px solid var(--border);
-  border-radius: 14px; width: 520px; max-width: 95vw; max-height: 90vh;
+  border-radius: var(--radius-lg); width: 520px; max-width: 95vw; max-height: 90vh;
   display: flex; flex-direction: column; overflow: hidden;
   box-shadow: 0 24px 60px rgba(0,0,0,.25);
 }
@@ -322,7 +322,7 @@ async function doReject() {
 }
 
 .sig-close {
-  width: 30px; height: 30px; border-radius: 8px; border: none;
+  width: 30px; height: 30px; border-radius: var(--radius-sm); border: none;
   background: transparent; color: var(--text-muted); cursor: pointer;
   display: flex; align-items: center; justify-content: center;
   transition: background .12s;
@@ -344,14 +344,14 @@ async function doReject() {
 }
 
 .sig-pad-wrap {
-  position: relative; border: 2px dashed var(--border); border-radius: 10px;
+  position: relative; border: 2px dashed var(--border); border-radius: var(--radius);
   overflow: hidden; background: #fff;
 }
 .sig-pad-wrap:focus-within { border-color: var(--accent); border-style: solid; }
 .sig-canvas { display: block; cursor: crosshair; touch-action: none; }
 .sig-clear-btn {
   position: absolute; top: 6px; right: 6px;
-  width: 28px; height: 28px; border-radius: 6px;
+  width: 28px; height: 28px; border-radius: var(--radius-sm);
   background: var(--bg-elevated); border: 1px solid var(--border);
   color: var(--text-muted); cursor: pointer;
   display: flex; align-items: center; justify-content: center;
@@ -363,7 +363,7 @@ async function doReject() {
 .sig-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 12px; flex-wrap: wrap; }
 .sig-btn {
   display: inline-flex; align-items: center; gap: 6px;
-  padding: 8px 16px; border-radius: 8px; border: none;
+  padding: 8px 16px; border-radius: var(--radius-sm); border: none;
   font-size: 13px; font-weight: 600; cursor: pointer;
   font-family: inherit; transition: opacity .12s, transform .08s;
 }
@@ -389,14 +389,14 @@ async function doReject() {
   font-family: var(--font-mono, ui-monospace, monospace);
   font-size: 10px;
   padding: 1px 5px;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   background: var(--bg-elevated);
   border: 1px solid var(--border);
   color: var(--text-secondary);
 }
 
 .sig-reject-input {
-  width: 100%; padding: 10px; border-radius: 8px;
+  width: 100%; padding: 10px; border-radius: var(--radius-sm);
   border: 1px solid var(--border); background: var(--bg-elevated);
   color: var(--text-primary); font-size: 13px; font-family: inherit;
   resize: vertical; outline: none;

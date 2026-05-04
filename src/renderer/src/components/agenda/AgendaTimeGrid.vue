@@ -539,7 +539,7 @@ const offHoursPmTop = computed(() => Math.max(0, ((18 * 60 - props.timeFrom) / p
   display: flex; align-items: center;
   padding: 0 8px;
   border-left: 3px solid var(--accent);
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   font-size: 11px; font-weight: 600;
   cursor: pointer;
   overflow: hidden;
@@ -622,7 +622,7 @@ const offHoursPmTop = computed(() => Math.max(0, ((18 * 60 - props.timeFrom) / p
   box-sizing: border-box;
   margin-left: 2px;
   padding: 4px 8px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   border-left: 3px solid var(--accent);
   font-size: 11px;
   font-weight: 600;

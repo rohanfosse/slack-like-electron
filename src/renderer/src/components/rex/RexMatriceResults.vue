@@ -77,12 +77,12 @@
   flex: 1;
   height: 20px;
   background: rgba(255,255,255,.04);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   overflow: hidden;
 }
 .rex-matrice-bar-fill {
   height: 100%;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   transition: width .6s cubic-bezier(.25,.8,.25,1);
   min-width: 2px;
 }

@@ -154,7 +154,7 @@
 
 <style scoped>
 .reminder-builder {
-  margin-top: 10px; padding: 14px; border-radius: 10px;
+  margin-top: 10px; padding: 14px; border-radius: var(--radius);
   background: var(--bg-elevated); border: 1px solid var(--border);
 }
 .reminder-header {
@@ -180,7 +180,7 @@
 .reminder-opt input { accent-color: var(--accent); }
 .reminder-custom { margin-bottom: 12px; }
 .reminder-preview {
-  padding: 10px; border-radius: 8px;
+  padding: 10px; border-radius: var(--radius-sm);
   background: var(--bg-elevated); border: 1px solid var(--border);
   margin-bottom: 12px;
 }

@@ -284,8 +284,8 @@
   font-size: 10px;
   font-weight: 600;
   padding: 1px 7px;
-  border-radius: 10px;
-  background: rgba(74,144,217,.12);
+  border-radius: var(--radius);
+  background: rgba(var(--accent-rgb),.12);
   color: var(--accent);
 }
 
@@ -318,14 +318,14 @@
 .suivi-progress-track {
   height: 6px;
   background: var(--bg-active);
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   overflow: hidden;
 }
 
 .suivi-progress-fill {
   height: 100%;
   background: var(--accent);
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   transition: width var(--motion-slow) var(--ease-out);
 }
 
@@ -404,7 +404,7 @@
   color: var(--text-muted);
   background: var(--bg-hover);
   padding: 1px 6px;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   white-space: nowrap;
   align-self: flex-start;
 }
@@ -470,10 +470,10 @@
 }
 
 .suivi-note-badge.has-note {
-  background: rgba(74,144,217,.18);
+  background: rgba(var(--accent-rgb),.18);
   color: var(--accent-light);
 }
-.suivi-note-badge.has-note:hover { background: rgba(74,144,217,.28); }
+.suivi-note-badge.has-note:hover { background: rgba(var(--accent-rgb),.28); }
 
 .suivi-note-badge.no-note {
   background: var(--bg-hover);
@@ -518,7 +518,7 @@
   text-overflow: ellipsis;
   white-space: nowrap;
   padding: 2px 4px;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   transition: color var(--t-fast), background var(--t-fast);
 }
 .suivi-feedback-btn:hover { color: var(--text-secondary); background: var(--bg-hover); }

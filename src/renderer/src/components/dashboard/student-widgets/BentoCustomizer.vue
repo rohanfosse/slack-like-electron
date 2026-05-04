@@ -151,7 +151,7 @@ function onToggle(id: string) {
 .wpc-panel {
   background: var(--bg-elevated);
   border: 1px solid var(--border);
-  border-radius: 14px;
+  border-radius: var(--radius-lg);
   padding: 16px;
   box-shadow: 0 8px 32px rgba(0,0,0,.15);
 }
@@ -169,12 +169,12 @@ function onToggle(id: string) {
   display: inline-flex; align-items: center; gap: 4px;
   font-size: 11px; font-weight: 600; color: var(--accent);
   background: none; border: none; cursor: pointer; font-family: var(--font);
-  padding: 4px 8px; border-radius: 6px; transition: background .15s;
+  padding: 4px 8px; border-radius: var(--radius-sm); transition: background .15s;
 }
 .wpc-btn-reset:hover { background: rgba(var(--accent-rgb),.08); }
 .wpc-btn-close {
   display: flex; align-items: center; justify-content: center;
-  width: 28px; height: 28px; border-radius: 6px;
+  width: 28px; height: 28px; border-radius: var(--radius-sm);
   border: none; background: transparent; color: var(--text-muted);
   cursor: pointer; transition: all .15s;
 }
@@ -210,7 +210,7 @@ function onToggle(id: string) {
 /* Card base */
 .wpc-card {
   display: flex; align-items: center; gap: 8px;
-  padding: 10px; border-radius: 10px;
+  padding: 10px; border-radius: var(--radius);
   border: 1px solid var(--border);
   transition: all .2s; font-family: var(--font);
 }
@@ -256,7 +256,7 @@ function onToggle(id: string) {
 /* Card icon */
 .wpc-card-icon {
   display: flex; align-items: center; justify-content: center;
-  width: 32px; height: 32px; border-radius: 8px;
+  width: 32px; height: 32px; border-radius: var(--radius-sm);
   background: rgba(var(--accent-rgb),.08); color: var(--accent);
   flex-shrink: 0;
 }

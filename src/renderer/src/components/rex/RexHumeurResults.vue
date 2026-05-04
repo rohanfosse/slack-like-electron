@@ -69,7 +69,7 @@
   align-items: center;
   gap: 12px;
   padding: 4px 8px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   transition: background .15s;
 }
 .rex-humeur-row:hover { background: rgba(255,255,255,.03); }
@@ -88,12 +88,12 @@
   flex: 1;
   height: 30px;
   background: rgba(255,255,255,.04);
-  border-radius: 10px;
+  border-radius: var(--radius);
   overflow: hidden;
 }
 .rex-humeur-bar-fill {
   height: 100%;
-  border-radius: 10px;
+  border-radius: var(--radius);
   transition: width .7s cubic-bezier(.16,1,.3,1);
   min-width: 2px;
   position: relative;

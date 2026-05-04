@@ -495,7 +495,7 @@
   font-family: var(--font);
   font-size: 13px; font-weight: 600;
   padding: 7px 14px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
   transition: background var(--t-fast), border-color var(--t-fast), color var(--t-fast), box-shadow var(--t-fast);
 }
@@ -548,7 +548,7 @@
   min-width: 200px;
   background: var(--bg-elevated);
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   box-shadow: 0 8px 24px rgba(0, 0, 0, .2);
   padding: 4px;
   display: flex;
@@ -587,7 +587,7 @@
 
 /* Rubrique collapsible */
 .gd-rubrique-details {
-  margin: 4px 20px 12px; border: 1px solid var(--border); border-radius: 8px;
+  margin: 4px 20px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm);
   overflow: hidden;
 }
 .gd-rubrique-summary {
@@ -604,7 +604,7 @@
 }
 .gd-rubrique-details[open] > .gd-rubrique-summary::before { transform: rotate(90deg); }
 .gd-rubrique-count {
-  font-size: 10px; font-weight: 600; padding: 1px 6px; border-radius: 10px;
+  font-size: 10px; font-weight: 600; padding: 1px 6px; border-radius: var(--radius);
   background: var(--bg-hover); color: var(--text-muted); margin-left: auto;
 }
 .gd-rubrique-content { padding: 12px 14px; }

@@ -193,7 +193,7 @@ onUnmounted(() => {
   position: relative;
   background: var(--bg-2, #fff);
   border: 1px solid var(--border, rgba(0, 0, 0, 0.08));
-  border-radius: 14px;
+  border-radius: var(--radius-lg);
   padding: 14px 14px 12px;
   box-shadow: 0 16px 40px -16px rgba(15, 23, 42, .25), 0 4px 12px -4px rgba(15, 23, 42, .12);
   pointer-events: auto;
@@ -269,7 +269,7 @@ onUnmounted(() => {
   justify-content: center;
   border: none;
   background: transparent;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   color: var(--text-3, #94A3B8);
   cursor: pointer;
   transition: background .15s, color .15s;
@@ -303,7 +303,7 @@ onUnmounted(() => {
   font-size: 12.5px;
   font-weight: 600;
   padding: 7px 11px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   border: none;
   cursor: pointer;
   transition: background .15s, color .15s, transform .15s;

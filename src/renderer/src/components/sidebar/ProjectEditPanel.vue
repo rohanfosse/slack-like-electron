@@ -154,7 +154,7 @@ function save() {
 .project-edit-panel {
   background: var(--bg-secondary, rgba(0,0,0,.15));
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   padding: 8px 10px;
   margin: 4px 8px 6px;
   display: flex;
@@ -205,7 +205,7 @@ function save() {
 .pep-icon-btn {
   width: 28px;
   height: 28px;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   border: 1px solid transparent;
   background: transparent;
   color: var(--text-muted);
@@ -226,7 +226,7 @@ function save() {
 .pep-input {
   background: var(--bg-input);
   border: 1px solid var(--border-input);
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   color: var(--text-primary);
   font-size: 12px;
   font-family: var(--font);
@@ -271,7 +271,7 @@ function save() {
   align-items: center;
   gap: 4px;
   padding: 4px 10px;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   border: none;
   font-size: 11px;
   font-family: var(--font);

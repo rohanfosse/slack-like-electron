@@ -1,5 +1,13 @@
 # Design System: Cursus
 
+> **DOC LEGACY (snapshot v2.27x).** Ce fichier decrit l'ancien design system
+> (accent bleu `#4A90D9`, Lato/Inter, theme creme). Depuis v2.272, l'app a
+> bascule sur le langage de la **landing page** : indigo `#6366F1` / `#818CF8`,
+> Plus Jakarta Sans, fonds lavande `#F5F3FF` / sombre `#0F0D1A`.
+>
+> **Source de verite a jour** : [`design-system/cursus/MASTER.md`](design-system/cursus/MASTER.md).
+> Ce fichier est conserve pour reference historique uniquement.
+
 ## 1. Visual Theme & Atmosphere
 
 Cursus is an education-first communication platform designed for engineering school cohorts. The design balances two audiences: students who expect a modern, Discord-like chat experience, and teachers who need a professional tool they can trust with grading and scheduling. The result is a system built on muted indigo-blue accents against neutral dark surfaces, with warm amber/sepia as the light-mode alternative — approachable but never casual.

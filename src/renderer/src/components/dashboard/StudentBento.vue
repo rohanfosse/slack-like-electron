@@ -305,7 +305,7 @@ function onReset() {
   align-items: center;
   gap: 10px;
   padding: 24px 16px;
-  border-radius: 12px;
+  border-radius: var(--radius);
   border: 1px solid var(--border);
   background: var(--bg-primary);
   cursor: pointer;
@@ -341,7 +341,7 @@ function onReset() {
 /* ── Alert (overdue only) ── */
 .sb-alert {
   display: flex; align-items: center; gap: 8px;
-  padding: 10px 14px; border-radius: 10px;
+  padding: 10px 14px; border-radius: var(--radius);
   background: rgba(231, 76, 60, 0.08);
   border: 1px solid rgba(231, 76, 60, 0.2);
   color: #e74c3c; font-size: 13px; font-weight: 600;
@@ -357,7 +357,7 @@ function onReset() {
 .sb-widget--ghost {
   opacity: 0.3;
   border: 2px dashed var(--accent) !important;
-  border-radius: 14px;
+  border-radius: var(--radius-lg);
 }
 
 /* ── Indication subtile "Ajouter des widgets" ──
@@ -373,7 +373,7 @@ function onReset() {
   margin-top: 4px;
   padding: 12px 18px;
   border: 1px dashed color-mix(in srgb, var(--text-muted, #94A3B8) 50%, transparent);
-  border-radius: 12px;
+  border-radius: var(--radius);
   background: transparent;
   color: var(--text-secondary, var(--text-2));
   font-family: inherit;

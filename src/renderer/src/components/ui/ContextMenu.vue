@@ -115,7 +115,7 @@ function run(item: ContextMenuItem) {
   min-width: 180px;
   background: var(--bg-secondary);
   border: 1px solid var(--border, var(--bg-hover));
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   padding: 4px;
   box-shadow: 0 8px 24px rgba(0,0,0,.4), 0 2px 8px rgba(0,0,0,.3);
   display: flex;

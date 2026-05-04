@@ -333,13 +333,13 @@ function filterLabel(f: LocalFilter): string {
 .rendus-export-btn {
   display: inline-flex; align-items: center; gap: 4px;
   font-size: 11px; padding: 5px 10px; flex-shrink: 0;
-  border: 1px solid var(--border); border-radius: 6px;
+  border: 1px solid var(--border); border-radius: var(--radius-sm);
 }
 .rendus-export-btn:hover { background: var(--bg-hover); border-color: var(--accent); color: var(--accent); }
 .rendus-filter-pills { display: flex; gap: 4px; }
 .rendus-pill {
   font-size: 10px; font-weight: 600; padding: 3px 10px;
-  border-radius: 12px; border: 1px solid var(--border);
+  border-radius: var(--radius); border: 1px solid var(--border);
   background: transparent; color: var(--text-muted);
   cursor: pointer; font-family: var(--font);
   transition: all .15s;
@@ -354,7 +354,7 @@ function filterLabel(f: LocalFilter): string {
   padding: 36px 20px;
   text-align: center;
   border: 1px dashed var(--border-input);
-  border-radius: 10px;
+  border-radius: var(--radius);
   background: var(--bg-elevated);
   display: flex;
   flex-direction: column;
@@ -372,7 +372,7 @@ function filterLabel(f: LocalFilter): string {
   display: inline-flex; align-items: center; gap: 4px;
   margin-top: 6px;
   font-family: inherit; font-size: 12px; font-weight: 600;
-  padding: 5px 12px; border-radius: 6px;
+  padding: 5px 12px; border-radius: var(--radius-sm);
   background: var(--bg-hover);
   border: 1px solid var(--border);
   color: var(--text-primary);
@@ -385,7 +385,7 @@ function filterLabel(f: LocalFilter): string {
 .grade-dist { display: flex; gap: 4px; flex-wrap: wrap; }
 .grade-dist-chip {
   font-size: 10px; font-weight: 700; padding: 1px 6px;
-  border-radius: 8px; white-space: nowrap;
+  border-radius: var(--radius-sm); white-space: nowrap;
 }
 .grade-dist--a { background: rgba(var(--color-success-rgb),.15); color: var(--color-success); }
 .grade-dist--b { background: rgba(var(--accent-rgb),.15); color: var(--accent); }
@@ -397,7 +397,7 @@ function filterLabel(f: LocalFilter): string {
 .rendu-late-badge {
   display: inline-flex; align-items: center; gap: 3px;
   font-size: 9px; font-weight: 700; padding: 1px 6px;
-  border-radius: 8px; white-space: nowrap;
+  border-radius: var(--radius-sm); white-space: nowrap;
   background: rgba(var(--color-danger-rgb),.12); color: var(--color-danger);
 }
 
@@ -414,7 +414,7 @@ function filterLabel(f: LocalFilter): string {
 .rendus-group {
   background: var(--bg-sidebar);
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: var(--radius);
   overflow: hidden;
   max-width: 780px;
   margin: 0 auto;
@@ -462,11 +462,11 @@ function filterLabel(f: LocalFilter): string {
 }
 .rendus-graded-count {
   font-size: 10px; font-weight: 600; padding: 2px 6px;
-  border-radius: 8px; background: rgba(var(--color-success-rgb),.12); color: var(--color-success);
+  border-radius: var(--radius-sm); background: rgba(var(--color-success-rgb),.12); color: var(--color-success);
 }
 .rendus-late-count {
   font-size: 10px; font-weight: 600; padding: 2px 6px;
-  border-radius: 8px; background: rgba(var(--color-danger-rgb),.12); color: var(--color-danger);
+  border-radius: var(--radius-sm); background: rgba(var(--color-danger-rgb),.12); color: var(--color-danger);
 }
 .btn-ouvrir {
   flex-shrink: 0;
@@ -489,7 +489,7 @@ function filterLabel(f: LocalFilter): string {
   align-items: flex-start;
   gap: 10px;
   padding: 8px 10px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   background: rgba(255, 255, 255, 0.03);
   transition: background var(--t-fast);
 }
@@ -629,7 +629,7 @@ function filterLabel(f: LocalFilter): string {
   text-transform: uppercase;
   letter-spacing: 0.5px;
   padding: 2px 7px;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
 }
 
 .type-livrable     { background: rgba(var(--accent-rgb),.2);   color: var(--accent); }
@@ -643,7 +643,7 @@ function filterLabel(f: LocalFilter): string {
 .skel-card {
   background: var(--bg-sidebar);
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: var(--radius);
   padding: 16px;
   display: flex;
   flex-direction: column;

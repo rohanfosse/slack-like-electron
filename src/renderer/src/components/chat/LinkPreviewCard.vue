@@ -39,7 +39,7 @@ function shortHost(url: string): string {
   background: var(--bg-hover);
   border: 1px solid var(--border);
   border-left: 3px solid var(--accent);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
   max-width: 520px;
   transition: background var(--motion-fast), border-color var(--motion-fast);
@@ -54,7 +54,7 @@ function shortHost(url: string): string {
   flex-shrink: 0;
   width: 88px;
   height: 88px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   overflow: hidden;
   background: var(--bg-surface);
 }

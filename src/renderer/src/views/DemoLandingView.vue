@@ -242,7 +242,7 @@ onMounted(() => {
   width: 56px;
   height: 56px;
   margin: 0 auto var(--space-md);
-  border-radius: 14px;
+  border-radius: var(--radius-lg);
 }
 
 .demo-title {
@@ -307,7 +307,7 @@ onMounted(() => {
   justify-content: center;
   width: 52px;
   height: 52px;
-  border-radius: 12px;
+  border-radius: var(--radius);
   flex-shrink: 0;
 }
 .demo-role-icon--student {

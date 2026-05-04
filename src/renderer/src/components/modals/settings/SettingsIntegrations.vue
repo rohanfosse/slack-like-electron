@@ -626,7 +626,7 @@ onMounted(() => {
   gap: 6px;
   padding: 7px 14px;
   border: none;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   font-size: 12.5px;
   font-weight: 600;
   font-family: var(--font);

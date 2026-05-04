@@ -143,7 +143,7 @@
   padding: 12px 16px;
   background: var(--bg-elevated);
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: var(--radius);
   transition: all 0.4s cubic-bezier(.25,.8,.25,1);
   position: relative;
   overflow: hidden;
@@ -224,7 +224,7 @@
   justify-content: center;
   gap: 6px;
   padding: 8px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   font-size: 13px;
   font-weight: 600;
   color: var(--text-muted);

@@ -426,7 +426,7 @@ async function copyTempPassword() {
   padding: 10px;
   background: var(--bg-elevated);
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: var(--radius);
   text-align: center;
 }
 .adm-det-stat-val {
@@ -441,7 +441,7 @@ async function copyTempPassword() {
 
 .adm-det-temp-pwd {
   padding: 12px;
-  border-radius: 10px;
+  border-radius: var(--radius);
   background: rgba(var(--color-warn-rgb, 245 158 11), 0.12);
   border: 1px solid rgba(var(--color-warn-rgb, 245 158 11), 0.35);
 }
@@ -466,13 +466,13 @@ async function copyTempPassword() {
   flex: 1;
   background: var(--bg-input);
   padding: 6px 10px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   letter-spacing: 1px;
 }
 .adm-det-copy {
   background: var(--bg-input);
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   padding: 6px;
   color: var(--text-muted);
   cursor: pointer;
@@ -506,7 +506,7 @@ async function copyTempPassword() {
   background: var(--bg-input);
   border: 1px solid var(--border);
   color: var(--text-primary);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   padding: 7px 10px;
   font-size: 13px;
   outline: none;
@@ -528,7 +528,7 @@ async function copyTempPassword() {
   align-items: center;
   font-size: 12px;
   padding: 7px 12px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   border: 1px solid var(--border);
   background: transparent;
   color: var(--text-primary);
@@ -554,7 +554,7 @@ async function copyTempPassword() {
   gap: 10px;
   padding: 14px;
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: var(--radius);
   background: var(--bg-elevated);
 }
 .adm-det-section-head {
@@ -577,7 +577,7 @@ async function copyTempPassword() {
 .adm-det-section-count {
   font-size: 11px;
   background: var(--bg-active);
-  border-radius: 10px;
+  border-radius: var(--radius);
   padding: 1px 8px;
   color: var(--text-muted);
   margin-left: auto;
@@ -602,7 +602,7 @@ async function copyTempPassword() {
   gap: 10px;
   padding: 10px 12px;
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   background: var(--bg-main);
   cursor: pointer;
   text-align: left;
@@ -639,7 +639,7 @@ async function copyTempPassword() {
   align-items: center;
   gap: 6px;
   padding: 4px 4px 4px 10px;
-  border-radius: 14px;
+  border-radius: var(--radius-lg);
   border: 1px solid var(--border);
   background: var(--bg-main);
   font-size: 12px;
@@ -687,7 +687,7 @@ async function copyTempPassword() {
   background: var(--bg-input);
   border: 1px solid var(--border);
   color: var(--text-primary);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   padding: 7px 10px;
   font-size: 13px;
   outline: none;

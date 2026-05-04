@@ -108,7 +108,7 @@ function onRename(newTitle: string) {
 }
 .cahier-tiptap :deep(.tiptap pre) {
   background: var(--bg-active); padding: 12px 16px;
-  border-radius: 8px; overflow-x: auto; font-size: 13px;
+  border-radius: var(--radius-sm); overflow-x: auto; font-size: 13px;
 }
 
 .cahier-tiptap :deep(.tiptap p.is-editor-empty:first-child::before) {

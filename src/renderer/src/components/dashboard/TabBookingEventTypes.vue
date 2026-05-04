@@ -586,7 +586,7 @@ onUnmounted(() => {
 .toggle-active {
   width: 20px;
   height: 20px;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   border: 1px solid var(--border-input);
   background: var(--bg-input);
   display: flex;
@@ -655,7 +655,7 @@ onUnmounted(() => {
 .color-btn {
   width: 18px;
   height: 18px;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   border: 2px solid transparent;
   cursor: pointer;
   transition: border-color var(--motion-fast) var(--ease-out);
@@ -711,7 +711,7 @@ onUnmounted(() => {
   border: none;
   background: none;
   cursor: pointer;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   color: var(--text-muted);
   flex-shrink: 0;
   transition: all var(--motion-fast) var(--ease-out);

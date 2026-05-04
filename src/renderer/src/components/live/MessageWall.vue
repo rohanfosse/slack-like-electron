@@ -288,7 +288,7 @@ const ctxItems = computed<ContextMenuItem[]>(() => {
   font-size: 11px;
   padding: 3px 8px;
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   background: transparent;
   color: var(--text-tertiary);
   cursor: pointer;
@@ -308,7 +308,7 @@ const ctxItems = computed<ContextMenuItem[]>(() => {
   flex: 1;
   padding: 8px 12px;
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   font-size: 13px;
   resize: none;
   background: var(--bg-primary);
@@ -324,7 +324,7 @@ const ctxItems = computed<ContextMenuItem[]>(() => {
   width: 36px;
   height: 36px;
   border: none;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   background: #a855f7;
   color: white;
   cursor: pointer;
@@ -344,7 +344,7 @@ const ctxItems = computed<ContextMenuItem[]>(() => {
 .mw-card {
   background: var(--bg-secondary);
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: var(--radius);
   padding: 12px;
   display: flex;
   flex-direction: column;
@@ -391,7 +391,7 @@ const ctxItems = computed<ContextMenuItem[]>(() => {
   font-size: 11px;
   padding: 2px 6px;
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   background: transparent;
   color: var(--text-tertiary);
   cursor: pointer;
@@ -408,7 +408,7 @@ const ctxItems = computed<ContextMenuItem[]>(() => {
   align-items: center;
   padding: 2px 5px;
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   background: transparent;
   color: var(--text-tertiary);
   cursor: pointer;

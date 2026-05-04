@@ -106,7 +106,7 @@ defineProps<{
 .db-action-item {
   display: flex; align-items: center; gap: 10px;
   padding: 10px 12px; background: var(--bg-elevated, rgba(255,255,255,.04));
-  border: 1px solid var(--border); border-radius: 10px;
+  border: 1px solid var(--border); border-radius: var(--radius);
   cursor: pointer; transition: all var(--motion-fast) var(--ease-out); text-align: left; width: 100%;
 }
 .db-action-item:hover { background: var(--bg-hover); border-color: var(--accent); }
@@ -115,12 +115,12 @@ defineProps<{
 .db-action-info     { border-left: 3px solid var(--accent); }
 
 .db-action-badge {
-  width: 28px; height: 28px; border-radius: 8px;
+  width: 28px; height: 28px; border-radius: var(--radius-sm);
   display: flex; align-items: center; justify-content: center; flex-shrink: 0;
 }
 .db-badge-grade    { background: rgba(239,68,68,.15); color: #ef4444; }
 .db-badge-deadline { background: rgba(245,158,11,.15); color: #f59e0b; }
-.db-badge-draft    { background: rgba(74,144,217,.15); color: var(--accent); }
+.db-badge-draft    { background: rgba(var(--accent-rgb),.15); color: var(--accent); }
 .db-badge-late     { background: rgba(239,68,68,.2); color: #ef4444; }
 
 .db-action-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
@@ -132,7 +132,7 @@ defineProps<{
 /* ── Santé de la classe ── */
 .db-class-health {
   background: var(--bg-elevated, rgba(255,255,255,.04));
-  border: 1px solid var(--border); border-radius: 12px; padding: 16px;
+  border: 1px solid var(--border); border-radius: var(--radius); padding: 16px;
   display: flex; flex-direction: column; align-items: center; gap: 4px;
 }
 .db-health-ring-wrap { position: relative; width: 80px; height: 80px; margin: 4px 0; }

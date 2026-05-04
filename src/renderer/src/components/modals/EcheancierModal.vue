@@ -307,7 +307,7 @@
   font-size: 10px;
   font-weight: 700;
   padding: 1px 6px;
-  border-radius: 10px;
+  border-radius: var(--radius);
   background: var(--bg-elevated);
   color: var(--text-secondary);
 }
@@ -387,7 +387,7 @@
   text-transform: uppercase;
   letter-spacing: .4px;
   padding: 2px 6px;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   flex-shrink: 0;
 }
 .type-livrable     { background: rgba(var(--accent-rgb),.2);   color: var(--accent); }
@@ -450,7 +450,7 @@
   font-size: 11px;
   font-weight: 600;
   padding: 2px 7px;
-  border-radius: 10px;
+  border-radius: var(--radius);
 }
 .ech-deadline-badge.deadline-passed,
 .ech-deadline-badge.deadline-critical {

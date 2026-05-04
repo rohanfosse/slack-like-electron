@@ -109,7 +109,7 @@
   color: var(--text-primary);
   background: var(--bg-input);
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: var(--radius);
   width: 64px;
   height: 76px;
   display: flex;
@@ -152,7 +152,7 @@
 .join-code-qr {
   margin-top: 4px;
   border: 4px solid #fff;
-  border-radius: 12px;
+  border-radius: var(--radius);
   box-shadow: 0 2px 12px rgba(0,0,0,.08);
 }
 .join-code-share {

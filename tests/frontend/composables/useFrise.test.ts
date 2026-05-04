@@ -94,11 +94,11 @@ describe('flattenMilestones', () => {
     expect(result[1].id).toBe(2)
   })
 
-  it('defaults to #4A90D9 for unknown project', () => {
+  it('defaults to #6366F1 (indigo landing) for unknown project', () => {
     const promos = [promo([{ key: 'Unknown', milestones: [ms({ deadline: '2099-01-01' })] }])]
     const colorMap = new Map<string, string>()
     const result = flattenMilestones(promos, colorMap)
-    expect(result[0].color).toBe('#4A90D9')
+    expect(result[0].color).toBe('#6366F1')
   })
 })
 

@@ -126,11 +126,11 @@ function projectPct(proj: string): number {
 .sb-proj-title { font-size: 11px; font-weight: 700; color: var(--text-muted); flex: 1; }
 .sb-proj-count {
   font-size: 9px; font-weight: 700; color: var(--accent);
-  background: rgba(var(--accent-rgb), .14); padding: 1px 5px; border-radius: 8px;
+  background: rgba(var(--accent-rgb), .14); padding: 1px 5px; border-radius: var(--radius-sm);
 }
 .sb-proj-add {
   display: flex; align-items: center; justify-content: center;
-  width: 20px; height: 20px; border-radius: 4px; border: none;
+  width: 20px; height: 20px; border-radius: var(--radius-xs); border: none;
   background: transparent; color: var(--text-muted); cursor: pointer;
 }
 .sb-proj-add:hover { background: var(--bg-hover); color: var(--accent); }
@@ -153,7 +153,7 @@ function projectPct(proj: string): number {
 /* Items */
 .sb-proj-item {
   display: flex; align-items: center; gap: 6px; width: 100%;
-  padding: 6px 8px; border-radius: 6px; border: none; border-left: 2px solid transparent;
+  padding: 6px 8px; border-radius: var(--radius-sm); border: none; border-left: 2px solid transparent;
   background: transparent; cursor: pointer; text-align: left; font-family: inherit; transition: all 0.1s;
 }
 .sb-proj-item:hover { background: var(--bg-hover); }

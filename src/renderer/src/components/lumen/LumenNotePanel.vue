@@ -226,7 +226,7 @@ async function handleDelete() {
   color: var(--text-muted);
   cursor: pointer;
   padding: 4px;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
 }
 .lumen-note-delete:hover { color: var(--danger); background: var(--bg-hover); }
 

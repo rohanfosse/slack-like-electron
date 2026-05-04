@@ -517,7 +517,7 @@ const dateGroups = computed<DateGroup[]>(() => {
 .scroll-badge {
   font-size: 11px; font-weight: 700;
   background: var(--color-danger);
-  color: white; border-radius: 10px;
+  color: white; border-radius: var(--radius);
   padding: 1px 6px; line-height: 1.5;
 }
 @media (prefers-reduced-motion: reduce) {

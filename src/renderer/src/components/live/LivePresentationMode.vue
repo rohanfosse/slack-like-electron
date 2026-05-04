@@ -196,11 +196,11 @@ function formatElapsed(s: number): string {
   padding: 10px 16px;
   background: rgba(255, 255, 255, .06);
   border: 1px solid rgba(255, 255, 255, .1);
-  border-radius: 10px;
+  border-radius: var(--radius);
   backdrop-filter: blur(8px);
 }
 .lpm-qr {
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   flex-shrink: 0;
 }
 .lpm-join-label {
@@ -225,7 +225,7 @@ function formatElapsed(s: number): string {
   align-items: center;
   gap: 6px;
   padding: 8px 14px;
-  border-radius: 10px;
+  border-radius: var(--radius);
   background: rgba(255, 255, 255, .06);
   border: 1px solid rgba(255, 255, 255, .1);
   color: rgba(255, 255, 255, .75);
@@ -349,7 +349,7 @@ function formatElapsed(s: number): string {
 }
 .lpm-results :deep(.rex-sondage-bar-wrap) {
   height: 48px;
-  border-radius: 10px;
+  border-radius: var(--radius);
 }
 .lpm-results :deep(.rex-sondage-count) {
   font-size: 26px;

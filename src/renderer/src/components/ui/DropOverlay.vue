@@ -73,7 +73,7 @@ watch(() => props.pendingFile, (f) => {
 <style scoped>
 .drop-overlay {
   position: absolute; inset: 0; z-index: 50;
-  background: rgba(74,144,217,.08);
+  background: rgba(var(--accent-rgb),.08);
   border: 2px dashed var(--accent);
   border-radius: var(--radius);
   display: flex; align-items: center; justify-content: center;
@@ -87,19 +87,19 @@ watch(() => props.pendingFile, (f) => {
 .drop-bar {
   display: flex; align-items: center; gap: 8px;
   padding: 8px 14px; background: var(--bg-elevated);
-  border: 1px solid var(--border); border-radius: 8px;
+  border: 1px solid var(--border); border-radius: var(--radius-sm);
   margin: 8px 16px;
 }
 .drop-bar-icon { color: var(--accent); flex-shrink: 0; }
 .drop-bar-input {
   flex: 1; min-width: 0; padding: 5px 8px; font-size: 12px;
   background: var(--bg-input); border: 1px solid var(--border-input);
-  border-radius: 6px; color: var(--text-primary); font-family: var(--font);
+  border-radius: var(--radius-sm); color: var(--text-primary); font-family: var(--font);
 }
 .drop-bar-input:focus { border-color: var(--accent); outline: none; }
 .drop-bar-cat { max-width: 140px; }
 .drop-bar-btn {
-  padding: 5px 10px; border-radius: 6px; font-size: 12px; font-weight: 600;
+  padding: 5px 10px; border-radius: var(--radius-sm); font-size: 12px; font-weight: 600;
   cursor: pointer; font-family: var(--font); border: none;
 }
 .drop-bar-ok { background: var(--accent); color: #fff; }

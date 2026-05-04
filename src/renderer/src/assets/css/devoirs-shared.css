@@ -5,7 +5,7 @@
 /* ── Type badges ──────────────────────────────────────────────────────────── */
 .devoir-type-badge {
   font-size: 10px; font-weight: 800; text-transform: uppercase;
-  letter-spacing: 0.5px; padding: 2px 7px; border-radius: 4px;
+  letter-spacing: 0.5px; padding: 2px 7px; border-radius: var(--radius-xs);
 }
 .type-livrable     { background: rgba(var(--accent-rgb), .15);  color: var(--accent); }
 .type-soutenance   { background: rgba(var(--color-warning-rgb),.15);  color: var(--color-warning); }
@@ -99,7 +99,7 @@
 }
 .dv-next-item {
   display: flex; align-items: center; justify-content: space-between; gap: 8px;
-  padding: 8px 10px; border-radius: 8px;
+  padding: 8px 10px; border-radius: var(--radius-sm);
   background: var(--bg-elevated); cursor: pointer;
   transition: background .15s;
 }
@@ -149,7 +149,7 @@
 .sa-next-list { display: flex; flex-direction: column; gap: 6px; }
 .sa-next-item {
   display: flex; align-items: center; gap: 8px;
-  padding: 8px 10px; border-radius: 8px;
+  padding: 8px 10px; border-radius: var(--radius-sm);
   background: var(--bg-elevated); cursor: pointer;
   transition: background .15s cubic-bezier(0.4, 0, 0.2, 1);
 }

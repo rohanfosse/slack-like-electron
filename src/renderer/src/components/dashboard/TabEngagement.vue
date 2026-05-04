@@ -169,7 +169,7 @@ function scoreLabel(score: number): string {
 .te-summary { display: flex; gap: 12px; flex-wrap: wrap; }
 .te-card {
   display: flex; align-items: center; gap: 8px;
-  padding: 14px 18px; border-radius: 12px;
+  padding: 14px 18px; border-radius: var(--radius);
   background: var(--bg-elevated); border: 1px solid var(--border);
   flex: 1; min-width: 140px;
 }
@@ -182,13 +182,13 @@ function scoreLabel(score: number): string {
 .te-filters { display: flex; gap: 10px; flex-wrap: wrap; }
 .te-search {
   flex: 1; min-width: 180px; display: flex; align-items: center; gap: 6px;
-  padding: 6px 10px; border-radius: 8px;
+  padding: 6px 10px; border-radius: var(--radius-sm);
   border: 1px solid var(--border); background: var(--bg-elevated); color: var(--text-muted);
 }
 .te-search input { flex: 1; border: none; background: transparent; outline: none; color: var(--text-primary); font-size: 13px; font-family: var(--font); }
 .te-filter-btn {
   display: inline-flex; align-items: center; gap: 5px;
-  padding: 6px 12px; border-radius: 8px;
+  padding: 6px 12px; border-radius: var(--radius-sm);
   border: 1px solid var(--border); background: transparent;
   color: var(--text-secondary); font-size: 12px; font-weight: 600;
   cursor: pointer; font-family: var(--font); transition: all .15s;
@@ -204,7 +204,7 @@ function scoreLabel(score: number): string {
   color: var(--text-muted); border-bottom: 1px solid var(--border);
 }
 .te-row {
-  border-radius: 8px; font-size: 12px; color: var(--text-secondary);
+  border-radius: var(--radius-sm); font-size: 12px; color: var(--text-secondary);
   transition: background .15s;
 }
 .te-row:hover { background: var(--bg-hover); }
@@ -213,7 +213,7 @@ function scoreLabel(score: number): string {
 .te-student-name { font-weight: 600; color: var(--text-primary); }
 .te-risk-badge {
   display: inline-flex; align-items: center; gap: 3px;
-  font-size: 9px; font-weight: 700; padding: 2px 6px; border-radius: 8px;
+  font-size: 9px; font-weight: 700; padding: 2px 6px; border-radius: var(--radius-sm);
   background: rgba(239,68,68,.12); color: #ef4444;
 }
 .te-col-score { display: flex; align-items: center; gap: 6px; }

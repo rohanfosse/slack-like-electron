@@ -43,14 +43,14 @@
 
 .pb-track {
   flex: 1;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   background: var(--border);
   overflow: hidden;
 }
 
 .pb--sm .pb-track { height: 4px; }
 .pb--md .pb-track { height: 6px; }
-.pb--lg .pb-track { height: 10px; border-radius: 6px; }
+.pb--lg .pb-track { height: 10px; border-radius: var(--radius-sm); }
 
 .pb-fill {
   height: 100%;

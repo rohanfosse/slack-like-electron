@@ -111,7 +111,7 @@
 .qs-card {
   flex: 1; min-width: 120px;
   display: flex; flex-direction: column; align-items: center; gap: 4px;
-  padding: 20px 16px; border-radius: 12px;
+  padding: 20px 16px; border-radius: var(--radius);
   background: var(--bg-elevated);
   border: 1px solid var(--border);
 }
@@ -120,7 +120,7 @@
 .qs-label { font-size: 12px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: .5px; }
 .qs-section {
   display: flex; flex-direction: column; gap: 12px;
-  padding: 16px; border-radius: 12px;
+  padding: 16px; border-radius: var(--radius);
   background: var(--bg-elevated);
   border: 1px solid var(--border);
 }
@@ -129,8 +129,8 @@
 .qs-bar-row { display: flex; align-items: center; gap: 10px; }
 .qs-bar-label { width: 120px; flex-shrink: 0; font-size: 12px; color: var(--text-secondary, #aaa); text-align: right; display: flex; align-items: center; justify-content: flex-end; gap: 5px; }
 .qs-bar-cat-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
-.qs-bar-track { flex: 1; height: 22px; border-radius: 6px; background: rgba(255,255,255,.04); overflow: hidden; }
-.qs-bar-fill { height: 100%; border-radius: 6px; background: linear-gradient(90deg, #c0392b, #e74c3c); transition: width .6s ease; min-width: 2px; }
+.qs-bar-track { flex: 1; height: 22px; border-radius: var(--radius-sm); background: rgba(255,255,255,.04); overflow: hidden; }
+.qs-bar-fill { height: 100%; border-radius: var(--radius-sm); background: linear-gradient(90deg, #c0392b, #e74c3c); transition: width .6s ease; min-width: 2px; }
 .qs-bar-count { width: 32px; flex-shrink: 0; font-size: 12px; font-weight: 600; color: var(--text-primary); }
 .qs-trend { display: flex; gap: 4px; align-items: flex-end; min-height: 140px; padding-top: 8px; overflow-x: auto; }
 .qs-trend-col { flex: 1; min-width: 32px; max-width: 60px; display: flex; flex-direction: column; align-items: center; gap: 4px; }

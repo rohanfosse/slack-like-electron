@@ -493,7 +493,7 @@
   gap: 12px;
   padding: 12px;
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   background: var(--bg-elevated);
   transition: border-color .12s;
 }
@@ -629,7 +629,7 @@
 .note-btn {
   width: 30px;
   height: 30px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   border: 1px solid var(--border);
   background: transparent;
   font-size: 12px;
@@ -650,7 +650,7 @@
 .note-display-btn {
   width: 40px;
   height: 40px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   border: 1.5px solid var(--border-input);
   background: transparent;
   font-size: 16px;
@@ -674,7 +674,7 @@
   text-transform: uppercase;
   letter-spacing: .5px;
   padding: 2px 7px;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
 }
 .type-livrable     { background: rgba(var(--accent-rgb),.2);   color: var(--accent); }
 .type-soutenance   { background: rgba(var(--color-warning-rgb),.2);   color: var(--color-warning); }
@@ -696,7 +696,7 @@
   align-items: center;
   gap: 4px;
   padding: 2px 8px;
-  border-radius: 12px;
+  border-radius: var(--radius);
   font-size: 11px;
   font-weight: 600;
   border: 1px solid transparent;
@@ -714,7 +714,7 @@
 .stat-badge {
   display: inline-flex; align-items: center; gap: 3px;
   font-size: 11px; font-weight: 600; padding: 2px 8px;
-  border-radius: 12px; border: 1px solid transparent;
+  border-radius: var(--radius); border: 1px solid transparent;
 }
 .stat-total   { background: rgba(var(--accent-rgb),.12); color: var(--accent); border-color: rgba(var(--accent-rgb),.25); }
 .stat-noted   { background: rgba(var(--color-success-rgb),.12);  color: var(--color-success); border-color: rgba(var(--color-success-rgb),.25); }
@@ -745,7 +745,7 @@
 /* Bulk hint */
 .depots-bulk-hint {
   font-size: 11.5px; color: var(--color-warning); font-weight: 600;
-  padding: 4px 10px; border-radius: 6px;
+  padding: 4px 10px; border-radius: var(--radius-sm);
   background: rgba(var(--color-warning-rgb),.08); border: 1px solid rgba(var(--color-warning-rgb),.2);
 }
 
@@ -757,7 +757,7 @@
   font-size: 10px;
   font-weight: 700;
   padding: 1px 6px;
-  border-radius: 10px;
+  border-radius: var(--radius);
   background: rgba(var(--color-danger-rgb),.15);
   color: var(--color-danger);
   border: 1px solid rgba(var(--color-danger-rgb),.3);
@@ -788,7 +788,7 @@
   align-items: center;
   gap: 5px;
   padding: 5px 12px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   font-size: 12px;
   font-weight: 600;
   border: 1px solid var(--border);
@@ -827,7 +827,7 @@
 .batch-filter-btn {
   font-size: 11px;
   padding: 3px 8px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   border: 1px solid var(--border);
   background: none;
   color: var(--text-muted);
@@ -910,7 +910,7 @@
   color: var(--text-muted);
   font-size: 13px;
   background: var(--bg-hover);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
 }
 
 .batch-grade-row {
@@ -931,7 +931,7 @@
 .batch-grade-btn {
   width: 48px;
   height: 48px;
-  border-radius: 12px;
+  border-radius: var(--radius);
   font-size: 18px;
   font-weight: 800;
   border: 2px solid var(--border);
@@ -983,7 +983,7 @@
   font-family: var(--font-mono, monospace);
   background: var(--bg-hover);
   border: 1px solid var(--border);
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
 }
 
 .batch-hint-sep { color: var(--border); margin: 0 2px; }

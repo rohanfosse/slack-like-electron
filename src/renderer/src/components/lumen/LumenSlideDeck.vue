@@ -104,7 +104,7 @@ async function renderDeck(): Promise<void> {
         height: 100%;
         overflow: hidden;
         background: #fff;
-        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        font-family: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
       }
       body {
         display: flex;

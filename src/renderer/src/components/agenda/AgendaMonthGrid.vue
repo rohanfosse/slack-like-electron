@@ -458,7 +458,7 @@ function parseEventTime(s: string): string {
   margin: 1px 2px;
   padding: 0 8px;
   border-left: 3px solid var(--accent);
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   font-size: 11px; font-weight: 600;
   display: flex; align-items: center;
   overflow: hidden;
@@ -489,7 +489,7 @@ function parseEventTime(s: string): string {
 .mg-event {
   display: flex; align-items: center; gap: 5px;
   padding: 2px 6px;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   border-left: 3px solid var(--accent);
   font-size: 10.5px; font-weight: 600;
   line-height: 1.25;

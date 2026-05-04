@@ -742,7 +742,7 @@ function handleNavigateLumenLink(payload: { repoName: string; path: string }) {
   align-items: center;
   gap: 6px;
   padding: 7px 12px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   border: 1px solid var(--border);
   background: var(--bg-primary);
   color: var(--text-primary);
@@ -895,7 +895,7 @@ function handleNavigateLumenLink(payload: { repoName: string; path: string }) {
 .lumen-modal-field input {
   padding: 10px 12px;
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   background: var(--bg-primary);
   color: var(--text-primary);
   font-family: var(--font-mono);
@@ -921,7 +921,7 @@ function handleNavigateLumenLink(payload: { repoName: string; path: string }) {
   padding: 8px 12px;
   background: var(--bg-secondary);
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   font-size: 11.5px;
   color: var(--text-secondary);
   line-height: 1.5;
@@ -995,7 +995,7 @@ function handleNavigateLumenLink(payload: { repoName: string; path: string }) {
   font-size: 0.88em;
   background: var(--bg-secondary);
   padding: 0.15em 0.4em;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   color: var(--text-primary);
   border: 1px solid var(--border);
 }
@@ -1003,7 +1003,7 @@ function handleNavigateLumenLink(payload: { repoName: string; path: string }) {
 .lumen-viewer .markdown-body pre.lumen-code {
   background: var(--bg-secondary);
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   padding: 16px 18px;
   overflow-x: auto;
   margin: 1.4em 0;
@@ -1061,7 +1061,7 @@ function handleNavigateLumenLink(payload: { repoName: string; path: string }) {
 .lumen-viewer .markdown-body img {
   max-width: 100%;
   height: auto;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   display: block;
   margin: 1.4em auto;
 }

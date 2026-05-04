@@ -477,9 +477,9 @@ const renderedContentWithoutPoll = computed(() => {
 }
 .msg-row:hover {
   background: rgba(255, 255, 255, 0.025);
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
 }
-.msg-row.editing { background: rgba(var(--accent-rgb), .04); border-radius: 6px; }
+.msg-row.editing { background: rgba(var(--accent-rgb), .04); border-radius: var(--radius-sm); }
 
 /* Message épinglé : bandeau latéral gold au lieu de fond pâle (plus clean) */
 .msg-row.pinned {
@@ -580,7 +580,7 @@ const renderedContentWithoutPoll = computed(() => {
   font-size: .85em;
   background: var(--bg-hover);
   border: 1px solid var(--border);
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   padding: 1px 5px;
   color: var(--color-warning);
 }
@@ -597,7 +597,7 @@ const renderedContentWithoutPoll = computed(() => {
 :deep(.code-block) {
   position: relative;
   margin: 10px 0;
-  border-radius: 10px;
+  border-radius: var(--radius);
   overflow: hidden;
   border: 1px solid var(--border);
   background: var(--bg-elevated);
@@ -624,7 +624,7 @@ const renderedContentWithoutPoll = computed(() => {
   color: var(--accent);
   background: rgba(var(--accent-rgb), .15);
   border: 1px solid rgba(var(--accent-rgb), .3);
-  border-radius: 12px;
+  border-radius: var(--radius);
   font-family: ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
 }
 :deep(.code-lines) {
@@ -643,7 +643,7 @@ const renderedContentWithoutPoll = computed(() => {
   color: var(--text-muted);
   background: transparent;
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
   transition: background var(--motion-fast) var(--ease-out),
               color var(--motion-fast) var(--ease-out),
@@ -688,7 +688,7 @@ const renderedContentWithoutPoll = computed(() => {
 }
 :deep(.code-block pre::-webkit-scrollbar-thumb) {
   background: rgba(255, 255, 255, .08);
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
 }
 :deep(.code-block pre::-webkit-scrollbar-thumb:hover) {
   background: rgba(255, 255, 255, .15);
@@ -722,7 +722,7 @@ const renderedContentWithoutPoll = computed(() => {
   background: rgba(var(--color-danger-rgb), .12);
   color: var(--color-danger);
   padding: 2px 7px;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   border: 1px solid rgba(var(--color-danger-rgb), .3);
   font-family: ui-monospace, Menlo, Consolas, monospace;
   font-size: 11.5px;
@@ -745,7 +745,7 @@ const renderedContentWithoutPoll = computed(() => {
   gap: 2px;
   background: color-mix(in srgb, var(--bg-elevated) 50%, transparent);
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: var(--radius);
 }
 :deep(.msg-text li.msg-task) {
   display: flex;
@@ -835,7 +835,7 @@ const renderedContentWithoutPoll = computed(() => {
   border-collapse: separate;
   border-spacing: 0;
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: var(--radius);
   background: var(--bg-elevated);
   box-shadow: var(--elevation-1);
   font-variant-numeric: tabular-nums;
@@ -896,7 +896,7 @@ const renderedContentWithoutPoll = computed(() => {
 .msg-img-preview img {
   max-width: 100%;
   max-height: 220px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   border: 1px solid var(--border);
   cursor: pointer;
   display: block;
@@ -925,7 +925,7 @@ const renderedContentWithoutPoll = computed(() => {
   transform: translateY(2px);
   background: var(--bg-modal);
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: var(--radius);
   box-shadow: var(--elevation-2);
   padding: 4px;
   z-index: 30;
@@ -1128,7 +1128,7 @@ const renderedContentWithoutPoll = computed(() => {
   min-width: 48px;
   min-height: 32px;
   padding: 2px 10px;
-  border-radius: 16px;
+  border-radius: var(--radius-lg);
   border: 1px solid var(--border);
   background: var(--bg-elevated);
   color: var(--text-secondary);
@@ -1179,7 +1179,7 @@ const renderedContentWithoutPoll = computed(() => {
   gap: 3px;
   min-height: 32px;
   padding: 2px 9px 2px 8px;
-  border-radius: 16px;
+  border-radius: var(--radius-lg);
   background: transparent;
   border: 1px dashed var(--border);
   color: var(--text-muted);
@@ -1238,7 +1238,7 @@ const renderedContentWithoutPoll = computed(() => {
   width: 100%;
   background: var(--bg-hover);
   border: 1.5px solid var(--accent);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   color: var(--text-primary);
   font-size: 13.5px;
   font-family: var(--font);

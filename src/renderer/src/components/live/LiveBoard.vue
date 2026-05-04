@@ -424,7 +424,7 @@ onBeforeUnmount(() => { unsubscribe?.() })
 .lb-icon { color: #a855f7; }
 .lb-title { font-size: 14px; font-weight: 700; color: var(--text-primary); }
 .lb-stat {
-  font-size: 10px; font-weight: 600; padding: 1px 7px; border-radius: 10px;
+  font-size: 10px; font-weight: 600; padding: 1px 7px; border-radius: var(--radius);
   background: var(--bg-active); color: var(--text-muted);
   display: inline-flex; align-items: center; gap: 3px;
 }
@@ -432,7 +432,7 @@ onBeforeUnmount(() => { unsubscribe?.() })
 .lb-header-actions { display: flex; gap: 4px; margin-left: auto; }
 .lb-hdr-btn {
   display: flex; align-items: center; justify-content: center;
-  width: 28px; height: 28px; border-radius: 6px;
+  width: 28px; height: 28px; border-radius: var(--radius-sm);
   border: 1px solid var(--border); background: transparent;
   color: var(--text-muted); cursor: pointer; transition: all .15s;
 }
@@ -451,7 +451,7 @@ onBeforeUnmount(() => { unsubscribe?.() })
 .lb-column {
   display: flex; flex-direction: column;
   background: var(--bg-elevated); border: 2px solid var(--border);
-  border-radius: 10px; padding: 10px; min-height: 200px;
+  border-radius: var(--radius); padding: 10px; min-height: 200px;
   transition: border-color .2s, background .2s;
 }
 .lb-column--dragover {
@@ -467,13 +467,13 @@ onBeforeUnmount(() => { unsubscribe?.() })
 }
 .lb-column-count {
   font-size: 10px; font-weight: 700; padding: 1px 6px;
-  border-radius: 8px; background: var(--bg-active); color: var(--text-muted);
+  border-radius: var(--radius-sm); background: var(--bg-active); color: var(--text-muted);
 }
 
 /* Cards */
 .lb-cards { display: flex; flex-direction: column; gap: 6px; flex: 1; min-height: 40px; }
 .lb-card {
-  position: relative; padding: 10px 12px; border-radius: 8px;
+  position: relative; padding: 10px 12px; border-radius: var(--radius-sm);
   box-shadow: 0 1px 3px rgba(0,0,0,.12);
   transition: transform .15s, box-shadow .15s, opacity .15s;
   cursor: grab;
@@ -501,7 +501,7 @@ onBeforeUnmount(() => { unsubscribe?.() })
 .lb-vote-btn {
   display: inline-flex; align-items: center; gap: 4px;
   font-size: 10px; font-weight: 700; padding: 2px 7px;
-  border-radius: 10px; border: 1px solid rgba(0,0,0,.15);
+  border-radius: var(--radius); border: 1px solid rgba(0,0,0,.15);
   background: rgba(255,255,255,.6); color: rgba(0,0,0,.75);
   cursor: pointer; font-family: var(--font); transition: all .15s;
 }
@@ -523,13 +523,13 @@ onBeforeUnmount(() => { unsubscribe?.() })
 /* Edit inline */
 .lb-edit-input {
   width: 100%; font-family: var(--font); font-size: 13px;
-  padding: 6px; border: 2px solid var(--accent); border-radius: 4px;
+  padding: 6px; border: 2px solid var(--accent); border-radius: var(--radius-xs);
   background: #fff; color: #1f2937; resize: none; outline: none;
 }
 .lb-edit-actions { display: flex; gap: 3px; margin-top: 4px; }
 .lb-edit-save, .lb-edit-cancel {
   display: flex; align-items: center; justify-content: center;
-  width: 24px; height: 24px; border-radius: 4px; border: none; cursor: pointer;
+  width: 24px; height: 24px; border-radius: var(--radius-xs); border: none; cursor: pointer;
 }
 .lb-edit-save { background: var(--accent); color: #fff; }
 .lb-edit-cancel { background: rgba(0,0,0,.1); color: rgba(0,0,0,.6); }
@@ -539,7 +539,7 @@ onBeforeUnmount(() => { unsubscribe?.() })
 .lb-add-input {
   width: 100%; font-family: var(--font); font-size: 13px;
   padding: 8px; border: 2px dashed var(--border-input);
-  border-radius: 6px; background: var(--bg-input);
+  border-radius: var(--radius-sm); background: var(--bg-input);
   color: var(--text-primary); resize: none; outline: none;
 }
 .lb-add-input:focus { border-color: var(--accent); border-style: solid; }
@@ -554,19 +554,19 @@ onBeforeUnmount(() => { unsubscribe?.() })
 .lb-add-actions { display: flex; gap: 4px; }
 .lb-add-confirm {
   font-size: 11px; font-weight: 600; padding: 5px 12px;
-  border: none; border-radius: 6px; background: var(--accent);
+  border: none; border-radius: var(--radius-sm); background: var(--accent);
   color: #fff; cursor: pointer; font-family: var(--font);
 }
 .lb-add-cancel {
   font-size: 11px; padding: 5px 8px;
-  border: 1px solid var(--border); border-radius: 6px;
+  border: 1px solid var(--border); border-radius: var(--radius-sm);
   background: transparent; color: var(--text-muted);
   cursor: pointer; font-family: var(--font);
 }
 .lb-add-btn {
   display: flex; align-items: center; justify-content: center; gap: 5px;
   width: 100%; font-size: 11px; padding: 6px;
-  border: 1px dashed var(--border-input); border-radius: 6px;
+  border: 1px dashed var(--border-input); border-radius: var(--radius-sm);
   background: transparent; color: var(--text-muted);
   cursor: pointer; font-family: var(--font); transition: all .15s;
 }

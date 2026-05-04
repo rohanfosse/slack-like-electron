@@ -204,7 +204,7 @@ const emit = defineEmits<{
 /* ── Card ── */
 .tp-card {
   background: var(--bg-elevated); border: 1px solid var(--border);
-  border-radius: 12px; padding: 16px; transition: border-color var(--t-fast), box-shadow var(--t-fast);
+  border-radius: var(--radius); padding: 16px; transition: border-color var(--t-fast), box-shadow var(--t-fast);
   border-left: 3px solid var(--promo-color, var(--border));
 }
 .tp-card--active {
@@ -222,7 +222,7 @@ const emit = defineEmits<{
 .tp-card-name { font-size: 15px; font-weight: 700; color: var(--text-primary); flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .tp-badge-active {
   font-size: 10px; font-weight: 700; text-transform: uppercase;
-  padding: 2px 8px; border-radius: 10px;
+  padding: 2px 8px; border-radius: var(--radius);
   background: rgba(var(--accent-rgb),.15); color: var(--accent);
 }
 
@@ -241,7 +241,7 @@ const emit = defineEmits<{
 .tp-pill {
   display: inline-flex; align-items: center; gap: 4px;
   font-size: 11px; font-weight: 600; padding: 3px 8px;
-  border-radius: 12px; background: var(--bg-hover);
+  border-radius: var(--radius); background: var(--bg-hover);
   color: var(--text-secondary); white-space: nowrap;
 }
 .tp-pill--accent { background: rgba(var(--accent-rgb),.1); color: var(--accent); }
@@ -255,7 +255,7 @@ const emit = defineEmits<{
   position: absolute; bottom: calc(100% + 6px); left: 50%; transform: translateX(-50%);
   display: flex; gap: 4px; flex-wrap: wrap; padding: 8px;
   background: var(--bg-modal, var(--bg-elevated)); border: 1px solid var(--border);
-  border-radius: 10px; box-shadow: var(--shadow-lg, 0 4px 20px rgba(0,0,0,.25));
+  border-radius: var(--radius); box-shadow: var(--shadow-lg, 0 4px 20px rgba(0,0,0,.25));
   z-index: 20; width: 140px;
 }
 /* ── Backdrop for closing color picker ── */
@@ -264,13 +264,13 @@ const emit = defineEmits<{
 /* ── Buttons ── */
 .tp-btn {
   display: inline-flex; align-items: center; gap: 4px;
-  font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 6px;
+  font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: var(--radius-sm);
   background: var(--bg-hover); color: var(--text-secondary);
   border: 1px solid var(--border-input); cursor: pointer; font-family: var(--font);
   transition: all var(--t-fast); white-space: nowrap;
 }
 .tp-btn:hover { background: var(--bg-elevated); color: var(--text-primary); }
-.tp-btn--sm { font-size: 10px; padding: 2px 7px; border-radius: 4px; }
+.tp-btn--sm { font-size: 10px; padding: 2px 7px; border-radius: var(--radius-xs); }
 .tp-btn--accent { background: var(--accent); color: #fff; border-color: var(--accent); }
 .tp-btn--accent:hover { opacity: .9; }
 .tp-btn--danger { color: var(--color-danger); }
@@ -280,7 +280,7 @@ const emit = defineEmits<{
 /* ── Rename input ── */
 .tp-rename-input {
   flex: 1; font-size: 14px; font-weight: 600; padding: 3px 8px;
-  background: var(--bg-input); border: 1px solid var(--accent); border-radius: 6px;
+  background: var(--bg-input); border: 1px solid var(--accent); border-radius: var(--radius-sm);
   color: var(--text-primary); font-family: var(--font); outline: none;
 }
 

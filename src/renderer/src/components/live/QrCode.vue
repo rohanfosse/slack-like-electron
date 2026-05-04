@@ -70,7 +70,7 @@ watch(() => props.value, renderQr)
 
 <style scoped>
 .qr-canvas {
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   image-rendering: pixelated;
 }
 </style>

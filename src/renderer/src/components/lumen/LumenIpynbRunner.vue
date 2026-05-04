@@ -309,7 +309,7 @@ const kernelStatusLabel = computed(() => {
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: var(--radius);
 }
 .nb-runner-toolbar-left,
 .nb-runner-toolbar-right {
@@ -339,7 +339,7 @@ const kernelStatusLabel = computed(() => {
   padding: 5px 10px;
   background: transparent;
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   color: var(--text-secondary);
   font-size: 12px;
   cursor: pointer;
@@ -366,7 +366,7 @@ const kernelStatusLabel = computed(() => {
   align-items: center;
   gap: 8px;
   padding: 8px 12px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   font-size: 12.5px;
 }
 .nb-kernel-loading {
@@ -395,7 +395,7 @@ const kernelStatusLabel = computed(() => {
   margin: 10px 0;
   background: var(--bg-input);
   border: 1px dashed var(--border);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   font-family: 'JetBrains Mono', Menlo, Consolas, monospace;
   font-size: 12.5px;
   white-space: pre-wrap;

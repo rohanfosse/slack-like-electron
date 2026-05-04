@@ -267,7 +267,7 @@ function formatDesc(text: string): string {
   background: var(--bg-sidebar);
   border: 1px solid var(--border);
   border-left-width: 4px;
-  border-radius: 10px;
+  border-radius: var(--radius);
   padding: 16px;
   transition: border-color var(--t-base);
 }
@@ -304,7 +304,7 @@ function formatDesc(text: string): string {
 .devoir-reminder-wrap { position: relative; flex-shrink: 0; }
 .devoir-reminder-btn {
   display: inline-flex; align-items: center; justify-content: center;
-  width: 24px; height: 24px; border-radius: 6px;
+  width: 24px; height: 24px; border-radius: var(--radius-sm);
   border: 1px solid var(--border); background: transparent;
   color: var(--text-muted); cursor: pointer;
   transition: all .15s; flex-shrink: 0;
@@ -316,7 +316,7 @@ function formatDesc(text: string): string {
   position: absolute; top: calc(100% + 6px); right: 0; z-index: 30;
   display: flex; flex-direction: column; gap: 2px;
   min-width: 140px; padding: 6px;
-  border: 1px solid var(--border); border-radius: 8px;
+  border: 1px solid var(--border); border-radius: var(--radius-sm);
   background: var(--bg-modal, var(--bg-elevated));
   box-shadow: 0 6px 20px rgba(0,0,0,.35);
 }
@@ -326,7 +326,7 @@ function formatDesc(text: string): string {
 }
 .devoir-reminder-option {
   display: flex; align-items: center; gap: 6px;
-  padding: 5px 8px; border-radius: 4px;
+  padding: 5px 8px; border-radius: var(--radius-xs);
   border: none; background: transparent;
   color: var(--text-secondary); font-family: var(--font);
   font-size: 12px; text-align: left; cursor: pointer;
@@ -362,7 +362,7 @@ function formatDesc(text: string): string {
   font-size: 10.5px;
   font-weight: 600;
   padding: 2px 8px;
-  border-radius: 12px;
+  border-radius: var(--radius);
   background: rgba(var(--accent-rgb),.12);
   color: var(--accent);
   white-space: nowrap;
@@ -379,7 +379,7 @@ function formatDesc(text: string): string {
   background: rgba(var(--color-cctl-rgb), 0.1);
   border: 1px solid rgba(var(--color-cctl-rgb), 0.25);
   padding: 6px 12px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   margin-top: 8px;
   margin-bottom: 8px;
 }
@@ -399,7 +399,7 @@ function formatDesc(text: string): string {
   font-size: 10px;
   font-weight: 700;
   padding: 2px 8px;
-  border-radius: 10px;
+  border-radius: var(--radius);
   background: rgba(var(--color-success-rgb),.15);
   color: var(--color-success);
   margin-left: 4px;
@@ -408,7 +408,7 @@ function formatDesc(text: string): string {
   font-size: 10px;
   font-weight: 700;
   padding: 2px 8px;
-  border-radius: 10px;
+  border-radius: var(--radius);
   background: var(--bg-active);
   color: var(--text-muted);
   margin-left: 4px;
@@ -423,7 +423,7 @@ function formatDesc(text: string): string {
   font-size: 12.5px;
 }
 .devoir-grade-icon { color: var(--accent-light); flex-shrink: 0; }
-.devoir-grade-value { font-weight: 700; color: var(--accent-light); padding: 1px 8px; border-radius: 8px; font-size: 13px; }
+.devoir-grade-value { font-weight: 700; color: var(--accent-light); padding: 1px 8px; border-radius: var(--radius-sm); font-size: 13px; }
 .grade--a { background: rgba(var(--color-success-rgb),.15); color: var(--color-success); }
 .grade--b { background: rgba(var(--accent-rgb),.15); color: var(--accent); }
 .grade--c { background: rgba(var(--color-warning-rgb),.15); color: var(--color-warning); }
@@ -466,7 +466,7 @@ function formatDesc(text: string): string {
   font-size: 11px;
   font-weight: 600;
   padding: 2px 8px;
-  border-radius: 10px;
+  border-radius: var(--radius);
   white-space: nowrap;
 }
 .countdown--urgent { background: rgba(var(--color-warning-rgb),.12); color: var(--color-warning); }
@@ -502,7 +502,7 @@ function formatDesc(text: string): string {
 .deposit-form {
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid var(--border-input);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   padding: 14px;
   margin-top: 12px;
   display: flex;
@@ -513,7 +513,7 @@ function formatDesc(text: string): string {
 .deposit-type-toggle {
   display: flex;
   background: rgba(255, 255, 255, 0.06);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   padding: 2px;
   gap: 2px;
   align-self: flex-start;
@@ -525,7 +525,7 @@ function formatDesc(text: string): string {
   gap: 5px;
   padding: 4px 12px;
   border: none;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   background: transparent;
   color: var(--text-secondary);
   font-size: 12px;
@@ -544,7 +544,7 @@ function formatDesc(text: string): string {
   gap: 4px;
   padding: 20px 14px;
   border: 1.5px dashed var(--border-input);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
   text-align: center;
   transition: border-color var(--t-fast), background var(--t-fast);
@@ -570,7 +570,7 @@ function formatDesc(text: string): string {
   gap: 8px;
   padding: 10px 12px;
   border: 1.5px solid var(--color-success);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   background: rgba(var(--color-success-rgb), 0.08);
 }
 
@@ -578,7 +578,7 @@ function formatDesc(text: string): string {
   position: relative;
   height: 32px;
   border: 1.5px solid var(--accent, #4dd0e1);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   background: rgba(77, 208, 225, 0.08);
   overflow: hidden;
   display: flex;
@@ -624,7 +624,7 @@ function formatDesc(text: string): string {
   padding: 2px;
   display: flex;
   align-items: center;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   flex-shrink: 0;
   transition: color var(--t-fast), background var(--t-fast);
 }
@@ -642,7 +642,7 @@ function formatDesc(text: string): string {
 /* ── Aperçu grille d'évaluation ──────────────────────────────────────────── */
 .rubric-preview {
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   overflow: hidden;
 }
 
@@ -696,7 +696,7 @@ function formatDesc(text: string): string {
   text-transform: uppercase;
   letter-spacing: 0.5px;
   padding: 2px 7px;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
 }
 
 .type-livrable     { background: rgba(var(--accent-rgb),.2);   color: var(--accent); }

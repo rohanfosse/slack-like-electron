@@ -168,7 +168,7 @@ watch(() => props.modelValue, async (open) => {
   padding: 10px 12px;
   background: rgba(var(--accent-rgb), .08);
   border: 1px solid rgba(var(--accent-rgb), .3);
-  border-radius: 10px;
+  border-radius: var(--radius);
 }
 .usp-current-emoji { font-size: 22px; line-height: 1; }
 .usp-current-body { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
@@ -188,7 +188,7 @@ watch(() => props.modelValue, async (open) => {
 .usp-input {
   padding: 7px 10px;
   border: 1px solid var(--border-input);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   background: var(--bg-input);
   color: var(--text-primary);
   font-size: 13px;
@@ -207,7 +207,7 @@ watch(() => props.modelValue, async (open) => {
   padding: 7px 10px;
   background: var(--bg-hover);
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
   color: var(--text-secondary);
   font-size: 13px;
@@ -224,7 +224,7 @@ watch(() => props.modelValue, async (open) => {
 .usp-select {
   padding: 7px 10px;
   border: 1px solid var(--border-input);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   background: var(--bg-input);
   color: var(--text-primary);
   font-size: 13px;
@@ -233,7 +233,7 @@ watch(() => props.modelValue, async (open) => {
 .usp-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 6px; }
 .usp-btn {
   padding: 7px 14px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   border: 1px solid var(--border);
   background: transparent;
   color: var(--text-secondary);

@@ -331,7 +331,7 @@ function toggleCollapse(studentId: number) {
 }
 .fv-title-block { display: flex; align-items: center; gap: 12px; }
 .fv-title-icon-wrap {
-  width: 36px; height: 36px; border-radius: 10px;
+  width: 36px; height: 36px; border-radius: var(--radius);
   background: linear-gradient(135deg, rgba(var(--accent-rgb),.2), rgba(var(--accent-rgb),.08));
   border: 1px solid rgba(var(--accent-rgb),.2);
   display: flex; align-items: center; justify-content: center;
@@ -386,7 +386,7 @@ function toggleCollapse(studentId: number) {
 .fv-search::placeholder { color: var(--text-muted); }
 .fv-search-clear {
   background: var(--bg-hover); border: none; cursor: pointer;
-  color: var(--text-muted); padding: 2px; display: flex; border-radius: 4px;
+  color: var(--text-muted); padding: 2px; display: flex; border-radius: var(--radius-xs);
   transition: color .12s;
 }
 .fv-search-clear:hover { color: var(--text-primary); }
@@ -415,7 +415,7 @@ function toggleCollapse(studentId: number) {
 .fv-filter-count {
   font-size: 11.5px; color: var(--accent); font-weight: 600;
   background: rgba(var(--accent-rgb),.1); border: 1px solid rgba(var(--accent-rgb),.2);
-  border-radius: 12px; padding: 3px 10px;
+  border-radius: var(--radius); padding: 3px 10px;
 }
 
 /* ═══════════════════════════════════════════
@@ -434,7 +434,7 @@ function toggleCollapse(studentId: number) {
 .fv-card {
   display: flex; flex-direction: column;
   background: var(--bg-elevated); border: 1px solid var(--border);
-  border-radius: 12px; overflow: hidden; cursor: pointer;
+  border-radius: var(--radius); overflow: hidden; cursor: pointer;
   transition: border-color .18s, box-shadow .18s, transform .18s;
   position: relative;
 }
@@ -453,7 +453,7 @@ function toggleCollapse(studentId: number) {
 .fv-card-img { width: 100%; height: 100%; object-fit: cover; }
 
 .fv-card-icon-ring {
-  width: 48px; height: 48px; border-radius: 14px;
+  width: 48px; height: 48px; border-radius: var(--radius-lg);
   background: color-mix(in srgb, var(--fc) 12%, transparent);
   border: 1.5px solid color-mix(in srgb, var(--fc) 20%, transparent);
   display: flex; align-items: center; justify-content: center;
@@ -490,7 +490,7 @@ function toggleCollapse(studentId: number) {
 }
 .fv-card-size {
   font-size: 10px; color: var(--text-muted);
-  background: var(--bg-hover); padding: 1px 6px; border-radius: 4px;
+  background: var(--bg-hover); padding: 1px 6px; border-radius: var(--radius-xs);
   font-weight: 500;
 }
 .fv-card-date { font-size: 10px; color: var(--text-muted); }
@@ -503,7 +503,7 @@ function toggleCollapse(studentId: number) {
 }
 .fv-card:hover .fv-card-actions { opacity: 1; }
 .fv-card-btn {
-  width: 28px; height: 28px; border-radius: 8px;
+  width: 28px; height: 28px; border-radius: var(--radius-sm);
   background: var(--bg-base); border: 1px solid var(--border);
   display: flex; align-items: center; justify-content: center;
   color: var(--text-secondary); cursor: pointer;
@@ -520,7 +520,7 @@ function toggleCollapse(studentId: number) {
 ═══════════════════════════════════════════ */
 .fv-list { display: flex; flex-direction: column; gap: 10px; overflow-y: auto; flex: 1; padding-right: 4px; }
 
-.fv-list-group { background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+.fv-list-group { background: var(--bg-elevated); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
 
 .fv-list-group-header {
   width: 100%; display: flex; align-items: center; gap: 10px;
@@ -549,7 +549,7 @@ function toggleCollapse(studentId: number) {
 .fv-list-item:hover .fv-list-item-actions { opacity: 1; }
 
 .fv-list-item-icon {
-  width: 34px; height: 34px; border-radius: 8px;
+  width: 34px; height: 34px; border-radius: var(--radius-sm);
   display: flex; align-items: center; justify-content: center; flex-shrink: 0;
   overflow: hidden;
   background: color-mix(in srgb, var(--fc) 12%, transparent);
@@ -563,7 +563,7 @@ function toggleCollapse(studentId: number) {
 .fv-list-item-ext {
   font-size: 10px; font-weight: 800; text-transform: uppercase; flex-shrink: 0;
   min-width: 36px; text-align: center;
-  padding: 2px 6px; border-radius: 4px;
+  padding: 2px 6px; border-radius: var(--radius-xs);
   background: var(--bg-hover);
 }
 .fv-list-item-size { font-size: 11px; color: var(--text-muted); flex-shrink: 0; min-width: 50px; text-align: right; }
@@ -577,7 +577,7 @@ function toggleCollapse(studentId: number) {
 ═══════════════════════════════════════════ */
 .fv-empty { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; }
 .fv-empty-icon-wrap {
-  width: 56px; height: 56px; border-radius: 16px;
+  width: 56px; height: 56px; border-radius: var(--radius-lg);
   background: var(--bg-elevated); border: 1px solid var(--border);
   display: flex; align-items: center; justify-content: center;
   color: var(--text-muted); margin-bottom: 4px;
@@ -600,20 +600,20 @@ function toggleCollapse(studentId: number) {
   backdrop-filter: blur(8px);
 }
 .fv-lightbox-img {
-  max-width: 88vw; max-height: 84vh; border-radius: 10px;
+  max-width: 88vw; max-height: 84vh; border-radius: var(--radius);
   box-shadow: 0 12px 48px rgba(0,0,0,.5);
 }
 .fv-lightbox-close {
   position: absolute; top: 18px; right: 18px;
   background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.12);
-  border-radius: 10px; color: #fff; cursor: pointer; padding: 8px;
+  border-radius: var(--radius); color: #fff; cursor: pointer; padding: 8px;
   display: flex; align-items: center; backdrop-filter: blur(8px);
   transition: background .15s;
 }
 .fv-lightbox-close:hover { background: rgba(255,255,255,.2); }
 .fv-lightbox-dl {
   position: absolute; bottom: 24px;
-  background: var(--accent); border: none; border-radius: 10px;
+  background: var(--accent); border: none; border-radius: var(--radius);
   color: #fff; cursor: pointer; padding: 9px 20px;
   font-size: 13px; font-weight: 600; font-family: var(--font);
   display: flex; align-items: center; gap: 7px;
@@ -633,7 +633,7 @@ function toggleCollapse(studentId: number) {
 .fv-grid::-webkit-scrollbar-track,
 .fv-list::-webkit-scrollbar-track { background: transparent; }
 .fv-grid::-webkit-scrollbar-thumb,
-.fv-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+.fv-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: var(--radius-xs); }
 .fv-grid::-webkit-scrollbar-thumb:hover,
 .fv-list::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
 </style>

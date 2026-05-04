@@ -60,17 +60,17 @@ const emit = defineEmits<{
 .db-week-title { display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 700; color: var(--text-primary); }
 .db-week-progress {
   font-size: 12px; font-weight: 600; color: var(--text-muted);
-  background: var(--bg-hover); padding: 2px 8px; border-radius: 10px;
+  background: var(--bg-hover); padding: 2px 8px; border-radius: var(--radius);
 }
 .db-week-list { display: flex; flex-direction: column; gap: 2px; }
 .db-week-item {
   display: flex; align-items: center; gap: 10px;
-  padding: 8px 12px; border-radius: 8px; cursor: pointer; transition: background var(--t-fast);
+  padding: 8px 12px; border-radius: var(--radius-sm); cursor: pointer; transition: background var(--t-fast);
 }
 .db-week-item:hover { background: var(--bg-elevated); }
 .db-week-item.done { opacity: .45; }
 .db-week-item.overdue:not(.done) { background: rgba(239,68,68,.06); }
-.db-week-item.today:not(.done) { background: rgba(74,144,217,.06); }
+.db-week-item.today:not(.done) { background: rgba(var(--accent-rgb),.06); }
 .db-week-check { flex-shrink: 0; }
 .db-week-circle {
   width: 18px; height: 18px; border-radius: 50%;
@@ -84,7 +84,7 @@ const emit = defineEmits<{
 .db-week-meta { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
 .db-week-promo {
   font-size: 9px; font-weight: 700; padding: 1px 5px; border-radius: 3px;
-  background: rgba(74,144,217,.1); color: var(--accent); text-transform: uppercase;
+  background: rgba(var(--accent-rgb),.1); color: var(--accent); text-transform: uppercase;
 }
 .db-week-late { font-size: 10px; font-weight: 700; color: var(--color-danger); }
 .db-week-today-tag { font-size: 10px; font-weight: 600; color: var(--accent); }
@@ -92,6 +92,6 @@ const emit = defineEmits<{
 .db-week-empty {
   display: flex; align-items: center; gap: 8px;
   padding: 12px 14px; font-size: 13px; color: var(--color-success);
-  background: rgba(34,197,94,.06); border-radius: 8px; font-weight: 600;
+  background: rgba(34,197,94,.06); border-radius: var(--radius-sm); font-weight: 600;
 }
 </style>

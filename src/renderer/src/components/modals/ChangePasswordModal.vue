@@ -249,7 +249,7 @@ function tryClose() {
   max-width: 420px;
   background: var(--bg-modal);
   border: 1px solid var(--border);
-  border-radius: 14px;
+  border-radius: var(--radius-lg);
   box-shadow: 0 24px 60px rgba(0, 0, 0, .6);
   display: flex;
   flex-direction: column;
@@ -268,8 +268,8 @@ function tryClose() {
 .cpw-header-icon {
   width: 38px;
   height: 38px;
-  border-radius: 10px;
-  background: rgba(74, 144, 217, .15);
+  border-radius: var(--radius);
+  background: rgba(var(--accent-rgb),.15);
   color: var(--accent);
   display: flex;
   align-items: center;

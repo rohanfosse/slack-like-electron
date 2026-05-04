@@ -7,18 +7,21 @@ import { ref, watch } from 'vue'
 import { Monitor, Sun, Moon, Waves, Sparkles } from 'lucide-vue-next'
 import { usePrefs } from '@/composables/usePrefs'
 
-export type ThemeId = 'auto' | 'dark' | 'light' | 'night' | 'marine' | 'cursus'
+export type ThemeId = 'auto' | 'dark' | 'light' | 'sepia' | 'night' | 'marine' | 'cursus'
 
-import { Laptop } from 'lucide-vue-next'
+import { Laptop, Coffee } from 'lucide-vue-next'
 
 export const THEMES: { id: ThemeId; label: string; icon: typeof Moon; colors: string[]; accent: string }[] = [
-  { id: 'auto',   label: 'Auto',    icon: Laptop,   colors: ['#1a1d21', '#f5f0e8', '#222529'], accent: '#4A90D9' },
-  { id: 'dark',   label: 'Sombre',  icon: Monitor,  colors: ['#1a1d21', '#1d2128', '#222529'], accent: '#4A90D9' },
-  { id: 'light',  label: 'Cr\u00e8me',   icon: Sun,      colors: ['#f0ebe3', '#f5f0e8', '#faf8f4'], accent: '#c27c2c' },
-  { id: 'night',  label: 'Nuit',    icon: Moon,     colors: ['#08090c', '#0b0d11', '#0f1115'], accent: '#7B8CDE' },
+  { id: 'auto',   label: 'Auto',    icon: Laptop,   colors: ['#0F0D1A', '#F5F3FF', '#1A1733'], accent: '#6366F1' },
+  { id: 'dark',   label: 'Sombre',  icon: Monitor,  colors: ['#0F0D1A', '#15122B', '#1A1733'], accent: '#818CF8' },
+  { id: 'light',  label: 'Clair',   icon: Sun,      colors: ['#EDE9FE', '#F5F3FF', '#FFFFFF'], accent: '#6366F1' },
+  { id: 'sepia',  label: 'S\u00e9pia',   icon: Coffee,   colors: ['#f0ebe3', '#f5f0e8', '#faf8f4'], accent: '#c27c2c' },
+  { id: 'night',  label: 'Nuit',    icon: Moon,     colors: ['#08090c', '#0b0d11', '#0f1115'], accent: '#818CF8' },
   { id: 'marine', label: 'Marine',  icon: Waves,    colors: ['#0e1829', '#132036', '#192840'], accent: '#5B9BD5' },
-  { id: 'cursus', label: 'Cursus',  icon: Sparkles, colors: ['#eef2f7', '#f4f6f9', '#f9fafb'], accent: '#3b82f6' },
 ]
+
+// 'cursus' n'est plus expose comme choix (alias legacy de 'light').
+// On migre la pref a la lecture pour les utilisateurs qui l'avaient.
 
 /** Resolve 'auto' theme to actual theme based on system preference. */
 function resolveTheme(theme: ThemeId): string {
@@ -29,7 +32,7 @@ function resolveTheme(theme: ThemeId): string {
 function applyTheme(theme: ThemeId) {
   const resolved = resolveTheme(theme)
   document.body.classList.add('theme-transitioning')
-  document.body.classList.remove('light', 'night', 'marine', 'cursus')
+  document.body.classList.remove('light', 'sepia', 'night', 'marine', 'cursus')
   if (resolved !== 'dark') document.body.classList.add(resolved)
   setTimeout(() => document.body.classList.remove('theme-transitioning'), 350)
 }
@@ -45,10 +48,35 @@ function setupSystemThemeListener(currentThemeRef: { value: ThemeId }) {
   mq.addEventListener('change', _systemThemeListener)
 }
 
+/**
+ * Migration one-shot v2.272 (alignement landing).
+ *   - 'cursus' (ancien clair indigo) -> 'light'
+ *   - 'light'  (ancien creme/sepia)  -> 'sepia'   (le nouveau 'light' est indigo)
+ * Pose le flag `themeMigratedLandingV2` pour eviter une re-migration.
+ * Retourne le theme apres migration.
+ */
+function migrateThemePref(
+  getPref: ReturnType<typeof usePrefs>['getPref'],
+  setPref: ReturnType<typeof usePrefs>['setPref'],
+): ThemeId {
+  const alreadyMigrated = getPref('themeMigratedLandingV2')
+  const stored = (getPref('theme') ?? 'dark') as ThemeId
+  if (alreadyMigrated) return stored
+
+  let migrated: ThemeId = stored
+  if (stored === 'cursus') migrated = 'light'
+  else if (stored === 'light') migrated = 'sepia'
+
+  if (migrated !== stored) setPref('theme', migrated)
+  setPref('themeMigratedLandingV2', true)
+  return migrated
+}
+
 export function useSettingsAppearance() {
   const { getPref, setPref } = usePrefs()
 
-  const currentTheme   = ref(getPref('theme') ?? 'dark')
+  const initialTheme = migrateThemePref(getPref, setPref)
+  const currentTheme   = ref<ThemeId>(initialTheme)
   const fontSize       = ref<string>(getPref('fontSize') ?? 'default')
   const density        = ref<string>(getPref('density') ?? 'default')
   const msgSpacing     = ref<string>(getPref('msgSpacing') ?? 'normal')
@@ -137,7 +165,7 @@ export function useSettingsAppearance() {
 
   /** Re-sync refs from stored prefs (called when modal opens). */
   function resetAppearance() {
-    currentTheme.value = getPref('theme') ?? 'dark'
+    currentTheme.value = migrateThemePref(getPref, setPref)
   }
 
   function resetAllAppearance() {

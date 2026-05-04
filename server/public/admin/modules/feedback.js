@@ -49,7 +49,7 @@ export async function loadFeedback() {
           </div>
           <div style="font-size:.9rem;font-weight:600;margin-bottom:.3rem">${escHtml(f.title)}</div>
           ${f.description ? `<p style="font-size:.8rem;color:var(--text-secondary);margin:0 0 .6rem;line-height:1.5">${escHtml(f.description)}</p>` : ''}
-          ${f.admin_reply ? `<div style="font-size:.8rem;color:var(--text-secondary);padding:.5rem .75rem;background:rgba(74,144,217,.06);border-radius:var(--radius-sm);border-left:2px solid var(--accent);margin-bottom:.6rem;line-height:1.4">${escHtml(f.admin_reply)}</div>` : ''}
+          ${f.admin_reply ? `<div style="font-size:.8rem;color:var(--text-secondary);padding:.5rem .75rem;background:rgba(99,102,241,.06);border-radius:var(--radius-sm);border-left:2px solid var(--accent);margin-bottom:.6rem;line-height:1.4">${escHtml(f.admin_reply)}</div>` : ''}
           <div style="display:flex;gap:.4rem;align-items:center">
             <select id="fb-status-${f.id}" class="status-select">
               <option value="open" ${f.status === 'open' ? 'selected' : ''}>Ouvert</option>

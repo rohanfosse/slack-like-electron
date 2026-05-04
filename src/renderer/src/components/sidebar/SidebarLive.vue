@@ -119,7 +119,7 @@ async function onDelete(session: LiveSession) {
 .sb-live-section-title { font-size: 11px; font-weight: 700; color: var(--text-muted); flex: 1; }
 .sb-live-section-count {
   font-size: 9px; font-weight: 700; color: var(--accent);
-  background: rgba(var(--accent-rgb), .14); padding: 1px 5px; border-radius: 8px;
+  background: rgba(var(--accent-rgb), .14); padding: 1px 5px; border-radius: var(--radius-sm);
 }
 .sb-live-active-dot { color: #ef4444; flex-shrink: 0; animation: pulse-dot 2s infinite; }
 @keyframes pulse-dot { 0%, 100% { opacity: 1; } 50% { opacity: .4; } }
@@ -128,7 +128,7 @@ async function onDelete(session: LiveSession) {
 
 .sb-live-item {
   display: flex; align-items: center; gap: 6px;
-  padding: 6px 8px; border-radius: 6px; border: none;
+  padding: 6px 8px; border-radius: var(--radius-sm); border: none;
   background: transparent; cursor: pointer; text-align: left;
   transition: all 0.1s;
 }
@@ -148,7 +148,7 @@ async function onDelete(session: LiveSession) {
 .sb-live-item-meta { font-size: 10px; color: var(--text-muted); }
 .sb-live-item-actions { display: flex; gap: 2px; flex-shrink: 0; }
 .sb-live-action {
-  width: 22px; height: 22px; border-radius: 4px; border: none;
+  width: 22px; height: 22px; border-radius: var(--radius-xs); border: none;
   background: transparent; color: var(--text-muted); cursor: pointer;
   display: flex; align-items: center; justify-content: center; transition: all 0.12s;
 }
@@ -160,7 +160,7 @@ async function onDelete(session: LiveSession) {
 .sb-live-links { display: flex; flex-direction: column; gap: 1px; }
 .sb-live-link {
   display: flex; align-items: center; gap: 6px;
-  padding: 6px 8px; border-radius: 6px; border: none;
+  padding: 6px 8px; border-radius: var(--radius-sm); border: none;
   background: transparent; color: var(--text-secondary); cursor: pointer;
   font-size: 12px; font-weight: 500; font-family: inherit; text-align: left;
   transition: all 0.1s;

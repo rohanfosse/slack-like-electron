@@ -115,14 +115,14 @@ function openProjectCtx(ev: MouseEvent, p: StudentProjectCard) {
 .spt-card {
   display: flex; flex-direction: column; gap: 8px;
   padding: 16px; border: 1px solid var(--border);
-  border-radius: 14px; background: var(--bg-elevated);
+  border-radius: var(--radius-lg); background: var(--bg-elevated);
   cursor: pointer;
   transition: background .15s cubic-bezier(.4, 0, .2, 1),
               border-color .15s cubic-bezier(.4, 0, .2, 1),
               box-shadow .15s cubic-bezier(.4, 0, .2, 1);
 }
 .spt-card:hover {
-  background: rgba(74,144,217,.07); border-color: rgba(74,144,217,.3);
+  background: rgba(var(--accent-rgb),.07); border-color: rgba(var(--accent-rgb),.3);
   box-shadow: 0 2px 12px rgba(0,0,0,.15);
 }
 
@@ -130,9 +130,9 @@ function openProjectCtx(ev: MouseEvent, p: StudentProjectCard) {
   display: flex; align-items: center; justify-content: space-between;
 }
 .spt-card-icon {
-  width: 36px; height: 36px; border-radius: 8px;
+  width: 36px; height: 36px; border-radius: var(--radius-sm);
   display: flex; align-items: center; justify-content: center;
-  background: rgba(74,144,217,.1); color: var(--accent);
+  background: rgba(var(--accent-rgb),.1); color: var(--accent);
   flex-shrink: 0;
 }
 
@@ -163,7 +163,7 @@ function openProjectCtx(ev: MouseEvent, p: StudentProjectCard) {
 .spt-card-overdue {
   display: inline-flex; align-items: center; gap: 3px;
   font-size: 10px; font-weight: 700; text-transform: uppercase;
-  letter-spacing: .3px; padding: 2px 7px; border-radius: 4px;
+  letter-spacing: .3px; padding: 2px 7px; border-radius: var(--radius-xs);
   background: rgba(231,76,60,.12); color: var(--color-danger);
 }
 

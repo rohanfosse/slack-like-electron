@@ -131,7 +131,7 @@ function onKeydown(e: KeyboardEvent) {
   gap: 6px;
   padding: 20px 14px;
   border: 1.5px dashed var(--border-input);
-  border-radius: 10px;
+  border-radius: var(--radius);
   background: transparent;
   color: var(--text-secondary);
   cursor: pointer;

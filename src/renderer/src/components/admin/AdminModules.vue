@@ -95,7 +95,7 @@ async function toggle(module: ModuleName) {
   padding: 10px 14px;
   background: var(--bg-elevated);
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: var(--radius);
   margin: 0;
 }
 
@@ -115,7 +115,7 @@ async function toggle(module: ModuleName) {
   padding: 14px;
   background: var(--bg-elevated);
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: var(--radius);
   transition: border-color var(--t-fast) var(--ease-out);
 }
 .adm-module-card--on {
@@ -128,7 +128,7 @@ async function toggle(module: ModuleName) {
   justify-content: center;
   width: 40px;
   height: 40px;
-  border-radius: 10px;
+  border-radius: var(--radius);
   background: var(--bg-active);
   color: var(--text-muted);
   flex-shrink: 0;

@@ -24,54 +24,87 @@ overrident ces variables.
 
 ### Surfaces
 
+> v2.272 — Aligne sur la landing page (palette indigo / lavande).
+
 | Token | Defaut (dark) | Usage |
 |---|---|---|
-| `--bg-rail` | `#161819` | Rail de navigation gauche |
-| `--bg-sidebar` | `#1c1d1f` | Sidebar de section |
-| `--bg-main` | `#232425` | Zone principale, headers |
-| `--bg-input` | `#1a1b1d` | Champs de saisie |
-| `--bg-modal` | `#1e1f21` | Modales |
-| `--bg-elevated` | `#2c2d2f` | Cartes en relief |
-| `--bg-hover` | `rgba(255,255,255,.05)` | Hover universel |
+| `--bg-rail` | `#0F0D1A` | Rail de navigation gauche |
+| `--bg-sidebar` | `#15122B` | Sidebar de section |
+| `--bg-main` | `#1A1733` | Zone principale, headers |
+| `--bg-input` | `#0F0D1A` | Champs de saisie |
+| `--bg-modal` | `#1A1733` | Modales |
+| `--bg-elevated` | `#221E45` | Cartes en relief |
+| `--bg-hover` | `rgba(129,140,248,.08)` | Hover universel (teinte indigo) |
 | `--bg-active` | `rgba(var(--accent-rgb), .16)` | Item selectionne |
 
 ### Texte
 
 | Token | Defaut | Contraste |
 |---|---|---|
-| `--text-primary` | `#E8E9EA` | AAA sur `--bg-main` |
-| `--text-secondary` | `#8B8D91` | AA sur `--bg-main` |
-| `--text-muted` | `#808488` | AA sur `--bg-main` (4.0:1) |
+| `--text-primary` | `#F1F0FF` | AAA sur `--bg-main` |
+| `--text-secondary` | `#CBD5E1` | AAA sur `--bg-main` |
+| `--text-muted` | `#94A3B8` | AA sur `--bg-main` (~5.4:1) |
 
 ### Accent (theme-reactif)
 
-| Token | Defaut | Usage |
-|---|---|---|
-| `--accent` | `#4A90D9` | Couleur primaire d'action |
-| `--accent-rgb` | `74,144,217` | Pour rgba() composables |
-| `--accent-hover` | `#5da3f0` | Hover |
-| `--accent-light` | `#7EB8FF` | Outline focus |
-| `--accent-subtle` | `rgba(var(--accent-rgb), .14)` | Backgrounds tres legers |
+| Token | Defaut (dark) | Light | Usage |
+| --- | --- | --- | --- |
+| `--accent` | `#818CF8` | `#6366F1` | Couleur primaire d'action |
+| `--accent-rgb` | `129,140,248` | `99,102,241` | Pour rgba() composables |
+| `--accent-hover` | `#A5B4FC` | `#4F46E5` | Hover |
+| `--accent-light` | `#A5B4FC` | `#818CF8` | Outline focus |
+| `--accent-subtle` | `rgba(var(--accent-rgb), .14)` | idem | Backgrounds tres legers |
 
 **Regle critique** : pour toute teinte d'accent, utiliser `rgba(var(--accent-rgb), X)`
 afin que les themes propagent automatiquement.
 
+### Couleurs sectorielles (NOUVEAU v2.272)
+
+Une couleur par feature, herité de la landing pour cohérence cross-app.
+Reactives au theme (chaque theme override les valeurs).
+
+| Token | Dark | Light | Feature |
+| --- | --- | --- | --- |
+| `--color-chat` | `#818CF8` | `#6366F1` | Messages |
+| `--color-devoirs` | `#34D399` | `#059669` | Devoirs |
+| `--color-docs` | `#FBBF24` | `#F59E0B` | Documents |
+| `--color-live` | `#F87171` | `#EF4444` | Live |
+| `--color-rex` | `#38BDF8` | `#0EA5E9` | Retours d'expérience |
+| `--color-lumen` | `#FBBF24` | `#D97706` | Cours (Lumen) |
+| `--color-dashboard` | `#A78BFA` | `#8B5CF6` | Tableau de bord |
+
+Utilisation principale : icônes du `NavRail` quand l'onglet est actif. Etendre
+aux empty states / hero sections de chaque feature au besoin.
+
 ### Semantique
 
-| Token | Couleur | Usage |
-|---|---|---|
-| `--color-success` | `#2ECC71` | Etat ok, succes |
-| `--color-warning` | `#E8891A` | Avertissement |
-| `--color-danger` | `#E74C3C` | Erreur, suppression |
-| `--color-info` | `#3B82F6` | Information neutre |
-| `--color-gold` | `#E5A842` | Mention speciale |
-| `--color-online` | `#27AE60` | Presence en ligne |
+| Token | Couleur (dark) | Light | Usage |
+| --- | --- | --- | --- |
+| `--color-success` | `#34D399` | `#059669` | Etat ok, succes |
+| `--color-warning` | `#FBBF24` | `#D97706` | Avertissement |
+| `--color-danger` | `#F87171` | `#DC2626` | Erreur, suppression |
+| `--color-info` | `#38BDF8` | `#0EA5E9` | Information neutre |
+| `--color-gold` | `#E5A842` | idem | Mention speciale |
+| `--color-online` | `#27AE60` | idem | Presence en ligne |
 
 ---
 
 ## 2. Typographie
 
-Police unique : **Inter Variable** (`var(--font)`). Pas de police secondaire.
+> v2.272 — Bascule vers **Plus Jakarta Sans Variable** pour aligner avec la
+> landing page. Inter conserve un usage explicite via `var(--font-reading)`
+> (zones de lecture dense, code editor — non automatique).
+
+| Token | Police | Usage |
+| --- | --- | --- |
+| `--font` / `--font-base` | Plus Jakarta Sans Variable | Body, navigation, UI generale |
+| `--font-display` | Plus Jakarta Sans Variable | Titres, hero numbers, labels widgets |
+| `--font-reading` | Inter Variable | Zones de lecture dense (opt-in) |
+| `--font-mono` | JetBrains Mono | Code, valeurs techniques |
+
+Plus Jakarta Sans est primaire ; Inter reste un fallback dans les listes
+font-family. **Pas de troisieme police** : si une UI demande autre chose,
+challenger la maquette.
 
 ### Echelle (`base.css`)
 
@@ -119,12 +152,16 @@ Police unique : **Inter Variable** (`var(--font)`). Pas de police secondaire.
 
 ### Rayons
 
+> v2.272 — Echelle elargie pour matcher la landing page.
+
 | Token | Valeur | Usage |
-|---|---|---|
-| `--radius-sm` | 6px | Inputs, badges |
-| `--radius` | 10px | Boutons, btn-icon |
-| `--radius-lg` | 14px | Cartes, modales |
-| `--radius-xl` | 18-20px | Hero, illustrations |
+| --- | --- | --- |
+| `--radius-xs` | 4px | Sub-pixel, petits chips |
+| `--radius-sm` | 8px | Inputs, badges |
+| `--radius` | 12px | Boutons, btn-icon |
+| `--radius-lg` | 16px | Cartes, modales |
+| `--radius-xl` | 24px | Hero, illustrations |
+| `--radius-2xl` | 28px | Bento, grandes surfaces |
 
 ### Elevation (NOUVEAU v2.52.0)
 
@@ -286,8 +323,8 @@ A bannir activement :
 6. **Reinventer une carte/header/empty** quand un composant `Ui*` existe
 7. **Emoji comme icone** structurelle → SVG (deja respecte via lucide-vue-next)
 8. **`width: 30px; height: 30px;`** sur boutons → 32px min (touch target)
-9. **Mixer 2 polices** → Inter Variable uniquement
-10. **`rgba(74,144,217, ...)`** hors blocs theme-specifiques → `rgba(var(--accent-rgb), ...)`
+9. **Importer une troisieme police** → Plus Jakarta Sans + Inter (fallback) uniquement
+10. **`rgba(99,102,241, ...)` ou `rgba(74,144,217, ...)`** hors blocs theme-specifiques → `rgba(var(--accent-rgb), ...)`
 
 ---
 
@@ -301,7 +338,7 @@ composants ou conventions canoniques. **Ne jamais reinventer.**
 Source : `src/renderer/src/utils/promoPalette.ts`.
 
 | Slug | Label FR | Hex | Usage |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | `sky` | Ciel | `#4A90D9` | defaut |
 | `violet` | Violet | `#8E5FC5` | |
 | `rose` | Rose | `#D65B8F` | |
@@ -365,11 +402,12 @@ avant de passer en revue `/code-review`.
 ### Tokens couleurs sous-jacents (repetition a eviter)
 
 Ne jamais ecrire directement :
-- `rgba(74,144,217, X)` → `rgba(var(--accent-rgb), X)`
-- `rgba(243,156,18, X)` → `color-mix(in srgb, var(--color-warning) X%, transparent)`
-- `rgba(231,76,60, X)` → idem avec `--color-danger`
-- `rgba(39,174,96, X)` → idem avec `--color-success`
-- `rgba(155,135,245, X)` → idem avec `--color-cctl`
+
+- `rgba(99,102,241, X)` ou `rgba(129,140,248, X)` ou ancien `rgba(74,144,217, X)` → `rgba(var(--accent-rgb), X)`
+- `rgba(217,119,6, X)` ou ancien `rgba(243,156,18, X)` → `color-mix(in srgb, var(--color-warning) X%, transparent)`
+- `rgba(220,38,38, X)` ou ancien `rgba(231,76,60, X)` → idem avec `--color-danger`
+- `rgba(5,150,105, X)` ou ancien `rgba(39,174,96, X)` → idem avec `--color-success`
+- `rgba(167,139,250, X)` ou ancien `rgba(155,135,245, X)` → idem avec `--color-cctl`
 
 **Garde-fou automatique** : `npm run check:design` detecte ces anti-patterns.
 Fonctionne avec un baseline (`scripts/design-tokens-baseline.json`) — seules les

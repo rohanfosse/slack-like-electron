@@ -233,7 +233,7 @@
 
 .docs-cat-count {
   background: var(--bg-elevated);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   padding: 1px 6px;
   font-size: 10px;
   font-weight: 600;
@@ -350,13 +350,13 @@
 .doc-card-icon-skel {
   width: 32px;
   height: 32px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
 }
 
 .doc-card-icon {
   width: 32px;
   height: 32px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -452,7 +452,7 @@
   justify-content: center;
   width: 26px;
   height: 26px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   border: none;
   background: transparent;
   color: var(--text-muted);
@@ -513,7 +513,7 @@
 .da-label { font-size: 12px; font-weight: 600; color: var(--text-secondary); display: flex; align-items: center; gap: 4px; }
 .da-hint { font-weight: 400; opacity: .6; }
 .da-input {
-  padding: 9px 12px; border-radius: 8px; font-size: 13px;
+  padding: 9px 12px; border-radius: var(--radius-sm); font-size: 13px;
   border: 1px solid var(--border-input); background: var(--bg-input);
   color: var(--text-primary); font-family: var(--font); transition: border-color .15s;
 }
@@ -523,7 +523,7 @@
 .da-flex1 { flex: 1; }
 .da-cat-wrap { display: flex; flex-direction: column; gap: 6px; }
 
-.da-type-row { display: flex; gap: 0; border-radius: 8px; overflow: hidden; border: 1px solid var(--border); }
+.da-type-row { display: flex; gap: 0; border-radius: var(--radius-sm); overflow: hidden; border: 1px solid var(--border); }
 .da-type-btn {
   flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px;
   padding: 10px; background: transparent; border: none;
@@ -533,11 +533,11 @@
 .da-type-btn:hover { background: var(--bg-hover); color: var(--text-primary); }
 .da-type-btn.active { background: var(--accent); color: #fff; }
 
-.da-drop-zone { margin: 0; transition: border-color .2s, background .2s; border-radius: 12px; }
+.da-drop-zone { margin: 0; transition: border-color .2s, background .2s; border-radius: var(--radius); }
 .da-drop-zone--active { border-color: var(--accent) !important; background: rgba(var(--accent-rgb),.08) !important; }
 .da-file-picker {
   width: 100%; display: flex; flex-direction: column; align-items: center; gap: 8px;
-  padding: 28px 16px; border: 2px dashed var(--border-input); border-radius: 12px;
+  padding: 28px 16px; border: 2px dashed var(--border-input); border-radius: var(--radius);
   background: var(--bg-elevated); color: var(--text-muted);
   font-family: var(--font); cursor: pointer; transition: all .2s; text-align: center;
 }
@@ -548,12 +548,12 @@
 
 .da-files-list {
   display: flex; flex-direction: column; gap: 6px;
-  border: 2px dashed var(--border-input); border-radius: 12px;
+  border: 2px dashed var(--border-input); border-radius: var(--radius);
   padding: 10px;
 }
 .da-file-selected {
   display: flex; align-items: center; gap: 8px;
-  padding: 8px 10px; border: 1px solid var(--color-success); border-radius: 8px;
+  padding: 8px 10px; border: 1px solid var(--color-success); border-radius: var(--radius-sm);
   background: rgba(var(--color-success-rgb),.06);
 }
 .da-file-icon { color: var(--color-success); flex-shrink: 0; }
@@ -562,13 +562,13 @@
 .da-file-hint { font-size: 11px; color: var(--color-success); }
 .da-file-clear {
   width: 24px; height: 24px; display: flex; align-items: center; justify-content: center;
-  border-radius: 6px; background: transparent; border: none; color: var(--text-muted);
+  border-radius: var(--radius-sm); background: transparent; border: none; color: var(--text-muted);
   cursor: pointer; transition: all .15s; flex-shrink: 0;
 }
 .da-file-clear:hover { background: rgba(var(--color-danger-rgb),.1); color: var(--color-danger); }
 .da-add-more {
   display: flex; align-items: center; justify-content: center; gap: 6px;
-  padding: 6px 10px; border: 1px dashed var(--border-input); border-radius: 8px;
+  padding: 6px 10px; border: 1px dashed var(--border-input); border-radius: var(--radius-sm);
   background: transparent; color: var(--text-muted);
   font-family: var(--font); font-size: 12px; cursor: pointer; transition: all .15s;
 }
@@ -767,7 +767,7 @@
   padding: 2px;
   display: flex;
   align-items: center;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   flex-shrink: 0;
   transition: color .12s, background .12s;
 }
@@ -856,7 +856,7 @@
   width: 20px; height: 20px;
 }
 .doc-dense-icon {
-  width: 36px; height: 36px; border-radius: 8px;
+  width: 36px; height: 36px; border-radius: var(--radius-sm);
   display: flex; align-items: center; justify-content: center;
   margin: 0 auto 6px;
 }
@@ -880,7 +880,7 @@
 .doc-card--list .doc-card-icon {
   width: 36px;
   height: 36px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   margin-bottom: 0;
   flex-shrink: 0;
 }
@@ -918,7 +918,7 @@
   text-transform: uppercase;
   letter-spacing: .4px;
   padding: 1px 6px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   background: rgba(var(--color-success-rgb), .18);
   color: var(--color-success);
   vertical-align: middle;
@@ -951,7 +951,7 @@
 /* ── File size badge ── */
 .doc-card-size {
   background: var(--bg-active);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   padding: 1px 5px;
   font-size: 10px;
   font-weight: 600;
@@ -985,7 +985,7 @@
 /* ── Dense size ── */
 .doc-dense-size {
   display: inline-block; margin-left: 4px;
-  background: var(--bg-active); border-radius: 4px;
+  background: var(--bg-active); border-radius: var(--radius-xs);
   padding: 0 3px; font-size: 9px; font-weight: 600;
 }
 

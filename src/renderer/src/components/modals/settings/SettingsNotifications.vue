@@ -145,14 +145,14 @@ function previewSound() {
   color: var(--color-warning, #f59e0b);
   background: rgba(245, 158, 11, 0.12);
   padding: 2px 8px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   margin-left: auto;
 }
 .stg-dnd-schedule {
   padding: 10px 14px;
   background: var(--bg-elevated, rgba(255,255,255,0.03));
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   margin-top: 6px;
 }
 .stg-dnd-time {
@@ -169,7 +169,7 @@ function previewSound() {
 }
 .stg-dnd-input {
   padding: 5px 8px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   border: 1px solid var(--border);
   background: var(--bg-input, rgba(255,255,255,0.05));
   color: var(--text-primary);
@@ -180,7 +180,7 @@ function previewSound() {
 }
 .stg-dnd-input:focus {
   border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(74,144,217,0.1);
+  box-shadow: 0 0 0 3px rgba(var(--accent-rgb),0.1);
 }
 .stg-dnd-active {
   margin-top: 8px;
@@ -190,7 +190,7 @@ function previewSound() {
 }
 .stg-sound-preview {
   display: flex; align-items: center; justify-content: center;
-  width: 28px; height: 28px; border-radius: 6px;
+  width: 28px; height: 28px; border-radius: var(--radius-sm);
   border: 1px solid var(--border); background: transparent;
   color: var(--text-muted); cursor: pointer; transition: all .15s;
 }
@@ -200,6 +200,6 @@ function previewSound() {
   padding: 8px 12px; margin-top: 4px;
   background: rgba(234,179,8,.04);
   border: 1px solid rgba(234,179,8,.1);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
 }
 </style>

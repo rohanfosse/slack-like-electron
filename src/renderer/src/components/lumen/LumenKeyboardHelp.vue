@@ -143,7 +143,7 @@ const SHORTCUTS: Record<string, Shortcut[]> = {
   cursor: pointer;
   color: var(--text-muted);
   padding: 4px;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -196,7 +196,7 @@ const SHORTCUTS: Record<string, Shortcut[]> = {
   background: var(--bg-elevated);
   border: 1px solid var(--border);
   border-bottom-width: 2px;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   color: var(--text-primary);
   min-width: 20px;
   text-align: center;

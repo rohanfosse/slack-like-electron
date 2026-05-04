@@ -411,7 +411,7 @@ onBeforeUnmount(() => {
   width: 28px;
   height: 28px;
   border: 1px solid var(--border);
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   background: var(--bg-primary);
   color: var(--text-primary);
   cursor: pointer;
@@ -444,7 +444,7 @@ onBeforeUnmount(() => {
   flex: 1;
   background: var(--bg-primary);
   border: 1px solid var(--border);
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   padding: 4px 8px;
   font-size: 12px;
   color: var(--text-primary);

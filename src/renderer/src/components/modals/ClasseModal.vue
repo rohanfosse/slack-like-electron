@@ -475,7 +475,7 @@
   color: var(--text-secondary);
   background: var(--bg-elevated);
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   padding: 4px 10px;
 }
 .classe-global-icon { color: var(--accent); }
@@ -596,7 +596,7 @@
   align-items: center;
   gap: 10px;
   padding: 8px 10px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
   border: 1px solid transparent;
   transition: background .1s, border-color .1s;
@@ -763,7 +763,7 @@
 .profile-travail {
   background: var(--bg-elevated);
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   padding: 9px 12px;
   display: flex;
   flex-direction: column;
@@ -791,7 +791,7 @@
   font-size: 10.5px;
   font-weight: 600;
   padding: 2px 7px;
-  border-radius: 10px;
+  border-radius: var(--radius);
   flex-shrink: 0;
   white-space: nowrap;
 }

@@ -64,7 +64,7 @@ const emit = defineEmits<{ 'update:modelValue': [value: boolean] }>()
   position: absolute;
   inset: 0;
   background: rgba(255, 255, 255, 0.06);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 .sb-toggle-track::after {

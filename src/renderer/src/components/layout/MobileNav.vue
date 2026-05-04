@@ -158,7 +158,7 @@ const showLive     = computed(() =>
   font-size: 9px;
   font-weight: 700;
   padding: 1px 5px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   line-height: 1.2;
 }
 

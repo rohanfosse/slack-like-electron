@@ -547,7 +547,7 @@
   align-items: center;
   gap: 10px;
   padding: 10px 14px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   background: color-mix(in srgb, var(--color-danger) 10%, transparent);
   border: 1px solid color-mix(in srgb, var(--color-danger) 45%, transparent);
   color: color-mix(in srgb, var(--color-danger) 80%, #fff);
@@ -577,7 +577,7 @@
 /* Code + Board sections */
 .code-section, .board-section {
   display: flex; flex-direction: column; gap: 8px;
-  padding: 12px; border: 1px solid var(--border); border-radius: 8px;
+  padding: 12px; border: 1px solid var(--border); border-radius: var(--radius-sm);
   background: var(--bg-elevated);
 }
 .code-hint {
@@ -586,7 +586,7 @@
 }
 .humeur-preview {
   display: flex; gap: 10px; padding: 8px;
-  background: var(--bg-input); border-radius: 6px;
+  background: var(--bg-input); border-radius: var(--radius-sm);
 }
 .humeur-emoji { font-size: 28px; }
 
@@ -621,7 +621,7 @@
   align-items: center;
   gap: 6px;
   padding: 12px 8px;
-  border-radius: 10px;
+  border-radius: var(--radius);
   background: var(--bg-elevated);
   border: 2px solid var(--border);
   color: var(--text-secondary);
@@ -656,7 +656,7 @@
 .form-input {
   width: 100%;
   padding: 10px 14px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   background: var(--bg-input, var(--border));
   border: 1px solid var(--border-input, var(--bg-hover));
   color: var(--text-primary);
@@ -685,7 +685,7 @@
 .timer-btn {
   flex: 1;
   height: 44px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   font-size: 16px;
   font-weight: 700;
   background: var(--bg-hover);
@@ -708,7 +708,7 @@
 .correct-toggle {
   width: 30px;
   height: 30px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   background: var(--bg-hover);
   border: 2px solid var(--border);
   cursor: pointer;
@@ -748,7 +748,7 @@
 .option-remove {
   width: 28px;
   height: 28px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   background: rgba(239,68,68,.1);
   border: none;
   color: #f87171;
@@ -767,7 +767,7 @@
   align-items: center;
   gap: 6px;
   padding: 8px 12px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   background: var(--bg-elevated);
   border: 1px dashed var(--border-input);
   color: var(--text-muted);
@@ -796,7 +796,7 @@
 .max-words-btn {
   width: 48px;
   height: 40px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   font-size: 16px;
   font-weight: 700;
   background: var(--bg-hover);
@@ -817,7 +817,7 @@
 }
 .btn-cancel {
   padding: 8px 16px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   font-size: 13px;
   font-weight: 600;
   background: var(--bg-hover);
@@ -831,7 +831,7 @@
 }
 .btn-save {
   padding: 8px 20px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   font-size: 13px;
   font-weight: 600;
   background: var(--accent);
@@ -850,7 +850,7 @@
 /* Vrai/Faux toggle */
 .vf-section { display: flex; flex-direction: column; gap: 8px; }
 .vf-toggle { display: flex; gap: 10px; }
-.vf-btn { flex: 1; padding: 14px; border-radius: 8px; font-size: 15px; font-weight: 700; border: 2px solid var(--border); background: var(--bg-elevated); color: var(--text-secondary); cursor: pointer; transition: all .15s; }
+.vf-btn { flex: 1; padding: 14px; border-radius: var(--radius-sm); font-size: 15px; font-weight: 700; border: 2px solid var(--border); background: var(--bg-elevated); color: var(--text-secondary); cursor: pointer; transition: all .15s; }
 .vf-vrai.active { background: #22c55e22; border-color: #22c55e; color: #22c55e; }
 .vf-faux.active { background: #ef444422; border-color: #ef4444; color: #ef4444; }
 /* Accepted answers (reponse courte) */
@@ -866,13 +866,13 @@
 .estimation-label { font-size: 12px; color: var(--text-secondary); }
 /* Texte a trous */
 .form-hint { font-size: 12px; color: var(--text-secondary); margin: 0; line-height: 1.4; }
-.form-hint code { background: var(--bg-tertiary); padding: 1px 5px; border-radius: 4px; font-size: 11px; }
+.form-hint code { background: var(--bg-tertiary); padding: 1px 5px; border-radius: var(--radius-xs); font-size: 11px; }
 .tatrous-preview { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-top: 4px; }
 .tatrous-preview-label { font-size: 11px; color: var(--text-secondary); }
 .tatrous-blank-chip {
   display: inline-block;
   padding: 2px 8px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   font-size: 11px;
   font-weight: 600;
   background: #fef3c7;

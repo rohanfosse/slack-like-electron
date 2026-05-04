@@ -55,7 +55,7 @@ const emit = defineEmits<{
 .db-header-promos { display: flex; gap: 6px; flex-wrap: wrap; }
 .db-promo-chip {
   display: inline-flex; align-items: center; gap: 4px;
-  padding: 4px 10px; border-radius: 14px; font-size: 11px; font-weight: 600;
+  padding: 4px 10px; border-radius: var(--radius-lg); font-size: 11px; font-weight: 600;
   background: var(--bg-elevated); color: var(--text-secondary);
   border: 1.5px solid var(--border); cursor: pointer;
   font-family: var(--font); transition: all .15s;

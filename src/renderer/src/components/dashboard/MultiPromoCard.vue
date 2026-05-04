@@ -120,7 +120,7 @@
 .mpc-promo {
   border: 1px solid var(--border);
   border-left: 3px solid var(--promo-color, var(--accent));
-  border-radius: 10px;
+  border-radius: var(--radius);
   padding: 12px 14px;
   display: flex;
   flex-direction: column;
@@ -153,7 +153,7 @@
   align-items: center;
   flex: 1;
   padding: 6px 0;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   background: var(--bg-hover, rgba(0,0,0,0.03));
 }
 
@@ -176,7 +176,7 @@
   align-items: center;
   gap: 6px;
   padding: 6px 8px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   border: none;
   background: none;
   cursor: pointer;

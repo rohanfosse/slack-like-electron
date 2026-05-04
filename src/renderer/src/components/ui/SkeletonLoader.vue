@@ -58,7 +58,7 @@
 
 .sk-line {
   height: 12px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
 }
 
 .sk-avatar {

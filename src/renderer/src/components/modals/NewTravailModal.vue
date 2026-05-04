@@ -295,7 +295,7 @@
 .group-builder {
   background: var(--bg-elevated);
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   padding: 12px;
   display: flex;
   flex-direction: column;
@@ -320,7 +320,7 @@
   gap: 8px;
   padding: 6px 12px;
   border: 1.5px solid var(--border-input);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   background: transparent;
   color: var(--text-secondary);
   font-family: var(--font);
@@ -328,7 +328,7 @@
   transition: all .12s;
 }
 .group-card:hover    { border-color: var(--accent); color: var(--text-primary); }
-.group-card.selected { border-color: var(--accent); background: rgba(74,144,217,.15); color: var(--accent); }
+.group-card.selected { border-color: var(--accent); background: rgba(var(--accent-rgb),.15); color: var(--accent); }
 
 .group-card-name  { font-size: 13px; font-weight: 600; }
 .group-card-count { font-size: 11px; opacity: .7; }
@@ -356,7 +356,7 @@
   gap: 8px;
   padding: 5px 8px;
   border: 1px solid transparent;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   background: transparent;
   color: var(--text-secondary);
   font-family: var(--font);
@@ -367,8 +367,8 @@
 }
 .group-member-btn:hover   { background: var(--bg-hover); color: var(--text-primary); }
 .group-member-btn.selected {
-  background: rgba(74,144,217,.15);
-  border-color: rgba(74,144,217,.4);
+  background: rgba(var(--accent-rgb),.15);
+  border-color: rgba(var(--accent-rgb),.4);
   color: var(--accent);
 }
 

@@ -36,7 +36,7 @@ const emit = defineEmits<{
 .fdp {
   position: absolute; top: calc(100% + 8px); left: 50%; transform: translateX(-50%);
   background: var(--bg-modal); border: 1px solid var(--border);
-  border-radius: 10px; padding: 8px; min-width: 200px; max-width: 280px;
+  border-radius: var(--radius); padding: 8px; min-width: 200px; max-width: 280px;
   box-shadow: var(--shadow-lg); z-index: 20;
   display: flex; flex-direction: column; gap: 4px;
   pointer-events: auto; cursor: default;
@@ -49,7 +49,7 @@ const emit = defineEmits<{
 }
 .fdp-item {
   display: flex; align-items: center; gap: 8px;
-  padding: 6px 8px; border-radius: 6px; cursor: pointer;
+  padding: 6px 8px; border-radius: var(--radius-sm); cursor: pointer;
   background: transparent; border: none; font-family: var(--font);
   color: var(--text-primary); text-align: left; transition: background .12s;
 }

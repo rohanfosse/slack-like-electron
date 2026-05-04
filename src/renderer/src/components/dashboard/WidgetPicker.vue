@@ -177,7 +177,7 @@ const enabledCount = computed(() => props.widgets.filter(w => props.isVisible(w.
 .wp-panel {
   background: var(--bg-modal, var(--bg-elevated));
   border: 1px solid var(--border);
-  border-radius: 14px;
+  border-radius: var(--radius-lg);
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -214,7 +214,7 @@ const enabledCount = computed(() => props.widgets.filter(w => props.isVisible(w.
   color: var(--text-muted);
   background: var(--bg-hover);
   padding: 2px 7px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
 }
 .wp-icon-btn {
   background: none;
@@ -222,7 +222,7 @@ const enabledCount = computed(() => props.widgets.filter(w => props.isVisible(w.
   color: var(--text-muted);
   cursor: pointer;
   padding: 6px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   display: flex;
   transition: all 0.12s;
 }
@@ -244,7 +244,7 @@ const enabledCount = computed(() => props.widgets.filter(w => props.isVisible(w.
   align-items: center;
   gap: 5px;
   padding: 5px 10px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   border: none;
   background: none;
   color: var(--text-muted);
@@ -277,7 +277,7 @@ const enabledCount = computed(() => props.widgets.filter(w => props.isVisible(w.
   gap: 12px;
   padding: 12px 14px;
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: var(--radius);
   cursor: pointer;
   transition: all var(--motion-fast) var(--ease-out);
 }
@@ -322,7 +322,7 @@ const enabledCount = computed(() => props.widgets.filter(w => props.isVisible(w.
   color: var(--accent);
   background: rgba(var(--accent-rgb), 0.12);
   padding: 2px 8px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   flex-shrink: 0;
 }
 
@@ -338,7 +338,7 @@ const enabledCount = computed(() => props.widgets.filter(w => props.isVisible(w.
 /* ── Widget card ── */
 .wp-card {
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: var(--radius);
   padding: 10px 12px;
   transition: all var(--motion-fast) var(--ease-out);
 }
@@ -360,7 +360,7 @@ const enabledCount = computed(() => props.widgets.filter(w => props.isVisible(w.
 .wp-card-icon {
   width: 32px;
   height: 32px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -424,7 +424,7 @@ const enabledCount = computed(() => props.widgets.filter(w => props.isVisible(w.
 }
 .wp-size-btn {
   padding: 3px 10px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   border: 1px solid var(--border);
   background: none;
   color: var(--text-muted);

@@ -326,7 +326,7 @@ onUnmounted(() => {
   font-family: ui-monospace, 'Consolas', monospace;
   font-size: 10px;
   padding: 1px 5px;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   background: rgba(255, 255, 255, .14);
   color: rgba(255, 255, 255, .9);
   margin-left: var(--space-xs);

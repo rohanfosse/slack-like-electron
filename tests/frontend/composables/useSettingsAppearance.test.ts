@@ -36,6 +36,7 @@ vi.mock('lucide-vue-next', () => ({
   Waves: { name: 'Waves' },
   Sparkles: { name: 'Sparkles' },
   Laptop: { name: 'Laptop' },
+  Coffee: { name: 'Coffee' },
 }))
 
 // Mock matchMedia for auto theme detection
@@ -64,10 +65,10 @@ afterEach(() => {
 describe('useSettingsAppearance', () => {
   // ── THEMES constant ───────────────────────────────────────────────────────
 
-  it('exports 6 theme definitions', () => {
+  it('exports 6 theme definitions (landing-aligned)', () => {
     expect(THEMES).toHaveLength(6)
     const ids = THEMES.map((t) => t.id)
-    expect(ids).toEqual(['auto', 'dark', 'light', 'night', 'marine', 'cursus'])
+    expect(ids).toEqual(['auto', 'dark', 'light', 'sepia', 'night', 'marine'])
   })
 
   // ── Default values ────────────────────────────────────────────────────────

@@ -282,7 +282,7 @@ const dauRatio = computed(() => {
   padding: 14px 16px;
   background: var(--bg-elevated);
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: var(--radius);
 }
 .adm-card-icon {
   display: flex;
@@ -290,7 +290,7 @@ const dauRatio = computed(() => {
   justify-content: center;
   width: 32px;
   height: 32px;
-  border-radius: 10px;
+  border-radius: var(--radius);
   background: var(--bg-active);
   position: relative;
 }
@@ -333,7 +333,7 @@ const dauRatio = computed(() => {
   color: var(--color-success, #22c55e);
   background: rgba(34, 197, 94, 0.15);
   padding: 1px 5px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   margin-left: 4px;
   letter-spacing: 0.5px;
 }
@@ -348,7 +348,7 @@ const dauRatio = computed(() => {
   padding: 16px;
   background: var(--bg-elevated);
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: var(--radius);
 }
 .adm-panel--wide { min-height: 120px; }
 .adm-panel-head {
@@ -406,7 +406,7 @@ const dauRatio = computed(() => {
 }
 .adm-adoption-metric {
   padding: 10px;
-  border-radius: 10px;
+  border-radius: var(--radius);
   background: var(--bg-active);
 }
 .adm-adoption-val {
@@ -505,7 +505,7 @@ const dauRatio = computed(() => {
 .adm-inactive-filter select {
   background: var(--bg-input);
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   padding: 2px 6px;
   font-size: 11px;
   color: var(--text-primary);
@@ -531,7 +531,7 @@ const dauRatio = computed(() => {
   grid-template-columns: 1fr 120px 160px;
   gap: 10px;
   padding: 6px 10px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   font-size: 12px;
   align-items: center;
 }

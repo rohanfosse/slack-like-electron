@@ -88,7 +88,7 @@ function openExternalOps() {
   display: none;
   background: transparent;
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   padding: 6px;
   color: var(--text-primary);
   cursor: pointer;
@@ -105,7 +105,7 @@ function openExternalOps() {
   background: transparent;
   border: 1px solid var(--border);
   color: var(--text-muted);
-  border-radius: 14px;
+  border-radius: var(--radius-lg);
   padding: 6px 12px;
   cursor: pointer;
   transition: border-color var(--t-fast) var(--ease-out), color var(--t-fast) var(--ease-out);
@@ -132,7 +132,7 @@ function openExternalOps() {
   font-size: 13px;
   font-weight: 500;
   padding: 7px 14px;
-  border-radius: 10px;
+  border-radius: var(--radius);
   border: 1px solid transparent;
   background: transparent;
   color: var(--text-muted);

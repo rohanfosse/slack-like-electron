@@ -348,7 +348,7 @@ const ctxItems = computed<ContextMenuItem[]>(() => {
 /* ── Section création ── */
 .iv-create-section {
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: var(--radius);
   overflow: hidden;
   margin-bottom: 16px;
 }
@@ -410,7 +410,7 @@ const ctxItems = computed<ContextMenuItem[]>(() => {
   gap: 7px;
   padding: 7px 12px;
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   margin-bottom: 12px;
 }
 .iv-search-icon { color: var(--text-muted); flex-shrink: 0; }
@@ -421,7 +421,7 @@ const ctxItems = computed<ContextMenuItem[]>(() => {
 
 /* ── Role badge ── */
 .iv-role-badge {
-  font-size: 9.5px; font-weight: 700; padding: 1px 7px; border-radius: 10px;
+  font-size: 9.5px; font-weight: 700; padding: 1px 7px; border-radius: var(--radius);
   vertical-align: middle; margin-left: 6px;
 }
 .iv-role-intervenant { background: rgba(var(--color-cctl-rgb),.15); color: #b8a8f7; }
@@ -446,7 +446,7 @@ const ctxItems = computed<ContextMenuItem[]>(() => {
 /* ── Carte intervenant ── */
 .iv-card {
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: var(--radius);
   overflow: hidden;
 }
 
@@ -460,7 +460,7 @@ const ctxItems = computed<ContextMenuItem[]>(() => {
 .iv-avatar {
   width: 32px;
   height: 32px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   background: #7B5EA7;
   color: #fff;
   font-size: 11px;
@@ -511,7 +511,7 @@ const ctxItems = computed<ContextMenuItem[]>(() => {
   gap: 5px;
   font-size: 12px;
   padding: 4px 9px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   border: 1px solid var(--border);
   color: var(--text-secondary);
   transition: background .1s, color .1s, border-color .1s;
@@ -531,7 +531,7 @@ const ctxItems = computed<ContextMenuItem[]>(() => {
 .iv-btn-delete {
   color: var(--text-muted);
   padding: 5px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   transition: color .1s, background .1s;
 }
 .iv-btn-delete:hover { color: var(--color-danger); background: rgba(var(--color-danger-rgb),.1); }
@@ -575,7 +575,7 @@ const ctxItems = computed<ContextMenuItem[]>(() => {
   gap: 4px;
   padding: 4px 9px 4px 7px;
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
   font-size: 12px;
   color: var(--text-secondary);

@@ -146,7 +146,7 @@ function openTokenPage() {
   max-width: 520px;
   background: var(--bg-secondary);
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: var(--radius);
   padding: 36px 32px;
   box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
 }
@@ -157,7 +157,7 @@ function openTokenPage() {
   align-items: flex-start;
   gap: 10px;
   padding: 12px 14px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   background: color-mix(in srgb, var(--accent) 8%, transparent);
   border: 1px solid color-mix(in srgb, var(--accent) 20%, transparent);
   margin-bottom: 24px;
@@ -238,7 +238,7 @@ function openTokenPage() {
   border: 1px solid var(--accent);
   color: var(--accent);
   padding: 8px 14px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
   font-size: 13px;
   font-weight: 600;
@@ -258,7 +258,7 @@ function openTokenPage() {
   gap: 8px;
   background: var(--bg-primary);
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   padding: 10px 12px;
   color: var(--text-muted);
   transition: border-color var(--t-fast) ease;
@@ -282,7 +282,7 @@ function openTokenPage() {
   align-items: flex-start;
   gap: 8px;
   padding: 10px 12px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   background: color-mix(in srgb, var(--danger) 8%, transparent);
   border: 1px solid color-mix(in srgb, var(--danger) 20%, transparent);
   color: var(--danger);
@@ -306,7 +306,7 @@ function openTokenPage() {
   background: var(--accent);
   color: white;
   border: none;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
   font-size: 15px;
   font-weight: 600;

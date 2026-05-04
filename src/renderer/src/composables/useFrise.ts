@@ -57,7 +57,7 @@ export function flattenMilestones(promos: FrisePromo[], colorMap: Map<string, st
   const all: EnrichedMilestone[] = []
   for (const promo of promos) {
     for (const proj of promo.projects) {
-      const color = colorMap.get(proj.key) ?? '#4A90D9'
+      const color = colorMap.get(proj.key) ?? '#6366F1'
       for (const ms of proj.milestones) {
         if (excludePast && new Date(ms.deadline).getTime() < now) continue
         all.push({ ...ms, projectKey: proj.key, projectLabel: proj.label, color })

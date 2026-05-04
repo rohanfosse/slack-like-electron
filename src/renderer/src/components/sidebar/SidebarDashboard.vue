@@ -117,7 +117,7 @@ function isProjectDone(proj: string): boolean {
 .sb-dash-promo {
   display: flex; align-items: center; gap: 6px;
   margin: 6px 10px 2px; padding: 8px 10px;
-  background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 8px;
+  background: var(--bg-elevated); border: 1px solid var(--border); border-radius: var(--radius-sm);
 }
 .sb-dash-promo-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
 .sb-dash-promo-name { font-size: 12px; font-weight: 700; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -125,11 +125,11 @@ function isProjectDone(proj: string): boolean {
 /* Tabs */
 .sb-dash-tabs {
   display: flex; gap: 2px; margin: 6px 10px 4px;
-  background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 6px; padding: 2px;
+  background: var(--bg-elevated); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 2px;
 }
 .sb-dash-tab {
   flex: 1; display: flex; align-items: center; justify-content: center; gap: 5px;
-  padding: 5px 8px; border-radius: 4px; border: none; background: transparent;
+  padding: 5px 8px; border-radius: var(--radius-xs); border: none; background: transparent;
   color: var(--text-muted); font-size: 11px; font-weight: 600; font-family: inherit; cursor: pointer;
   transition: all 0.12s;
 }
@@ -144,11 +144,11 @@ function isProjectDone(proj: string): boolean {
 .sb-dash-section-title { font-size: 11px; font-weight: 700; color: var(--text-muted); flex: 1; }
 .sb-dash-section-count {
   font-size: 9px; font-weight: 700; color: var(--accent);
-  background: rgba(var(--accent-rgb), .14); padding: 1px 5px; border-radius: 8px;
+  background: rgba(var(--accent-rgb), .14); padding: 1px 5px; border-radius: var(--radius-sm);
 }
 .sb-dash-add {
   display: flex; align-items: center; justify-content: center;
-  width: 20px; height: 20px; border-radius: 4px; border: none;
+  width: 20px; height: 20px; border-radius: var(--radius-xs); border: none;
   background: transparent; color: var(--text-muted); cursor: pointer;
 }
 .sb-dash-add:hover { background: var(--bg-hover); color: var(--accent); }
@@ -172,7 +172,7 @@ function isProjectDone(proj: string): boolean {
 .sb-dash-projects { display: flex; flex-direction: column; gap: 1px; }
 .sb-dash-project {
   display: flex; align-items: center; gap: 6px; width: 100%;
-  padding: 6px 8px; border-radius: 6px; border: none; border-left: 2px solid transparent;
+  padding: 6px 8px; border-radius: var(--radius-sm); border: none; border-left: 2px solid transparent;
   background: transparent; cursor: pointer; text-align: left; transition: all 0.1s;
 }
 .sb-dash-project:hover { background: var(--bg-hover); }

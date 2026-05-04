@@ -107,12 +107,12 @@ const roleBadgeClass: Record<string, string> = {
 .stg-role-badge {
   display: inline-block;
   padding: 2px 8px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   font-size: 11.5px;
   font-weight: 600;
 }
 .stg-role-admin { background: rgba(139,92,246,0.12); color: #8b5cf6; }
-.stg-role-teacher { background: rgba(74,144,217,0.12); color: var(--accent); }
+.stg-role-teacher { background: rgba(var(--accent-rgb),0.12); color: var(--accent); }
 .stg-role-ta { background: rgba(245,158,11,0.12); color: #d97706; }
 .stg-role-student { background: rgba(34,197,94,0.12); color: #16a34a; }
 .stg-info-mono { font-family: 'Fira Code', monospace; font-size: 12.5px; letter-spacing: -0.3px; }

@@ -204,7 +204,7 @@ function copyIcalUrl() {
 
 /* Week summary */
 .sb-week-summary {
-  background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 8px; padding: 10px;
+  background: var(--bg-elevated); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 10px;
 }
 .sb-week-header { font-size: 11px; font-weight: 700; color: var(--text-muted); margin-bottom: 6px; }
 .sb-week-stats { margin-bottom: 6px; }
@@ -220,16 +220,16 @@ function copyIcalUrl() {
 .sb-week-countdown { font-weight: 700; color: #f97316; white-space: nowrap; }
 
 /* Mini Calendar */
-.sb-agenda-cal { background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 8px; padding: 10px; }
+.sb-agenda-cal { background: var(--bg-elevated); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 10px; }
 .sb-cal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
 .sb-cal-nav {
   display: flex; align-items: center; justify-content: center; width: 24px; height: 24px;
-  border-radius: 4px; border: none; background: transparent; color: var(--text-muted); cursor: pointer;
+  border-radius: var(--radius-xs); border: none; background: transparent; color: var(--text-muted); cursor: pointer;
 }
 .sb-cal-nav:hover { background: var(--bg-hover); color: var(--text-primary); }
 .sb-cal-month {
   font-size: 12px; font-weight: 700; color: var(--text-primary); background: none;
-  border: none; cursor: pointer; padding: 2px 6px; border-radius: 4px; text-transform: capitalize;
+  border: none; cursor: pointer; padding: 2px 6px; border-radius: var(--radius-xs); text-transform: capitalize;
 }
 .sb-cal-month:hover { background: var(--bg-hover); }
 
@@ -237,7 +237,7 @@ function copyIcalUrl() {
 .sb-cal-day-name { font-size: 9px; font-weight: 600; color: var(--text-muted); text-align: center; padding: 2px 0 3px; }
 .sb-cal-day {
   display: flex; flex-direction: column; align-items: center; gap: 1px; padding: 2px 0;
-  border-radius: 4px; border: none; background: transparent; cursor: pointer;
+  border-radius: var(--radius-xs); border: none; background: transparent; cursor: pointer;
   transition: background 0.1s;
 }
 .sb-cal-day:hover { background: var(--bg-hover); }
@@ -256,7 +256,7 @@ function copyIcalUrl() {
 /* Calendar toggles (promos style Outlook) */
 .sb-cal-toggle {
   display: flex; align-items: center; gap: 6px; padding: 4px 3px;
-  border-radius: 4px; cursor: pointer; transition: background 0.1s;
+  border-radius: var(--radius-xs); cursor: pointer; transition: background 0.1s;
 }
 .sb-cal-toggle:hover { background: var(--bg-hover); }
 .sb-cal-toggle input { width: 12px; height: 12px; cursor: pointer; }
@@ -269,7 +269,7 @@ function copyIcalUrl() {
 /* Sync */
 .sb-sync-btn {
   display: flex; align-items: center; gap: 5px; width: 100%; padding: 5px 6px;
-  border-radius: 4px; border: none; background: transparent; color: var(--text-secondary);
+  border-radius: var(--radius-xs); border: none; background: transparent; color: var(--text-secondary);
   font-size: 11px; font-weight: 500; font-family: inherit; cursor: pointer; text-align: left;
 }
 .sb-sync-btn:hover { background: var(--bg-hover); color: var(--text-primary); }

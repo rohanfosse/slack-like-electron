@@ -4,7 +4,7 @@ import { safeGetJSON, safeSetJSON } from '@/utils/safeStorage'
 
 interface Prefs {
   docsOpenByDefault: boolean
-  theme: 'auto' | 'dark' | 'light' | 'night' | 'marine' | 'cursus'
+  theme: 'auto' | 'dark' | 'light' | 'sepia' | 'night' | 'marine' | 'cursus'
   fontSize: 'small' | 'default' | 'large'
   density: 'compact' | 'default' | 'cozy'
   msgSpacing: 'compact' | 'normal' | 'aere'
@@ -35,6 +35,10 @@ interface Prefs {
   //   'dashboard' : toujours le tableau de bord
   //   'messages'  : toujours la liste des messages (legacy v2.254 et avant)
   startView: 'last' | 'dashboard' | 'messages'
+  // Flag one-shot pose lors de la migration v2.272 (alignement landing).
+  // Avant : 'light' = creme/sepia. Apres : 'light' = clair indigo, 'sepia' = creme.
+  // Cf. useSettingsAppearance.ts §migrateThemePref.
+  themeMigratedLandingV2: boolean
 }
 
 const DEFAULTS: Prefs = {
@@ -64,6 +68,7 @@ const DEFAULTS: Prefs = {
   highContrast: false,
   unfurlEnabled: true,
   startView: 'last',
+  themeMigratedLandingV2: false,
 }
 
 function loadPrefs(): Prefs {

@@ -492,7 +492,7 @@
 <style>
 /* Animation surbrillance message depuis la recherche (non-scoped pour toucher MessageBubble) */
 @keyframes msg-flash {
-  0%, 10%  { background: rgba(var(--accent-rgb), .28); border-radius: 6px; }
+  0%, 10%  { background: rgba(var(--accent-rgb), .28); border-radius: var(--radius-sm); }
   100%      { background: transparent; }
 }
 .msg-highlight { animation: msg-flash 2s ease forwards !important; }
@@ -546,7 +546,7 @@
 .header-panel-btn.active {
   color: var(--accent) !important;
   background: var(--accent-subtle);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
 }
 
 /* ── Badge compteur membres ── */
@@ -556,7 +556,7 @@
   top: -4px; right: -6px;
   min-width: 16px; height: 16px;
   padding: 0 4px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   background: var(--accent);
   color: #fff;
   font-size: 9px;
@@ -573,7 +573,7 @@
   top: -4px; right: -6px;
   min-width: 16px; height: 16px;
   padding: 0 4px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   background: var(--accent);
   color: #fff;
   font-size: 9px;
@@ -597,7 +597,7 @@
   background: rgba(var(--accent-rgb), 0.12);
   backdrop-filter: blur(2px);
   border: 3px dashed var(--accent);
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -612,7 +612,7 @@
   text-align: center;
   padding: 32px;
   background: var(--bg-modal);
-  border-radius: 12px;
+  border-radius: var(--radius);
   box-shadow: var(--shadow-lg);
   border: 1px solid var(--border-input);
 }
@@ -681,7 +681,7 @@
 .dm-file-item:hover { background: var(--bg-hover); }
 .dm-file-item:hover .dm-file-ext { opacity: .7; }
 .dm-file-thumb {
-  width: 36px; height: 36px; border-radius: 6px;
+  width: 36px; height: 36px; border-radius: var(--radius-sm);
   background: var(--bg-elevated); border: 1px solid var(--border);
   display: flex; align-items: center; justify-content: center;
   flex-shrink: 0; overflow: hidden; color: var(--text-muted);

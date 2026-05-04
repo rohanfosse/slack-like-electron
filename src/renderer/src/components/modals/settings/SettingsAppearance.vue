@@ -11,14 +11,15 @@ const {
 
 const ACCENT_PRESETS = [
   { color: '', label: 'Theme par defaut' },
-  { color: '#4A90D9', label: 'Bleu' },
+  { color: '#6366F1', label: 'Indigo' },
+  { color: '#3b82f6', label: 'Bleu' },
+  { color: '#059669', label: 'Emeraude' },
   { color: '#22c55e', label: 'Vert' },
   { color: '#f59e0b', label: 'Ambre' },
   { color: '#ef4444', label: 'Rouge' },
   { color: '#8b5cf6', label: 'Violet' },
   { color: '#ec4899', label: 'Rose' },
   { color: '#14b8a6', label: 'Teal' },
-  { color: '#f97316', label: 'Orange' },
 ]
 
 /** Synchronise density et msgSpacing en un seul controle. */
@@ -208,7 +209,7 @@ const fontSizePreview: Record<string, string> = { small: '13px', default: '14px'
   align-items: center;
   gap: 5px;
   padding: 4px 10px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   border: 1px solid var(--border);
   background: none;
   color: var(--text-muted);

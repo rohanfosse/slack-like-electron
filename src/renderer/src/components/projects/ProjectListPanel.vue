@@ -183,12 +183,12 @@ const ctxItems = computed<ContextMenuItem[]>(() => {
   gap: 8px;
   margin-bottom: 12px;
   padding: 10px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   background: var(--bg-2);
 }
 .input-sm {
   padding: 6px 10px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   border: 1px solid var(--border);
   background: var(--bg-1);
   font-size: 13px;
@@ -200,7 +200,7 @@ const ctxItems = computed<ContextMenuItem[]>(() => {
 }
 .btn-sm {
   padding: 4px 10px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   border: 1px solid var(--border);
   background: transparent;
   font-size: 12px;
@@ -212,7 +212,7 @@ const ctxItems = computed<ContextMenuItem[]>(() => {
 }
 .btn-primary-sm {
   padding: 6px 12px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   border: none;
   background: var(--accent);
   color: #fff;
@@ -229,7 +229,7 @@ const ctxItems = computed<ContextMenuItem[]>(() => {
 }
 .btn-danger-sm {
   padding: 4px 8px;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   border: none;
   background: rgba(220, 38, 38, 0.1);
   color: #dc2626;
@@ -242,7 +242,7 @@ const ctxItems = computed<ContextMenuItem[]>(() => {
 }
 .project-card {
   padding: 10px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   border: 1px solid var(--border);
   margin-bottom: 8px;
 }

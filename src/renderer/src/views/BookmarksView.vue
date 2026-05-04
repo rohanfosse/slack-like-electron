@@ -220,7 +220,7 @@ function goToMessage(b: BookmarkItem) {
   justify-content: center;
   width: 32px;
   height: 32px;
-  border-radius: 10px;
+  border-radius: var(--radius);
   background: rgba(var(--accent-rgb), .12);
   color: var(--accent);
   flex-shrink: 0;
@@ -315,7 +315,7 @@ function goToMessage(b: BookmarkItem) {
   align-items: stretch;
   padding: var(--space-md) var(--space-md) var(--space-md) calc(var(--space-md) + 6px);
   border: 1px solid var(--border);
-  border-radius: 14px;
+  border-radius: var(--radius-lg);
   background: var(--bg-surface);
   overflow: hidden;
   transition: transform var(--motion-fast) var(--ease-out),
@@ -420,7 +420,7 @@ function goToMessage(b: BookmarkItem) {
   margin: 0;
   padding: var(--space-sm) var(--space-md) var(--space-sm) calc(var(--space-md) + 8px);
   background: color-mix(in srgb, var(--bm-accent) 4%, var(--bg-elevated, var(--bg-hover)));
-  border-radius: 10px;
+  border-radius: var(--radius);
   border-left: 3px solid color-mix(in srgb, var(--bm-accent) 35%, transparent);
 }
 .bm-quote-icon {
@@ -446,7 +446,7 @@ function goToMessage(b: BookmarkItem) {
 .bm-content :deep(code) {
   background: color-mix(in srgb, var(--bm-accent) 12%, var(--bg-hover));
   padding: 1px 5px;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   font-size: 90%;
 }
 
@@ -469,7 +469,7 @@ function goToMessage(b: BookmarkItem) {
   color: var(--text-muted);
   cursor: pointer;
   padding: 6px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   transition: background var(--motion-fast),
               color var(--motion-fast),
               border-color var(--motion-fast);

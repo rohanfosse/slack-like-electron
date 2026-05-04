@@ -324,7 +324,7 @@ async function savePhoto() {
   max-width: 560px;
   background: var(--bg-modal);
   border: 1px solid var(--border);
-  border-radius: 16px;
+  border-radius: var(--radius-lg);
   box-shadow: 0 32px 80px rgba(0, 0, 0, 0.6);
   display: flex;
   flex-direction: column;
@@ -501,7 +501,7 @@ async function savePhoto() {
   align-items: center;
   gap: 8px;
   padding: 6px 10px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid var(--border);
 }
@@ -539,7 +539,7 @@ async function savePhoto() {
   text-align: center;
   gap: 6px;
   padding: 16px 12px;
-  border-radius: 12px;
+  border-radius: var(--radius);
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid var(--border);
   transition: border-color var(--motion-fast) var(--ease-out);
@@ -552,7 +552,7 @@ async function savePhoto() {
 .ob-feature-icon {
   width: 44px;
   height: 44px;
-  border-radius: 12px;
+  border-radius: var(--radius);
   background: rgba(var(--accent-rgb), 0.12);
   color: var(--accent);
   display: flex;
@@ -583,7 +583,7 @@ async function savePhoto() {
   background: var(--accent);
   color: #fff;
   border: none;
-  border-radius: 10px;
+  border-radius: var(--radius);
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
@@ -612,7 +612,7 @@ async function savePhoto() {
   background: transparent;
   color: var(--accent);
   border: 1px solid var(--accent);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   font-size: 13px;
   font-weight: 500;
   cursor: pointer;
@@ -631,7 +631,7 @@ async function savePhoto() {
   background: transparent;
   color: var(--text-muted);
   border: none;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   font-size: 13px;
   cursor: pointer;
   transition: color var(--motion-fast) var(--ease-out);
@@ -703,7 +703,7 @@ async function savePhoto() {
 @media (max-width: 600px) {
   .ob-card {
     max-width: calc(100vw - 24px);
-    border-radius: 12px;
+    border-radius: var(--radius);
   }
 
   .ob-content {

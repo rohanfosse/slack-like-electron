@@ -165,7 +165,7 @@ async function toggleLink(travail: GanttRow) {
 
 .lldm-modal {
   background: var(--bg-secondary);
-  border-radius: 12px;
+  border-radius: var(--radius);
   width: min(560px, calc(100% - 32px));
   max-height: 80vh;
   display: flex;
@@ -202,7 +202,7 @@ async function toggleLink(travail: GanttRow) {
   cursor: pointer;
   padding: 4px;
   display: flex;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
 }
 .lldm-close:hover { color: var(--text-primary); background: var(--bg-hover); }
 
@@ -214,7 +214,7 @@ async function toggleLink(travail: GanttRow) {
   margin: 12px 16px 0;
   background: var(--bg-primary);
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   color: var(--text-muted);
 }
 .lldm-search:focus-within {
@@ -259,7 +259,7 @@ async function toggleLink(travail: GanttRow) {
   padding: 10px 12px;
   background: var(--bg-primary);
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   margin-bottom: 6px;
   cursor: pointer;
   font-family: inherit;
@@ -303,7 +303,7 @@ async function toggleLink(travail: GanttRow) {
 .lldm-item-cat {
   background: var(--bg-secondary);
   padding: 1px 6px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
 }
 .lldm-item-deadline {
   display: inline-flex;
@@ -317,7 +317,7 @@ async function toggleLink(travail: GanttRow) {
   color: var(--accent);
   padding: 4px 10px;
   background: var(--bg-secondary);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   flex-shrink: 0;
   min-width: 48px;
   text-align: center;

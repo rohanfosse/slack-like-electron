@@ -90,30 +90,30 @@ export const URGENCY_ORDER = { critical: 0, warning: 1, info: 2 } as const
 // (props dynamiques, canvas, etc.). Garder synchronisé avec base.css :root.
 
 export const COLORS = {
-  accent:      '#4dd0e1',
-  danger:      '#E74C3C',
-  warning:     '#F39C12',
-  success:     '#2ECC71',
+  accent:      '#6366F1',
+  danger:      '#EF4444',
+  warning:     '#F59E0B',
+  success:     '#059669',
 
-  // Types de devoirs
-  livrable:    '#4A90D9',
-  soutenance:  '#F39C12',
-  cctl:        '#9B87F5',
-  etudeDeCas:  '#2ECC71',
-  memoire:     '#E74C3C',
-  autre:       '#95A5A6',
+  // Types de devoirs (palette landing)
+  livrable:    '#6366F1',
+  soutenance:  '#F59E0B',
+  cctl:        '#8B5CF6',
+  etudeDeCas:  '#059669',
+  memoire:     '#EF4444',
+  autre:       '#64748B',
 
-  // Notes
-  gradeA:      '#2ECC71',
-  gradeB:      '#4A90D9',
-  gradeC:      '#F39C12',
-  gradeD:      '#E74C3C',
-  gradeNA:     '#95A5A6',
+  // Notes (palette landing)
+  gradeA:      '#059669',
+  gradeB:      '#6366F1',
+  gradeC:      '#F59E0B',
+  gradeD:      '#EF4444',
+  gradeNA:     '#94A3B8',
 } as const
 
-// ─── Palette de couleurs prédéfinies pour les projets ───────────────────────
+// ─── Palette de couleurs prédéfinies pour les projets (landing-aligned) ─────
 
 export const PROJECT_COLORS = [
-  '#4A90D9', '#2ECC71', '#9B87F5', '#F39C12', '#E74C3C',
-  '#1ABC9C', '#E67E22', '#3498DB', '#8E44AD', '#27AE60',
+  '#6366F1', '#059669', '#8B5CF6', '#F59E0B', '#EF4444',
+  '#0EA5E9', '#F97316', '#3B82F6', '#A855F7', '#14B8A6',
 ] as const

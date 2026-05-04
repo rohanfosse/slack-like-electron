@@ -385,14 +385,14 @@ function onFormKeydown(e: KeyboardEvent, t: Devoir): void {
 .spf-section-count {
   font-size: 10px; font-weight: 600;
   background: var(--bg-hover); padding: 1px 5px;
-  border-radius: 8px; color: var(--text-muted);
+  border-radius: var(--radius-sm); color: var(--text-muted);
 }
 
 .spf-devoir-list { display: flex; flex-direction: column; gap: 8px; }
 
 /* ── Card ── */
 .spf-devoir-card {
-  border: 1px solid var(--border); border-radius: 8px;
+  border: 1px solid var(--border); border-radius: var(--radius-sm);
   padding: 12px 14px; background: var(--bg-elevated);
   display: flex; flex-direction: column; gap: 6px;
   transition: background var(--t-fast);
@@ -405,7 +405,7 @@ function onFormKeydown(e: KeyboardEvent, t: Devoir): void {
 .spf-card--done    { opacity: .75; }
 
 .spf-card-top { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }
-.spf-type-badge { font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 4px; flex-shrink: 0; }
+.spf-type-badge { font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: var(--radius-xs); flex-shrink: 0; }
 .type-livrable     { background: rgba(var(--accent-rgb),.2);   color: var(--accent); }
 .type-soutenance   { background: rgba(var(--color-warning-rgb),.2);   color: var(--color-warning); }
 .type-cctl         { background: rgba(123,104,238,.2);  color: var(--color-cctl); }
@@ -417,7 +417,7 @@ function onFormKeydown(e: KeyboardEvent, t: Devoir): void {
 .spf-deadline-badge {
   display: inline-flex; align-items: center; gap: 3px;
   font-size: 10px; font-weight: 600; padding: 2px 6px;
-  border-radius: 8px; flex-shrink: 0;
+  border-radius: var(--radius-sm); flex-shrink: 0;
 }
 .deadline-ok       { background: rgba(var(--color-success-rgb),.1);  color: var(--color-success); }
 .deadline-warning  { background: rgba(var(--color-warning-rgb),.1); color: #F39C12; }
@@ -434,13 +434,13 @@ function onFormKeydown(e: KeyboardEvent, t: Devoir): void {
 /* ── Done ── */
 .spf-done-check { color: var(--color-success); margin-left: auto; flex-shrink: 0; }
 .badge-new {
-  font-size: 9px; font-weight: 700; padding: 2px 6px; border-radius: 8px;
+  font-size: 9px; font-weight: 700; padding: 2px 6px; border-radius: var(--radius-sm);
   background: rgba(var(--accent-rgb),.15); color: var(--accent);
 }
 
 /* ── Grade ── */
 .spf-grade-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-.spf-grade-badge { font-size: 13px; font-weight: 700; padding: 3px 10px; border-radius: 6px; flex-shrink: 0; }
+.spf-grade-badge { font-size: 13px; font-weight: 700; padding: 3px 10px; border-radius: var(--radius-sm); flex-shrink: 0; }
 .grade-a { background: rgba(var(--color-success-rgb),.15); color: var(--color-success); }
 .grade-b { background: rgba(var(--accent-rgb),.15); color: var(--accent); }
 .grade-c { background: rgba(var(--color-warning-rgb),.15); color: var(--color-warning); }
@@ -455,7 +455,7 @@ function onFormKeydown(e: KeyboardEvent, t: Devoir): void {
   display: inline-flex; align-items: center; gap: 5px;
   font-size: 11px; color: var(--color-cctl);
   background: rgba(var(--color-cctl-rgb),.08); padding: 4px 10px;
-  border-radius: 6px; width: fit-content;
+  border-radius: var(--radius-sm); width: fit-content;
 }
 
 /* ── Actions ── */
@@ -463,7 +463,7 @@ function onFormKeydown(e: KeyboardEvent, t: Devoir): void {
 .spf-btn-deposit { font-size: 12px; padding: 5px 12px; display: inline-flex; align-items: center; gap: 5px; }
 .spf-btn-expired {
   font-size: 11px; padding: 4px 10px;
-  border: 1px solid var(--border); border-radius: 6px;
+  border: 1px solid var(--border); border-radius: var(--radius-sm);
   background: transparent; color: var(--text-muted);
   cursor: not-allowed; display: inline-flex; align-items: center; gap: 4px;
   font-family: var(--font);
@@ -473,7 +473,7 @@ function onFormKeydown(e: KeyboardEvent, t: Devoir): void {
 .spf-deposit-form {
   display: flex; flex-direction: column; gap: 10px;
   padding: 12px; background: var(--bg-elevated);
-  border-radius: 8px; border: 1px solid var(--border-input);
+  border-radius: var(--radius-sm); border: 1px solid var(--border-input);
 }
 .spf-deposit-toggle { display: flex; gap: 4px; }
 .spf-toggle-btn {
@@ -484,7 +484,7 @@ function onFormKeydown(e: KeyboardEvent, t: Devoir): void {
 }
 .spf-toggle-btn.active { border-color: var(--color-cctl); background: rgba(var(--color-cctl-rgb),.12); color: var(--color-cctl); }
 .spf-file-zone {
-  border: 2px dashed var(--border-input); border-radius: 8px;
+  border: 2px dashed var(--border-input); border-radius: var(--radius-sm);
   padding: 20px; display: flex; flex-direction: column;
   align-items: center; gap: 6px; cursor: pointer;
   color: var(--text-muted); font-size: 12px;
@@ -497,14 +497,14 @@ function onFormKeydown(e: KeyboardEvent, t: Devoir): void {
 .spf-file-selected {
   display: flex; align-items: center; gap: 8px;
   padding: 8px 12px; background: rgba(var(--color-success-rgb),.06);
-  border: 1px solid rgba(var(--color-success-rgb),.2); border-radius: 6px;
+  border: 1px solid rgba(var(--color-success-rgb),.2); border-radius: var(--radius-sm);
 }
 .spf-file-ok { color: var(--color-success); flex-shrink: 0; }
 .spf-file-name { flex: 1; font-size: 12px; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .spf-file-clear {
   background: transparent; border: none; color: var(--text-muted);
   cursor: pointer; padding: 2px; display: flex; align-items: center;
-  border-radius: 4px; flex-shrink: 0; transition: color var(--t-fast);
+  border-radius: var(--radius-xs); flex-shrink: 0; transition: color var(--t-fast);
 }
 .spf-file-clear:hover { color: var(--color-danger); }
 .spf-deposit-actions { display: flex; justify-content: flex-end; gap: 6px; align-items: center; }
@@ -564,7 +564,7 @@ function onFormKeydown(e: KeyboardEvent, t: Devoir): void {
   font-weight: 500;
   cursor: pointer;
   padding: 2px 6px;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   transition: background var(--t-fast), color var(--t-fast);
 }
 .spf-view-depot:hover { background: rgba(var(--accent-rgb), .1); color: var(--accent-hover, var(--accent)); }

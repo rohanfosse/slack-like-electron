@@ -148,7 +148,7 @@
   font-family: var(--font);
   text-align: left;
   padding: 0;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   transition: opacity .12s;
 }
 .pinned-bar-preview:hover { opacity: .8; background: rgba(232,137,26,.06); }
@@ -187,7 +187,7 @@
   gap: 3px;
   background: rgba(232,137,26,.12);
   border: 1px solid rgba(232,137,26,.25);
-  border-radius: 10px;
+  border-radius: var(--radius);
   color: rgba(232,137,26,.9);
   font-family: var(--font);
   font-size: 11px;

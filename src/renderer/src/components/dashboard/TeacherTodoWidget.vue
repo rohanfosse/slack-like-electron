@@ -154,7 +154,7 @@ function clearDone(listId: string) {
 .ttw-title { font-size: 15px; font-weight: 700; margin: 0; flex: 1; }
 .ttw-settings-btn {
   display: flex; align-items: center; justify-content: center;
-  width: 26px; height: 26px; border-radius: 6px;
+  width: 26px; height: 26px; border-radius: var(--radius-sm);
   border: 1px solid var(--border); background: transparent;
   color: var(--text-muted); cursor: pointer; transition: all .15s;
 }
@@ -162,7 +162,7 @@ function clearDone(listId: string) {
 
 /* Settings */
 .ttw-settings {
-  padding: 10px; border-radius: 8px;
+  padding: 10px; border-radius: var(--radius-sm);
   background: var(--bg-elevated); border: 1px solid var(--border);
   display: flex; flex-direction: column; gap: 6px;
 }
@@ -175,7 +175,7 @@ function clearDone(listId: string) {
 
 /* List */
 .ttw-list {
-  border-radius: 10px;
+  border-radius: var(--radius);
   background: var(--bg-elevated); border: 1px solid var(--border);
   overflow: hidden;
 }
@@ -193,7 +193,7 @@ function clearDone(listId: string) {
 }
 .ttw-clear-btn {
   display: flex; align-items: center; justify-content: center;
-  width: 20px; height: 20px; border-radius: 4px;
+  width: 20px; height: 20px; border-radius: var(--radius-xs);
   border: none; background: transparent; color: var(--text-muted);
   cursor: pointer; transition: all .15s;
 }
@@ -214,7 +214,7 @@ function clearDone(listId: string) {
 .ttw-item-text { flex: 1; line-height: 1.4; }
 .ttw-item-remove {
   display: flex; align-items: center; justify-content: center;
-  width: 18px; height: 18px; border-radius: 4px;
+  width: 18px; height: 18px; border-radius: var(--radius-xs);
   border: none; background: transparent; color: var(--text-muted);
   cursor: pointer; opacity: 0; transition: all .15s;
 }
@@ -226,7 +226,7 @@ function clearDone(listId: string) {
   display: flex; gap: 4px; margin-top: 6px;
 }
 .ttw-add-input {
-  flex: 1; padding: 5px 8px; border-radius: 6px;
+  flex: 1; padding: 5px 8px; border-radius: var(--radius-sm);
   border: 1px solid var(--border); background: transparent;
   color: var(--text-primary); font-size: 11px; font-family: var(--font);
   outline: none; transition: border-color .15s;
@@ -235,7 +235,7 @@ function clearDone(listId: string) {
 .ttw-add-input::placeholder { color: var(--text-muted); }
 .ttw-add-btn {
   display: flex; align-items: center; justify-content: center;
-  width: 26px; height: 26px; border-radius: 6px;
+  width: 26px; height: 26px; border-radius: var(--radius-sm);
   border: none; background: var(--accent); color: #fff;
   cursor: pointer; transition: background .15s;
 }

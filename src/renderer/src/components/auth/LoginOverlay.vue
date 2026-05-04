@@ -484,7 +484,7 @@
 .auth-input {
   width: 100%;
   padding: 10px 13px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   border: 1.5px solid var(--border-input, var(--border-input));
   background: var(--bg-input, rgba(255,255,255,.05));
   color: var(--text-primary);
@@ -550,7 +550,7 @@
 .auth-error {
   background: rgba(var(--color-danger-rgb),.1);
   border: 1px solid rgba(var(--color-danger-rgb),.3);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   padding: 9px 12px;
   font-size: 13px;
   color: var(--color-danger);
@@ -571,7 +571,7 @@
 .auth-submit {
   width: 100%;
   padding: 11px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   border: none;
   background: var(--accent);
   color: #fff;
@@ -629,7 +629,7 @@
 .auth-secondary-btn {
   width: 100%;
   padding: 10px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   border: 1.5px solid var(--border-input, var(--border-input));
   background: transparent;
   color: var(--text-secondary);
@@ -668,7 +668,7 @@
 .auth-avatar-preview {
   width: 52px;
   height: 52px;
-  border-radius: 14px;
+  border-radius: var(--radius-lg);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -707,7 +707,7 @@
 }
 .auth-outline-btn {
   padding: 6px 12px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   border: 1px solid var(--border-input, rgba(255,255,255,.15));
   background: transparent;
   color: var(--text-secondary);
@@ -740,7 +740,7 @@
 .auth-pwd-criteria span {
   font-size: 11px;
   padding: 2px 7px;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   background: rgba(var(--color-danger-rgb),.1);
   color: var(--color-danger);
   transition: background .2s, color .2s;
@@ -764,7 +764,7 @@
 
 .auth-back-btn {
   padding: 11px 16px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   border: 1.5px solid var(--border-input, var(--border-input));
   background: transparent;
   color: var(--text-secondary);

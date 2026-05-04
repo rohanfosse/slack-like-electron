@@ -31,7 +31,7 @@ const COLORS: Record<DocIconType, string> = {
   image:       '#3498DB',
   video:       '#9B59B6',
   link:        '#27AE60',
-  file:        '#4A90D9',
+  file:        '#6366F1',
   spreadsheet: '#059669',
   moodle:      '#f59e0b',
   github:      '#6e7681',
