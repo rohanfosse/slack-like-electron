@@ -304,37 +304,89 @@
   margin-bottom: 4px;
 }
 
-/* ── Carte flat minimaliste (Notion-like) ── */
+/* ── Carte (mode grid, defaut) — alignee sur FilesView .fv-card ──
+   v2.273.6 : refonte du card grid avec thumbnail zone + body, comme
+   pour les fichiers partages. Les modes --list et --dense gardent leur
+   layout compact specifique (overrides plus bas). */
 .doc-card {
-  background: transparent;
-  border: 1px solid transparent;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
   border-radius: var(--radius);
-  padding: 10px 12px 10px;
   cursor: pointer;
   position: relative;
   display: flex;
   flex-direction: column;
-  gap: 0;
-  transition: background-color .12s var(--ease-out),
-              border-color .12s var(--ease-out);
   overflow: hidden;
+  transition: border-color .18s, box-shadow .18s, transform .18s;
 }
 
 .doc-card:hover {
-  background: var(--bg-hover);
-  border-color: var(--border);
+  border-color: rgba(var(--accent-rgb), .35);
+  box-shadow: 0 8px 24px rgba(15,23,42, .08), 0 0 0 1px rgba(var(--accent-rgb), .08);
+  transform: translateY(-2px);
 }
 
 .doc-card--selected {
-  background: rgba(var(--accent-rgb), .1);
-  border-color: rgba(var(--accent-rgb), .35);
+  border-color: rgba(var(--accent-rgb), .5);
+  box-shadow: 0 0 0 2px rgba(var(--accent-rgb), .25);
 }
 
 .doc-card--fav {
-  background: rgba(var(--color-warning-rgb), .06);
+  border-color: rgba(var(--color-warning-rgb), .35);
 }
 .doc-card--fav:hover {
-  background: rgba(var(--color-warning-rgb), .12);
+  border-color: rgba(var(--color-warning-rgb), .5);
+}
+
+/* ── Thumbnail zone (style fv-card-thumb) ── */
+.doc-card-thumb {
+  height: 100px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  background: linear-gradient(135deg,
+    color-mix(in srgb, var(--fc) 10%, transparent),
+    color-mix(in srgb, var(--fc) 3%, transparent));
+}
+.doc-card-icon-ring {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--fc) 14%, var(--bg-elevated));
+  border: 1.5px solid color-mix(in srgb, var(--fc) 25%, transparent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--fc);
+}
+.doc-card-ext-badge {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  font-size: 9.5px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+  color: #fff;
+  padding: 2px 7px;
+  border-radius: 5px;
+  background: var(--fc);
+  box-shadow: 0 2px 6px rgba(15,23,42,.15);
+  max-width: 60%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ── Body ── */
+.doc-card-body {
+  padding: 10px 12px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+  min-height: 0;
 }
 
 .doc-card--skel {
@@ -364,19 +416,22 @@
   margin-bottom: 8px;
 }
 
-/* Favorite star (always visible) */
+/* Favorite star — fond semi-transparent pour rester lisible sur la
+   thumbnail coloree (mode grid). Reset pour list/dense plus bas. */
 .doc-card-fav {
   position: absolute; top: 8px; left: 8px; z-index: 2;
   display: flex; align-items: center; justify-content: center;
   width: 26px; height: 26px; border-radius: 50%;
-  border: none; background: transparent;
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--bg-elevated) 75%, transparent);
+  backdrop-filter: blur(4px);
   color: var(--text-muted); cursor: pointer;
-  opacity: .3; transition: all .15s;
+  opacity: .55; transition: all .15s;
 }
 .doc-card:hover .doc-card-fav,
 .doc-card-fav--active { opacity: 1; }
 .doc-card-fav--active { color: #f59e0b; }
-.doc-card-fav:hover { transform: scale(1.15); }
+.doc-card-fav:hover { transform: scale(1.1); }
 
 /* Description (truncated) */
 .doc-card-desc {
@@ -453,11 +508,12 @@
   width: 26px;
   height: 26px;
   border-radius: var(--radius-sm);
-  border: none;
-  background: transparent;
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--bg-elevated) 75%, transparent);
+  backdrop-filter: blur(4px);
   color: var(--text-muted);
   cursor: pointer;
-  opacity: .45;
+  opacity: .55;
   transition: opacity var(--motion-fast) var(--ease-out),
               background var(--motion-fast) var(--ease-out),
               color var(--motion-fast) var(--ease-out);
@@ -875,6 +931,23 @@
   align-items: center;
   gap: 12px;
   padding: 10px 14px;
+  /* Reset hover effects du grid mode pour rester en ligne flat. */
+  transform: none;
+}
+.doc-card--list:hover {
+  border-color: var(--border);
+  box-shadow: none;
+  background: var(--bg-hover);
+  transform: none;
+}
+/* Boutons fav/menu en mode list : reset du fond semi-transparent grid */
+.doc-card--list .doc-card-fav,
+.doc-card--list .doc-card-menu-btn,
+.doc-card--dense .doc-card-fav,
+.doc-card--dense .doc-card-menu-btn {
+  background: transparent;
+  border: none;
+  backdrop-filter: none;
 }
 
 .doc-card--list .doc-card-icon {

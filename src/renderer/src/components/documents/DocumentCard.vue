@@ -172,14 +172,41 @@ const menuItems = computed<ContextMenuItem[]>(() => {
       <MoreVertical :size="isDense ? 14 : 16" />
     </button>
 
-    <div
-      :class="isDense ? 'doc-dense-icon' : 'doc-card-icon'"
-      :style="{ background: iconBg, color: iconColor }"
-    >
-      <component :is="iconComponent ?? File" :size="iconSize" />
-    </div>
+    <!-- Mode GRID (defaut) : layout style FilesView avec thumbnail zone +
+         body. Les modes dense/list utilisent l'icone simple inline. -->
+    <template v-if="!isDense && !isList">
+      <div class="doc-card-thumb" :style="{ '--fc': iconColor }">
+        <div class="doc-card-icon-ring">
+          <component :is="iconComponent ?? File" :size="22" />
+        </div>
+        <span class="doc-card-ext-badge">{{ iconLabel }}</span>
+      </div>
 
-    <template v-if="!isDense">
+      <div class="doc-card-body">
+        <p class="doc-card-name">
+          {{ doc.name }}
+          <span v-if="isRecent" class="doc-new-badge">Nouveau</span>
+        </p>
+        <p v-if="doc.description" class="doc-card-desc">{{ doc.description }}</p>
+        <span v-if="doc.travail_title" class="doc-devoir-badge">
+          <BookMarked :size="10" />
+          {{ doc.travail_title }}
+        </span>
+        <p class="doc-card-meta">
+          <span class="doc-card-date">{{ formatDate(doc.created_at) }}</span>
+        </p>
+      </div>
+    </template>
+
+    <!-- Mode LIST (ligne horizontale compacte) -->
+    <template v-else-if="isList">
+      <div
+        class="doc-card-icon"
+        :style="{ background: iconBg, color: iconColor }"
+      >
+        <component :is="iconComponent ?? File" :size="iconSize" />
+      </div>
+
       <p class="doc-card-name">
         {{ doc.name }}
         <span v-if="isRecent" class="doc-new-badge">Nouveau</span>
@@ -196,8 +223,8 @@ const menuItems = computed<ContextMenuItem[]>(() => {
         <span class="doc-card-type" :style="{ color: iconColor }">{{ iconLabel }}</span>
         <span class="doc-card-meta-sep" aria-hidden="true">·</span>
         <span class="doc-card-date">{{ formatDate(doc.created_at) }}</span>
-        <span v-if="isList && fileSize" class="doc-card-size">{{ fileSize }}</span>
-        <span v-if="isList && !appStore.activeChannelId && doc.channel_name" class="doc-card-channel">#{{ doc.channel_name }}</span>
+        <span v-if="fileSize" class="doc-card-size">{{ fileSize }}</span>
+        <span v-if="!appStore.activeChannelId && doc.channel_name" class="doc-card-channel">#{{ doc.channel_name }}</span>
       </p>
     </template>
 

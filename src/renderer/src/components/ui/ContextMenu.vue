@@ -113,11 +113,16 @@ function run(item: ContextMenuItem) {
   position: fixed;
   z-index: 9999;
   min-width: 180px;
-  background: var(--bg-secondary);
-  border: 1px solid var(--border, var(--bg-hover));
+  /* v2.273.6 : --bg-elevated direct (au lieu de --bg-secondary alias) +
+     fallback explicite pour eviter le rendu sombre en theme clair quand
+     les tokens theme-aware ne sont pas resolus correctement par cascade. */
+  background: var(--bg-elevated, var(--bg-modal, #FFFFFF));
+  color: var(--text-primary);
+  border: 1px solid var(--border, rgba(15,23,42,.08));
   border-radius: var(--radius-sm);
   padding: 4px;
-  box-shadow: 0 8px 24px rgba(0,0,0,.4), 0 2px 8px rgba(0,0,0,.3);
+  /* Ombre theme-aware via --elevation-3 (indigo-tintee en light, neutre en dark). */
+  box-shadow: var(--elevation-3, 0 8px 24px rgba(0,0,0,.25));
   display: flex;
   flex-direction: column;
   gap: 1px;

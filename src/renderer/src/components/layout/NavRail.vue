@@ -213,8 +213,13 @@ const hiddenVisibleNavItems = computed<NavItem[]>(() => {
 })
 
 /** Click sur une icône de la grille « Plus » : rétablit l'onglet puis navigue. */
+/** Click sur une icône de la grille « Plus » : navigue sans démasquer.
+   v2.273.6 : avant, on appelait `showNavItem(id)` ce qui retirait le
+   masquage automatiquement. Comportement non souhaite — l'utilisateur
+   veut pouvoir ouvrir un onglet masque sans le re-epinger au rail.
+   Pour le re-epinger, il doit passer par le menu contextuel "Afficher
+   {label}" (cf. buildHiddenItemsMenu). */
 function openHiddenApp(id: string): void {
-  showNavItem(id)
   showMorePopup.value = false
   router.push(`/${id}`)
 }
