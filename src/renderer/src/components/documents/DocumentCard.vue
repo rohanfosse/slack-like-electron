@@ -177,7 +177,7 @@ const menuItems = computed<ContextMenuItem[]>(() => {
     <template v-if="!isDense && !isList">
       <div class="doc-card-thumb" :style="{ '--fc': iconColor }">
         <div class="doc-card-icon-ring">
-          <component :is="iconComponent ?? File" :size="22" />
+          <component :is="iconComponent ?? File" :size="32" />
         </div>
         <span class="doc-card-ext-badge">{{ iconLabel }}</span>
       </div>

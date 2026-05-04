@@ -338,42 +338,44 @@
   border-color: rgba(var(--color-warning-rgb), .5);
 }
 
-/* ── Thumbnail zone (style fv-card-thumb) ── */
+/* ── Thumbnail zone — v2.273.11 simplifiee ──
+   Avant : ring 48px sur fond color-mix transparent + badge bottom-right.
+   Le ring + badge formaient une "tour verticale" disproportionnee pour
+   les cards etroites (180px). Maintenant : juste l'icone centree (pas
+   de ring/border), badge ext en pill centree en bas, fond plus discret. */
 .doc-card-thumb {
-  height: 100px;
+  height: 88px;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: 6px;
   position: relative;
-  background: linear-gradient(135deg,
-    color-mix(in srgb, var(--fc) 10%, transparent),
-    color-mix(in srgb, var(--fc) 3%, transparent));
+  padding: 14px 12px 10px;
+  background: linear-gradient(180deg,
+    color-mix(in srgb, var(--fc) 8%, var(--bg-elevated)),
+    var(--bg-elevated));
 }
 .doc-card-icon-ring {
-  width: 48px;
-  height: 48px;
-  border-radius: var(--radius-lg);
-  background: color-mix(in srgb, var(--fc) 14%, var(--bg-elevated));
-  border: 1.5px solid color-mix(in srgb, var(--fc) 25%, transparent);
   display: flex;
   align-items: center;
   justify-content: center;
   color: var(--fc);
+  /* Pas de fond ni de bordure — juste l'icone qui ressort sur le gradient. */
 }
 .doc-card-ext-badge {
-  position: absolute;
-  bottom: 8px;
-  right: 8px;
-  font-size: 9.5px;
+  display: inline-block;
+  font-family: var(--font-display);
+  font-size: 9px;
   font-weight: 800;
   text-transform: uppercase;
-  letter-spacing: .5px;
+  letter-spacing: .06em;
   color: #fff;
-  padding: 2px 7px;
-  border-radius: 5px;
+  padding: 2px 8px;
+  border-radius: 999px;
   background: var(--fc);
-  box-shadow: 0 2px 6px rgba(15,23,42,.15);
-  max-width: 60%;
+  box-shadow: 0 1px 3px color-mix(in srgb, var(--fc) 35%, transparent);
+  max-width: calc(100% - 24px);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
